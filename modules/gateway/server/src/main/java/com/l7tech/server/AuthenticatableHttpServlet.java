@@ -250,6 +250,8 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                         }
                     }
                 }
+            } catch (FailAttemptsExceededException faee) {
+                logger.warning("Max. number of failed attempts has been reached for user '" + creds.getLogin() + "'");
             } catch (Exception e) {
                 logger.fine("Authentication failed for user " + creds.getLogin() +
                         " on identity provider: " + provider.getConfig().getName());

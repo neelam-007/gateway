@@ -35,6 +35,10 @@ public class VariableMetadataTest extends TestCase {
         expectFail("foo$bar");
         expectFail("foo bar");
         expectFail("${foo}");
+        expectFail("9");
+        expectFail(" foo");
+        expectFail(".foo");
+        expectFail("foo ");
         new VariableMetadata("foo");
         new VariableMetadata("_foo");
         new VariableMetadata("foo_bar");

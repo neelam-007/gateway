@@ -6,14 +6,10 @@ package com.l7tech.server.transport.ftp;
 
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpTestException;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.server.policy.ServerAssertionRegistry;
+import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
+import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.net.ssl.X509TrustManager;
 
 /**
@@ -21,21 +17,18 @@ import javax.net.ssl.X509TrustManager;
  * @since SecureSpan 4.0
  */
 public class FtpAdminImpl implements FtpAdmin {
-    private static final Logger _logger = Logger.getLogger(FtpAdminImpl.class.getName());
     private final X509TrustManager _x509TrustManager;
     private final SsgKeyStoreManager _ssgKeyStoreManager;
-    private final ServerAssertionRegistry _serverAssertionRegistry;
 
     public FtpAdminImpl(X509TrustManager x509TrustManager,
-                        SsgKeyStoreManager ssgKeyStoreManager,
-                        ServerAssertionRegistry serverAssertionRegistry) {
+                        SsgKeyStoreManager ssgKeyStoreManager) {
         _x509TrustManager = x509TrustManager;
         _ssgKeyStoreManager = ssgKeyStoreManager;
-        _serverAssertionRegistry = serverAssertionRegistry;
     }
 
     /**
      * Tests connection to FTP(S) server and tries "cd" into remote directory.
+     * Convenience proxy bean for the FtpClientBuilder, configured with SSG's certificate and key store.
      *
      * @param isFtps                true if FTPS; false if FTP (unsecured)
      * @param isExplicit            if FTPS: true if explicit FTPS, false if implicit FTPS
@@ -63,56 +56,28 @@ public class FtpAdminImpl implements FtpAdmin {
                                String clientCertKeyAlias,
                                String directory,
                                int timeout) throws FtpTestException {
-        try {
-            // Need to use reflection for modular assertion.
-            Assertion ftpRoutingAssertion = _serverAssertionRegistry.findByExternalName("FtpRoutingAssertion");
-            String serverFtpRoutingAssertionClassname = (String)ftpRoutingAssertion.meta().get(AssertionMetadata.SERVER_ASSERTION_CLASSNAME);
-            Class serverFtpRoutingAssertionClass = ftpRoutingAssertion.getClass().getClassLoader().loadClass(serverFtpRoutingAssertionClassname);
-            serverFtpRoutingAssertionClass.getMethod("testConnection",
-                                                     Boolean.TYPE,              // isFtps
-                                                     Boolean.TYPE,              // isExplicit
-                                                     Boolean.TYPE,              // isVerifyServerCert
-                                                     String.class,              // hostName
-                                                     Integer.TYPE,              // port
-                                                     String.class,              // userName
-                                                     String.class,              // password
-                                                     Boolean.TYPE,              // useClientCert
-                                                     Long.TYPE,                 // clientCertKeystoreId
-                                                     String.class,              // clientCertKeyAlias
-                                                     String.class,              // directory
-                                                     Integer.TYPE,              // timeout
-                                                     X509TrustManager.class,    // x509TrustManager
-                                                     SsgKeyStoreManager.class)  // ssgKeyStoreManager
-                                          .invoke(null /* static method */,
-                                                  isFtps,
-                                                  isExplicit,
-                                                  isVerifyServerCert,
-                                                  hostName,
-                                                  port,
-                                                  userName,
-                                                  password,
-                                                  useClientCert,
-                                                  clientCertKeystoreId,
-                                                  clientCertKeyAlias,
-                                                  directory,
-                                                  timeout,
-                                                  _x509TrustManager,
-                                                  _ssgKeyStoreManager);
-        } catch (ClassNotFoundException e) {
-            _logger.log(Level.INFO, "Caught ClassNotFoundException while testing connection.", e);
-            throw new FtpTestException(e.toString(), null);
-        } catch (NoSuchMethodException e) {
-            _logger.log(Level.INFO, "Caught NoSuchMethodException while testing connection.", e);
-            throw new FtpTestException(e.toString(), null);
-        } catch (IllegalAccessException e) {
-            _logger.log(Level.INFO, "Caught IllegalAccessException while testing connection.", e);
-            throw new FtpTestException(e.toString(), null);
-        } catch (InvocationTargetException e) {
-            if (e.getCause() instanceof FtpTestException) {
-                throw (FtpTestException)e.getCause();
-            } else {
-                throw new FtpTestException(e.getMessage(), null);
-            }
+
+        FtpClientConfig config = FtpClientUtils.newConfig(hostName);
+
+        config.setSecurity(!isFtps ? FtpSecurity.FTP_UNSECURED :
+                                      isExplicit ? FtpSecurity.FTPS_EXPLICIT : FtpSecurity.FTPS_IMPLICIT);
+        config.setPort(port).setUser(userName).setPass(password).setDirectory(directory).setTimeout(timeout);
+
+        X509TrustManager trustManager = null;
+        if (isVerifyServerCert) {
+            config.setVerifyServerCert(true);
+            trustManager = _x509TrustManager;
         }
+
+        SsgKeyStoreManager keyStoreManager = null;
+        if (useClientCert) {
+            config.setUseClientCert(true).setClientCertId(clientCertKeystoreId).setClientCertAlias(clientCertKeyAlias);
+            keyStoreManager = _ssgKeyStoreManager;
+        }
+
+        if (isFtps)
+            FtpClientUtils.testFtpsConnection(config, keyStoreManager, trustManager);
+        else
+            FtpClientUtils.testFtpConnection(config);
     }
 }

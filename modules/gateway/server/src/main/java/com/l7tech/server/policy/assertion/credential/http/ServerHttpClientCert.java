@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 import sun.security.x509.X500Name;
 
@@ -79,10 +80,10 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
         try {
             clientCert.checkValidity();
         } catch (CertificateExpiredException cee) {
-            logger.log( Level.WARNING, cee.toString(), cee );
+            logger.log( Level.WARNING, "Client Certificate has expired: {0}", new String[] {ExceptionUtils.getMessage(cee)} );
             throw new CredentialFinderException( "Client Certificate has expired", cee, AssertionStatus.AUTH_FAILED );
         } catch (CertificateNotYetValidException cnyve ) {
-            logger.log( Level.WARNING, cnyve.toString(), cnyve );
+            logger.log( Level.WARNING, "Client Certificate is not yet valid: {0}", new String[] {ExceptionUtils.getMessage(cnyve)} );
             throw new CredentialFinderException( "Client Certificate is not yet valid", cnyve, AssertionStatus.AUTH_FAILED );
         }
 

@@ -192,7 +192,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         for(GroupMappingConfig groupMappingConfig : ldapIdentityProviderConfig.getGroupMappings()) {
             if(groupMappingConfig.getMemberStrategy().equals(MemberStrategy.MEMBERS_BY_OU)) {
                 try {
-                    return isMemberOfGroupByOu(user, group.getDn());
+                    if(isMemberOfGroupByOu(user, group.getDn())) {
+                        return true;
+                    }
                 } catch(NamingException e) {
                     String msg = "failed to check group membership";
                     logger.log(Level.WARNING, "LDAP error: " + msg, e);
@@ -202,7 +204,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 boolean membersByLogin = groupMappingConfig.getMemberStrategy().equals(MemberStrategy.MEMBERS_ARE_LOGIN);
                 Attribute membersAttribute = group.getAttributes().get(groupMappingConfig.getMemberAttrName());
                 if(membersAttribute == null) {
-                    return false;
+                    continue;
                 }
                 
                 for(int i = 0;i < membersAttribute.size();i++) {
@@ -233,14 +235,14 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                         }
 
                         if(subgroup != null) {
-                            return isMember(user, subgroup);
+                            if(isMember(user, subgroup)) {
+                                return true;
+                            }
                         }
                     } catch(NamingException e) {
                         // skip to the next member
                     }
                 }
-
-                return false;
             }
         }
 

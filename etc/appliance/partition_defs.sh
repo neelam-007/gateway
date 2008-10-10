@@ -17,11 +17,10 @@ system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
 multiplier="2/3"
 # 
 let java_ram="$system_ram*$multiplier" 
-if [ `expr $java_ram \> 2074412` == 1 ]; then
+if [ `expr $java_ram \> 4148824` == 1 ]; then
 	# we have more ram than java can use
-	# FIXME: when we start running 64 bit JVM
-	java_ram=2074412;
-	# CAP at 2 gigs
+	java_ram=4148824;
+	# CAP at 4 gigs
 fi
 
 

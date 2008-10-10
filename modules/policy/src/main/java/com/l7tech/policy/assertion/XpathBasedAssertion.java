@@ -7,6 +7,8 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 
@@ -18,8 +20,9 @@ import java.util.Map;
  * Base class for XML security assertions whose primary configurable feature is an Xpath expression.
  */
 @RequiresXML()
-public abstract class XpathBasedAssertion extends Assertion {
+public abstract class XpathBasedAssertion extends Assertion implements AssertionServiceChangeListener {
     protected XpathExpression xpathExpression;
+    protected SoapVersion soapVersion = SoapVersion.SOAP_1_1;
 
     protected XpathBasedAssertion() {
     }
@@ -61,5 +64,23 @@ public abstract class XpathBasedAssertion extends Assertion {
         if (getXpathExpression() != null)
             return getXpathExpression().getNamespaces();
         return null;
+    }
+
+    public SoapVersion getSoapVersion() {
+        return soapVersion;
+    }
+
+    public void updateSoapVersion(SoapVersion soapVersion) {
+        this.soapVersion = soapVersion;
+        
+        if (getXpathExpression() == null) return;
+        String expression = xpathExpression.getExpression();
+        if(SoapUtil.SOAP_ENVELOPE_XPATH.equals(expression) && soapVersion == SoapVersion.SOAP_1_2) {
+            xpathExpression.setExpression(expression.replaceAll("soapenv:", "s12:"));
+            xpathExpression.getNamespaces().put("s12", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
+        } else if(SoapUtil.SOAP_1_2_ENVELOPE_XPATH.equals(expression) && soapVersion == SoapVersion.SOAP_1_1) {
+            xpathExpression.setExpression(expression.replaceAll("s12:", "soapenv:"));
+            xpathExpression.getNamespaces().remove("s12");
+        }
     }
 }

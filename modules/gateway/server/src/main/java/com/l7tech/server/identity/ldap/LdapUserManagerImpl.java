@@ -84,6 +84,22 @@ public class LdapUserManagerImpl implements LdapUserManager {
                         byte[] tmp2 = (byte[]) tmp;
                         out.setPassword(new String(tmp2));
                     }
+
+                    // check for presence of userCertificate
+                    String userCertAttrName = userType.getUserCertAttrName();
+                    if (userCertAttrName == null) {
+                        userCertAttrName = "userCertificate;binary";
+                    }
+                    tmp = LdapUtils.extractOneAttributeValue(attributes, userCertAttrName);
+                    if (tmp != null) {
+                        if (tmp instanceof byte[]) {
+                            out.setLdapCert((byte[])tmp);
+                        } else {
+                            logger.warning("User certificate Ldap property populated with " +
+                                           "data in an unexpected format " + tmp.getClass());
+                        }
+                    }
+
                     return out;
                 }
             }
@@ -95,7 +111,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
             logger.log(Level.WARNING, "LDAP authentication error: " + ae.getMessage(), ExceptionUtils.getDebugException(ae));
             return null;
         } catch (NamingException ne) {
-            logger.log(Level.WARNING, "LDAP error: " + ne.getMessage(), ne);
+            logger.log(Level.WARNING, "LDAP error: " + ne.getMessage(), ExceptionUtils.getDebugException(ne));
             return null;
         } finally {
             try {
@@ -156,7 +172,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
         } catch (AuthenticationException ae) {
             logger.log(Level.WARNING, "LDAP authentication error: " + ae.getMessage(), ExceptionUtils.getDebugException(ae));
         } catch (NamingException ne) {
-            logger.log(Level.WARNING, "LDAP error: " + ne.getMessage(), ne);
+            logger.log(Level.WARNING, "LDAP error: " + ne.getMessage(), ExceptionUtils.getDebugException(ne));
         } finally {
             try {
                 if (context != null) context.close();
@@ -231,7 +247,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     }
 
     public IdentityHeader userToHeader(LdapUser user) {
-        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getLogin(), user.getName());
+        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getLogin(), user.getName(), user.getCn());
     }
 
     public LdapUser headerToUser(IdentityHeader header) {

@@ -7,6 +7,8 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.License;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.transport.PreemptiveCompression;
+import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -85,6 +87,7 @@ public class GatewayFeatureSets {
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
     public static final String UI_DASHBOARD_WINDOW = "ui:DashboardWindow";
     public static final String UI_MANAGE_LOG_SINKS = "ui:ManageLogSinks";
+    public static final String UI_MANAGE_EMAIL_LISTENERS = "ui:ManageEmailListeners";
 
     public static final String FEATURE_SIGNED_ATTACHMENTS = "feature:SignedAttachments";
 
@@ -193,6 +196,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet uiRbacRoleEditor = ui(UI_RBAC_ROLE_EDITOR, "Enable the SSM RBAC Role Editor");
         GatewayFeatureSet uiDashboardWindow = ui(UI_DASHBOARD_WINDOW, "Enable the SSM Dashboard Window");
         GatewayFeatureSet uiLogSinksDialog = ui(UI_MANAGE_LOG_SINKS, "Enable the SSM Log Sinks Dialog");
+        GatewayFeatureSet uiEmailListenersDialog = ui(UI_MANAGE_EMAIL_LISTENERS, "Enable the SSM Email Listeners Dialog");
 
         //
         // Declare "building block" feature sets
@@ -204,16 +208,16 @@ public class GatewayFeatureSets {
         GatewayFeatureSet uiAccel =
         fsr("set:UI:Accel", "SecureSpan Accelerator UI features",
             uiPublishXmlWizard,
+            uiPublishServiceWizard,
             uiAuditWindow,
             uiDashboardWindow,
+            uiWsdlCreateWizard,
             uiLogSinksDialog);
 
         GatewayFeatureSet uiDs =
         fsr("set:UI:Datascreen", "SecureSpan Datascreen UI features",
             "Adds Publish SOAP Web Service Wizard and Create WSDL Wizard",
-            fs(uiAccel),
-            uiWsdlCreateWizard,
-            uiPublishServiceWizard);
+            fs(uiAccel));
 
         GatewayFeatureSet uiFw =
         fsr("set:UI:Firewall", "SecureSpan Firewall UI features",
@@ -239,7 +243,11 @@ public class GatewayFeatureSets {
             ass(RequestWssSaml2.class),
             ass(EncryptedUsernameTokenAssertion.class),
             ass(WsTrustCredentialExchange.class),
-            ass(SamlBrowserArtifact.class));
+            ass(SamlBrowserArtifact.class),
+            ass(PreemptiveCompression.class),
+            ass(RemoteDomainIdentityInjection.class),
+            mass("assertion:LDAPQuery"),
+            mass("assertion:IdentityAttributes"));
 
         GatewayFeatureSet accessGateway =
         fsr("set:AccessControl:Gateway", "SecureSpan Gateway access control",
@@ -264,6 +272,7 @@ public class GatewayFeatureSets {
             ass(RequestWssReplayProtection.class),
             ass(RequestWssTimestamp.class),
             ass(ResponseWssSecurityToken.class),
+            ass(WssVersionAssertion.class),
             misc(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments.", null));
 
         // Message Validation/Transform
@@ -293,16 +302,17 @@ public class GatewayFeatureSets {
             ass(Regex.class),
             ass(WsiBspAssertion.class),
             ass(WsiSamlAssertion.class),
+            ass(WsspAssertion.class),
             ass(HtmlFormDataAssertion.class),
-            ass(CodeInjectionProtectionAssertion.class));
+            ass(CodeInjectionProtectionAssertion.class),
+            mass("assertion:WsAddressing"));
 
         GatewayFeatureSet validationGateway =
         fsr("set:Validation:Gateway", "SecureSpan Gateway message validation and transformation",
             "Adds HTTP form/MIME conversion assertions",
             fs(validationFw),
             ass(HttpFormPost.class),
-            ass(InverseHttpFormPost.class),
-            mass("assertion:WsAddressing"));
+            ass(InverseHttpFormPost.class));
 
         // Message routing
         GatewayFeatureSet routingIps =
@@ -337,6 +347,7 @@ public class GatewayFeatureSets {
             fs(ftpFront),
             fs(jmsFront),
             fs(jmsBack),
+            fs(uiEmailListenersDialog),
             ass(BridgeRoutingAssertion.class),
             mass("assertion:FtpRouting"));
 
@@ -345,14 +356,14 @@ public class GatewayFeatureSets {
         fsr("set:Availability:Accel", "SecureSpan Accelerator service availability",
             "Time/Day and IP range",
             ass(TimeRange.class),
-            ass(RemoteIpRange.class));
+            ass(RemoteIpRange.class),
+            mass("assertion:RateLimit"));
 
         GatewayFeatureSet availabilityFw =
         fsr("set:Availability:Firewall", "SecureSpan Firewall service availability",
             "Adds throughput qutoa",
             fs(availabilityAccel),
-            ass(ThroughputQuota.class),
-            mass("assertion:RateLimit"));
+            ass(ThroughputQuota.class));
 
         // Logging/auditing and alerts
         GatewayFeatureSet auditAccel =
@@ -391,7 +402,8 @@ public class GatewayFeatureSets {
         GatewayFeatureSet threatAccel =
         fsr("set:Threats:Accel", "SecureSpan Accelerator threat protection",
             "Just document structure threats and schema validation",
-            ass(SchemaValidation.class));
+            ass(SchemaValidation.class),
+            ass(FaultLevel.class));
 
         GatewayFeatureSet threatFw =
         fsr("set:Threats:Firewall", "SecureSpan Firewall threat protection",
@@ -463,7 +475,9 @@ public class GatewayFeatureSets {
             fs(auditAccel),
             fs(policyAccel),
             fs(uiDs),
-            fs(customDs));
+            fs(customDs),
+            ass(SslAssertion.class),
+            srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
         fsp("set:Profile:Accel", "SecureSpan Accelerator",
             "XML acceleration features",
@@ -477,9 +491,11 @@ public class GatewayFeatureSets {
             fs(policyAccel),
             fs(threatAccel),
             fs(uiAccel),
-            fs(moduleLoader));
+            fs(moduleLoader),
+            ass(SslAssertion.class),
+            srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
-        fsp("set:Profile:Firewall", "SecureSpan Firewall",
+            fsp("set:Profile:Firewall", "SecureSpan Firewall",
             "XML firewall with custom assertions.  No BRA, no JMS, no special XML VPN Client support",
             fs(core),
             fs(admin),

@@ -15,6 +15,7 @@ import com.l7tech.xml.SoapFaultLevel;
  */
 public class FaultLevel extends Assertion implements UsesVariables {
     private SoapFaultLevel data = new SoapFaultLevel();
+    private boolean soap12 = false;
 
     public FaultLevel() {
     }
@@ -29,5 +30,13 @@ public class FaultLevel extends Assertion implements UsesVariables {
 
     public String[] getVariablesUsed() {
         return data.getVariablesUsed();
+    }
+
+    public boolean isSoap12() {
+        return soap12;
+    }
+    
+    public void setSoap12(boolean soap12) {
+        this.soap12 = soap12;
     }
 }

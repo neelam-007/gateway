@@ -7,7 +7,9 @@ package com.l7tech.security.xml;
 
 import com.l7tech.security.token.KerberosSecurityToken;
 
+import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
+import java.math.BigInteger;
 
 /**
  * Interface implemented by entities capable of lookup up X.509 certificate by their SHA1 thumbprint, SKI, or KeyName.
@@ -37,6 +39,15 @@ public interface SecurityTokenResolver {
      * @return the certificate that was found, or null if one was not found.
      */
     X509Certificate lookupByKeyName(String keyName);
+
+    /**
+     * Look up a certificate by Issuer and Serial.
+     *
+     * @param issuer The certificate issuing authority
+     * @param serial The certificate serial number
+     * @return the certificate that was found, or null if one was not found.
+     */
+    X509Certificate lookupByIssuerAndSerial( X500Principal issuer, BigInteger serial );
 
     /**
      * Get the private key (and the rest of the cert chain) for the specified certificate, if we have access to it.

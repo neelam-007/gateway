@@ -101,5 +101,3 @@
 		<antcall target="html" />
 	</target>
 </project>
-
-

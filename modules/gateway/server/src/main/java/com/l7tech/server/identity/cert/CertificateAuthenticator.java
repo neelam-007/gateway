@@ -44,14 +44,14 @@ public class CertificateAuthenticator {
     }
 
     /**
-     * @param validationType may be null, indicating that the {@link CertValidationProcessor} should use whatever type 
+     * @param validationType may be null, indicating that the {@link CertValidationProcessor} should use whatever type
      *        is the default for this facility
      */
-    public AuthenticationResult authenticateX509Credentials(LoginCredentials pc, User user, CertificateValidationType validationType, Auditor auditor)
-            throws BadCredentialsException, MissingCredentialsException, InvalidClientCertificateException
-    {
+    public AuthenticationResult authenticateX509Credentials(LoginCredentials pc, X509Certificate validCert,
+                                                            User user, CertificateValidationType validationType,
+                                                            Auditor auditor, boolean internalCert)
+            throws BadCredentialsException, MissingCredentialsException, InvalidClientCertificateException {
         CredentialFormat format = pc.getFormat();
-        X509Certificate dbCert;
         X509Certificate requestCert = null;
         Object payload = pc.getPayload();
 
@@ -75,24 +75,18 @@ public class CertificateAuthenticator {
             throw new MissingCredentialsException(err);
         }
 
-        try {
-            dbCert = (X509Certificate)clientCertManager.getUserCert(user);
-        } catch (FindException e) {
-            logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
-            dbCert = null;
-        }
 
         String userLabel = user.getLogin();
         if (userLabel == null || userLabel.trim().length() < 1) userLabel = user.getId();
 
-        if (dbCert == null) {
+        if (validCert == null) {
             String err = "No certificate found for user " + userLabel;
             logger.warning(err);
             throw new InvalidClientCertificateException(err);
         }
 
         logger.fine("Request cert serial# is " + requestCert.getSerialNumber().toString());
-        if (CertUtils.certsAreEqual(requestCert, dbCert)) {
+        if (CertUtils.certsAreEqual(requestCert, validCert)) {
             try {
                 CertificateValidationResult cvr = certValidationProcessor.check(
                         new X509Certificate[]{requestCert},
@@ -107,14 +101,18 @@ public class CertificateAuthenticator {
                 throw new InvalidClientCertificateException("Certificate validation failed: " + ExceptionUtils.getMessage(e), e);
             }
             logger.finest(MessageFormat.format("Authenticated user {0} using a client certificate", userLabel));
-            // remember that this cert was used at least once successfully
-            try {
-                clientCertManager.forbidCertReset(user);
-                return new AuthenticationResult(user, requestCert,
-                                                clientCertManager.isCertPossiblyStale(requestCert));
-            } catch (ObjectModelException e) {
-                logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
-                return null;
+            if (internalCert) {
+                // remember that this cert was used at least once successfully
+                try {
+                    clientCertManager.forbidCertReset(user);
+                    return new AuthenticationResult(user, requestCert,
+                                                    clientCertManager.isCertPossiblyStale(requestCert));
+                } catch (ObjectModelException e) {
+                    logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
+                    return null;
+                }
+            } else {
+                return new AuthenticationResult(user, requestCert, false);
             }
         } else {
             String err = "Failed to authenticate user " + userLabel + " using a client certificate " +
@@ -122,5 +120,22 @@ public class CertificateAuthenticator {
             logger.warning(err);
             throw new InvalidClientCertificateException(err);
         }
+    }
+
+    /**
+     * @param validationType may be null, indicating that the {@link CertValidationProcessor} should use whatever type
+     *        is the default for this facility
+     */
+    public AuthenticationResult authenticateX509Credentials(LoginCredentials pc, User user, CertificateValidationType validationType, Auditor auditor)
+            throws BadCredentialsException, MissingCredentialsException, InvalidClientCertificateException
+    {
+        X509Certificate validCert;
+        try {
+            validCert = (X509Certificate)clientCertManager.getUserCert(user);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
+            validCert = null;
+        }
+        return authenticateX509Credentials(pc, validCert, user, validationType, auditor, true);
     }
 }

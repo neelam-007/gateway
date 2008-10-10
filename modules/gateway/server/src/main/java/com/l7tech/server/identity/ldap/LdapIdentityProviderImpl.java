@@ -3,17 +3,15 @@ package com.l7tech.server.identity.ldap;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.Background;
+import com.l7tech.util.Pair;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.identity.ldap.GroupMappingConfig;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.LdapUser;
-import com.l7tech.identity.ldap.UserMappingConfig;
+import com.l7tech.identity.ldap.*;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.mapping.LdapAttributeMapping;
 import com.l7tech.objectmodel.EntityHeader;
@@ -24,26 +22,36 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.ConfigurableIdentityProvider;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
+import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.server.util.ManagedTimer;
+import com.l7tech.server.util.ManagedTimerTask;
 import com.sun.jndi.ldap.LdapURL;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import javax.naming.*;
 import com.l7tech.identity.AuthenticationException;
+import com.l7tech.common.io.CertUtils;
+
 import javax.naming.directory.*;
+import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.TreeSet;
+import java.text.MessageFormat;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,9 +66,24 @@ import java.util.logging.Logger;
  * Date: Jan 21, 2004<br/>
  */
 public class LdapIdentityProviderImpl
-        implements LdapIdentityProvider, InitializingBean, ApplicationContextAware, ConfigurableIdentityProvider
+        implements LdapIdentityProvider, InitializingBean, DisposableBean, ApplicationContextAware, ConfigurableIdentityProvider
 {
     private Auditor auditor;
+    private final static long DEFAULT_INDEX_REBUILD_INTERVAL = 1000*60*10; // 10 minutes
+    private final static long DEFAULT_CACHE_CLEANUP_INTERVAL = 1000*60*10; // 10 minutes
+    private final static long DEFAULT_CACHED_CERT_ENTRY_LIFE = 1000*60*10; // 10 minutes
+    private static final long MIN_INDEX_REBUILD_TIME = 10000; //10 seconds
+    private static final long MIN_CERT_CACHE_LIFETIME = 10000; //10 seconds
+
+    private final AtomicLong rebuildTimerLength = new AtomicLong(DEFAULT_INDEX_REBUILD_INTERVAL);
+    private final AtomicLong cleanupTimerLength = new AtomicLong(DEFAULT_CACHE_CLEANUP_INTERVAL);
+    private static long cachedCertEntryLife = DEFAULT_CACHED_CERT_ENTRY_LIFE;
+
+    private LogonService logonService;
+
+    private final ManagedTimer timer = new ManagedTimer("LDAP Certificate Cache Timer");
+    private ManagedTimerTask rebuildTask;
+    private ManagedTimerTask cleanupTask;
 
     public LdapIdentityProviderImpl() {
     }
@@ -74,6 +97,13 @@ public class LdapIdentityProviderImpl
             throw new InvalidIdProviderCfgException("This config does not contain an ldap url"); // should not happen
         }
 
+        // worker thread which cleans old certs in the cache
+        Background.scheduleRepeated(new TimerTask() {
+            public void run() {
+                cleanupCertCache();
+            }
+        }, 5000, cleanupTimerLength.longValue()); // every 5 minutes
+
         if ( userManager == null ) {
             throw new InvalidIdProviderCfgException("UserManager is not set");
         }
@@ -85,6 +115,286 @@ public class LdapIdentityProviderImpl
         groupManager.configure( this );
 
         initializeFallbackMechanism();
+    }
+
+    /**
+     * This is a map which indexes the DN of LDAP entries for the entry's certificate serial and issuer dn.
+     * Key: a string, lowercased, that is a Pair of IssuerDn and serial num.
+     * Value: the DN of the LDAP entry containing the actual certificate
+     */
+    private HashMap<Pair<String, String>, String> certIndex = new HashMap<Pair<String, String>, String>();
+
+    /**
+     * This is a map to cache user certificates by the LDAP entry DN
+     * Key: a string, lowercased, the DN of the LDAP entry to which the cert belong. This DN comes from the index certIndex
+     * Value: the X509Certificate
+     */
+    private final HashMap<String, CertCacheEntry> certCache = new HashMap<String, CertCacheEntry>();
+
+    /**
+     * a lock for accessing the index above
+     */
+    private final ReentrantReadWriteLock indexLock = new ReentrantReadWriteLock();
+
+    /**
+     * a lock for accessing the index above
+     */
+    private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private final AtomicBoolean certsEnabled = new AtomicBoolean(true);
+
+
+    public void getIndexRebuildIntervalProperty() {
+        logger.fine("Checking the ldap cache rebuild interval property");
+        long indexRebuildInterval = DEFAULT_INDEX_REBUILD_INTERVAL;
+
+        String scp = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL);
+        if (scp != null) {
+            try {
+                indexRebuildInterval = Long.parseLong(scp);
+                if (indexRebuildInterval < MIN_INDEX_REBUILD_TIME) {
+                    logger.info(MessageFormat.format("Property {0} is less than the minimum value {1} (configured value = {2}). Using the default value ({3} ms)",
+                            ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL,
+                            MIN_INDEX_REBUILD_TIME,
+                            indexRebuildInterval,
+                            DEFAULT_CACHED_CERT_ENTRY_LIFE));
+                    indexRebuildInterval = DEFAULT_INDEX_REBUILD_INTERVAL;
+                }
+                logger.fine("Read property " + ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL + " with value " + indexRebuildInterval);
+            } catch (NumberFormatException e) {
+                logger.warning(MessageFormat.format("Error parsing property {0} with value {1}. Using the default value ({2})",
+                        ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL,
+                        scp,
+                        DEFAULT_INDEX_REBUILD_INTERVAL));
+            }
+        }
+        rebuildTimerLength.set(indexRebuildInterval);
+        logger.fine("Certificate index rebuild interval = " + rebuildTimerLength);
+    }
+
+    public void getCachedCertEntryLifeProperty() {
+
+        long cleanupLife = DEFAULT_CACHED_CERT_ENTRY_LIFE;
+
+        String scp = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME);
+        if (scp != null) {
+            try {
+                cleanupLife = Long.parseLong(scp);
+                if (cleanupLife < MIN_CERT_CACHE_LIFETIME) {
+                    logger.info(MessageFormat.format("Property {0} is less than the minimum value {1} (configured value = {2}). Using the default value ({3} ms)",
+                            ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME,
+                            MIN_CERT_CACHE_LIFETIME,
+                            cleanupLife,
+                            DEFAULT_CACHED_CERT_ENTRY_LIFE));
+                    cleanupLife = DEFAULT_CACHED_CERT_ENTRY_LIFE;
+                }
+            } catch (NumberFormatException e) {
+                logger.warning(MessageFormat.format("Could not parse property {0} with value {1}. Using the default ({2} ms)",
+                        ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME,
+                        scp,
+                        DEFAULT_CACHED_CERT_ENTRY_LIFE));
+            }
+        }
+        cachedCertEntryLife = cleanupLife;
+        logger.fine("Certificate cache entry lifetime = " + cleanupLife);
+    }
+
+    private static class RebuildTask extends ManagedTimerTask {
+        final LdapIdentityProviderImpl ldapProvRef;
+        final String providerName;
+        final long oid;
+        RebuildTask(LdapIdentityProviderImpl prov) {
+            this.ldapProvRef = prov;
+            providerName = prov.getConfig().getName();
+            oid = prov.getConfig().getOid();
+        }
+
+        protected void doRun() {
+            //when the referant Identity provider goes away, this timer should stop
+            if (ldapProvRef.wasRemoved()) {
+                logger.info("Cancelling cert index task for '" + providerName + "' oid: " + oid);
+                cancel();
+            } else if (!ldapProvRef.certsAreEnabled()) {
+                logger.fine("LDAP identity provider \"" + providerName + "\" is not configured to enable user certificates in LDAP. The user certificate index will not be built.");
+            } else {
+                long oldIndexInterval = ldapProvRef.rebuildTimerLength.get();
+                ldapProvRef.getIndexRebuildIntervalProperty();
+                long newIndexInterval = ldapProvRef.rebuildTimerLength.get();
+
+                if (oldIndexInterval != newIndexInterval) {
+                    logger.info(MessageFormat.format(
+                            "Certificate index rebuild interval has changed (old value = {0}, new value = {1}). Rescheduling this task with new interval.", 
+                            oldIndexInterval,
+                            newIndexInterval));
+                    ldapProvRef.rescheduleIndexRebuildTask();
+                } else {
+                    ldapProvRef.rebuildCertIndex();
+                }
+            }
+        }
+    }
+
+    private void rescheduleIndexRebuildTask() {
+        cancelTasks(rebuildTask);
+        rebuildTask = new RebuildTask(this);
+        scheduleTasks(new Pair<ManagedTimerTask, Long>(rebuildTask, rebuildTimerLength.get())); 
+    }
+
+    private static class CleanupTask extends ManagedTimerTask {
+        final LdapIdentityProviderImpl ldapProv;
+        String providerName;
+
+
+        CleanupTask(LdapIdentityProviderImpl prov) {
+            this.ldapProv = prov;
+            providerName = prov.getConfig().getName();
+        }
+
+        protected void doRun() {
+            //when the referant Identity provider goes away, this timer should stop
+            if (ldapProv.wasRemoved()) {
+                logger.info("Cancelling cert cache cleanup task for '" + providerName + "' oid: " + ldapProv.config.getOid());
+                cancel();
+            }
+            else {
+                ldapProv.cleanupCertCache();
+            }
+        }
+    }
+
+    public LdapIdentityProviderImpl(IdentityProviderConfig config) {
+        this.config = (LdapIdentityProviderConfig)config;
+        if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
+            throw new IllegalArgumentException("This config does not contain an ldap url"); // should not happen
+        }
+
+        rebuildTask = new RebuildTask(this);
+        cleanupTask = new CleanupTask(this);
+
+        getTaskPeriods();
+        scheduleTasks(
+                new Pair<ManagedTimerTask, Long>(rebuildTask, rebuildTimerLength.get()),
+                new Pair<ManagedTimerTask, Long>(cleanupTask, cleanupTimerLength.get()));
+    }
+
+    private boolean wasRemoved() {
+        if (configManager == null) {
+            logger.warning("Config Manager is null.");
+        } else {
+            try {
+                return configManager.findByPrimaryKey(config.getOid()) == null;
+            } catch (FindException e) {
+                logger.warning("Error checking identity configuration for " + config);
+            }
+        }
+        return false; // don't assume it was removed if there are errors getting to it
+    }
+
+    public void scheduleTasks(Pair<ManagedTimerTask, Long> ... whichTasks) {
+        for (Pair<ManagedTimerTask, Long> whichTask : whichTasks) {
+            timer.schedule(whichTask.left, 5000, whichTask.right);
+        }
+    }
+
+    public void getTaskPeriods() {
+        getIndexRebuildIntervalProperty();
+    }
+
+    public class CertCacheEntry {
+        public CertCacheEntry(X509Certificate cert) {
+            entryCreation = System.currentTimeMillis();
+            this.cert = cert;
+        }
+        public X509Certificate cert;
+        public long entryCreation;
+    }
+
+    private void cleanupCertCache() {
+        getCachedCertEntryLifeProperty();
+
+        ArrayList<String> todelete = new ArrayList<String>();
+        long now = System.currentTimeMillis();
+        cacheLock.readLock().lock();
+        try {
+            Set<String> keys = certCache.keySet();
+            for (String key : keys) {
+                CertCacheEntry cce = certCache.get(key);
+                if ((now - cce.entryCreation) > cachedCertEntryLife) {
+                    todelete.add(key);
+                }
+            }
+        } finally {
+            cacheLock.readLock().unlock();
+        }
+        if (todelete.size() > 0) {
+            cacheLock.writeLock().lock();
+            try {
+                for (String key : todelete) {
+                    logger.info("removing from cache " + key);
+                    certCache.remove(key);
+                }
+            } finally {
+                cacheLock.writeLock().unlock();
+            }
+        }
+    }
+
+    private void rebuildCertIndex() {
+        logger.fine("Re-creating ldap user certificate index for " + config.getName());
+        DirContext context = null;
+        NamingEnumeration answer = null;
+        HashMap<Pair<String,String>, String> tmpCertIndex = new HashMap<Pair<String, String>, String>();
+        try {
+            context = getBrowseContext();
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+            UserMappingConfig[] mappings = config.getUserMappings();
+            for (UserMappingConfig mapping : mappings) {
+                String certAttributeName = mapping.getUserCertAttrName();
+                answer = context.search(config.getSearchBase(), "(" + certAttributeName + "=*)", sc);
+
+                while (answer.hasMore()) {
+                    SearchResult sr = (SearchResult)answer.next();
+                    Object tmp = LdapUtils.extractOneAttributeValue(sr.getAttributes(), certAttributeName);
+                    if (tmp != null) {
+                        if (tmp instanceof byte[]) {
+                            X509Certificate cert = CertUtils.decodeCert((byte[])tmp);
+                            if (cert.getSerialNumber() != null && cert.getIssuerX500Principal() != null) {
+                                BigInteger serialNumber = cert.getSerialNumber();
+                                X500Principal issuerDn = cert.getIssuerX500Principal();
+
+                                Pair<String, String> key = makeIndexKey(issuerDn, serialNumber);
+                                String val = sr.getNameInNamespace();
+                                logger.fine("Indexing " + key + " for " + val);
+                                tmpCertIndex.put(key, val);
+                            }
+                        }
+                    }
+                }
+            }
+            indexLock.writeLock().lock();
+            try {
+                certIndex = tmpCertIndex;
+            } finally {
+                indexLock.writeLock().unlock();
+            }
+            logger.fine("serial cert index size: " + tmpCertIndex.size());
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error while recreating ldap user certificate index for LDAP Provider '" + config.getName() + "': " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } finally {
+            if (context != null) {
+                if (answer != null) {
+                    ResourceUtils.closeQuietly(answer);
+                }
+                ResourceUtils.closeQuietly(context);
+            }
+        }
+    }
+
+    private boolean certsAreEnabled() {
+        boolean enabled = getConfig().isUserCertsEnabled();
+        certsEnabled.set(enabled);
+        return certsEnabled.get();
     }
 
     public void setServerConfig(ServerConfig serverConfig) {
@@ -125,6 +435,14 @@ public class LdapIdentityProviderImpl
 
     public LdapGroupManager getGroupManager() {
         return groupManager;
+    }
+
+    public LogonService getLogonService() {
+        return logonService;
+    }
+
+    public void setLogonService(LogonService logonService) {
+        this.logonService = logonService;
     }
 
     /**
@@ -237,12 +555,30 @@ public class LdapIdentityProviderImpl
 
         final CredentialFormat format = pc.getFormat();
         if (format == CredentialFormat.CLEARTEXT) {
+            long now = System.currentTimeMillis();
+            logonService.hookPreLoginCheck(realUser, now);
             return authenticatePasswordCredentials(pc, realUser);
         } else if (format == CredentialFormat.DIGEST) {
             return DigestAuthenticator.authenticateDigestCredentials(pc, realUser);
         } else {
             if (format == CredentialFormat.CLIENTCERT || format == CredentialFormat.SAML) {
-                return certificateAuthenticator.authenticateX509Credentials(pc, realUser, config.getCertificateValidationType(), auditor);
+
+                    //get the LDAP cert for this user if LDAP certs are enabled for this provider
+                    if (certsAreEnabled() && realUser.getLdapCert() != null) {
+                        try {
+                            return certificateAuthenticator.authenticateX509Credentials(pc,
+                                                                             CertUtils.decodeCert(realUser.getLdapCert()),
+                                                                             realUser,
+                                                                             config.getCertificateValidationType(),
+                                                                             auditor, false);
+                        } catch (CertificateException e) {
+                            String msg = "Problem decoding cert located in LDAP";
+                            logger.log(Level.WARNING, msg, e);
+                            throw new AuthenticationException(msg + " " + e.getMessage());
+                        }
+                    } else {
+                        return certificateAuthenticator.authenticateX509Credentials(pc, realUser, config.getCertificateValidationType(), auditor);
+                    }
             } else {
                 String msg = "Attempt to authenticate using unsupported method on this provider: " + pc.getFormat();
                 logger.log(Level.SEVERE, msg);
@@ -256,9 +592,13 @@ public class LdapIdentityProviderImpl
         boolean res = userManager.authenticateBasic(realUser.getDn(), new String(pc.getCredentials()));
         if (res) {
             // success
-            return new AuthenticationResult(realUser);
+            AuthenticationResult ar = new AuthenticationResult(realUser);
+            logonService.updateLogonAttempt(realUser, ar);
+            return ar;
+            //return new AuthenticationResult(realUser);
         }
         logger.info("credentials did not authenticate for " + pc.getLogin());
+        //logonService.updateLogonAttempt(realUser, null);
         throw new BadCredentialsException("credentials did not authenticate");
     }
 
@@ -338,7 +678,7 @@ public class LdapIdentityProviderImpl
     }
 
     /**
-     * Find the LDAP users that correspond to the given ticket 
+     * Find the LDAP users that correspond to the given ticket
      */
     private Collection<IdentityHeader> search( final KerberosServiceTicket ticket ) throws FindException {
         String principal = ticket.getClientPrincipalName();
@@ -352,7 +692,7 @@ public class LdapIdentityProviderImpl
         }
 
         if ( value.length() == 0 ) {
-            throw new FindException( "Error processing kerberos principal name '"+principal+"', cannot determine REALM." );            
+            throw new FindException( "Error processing kerberos principal name '"+principal+"', cannot determine REALM." );
         }
 
         if ( logger.isLoggable( Level.FINEST ) ) {
@@ -383,6 +723,95 @@ public class LdapIdentityProviderImpl
 
         return doSearch(filter);
     }
+
+    public X509Certificate findCertByIssuerAndSerial( final X500Principal issuerDN, final BigInteger certSerial ) {
+        X509Certificate lookedupCert = null;
+
+        if ( certsAreEnabled() ) {
+            // look for presence of cert in index
+            Pair<String, String> key = makeIndexKey(issuerDN, certSerial);
+            indexLock.readLock().lock();
+            String dnforcert = null;
+            try {
+                dnforcert = certIndex.get(key);
+            } finally {
+                indexLock.readLock().unlock();
+            }
+
+            if (dnforcert == null) {
+                logger.info("The certificate with Issuer DN '" + issuerDN + "' and  Serial Number '" + certSerial + "' is not indexed. Returning null");
+                return null;
+            }
+
+            // try to find cert in cert cache
+            X509Certificate output = null;
+            cacheLock.readLock().lock();
+            try {
+                CertCacheEntry cce = certCache.get(dnforcert);
+                if (cce != null) output = cce.cert;
+            } finally {
+                cacheLock.readLock().unlock();
+            }
+            if (output != null) {
+                logger.fine("Cert found in cache");
+                return output;
+            }
+
+            // load the cert from ldap
+            DirContext context = null;
+            try {
+                UserMappingConfig[] mappings = config.getUserMappings();
+
+                context = getBrowseContext();
+                Attributes attributes = context.getAttributes(dnforcert);
+                Object tmp = null;
+                for (UserMappingConfig mapping : mappings) {
+                    String userCertAttrName = mapping.getUserCertAttrName();
+                    if (userCertAttrName == null || "".equals(userCertAttrName)) {
+                        logger.warning("No user certificate attribute has been configured for user mapping " + mapping.getObjClass());
+                    } else {
+                        tmp = LdapUtils.extractOneAttributeValue(attributes, userCertAttrName);
+                        if (tmp != null) {
+                            if (tmp instanceof byte[]) {
+                                logger.info("Found the certificate in LDAP");
+                                lookedupCert = CertUtils.decodeCert((byte[])tmp);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "error looking up user in directory " + dnforcert, e);
+            } finally {
+                try {
+                    if (context != null) context.close();
+                } catch (NamingException e) {
+                    logger.log(Level.WARNING, e.getMessage(), e);
+                }
+            }
+
+            if (lookedupCert == null) {
+                logger.info("the cert is in the index but not in ldap (" + dnforcert + ")");
+                return null;
+            }
+
+            // add the cert to the cert cache and return
+            cacheLock.writeLock().lock();
+            try {
+                logger.info("caching cert for " + dnforcert);
+                certCache.put(dnforcert, new CertCacheEntry(lookedupCert));
+            } finally {
+                cacheLock.writeLock().unlock();
+            }
+        }
+        
+        return lookedupCert;
+    }
+
+    private Pair<String,String> makeIndexKey(X500Principal issuerDN, BigInteger certSerial) {
+        return new Pair<String, String>(issuerDN.getName(X500Principal.RFC2253), certSerial.toString());
+    }
+
 
     private Collection<IdentityHeader> doSearch(String filter) throws FindException {
         Collection<IdentityHeader> output = new TreeSet<IdentityHeader>();
@@ -569,11 +998,11 @@ public class LdapIdentityProviderImpl
                     env.put(Context.SECURITY_PROTOCOL, "ssl");
                 }
             } catch (NamingException e) {
-                logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e));
+                logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
                 continue;
             } catch (IllegalArgumentException e) {
-                logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e));
+                logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
                 continue;
             }
@@ -584,10 +1013,10 @@ public class LdapIdentityProviderImpl
                 // Create the initial directory context.
                 return new InitialDirContext(env);
             } catch (CommunicationException e) {
-                logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
+                logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
             } catch (RuntimeException e) {
-                logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
+                logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
             }
         }
@@ -609,7 +1038,7 @@ public class LdapIdentityProviderImpl
                     logger.log(Level.INFO, "LDAP configuration test failure. " + msg, ExceptionUtils.getDebugException(e));
                 } else {
                     msg = "Cannot connect to this directory.";
-                    logger.log(Level.INFO, "LDAP configuration test failure. " + msg, e);
+                    logger.log(Level.INFO, "LDAP configuration test failure. " + msg, ExceptionUtils.getDebugException(e));
                 }
                 throw new InvalidIdProviderCfgException(msg, e);
             }
@@ -739,6 +1168,7 @@ public class LdapIdentityProviderImpl
                 logger.finest("this ldap config was tested successfully");
         } finally {
             if (context != null) ResourceUtils.closeQuietly(context);
+            cancelTasks(rebuildTask, cleanupTask);
         }
     }
 
@@ -754,8 +1184,54 @@ public class LdapIdentityProviderImpl
         this.groupManager = groupManager;
     }
 
+    public boolean updateFailedLogonAttempt(LoginCredentials lc) {
+        LdapUser realUser;
+        try {
+            realUser = userManager.findByLogin(lc.getLogin());
+        } catch (FindException e) {
+            return false;
+        }
+
+        logonService.updateLogonAttempt(realUser, null);
+        return true;
+    }
+
+    public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
+        try {
+            LdapUser ldapUser = userManager.findByLogin(lc.getLogin());
+            if (ldapUser != null) {
+                //check where we should be looking for the cert, the cert could reside either in LDAP or gateway
+                if (certsAreEnabled()) {
+                    //telling use to search cert through ldap
+                    if (ldapUser.getLdapCert() != null) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    //telling use to search the gateway
+                    if (clientCertManager.getUserCert(ldapUser) != null ) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            } else {
+                //we cant even find the user, so there won't be a cert available
+                return false;
+            }
+        } catch (FindException fe) {
+                logger.log(Level.FINE, "Couldn't find user '" + lc.getLogin() + "'");
+                throw new AuthenticationException("Failed on ldap user '" + lc.getLogin() + "' lookup");
+        }
+    }
+
     public void setClientCertManager(ClientCertManager clientCertManager) {
         this.clientCertManager = clientCertManager;
+    }
+
+    public void setConfigManager(IdentityProviderConfigManager configManager) {
+        this.configManager = configManager;
     }
 
     /**
@@ -771,6 +1247,17 @@ public class LdapIdentityProviderImpl
         if (groupManager == null) throw new IllegalStateException("GroupManager has not been initialized");
     }
 
+    public void destroy() throws Exception {
+        cancelTasks(rebuildTask, cleanupTask);
+    }
+
+    private void cancelTasks(ManagedTimerTask ... tasks) {
+        for (ManagedTimerTask task : tasks) {
+            if (task != null) {
+                task.cancel();
+            }
+        }
+    }
 
     /**
      * In MSAD, there is an attribute named userAccountControl which contains information
@@ -893,6 +1380,19 @@ public class LdapIdentityProviderImpl
                 if (tmp != null) {
                     login = tmp.toString();
                 }
+
+                // if cn is present use it
+                String cn = null;
+                try{
+                    tmp = LdapUtils.extractOneAttributeValue(atts, userType.getNameAttrName());
+                }catch(NamingException e){
+                    logger.log(Level.WARNING, "cannot extract cn", e);
+                    tmp = null;
+                }
+                if(tmp != null){
+                    cn = tmp.toString();
+                }
+
                 // if description attribute present, use it
                 String description = null;
                 try {
@@ -905,7 +1405,7 @@ public class LdapIdentityProviderImpl
                     description = tmp.toString();
                 }
                 if (login != null) {
-                    return new IdentityHeader(config.getOid(), dn, EntityType.USER, login, description);
+                    return new IdentityHeader(config.getOid(), dn, EntityType.USER, login, description, cn);
                 } else {
                     return null;
                 }
@@ -968,6 +1468,7 @@ public class LdapIdentityProviderImpl
 
     private ServerConfig serverConfig;
     private LdapIdentityProviderConfig config;
+    private IdentityProviderConfigManager configManager;
     private ClientCertManager clientCertManager;
     private LdapUserManager userManager;
     private LdapGroupManager groupManager;

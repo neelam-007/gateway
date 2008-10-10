@@ -129,10 +129,11 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         Element xencDesiredNextSibling = null;
-        if (dreq.getSignatureConfirmation() != null) {
-            Element sc = addSignatureConfirmation(securityHeader, dreq.getSignatureConfirmation());
-            signList.add(sc);
-            xencDesiredNextSibling = sc;
+        if (!dreq.getSignatureConfirmations().isEmpty()) {
+            for (String conf : dreq.getSignatureConfirmations()) {
+                Element sc = addSignatureConfirmation(securityHeader, conf);
+                signList.add(sc);
+            }
         }
 
         Element addedUsernameTokenHolder = null; // dummy element to hold fully-encrypted usernametoken.  will be removed later

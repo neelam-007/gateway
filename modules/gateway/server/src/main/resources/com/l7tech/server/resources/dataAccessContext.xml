@@ -110,6 +110,7 @@
         <property name="annotatedClasses">
             <list>
                 <!-- Transports -->
+                <value>com.l7tech.gateway.common.transport.email.EmailListener</value>
                 <value>com.l7tech.gateway.common.transport.SsgConnector</value>
                 <value>com.l7tech.gateway.common.transport.SsgConnectorProperty</value>
                 <value>com.l7tech.gateway.common.transport.jms.JmsConnection</value>
@@ -119,6 +120,7 @@
                 <value>com.l7tech.identity.IdentityProviderConfig</value>
                 <value>com.l7tech.identity.internal.InternalGroup</value>
                 <value>com.l7tech.identity.internal.InternalUser</value>
+                <value>com.l7tech.identity.internal.PasswordChangeRecord</value>
                 <value>com.l7tech.identity.internal.InternalGroupMembership</value>
                 <value>com.l7tech.identity.ldap.LdapIdentityProviderConfig</value>
                 <value>com.l7tech.identity.fed.FederatedIdentityProviderConfig</value>
@@ -157,6 +159,7 @@
                 <value>com.l7tech.gateway.common.security.RevocationCheckPolicy</value>
                 <value>com.l7tech.security.cert.TrustedCert</value>
                 <value>com.l7tech.server.identity.cert.CertEntryRow</value>
+                <value>com.l7tech.server.logon.LogonInfo</value>
                 <value>com.l7tech.server.security.keystore.KeystoreFile</value>
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
 

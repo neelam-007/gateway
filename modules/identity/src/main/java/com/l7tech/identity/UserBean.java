@@ -132,6 +132,22 @@ public class UserBean implements User, Serializable {
         this.version = version;
     }
 
+    public boolean isChangePassword() {
+        return changePassword;
+    }
+
+    public void setChangePassword(boolean changePassword) {
+        this.changePassword = changePassword;
+    }
+
+    public long getPasswordExpiry() {
+        return passwordExpiry;
+    }
+
+    public void setPasswordExpiry(long passwordExpiry) {
+        this.passwordExpiry = passwordExpiry;
+    }
+
     /**
      * {@link User} implementations that delegate their bean properties to {@link UserBean} <b>must</b> override
      * {@link #equals} and {@link #hashCode} to include their own identity information!
@@ -153,6 +169,8 @@ public class UserBean implements User, Serializable {
         if (lastName != null ? !lastName.equals(userBean.lastName) : userBean.lastName != null) return false;
         if (login != null ? !login.equals(userBean.login) : userBean.login != null) return false;
         if (name != null ? !name.equals(userBean.name) : userBean.name != null) return false;
+        if (changePassword != userBean.changePassword) return false;
+        if (passwordExpiry != userBean.passwordExpiry) return false;
 
         return true;
     }
@@ -173,6 +191,8 @@ public class UserBean implements User, Serializable {
         result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
         result = 31 * result + (email != null ? email.hashCode() : 0);
         result = 31 * result + (department != null ? department.hashCode() : 0);
+        result = 31 * result + Boolean.valueOf(changePassword).hashCode();
+        result = 31 * result + (int) (passwordExpiry ^ (passwordExpiry >>> 32));
         return result;
     }
 
@@ -189,4 +209,6 @@ public class UserBean implements User, Serializable {
     protected String department;
     protected String subjectDn;
     protected int version;
+    protected boolean changePassword;
+    private long passwordExpiry;
 }

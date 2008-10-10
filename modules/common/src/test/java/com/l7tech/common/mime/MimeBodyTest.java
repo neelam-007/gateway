@@ -12,10 +12,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -380,6 +377,33 @@ public class MimeBodyTest extends TestCase {
         rebuilt.readAndStashEntireMessage();
 
         assertEquals(1,rebuilt.getNumPartsKnown());
+    }
+    
+    public void testGetBytesIfAlreadyAvailable() throws Exception {
+        SwaTestcaseFactory stfu = new SwaTestcaseFactory(1, 50000, 29);
+        InputStream in = new ByteArrayInputStream(stfu.makeTestMessage());
+
+        final HybridStashManager stashManager = new HybridStashManager(2038, new File("."), "testGBIAA_1");
+        try {
+            MimeBody mm = new MimeBody(
+                    stashManager,
+                    ContentTypeHeader.parseValue("multipart/mixed; boundary=\"" +
+                            new String(stfu.getBoundary()) + "\""),
+                    in);
+
+            byte[] firstPart = IOUtils.slurpStream(mm.getPart(0).getInputStream(false));
+            assertEquals(firstPart.length, 50000);
+
+            // Fetch with high limit should succeed
+            byte[] got = mm.getFirstPart().getBytesIfAvailableOrSmallerThan(99999);
+            assertTrue(Arrays.equals(got, firstPart));
+
+            // Fetch with low limit should return null
+            got = mm.getFirstPart().getBytesIfAvailableOrSmallerThan(1024);
+            assertEquals(got, null);
+        } finally {
+            stashManager.close();
+        }
     }
 
     public final String MESS_SOAPCID = "-76394136.15558";

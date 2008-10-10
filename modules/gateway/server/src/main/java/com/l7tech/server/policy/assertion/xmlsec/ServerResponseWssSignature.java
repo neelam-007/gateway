@@ -160,7 +160,7 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
         // TODO need some way to guess whether sender would prefer we sign with our cert or with his
         //      EncryptedKey.  For now, we'll cheat, and use EncryptedKey if the request used any wse11
         //      elements that we noticed.
-        if (wssResult != null && wssResult.isWsse11Seen()) {
+        if (wssResult != null && context.isResponseWss11()) {
             // Try to sign response using an existing EncryptedKey already known to the requestor,
             // using #EncryptedKeySHA1 KeyInfo reference, instead of making an RSA signature,
             // which is expensive.

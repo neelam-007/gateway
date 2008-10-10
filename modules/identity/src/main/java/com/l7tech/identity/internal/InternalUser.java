@@ -7,15 +7,16 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.List;
+
+import org.hibernate.annotations.Cascade;
 
 /**
  * User from the internal identity provider.
  * Password property is stored as HEX(MD5(login:L7SSGDigestRealm:password)). If you pass a clear text passwd in
- * setPassword, this encoding will be done ofr you (provided that login was set before).
+ * setPassword, this encoding will be done for you (provided that login was set before).
  * 
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
@@ -30,6 +31,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class InternalUser extends PersistentUser {
     private long expiration = -1;
     protected String hashedPassword;
+    private List<PasswordChangeRecord> passwordChangesHistory;
+    private long passwordExpiry;
+    private boolean changePassword;
 
     public InternalUser() {
         this(null);
@@ -56,6 +60,9 @@ public class InternalUser extends PersistentUser {
         setExpiration(imp.getExpiration());
         setHashedPassword(imp.getHashedPassword());
         setSubjectDn( imp.getSubjectDn() );
+        setPasswordChangesHistory(imp.getPasswordChangesHistory());
+        setPasswordExpiry(imp.getPasswordExpiry());
+        setChangePassword(imp.isChangePassword());
     }
 
     public void setHashedPassword(String password) {
@@ -90,6 +97,43 @@ public class InternalUser extends PersistentUser {
         this.expiration = expiration;
     }
 
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="internalUser")
+    @OrderBy("lastChanged ASC")
+    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
+    public List<PasswordChangeRecord> getPasswordChangesHistory() {
+        return passwordChangesHistory;
+    }
+
+    @Column(name="password_expiry")
+    public long getPasswordExpiry() {
+        return passwordExpiry;
+    }
+
+    public void setPasswordExpiry(long passwordExpiry) {
+        this.passwordExpiry = passwordExpiry;
+    }
+
+    @Column(name="change_password")
+    public boolean isChangePassword() {
+        return changePassword;
+    }
+
+    public void setChangePassword(boolean changePassword) {
+        this.changePassword = changePassword;
+    }
+
+    public void setPasswordChangesHistory(List<PasswordChangeRecord> passwordChangesHistory) {
+        if ( this.passwordChangesHistory != null) {
+            for (PasswordChangeRecord changeRecord : passwordChangesHistory) {
+                if (!this.passwordChangesHistory.contains(changeRecord)) {
+                    this.passwordChangesHistory.add(changeRecord);
+                }
+            }
+        } else {
+            this.passwordChangesHistory = passwordChangesHistory;
+        }
+    }
+
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -98,20 +142,23 @@ public class InternalUser extends PersistentUser {
 
         InternalUser that = (InternalUser) o;
 
-        if (expiration != that.expiration) return false;
-        if (hashedPassword != null ? !hashedPassword.equals(that.hashedPassword) : that.hashedPassword != null)
-            return false;
-
-        return true;
+        return expiration == that.expiration &&
+               passwordExpiry == that.passwordExpiry &&
+               changePassword == that.changePassword &&
+               hashedPassword != null ? hashedPassword.equals(that.hashedPassword) : that.hashedPassword == null;
     }
 
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (hashedPassword != null ? hashedPassword.hashCode() : 0);
         result = 31 * result + (int) (expiration ^ (expiration >>> 32));
+        result = 31 * result + (int) (passwordExpiry ^ (passwordExpiry >>> 32));
+        result = 31 * result + (passwordChangesHistory != null ? passwordChangesHistory.hashCode() : 0);
+        result = 31 * result + Boolean.valueOf(changePassword).hashCode();
         return result;
     }
 
+    @Transient
     public void setCleartextPassword(String newPassword) throws InvalidPasswordException {
         if (newPassword == null) throw new InvalidPasswordException("Empty password is not valid");
         if (newPassword.length() < 6) throw new InvalidPasswordException("Password must be no shorter than 6 characters");
@@ -119,5 +166,15 @@ public class InternalUser extends PersistentUser {
 
         if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
         this.hashedPassword = HexUtils.encodePasswd(login, newPassword, HttpDigest.REALM);
+    }
+
+    public void setPasswordChanges(long passwordChangeTime, String newPassword) {
+        PasswordChangeRecord passChangeRecord = new PasswordChangeRecord();
+        passChangeRecord.setInternalUser(this);
+        passChangeRecord.setLastChanged(passwordChangeTime);
+        passChangeRecord.setPrevHashedPassword(this.getHashedPassword());
+        this.passwordChangesHistory.add(passChangeRecord);
+        this.hashedPassword = HexUtils.encodePasswd(login, newPassword, HttpDigest.REALM);
+        this.changePassword = false;
     }
 }

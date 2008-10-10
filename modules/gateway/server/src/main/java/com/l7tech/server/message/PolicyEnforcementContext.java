@@ -7,6 +7,7 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
@@ -27,7 +28,6 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
@@ -39,6 +39,7 @@ import com.l7tech.util.Pair;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Operation;
@@ -80,7 +81,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private CompositeRoutingResultListener routingResultListener = new CompositeRoutingResultListener();
     private boolean operationAttempted = false;
     private Operation cachedOperation = null;
-    private ClusterPropertyManager clusterPropertyManager = null;
+    private ClusterPropertyCache clusterPropertyCache = null;
 
     private RoutingStatus routingStatus = RoutingStatus.NONE;
     private URL routedServiceUrl;
@@ -91,6 +92,8 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private Long hardwiredService = null;
     private static ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
     private List<MessageContextMapping> mappings = new ArrayList<MessageContextMapping>(5);
+    private boolean requestWasCompressed;
+    private boolean responseWss11;
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -152,12 +155,12 @@ public class PolicyEnforcementContext extends ProcessingContext {
         this.soapFaultManager = soapFaultManager;
     }
 
-    public ClusterPropertyManager getClusterPropertyManager() {
-        return clusterPropertyManager;
+    public ClusterPropertyCache getClusterPropertyCache() {
+        return clusterPropertyCache;
     }
 
-    public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
-        this.clusterPropertyManager = clusterPropertyManager;
+    public void setClusterPropertyCache(ClusterPropertyCache clusterPropertyCache) {
+        this.clusterPropertyCache = clusterPropertyCache;
     }
 
     public void setAuditContext(AuditContext auditContext) {
@@ -586,6 +589,30 @@ public class PolicyEnforcementContext extends ProcessingContext {
         }
     }
 
+    /**
+     * Check if this WS-Security version 1.1 is preferred for secured response messages.
+     * <p/>
+     * This method will return true if {@link #setResponseWss11()} has been called <b>OR</b> if request processor
+     * results exist and {@link ProcessorResult#isWsse11Seen()} returns
+     * true.
+     *
+     * @return true if WS-Security version 1.1 is preferred for message level security in response messages.
+     */
+    public boolean isResponseWss11() {
+        if (responseWss11)
+            return true;
+        ProcessorResult pr = getRequest().getSecurityKnob().getProcessorResult();
+        return pr != null && pr.isWsse11Seen();
+
+    }
+
+    /**
+     * Mark this context as preferring to use WS-Security version 1.1 for secured response messages.
+     */
+    public void setResponseWss11() {
+        this.responseWss11 = true;
+    }
+
     private Message createContextVariableBackedMessage(final String variableName, String initialValue) {
         Message mess = new Message();
         final ContentTypeHeader ctype = ContentTypeHeader.TEXT_DEFAULT;
@@ -665,5 +692,13 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setMappings(List<MessageContextMapping> mappings) {
         this.mappings = mappings;
+    }
+
+    public boolean isRequestWasCompressed() {
+        return requestWasCompressed;
+    }
+
+    public void setRequestWasCompressed(boolean requestWasCompressed) {
+        this.requestWasCompressed = requestWasCompressed;
     }
 }

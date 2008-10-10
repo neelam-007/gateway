@@ -3,7 +3,7 @@
   <grid id="a9e4" binding="rootPanel" layout-manager="GridLayoutManager" row-count="13" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="0">
     <margin top="8" left="8" bottom="8" right="8"/>
     <constraints>
-      <xy x="59" y="16" width="802" height="593"/>
+      <xy x="59" y="16" width="837" height="697"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -37,7 +37,7 @@
       </component>
       <scrollpane id="65b89">
         <constraints>
-          <grid row="10" column="2" row-span="1" col-span="2" vsize-policy="7" hsize-policy="0" anchor="8" fill="3" indent="0" use-parent-layout="false">
+          <grid row="10" column="2" row-span="1" col-span="2" vsize-policy="3" hsize-policy="0" anchor="8" fill="3" indent="0" use-parent-layout="false">
             <minimum-size width="100" height="200"/>
             <preferred-size width="600" height="440"/>
           </grid>
@@ -70,7 +70,7 @@
         </constraints>
         <properties>
           <text value="Server Certificate:"/>
-          <visible value="false"/>
+          <visible value="true"/>
         </properties>
       </component>
       <hspacer id="cf849">
@@ -87,30 +87,27 @@
           </grid>
         </constraints>
       </hspacer>
-      <scrollpane id="b9826">
+      <scrollpane id="b9826" binding="certScrollPane">
         <constraints>
-          <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="0" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <minimum-size width="100" height="50"/>
+            <preferred-size width="600" height="50"/>
+          </grid>
         </constraints>
         <properties>
-          <visible value="false"/>
+          <visible value="true"/>
         </properties>
         <border type="none"/>
-        <children>
-          <component id="c80c9" class="javax.swing.JList" binding="serverCertList">
-            <constraints/>
-            <properties>
-              <visible value="false"/>
-            </properties>
-          </component>
-        </children>
+        <children/>
       </scrollpane>
       <component id="5e8dd" class="javax.swing.JRadioButton" binding="rbServerCertAuto">
         <constraints>
           <grid row="3" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
+          <selected value="true"/>
           <text value="Discover Automatically"/>
-          <visible value="false"/>
+          <visible value="true"/>
         </properties>
       </component>
       <component id="febf2" class="javax.swing.JRadioButton" binding="rbServerCertManual">
@@ -119,7 +116,7 @@
         </constraints>
         <properties>
           <text value="Manually Specify Server Certificate:"/>
-          <visible value="false"/>
+          <visible value="true"/>
         </properties>
       </component>
       <hspacer id="ba67">
@@ -129,7 +126,7 @@
           </grid>
         </constraints>
       </hspacer>
-      <grid id="b5052" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="b5052" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="5" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -137,20 +134,28 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="a20a3" class="javax.swing.JButton" binding="newServerCertButton">
+          <component id="a20a3" class="javax.swing.JButton" binding="newServerCert">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="New"/>
-              <visible value="false"/>
+              <text value="Create New Certificate"/>
+              <visible value="true"/>
             </properties>
           </component>
           <vspacer id="13b8b">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
             </constraints>
           </vspacer>
+          <component id="59635" class="javax.swing.JButton" binding="selectCert">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Select a Certificate"/>
+            </properties>
+          </component>
         </children>
       </grid>
       <grid id="a9a60" layout-manager="GridLayoutManager" row-count="1" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

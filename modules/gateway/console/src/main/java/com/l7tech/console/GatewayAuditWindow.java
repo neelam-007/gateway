@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gui.util.*;
 import com.l7tech.console.action.DeleteAuditEventsAction;
 import com.l7tech.console.action.DownloadAuditEventsAction;
+import com.l7tech.console.action.StartAuditArchiverAction;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.Registry;
@@ -30,7 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -297,6 +297,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
             if(startConnected) {
                 fileMenu.add(new JMenuItem(new DownloadAuditEventsAction()));
                 fileMenu.add(new JMenuItem(deleteAuditEventsAction));
+                fileMenu.add(new JMenuItem(new StartAuditArchiverAction()));
                 fileMenu.addSeparator();
             }
             fileMenu.add(getSaveMenuItem());

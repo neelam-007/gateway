@@ -26,11 +26,13 @@ import com.l7tech.util.ExceptionUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.security.auth.x500.X500Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.math.BigInteger;
 
 /**
  * The Federated Identity Provider allows authorization of {@link User}s and {@link Group}s
@@ -83,6 +85,11 @@ public class FederatedIdentityProviderImpl
         } else {
             throw new BadCredentialsException("Can't authenticate without SAML or X.509 certificate credentials");
         }
+    }
+
+    @Transactional(propagation=Propagation.SUPPORTS)
+    public X509Certificate findCertByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
+        return null;
     }
 
     /**
@@ -182,6 +189,14 @@ public class FederatedIdentityProviderImpl
 
     public void setGroupManager(FederatedGroupManager groupManager) {
         this.groupManager = groupManager;
+    }
+
+    public boolean updateFailedLogonAttempt(LoginCredentials lc) {
+        return false;
+    }
+
+    public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
+        return false;  
     }
 
     public void setCertValidationProcessor(CertValidationProcessor certValidationProcessor) {

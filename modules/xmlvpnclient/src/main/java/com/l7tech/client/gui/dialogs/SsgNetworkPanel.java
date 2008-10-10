@@ -65,6 +65,7 @@ class SsgNetworkPanel extends JPanel {
     private JPanel outgoingRequestsPanel;
     private JTextField customLabelField;
     private JCheckBox customLabelCb;
+    private JCheckBox gzipCheckBox;
     private JLabel ssgPortFieldLabel;
     private JLabel sslPortFieldLabel;
     private JPanel configureNonstandardPortsSpacerPanel;
@@ -158,7 +159,7 @@ class SsgNetworkPanel extends JPanel {
                 String ret = len <= ENDPOINT_MAX ? null : "Custom label field must be " + ENDPOINT_MAX + " characters or fewer.";
                 if (ret == null)
                     ret = ENDPOINT_PATTERN.matcher(text).matches()
-                          ? null 
+                          ? null
                           : "Custom label may contain only letters, numbers, or underscore.";
 
                 if (ret == null) {
@@ -417,5 +418,13 @@ class SsgNetworkPanel extends JPanel {
     private void createUIComponents() {
         // InputValidator will show feedback if a ComponentValidationRule's component implements ModelessFeedback
         customLabelField = new SquigglyTextField();
+    }
+
+    public void setCompression(boolean compress) {
+        gzipCheckBox.setSelected(compress);
+    }
+
+    public boolean getCompression() {
+        return gzipCheckBox.isSelected();
     }
 }

@@ -2,15 +2,16 @@ package com.l7tech.console.util;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.common.io.CertUtils;
 
 import java.io.*;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -41,11 +42,15 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
      * where is home (properties are stored there)
      */
     public static final String SSM_USER_HOME =
-      System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
+            System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
     protected final String TRUST_STORE_FILE = SSM_USER_HOME + File.separator + "trustStore";
     protected final String TRUST_STORE_PASSWORD = "password";
 
+    private final KeyManager keyManager;
+
     public HeavySsmPreferences() {
+        keyManager = new KeyManager();
+
         setupDefaults();
         try {
             initialize();
@@ -71,8 +76,7 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
 
     private void prepare() {
         // verify home path exist, create if necessary
-        File home =
-          new File(SSM_USER_HOME);
+        File home = new File(SSM_USER_HOME);
         if (!home.exists()) {
             home.mkdir();
         }
@@ -159,16 +163,79 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         }
     }
 
-    private void initializeSsgCertStorage() {
+    public void importPrivateKey(X509Certificate[] certs, PrivateKey privateKey) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        KeyStore keyStore = getTrustStore();
+        String alias = certs[0].getSubjectDN().getName();
+        logger.log( Level.INFO, "Adding private key with alias ''{0}'' for certificate ''{1}''.", new String[]{alias, certs[0].getSubjectDN().getName()});
+        keyStore.setKeyEntry(alias, privateKey, TRUST_STORE_PASSWORD.toCharArray(), certs);
+        store(keyStore);
+        keyManager.setKeyStore(keyStore);
+    }
+
+    public void deleteCertificate(X509Certificate cert) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        KeyStore keyStore = getTrustStore();
+
+        //loop through list of certs and delete the one
+        final List<String> aliases = Collections.list(keyStore.aliases());
+        boolean needsUpdate = false;
+        for (String alias : aliases) {
+            X509Certificate certificate = (X509Certificate) keyStore.getCertificate(alias);
+            if (CertUtils.certsAreEqual(certificate, cert)) {
+                needsUpdate = true;
+                logger.info("Deleting certificate: " + cert);
+                keyStore.deleteEntry(alias);
+            }
+        }
+
+        if (needsUpdate) {
+            store(keyStore);
+            keyManager.setKeyStore(keyStore);
+        }
+
+    }
+
+    @Override
+    public Set<X509Certificate> getKeys() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        KeyStore store = getTrustStore();
+        Set<X509Certificate> data = new HashSet<X509Certificate>();
+        for (String alias : Collections.list(store.aliases())) {
+            if (store.isKeyEntry(alias)) {
+                data.add((X509Certificate) store.getCertificate(alias));
+            }//otherwise its likely an SSG server certificate
+        }
+        return data;
+    }
+
+    @Override
+    public Set<X509Certificate> getCertificates() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        KeyStore store = getTrustStore();
+        Set<X509Certificate> data = new HashSet<X509Certificate>();
+        for (String alias : Collections.list(store.aliases())) {
+            if (store.isCertificateEntry(alias)) {
+                data.add((X509Certificate) store.getCertificate(alias));
+            }//otherwise its likely an SSG server certificate
+        }
+        return data;
+    }
+
+    public void setClientCertificate(X509Certificate cert) {
+        keyManager.selectedCert(cert);
+    }
+
+    public X509Certificate getClientCertificate() {
+        return keyManager.getSelectedCert();
+    }
+
+    public void initializeSsgCertStorage() {
         try {
-            getTrustStore();
+            keyManager.setKeyStore(getTrustStore());
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error initializing certificate storage.", e);
+            logger.log(Level.WARNING, "Error itializing certificate storage.", e);
         }
     }
 
     private KeyStore getTrustStore()
-      throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+            throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
         File storeFile = new File(TRUST_STORE_FILE);
         String defaultKeystoreType = KeyStore.getDefaultType();
         KeyStore ts = KeyStore.getInstance(defaultKeystoreType);
@@ -217,6 +284,24 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Help method to store the changes from the keystore back into disk.
+     *
+     * @param keyStore Keystore that needs to update to disk
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     * @throws CertificateException
+     */
+    private void store(KeyStore keyStore) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        FileOutputStream fos = new FileOutputStream(TRUST_STORE_FILE);
+        try {
+            keyStore.store(fos, TRUST_STORE_PASSWORD.toCharArray());
+        } finally {
+            fos.close();
         }
     }
 }

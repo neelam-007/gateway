@@ -14,6 +14,8 @@ import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 
+import com.l7tech.common.io.DigestZipOutputStream;
+
 /**
  * @author alex
  */
@@ -44,12 +46,47 @@ public interface AuditExporter {
                                PrivateKey signingKey)
             throws IOException, SQLException, HibernateException, SignatureException, InterruptedException;
 
+
+    /**
+     * Initializes and returns a DigestZipOutputStream ready to be used for the actual export.
+     * The digest hashes must be reset, so that they will apply to the actual file within the archive.
+     */
+    public DigestZipOutputStream newAuditExportOutputStream(OutputStream os)
+        throws IOException;
+
+    /**
+     * Exports audit records with the object id in the given range to the provided DigestZipOutputStream.
+     * If the same output stream is used in a batch, the previous result may/should be provided to this call.
+     *
+     * @param bytesRemaining    No more than this number of bytes should be written to the zipped stream; 0 = unlimited.
+     * @return                  Metainformation about the exported data.
+     */
+    @Transactional(propagation=Propagation.REQUIRED, readOnly=true)
+    ExportedInfo exportAudits(long startOid, long endOid, DigestZipOutputStream zipOut, long bytesRemaining, ExportedInfo previous)
+        throws IOException, SQLException, InterruptedException;
+
+    /**
+     * Adds a XML signature to the zip stream.
+     *
+     * @param exportedInfo  Information to be added to the signature.
+     */
+    public void addXmlSignature(DigestZipOutputStream zip, ExportedInfo exportedInfo,
+                                X509Certificate signingCert, PrivateKey signingKey)
+        throws SignatureException;
+
     public interface ExportedInfo {
         long getLowestId();
         long getHighestId();
+
         long getEarliestTime();
         long getLatestTime();
-        byte[] getSha1Hash();
-        byte[] getMd5Hash();
+
+        boolean hasTransferredFullRange();
+        long getTransferredBytes();
+        long getReceivedBytes();
+        long getRecordsExported();
+
+        long getExportStartTime();
+        long getExportEndTime();
     }
 }

@@ -32,6 +32,7 @@ public class AuditAdminImpl implements AuditAdmin {
     private LogRecordManager logRecordManager;
     private ServerConfig serverConfig;
     private ClusterPropertyManager clusterPropertyManager;
+    private AuditArchiver auditArchiver;
 
     public void setAuditDownloadManager(AuditDownloadManager auditDownloadManager) {
         this.auditDownloadManager = auditDownloadManager;
@@ -53,6 +54,10 @@ public class AuditAdminImpl implements AuditAdmin {
         this.clusterPropertyManager = clusterPropertyManager;
     }
 
+    public void setAuditArchiver(AuditArchiver auditArchiver) {
+        this.auditArchiver = auditArchiver;
+    }
+
     public AuditRecord findByPrimaryKey( final long oid ) throws FindException {
         return auditRecordManager.findByPrimaryKey(oid);
     }
@@ -67,6 +72,33 @@ public class AuditAdminImpl implements AuditAdmin {
 
     public void deleteOldAuditRecords() throws DeleteException {
         auditRecordManager.deleteOldAuditRecords(-1);
+    }
+
+    public void doAuditArchive() {
+        if (auditArchiver == null) {
+            throw new NullPointerException("Null AuditArchiver! Cannot run requested archive command.");
+        }
+        auditArchiver.runNow();
+    }
+
+    public ClusterProperty getFtpAuditArchiveConfig() {
+        ClusterProperty result = null;
+        try {
+            result = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION);
+        }
+        catch (FindException fe) {
+            logger.warning("Error getting cluster property: " + fe.getMessage());
+        }
+
+        return result != null ? result : new ClusterProperty(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION, null);
+    }
+
+    public void setFtpAuditArchiveConfig(ClusterProperty prop) throws UpdateException {
+
+        if (prop == null || ! ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION.equals(prop.getName()))
+            throw new UpdateException("Invalid cluster property provided for FTP archiver configuration: " + prop);
+
+        clusterPropertyManager.update(prop);
     }
 
     public void initDao() throws Exception {

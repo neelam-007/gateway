@@ -115,7 +115,7 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      *         referenced by another entity (e.g. a {@link com.l7tech.gateway.common.service.PublishedService})
      */
     @Secured(stereotype=DELETE_BY_ID)
-    void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException;
+    void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException;
 
     /**
      * Saves or updates the specified policy.

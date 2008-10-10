@@ -9,9 +9,15 @@ import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.awt.*;
 import java.io.PrintStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.security.PrivateKey;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Implementation of SsmPreferences shared between applet and fat client.
@@ -20,6 +26,7 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
     protected static final Logger logger = Logger.getLogger(AbstractSsmPreferences.class.getName());
     protected static boolean debug = false;
     protected Properties props = new Properties();
+    private static final int DEFAULT_INACTIVITY_TIMEOUT = 30;
 
     public void updateFromProperties(Properties p, boolean append) {
         for (Object o : p.keySet()) {
@@ -151,7 +158,9 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            return 0;
+            //when the inactivity timeout was never set to begin with, we'll use this default
+            //note: this value MUST be the same as the value in PreferencesDialog.java
+            return DEFAULT_INACTIVITY_TIMEOUT;
         }
     }
 
@@ -300,5 +309,28 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
         public int getMaxSize() {
             return maxSize;
         }
+    }
+
+    public Set<X509Certificate> getKeys() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        return new HashSet<X509Certificate>();
+    }
+
+    public Set<X509Certificate> getCertificates() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        return new HashSet<X509Certificate>();
+    }
+
+    public void importPrivateKey(X509Certificate[] cert, PrivateKey privateKey)
+            throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+    }
+
+    public void deleteCertificate(X509Certificate cert)
+            throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+    }
+
+    public X509Certificate getClientCertificate() {
+        return null;
+    }
+
+    public void setClientCertificate(X509Certificate cert) {
     }
 }

@@ -20,6 +20,8 @@ import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.CertificateInfo;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.transport.PreemptiveCompression;
+import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -280,6 +282,8 @@ public class WspConstants {
         new AssertionMapping(new CookieCredentialSourceAssertion(), "CookieCredentialSource"),
         new AssertionMapping(new HtmlFormDataAssertion(), "HtmlFormDataAssertion"),
         new AssertionMapping(new CodeInjectionProtectionAssertion(), "CodeInjectionProtectionAssertion"),
+        new AssertionMapping(new PreemptiveCompression(), "PreemptiveCompression"),
+        new AssertionMapping(new RemoteDomainIdentityInjection(), "RemoteDomainIdentityInjection"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),

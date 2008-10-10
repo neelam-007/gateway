@@ -75,6 +75,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private final HttpRoutingAssertion assertion;
     private final HttpRoutingHttpAuthPanel httpAuthPanel;
     private final HttpRoutingSamlAuthPanel samlAuthPanel;
+    private final HttpRoutingWindowsIntegratedAuthPanel windowsAuthPanel;
 
     private JPanel mainPanel;
 
@@ -88,6 +89,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JRadioButton authPassthroughRadio;
     private JRadioButton authSamlRadio;
     private JRadioButton authTaiRadio;
+    private JRadioButton authWindowsIntegratedRadio;
     private JPanel authDetailsPanel;
 
     private JRadioButton wssRemoveRadio;
@@ -128,6 +130,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JRadioButton resMsgDestVariableRadioButton;
     private JTextField resMsgDestVariableTextField;
     private JLabel resMsgDestVariableStatusLabel;
+    private JCheckBox gzipCheckBox;
 
     private final BaseAction okButtonAction;
     private boolean confirmed = false;
@@ -149,6 +152,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         this.wsdl = wsdl;
         this.httpAuthPanel = new HttpRoutingHttpAuthPanel(assertion);
         this.samlAuthPanel = new HttpRoutingSamlAuthPanel(assertion);
+        this.windowsAuthPanel = new HttpRoutingWindowsIntegratedAuthPanel(assertion);
 
         okButtonAction = new BaseAction() {
             @Override
@@ -258,6 +262,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         methodGroup.add(this.authPassthroughRadio);
         methodGroup.add(this.authSamlRadio);
         methodGroup.add(this.authTaiRadio);
+        methodGroup.add(this.authWindowsIntegratedRadio);
 
         final ChangeListener radioChangeListener = new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
@@ -269,12 +274,14 @@ public class HttpRoutingAssertionDialog extends JDialog {
         authDetailsPanel.setLayout(new GridBagLayout());
         authDetailsPanel.add(httpAuthPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
         authDetailsPanel.add(samlAuthPanel, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+        authDetailsPanel.add(windowsAuthPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
 
         authNoneRadio.addChangeListener(radioChangeListener);
         authPasswordRadio.addChangeListener(radioChangeListener);
         authPassthroughRadio.addChangeListener(radioChangeListener);
         authSamlRadio.addChangeListener(radioChangeListener);
         authTaiRadio.addChangeListener(radioChangeListener);
+        authWindowsIntegratedRadio.addChangeListener(radioChangeListener);
 
         if (!policy.isSoap()) {
             authSamlRadio.setEnabled(false);
@@ -547,6 +554,16 @@ public class HttpRoutingAssertionDialog extends JDialog {
             assertion.setAttachSamlSenderVouches(false);
         }
 
+        if (authWindowsIntegratedRadio.isSelected()) {
+            windowsAuthPanel.updateModel();
+        } else {
+            // set the assertion as needed
+            assertion.setKrbConfiguredAccount(null);
+            assertion.setKrbConfiguredPassword(null);
+            assertion.setKrbUseGatewayKeytab(false);
+            assertion.setKrbDelegatedAuthentication(false);
+        }
+
         assertion.setProtectedServiceUrl(url);
         assertion.setAttachSamlSenderVouches(authSamlRadio.isSelected());
         assertion.setTaiCredentialChaining(authTaiRadio.isSelected());
@@ -612,6 +629,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
         }
         assertion.setFollowRedirects(followRedirectCheck.isSelected());
         assertion.setFailOnErrorStatus(failOnErrorRadio.isSelected());
+        
+        assertion.setGzipEncodeDownstream(gzipCheckBox.isSelected());
 
         confirmed = true;
         fireEventAssertionChanged(assertion);
@@ -622,9 +641,11 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private void updateAuthMethod() {
         final boolean password = authPasswordRadio.isSelected();
         final boolean saml = authSamlRadio.isSelected();
+        final boolean win = authWindowsIntegratedRadio.isSelected();
 
         httpAuthPanel.setVisible(password);
         samlAuthPanel.setVisible(saml);
+        windowsAuthPanel.setVisible(win);
         authDetailsPanel.revalidate();
     }
 
@@ -634,9 +655,16 @@ public class HttpRoutingAssertionDialog extends JDialog {
         JRadioButton which = authNoneRadio;
         if (assertion.isTaiCredentialChaining()) which = authTaiRadio;
         if (assertion.isPassthroughHttpAuthentication()) which = authPassthroughRadio;
-        if (assertion.getLogin() != null) which = authPasswordRadio;
+        if (assertion.getLogin() != null || assertion.getPassword() != null || assertion.getNtlmHost() != null || assertion.getRealm() != null) which = authPasswordRadio;
         if (assertion.isAttachSamlSenderVouches()) which = authSamlRadio;
+        if (assertion.isKrbDelegatedAuthentication() || assertion.isKrbUseGatewayKeytab() || assertion.getKrbConfiguredAccount() != null) which = authWindowsIntegratedRadio;
         which.setSelected(true);
+
+        //we need to apply updateAuthMethod() if none of the JRadioButton from above was selected other than the "None"
+        //radio button
+        if (which.equals(authNoneRadio)) {
+            updateAuthMethod();
+        }
 
         authSamlRadio.setSelected(assertion.isAttachSamlSenderVouches());
         if (assertion.getCustomURLs() != null) {
@@ -698,6 +726,12 @@ public class HttpRoutingAssertionDialog extends JDialog {
             failOnErrorRadio.setSelected(true);
         } else {
             neverFailRadio.setSelected(true);
+        }
+
+        if (assertion.isGzipEncodeDownstream()) {
+            gzipCheckBox.setSelected(true);
+        } else {
+            gzipCheckBox.setSelected(false);
         }
     }
 

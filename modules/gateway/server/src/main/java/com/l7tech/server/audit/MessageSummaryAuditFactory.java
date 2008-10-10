@@ -259,7 +259,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             lengthHolder[0] = req.length;
             ContentTypeHeader cth = part.getContentType();
             String encoding = null;
-            if (cth != null && cth.isText()) {
+            if (cth != null && (cth.isText() || cth.isXml())) {
                 String declaredEncoding = cth.getEncoding();
                 if (KNOWN_GOOD_ENCODINGS.contains(declaredEncoding.toLowerCase())) {
                     encoding = declaredEncoding;
@@ -278,8 +278,9 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             if (encoding == null) encoding = FALLBACK_ENCODING;
             return new String(req, encoding);
         } catch (Exception e) {
-            logger.log(Level.WARNING, MessageFormat.format("Unable to get {0} XML", what), e);
-            return null;
+            String errMsg = MessageFormat.format("Unable to get {0} XML: {1}", what, e.getMessage());
+            logger.log(Level.WARNING, errMsg);
+            return errMsg;
         }
     }
 

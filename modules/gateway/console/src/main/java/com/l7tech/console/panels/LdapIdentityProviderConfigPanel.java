@@ -206,6 +206,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     if (model.getIndexOf(newUrl) < 0) {
                         model.insertElementAt(newUrl, model.getSize());
                     }
+                    if(model.getSize() > 0) {
+                        updateControlButtonState();
+                    }
                 }
             }
         });
@@ -243,6 +246,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 int selected = getLdapHostList().getSelectedIndex();
                 if (selected > -1) {
                     ((DefaultComboBoxModel)getLdapHostList().getModel()).removeElementAt(selected);
+                    if(getLdapHostList().getModel().getSize() == 0) {
+                        updateControlButtonState();
+                    }
                 }
             }
         });
@@ -300,6 +306,16 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         adminEnabledCheckbox.setToolTipText(resources.getString("ldapAdminEnabledCheckbox.tooltip"));
         return adminEnabledCheckbox;
     }
+
+    private JCheckBox getUserCertsEnabledCheckbox() {
+        if (userCertsEnabled == null) {
+            userCertsEnabled = new JCheckBox("Enable user certificates in this LDAP");
+            userCertsEnabled.setToolTipText("Enable the gateway to use certificates stored in this LDAP");
+        }
+
+        return userCertsEnabled;
+    }
+
 
     private IdentityAdmin getIdentityAdmin()
             throws RuntimeException {
@@ -519,6 +535,16 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
         configPanel.add(getAdminEnabledCheckbox(), constraints);
 
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = rowIndex++;
+        constraints.gridwidth = 2;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
+        configPanel.add(getUserCertsEnabledCheckbox(), constraints);
+
         // Horizontal Spacers
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
@@ -670,6 +696,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     getLdapBindDNTextField().setText(iProviderConfig.getBindDN());
                     getLdapSearchBaseTextField().setText(iProviderConfig.getSearchBase());
                     getAdminEnabledCheckbox().setSelected(iProviderConfig.isAdminEnabled());
+                    getUserCertsEnabledCheckbox().setSelected(iProviderConfig.isUserCertsEnabled());
 
                     // populate host list based on what is in the iProviderConfig
                     ((DefaultComboBoxModel)getLdapHostList().getModel()).removeAllElements();
@@ -733,6 +760,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 ((LdapIdentityProviderConfig) settings).setBindDN(getLdapBindDNTextField().getText());
                 ((LdapIdentityProviderConfig) settings).setBindPasswd(String.valueOf(getLdapBindPasswordField().getPassword()));
                 ((LdapIdentityProviderConfig) settings).setAdminEnabled(getAdminEnabledCheckbox().isSelected());
+                ((LdapIdentityProviderConfig) settings).setUserCertsEnabled(getUserCertsEnabledCheckbox().isSelected());
             }
         }
     }
@@ -816,4 +844,5 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JButton upbutton;
     private JButton downbutton;
     private JCheckBox adminEnabledCheckbox;
+    private JCheckBox userCertsEnabled;
 }

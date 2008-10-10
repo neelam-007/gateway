@@ -132,14 +132,16 @@ public class SamlAssertionV1 extends SamlAssertion {
                     throw new IllegalArgumentException("One and only one SubjectConfirmation/ConfirmationMethod must be present");
                 }
                 String confMethod = confMethods[0];
-                if (confMethod.indexOf("holder-of-key") >= 0) {
-                    confirmationMethod = HOLDER_OF_KEY;
-                } else if (confMethod.indexOf("sender-vouches") >= 0) {
-                    confirmationMethod = SENDER_VOUCHES;
-                } else {
-                    String msg = "Could not determine the saml ConfirmationMethod (neither holder-of-key nor sender-vouches)";
-                    logger.fine(msg);
-                    confirmationMethod = null;
+                if (confMethod != null) {
+                    if (confMethod.indexOf("holder-of-key") >= 0) {
+                        confirmationMethod = HOLDER_OF_KEY;
+                    } else if (confMethod.indexOf("sender-vouches") >= 0) {
+                        confirmationMethod = SENDER_VOUCHES;
+                    } else {
+                        String msg = "Could not determine the saml ConfirmationMethod (neither holder-of-key nor sender-vouches)";
+                        logger.fine(msg);
+                        confirmationMethod = null;
+                    }
                 }
 
                 if (confirmationMethod == HOLDER_OF_KEY) {

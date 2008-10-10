@@ -45,6 +45,9 @@ public enum MethodStereotype {
      * The method returns one {@link com.l7tech.objectmodel.Entity}, and takes an attribute value as a
      * {@link Secured#relevantArg} argument.  Caller must hold {@link OperationType#READ} permission
      * on the returned entity.
+     *
+     * The method returns one {@link com.l7tech.objectmodel.Entity}.  Caller must hold {@link OperationType#READ}
+     * permission on the returned entity.
      */
     FIND_ENTITY_BY_ATTRIBUTE,
 

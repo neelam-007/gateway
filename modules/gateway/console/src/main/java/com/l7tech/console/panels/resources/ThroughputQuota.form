@@ -5,7 +5,9 @@
     <constraints>
       <xy x="16" y="0" width="720" height="493"/>
     </constraints>
-    <properties/>
+    <properties>
+      <preferredSize width="660" height="472"/>
+    </properties>
     <border type="none"/>
     <children>
       <grid id="8963d" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -217,7 +219,7 @@
           </component>
           <component id="1feb4" class="javax.swing.JLabel" binding="varPrefixStatusLabel">
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <enabled value="true"/>

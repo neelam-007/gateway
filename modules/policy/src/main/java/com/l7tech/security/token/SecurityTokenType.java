@@ -110,6 +110,9 @@ public class SecurityTokenType implements Serializable {
     public static final SecurityTokenType FTP_CREDENTIAL =
             new SecurityTokenType(n++, "FTP Credentials", null, null, null, UsernameToken.class);
 
+    public static final SecurityTokenType X509_ISSUER_SERIAL =
+                new SecurityTokenType(n++, "X509 Issuer Serial", null, null, null, X509SecurityToken.class);
+
     /**
      * NOTE: Order MUST equal declaration order above (see readResolve/getByNum)
      *       DO NOT reorder, these numbers must be the same between releases.
@@ -130,6 +133,7 @@ public class SecurityTokenType implements Serializable {
         XPATH_CREDENTIALS,
         HTTP_KERBEROS,
         FTP_CREDENTIAL,
+        X509_ISSUER_SERIAL
     };
 
     private SecurityTokenType(int num, String name, String tokenTypeUri, String prototypeElementNs, String prototypeElementName, Class interfaceClass) {

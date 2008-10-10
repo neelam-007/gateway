@@ -21,6 +21,7 @@ import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Group;
@@ -82,6 +83,8 @@ public enum EntityType {
     LOG_RECORD("Log Record", SSGLogRecord.LogEntity.class, UNDEFINED, true),
 
     SSG_CONNECTOR("Listen Port", SsgConnector.class, com.l7tech.objectmodel.EntityType.CONNECTOR, true),
+
+    EMAIL_LISTENER("Email Listener", EmailListener.class, UNDEFINED, true),
 
     LOG_SINK("Log Sink", SinkConfiguration.class, UNDEFINED, true),
 

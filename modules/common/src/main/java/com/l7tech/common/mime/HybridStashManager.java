@@ -18,8 +18,7 @@ import java.io.*;
 public class HybridStashManager implements StashManager {
     private static final int DEFAULT_MAX_INITIAL_BUFFER = 8192;
     private static final String MAX_INITIAL_BUFFER_PROPERTY = HybridStashManager.class.getName() + ".maxInitialBuffer";
-    private static final int MAX_INITIAL_BUFFER = SyspropUtil.getInteger(MAX_INITIAL_BUFFER_PROPERTY,
-                                                                     DEFAULT_MAX_INITIAL_BUFFER).intValue();
+    private static final int MAX_INITIAL_BUFFER = SyspropUtil.getInteger(MAX_INITIAL_BUFFER_PROPERTY, DEFAULT_MAX_INITIAL_BUFFER);
 
     private final int limit;
     private final int initialBuffer;
@@ -161,11 +160,15 @@ public class HybridStashManager implements StashManager {
 
     public InputStream recall(int ordinal) throws IOException, NoSuchPartException {
         InputStream ret = null;
-        if (ramstash.peek(ordinal))
+        try {
             ret = ramstash.recall(ordinal);
-        if (ret != null) return ret;
-        if (filestash != null) return filestash.recall(ordinal);
-        return null;
+        } catch (NoSuchPartException e) {
+            /* fall back to file stash; we do want the IOException thrown, if any */
+        }
+
+        if (ret == null && filestash != null) ret = filestash.recall(ordinal);
+
+        return ret;
     }
 
     public boolean isByteArrayAvailable(int ordinal) {
@@ -177,10 +180,7 @@ public class HybridStashManager implements StashManager {
     }
 
     public boolean peek(int ordinal) {
-        boolean r = ramstash.peek(ordinal);
-        if (r) return r;
-        if (filestash != null) return filestash.peek(ordinal);
-        return false;
+        return ramstash.peek(ordinal) || (filestash != null && filestash.peek(ordinal));
     }
 
     public int getMaxOrdinal() {

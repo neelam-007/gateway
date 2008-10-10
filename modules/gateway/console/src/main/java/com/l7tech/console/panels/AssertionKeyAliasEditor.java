@@ -40,10 +40,12 @@ public class AssertionKeyAliasEditor extends JDialog {
     private JButton manageCustomKeysButton;
     private JPanel customFrame;
     private boolean wasOKed = false;
+    private boolean readonly;
 
-    public AssertionKeyAliasEditor(Frame owner, PrivateKeyable assertion) {
+    public AssertionKeyAliasEditor(Frame owner, PrivateKeyable assertion, boolean readonly) {
         super(owner, true);
         this.assertion = assertion;
+        this.readonly = readonly;
         initialize();
     }
 
@@ -63,6 +65,7 @@ public class AssertionKeyAliasEditor extends JDialog {
                 ok();
             }
         });
+        OKButton.setEnabled(!readonly);
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {

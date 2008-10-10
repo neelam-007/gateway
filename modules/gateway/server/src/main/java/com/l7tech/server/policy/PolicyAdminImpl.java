@@ -100,7 +100,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         return policyManager.findHeadersByType(type);
     }
 
-    public void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException {
+    public void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
         policyManager.delete(oid);
         roleManager.deleteEntitySpecificRole( com.l7tech.gateway.common.security.rbac.EntityType.POLICY, oid);
     }

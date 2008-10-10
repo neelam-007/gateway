@@ -11,9 +11,11 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.TrustedEmsUserManager;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.HexUtils;
@@ -47,6 +49,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private final RoleManager roleManager;
     private final DefaultKey defaultKey;
     private ApplicationEventPublisher applicationEventPublisher;
+    private final PasswordEnforcerManager passwordEnforcerManager;
+    private final LogonService logonServ;
 
     @Resource
     private TrustedEmsUserManager trustedEmsUserManager;
@@ -54,11 +58,15 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
     public IdentityAdminImpl(final RoleManager roleManager,
-                             final DefaultKey defaultKey) {
+                             final PasswordEnforcerManager passwordEnforcerManager,
+                             final DefaultKey defaultKey,
+                             final LogonService logonServ) {
         if (roleManager == null) throw new IllegalArgumentException("roleManager is required");
 
         this.roleManager = roleManager;
         this.defaultKey = defaultKey;
+        this.passwordEnforcerManager = passwordEnforcerManager;
+        this.logonServ = logonServ;
     }
 
     public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
@@ -274,6 +282,26 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             UserManager userManager = provider.getUserManager();
             if (user instanceof UserBean) user = userManager.reify((UserBean) user);
 
+            if(user instanceof InternalUser) {
+                InternalUser internalUser = (InternalUser)user;
+                // Password expiration is wrong for new users
+                if(isSave) {
+                    internalUser.setPasswordExpiry(PasswordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
+                } else {
+                    User u = userManager.findByPrimaryKey(internalUser.getId());
+                    InternalUser existingDude = null;
+                    if(u != null && u instanceof InternalUser) {
+                        existingDude = (InternalUser)u;
+                    }
+
+                    if(existingDude != null) {
+                        if(!internalUser.getHashedPassword().equals(existingDude.getHashedPassword())) {
+                            internalUser.setPasswordExpiry(PasswordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
+                        }
+                    }
+                }
+            }
+
             if (isSave) {
                 id = userManager.save(user, groupHeaders);
                 logger.info("Saved User: " + user.getLogin() + " [" + id + "]");
@@ -456,6 +484,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         clientCertManager.recordNewUserCert(user, cert, false);
     }
 
+    public void resetLogonFailCount(User user) throws FindException, UpdateException {
+        logonServ.resetLogonFailCount(user);
+    }
+
     private static SecureRandom secureRandom = null;
 
     private synchronized SecureRandom getSecureRandom() {
@@ -552,6 +584,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             throw new FindException("IdentityProvider could not be found");
 
         return provider.getGroupManager();
+    }
+
+    private boolean enforcePasswordRestrictions() {
+        return passwordEnforcerManager.isSTIGEnforced();
     }
 
     private IdentityProviderConfigManager identityProviderConfigManager = null;

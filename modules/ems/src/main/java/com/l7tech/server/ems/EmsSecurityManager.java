@@ -8,9 +8,14 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 import java.io.Serializable;
 
+import org.springframework.transaction.annotation.Transactional;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+
 /**
  * Security for web application access
  */
+@Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public interface EmsSecurityManager {
     
     /**
@@ -38,6 +43,7 @@ public interface EmsSecurityManager {
      * @param request The HttpServletRequest being attempted
      * @return True if access is permitted
      */
+    @Transactional(propagation=SUPPORTS,readOnly=true)
     boolean canAccess(  HttpSession session, HttpServletRequest request );
 
     /**
@@ -46,6 +52,7 @@ public interface EmsSecurityManager {
      * @param ao The attempted operation
      * @return true if permitted
      */
+    @Transactional(propagation=SUPPORTS,readOnly=true)
     boolean hasPermission( AttemptedOperation ao );
 
     /**
@@ -64,6 +71,7 @@ public interface EmsSecurityManager {
      * @param session The Session for the user
      * @return The session information or null if not set
      */
+    @Transactional(propagation=SUPPORTS,readOnly=true)
     LoginInfo getLoginInfo( HttpSession session );
 
     /**

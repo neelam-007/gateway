@@ -43,8 +43,9 @@ public interface ServiceRequest {
      * <p><b>httpResponse</b> -- {@link javax.servlet.http.HttpServletResponse HttpServletResponse} object that can be used to modify the response
      * <p><b>updatedCookies</b> -- an immutable <code>java.util.Vector</code> of request {@link javax.servlet.http.Cookie Cookie} objects
      * <p><b>originalCookies</b> -- an immutable <code>java.util.Collection</code> of the request {@link javax.servlet.http.Cookie Cookie} objects
+     * <p><b>serviceFinder</b> -- an implementaion of {@link ServiceFinder}, which provides access to additional Layer 7 API services.
      * <p><b>messageparts</b> -- an immutable two-dimensional <code>java.lang.Object</code> array containing the request mime parts and associated content-types.
-     * 
+     *
      * The size of the 2D array is [number of mime parts][2], where the content-types appear in indeces [i][0] and the associated mime parts appear in indeces [i][1].
      * Content-types are of type <code>java.lang.String</code> and mime parts are <code>byte</code> arrays and can be cast as such.
      *

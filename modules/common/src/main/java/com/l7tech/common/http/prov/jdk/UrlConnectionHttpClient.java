@@ -11,10 +11,13 @@ import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.mail.internet.MimeUtility;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
 import java.net.URLConnection;
@@ -63,7 +66,11 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
             List extraHeaders = params.getExtraHeaders();
             for (Iterator i = extraHeaders.iterator(); i.hasNext();) {
                 HttpHeader extraHeader = (HttpHeader)i.next();
-                conn.setRequestProperty(extraHeader.getName(), extraHeader.getFullValue());
+                try {
+                    conn.setRequestProperty(extraHeader.getName(), MimeUtility.encodeText(extraHeader.getFullValue(), "utf-8", "Q"));
+                } catch (UnsupportedEncodingException e) {
+                    throw new GenericHttpException("Unable to encode header value for header " + extraHeader.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                }
             }
 
             // Set content type

@@ -259,10 +259,11 @@ public class SubscriptionManagerImpl
     }
 
     @Override
-    protected Map<String, Object> getUniqueAttributeMap(final Subscription entity) {
-        return new HashMap<String, Object>() {{
-            put(COLUMN_UUID, entity.getUuid());
-        }};
+    protected Collection<Map<String, Object>> getUniqueConstraints(final Subscription entity) {
+        Map<String, Object> map = new HashMap<String, Object>() {{
+                put(COLUMN_UUID, entity.getUuid());
+            }};
+        return Arrays.asList(map);
     }
 
     public Class<? extends Entity> getImpClass() {

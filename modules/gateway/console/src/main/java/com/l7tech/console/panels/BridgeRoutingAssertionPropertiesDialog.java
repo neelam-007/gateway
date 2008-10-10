@@ -11,13 +11,18 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.Policy;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.event.*;
+import com.l7tech.console.table.TrustedCertTableSorter;
+import com.l7tech.console.table.TrustedCertsTable;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.ExceptionUtils;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -27,8 +32,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.EventListener;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,18 +53,22 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
     private JRadioButton rbServerCertAuto;
     private JRadioButton rbServerCertManual;
     private JLabel xmlMessages;
-    private JList serverCertList;
-    private JButton newServerCertButton;
+    private TrustedCertsTable trustedCertTable;
+    private JButton newServerCert;
+    private JButton selectCert;
     private JCheckBox useSslByDefaultCheckBox;
     private JCheckBox overridePortsCheckBox;
     private SquigglyTextField httpPortTextField;
     private SquigglyTextField httpsPortTextField;
+    private JScrollPane certScrollPane;
 
     private final BridgeRoutingAssertion assertion; // live copy of assertion -- do not write to it until Ok pressed
     private BridgeRoutingAssertion lastRoutingProperties = null; // copy last confirmed by HTTP dialog; all except policy XML is up-to-date
 
     private final EventListenerList listenerList = new EventListenerList();
     private InputValidator inputValidator;
+    private List<TrustedCert> certList;
+    private TrustedCert serverCert;
 
     public BridgeRoutingAssertionPropertiesDialog(final Frame owner,
                                                   final BridgeRoutingAssertion a,
@@ -133,13 +142,8 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         for (AbstractButton b : Arrays.asList(rbPolicyAutoDisco, rbPolicyManual, rbServerCertAuto, rbServerCertManual, overridePortsCheckBox))
             b.addActionListener(updateEnableStates);
 
-        Utilities.enableGrayOnDisabled(serverCertList);
-
-        // TODO reenable when it is ready
-        rbServerCertAuto.setSelected(true);
-        rbServerCertManual.setEnabled(false);
-        serverCertList.setEnabled(false);
-        newServerCertButton.setEnabled(false);
+        //populate the available server certs list
+        initializeServerCerts();
 
         Utilities.enableGrayOnDisabled(policyXmlText);
 
@@ -176,6 +180,51 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         updateEnableStates();
     }
 
+    private void initializeServerCerts() {
+
+        certList = new ArrayList<TrustedCert>();
+        trustedCertTable = new TrustedCertsTable();
+        trustedCertTable.getTableSorter().setData(certList);
+
+        certScrollPane.setViewportView(trustedCertTable);
+        certScrollPane.getViewport().setBackground(Color.white);
+
+        // Hide the cert issuer column
+        trustedCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_ISSUER_NAME_COLUMN_INDEX);
+        trustedCertTable.setEnabled(true);
+
+
+        rbServerCertAuto.setSelected(true);
+        rbServerCertManual.setEnabled(true);
+
+        newServerCert.setEnabled(true);
+        newServerCert.addActionListener( new NewTrustedCertificateAction(certListener, "Add"));
+
+        selectCert.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                CertSearchPanel sp = new CertSearchPanel(BridgeRoutingAssertionPropertiesDialog.this);
+                sp.addCertListener(certListener);
+                sp.pack();
+                Utilities.centerOnScreen(sp);
+                DialogDisplayer.display(sp);
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(trustedCertTable) {
+            public String getValidationError() {
+                if (rbServerCertManual.isSelected()) {
+                    if (serverCert == null)
+                        return "A cert must be selected";
+                    else
+                        return null;
+                    
+                } else return null;
+            }
+        });
+
+        Utilities.enableGrayOnDisabled(trustedCertTable);
+    }
+
     private static BridgeRoutingAssertion cloneAssertion(BridgeRoutingAssertion assertion) throws IOException {
         return (BridgeRoutingAssertion)WspReader.getDefault().parseStrictly(WspWriter.getPolicyXml(assertion));
     }
@@ -206,10 +255,19 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         useSslByDefaultCheckBox.setSelected(assertion.isUseSslByDefault());
 
-        // TODO String serverCert = assertion.getServerCertBase64();
-        // TODO rbServerCertAuto.setSelected(serverCert == null);
-        // TODO rbServerCertManual.setSelected(serverCert != null);
-        // TODO serverCertText.setText(serverCert != null ? serverCert : "");
+
+        Long certOid = assertion.getServerCertificateOid();
+        if (certOid != null) {
+            try {
+                serverCert = Registry.getDefault().getTrustedCertManager().findCertByPrimaryKey(certOid);
+                updateTrustedCertTable();
+            } catch (FindException e) {
+                logger.warning("Could not find the specified certificate in the trust store. " + ExceptionUtils.getMessage(e));
+            }
+        }
+        rbServerCertAuto.setSelected(serverCert == null);
+        rbServerCertManual.setSelected(serverCert != null);
+
     }
 
     /** Update the policy assertion settings to reflect the GUI state. */
@@ -234,10 +292,12 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         assertion.setUseSslByDefault(useSslByDefaultCheckBox.isSelected());
 
-        // TODO if (rbServerCertManual.isSelected())
-// TODO             assertion.setServerCertBase64(serverCertText.getText());
-// TODO         else
-// TODO             assertion.setServerCertBase64(null);
+        if (rbServerCertManual.isSelected()) {
+            assertion.setServerCertificateOid(serverCert.getOid());
+        }
+        else {
+            assertion.setServerCertificateOid(null);
+        }
     }
 
     private void updateEnableStates() {
@@ -245,6 +305,9 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         boolean customPorts = overridePortsCheckBox.isSelected();
         httpPortTextField.setEnabled(customPorts);
         httpsPortTextField.setEnabled(customPorts);
+        trustedCertTable.setEnabled(rbServerCertManual.isSelected());
+        selectCert.setEnabled(rbServerCertManual.isSelected());
+        newServerCert.setEnabled(rbServerCertManual.isSelected());
     }
 
     public void addPolicyListener(PolicyListener listener) {
@@ -265,6 +328,21 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
             }
         });
     }
+
+    private void updateTrustedCertTable() {
+        certList.clear();
+
+        if (serverCert != null) certList.add(serverCert);
+        trustedCertTable.getTableSorter().setData(certList);
+        trustedCertTable.getTableSorter().fireTableDataChanged();
+    }
+
+    private CertListener certListener = new CertListenerAdapter() {
+        public void certSelected(CertEvent e) {
+                serverCert = e.getCert();
+                if (serverCert != null) updateTrustedCertTable();
+        }
+    };
 
     /**
      * Validates the policy xml to make sure that it is not empty and the xml is valid.

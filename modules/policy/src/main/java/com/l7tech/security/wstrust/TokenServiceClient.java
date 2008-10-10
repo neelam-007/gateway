@@ -28,6 +28,7 @@ import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLException;
+import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -291,6 +292,14 @@ public class TokenServiceClient {
             GenericHttpRequestParams params = new GenericHttpRequestParams(url);
             if (httpBasicCredentials != null)
                 params.setPasswordAuthentication(httpBasicCredentials);
+            if(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(requestDoc.getDocumentElement().getNamespaceURI())) {
+                params.setContentType(ContentTypeHeader.SOAP_1_2_DEFAULT);
+            } else {
+                params.setContentType(ContentTypeHeader.XML_DEFAULT);
+                params.setExtraHeaders(new HttpHeader[] {
+                    new GenericHttpHeader(SoapUtil.SOAPACTION, "\"\""),
+                });
+            }
             params.setContentType(ContentTypeHeader.XML_DEFAULT);
             params.setExtraHeaders(new HttpHeader[] {
                 new GenericHttpHeader( SoapConstants.SOAPACTION, "\"\""),

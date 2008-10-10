@@ -141,7 +141,7 @@ public class SnmpTrapAssertion extends Assertion implements UsesVariables {
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "audit" });
         meta.put(AssertionMetadata.PALETTE_NODE_NAME, "Send SNMP Trap");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Edit16.gif");
-
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Edit16.gif");
 

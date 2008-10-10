@@ -59,10 +59,12 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
     private String locallyDefinedActor;
     private X509Certificate locallyDefinedRecipient;
     private boolean assertionChanged = false;
+    private boolean readonly;
 
-    public XmlSecurityRecipientContextEditor(Frame owner, SecurityHeaderAddressable assertion) {
+    public XmlSecurityRecipientContextEditor(Frame owner, SecurityHeaderAddressable assertion, boolean readonly) {
         super(owner, true);
         this.assertion = assertion;
+        this.readonly = readonly;
         initialize();
     }
 
@@ -81,6 +83,8 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         setActionListeners();
         setInitialValues();
         enableSpecificControls();
+
+        okButton.setEnabled(!readonly);
     }
 
     private void setActionListeners() {
@@ -293,7 +297,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
 
     private void enableSpecificControls() {
         if (specificRecipientRradio.isSelected()) {
-            assignCertButton.setEnabled(true);
+            assignCertButton.setEnabled(!readonly);
             certSubject.setEnabled(true);
             actorComboBox.setEnabled(true);
             label2.setEnabled(true);

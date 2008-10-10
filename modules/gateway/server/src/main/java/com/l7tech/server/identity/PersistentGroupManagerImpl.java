@@ -647,11 +647,11 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     }
 
     @Override
-    protected Map<String, Object> getUniqueAttributeMap(GT entity) {
+    protected Collection<Map<String, Object>> getUniqueConstraints(GT entity) {
         Map<String, Object> attrs = new HashMap<String, Object>();
         attrs.put("providerId", entity.getProviderId());
         attrs.put("name", entity.getName());
-        return attrs;
+        return Arrays.asList(attrs);
     }
 
     @Override

@@ -61,7 +61,7 @@ public class IdProviderReference extends ExternalReference {
             logger.severe("This policy is referring to an Id provider that cannot be retrieved.");
         } else {
             try {
-                setIdProviderConfProps(config.getSerializedProps());
+                setIdProviderConfProps(config.getExportableSerializedProps());
                 setProviderName(config.getName());
                 setIdProviderTypeVal(config.getTypeVal());
             } catch (IOException e) {
@@ -226,6 +226,7 @@ public class IdProviderReference extends ExternalReference {
                             for (String s1 : urls1) {
                                 for (String s2 : urls2) {
                                    if (s1.equalsIgnoreCase(s2)) {
+                                       setLocalizeReplace( configOnThisSystem.getOid() );
                                        logger.fine("LDAP URL common to both id providers (" + s1 + ")");
                                        return true;
                                    }

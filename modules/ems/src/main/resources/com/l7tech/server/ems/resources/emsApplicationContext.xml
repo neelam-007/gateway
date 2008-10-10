@@ -80,8 +80,10 @@
                 <!-- General -->                
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
                 <value>com.l7tech.identity.internal.InternalUser</value>
+                <value>com.l7tech.identity.internal.PasswordChangeRecord</value>
                 <value>com.l7tech.identity.IdentityProviderConfig</value>
                 <value>com.l7tech.server.ems.user.UserProperty</value>
+                <value>com.l7tech.server.logon.LogonInfo</value>
             </list>
         </property>
         <property name="hibernateProperties" value="hibernate.dialect=org.hibernate.dialect.DerbyDialect"/>
@@ -252,19 +254,37 @@
         <constructor-arg value="com.l7tech.server.identity.internal.InternalIdentityProviderImpl"/>
         <constructor-arg value="internalIdentityProvider"/>
     </bean>
-    <bean id="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" parent="hibernateBean">
+    <bean id="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" parent="hibernateBean" scope="prototype" >
         <constructor-arg index="0" ref="roleManager"/>
         <constructor-arg index="1"><null/></constructor-arg>
+        <constructor-arg index="2" ref="logonManager"/>
     </bean>
-    <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl">
+    <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" scope="prototype">
         <property name="clientCertManager"><null/></property>
         <property name="keystore"><null/></property>
         <property name="certificateAuthenticator"><null/></property>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager"><null/></property>
+        <property name="logonService" ref="logonService"/>
     </bean>
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean"/>
+
+    <!-- logon manager handles the persistence of login attempts information to the database layer -->
+    <bean id="logonManager" class="com.l7tech.server.logon.LogonInfoManagerImpl" parent="hibernateBean"/>
+
+    <!-- Logon service that monitors the login attempts in the SSM -->
+    <bean id="logonService" class="com.l7tech.server.logon.SSMLogonService">
+        <constructor-arg ref="transactionManager"/>
+        <constructor-arg ref="logonManager"/>
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <!-- password enforcer to enforce the password constraints -->
+    <bean id="passwordEnforcerManager" class="com.l7tech.server.security.PasswordEnforcerManager">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="roleManager"/>
+    </bean>
 
     <!-- Account manager -->
     <bean id="emsAccountManager" class="com.l7tech.server.ems.EmsAccountManagerImpl">
@@ -314,5 +334,4 @@
         </property>
     </bean>
 
-    <bean id="emsKeyStore" class="com.l7tech.server.ems.EmsKeyStore"/>
 </beans>

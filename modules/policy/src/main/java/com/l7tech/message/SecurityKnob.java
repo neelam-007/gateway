@@ -6,9 +6,13 @@ package com.l7tech.message;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 
 import java.util.List;
+import java.io.IOException;
+
+import org.xml.sax.SAXException;
 
 /**
  * Provides access to any {@link SecurityToken}s that currently accompany this {@link Message}, and holds
@@ -36,6 +40,19 @@ public interface SecurityKnob extends MessageKnob {
      * @return the ProcessorResult, or null if this Message has not been undecorated.
      */
     ProcessorResult getProcessorResult();
+
+    /**
+     * Obtain the undecoration results for this Message, running the undecorator lazily if it needs
+     * to be done, and if an undecorator is available with the current implementation.
+     * <p/>
+     * Currently this method works in Client assertions but not Server assertions.
+     *
+     * @return the ProcessorResult, or null if this Message has not been undecorated and no
+     *         lazy undecoration service is available.
+     * @throws Exception if undecoration fails.  May throw any exception documented by
+     *              {@link com.l7tech.security.xml.processor.WssProcessor#undecorateMessage}.
+     */
+    ProcessorResult getOrCreateProcessorResult() throws ProcessorException, SAXException, IOException;
 
     /**
      * Store the undecoration results for this Message, if it has been undecorated.

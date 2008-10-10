@@ -18,11 +18,15 @@ import com.l7tech.gui.ExceptionDialog;
 import com.l7tech.util.WeakSet;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.gateway.common.service.PublishedService;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import javax.mail.internet.MimeUtility;
 import javax.swing.*;
+import javax.wsdl.WSDLException;
+import javax.wsdl.xml.WSDLLocator;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -118,6 +122,11 @@ public class AppletMain extends JApplet implements SheetHolder {
             // Install WSDL Factory that is safe for Applet use
             Wsdl.setWSDLFactoryBuilder( WsdlUtils.getWSDLFactoryBuilder() );
         }
+        PublishedService.setWSDLLocatorFactory(new PublishedService.WSDLLocatorFactory() {
+            public WSDLLocator getWSDLLocator(String uri) throws WSDLException {
+                return new AppletWsdlLocator(uri);
+            }
+        });
     }
 
     /**
@@ -176,6 +185,7 @@ public class AppletMain extends JApplet implements SheetHolder {
 
     public void start() {
         setFocusable(true);
+        forceEarlyClassLoading();
         if ( otherSessionId == null || !otherSessionId.equals(sessionId) ) {
             MainWindow mainWindow =  getApplication().getMainWindow();
 
@@ -188,6 +198,18 @@ public class AppletMain extends JApplet implements SheetHolder {
             }
 
             mainWindow.activateLogonDialog();
+        }
+    }
+
+    // Reference a class from each signed jar that might be lazily accessed later,
+    // to prevent any needed security dialogs from coming up at a fragile time and deadlocking Swing (Bug #5548)
+    private void forceEarlyClassLoading() {
+        // Ensure that dependency on signed mailapi jar is detected very early, so we don't get a landmind
+        // security dialog at an inconvenient time, later
+        try {
+            MimeUtility.encodeText("bogus");
+        } catch (UnsupportedEncodingException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e); // can't happen
         }
     }
 

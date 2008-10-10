@@ -57,6 +57,7 @@ import org.xml.sax.SAXException;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.SSLException;
 import javax.wsdl.WSDLException;
 import javax.xml.namespace.QName;
 import java.io.ByteArrayInputStream;
@@ -121,7 +122,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             hardcodedPolicy = getHardCodedPolicy();
 
         } catch(Exception ise) {
-            logger.log(Level.WARNING, ise.getMessage(), ise.getCause());
+            logger.log(Level.WARNING, ise.getMessage(), ExceptionUtils.getDebugException(ise));
             ssg = null;
             messageProcessor = null;
             useClientCert = false;
@@ -154,6 +155,11 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         initSSGPorts(assertion, url);
         ssg.setSsgFile(url.getFile());
         ssg.setUseSslByDefault(assertion.isUseSslByDefault());
+        
+        ssg.setCompress(assertion.isGzipEncodeDownstream());
+
+        // Force processing of the security header
+        ssg.getProperties().put("response.security.stripHeader", "always");
 
         messageProcessor = new MessageProcessor();
     }
@@ -308,6 +314,13 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 thrown = ioe;
                 if (ExceptionUtils.causedBy(ioe, SocketTimeoutException.class)) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_SOCKET_TIMEOUT);
+                } else if (ExceptionUtils.causedBy(ioe, SSLException.class)) {
+                    Exception loggableException = ExceptionUtils.getDebugException(ioe);
+                    if(loggableException != null) {
+                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, loggableException);
+                    } else {
+                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED);
+                    }
                 } else {
                     // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);

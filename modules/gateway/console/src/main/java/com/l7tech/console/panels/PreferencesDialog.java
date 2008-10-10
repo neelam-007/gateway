@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 public class PreferencesDialog extends JDialog {
     static Logger log = Logger.getLogger(PreferencesDialog.class.getName());
 
-    private static final int DEFAULT_INACTIVITY_TIMEOUT = 30;
+    private static final int DEFAULT_INACTIVITY_TIMEOUT = 30; //this value MUST be the same as AbstractSsmPreferences.java
     private static final int DEFAULT_NUM_HOSTS_HISTORY = 5;    
 
     /**

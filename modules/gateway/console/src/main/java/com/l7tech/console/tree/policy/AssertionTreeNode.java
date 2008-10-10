@@ -9,6 +9,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.console.action.*;
 import com.l7tech.console.policy.exporter.PolicyImporter;
+import com.l7tech.console.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
@@ -22,6 +23,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -188,7 +190,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             Assertion ass = this.asAssertion();
             if (ass instanceof SetsVariables) {
                 SetsVariables sv = (SetsVariables)ass;
-                final VariableMetadata[] vars = sv.getVariablesSet();
+                final VariableMetadata[] vars = PolicyVariableUtils.getVariablesSetNoThrow(sv);
                 if (vars.length > 0) {
                     if (st != null)
                         sb.append(", setting ");
@@ -436,6 +438,8 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             logger.log(Level.WARNING, "Could not import the policy", e);
         } catch (InvalidPolicyStreamException e) {
             logger.log(Level.WARNING, "Could not import the policy", e);
+        } catch (PolicyImportCancelledException e) {
+            logger.log(Level.INFO, "import was cancelled", e);
         }
     }
 
@@ -501,6 +505,9 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      */
     public boolean accept(AbstractTreeNode node) {
         return !checkForInclude(node);
+    }
+
+    public void serviceChanged(PublishedService service) {
     }
 
     protected boolean isDescendantOfInclude(boolean includeSelf) {

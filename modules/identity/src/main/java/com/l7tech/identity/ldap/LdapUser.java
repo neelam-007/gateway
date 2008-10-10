@@ -30,6 +30,7 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
     private String lastName;
     private String email;
     private String department;
+    private byte[] ldapCertBytes;
 
     public LdapUser() {
         this(IdentityProviderConfig.DEFAULT_OID, null, null);
@@ -158,5 +159,14 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
         setLastName(imp.getLastName());
         setPassword(imp.getPassword());
         setAttributes(imp.getAttributes());
+        setLdapCert(imp.getLdapCert());
+    }
+
+    public byte[] getLdapCert() {
+        return ldapCertBytes;
+    }
+
+    public void setLdapCert(byte[] certbytes) {
+        ldapCertBytes = certbytes;
     }
 }

@@ -14,6 +14,7 @@ import javax.jms.Message;
 import javax.jms.QueueReceiver;
 import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -242,8 +243,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         QueueReceiver receiver = getConsumer();
         ensureConnectionStarted();
 
-        Message jmsMessage = receiver.receive( RECEIVE_TIMEOUT );
-        return jmsMessage;
+        return receiver.receive( RECEIVE_TIMEOUT );
     }
 
     /**
@@ -295,10 +295,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
             _logger.log(Level.CONFIG, "Updated JMS message max size to {0}.", newMaxSize);
             _endpointCfg.setMessageMaxSize(newMaxSize);
         }
-
-        /*
-         * What about the thread pool cluster properties?
-         */
+        
     }
 
     protected void fireConnected() {
@@ -386,12 +383,13 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
                 Message jmsMessage;
                 while ( !isStop() ) {
                     try {
-//                        _logger.finest( "Polling for a message on " + _inboundRequestEndpoint.getDestinationName() );
                         jmsMessage = receiveMessage();
+
+                        log(Level.FINE, JmsMessages.INFO_LISTENER_RECEIVE_MSG,
+                            new Object[]{_endpointCfg.getEndpoint().getDestinationName(), jmsMessage == null ? null : jmsMessage.getJMSMessageID()});
 
                         if ( jmsMessage != null && !isStop() ) {
 
-                            log(Level.FINE, JmsMessages.INFO_LISTENER_RECEIVE_MSG, _endpointCfg.getEndpoint().getDestinationName());
                             oopses = 0;
 
                             // process on the message
@@ -400,17 +398,22 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
                         }
                     } catch ( Throwable e ) {
                         if (ExceptionUtils.causedBy(e, InterruptedException.class)) {
+                            log(Level.FINE, "JMS listener on {0} caught throwable: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                             continue;
                         }
 
-                        log(Level.WARNING, formatMessage(
-                                JmsMessages.WARN_LISTENER_RECEIVE_ERROR,
-                                _endpointCfg.getEndpoint().getDestinationName()), e);
+                        if (!ExceptionUtils.causedBy(e, RejectedExecutionException.class)) {
+                            log(Level.WARNING, formatMessage(
+                                    JmsMessages.WARN_LISTENER_RECEIVE_ERROR,
+                                    _endpointCfg.getEndpoint().getDestinationName()),
+                                    ExceptionUtils.getDebugException(e));
 
-                        cleanup();
+                            cleanup();
+                        }
 
                         if ( ++oopses < MAXIMUM_OOPSES ) {
                             // sleep for a short period of time before retrying
+                            log(Level.FINE, "JMS listener on {0} sleeping for {1} milliseconds.", new Object[]{_endpointCfg.getEndpoint(), OOPS_RETRY});
                             try {
                                 Thread.sleep(OOPS_RETRY);
                             } catch ( InterruptedException e1 ) {
@@ -420,9 +423,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
                         } else {
                             // max oops reached .. sleep for a longer period of time before retrying
                             int sleepTime = oopsSleep.get();
-
                             log(Level.WARNING, JmsMessages.WARN_LISTENER_MAX_OOPS_REACHED, new Object[] {_endpointCfg.getEndpoint(), MAXIMUM_OOPSES, sleepTime });
-
                             try {
                                 Thread.sleep(sleepTime);
                             } catch ( InterruptedException e1 ) {
@@ -432,7 +433,6 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
                     }
                 }
             } finally {
-
                 log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_STOP, _endpointCfg.getEndpoint().getDestinationName());
                 cleanup();
             }

@@ -1,18 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.HttpRoutingHttpAuthPanel">
-  <grid id="6b154" binding="mainPanel" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="6b154" binding="mainPanel" layout-manager="GridLayoutManager" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="120" y="129" width="390" height="179"/>
-      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
       <component id="6ba4" class="javax.swing.JLabel" binding="usernameLabel">
         <constraints>
-          <xy x="0" y="3" width="75" height="20"/>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="authPasswordUsernameLabel.text"/>
@@ -20,8 +18,7 @@
       </component>
       <component id="958c4" class="javax.swing.JLabel" binding="passwordLabel">
         <constraints>
-          <xy x="0" y="32" width="65" height="20"/>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="authPasswordPasswordLabel.text"/>
@@ -29,8 +26,7 @@
       </component>
       <component id="8879a" class="javax.swing.JLabel" binding="ntlmDomainLabel">
         <constraints>
-          <xy x="0" y="62" width="96" height="20"/>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="authPasswordDomainLabel.text"/>
@@ -38,8 +34,7 @@
       </component>
       <component id="6f9c6" class="javax.swing.JTextField" binding="usernameField">
         <constraints>
-          <xy x="106" y="0" width="284" height="26"/>
-          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <minimum-size width="100" height="-1"/>
             <preferred-size width="150" height="-1"/>
           </grid>
@@ -48,8 +43,7 @@
       </component>
       <component id="7ce29" class="javax.swing.JPasswordField" binding="passwordField">
         <constraints>
-          <xy x="106" y="31" width="284" height="23"/>
-          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <minimum-size width="100" height="-1"/>
             <preferred-size width="150" height="-1"/>
           </grid>
@@ -58,8 +52,7 @@
       </component>
       <component id="200af" class="javax.swing.JTextField" binding="ntlmDomainField">
         <constraints>
-          <xy x="106" y="59" width="284" height="26"/>
-          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <minimum-size width="100" height="-1"/>
             <preferred-size width="150" height="-1"/>
           </grid>
@@ -68,14 +61,12 @@
       </component>
       <vspacer id="7afea">
         <constraints>
-          <xy x="242" y="116" width="11" height="63"/>
-          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
         </constraints>
       </vspacer>
       <component id="57646" class="javax.swing.JLabel" binding="ntlmHostLabel">
         <constraints>
-          <xy x="0" y="93" width="77" height="20"/>
-          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="authPasswordHostLabel.text"/>
@@ -83,8 +74,7 @@
       </component>
       <component id="b4584" class="javax.swing.JTextField" binding="ntlmHostField">
         <constraints>
-          <xy x="106" y="90" width="284" height="26"/>
-          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <minimum-size width="100" height="-1"/>
             <preferred-size width="150" height="-1"/>
           </grid>

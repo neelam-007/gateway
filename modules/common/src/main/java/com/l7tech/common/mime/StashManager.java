@@ -28,6 +28,7 @@ public interface StashManager extends Closeable {
      * @param in  the InputStream to stash.  Will be drained, read all the way to EOF, before this method returns,
      *                                       but will not be closed by this method.
      * @throws IOException if there is a problem stashing this InputStream.
+     *                     Implementations are required to save and rethrow the IOException so that it may be recall()'ed later.
      */
     void stash(int ordinal, InputStream in) throws IOException;
 
@@ -41,6 +42,7 @@ public interface StashManager extends Closeable {
      * @param ordinal a small non-negative integer to identify this stream within the stash
      * @param in      the byte array to stash.  May be zero-length but must be non-null.
      * @throws IOException if there is a problem stashing this byte array.
+     *                     Implementations are required to save and rethrow the IOException so that it may be recall()'ed later.
      */
     void stash(int ordinal, byte[] in) throws IOException;
 
@@ -68,7 +70,8 @@ public interface StashManager extends Closeable {
      *
      * @param ordinal the ordinal that was used in a previous call to stash().
      * @return an InputStream ready to play back the exact bytes that were previously stashed, followed by EOF.  Never null.
-     * @throws IOException if there is a problem producing the InputStream.
+     * @throws IOException if there is a problem producing the InputStream,
+     *                     or if an IOException was thrown by stash() for this ordinal.
      * @throws NoSuchPartException if no InputStream is currently stashed using this ordinal
      */
     InputStream recall(int ordinal) throws IOException, NoSuchPartException;

@@ -103,12 +103,22 @@ class ChangePasswordAction extends AbstractAction {
                     }
                     String message = "Change password for gateway: " + ssg.getSsgAddress();
                     ChangePasswordDialog cpd = new ChangePasswordDialog(Gui.getInstance().getFrame(), message, username, usernameEditable);
-                    cpd.setVisible(true);
+                    //Bug 5416 - it will re-display the change password dialog due to server cert untrusted exception
+                    //but since we still have the new pass and old pass info already, we dont need to ask for it again
+                    if (newpass == null && oldpass == null) {
+                        cpd.setVisible(true);
+                    }
 
                     if (cpd.wasOk()) {
                         cmPasswdPotentiallyChanged = true;
                         oldpass = cpd.getCurrentPasswordAuthentication();
                         newpass = cpd.getNewPasswordAuthentication().getPassword();
+                        if (usernameEditable && (username==null || !username.equals(oldpass.getUserName()))) {
+                            ssg.setUsername(oldpass.getUserName());
+                        }
+                        ssg.getRuntime().setCachedPassword(oldpass.getPassword());
+                    } else if (newpass != null && oldpass != null) {    //bug 5416
+                        cmPasswdPotentiallyChanged = true;
                         if (usernameEditable && (username==null || !username.equals(oldpass.getUserName()))) {
                             ssg.setUsername(oldpass.getUserName());
                         }
@@ -124,7 +134,7 @@ class ChangePasswordAction extends AbstractAction {
                                                                           newpass);
                     } catch (IOException e1) {
                         // un-hide wrapped SSLException so server cert disco can be triggered if needed.
-                        SSLException sse = (SSLException)ExceptionUtils.getCauseIfCausedBy(e1, SSLException.class);
+                        SSLException sse = ExceptionUtils.getCauseIfCausedBy(e1, SSLException.class);
                         if (sse != null)
                             throw (SSLException)new SSLException(ExceptionUtils.getMessage(sse)).initCause(e1);
                         throw e1;
@@ -144,7 +154,7 @@ class ChangePasswordAction extends AbstractAction {
                         return; // cancel the password change as well
                     }
                 } catch (SSLException sslException) {
-                    PasswordAuthentication credentials = null;
+                    PasswordAuthentication credentials;
                     try {
                         credentials = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
                         MessageProcessor.handleSslException(ssg, credentials, sslException);

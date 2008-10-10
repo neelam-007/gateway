@@ -37,6 +37,7 @@ import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
@@ -264,6 +265,7 @@ public class AdminWebServiceFilter implements Filter {
                 httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 out = servletResponse.getOutputStream();
                 Document fault = SoapFaultUtils.generateSoapFaultDocument(
+                        SoapVersion.UNKNOWN,
                         SoapUtil.FC_CLIENT,
                         e.getMessage(),
                         null,

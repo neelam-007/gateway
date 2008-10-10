@@ -12,14 +12,15 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.logging.Logger;
-import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.logging.Logger;
 
 /**
  * Verifies that a specific element in the response was encrypted by the ssg.
@@ -60,7 +61,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
             return AssertionStatus.NOT_APPLICABLE;
         }
         Document soapmsg = response.getXmlKnob().getDocumentReadOnly();
-        ProcessorResult wssRes = response.getSecurityKnob().getProcessorResult();
+        ProcessorResult wssRes = getOrCreateWssResults(response);
         if (wssRes == null) {
             log.info("WSS processing was not done on this response.");
             return AssertionStatus.FAILED;
@@ -98,6 +99,18 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
                 return AssertionStatus.FALSIFIED;
             default:
                 return AssertionStatus.SERVER_ERROR;
+        }
+    }
+
+    public static ProcessorResult getOrCreateWssResults(Message response) throws IOException, SAXException, ResponseValidationException {
+        try {
+            return response.getSecurityKnob().getOrCreateProcessorResult();
+        } catch (IOException e) {
+            throw e;
+        } catch (SAXException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseValidationException("Unable to undecorate response: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

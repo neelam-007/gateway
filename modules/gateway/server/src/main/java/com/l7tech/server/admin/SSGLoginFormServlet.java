@@ -18,6 +18,7 @@ import java.text.MessageFormat;
 public class SSGLoginFormServlet extends HttpServlet {
     private static final String NORMAL_MESSAGE = "Connecting to the SecureSpan Gateway";
     private static final String INCORRECT_USR_PWD_MESSAGE = "The user name or password is incorrect.  Try again.";
+    private static final String LOCK_OUT_MESSAGE = "Maximum login attempts exceeded, please try again later.";
 
     protected void doGet(HttpServletRequest hreq, HttpServletResponse hresp) throws ServletException, IOException {
         hresp.setContentType("text/html");
@@ -30,8 +31,15 @@ public class SSGLoginFormServlet extends HttpServlet {
         String css = new String(IOUtils.slurpUrl(SSGLoginFormServlet.class.getResource("/com/l7tech/server/resources/ssglogin.css")), "UTF-8");
         try {
             // There are two types of login messages depend
-            String loginMessage = (hreq.getAttribute(ManagerAppletFilter.RELOGIN) != null) ?
-                    INCORRECT_USR_PWD_MESSAGE : NORMAL_MESSAGE;
+            String loginMessage = NORMAL_MESSAGE;
+            if ( hreq.getAttribute(ManagerAppletFilter.RELOGIN) != null ) {
+                String reLogin = (String) hreq.getAttribute(ManagerAppletFilter.RELOGIN);
+                if ( reLogin.equalsIgnoreCase("YES") ) {
+                    loginMessage = INCORRECT_USR_PWD_MESSAGE;
+                } else {
+                    loginMessage = LOCK_OUT_MESSAGE;
+                }
+            }
             ps.print(MessageFormat.format(page, css, loginMessage));
         }
         finally {

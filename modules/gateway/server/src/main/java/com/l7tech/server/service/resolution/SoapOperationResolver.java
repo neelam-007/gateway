@@ -16,6 +16,7 @@ import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap12.SOAP12Binding;
 import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.xml.namespace.QName;
 import java.io.IOException;
@@ -71,28 +72,25 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
             return EMPTY;
         }
 
-        nextBinding: for (QName qName : bindings.keySet()) {
+        for (QName qName : bindings.keySet()) {
             Binding binding = bindings.get(qName);
             String bindingStyle = null;
 
             //noinspection unchecked
             List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
             SOAPBinding sb = null;
-            // uncomment this when we get mendate to support soap 1.2
-            // SOAP12Binding sb12 = null;
+            SOAP12Binding sb12 = null;
             for (ExtensibilityElement eel : bindingEels) {
                 if (eel instanceof SOAPBinding) {
                     sb = (SOAPBinding) eel;
                     bindingStyle = sb.getStyle();
-                }/* else if (eel instanceof SOAP12Binding) {
+                } else if (eel instanceof SOAP12Binding) {
                     sb12 = (SOAP12Binding) eel;
                     bindingStyle = sb12.getStyle();
-                }*/
+                }
             }
-            if (sb == null) {
-                //if (sb12 == null) {
-                    continue nextBinding;
-                //}
+            if (sb == null && sb12 == null) {
+                continue;
             }
 
             //noinspection unchecked

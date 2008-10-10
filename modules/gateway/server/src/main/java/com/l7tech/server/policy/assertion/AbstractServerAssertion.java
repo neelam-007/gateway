@@ -24,8 +24,8 @@ public abstract class AbstractServerAssertion<AT extends Assertion> implements S
 
     /**
      * Override to cleanup any resources allocated in the ServerAssertion.
-     * Caller is responsible for ensuring that no requests are currently, or will ever,
-     * use this ServerAssertion after close() is called. 
+     * Caller is responsible for ensuring that no requests are currently using -- or will ever
+     * again use -- this ServerAssertion after close() is called.
      */
     public void close() {
     }

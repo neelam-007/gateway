@@ -36,6 +36,7 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
         insert(new WsiBspPaletteNode(), index++);
         insert(new WsiSamlPaletteNode(), index++);
         insert(new WsspPaletteNode(), index++);
+        insert(new PreemptiveCompressionPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);
         index = insertMatchingCustomAssertions(index, Category.MESSAGE);
         insertMatchingCustomAssertions(index, Category.MSG_VAL_XSLT);

@@ -129,6 +129,14 @@ public class BuiltinVariables {
         new VariableMetadata(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, true, true, null, false),
         new VariableMetadata("request.username", false, false, null, false),
         new VariableMetadata("request.password", false, false, null, false),
+
+        new VariableMetadata("request.ssl.clientcertificate", false, false, null, false, DataType.CERTIFICATE),
+        new VariableMetadata("request.ssl.clientcertificate.base64", false, false, null, false, DataType.STRING),
+        new VariableMetadata("request.ssl.clientcertificate.pem", false, false, null, false, DataType.STRING),
+
+        new VariableMetadata("request.wss.signingcertificate", false, false, null, false, DataType.CERTIFICATE),
+        new VariableMetadata("request.wss.signingcertificate.base64", false, false, null, false, DataType.STRING),
+        new VariableMetadata("request.wss.signingcertificate.pem", false, false, null, false, DataType.STRING),
     };
 
     static {

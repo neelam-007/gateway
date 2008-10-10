@@ -11,6 +11,8 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -54,7 +56,7 @@ public abstract class UserCertPanel extends JPanel {
     IdentityAdmin identityAdmin = null;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     protected final EntityListener parentListener;
-    private final boolean canUpdate;
+    private boolean canUpdate;
 
     /**
      * Create a new NonFederatedUserCertPanel
@@ -258,12 +260,18 @@ public abstract class UserCertPanel extends JPanel {
             if (user == null) {
                 user = userPanel.getUser();
             }
-            String certstr = identityAdmin.getUserCert(user);
-            if (certstr == null) {
-                cert = null;
+            if (user instanceof LdapUser) {
+                LdapUser luser = (LdapUser)user;
+                try {
+                    cert = getCertForLdapUser(luser);
+                    canUpdate = false;
+                } catch (LdapCertsNotEnabledException e) {
+                    cert = getCertFromInternalTrustStore(user);
+                    canUpdate = true;
+                }
             } else {
-                byte[] certbytes = HexUtils.decodeBase64(certstr);
-                cert = CertUtils.decodeCert(certbytes);
+                cert = getCertFromInternalTrustStore(user);
+                canUpdate = true;
             }
         } catch (FindException e) {
             log.log(Level.WARNING, "There was an error loading the certificate", e);
@@ -272,7 +280,35 @@ public abstract class UserCertPanel extends JPanel {
         } catch (IOException e) {
             log.log(Level.WARNING, "There was an error loading the certificate", e);
         }
+        applyFormSecurity();
         return cert;
+    }
+
+    private X509Certificate getCertFromInternalTrustStore(User user) throws FindException, CertificateException, IOException {
+        String certstr = identityAdmin.getUserCert(user);
+        X509Certificate theCert = null;
+        if (certstr == null) {
+            theCert = null;
+        } else {
+            byte[] certbytes = HexUtils.decodeBase64(certstr);
+            theCert = CertUtils.decodeCert(certbytes);
+        }
+        return theCert;
+    }
+
+    private X509Certificate getCertForLdapUser(LdapUser luser) throws FindException, CertificateException, IOException, LdapCertsNotEnabledException {
+        X509Certificate theCert = null;
+        IdentityProviderConfig whichLdap = identityAdmin.findIdentityProviderConfigByID(luser.getProviderId());
+        if (whichLdap != null) {
+            if (!whichLdap.isUserCertsEnabled()) throw new LdapCertsNotEnabledException();
+            else {
+                if (luser.getLdapCert() != null) {
+                    byte[] certbytes = luser.getLdapCert();
+                    theCert = CertUtils.decodeCert(certbytes);
+                }
+            }
+        }
+        return theCert;
     }
 
     private void saveUserCert(TrustedCert tc) throws IOException, CertificateException, UpdateException {
@@ -345,4 +381,7 @@ public abstract class UserCertPanel extends JPanel {
     };
 
     protected abstract boolean isCertOk(TrustedCert tc) throws IOException, CertificateException;
+
+    private class LdapCertsNotEnabledException extends Throwable {
+    }
 }

@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.ftp;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -48,14 +49,14 @@ class MessageProcessingFtplet extends DefaultFtplet {
                                    final MessageProcessor messageProcessor,
                                    final AuditContext auditContext,
                                    final SoapFaultManager soapFaultManager,
-                                   final ClusterPropertyManager clusterPropertyManager,
+                                   final ClusterPropertyCache clusterPropertyCache,
                                    final StashManagerFactory stashManagerFactory) {
         this.applicationContext = applicationContext;
         this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
         this.auditContext = auditContext;
         this.soapFaultManager = soapFaultManager;
-        this.clusterPropertyManager = clusterPropertyManager;
+        this.clusterPropertyCache = clusterPropertyCache;
         this.stashManagerFactory = stashManagerFactory;
     }
 
@@ -116,7 +117,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private final MessageProcessor messageProcessor;
     private final AuditContext auditContext;
     private final SoapFaultManager soapFaultManager;
-    private final ClusterPropertyManager clusterPropertyManager;
+    private final ClusterPropertyCache clusterPropertyCache;
     private final StashManagerFactory stashManagerFactory;
 
     /**
@@ -262,7 +263,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
             try {
                 context.setAuditContext(auditContext);
                 context.setSoapFaultManager(soapFaultManager);
-                context.setClusterPropertyManager(clusterPropertyManager);
+                context.setClusterPropertyCache(clusterPropertyCache);
                 context.setReplyExpected(false);
 
                 try {

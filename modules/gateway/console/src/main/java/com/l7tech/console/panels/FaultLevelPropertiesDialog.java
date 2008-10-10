@@ -18,6 +18,8 @@ import com.japisoft.xmlpad.editor.XMLEditor;
 import com.japisoft.xmlpad.action.ActionModel;
 
 import javax.swing.*;
+import javax.xml.soap.SOAPConstants;
+import javax.xml.XMLConstants;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -73,6 +75,23 @@ public class FaultLevelPropertiesDialog extends JDialog {
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
+    private static final String GEN_LEVEL_SAMPLE_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <soapenv:Code>\n" +
+                        "                <soapenv:Value>soapenv:Receiver</soapenv:Value>\n" +
+                        "            </soapenv:Code>\n" +
+                        "            <soapenv:Reason>\n" +
+                        "                <soapenv:Text xml:lang=\"en-US\">Assertion Falsified</soapenv:Text>\n" +
+                        "            </soapenv:Reason>\n" +
+                        "            <soapenv:Role>http://soong:8080/xml/blub</soapenv:Role>\n" +
+                        "            <soapenv:Detail>\n" +
+                        "               <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "            </soapenv:Detail>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>";
     private static final String MEDIUM_LEVEL_SAMPLE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                         "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                         "    <soapenv:Body>\n" +
@@ -88,6 +107,28 @@ public class FaultLevelPropertiesDialog extends JDialog {
                         "               \t </l7:assertionResult>\n" +
                         "               </l7:policyResult>\n" +
                         "            </detail>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>";
+    private static final String MEDIUM_LEVEL_SAMPLE_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <soapenv:Code>\n" +
+                        "                <soapenv:Value>soapenv:Receiver</soapenv:Value>\n" +
+                        "            </soapenv:Code>\n" +
+                        "            <soapenv:Reason>\n" +
+                        "                <soapenv:Text xml:lang=\"en-US\">Policy Falsified</soapenv:Text>\n" +
+                        "            </soapenv:Reason>\n" +
+                        "            <soapenv:Role>http://soong:8080/xml/blub</soapenv:Role>\n" +
+                        "            <soapenv:Detail>\n" +
+                        "               <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\" xmlns:l7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                        "               \t <l7:assertionResult status=\"BAD\" assertion=\"l7p:WssUsernameToken\">\n" +
+                        "               \t    <l7:detailMessage id=\"4302\">This request did not contain any WSS level security.</l7:detailMessage>\n" +
+                        "               \t    <l7:detailMessage id=\"5204\">Request did not include an encrypted UsernameToken.</l7:detailMessage>\n" +
+                        "               \t </l7:assertionResult>\n" +
+                        "               </l7:policyResult>\n" +
+                        "            </soapenv:Detail>\n" +
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
@@ -107,6 +148,29 @@ public class FaultLevelPropertiesDialog extends JDialog {
                         "               \t </l7:assertionResult>\n" +
                         "               </l7:policyResult>\n" +
                         "            </detail>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>";
+    private static final String FULL_LEVEL_SAMPLE_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <soapenv:Code>\n" +
+                        "                <soapenv:Value>soapenv:Receiver</soapenv:Value>\n" +
+                        "            </soapenv:Code>\n" +
+                        "            <soapenv:Reason>\n" +
+                        "                <soapenv:Text xml:lang=\"en-US\">Policy Falsified</soapenv:Text>\n" +
+                        "            </soapenv:Reason>\n" +
+                        "            <soapenv:Role>http://soong:8080/xml/blub</soapenv:Role>\n" +
+                        "            <soapenv:Detail>\n" +
+                        "               <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\" xmlns:l7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                        "               \t <l7:assertionResult status=\"OK\" assertion=\"l7p:RequestXpathAssertion\"/>\n" +
+                        "               \t <l7:assertionResult status=\"BAD\" assertion=\"l7p:WssUsernameToken\">\n" +
+                        "               \t    <l7:detailMessage id=\"4302\">This request did not contain any WSS level security.</l7:detailMessage>\n" +
+                        "               \t    <l7:detailMessage id=\"5204\">Request did not include an encrypted UsernameToken.</l7:detailMessage>\n" +
+                        "               \t </l7:assertionResult>\n" +
+                        "               </l7:policyResult>\n" +
+                        "            </soapenv:Detail>\n" +
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
@@ -331,19 +395,19 @@ public class FaultLevelPropertiesDialog extends JDialog {
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 description = GEN_LEVEL_DESCRIPTION;
-                editor.setText(GEN_LEVEL_SAMPLE);
+                editor.setText(assertion.isSoap12() ? GEN_LEVEL_SAMPLE_SOAP_1_2 : GEN_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
                 description = MEDIUM_LEVEL_DESCRIPTION;
-                editor.setText(MEDIUM_LEVEL_SAMPLE);
+                editor.setText(assertion.isSoap12() ? MEDIUM_LEVEL_SAMPLE_SOAP_1_2 : MEDIUM_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.FULL_TRACE_FAULT:
                 description = FULL_LEVEL_DESCRIPTION;
-                editor.setText(FULL_LEVEL_SAMPLE);
+                editor.setText(assertion.isSoap12() ? FULL_LEVEL_SAMPLE_SOAP_1_2 : FULL_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(true);
                 break;
@@ -363,17 +427,37 @@ public class FaultLevelPropertiesDialog extends JDialog {
     private void showCustomFault() {
         String toShow = lastUserEdits;
         if (toShow == null || toShow.length() < 1) {
-            toShow = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-                        "    <soapenv:Body>\n" +
-                        "        <soapenv:Fault>\n" +
-                        "            <faultcode>YOUR_FAULT_CODE</faultcode>\n" +
-                        "            <faultstring>YOUR_FAULT_STRING</faultstring>\n" +
-                        "            <faultactor>YOUR_FAULT_ACTOR</faultactor>\n" +
-                        "            <detail>YOUR_FAULT_DETAIL</detail>\n" +
-                        "        </soapenv:Fault>\n" +
-                        "    </soapenv:Body>\n" +
-                        "</soapenv:Envelope>";
+            if(assertion.isSoap12()) {
+                toShow = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                         "<soapenv:Envelope xmlns:xml=\"" + XMLConstants.XML_NS_URI + "\" xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                         "    <soapenv:Body>\n" +
+                         "        <soapenv:Fault>\n" +
+                         "            <soapenv:Code>\n" +
+                         "                <soapenv:Value>YOUR_FAULT_CODE</soapenv:Value>\n" +
+                         "            </soapenv:Code>\n" +
+                         "            <soapenv:Reason>\n" +
+                         "                <soapenv:Text xml:lang=\"en-US\">YOUR_FAULT_STRING</soapenv:Text>\n" +
+                         "            </soapenv:Reason>\n" +
+                         "            <soapenv:Role>YOUR_FAULT_ROLE</soapenv:Role>\n" +
+                         "            <soapenv:Detail>\n" +
+                         "               YOUR_FAULT_DETAIL\n" +
+                         "            </soapenv:Detail>\n" +
+                         "        </soapenv:Fault>\n" +
+                         "    </soapenv:Body>\n" +
+                         "</soapenv:Envelope>";
+            } else {
+                toShow = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                         "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                         "    <soapenv:Body>\n" +
+                         "        <soapenv:Fault>\n" +
+                         "            <faultcode>YOUR_FAULT_CODE</faultcode>\n" +
+                         "            <faultstring>YOUR_FAULT_STRING</faultstring>\n" +
+                         "            <faultactor>YOUR_FAULT_ACTOR</faultactor>\n" +
+                         "            <detail>YOUR_FAULT_DETAIL</detail>\n" +
+                         "        </soapenv:Fault>\n" +
+                         "    </soapenv:Body>\n" +
+                         "</soapenv:Envelope>";
+            }
         }
         editor.setText(toShow);
     }

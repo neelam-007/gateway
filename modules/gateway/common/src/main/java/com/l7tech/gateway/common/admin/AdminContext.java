@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
@@ -16,6 +17,12 @@ import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 
 public interface AdminContext {
+
+    /**
+     * @return the {@link IdentityAdmin} implementation
+     * @throws SecurityException on security error accessing the interface
+     */
+    AdminLogin getAdminLogin() throws SecurityException;
 
     /**
      * @return the {@link IdentityAdmin} implementation
@@ -89,6 +96,12 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     TransportAdmin getTransportAdmin() throws SecurityException;
+
+    /**
+     * @return the email listener admin interface implementation.
+     * @throws SecurityException on security error accessing the interface
+     */
+    EmailListenerAdmin getEmailListenerAdmin() throws SecurityException;
 
     /**
      * @return the Policy admin interface implementation.

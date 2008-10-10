@@ -1,21 +1,22 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.util.Registry;
+
+import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimerTask;
 import java.util.logging.Level;
-import java.text.SimpleDateFormat;
 import java.io.File;
 import java.io.IOException;
-import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.FileChooserUtil;
@@ -179,7 +180,12 @@ public class KerberosDialog extends JDialog {
                                 valid = true;
                             }
                             catch(KerberosException e) {
-                                errorMessageText = e.getMessage();
+                                // bug 5603: truncate the error message to a maximum length of 150 chars.
+                                if (e.getMessage() != null && e.getMessage().length() > 150) {
+                                    errorMessageText = new StringBuffer(e.getMessage().substring(0, 150)).append("...").toString();
+                                } else {
+                                    errorMessageText = e.getMessage();
+                                }
                             }
 
                             final boolean wasValid = valid;

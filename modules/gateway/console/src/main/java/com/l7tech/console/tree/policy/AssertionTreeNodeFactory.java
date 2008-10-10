@@ -21,6 +21,7 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import com.l7tech.policy.assertion.transport.PreemptiveCompression;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -111,6 +112,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HtmlFormDataAssertion.class, HtmlFormDataAssertionPolicyNode.class);
         assertionMap.put(CodeInjectionProtectionAssertion.class, CodeInjectionProtectionAssertionPolicyNode.class);
         assertionMap.put(Include.class, IncludeAssertionPolicyNode.class);
+        assertionMap.put(PreemptiveCompression.class, PreemptiveCompressionPolicyNode.class);
     }
 
     /**

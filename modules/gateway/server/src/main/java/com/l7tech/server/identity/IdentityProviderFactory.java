@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
@@ -178,11 +179,22 @@ public class IdentityProviderFactory
             if (IdentityProviderConfig.class.isAssignableFrom(iev.getEntityClass())) {
                 // Throw them out of the cache so they get reloaded next time they are needed
                 long[] oids = iev.getEntityIds();
-                if ( providers != null ) {
-                    for (long oid : oids) {
-                        providers.remove(oid);
-                    }
+                for (long oid : oids) {
+                    destroyProvider(oid);
+                    providers.remove(oid);
                 }
+            }
+        }
+    }
+
+    private void destroyProvider(long oid) {
+        IdentityProvider x = providers.get(oid);
+        if (x instanceof DisposableBean) {
+            DisposableBean disposableBean = (DisposableBean) x;
+            try {
+                disposableBean.destroy();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to destroy the identity provider " + oid, e);
             }
         }
     }

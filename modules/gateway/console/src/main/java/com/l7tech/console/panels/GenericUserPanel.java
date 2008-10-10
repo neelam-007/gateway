@@ -79,7 +79,7 @@ public class GenericUserPanel extends UserPanel {
     private static final String CERTIFICATE_LABEL = "Certificate";
 
     private static final String CANCEL_BUTTON = "Cancel";
-    private final static String CHANGE_PASSWORD_LABEL = "Change Password";
+    private final static String CHANGE_PASSWORD_LABEL = "Reset Password";
     private JLabel emailLabel;
     private JTextField emailTextField;
     private JButton changePassButton;
@@ -559,6 +559,9 @@ public class GenericUserPanel extends UserPanel {
             expirationPanel.setLayout(new BoxLayout(expirationPanel, BoxLayout.Y_AXIS));
             Box topPanel = Box.createHorizontalBox();
             Box botPanel = Box.createHorizontalBox();
+            Box upperTopPanel = Box.createHorizontalBox();
+
+            expirationPanel.add(upperTopPanel);
             expirationPanel.add(topPanel);
             expirationPanel.add(botPanel);
 
@@ -603,6 +606,7 @@ public class GenericUserPanel extends UserPanel {
 
             topPanel.add(Box.createHorizontalGlue());
             botPanel.add(Box.createHorizontalGlue());
+            upperTopPanel.add(Box.createHorizontalGlue());
         }
         return expirationPanel;
     }
@@ -622,7 +626,7 @@ public class GenericUserPanel extends UserPanel {
                     if (user instanceof InternalUser) {
                         InternalUser iu = (InternalUser) user;
                         DialogDisplayer.display(new PasswordDialog(TopComponents.getInstance().getTopParent(), userPanel,
-                                iu, passwordChangeListener));
+                                iu, passwordChangeListener, CHANGE_PASSWORD_LABEL));
                     } else {
                         throw new IllegalStateException("Password can only be changed for Internal users");
                     }

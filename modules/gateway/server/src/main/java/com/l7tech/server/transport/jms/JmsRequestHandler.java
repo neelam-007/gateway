@@ -7,6 +7,7 @@ import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.message.JmsKnob;
 import com.l7tech.message.MimeKnob;
@@ -15,7 +16,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -40,7 +41,7 @@ class JmsRequestHandler {
     final private MessageProcessor messageProcessor;
     final private AuditContext auditContext;
     final private SoapFaultManager soapFaultManager;
-    final private ClusterPropertyManager clusterPropertyManager;
+    final private ClusterPropertyCache clusterPropertyCache;
     final private StashManagerFactory stashManagerFactory;
 
     public JmsRequestHandler(ApplicationContext ctx) {
@@ -51,7 +52,7 @@ class JmsRequestHandler {
         messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
-        clusterPropertyManager = (ClusterPropertyManager)ctx.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+        clusterPropertyCache = (ClusterPropertyCache)ctx.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
@@ -177,7 +178,7 @@ class JmsRequestHandler {
                 try {
                     context.setAuditContext(auditContext);
                     context.setSoapFaultManager(soapFaultManager);
-                    context.setClusterPropertyManager(clusterPropertyManager);
+                    context.setClusterPropertyCache(clusterPropertyCache);
 
                     final Destination replyToDest = jmsRequest.getJMSReplyTo();
                     if (replyToDest != null || jmsRequest.getJMSCorrelationID() != null) {
@@ -233,6 +234,7 @@ class JmsRequestHandler {
                             if ( faultMessage == null ) faultMessage = status.getMessage();
                             try {
                                 String faultXml = SoapFaultUtils.generateSoapFaultXml(
+                                        (context.getService() != null) ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN,
                                         faultCode == null ? SoapConstants.FC_SERVER : faultCode,
                                         faultMessage, null, "");
 

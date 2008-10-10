@@ -50,6 +50,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     public static final String VALUE_BOOLEAN_TRUE = PREFIX + ".boolean.true";
     public static final String VALUE_BOOLEAN_FALSE = PREFIX + ".boolean.false";
     public static final String PROP_KEYSTORE_ALIAS = PREFIX + ".keystore.alias";
+    public static final String PROP_JNDI_USE_CLIENT_AUTH = PREFIX + ".jndi.useClientAuth";
     public static final String PROP_JNDI_SSG_KEYSTORE_ID = PREFIX + ".jndi.ssgKeystoreId";
     public static final String PROP_JNDI_SSG_KEY_ALIAS = PREFIX + ".jndi.ssgKeyAlias";
     public static final String PROP_QUEUE_USE_CLIENT_AUTH = PREFIX + ".queue.useClientAuth";
@@ -92,7 +93,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public EntityHeader toEntityHeader() {
-        return new EntityHeader(getOid(), EntityType.JMS_CONNECTION, getName(), null);
+        return new EntityHeader(Long.toString(getOid()), EntityType.JMS_CONNECTION, getName(), null);
     }
 
     @Column(name="username", length=32)

@@ -26,6 +26,7 @@ import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -37,6 +38,8 @@ import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.objectmodel.FindException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.xml.sax.SAXException;
@@ -46,12 +49,15 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.*;
+import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,8 +71,21 @@ import java.util.logging.Logger;
  */
 public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
+    public static final String SOAP_1_2_CONTENT_TYPE = SOAPConstants.SOAP_1_2_CONTENT_TYPE + "; charset=utf-8";
     public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco?serviceoid=";
+
+    private static final String GZIP_REQUESTS_FORBIDDEN_SOAP_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                                                     "    <soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                                                                     "    <soapenv:Body>\n" +
+                                                                     "        <soapenv:Fault>\n" +
+                                                                     "            <faultcode>soapenv:Server</faultcode>\n" +
+                                                                     "            <faultstring>Rejecting GZIP compressed request</faultstring>\n" +
+                                                                     "            <faultactor>http://soong:8080/xml/blub</faultactor>\n" +
+                                                                     "            <detail>This server does not accept GZIP compressed requests.</detail>\n" +
+                                                                     "        </soapenv:Fault>\n" +
+                                                                     "    </soapenv:Body>\n" +
+                                                                     "</soapenv:Envelope>";
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
@@ -75,6 +94,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
     private ClusterPropertyManager clusterPropertyManager;
+    private ClusterPropertyCache clusterPropertyCache;
     private LicenseManager licenseManager;
     private StashManagerFactory stashManagerFactory;
     private ServiceCache serviceCache;
@@ -90,6 +110,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         auditContext = (AuditContext)applicationContext.getBean("auditContext");
         soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
         clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
+        clusterPropertyCache = (ClusterPropertyCache)applicationContext.getBean("clusterPropertyCache");
         licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
         stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
         serviceCache = (ServiceCache)applicationContext.getBean("serviceCache");
@@ -111,6 +132,55 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     protected void service(HttpServletRequest hrequest, HttpServletResponse hresponse)
             throws ServletException, IOException
     {
+        GZIPInputStream gis = null;
+        String maybegzipencoding = hrequest.getHeader("content-encoding");
+        boolean gzipEncodedTransaction = false;
+        if (maybegzipencoding != null) { // case of value ?
+            if (maybegzipencoding.contains("gzip")) {
+                try {
+                    if("false".equalsIgnoreCase(clusterPropertyManager.getProperty("request.compress.gzip.allow"))) {
+                        logger.log(Level.WARNING, "Rejecting GZIP compressed request.");
+                        String soapFault = GZIP_REQUESTS_FORBIDDEN_SOAP_FAULT.replace("http://soong:8080/xml/blub",
+                                hrequest.getScheme() + "://" + hrequest.getServerName() +
+                                (hrequest.getServerPort() == 80 ? "" : ":" + hrequest.getServerPort()) +
+                                hrequest.getRequestURI());
+                        OutputStream responseStream = null;
+                        try {
+                            responseStream = hresponse.getOutputStream();
+                            hresponse.setStatus(500);
+                            hresponse.setContentType(DEFAULT_CONTENT_TYPE);
+                            responseStream.write(soapFault.getBytes("UTF-8"));
+                        } finally {
+                            if(responseStream != null) responseStream.close();
+                        }
+                        return;
+                    }
+                } catch(FindException e) {
+                    // Assume that GZipped requests are allowed
+                }
+                
+                gzipEncodedTransaction = true;
+                logger.fine("request with gzip content-encoding detected " + hrequest.getContentLength());
+                //logger.info("Compression #2");
+                try {
+                    InputStream original = hrequest.getInputStream();
+                    gis = new GZIPInputStream(original);
+                } catch (Exception e) {
+                    String exceptionMessage = ExceptionUtils.getMessage(e);
+                    logger.log(Level.WARNING, "Cannot decompress the incoming request. " + exceptionMessage);
+                    byte[] bytes = IOUtils.slurpStream(hrequest.getInputStream());
+                    logger.fine("Read this instead: " + new String(bytes));
+                    if(e instanceof IOException && exceptionMessage.contains("Not in GZIP format")){
+                        gzipEncodedTransaction = false; //do this for all exceptions here?
+                    }
+                }
+            } else {
+                logger.fine("content-encoding not gzip " + maybegzipencoding);
+            }
+        } else {
+            logger.fine("no content-encoding specified");
+        }
+
         if ("/".equals(hrequest.getRequestURI())) {
             try {
                 if (!serviceCache.hasCatchAllService()) {
@@ -148,6 +218,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setReplyExpected(true); // HTTP always expects to receive a reply
+        context.setRequestWasCompressed(gzipEncodedTransaction);
 
         initCookies(hrequest.getCookies(), context);
 
@@ -156,9 +227,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         try {
             context.setAuditContext(auditContext);
             context.setSoapFaultManager(soapFaultManager);
-            context.setClusterPropertyManager(clusterPropertyManager);
+            context.setClusterPropertyCache(clusterPropertyCache);
 
-            request.initialize(stashManager, ctype, hrequest.getInputStream());
+            if (gzipEncodedTransaction) {
+                request.initialize(stashManager, ctype, gis);
+                context.setVariable("request.compression.gzip.found", Boolean.TRUE);
+            } else {
+                request.initialize(stashManager, ctype, hrequest.getInputStream());
+                context.setVariable("request.compression.gzip.found", Boolean.FALSE);
+            }
 
             final MimeKnob mk = request.getMimeKnob();
             HttpServletRequestKnob reqKnob = new HttpServletRequestKnob(new LazyInputStreamServletRequestWrapper(hrequest, new MimeKnobInputStreamHolder(mk)));
@@ -231,6 +308,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
                 }
                 OutputStream responseos = hresponse.getOutputStream();
+                if (gzipEncodedTransaction) {
+                    //logger.info("Compression #3");
+                    logger.fine("zipping response back to requester");
+                    hresponse.setHeader("content-encoding", "gzip");
+                    responseos = new GZIPOutputStream(responseos);
+                }
                 IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
                 responseos.close();
                 logger.fine("servlet transport returned status " + routeStat +
@@ -256,7 +339,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
             try {
                 if (e instanceof PolicyAssertionException) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    if (ExceptionUtils.causedBy(e, LicenseException.class)) {
+                        // Unlicensed assertion; suppress stack trace (Bug #5499)
+                        logger.log(Level.SEVERE, e.getMessage());
+                    } else {
+                        logger.log(Level.SEVERE, e.getMessage(), e);
+                    }
                     sendExceptionFault(context, e, hrequest, hresponse);
                 } else if (e instanceof PolicyVersionException) {
                     String msg = "Request referred to an outdated version of policy";
@@ -268,9 +356,17 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 } else if (e instanceof MethodNotAllowedException) {
                     logger.warning(e.getMessage());
                     sendExceptionFault(context, e, hrequest, hresponse);
+                } else if (e instanceof MessageProcessingSuspendedException) {
+                    auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_MESSAGE_PROCESSING_SUSPENDED, e.getMessage());
+                    sendExceptionFault(context, e, hrequest, hresponse);
                 } else if (e instanceof IOException &&
                            e.getClass().getName().equals("org.apache.catalina.connector.ClientAbortException")){
                     logger.warning("Client closed connection.");
+                } else if (e instanceof MessageResponseIOException) {
+                    sendExceptionFault(context, e.getMessage(), hrequest, hresponse);
+                } else if (e instanceof IOException) {
+                    logger.warning("I/O error while processing message: " + e.getMessage());
+                    sendExceptionFault(context, e, hrequest, hresponse);
                 } else if (ExceptionUtils.causedBy(e, SocketTimeoutException.class)) {
                     auditor.logAndAudit(SystemMessages.SOCKET_TIMEOUT);
                     sendExceptionFault(context, e, hrequest, hresponse);
@@ -345,7 +441,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         String faultXml = null;
         try {
             responseStream = hresp.getOutputStream();
-            hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            if(context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
+                hresp.setContentType(SOAP_1_2_CONTENT_TYPE);
+            } else {
+                hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            }
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
@@ -369,11 +469,19 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
                                     HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
+        sendExceptionFault(context, soapFaultManager.constructExceptionFault(e, context), hreq, hresp);
+    }
+
+    private void sendExceptionFault(PolicyEnforcementContext context, String faultXml,
+                                    HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
         OutputStream responseStream = null;
-        String faultXml = null;
         try {
             responseStream = hresp.getOutputStream();
-            hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            if(context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
+                hresp.setContentType(SOAP_1_2_CONTENT_TYPE);
+            } else {
+                hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            }
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
@@ -386,7 +494,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     }
                 }
             }
-            faultXml = soapFaultManager.constructExceptionFault(e, context);
             responseStream.write(faultXml.getBytes());
         } finally {
             if (responseStream != null) responseStream.close();

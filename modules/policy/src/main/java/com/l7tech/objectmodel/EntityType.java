@@ -35,6 +35,7 @@ public class EntityType implements Serializable {
     public static final EntityType FOLDER = new EntityType(21, "Folder");
     public static final EntityType SERVICE_ALIAS = new EntityType(22, "Published Service Alias");
     public static final EntityType POLICY_ALIAS = new EntityType(23, "Policy Alias");
+    public static final EntityType EMAIL_LISTENER = new EntityType(20, "Email Listener");
     public static final EntityType AUDIT_RECORD = new EntityType(24, "Audit Record");
     public static final EntityType UNDEFINED = new EntityType(-1, "Undefined");
 
@@ -147,13 +148,14 @@ public class EntityType implements Serializable {
                 return "CONNECTOR";
             case 18:
  	 	        return "POLICY";
+            case 20:
+                return "EMAIL_LISTENER";
             case 21:
                 return "FOLDER";
             case 22:
                 return "SERVICE_ALIAS";
             case 23:
                 return "POLICY_ALIAS";
-
             default:
                 return "?";
         }
@@ -206,6 +208,8 @@ public class EntityType implements Serializable {
  	 	        return POLICY;
             case 19:
                 return POLICY_VERSION;
+            case 20:
+                return EMAIL_LISTENER;
             case 21:
                 return FOLDER;
             case 22:

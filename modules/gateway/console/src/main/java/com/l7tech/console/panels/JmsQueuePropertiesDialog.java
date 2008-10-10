@@ -61,7 +61,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JPasswordField queuePasswordField;
     private JPanel queueExtraPropertiesOuterPanel;   // For provider-specific settings.
     private JmsExtraPropertiesPanel queueExtraPropertiesPanel;
-    private JCheckBox useJmsMsgPropAsSoapActionCheckBox;
     private JLabel jmsMsgPropWithSoapActionLabel;
     private JTextField jmsMsgPropWithSoapActionTextField;
     private JComboBox acknowledgementModeComboBox;
@@ -80,7 +79,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JRadioButton outboundReplyNoneRadioButton;
     private JRadioButton outboundReplySpecifiedQueueRadioButton;
     private JTextField outboundReplySpecifiedQueueField;
-    private JCheckBox associateQueueWithPublishedCheckBox;
     private JLabel serviceNameLabel;
     private JComboBox serviceNameCombo;
     private JRadioButton outboundFormatAutoRadioButton;
@@ -93,8 +91,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JRadioButton outboundMessageIdRadioButton;
     private JPanel inboundCorrelationPanel;
     private JPanel outboundCorrelationPanel;
-    private JPanel outboundOptionsPanel;
-    private JPanel inboundOptionsPanel;
+    private JPanel msgResolutionPanel;
+    private JRadioButton defaultToNormalResolutionRadioButton;
+    private JRadioButton useJmsMsgPropAsSoapActionRadioButton;
+    private JRadioButton associateQueueWithPublishedRadioButton;
+    private JPanel propertyNamePanel;
+    private JPanel serviceNamePanel;
 
     private JmsConnection connection = null;
     private JmsEndpoint endpoint = null;
@@ -217,6 +219,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         initProviderComboBox();
 
+//        useJndiCredentialsCheckBox.addItemListener(formPreener);
         useJndiCredentialsCheckBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 enableOrDisableJndiCredentials();
@@ -225,6 +228,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         Utilities.enableGrayOnDisabled(jndiUsernameTextField);
         Utilities.enableGrayOnDisabled(jndiPasswordField);
 
+//        useQueueCredentialsCheckBox.addItemListener(formPreener);
         useQueueCredentialsCheckBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 enableOrDisableQueueCredentials();
@@ -245,7 +249,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         jndiPasswordField.setDocument(new MaxLengthDocument(32));
         // Case 2: in the Queue Tab
         qcfTextField.setDocument(new MaxLengthDocument(255));
-        queueNameTextField.setDocument(new MaxLengthDocument(128));
+        queueNameTextField.setDocument(new MaxLengthDocument(255));
         queueUsernameTextField.setDocument(new MaxLengthDocument(32));
         queuePasswordField.setDocument(new MaxLengthDocument(32));
         // Case 3: in the Inbound or Outbound Options Tab
@@ -266,6 +270,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
         failureQueueNameTextField.getDocument().addDocumentListener(formPreener);
         jmsMsgPropWithSoapActionTextField.getDocument().addDocumentListener(formPreener);
         outboundReplySpecifiedQueueField.getDocument().addDocumentListener(formPreener);
+
+//        jndiUsernameTextField.getDocument().addDocumentListener(formPreener);
+//        jndiPasswordField.getDocument().addDocumentListener(formPreener);
+//        queueUsernameTextField.getDocument().addDocumentListener(formPreener);
+//        queuePasswordField.getDocument().addDocumentListener(formPreener);
 
         final ComponentEnabler inboundEnabler = new ComponentEnabler(new Functions.Nullary<Boolean>() {
             public Boolean call() {
@@ -343,10 +352,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
         acknowledgementModeComboBox.addActionListener(formPreener);
         useQueueForFailedCheckBox.addActionListener(formPreener);
         Utilities.enableGrayOnDisabled(failureQueueNameTextField);
-        useJmsMsgPropAsSoapActionCheckBox.addItemListener(formPreener);
+        useJmsMsgPropAsSoapActionRadioButton.addItemListener(formPreener);
         jmsMsgPropWithSoapActionTextField.getDocument().addDocumentListener(formPreener);
         Utilities.enableGrayOnDisabled(jmsMsgPropWithSoapActionTextField);
-        associateQueueWithPublishedCheckBox.addActionListener(formPreener);
+        associateQueueWithPublishedRadioButton.addActionListener(formPreener);
+        defaultToNormalResolutionRadioButton.addActionListener(formPreener);
 
         testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -452,7 +462,15 @@ public class JmsQueuePropertiesDialog extends JDialog {
      */
     private void setExtraPropertiesPanels(JmsProvider provider, Properties extraProperties) {
         final String icfClassname = provider.getInitialContextFactoryClassname();
-        if ("com.tibco.tibjms.naming.TibjmsInitialContextFactory".equals(icfClassname)) {
+        if ( "fiorano.jms.runtime.naming.FioranoInitialContextFactory".equals(icfClassname)) {
+            jndiExtraPropertiesPanel = new FioranoJndiExtraPropertiesPanel(extraProperties);
+            jndiExtraPropertiesOuterPanel.removeAll();  //clean out what's previous
+            jndiExtraPropertiesOuterPanel.add(jndiExtraPropertiesPanel);    //set with new properties
+            queueExtraPropertiesPanel = null; //new FioranoQueueExtraPropertiesPanel(extraProperties);
+            queueExtraPropertiesOuterPanel.removeAll(); //clean out what's previous
+            //queueExtraPropertiesOuterPanel.add(queueExtraPropertiesPanel);  //set with new properties panel
+        }
+        else if ("com.tibco.tibjms.naming.TibjmsInitialContextFactory".equals(icfClassname)) {
             jndiExtraPropertiesPanel = new TibcoEmsJndiExtraPropertiesPanel(extraProperties);
             jndiExtraPropertiesOuterPanel.removeAll();
             jndiExtraPropertiesOuterPanel.add(jndiExtraPropertiesPanel);
@@ -542,7 +560,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             conn.setPassword(null);
         }
 
-        if (associateQueueWithPublishedCheckBox.isSelected()) {
+        if (associateQueueWithPublishedRadioButton.isSelected()) {
             ComboItem item = (ComboItem)serviceNameCombo.getSelectedItem();
             properties.setProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE, (Boolean.TRUE).toString());
             properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, (new Long(item.serviceID)).toString());
@@ -559,7 +577,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (queueExtraPropertiesPanel != null) {
             properties.putAll(queueExtraPropertiesPanel.getProperties());
         }
-        if (useJmsMsgPropAsSoapActionCheckBox.isSelected()) {
+        if (useJmsMsgPropAsSoapActionRadioButton.isSelected()) {
             properties.put(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION, jmsMsgPropWithSoapActionTextField.getText());
         }
         conn.properties(properties);
@@ -656,9 +674,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private static void configureEndpointReplyBehaviour(JmsEndpoint ep, String what, final JRadioButton autoButton, final JRadioButton noneButton, final JRadioButton specifiedButton, final JTextField specifiedField, JRadioButton messageIdRadioButton) {
         if (autoButton.isSelected()) {
             ep.setReplyType(JmsReplyType.AUTOMATIC);
+            ep.setReplyToQueueName(null);
             if (ep.isMessageSource()) ep.setUseMessageIdForCorrelation(messageIdRadioButton.isSelected());
         } else if (noneButton.isSelected()) {
             ep.setReplyType(JmsReplyType.NO_REPLY);
+            ep.setReplyToQueueName(null);
         } else if (specifiedButton.isSelected()) {
             ep.setReplyType(JmsReplyType.REPLY_TO_OTHER);
             final String t = specifiedField.getText();
@@ -787,14 +807,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
             if (isHardWired) {
                 String message = "Service " + hardWiredId + " is selected, but cannot be displayed.";
                 serviceNameCombo.addItem(new ComboItem(message, hardWiredId));
-                associateQueueWithPublishedCheckBox.setSelected(true);
+                associateQueueWithPublishedRadioButton.setSelected(true);
             }
             // Case 2: There are no any published services at all.
             else {
                 // We just want to show the message "No published services available." in the combo box.
                 // So "-1" is just a dummy ServiceOID and it won't be used since the checkbox is set to disabled.
                 serviceNameCombo.addItem(new ComboItem("No published services available.", -1));
-                associateQueueWithPublishedCheckBox.setEnabled(false);
             }
         } else {
             java.util.List<EntityHeader> onlySoapServicesList = new ArrayList<EntityHeader>();
@@ -813,10 +832,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
             serviceNameCombo.setModel(new DefaultComboBoxModel(comboitems));
             if (selectMe != null) {
                 serviceNameCombo.setSelectedItem(selectMe);
-                associateQueueWithPublishedCheckBox.setSelected(true);
-            } else {
-                associateQueueWithPublishedCheckBox.setSelected(false);
-            }
+                associateQueueWithPublishedRadioButton.setSelected(true);
+            } 
         }
         useQueueForFailedCheckBox.setSelected(false);
         failureQueueNameTextField.setText("");
@@ -866,7 +883,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             }
         }
 
-        useJmsMsgPropAsSoapActionCheckBox.setSelected(false);
+        useJmsMsgPropAsSoapActionRadioButton.setSelected(false);
         jmsMsgPropWithSoapActionTextField.setText("");
         if (endpoint != null) {
             // Configure gui from endpoint
@@ -875,7 +892,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             if (connection != null) {
                 final String propName = (String)connection.properties().get(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION);
                 if (propName != null) {
-                    useJmsMsgPropAsSoapActionCheckBox.setSelected(true);
+                    useJmsMsgPropAsSoapActionRadioButton.setSelected(true);
                     jmsMsgPropWithSoapActionTextField.setText(propName);
                 }
             }
@@ -909,10 +926,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return false;
         if (outboundRadioButton.isSelected() && !isOutboundPaneValid())
             return false;
-        //noinspection RedundantIfStatement
         if (inboundRadioButton.isSelected() && !isInboundPaneValid())
             return false;
+//        if (useJndiCredentialsCheckBox.isSelected() && jndiUsernameTextField.getText().trim().length() == 0)
+//            return false;
+//
+//        return !(useQueueCredentialsCheckBox.isSelected() && queueUsernameTextField.getText().trim().length() == 0);
         return true;
+
     }
 
     private boolean isOutboundPaneValid() {
@@ -928,12 +949,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
             useQueueForFailedCheckBox.isSelected() &&
             failureQueueNameTextField.getText().trim().length() == 0)
             return false;
-        if (useJmsMsgPropAsSoapActionCheckBox.isSelected() &&
-            jmsMsgPropWithSoapActionTextField.getText().length() == 0)
+        if (useJmsMsgPropAsSoapActionRadioButton.isSelected() &&
+            jmsMsgPropWithSoapActionTextField.getText().trim().length() == 0)
             return false;
-        //noinspection RedundantIfStatement
         if (inboundReplySpecifiedQueueField.isEnabled() &&
             inboundReplySpecifiedQueueField.getText().trim().length() == 0)
+            return false;
+        if (associateQueueWithPublishedRadioButton.isSelected() &&
+                (serviceNameCombo == null || serviceNameCombo.getItemCount() <= 0))
             return false;
         return true;
     }
@@ -953,11 +976,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
      */
     private void enableOrDisableComponents() {
         if (inboundRadioButton.isSelected()) {
-            useJmsMsgPropAsSoapActionCheckBox.setEnabled(true);
-            jmsMsgPropWithSoapActionLabel.setEnabled(useJmsMsgPropAsSoapActionCheckBox.isSelected());
-            jmsMsgPropWithSoapActionTextField.setEnabled(useJmsMsgPropAsSoapActionCheckBox.isSelected());
-            serviceNameLabel.setEnabled(associateQueueWithPublishedCheckBox.isSelected());
-            serviceNameCombo.setEnabled(associateQueueWithPublishedCheckBox.isSelected());
+            useJmsMsgPropAsSoapActionRadioButton.setEnabled(true);
+            jmsMsgPropWithSoapActionLabel.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected() && !defaultToNormalResolutionRadioButton.isSelected());
+            jmsMsgPropWithSoapActionTextField.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected() && !defaultToNormalResolutionRadioButton.isSelected());
+            serviceNameLabel.setEnabled(associateQueueWithPublishedRadioButton.isSelected() && !defaultToNormalResolutionRadioButton.isSelected());
+            serviceNameCombo.setEnabled(associateQueueWithPublishedRadioButton.isSelected() && !defaultToNormalResolutionRadioButton.isSelected());
             tabbedPane.setEnabledAt(3, true);
             tabbedPane.setEnabledAt(4, false);
             enableOrDisableAcknowledgementControls();
@@ -1011,7 +1034,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 useQueueCredentialsCheckBox,
                 queueUsernameTextField,
                 queuePasswordField,
-                useJmsMsgPropAsSoapActionCheckBox,
+                useJmsMsgPropAsSoapActionRadioButton,
                 jmsMsgPropWithSoapActionTextField,
                 acknowledgementModeComboBox,
                 useQueueForFailedCheckBox,
@@ -1019,8 +1042,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
         });
         securityFormAuthorizationPreparer.prepare(jndiExtraPropertiesOuterPanel);
         securityFormAuthorizationPreparer.prepare(queueExtraPropertiesOuterPanel);
-        securityFormAuthorizationPreparer.prepare(inboundOptionsPanel);
-        securityFormAuthorizationPreparer.prepare(outboundOptionsPanel);
     }
 
     private void onTest() {
@@ -1040,7 +1061,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
               JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
             String errorMsg = (ExceptionUtils.causedBy(ex, JmsNotSupportTopicException.class))?
-                    ex.getMessage() : "The Gateway was unable to find this JMS Queue:\n" + ex.getMessage();
+                    ex.getMessage() : "The Gateway was unable to find this JMS Queue.\n";
             JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
               errorMsg,
               "JMS Connection Settings",

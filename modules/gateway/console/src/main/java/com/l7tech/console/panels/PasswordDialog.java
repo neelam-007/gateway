@@ -65,6 +65,8 @@ public class PasswordDialog extends JDialog {
     private EntityListener listener;
     private UserPanel userPanel;
 
+    private JCheckBox forceChangePasswordCheckBox;
+    private String title = null;
     /**
      * Create a new PasswordDialog
      *
@@ -79,6 +81,19 @@ public class PasswordDialog extends JDialog {
         initComponents();
         pack();
         Utilities.centerOnScreen(this);
+    }
+
+    public PasswordDialog(Frame parent, UserPanel userPanel, InternalUser user, EntityListener l, String title) {
+        super(parent, true);
+        this.userPanel = userPanel;
+        this.user = user;
+        this.listener = l;
+        this.title = title;
+        initResources();
+        initComponents();
+        pack();
+        Utilities.centerOnScreen(this);
+
     }
 
     /**
@@ -99,7 +114,11 @@ public class PasswordDialog extends JDialog {
 
         Container contents = getContentPane();
         contents.setLayout(new GridBagLayout());
-        setTitle(resources.getString("dialog.title"));
+        if (title == null || title.equalsIgnoreCase("")) {
+            setTitle(resources.getString("dialog.title"));
+        } else {
+            setTitle(title);
+        }
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent event) {
@@ -166,13 +185,26 @@ public class PasswordDialog extends JDialog {
         constraints.insets = new Insets(12, 7, 0, 11);
         contents.add(confirmPasswordField, constraints);
 
+        forceChangePasswordCheckBox = new JCheckBox();
+        forceChangePasswordCheckBox.setSelected(true);
+        forceChangePasswordCheckBox.setToolTipText(resources.getString("forceChangePassword.tooltip"));
+        forceChangePasswordCheckBox.setText(resources.getString("forceChangePassword.label"));
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.gridwidth = 2;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(11, 10, 0, 0);
+        contents.add(forceChangePasswordCheckBox, constraints);
+
         Utilities.
           equalizeLabelSizes(
             new JLabel[]{confirmPasswordLabel, passwordLabel});
 
         constraints = new GridBagConstraints();
         constraints.gridx = 2;
-        constraints.gridy = 2;
+        constraints.gridy = 3;
         constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.anchor = GridBagConstraints.EAST;
@@ -332,9 +364,11 @@ public class PasswordDialog extends JDialog {
                 }
             }
 
-            user.setCleartextPassword(new String(newPass));
+            user.setPasswordChanges(Registry.getDefault().getClusterStatusAdmin().getCurrentClusterSystemTime().getTime(), new String(newPass));
+            user.setChangePassword(forceChangePasswordCheckBox.isSelected());
             Registry.getDefault().getIdentityAdmin().saveUser(
                     IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, user, null); // TODO make sure passing null here won't clear group memberships
+            Registry.getDefault().getIdentityAdmin().resetLogonFailCount(user);
             dispose();
             if (listener != null) {
                 EntityHeader eh = new EntityHeader();

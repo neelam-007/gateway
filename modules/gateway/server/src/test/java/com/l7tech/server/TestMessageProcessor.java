@@ -10,12 +10,14 @@ import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.AuditContextStub;
+import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.PolicyCache;
+import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsManagerImpl;
-import com.l7tech.server.log.TrafficLogger;
+import com.l7tech.server.util.ManagedTimer;
+import com.l7tech.server.util.SoapFaultManager;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -41,12 +43,12 @@ public class TestMessageProcessor extends MessageProcessor {
      */
     public TestMessageProcessor(ServiceCache sc, PolicyCache pc, WssDecorator wssd)
       throws IllegalArgumentException {
-        super(sc, pc, wssd, null, new TestLicenseManager(), new ServiceMetricsManagerImpl("yo",null), new AuditContextStub(), ServerConfig.getInstance(), new TrafficLogger(ServerConfig.getInstance(), null));
+        super(sc, pc, wssd, null, new TestLicenseManager(), new ServiceMetricsManagerImpl("yo",null), new AuditContextStub(), ServerConfig.getInstance(), new TrafficLogger(ServerConfig.getInstance(), null), new SoapFaultManager(ServerConfig.getInstance(), new ManagedTimer("Soap fault manager refresh")));
     }
 
     @Override
     public AssertionStatus processMessage(PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
+        throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException {
 
         try {
             notifyListenersBefore(context);

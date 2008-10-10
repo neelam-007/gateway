@@ -24,7 +24,7 @@ import java.awt.*;
  */
 public class PublishPolicyToUDDIRegistry extends NodeAction {
     public PublishPolicyToUDDIRegistry(ServiceNode node) {
-        super(node, LIC_AUTH_ASSERTIONS, null);
+        super(node, "set:core", null);
     }
 
     public String getName() {

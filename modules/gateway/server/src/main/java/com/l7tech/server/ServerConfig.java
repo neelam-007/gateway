@@ -84,6 +84,17 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThreshold";
     public static final String PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThresholdRespected";
 
+    public static final String PARAM_AUDIT_ARCHIVER_TIMER_PERIOD = "auditArchiverTimerPeriod";
+    public static final String PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD = "auditArchiverShutdownThreshold";
+    public static final String PARAM_AUDIT_ARCHIVER_START_THRESHOLD = "auditArchiverStartThreshold";
+    public static final String PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD = "auditArchiverStopThreshold";
+    public static final String PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT = "auditArchiverStaleTimeout";
+    public static final String PARAM_AUDIT_ARCHIVER_BATCH_SIZE = "auditArchiverBatchSize";
+    public static final String PARAM_AUDIT_ARCHIVER_IN_PROGRESS = "audit.archiverInProgress";
+    public static final String PARAM_AUDIT_ARCHIVER_FTP_DESTINATION = "audit.archiver.ftp.config";
+    public static final String PARAM_AUDIT_ARCHIVER_FTP_FILEPREFIX = "auditArchiverFtpFileprefix";
+    public static final String PARAM_AUDIT_ARCHIVER_FTP_MAX_UPLOAD_FILE_SIZE = "auditArchiverFtpMaxUploadFileSize";
+
     public static final String CONFIG_AUDIT_SIGN_CLUSTER = "audit.signing";
 
     public static final String PARAM_ANTIVIRUS_ENABLED = "savseEnable";
@@ -159,11 +170,22 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_ADD_MAPPINGS_INTO_AUDIT = "customerMapping.addToGatewayAuditEvents";
     public static final String PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS = "customerMapping.addToServiceMetrics";
 
+    public static final String PARAM_EMAIL_LISTENER_THREAD_LIMIT = "emailListenerThreadLimit";
+    public static final String PARAM_EMAIL_LISTENER_THREAD_DISTRIBUTION = "emailListenerThreadDistribution";
+
     public static final String PARAM_LOG_DIRECTORY = "logDirectory";
 
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
-    public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
+    public static final String PARAM_MAX_LOGIN_ATTEMPTS_ALLOW = "logon.maxAllowableAttempts";
+    public static final String PARAM_MAX_LOCKOUT_TIME = "logon.lockoutTime";
+    public static final String PARAM_PASSWORD_EXPIRY = "password.expiry";
+
+    public static final String PARAM_KERBEROS_CONFIG_REALM = "krb5Realm";
+    public static final String PARAM_KERBEROS_CONFIG_KDC = "krb5KDC";
+
+    public static final String PARAM_LDAPCERTINDEX_REBUILD_INTERVAL="ldapCertIndexInterval";
+    public static final String PARAM_LDAPCERT_CACHE_LIFETIME="ldapCertCacheLifetime";
 
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
     public static final String PROPS_RESOURCE_PROPERTY = "com.l7tech.server.serverConfigPropertiesResource";

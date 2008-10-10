@@ -36,7 +36,7 @@ tstr_to_utf8(const LPTSTR in)
 	// TSTR is wide characters
 	int needed = ::WideCharToMultiByte(CP_UTF8, 0, in, -1, 0, 0, NULL, NULL);
 	string out(needed, '\0');
-	::WideCharToMultiByte(CP_UTF8, 0, in, -1, &(*out.begin()), out.length(), NULL, NULL);
+    ::WideCharToMultiByte(CP_UTF8, 0, in, -1, &(*out.begin()), (int)out.length(), NULL, NULL);
 	return out;
 #else
 	// TSTR is ANSI characters.  Not supported

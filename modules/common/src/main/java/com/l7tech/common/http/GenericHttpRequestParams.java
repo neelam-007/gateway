@@ -365,4 +365,28 @@ public class GenericHttpRequestParams {
         keepers.add(extraHeader);
         extraHeaders = keepers;
     }
+
+    /**
+     * Remove any existing extra HttpHeader instances with the specified name.
+     * Be warned that this may not be very fast.
+     *
+     * @param headerName the name of the headers to remove.  Required.
+     * @return true iff. any headers were removed.
+     */
+    public boolean removeExtraHeader(String headerName) {
+        if (extraHeaders == null || extraHeaders.size() < 1)
+            return false;
+
+        boolean removed = false;
+        List<HttpHeader> keepers = new ArrayList<HttpHeader>();
+        for (HttpHeader header : extraHeaders) {
+            if (header.getName().equalsIgnoreCase(headerName)) {
+                removed = true;
+            } else {
+                keepers.add(header);
+            }
+        }
+        extraHeaders = keepers;
+        return removed;
+    }
 }

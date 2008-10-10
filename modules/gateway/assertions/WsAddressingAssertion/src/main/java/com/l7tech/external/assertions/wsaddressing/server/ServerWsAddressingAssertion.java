@@ -249,6 +249,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             wssResults = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
         } catch (SAXException e) {
             throw new CausedIOException(e);
+        } catch (Exception e) {
+            throw new CausedIOException(e);
         }
 
         if ( wssResults == null ) {

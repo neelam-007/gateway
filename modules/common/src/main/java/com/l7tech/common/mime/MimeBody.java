@@ -893,6 +893,27 @@ public class MimeBody implements Iterable<PartInfo> {
             }
         }
 
+        public byte[] getBytesIfAvailableOrSmallerThan(int maxSize) throws IOException, NoSuchPartException {
+            byte[] bytes = getBytesIfAlreadyAvailable();
+            if (bytes != null)
+                return bytes;
+
+            long len = getActualContentLength();
+            if (len > (long)maxSize)
+                return null;
+
+            InputStream is = null;
+            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream((int)len);
+            try {
+                is = stashManager.recall(ordinal);
+                IOUtils.copyStream(is, baos);
+                return baos.toByteArray();
+            } finally {
+                ResourceUtils.closeQuietly(baos);
+                ResourceUtils.closeQuietly(is);
+            }
+        }
+
         /**
          * Get a previously stashed InputStream or, if there isn't one, ensure that the main input stream
          * is positioned to read this part's body.

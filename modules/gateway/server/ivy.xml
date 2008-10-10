@@ -32,7 +32,7 @@
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-common" rev="latest.integration" force="true" conf="core; test->default,test"/>
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core; test->default,test"/>
-        <dependency name="layer7-proxy" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-proxy" rev="latest.integration" force="true" conf="core; test->default,test"/>
         <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-gateway-management" rev="latest.integration" force="true" conf="core"/>
 
@@ -74,9 +74,6 @@
         <dependency org="org.springframework" name="spring-webmvc" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="aspectjweaver" rev="2.5.4" force="true" conf="core"/> <!-- Used for parsing pointcut expressions only -->
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional"/>
-
-        <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.1.1" force="true" conf="core"/>
-
         <dependency org="trove" name="trove" rev="1.0.2" force="true" conf="core"/>
         <dependency org="org.apache.ftpserver" name="ftpserver-parent" rev="1.0-543677-20070601" force="true"
                     conf="core"/>
@@ -94,6 +91,9 @@
         <dependency org="com.tibco" name="jms" rev="1.5" force="true" conf="optional"/>
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
         <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.1.1" force="true" conf="core"/>
+        <dependency org="com.jscape" name="sftp" rev="7.0.2" force="true" conf="core"/>
+        <dependency org="fiorano" name="fmq-client" rev="1.0-4507" force="true" conf="optional"/>
+        <dependency org="fiorano" name="fiorano-framework" rev="1.0-4507" force="true" conf="optional"/>
         
         <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

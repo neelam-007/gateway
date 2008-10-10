@@ -171,12 +171,15 @@
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
         <property name="identityProviderFactory" ref='identityProviderFactory'/>
         <property name="adminSessionManager" ref="adminSessionManager"/>
+        <property name="serverConfig" ref="serverConfig"/>
     </bean>
 
     <!-- identity admin servant -->
     <bean id="identityAdmin" class="com.l7tech.server.identity.IdentityAdminImpl">
         <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="passwordEnforcerManager"/>
         <constructor-arg ref="defaultKey"/>
+        <constructor-arg ref="logonService"/>
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
@@ -189,6 +192,7 @@
         <property name="logRecordManager" ref="logRecordManager"/>
         <property name="serverConfig" ref="serverConfig"/>
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
+        <property name="auditArchiver" ref="auditArchiver"/>
     </bean>
 
     <!-- service admin servant -->
@@ -235,7 +239,6 @@
     <bean id="ftpAdmin" class="com.l7tech.server.transport.ftp.FtpAdminImpl">
         <constructor-arg ref="routingTrustManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
-        <constructor-arg ref="assertionRegistry"/>
     </bean>
 
     <!-- trusted cert admin servant -->
@@ -250,6 +253,11 @@
     <bean id="transportAdmin" class="com.l7tech.server.transport.TransportAdminImpl">
         <constructor-arg ref="ssgConnectorManager"/>
         <constructor-arg ref="defaultKey"/>
+    </bean>
+
+    <bean id="emailListenerAdmin" class="com.l7tech.server.transport.email.EmailListenerAdminImpl">
+        <constructor-arg ref="emailListenerManager"/>
+        <constructor-arg ref="clusterNodeId"/>
     </bean>
 
     <!-- custom assertions admin servant -->

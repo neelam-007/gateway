@@ -67,7 +67,7 @@ public class LogMessage implements Comparable {
     }
 
     public String getReqId() {
-        return log.getReqId() == null ? null : log.getReqId().toString();
+        return (log == null || log.getReqId() == null) ? null : log.getReqId().toString();
     }
 
     public String getNodeName() {

@@ -25,8 +25,8 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
@@ -47,6 +47,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
 
 import javax.security.auth.login.LoginException;
+import javax.security.auth.login.AccountLockedException;
 import javax.servlet.*;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -64,6 +65,7 @@ import java.util.logging.Logger;
 public class ManagerAppletFilter implements Filter {
     private static final Logger logger = Logger.getLogger(ManagerAppletFilter.class.getName());
     public static final String RELOGIN = "Relogin due to incorrect username or password";
+    public static final String INVALID_CERT = "Relogin due to incorrect certificate";
     public static final String PROP_CREDS = "ManagerApplet.authenticatedCredentials";
     public static final String PROP_USER = "ManagerApplet.authenticatedUser";
     public static final String SESSION_ID_COOKIE_NAME = "sessionId";
@@ -108,7 +110,9 @@ public class ManagerAppletFilter implements Filter {
         auditContext = (AuditContext)getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager)getBean("soapFaultManager", SoapFaultManager.class);
 
-        CompositeAssertion dogfood = new AllAssertion();
+        //CompositeAssertion dogfood = new AllAssertion();
+        CompositeAssertion dogfood = new OneOrMoreAssertion();
+        dogfood.addChild(new SslAssertion(true));
         dogfood.addChild(new SslAssertion(false));
         fakeDoc = XmlUtil.createEmptyDocument("placeholder", "l7", "http://www.l7tech.com/ns/placeholder");
 
@@ -304,12 +308,13 @@ public class ManagerAppletFilter implements Filter {
             }
         }
 
+
+        String username = hreq.getParameter("username");
+        String password = hreq.getParameter("password");
         try {
             final AssertionStatus result = dogfoodPolicy.checkRequest(context);
             if (result == AssertionStatus.NONE) {
-                String username = hreq.getParameter("username");
-                String password = hreq.getParameter("password");
-                if (username == null || password == null) {
+                if ( (username == null || password == null) && (context.isAuthenticationMissing() || context.getLastCredentials() == null) ){
                     if (isClasspathResourceRequest(hreq)) {
                         hresp.setStatus(403);
                         hresp.sendError(403);
@@ -320,7 +325,13 @@ public class ManagerAppletFilter implements Filter {
                 }
 
                 // Check authentication
-                AdminLoginResult loginResult = adminLogin.login(username, password);
+                AdminLoginResult loginResult;
+                if ( username != null || password != null ){
+                    loginResult = adminLogin.login(username, password);
+                } else {
+                    loginResult = adminLogin.login(context.getLastCredentials().getClientCert());
+                }
+
                 final User user = loginResult.getUser();
                 auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_SUCCESS, getName(user));
 
@@ -337,13 +348,23 @@ public class ManagerAppletFilter implements Filter {
                 hresp.sendRedirect(hreq.getRequestURI());
                 return AuthResult.CHALLENGED;
             }
+        } catch (AccountLockedException lae) {
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, ExceptionUtils.getMessage(lae));
+            // Fall through and either challenge or send error message
+            logger.log(Level.FINE, "Error authenticating administrator, " + ExceptionUtils.getMessage(lae), lae);
+            hreq.setAttribute(RELOGIN, "NO");
+            return AuthResult.FAIL;
         } catch (LoginException e) {
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, ExceptionUtils.getMessage(e));
             // Fall through and either challenge or send error message
             logger.log(Level.FINE, "Error authenticating administrator, " + ExceptionUtils.getMessage(e), e);
 
             // For the case - incorrect username and password
-            hreq.setAttribute(RELOGIN, "YES");
+            if (username != null || password != null){
+                hreq.setAttribute(RELOGIN, "YES");
+            } else {
+                hreq.setAttribute(INVALID_CERT, "YES");
+            }
             return AuthResult.FAIL;
         } catch (PolicyAssertionException e) {
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, ExceptionUtils.getMessage(e));

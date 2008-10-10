@@ -25,6 +25,7 @@ public class ContentTypeHeader extends MimeHeader {
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT; // application/octet-stream
     public static final ContentTypeHeader TEXT_DEFAULT; // text/plain; charset=UTF-8
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
+    public static final ContentTypeHeader SOAP_1_2_DEFAULT; // appliacation/soap+xml; charset=UTF-8
     public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
@@ -37,6 +38,7 @@ public class ContentTypeHeader extends MimeHeader {
             TEXT_DEFAULT = parseValue("text/plain; charset=UTF-8");
             XML_DEFAULT = parseValue("text/xml; charset=UTF-8");
             XML_DEFAULT.getEncoding();
+            SOAP_1_2_DEFAULT = parseValue("application/soap+xml; charset=UTF-8");
             APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded");
         } catch (Throwable e) {
             throw new Error(e);
@@ -58,22 +60,23 @@ public class ContentTypeHeader extends MimeHeader {
      * @param params the parameters, ie {charset=>"utf-8"}.  must not be null.
      *               Caller must not modify this map after giving it to this constructor.
      *               Caller is responsible for ensuring that lookups in the map are case-insensitive.
-     * @throws IllegalArgumentException if type is multipart, but boundary param is missing or empty
-     * @throws IllegalArgumentException if type is multipart, but the subtype is other than "related"
+     * @throws IllegalArgumentException if type is multipart, but boundary param is missing or empty; or,
+     *                                  if type is multipart, but the subtype is other than "related"
      * @throws NullPointerException if type, subtype or param is null
+     * @throws java.io.IOException if an attempt is made to create a multipart type with a missing or invalid boundary
      */
-    private ContentTypeHeader(String type, String subtype, Map params) throws IOException {
+    private ContentTypeHeader(String type, String subtype, Map<String, String> params) throws IOException {
         super(MimeUtil.CONTENT_TYPE, type + "/" + subtype, params);
         this.type = type.toLowerCase();
         this.subtype = subtype.toLowerCase();
 
         if ("multipart".equalsIgnoreCase(type)) {
-            String boundary = (String)this.params.get("boundary");
+            String boundary = this.params.get("boundary");
             if (boundary == null || boundary.length() < 1)
                 throw new IOException("Content-Type of type multipart must include a boundary parameter (RFC 2045 sec 5)");
             byte[] bytes = boundary.getBytes(ENCODING);
-            for (int i = 0; i < bytes.length; ++i) {
-                if (bytes[i] < ' ' || bytes[i] > 126)
+            for (byte aByte : bytes) {
+                if (aByte < ' ' || aByte > 126)
                     throw new IOException("Content-Type multipart boundary contains illegal character; must be US-ASCII (RFC 2045)");
             }
 
@@ -122,7 +125,7 @@ public class ContentTypeHeader extends MimeHeader {
             String subtype = token.getValue();
 
             // Check for parameters
-            Map params = new TreeMap(String.CASE_INSENSITIVE_ORDER);
+            Map<String, String> params = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
             for (;;) {
                 token = ht.next();
 
@@ -293,6 +296,21 @@ public class ContentTypeHeader extends MimeHeader {
              ||(isApplication() && "xhtml+xml".equalsIgnoreCase(getSubtype()));
     }
 
+    /**
+     * Check if this type is for SOAP.
+     *
+     * <ul>
+     * <li>application/soap+xml</li>
+     * </ul>
+     *
+     * Note that it is possible for isHtml and isXml to both be true.
+     *
+     * @return true if textual html content.
+     */
+    public boolean isSoap12() {
+        return isApplication() && "soap+xml".equalsIgnoreCase(getSubtype());
+    }
+    
     /**
      * Check if this content type header matches the type and subtype of the given
      * content type header.

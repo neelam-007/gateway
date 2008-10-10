@@ -502,7 +502,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             final String message = "Assertion not available: " + ExceptionUtils.getMessage( le );
             serverRootAssertion = new AbstractServerAssertion<UnknownAssertion>( new UnknownAssertion() ) {
                 public AssertionStatus checkRequest( PolicyEnforcementContext context ) throws PolicyAssertionException {
-                    throw new PolicyAssertionException( getAssertion(), message );
+                    throw new PolicyAssertionException( getAssertion(), message, new LicenseException(message) );
                 }
             };
         }

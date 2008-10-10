@@ -5,6 +5,7 @@ import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsRequestHandlerImpl;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.jms.*;
 import java.util.ArrayList;
@@ -26,6 +27,8 @@ public class JmsTask implements Runnable {
     private final JmsEndpointConfig endpointCfg;
     /** Holds the Jms connection/session for this task */
     private JmsTaskBag jmsBag;
+    /** The message consumer (receiver) that was used to de-queue the mssage - used in the cleanup only */
+    private MessageConsumer consumer;
     /** The Jms message to process */
     protected final Message jmsMessage;
     /** The failure queue */
@@ -40,26 +43,25 @@ public class JmsTask implements Runnable {
     private boolean success;
     /** List of errors */
     private List errors;
-    /** The parent listener that this task was created by */
-    private final String parentListener;
 
     /**
      * Constructor.
      */
-    public JmsTask(final JmsEndpointConfig endpointCfg, JmsTaskBag jmsBag, Message jmsMessage, Queue failureQ) {
+    public JmsTask(final JmsEndpointConfig endpointCfg,
+                   final JmsTaskBag jmsBag,
+                   final Message jmsMessage,
+                   final Queue failureQ,
+                   final MessageConsumer consumer)
+    {
         this.endpointCfg = endpointCfg;
+        this.consumer = consumer;
         this.jmsBag = jmsBag;
         this.jmsMessage = jmsMessage;
         this.failureQ = failureQ;
-
-        // do we need to pool handlers?
-//        this.handler = (JmsRequestHandlerImpl)endpointCfg.getApplicationContext().getBean("jmsRequestHandler", JmsRequestHandlerImpl.class);
         this.handler = new JmsRequestHandlerImpl(endpointCfg.getApplicationContext());
 
         // intitialize error list
         this.errors = new ArrayList();
-
-        this.parentListener = "tobepopulated";
     }
 
     /**
@@ -68,19 +70,20 @@ public class JmsTask implements Runnable {
      */
     public final void run() {
 
-//        try {
-//            _logger.info(Thread.currentThread().getName() + ": handling message=" + jmsMessage.getJMSMessageID());
-//        } catch (JMSException ex) {} // ignore
-
         // call the handler to process the message
         try {
+
+            // if not transactional, then ACK the message to remove from queue
+            if ( !endpointCfg.isTransactional() )
+                jmsMessage.acknowledge();
+
             handleMessage();
+
+        } catch (JMSException jex) {
+            _logger.warning("Error encountered while acknowledging message: " + ExceptionUtils.getMessage(jex));
 
         } catch (JmsRuntimeException ex) {
 
-            // possible actions
-            // -- check response message sent?
-            // -- let timeout expire?
             _logger.info("Runtime exception encountered: " + ex);
 
         } finally {
@@ -107,8 +110,7 @@ public class JmsTask implements Runnable {
      * Creates the QueueSender for the failure queue.  Needed by the RequestHandler.
      *
      * @return the failure QueueSender
-     * @throws JMSException
-     * @throws JmsConfigException
+     * @throws JmsRuntimeException
      */
     private QueueSender createFailureSender() throws JmsRuntimeException {
 
@@ -128,11 +130,9 @@ public class JmsTask implements Runnable {
                 ok = true;
 
             } catch (JMSException jex) {
-//                message = ExceptionUtils.getMessage(jex);
                 throw new JmsRuntimeException(jex);
 
             } catch (JmsConfigException cex) {
-//                message = ExceptionUtils.getMessage(cex);
                 throw new JmsRuntimeException(cex);
 
             } finally {
@@ -149,7 +149,7 @@ public class JmsTask implements Runnable {
     /**
      * Cleanup object references so resources can be GC'd.
      */
-    private void cleanup() {
+    protected void cleanup() {
 
         this.handler = null;
 
@@ -158,11 +158,19 @@ public class JmsTask implements Runnable {
             try {
                 failureSender.close();
             } catch (JMSException jex) {
-                // log and ignore
+                // ignore at this point
             }
         }
 
-//        // close the jms session
+        // close the message consumer
+        try {
+            if (consumer != null)
+                consumer.close();
+        } catch (JMSException jex) {
+            // ignore at this point
+        }
+
+        // close the jms session
         this.jmsBag.close();
         this.jmsBag = null;
     }

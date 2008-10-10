@@ -17,6 +17,7 @@ import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.DomUtils;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Functions;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.security.WsiBSPValidator;
@@ -25,26 +26,19 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.logging.Logger;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Decorate messages with WssDecorator and then send them through WssProcessor
  */
 public class WssRoundTripTest extends TestCase {
     private static Logger log = Logger.getLogger(WssRoundTripTest.class.getName());
-    private static final String SESSION_ID = "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid";
     private static final WsiBSPValidator validator = new WsiBSPValidator();
 
     static {
@@ -93,7 +87,7 @@ public class WssRoundTripTest extends TestCase {
                                                       wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument());
         ntd.td.securityTokenResolver = securityTokenResolver;
         EncryptedKey[] ekh = new EncryptedKey[1];
-        runRoundTripTest(ntd, false, ekh);
+        runRoundTripTest(ntd, true, ekh);
         EncryptedKey encryptedKey = ekh[0];
         assertNotNull(encryptedKey);
 
@@ -102,9 +96,9 @@ public class WssRoundTripTest extends TestCase {
 
         // Make a second request using the same encrypted key and token resolver
         ntd2.td.securityTokenResolver = ntd.td.securityTokenResolver;
-        ntd2.td.encryptedKeySha1 = encryptedKey.getEncryptedKeySHA1();
+        ntd2.td.req.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
 
-        DecorationRequirements reqs = makeDecorationRequirements(ntd2.td);
+        DecorationRequirements reqs = ntd2.td.req;
         reqs.setEncryptedKey(encryptedKey.getSecretKey());
         reqs.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
 
@@ -117,17 +111,17 @@ public class WssRoundTripTest extends TestCase {
 
         log.info("SECOND decorated request *Pretty-Printed*: " + XmlUtil.nodeToFormattedString(doc));
 
-        WrapSSTR strr = new WrapSSTR(ntd2.td.recipientCert, ntd2.td.recipientKey, ntd2.td.securityTokenResolver);
-        strr.addCerts(new X509Certificate[]{ntd2.td.senderCert});
+        WrapSSTR strr = new WrapSSTR(ntd2.td.req.getRecipientCertificate(), ntd2.td.recipientKey, ntd2.td.securityTokenResolver);
+        strr.addCerts(new X509Certificate[]{ntd2.td.req.getSenderMessageSigningCertificate()});
         ProcessorResult r = new WssProcessorImpl().undecorateMessage(req,
-                                                                     ntd2.td.senderCert,
+                                                                     ntd2.td.req.getSenderMessageSigningCertificate(),
                                                                      null,
                                                                      strr);
 
         UsernameToken usernameToken = findUsernameToken(r);
         WssDecoratorTest.TestDocument td = ntd2.td;
-        if (td.signUsernameToken) {
-            Map ns = new HashMap();
+        if (td.req.isSignUsernameToken()) {
+            Map<String, String> ns = new HashMap<String, String>();
             ns.put("wsse", SoapUtil.SECURITY_NAMESPACE);
             ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, doc1, "//wsse:UsernameToken", ns, false, r.getElementsThatWereSigned(), "signed");
             if (securityTokenResolver == null)
@@ -214,6 +208,14 @@ public class WssRoundTripTest extends TestCase {
                          false);
     }
 
+    public void testSigningAndEncryptionWithSecureConversationWss11() throws Exception {
+        NamedTestDocument ntd = new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
+                                               wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument());
+        ntd.td.req.addSignatureConfirmation("abc11SignatureConfirmationValue11blahblahblah11==");
+        runRoundTripTest(ntd,
+                         false);
+    }
+
     public void testSignedSamlHolderOfKeyRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSamlHolderOfKeyRequest",
                                                wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument(1)),
@@ -257,8 +259,10 @@ public class WssRoundTripTest extends TestCase {
         NamedTestDocument ntd = new NamedTestDocument("SoapWithSignedAttachmentContent",
                                                wssDecoratorTest.getSoapWithSignedAttachmentTestDocument());
 
-        ntd.td.signAttachmentHeaders = false;
-        ntd.td.attachmentsToSign = new String[]{"-76392836.13454"};
+        ntd.td.req.setSignPartHeaders(false);
+        final Set<String> partsToSign = ntd.td.req.getPartsToSign();
+        partsToSign.clear();
+        partsToSign.add("-76392836.13454");
 
         String result = runRoundTripTest(ntd, false);
 
@@ -269,8 +273,8 @@ public class WssRoundTripTest extends TestCase {
         NamedTestDocument ntd = new NamedTestDocument("SoapWithSignedAttachmentContentAndMIMEHeaders",
                                                wssDecoratorTest.getSoapWithSignedAttachmentTestDocument());
 
-        ntd.td.signAttachmentHeaders = true;
-        ntd.td.attachmentsToSign = new String[]{"-76392836.13454"};
+        ntd.td.req.setSignPartHeaders(true);
+        ntd.td.req.getPartsToSign().add("-76392836.13454");
 
         String result = runRoundTripTest(ntd, false);
 
@@ -305,6 +309,12 @@ public class WssRoundTripTest extends TestCase {
     }
 
 
+    public void testExplicitSignatureConfirmation() throws Exception {
+        NamedTestDocument ntd = new NamedTestDocument("ExplicitSignatureConfirmation",
+                                                      wssDecoratorTest.getExplicitSignatureConfirmationsTestDocument());
+        runRoundTripTest(ntd, false);
+    }
+
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
         runRoundTripTest(ntd, true);
     }
@@ -326,17 +336,17 @@ public class WssRoundTripTest extends TestCase {
         WssProcessor trogdor = new WssProcessorImpl();
 
         // save a record of the literal encrypted elements before they get messed with
-        Element[] elementsBeforeEncryption = new Element[td.elementsToEncrypt.length];
-        String[] canonicalizedElementsBeforeEncryption = new String[td.elementsToEncrypt.length];
-        for (int i = 0; i < td.elementsToEncrypt.length; i++) {
-            Element element = td.elementsToEncrypt[i];
+        final Set<Element> elementSet = td.req.getElementsToEncrypt();
+        final Element[] elementsToEncrypt = elementSet.toArray(new Element[elementSet.size()]);
+        Element[] elementsBeforeEncryption = new Element[elementsToEncrypt.length];
+        for (int i = 0; i < elementsToEncrypt.length; i++) {
+            Element element = elementsToEncrypt[i];
             log.info("Saving canonicalizing copy of " + element.getLocalName() + " before it gets encrypted");
-            canonicalizedElementsBeforeEncryption[i] = canonicalize(element);
             elementsBeforeEncryption[i] = (Element) element.cloneNode(true);
         }
 
         log.info("Message before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(soapMessage));
-        DecorationRequirements reqs = makeDecorationRequirements(td);
+        DecorationRequirements reqs = td.req;
 
         martha.decorateMessage(c.messageMessage, reqs);
 
@@ -360,11 +370,11 @@ public class WssRoundTripTest extends TestCase {
         assertTrue("Serialization did not affect the integrity of the XML message",
                    XmlUtil.nodeToString(soapMessage).equals(XmlUtil.nodeToString(XmlUtil.stringToDocument(networkRequestString))));
 
-        WrapSSTR strr = new WrapSSTR(td.recipientCert, td.recipientKey, td.securityTokenResolver);
-        strr.addCerts(new X509Certificate[]{td.senderCert});
+        WrapSSTR strr = new WrapSSTR(td.req.getRecipientCertificate(), td.recipientKey, td.securityTokenResolver);
+        strr.addCerts(new X509Certificate[]{td.req.getSenderMessageSigningCertificate()});
         ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
-                                                      td.senderCert,
-                                                      makeSecurityContextFinder(td.secureConversationKey),
+                                                      td.req.getSenderMessageSigningCertificate(),
+                                                      makeSecurityContextFinder(td.req.getSecureConversationSession()),
                                                       strr);
 
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingSoapDocument));
@@ -374,11 +384,14 @@ public class WssRoundTripTest extends TestCase {
         SignedElement[] signed = r.getElementsThatWereSigned();
         assertNotNull(signed);
 
+        List<Element> signedDomElements = Functions.map(Arrays.asList(r.getElementsThatWereSigned()),
+                Functions.<Element, SignedElement>getterTransform(SignedElement.class.getMethod("asElement")));
+
         // Output security tokens
         UsernameToken usernameToken = findUsernameToken(r);
 
-        if (td.signUsernameToken) {
-            Map ns = new HashMap();
+        if (td.req.isSignUsernameToken()) {
+            Map<String, String> ns = new HashMap<String, String>();
             ns.put("wsse", SoapUtil.SECURITY_NAMESPACE);
             ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(
                     log, incomingSoapDocument,
@@ -391,13 +404,12 @@ public class WssRoundTripTest extends TestCase {
         checkEncryptedUsernameToken(td, usernameToken, r, timestampSigner);
 
         // Make sure all requested elements were signed
-        for (int i = 0; i < td.elementsToSign.length; ++i) {
-            Element elementToSign = td.elementsToSign[i];
-
+        Element[] elementsToSign = td.req.getElementsToSign().toArray(new Element[td.req.getElementsToSign().size()]);
+        for (Element elementToSign : elementsToSign) {
             boolean wasSigned = false;
-            for (int j = 0; j < signed.length; ++j) {
-                Element signedElement = signed[j].asElement();
-                if (localNamePathMatches(elementToSign, signedElement)) {
+
+            for (SignedElement aSigned : signed) {
+                if (localNamePathMatches(elementToSign, aSigned.asElement())) {
                     wasSigned = true;
                     break;
                 }
@@ -407,13 +419,12 @@ public class WssRoundTripTest extends TestCase {
         }
 
         // Make sure all requested elements were encrypted
-        for (int i = 0; i < elementsBeforeEncryption.length; ++i) {
-            Element elementToEncrypt = elementsBeforeEncryption[i];
+        for (Element elementToEncrypt : elementsBeforeEncryption) {
             log.info("Looking to ensure element was encrypted: " + XmlUtil.nodeToString(elementToEncrypt));
 
             boolean wasEncrypted = false;
-            for (int j = 0; j < encrypted.length; ++j) {
-                Element encryptedElement = encrypted[j].asElement();
+            for (ParsedElement anEncrypted : encrypted) {
+                Element encryptedElement = anEncrypted.asElement();
 
                 log.info("Checking if element matches: " + XmlUtil.nodeToString(encryptedElement));
                 if (localNamePathMatches(elementToEncrypt, encryptedElement)) {
@@ -431,6 +442,17 @@ public class WssRoundTripTest extends TestCase {
             log.info("Element " + elementToEncrypt.getLocalName() + " succesfully verified as either empty or encrypted.");
         }
 
+        // If there were supposed to be SignatureConfirmation elements, make sure they are there
+        if (!td.req.getSignatureConfirmations().isEmpty()) {
+            List<SignatureConfirmation> gotConfimationElements = r.getSignatureConfirmationValues();
+            for (SignatureConfirmation element : gotConfimationElements)
+                assertTrue(signedDomElements.contains(element.asElement()));
+            List<String> gotConfirmationValues = Functions.map(gotConfimationElements,
+                    Functions.<String, SignatureConfirmation>getterTransform(SignatureConfirmation.class.getMethod("getConfirmationValue")));            
+            for (String expectedConfValue : td.req.getSignatureConfirmations())
+                assertTrue("Expect SignatureConfirmation for: " + expectedConfValue, gotConfirmationValues.contains(expectedConfValue));
+        }
+
         assertTrue("WS-I BSP check.", isValid);
 
         return networkRequestString;
@@ -439,20 +461,18 @@ public class WssRoundTripTest extends TestCase {
     private UsernameToken findUsernameToken(ProcessorResult r) {
         XmlSecurityToken[] tokens = r.getXmlSecurityTokens();
         UsernameToken usernameToken = null;
-        for (int i = 0; i < tokens.length; i++) {
-            XmlSecurityToken token = tokens[i];
+        for (XmlSecurityToken token : tokens) {
             log.info("Got security token: " + token.getClass() + " type=" + token.getType());
             if (token instanceof UsernameToken) {
                 if (usernameToken != null)
                     fail("More than one UsernameToken found in processor result");
-                usernameToken = (UsernameToken)token;
+                usernameToken = (UsernameToken) token;
             }
             if (token instanceof SigningSecurityToken) {
-                SigningSecurityToken signingSecurityToken = (SigningSecurityToken)token;
+                SigningSecurityToken signingSecurityToken = (SigningSecurityToken) token;
                 log.info("It's a signing security token.  possessionProved=" + signingSecurityToken.isPossessionProved());
                 SignedElement[] signedElements = signingSecurityToken.getSignedElements();
-                for (int j = 0; j < signedElements.length; j++) {
-                    SignedElement signedElement = signedElements[j];
+                for (SignedElement signedElement : signedElements) {
                     log.info("It was used to sign: " + signedElement.asElement().getLocalName());
                 }
             }
@@ -461,7 +481,7 @@ public class WssRoundTripTest extends TestCase {
     }
 
     private void checkEncryptedUsernameToken(WssDecoratorTest.TestDocument td, UsernameToken usernameToken, ProcessorResult r, SigningSecurityToken timestampSigner) {
-        if (td.encryptUsernameToken) {
+        if (td.req.isEncryptUsernameToken()) {
             assertNotNull(usernameToken);
             assertTrue(ProcessorResultUtil.nodeIsPresent(usernameToken.asElement(), r.getElementsThatWereSigned()));
             assertTrue(ProcessorResultUtil.nodeIsPresent(usernameToken.asElement(), r.getElementsThatWereEncrypted()));
@@ -477,7 +497,7 @@ public class WssRoundTripTest extends TestCase {
 
     private SigningSecurityToken checkTimestampSignature(WssDecoratorTest.TestDocument td, ProcessorResult r, EncryptedKey[] ekOut) throws SAXException, InvalidDocumentFormatException, GeneralSecurityException {
         SigningSecurityToken timestampSigner = null;
-        if (td.signTimestamp) {
+        if (td.req.isSignTimestamp()) {
             WssTimestamp rts = r.getTimestamp();
             assertNotNull(rts);
             assertTrue("Timestamp was supposed to have been signed", rts.isSigned());
@@ -491,16 +511,16 @@ public class WssRoundTripTest extends TestCase {
 
             if (signer instanceof X509SecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
-                           ((X509SecurityToken)signer).getCertificate().equals(td.senderCert));
+                           ((X509SecurityToken)signer).getCertificate().equals(td.req.getSenderMessageSigningCertificate()));
             } else if (signer instanceof SamlSecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
-                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(SamlAssertion.newInstance(td.senderSamlAssertion).getSubjectCertificate()));
+                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(SamlAssertion.newInstance(td.req.getSenderSamlToken()).getSubjectCertificate()));
             } else if (signer instanceof SecurityContextToken) {
                 SecurityContextToken sct = (SecurityContextToken)signer;
                 assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());
-                assertEquals("WS-Security session ID was supposed to match", sct.getContextIdentifier(), SESSION_ID);
+                assertEquals("WS-Security session ID was supposed to match", sct.getContextIdentifier(), WssDecoratorTest.TEST_WSSC_SESSION_ID);
                 assertTrue(Arrays.equals(sct.getSecurityContext().getSharedSecret(),
-                                         td.secureConversationKey));
+                                         td.req.getSecureConversationSession().getSecretKey()));
             } else if (signer instanceof EncryptedKey) {
                 EncryptedKey ek = (EncryptedKey)signer;
                 if (ekOut != null && ekOut.length > 0) ekOut[0] = ek;
@@ -518,67 +538,22 @@ public class WssRoundTripTest extends TestCase {
         return timestampSigner;
     }
 
-    private DecorationRequirements makeDecorationRequirements(final WssDecoratorTest.TestDocument td) {
-        DecorationRequirements reqs = new DecorationRequirements();
-        reqs.setSenderSamlToken(td.senderSamlAssertion, td.signSamlToken);
-        reqs.setSenderMessageSigningCertificate(td.senderCert);
-        reqs.setRecipientCertificate(td.recipientCert);
-        reqs.setSenderMessageSigningPrivateKey(td.senderKey);
-        reqs.setSignTimestamp();
-        reqs.setUsernameTokenCredentials(td.usernameToken);
-        reqs.setEncryptUsernameToken(td.encryptUsernameToken);
-        reqs.setSignUsernameToken(td.signUsernameToken);
-        reqs.setKeyInfoInclusionType(td.keyInfoInclusionType);
-        reqs.setUseDerivedKeys(td.useDerivedKeys);
-        reqs.setKeyEncryptionAlgorithm(td.keyEncryptionAlgoritm);
-        reqs.setSignPartHeaders(td.signAttachmentHeaders);
-        if (td.secureConversationKey != null) {
-            reqs.setSecureConversationSession(new DecorationRequirements.SimpleSecureConversationSession(
-                SESSION_ID,
-                td.secureConversationKey,
-                SoapUtil.WSSC_NAMESPACE
-            ));
-        }
-        if (td.elementsToEncrypt != null) {
-            for (int i = 0; i < td.elementsToEncrypt.length; i++) {
-                reqs.getElementsToEncrypt().add(td.elementsToEncrypt[i]);
-            }
-        }
-        if (td.encryptionAlgorithm !=null) {
-            reqs.setEncryptionAlgorithm(td.encryptionAlgorithm);
-        }
-        if (td.elementsToSign != null) {
-            for (int i = 0; i < td.elementsToSign.length; i++) {
-                reqs.getElementsToSign().add(td.elementsToSign[i]);
-            }
-        }
-        if (td.attachmentsToSign != null) {
-            for (int i = 0; i < td.attachmentsToSign.length; i++) {
-                reqs.getPartsToSign().add(td.attachmentsToSign[i]);
-            }
-        }
-        return reqs;
-    }
-
-    private SecurityContextFinder makeSecurityContextFinder(final byte[] secureConversationKey) {
-        if (secureConversationKey == null) return null;
+    private SecurityContextFinder makeSecurityContextFinder(final DecorationRequirements.SecureConversationSession secureConversationSession) {
+        if (secureConversationSession == null)
+            return null;
         return new SecurityContextFinder() {
             public SecurityContext getSecurityContext(String securityContextIdentifier) {
                 return new SecurityContext() {
                     public byte[] getSharedSecret() {
-                        return secureConversationKey;
+                        return secureConversationSession.getSecretKey();
                     }
                 };
             }
         };
     }
 
-    private String canonicalize(Node node) throws IOException {
-        return XmlUtil.nodeToString(node);
-    }
-
     private void schemaValidateSamlAssertions(Document document) {
-        List<Element> elements = new ArrayList();
+        List<Element> elements = new ArrayList<Element>();
         NodeList nl1 = document.getElementsByTagNameNS(SamlConstants.NS_SAML, SamlConstants.ELEMENT_ASSERTION);
         NodeList nl2 = document.getElementsByTagNameNS(SamlConstants.NS_SAML2, SamlConstants.ELEMENT_ASSERTION);
         for (int n=0; n<nl1.getLength(); n++) {
@@ -614,6 +589,8 @@ public class WssRoundTripTest extends TestCase {
     }
 
     /**
+     * @param a one of the elements to compare.  may be null
+     * @param b the other element to compare.  May be null
      * @return true iff. the two elements have the same namespace and localname and the same number of direct ancestor
      *         elements, and each pair of corresponding direct ancestor elements have the same namespace and localname.
      * TODO I think this is broken -- I think it short-circuits as soon as one element's parent is null
@@ -630,7 +607,7 @@ public class WssRoundTripTest extends TestCase {
                 return false;
             if ((a == aroot) != (b == broot))
                 return false;
-            if (a == aroot || b == broot)
+            if (a == aroot)
                 return true;
             a = (Element) a.getParentNode();
             b = (Element) b.getParentNode();

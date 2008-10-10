@@ -11,6 +11,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
@@ -22,6 +23,7 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -33,16 +35,18 @@ import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.xmlsec.ServerResponseWssSignature;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.security.kerberos.KerberosRoutingClient;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.kerberos.KerberosException;
+import com.l7tech.kerberos.KerberosServiceTicket;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.*;
 import javax.wsdl.WSDLException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.*;
 import java.security.PrivateKey;
 import java.security.SignatureException;
@@ -52,6 +56,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Server-side implementation of HTTP routing assertion.
@@ -318,6 +324,27 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
+            // Outbound Kerberos support (for Windows Integrated Auth only)
+            if (data.isKrbDelegatedAuthentication()) {
+                // extract creds from request & get service ticket
+                addKerberosServiceTicketToRequestParam(
+                        getDelegatedKerberosTicket(context, url.getHost()), routedRequestParams);
+
+            } else if (data.isKrbUseGatewayKeytab()) {
+                // obtain a service ticket using the gateway's keytab
+                KerberosRoutingClient client = new KerberosRoutingClient();
+                String svcPrincipal = client.getServicePrincipalName(url.getProtocol(), url.getHost());
+                addKerberosServiceTicketToRequestParam(
+                        client.getKerberosServiceTicket(svcPrincipal, true), routedRequestParams);
+
+            } else if (data.getKrbConfiguredAccount() != null) {
+                // obtain a service ticket using the configured account in the assertion
+                KerberosRoutingClient client = new KerberosRoutingClient();
+                addKerberosServiceTicketToRequestParam(
+                        client.getKerberosServiceTicket(url, data.getKrbConfiguredAccount(), data.getKrbConfiguredPassword()),
+                        routedRequestParams);
+            }
+
             return reallyTryUrl(context, routedRequestParams, url, true, vars);
         } catch (MalformedURLException mfe) {
             thrown = mfe;
@@ -339,6 +366,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         } catch (CertificateException e) {
             thrown = e;
             auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
+            logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
+        } catch (KerberosException kex) {
+            thrown = kex;
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_USING_KERBEROS_ERROR, ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } finally {
             if(context.getRoutingStatus()!=RoutingStatus.ROUTED) {
@@ -380,7 +411,40 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         return GenericHttpClient.POST;
     }
 
-    private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams,
+    class GZipOutput {
+        public InputStream zippedIS;
+        public long zippedContentLength;
+    }
+    private GZipOutput clearToGZipInputStream(final InputStream in) {
+        //logger.info("Compression #1");
+        logger.fine("compressing input stream for downstream target");
+
+        try {
+            //byte[] originalBytes = HexUtils.slurpStream(in);
+            //in.close();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            GZIPOutputStream gzos = new GZIPOutputStream(baos);
+            IOUtils.copyStream(in, gzos);
+            //gzos.write(originalBytes);
+            in.close();
+            gzos.close();
+            baos.close();
+            byte[] zippedBytes = baos.toByteArray();
+            ByteArrayInputStream bais = new ByteArrayInputStream(zippedBytes);
+            logger.fine("Zipped output to " + zippedBytes.length + " bytes");
+            GZipOutput output = new GZipOutput();
+            output.zippedIS = bais;
+            output.zippedContentLength = zippedBytes.length;
+            return output;
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "error zipping payload", e);
+        }
+        GZipOutput output = new GZipOutput();
+        output.zippedIS = in;
+        return output;
+    }
+
+    private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, final GenericHttpRequestParams routedRequestParams,
                                          URL url, boolean allowRetry, Map vars) throws PolicyAssertionException {
         GenericHttpRequest routedRequest = null;
         GenericHttpResponse routedResponse = null;
@@ -435,6 +499,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
             }
 
+            GZipOutput resgz = null;
+            if (assertion.isGzipEncodeDownstream()) {
+                InputStream out = reqMime.getEntireMessageBodyAsInputStream();
+                resgz = clearToGZipInputStream(out);
+                routedRequestParams.addExtraHeader(new GenericHttpHeader("content-encoding", "gzip"));
+                routedRequestParams.setContentLength(resgz.zippedContentLength);
+            }
+            final InputStream zippedInputStream = resgz != null ? resgz.zippedIS : null;
+
             routedRequest = httpClient.createRequest(method, routedRequestParams);
 
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.
@@ -453,7 +526,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                         rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
                             public InputStream getInputStream() {
                                 try {
-                                    return reqMime.getEntireMessageBodyAsInputStream();
+                                    InputStream out = reqMime.getEntireMessageBodyAsInputStream();
+                                    if (assertion.isGzipEncodeDownstream()) {
+                                        out = zippedInputStream;
+                                    }
+                                    return out;
                                 } catch (NoSuchPartException nspe) {
                                     return new IOExceptionThrowingInputStream(new CausedIOException("Cannot access mime part.", nspe));
                                 } catch (IOException ioe) {
@@ -462,8 +539,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                             }
                         });
                     } else {
-                        final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
-                        routedRequest.setInputStream(bodyInputStream);
+                        if (assertion.isGzipEncodeDownstream()) {
+                            routedRequest.setInputStream(zippedInputStream);
+                        } else {
+                            InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
+                            routedRequest.setInputStream(bodyInputStream);
+                        }
                     }
                 }
             }
@@ -669,7 +750,16 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         boolean responseOk = true;
         try {
             final int status = routedResponse.getStatus();
-            final InputStream responseStream = routedResponse.getInputStream();
+            InputStream responseStream = routedResponse.getInputStream();
+            // compression addition
+            final String maybegzipencoding = routedResponse.getHeaders().getOnlyOneValue("content-encoding");
+            if (maybegzipencoding != null && maybegzipencoding.contains("gzip")) { // case of value ?
+                if (responseStream != null ){
+                    // logger.info("Compression #4");
+                    logger.fine("detected compression on incoming response");
+                    responseStream = new GZIPInputStream(responseStream);
+                }
+            }
             final String ctype = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_TYPE);
             final ContentTypeHeader outerContentType = ctype != null ? ContentTypeHeader.parseValue(ctype) : null;
             boolean passthroughSoapFault = false;
@@ -696,6 +786,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     destination.initialize(stashManager, outerContentType, responseStream);
                 }
             }
+        } catch(EOFException eofe){
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_GZIP_STREAM);
+            responseOk = false;
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
             responseOk = false;
@@ -723,6 +816,30 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return url;
+    }
+
+    /**
+     * Adds the kerberos service ticket (if not null) into the HTTP request parameters for
+     * outbound kerberos support.
+     *
+     * @param serviceTicket the service ticket to add
+     * @param routedRequestParams the pending HTTP request parameters
+     * @throws KerberosException if either the serviceTicke or the routed request parameters
+     */
+    private void addKerberosServiceTicketToRequestParam(KerberosServiceTicket serviceTicket, GenericHttpRequestParams routedRequestParams)
+        throws KerberosException
+    {
+        if (serviceTicket == null)
+            throw new KerberosException("KerberosServiceTicket is null and cannot be added to the request for routing");
+        if (routedRequestParams == null)
+            throw new KerberosException("Missing Http routing parameters");
+
+        routedRequestParams.addExtraHeader(new GenericHttpHeader(
+                HttpConstants.HEADER_AUTHORIZATION,
+                "Negotiate " + HexUtils.encodeBase64(serviceTicket.getGSSAPReqTicket().getSPNEGO(), true)));
+
+        logger.log(Level.FINE, "Kerberos ticket added to Http request parameters ({0}|{1})",
+                new String[] { serviceTicket.getServicePrincipalName(), serviceTicket.getClientPrincipalName() });
     }
 
     private void setHttpRoutingUrlContextVariables(PolicyEnforcementContext context) {

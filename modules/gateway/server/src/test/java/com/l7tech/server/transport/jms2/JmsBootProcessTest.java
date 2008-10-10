@@ -2,7 +2,7 @@ package com.l7tech.server.transport.jms2;
 
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.ReadyForMessages;
-import com.l7tech.server.transport.jms2.synch.LegacyJmsEndpointListenerFactory;
+import com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory;
 import com.l7tech.gateway.common.Component;
 
 import org.junit.Ignore;
@@ -69,7 +69,7 @@ public class JmsBootProcessTest extends JmsTestCase {
             bootProcess.setApplicationContext(appCtx);
 
             // choose the jms listener factory
-            bootProcess.setJmsEndpointListenerFactory(new LegacyJmsEndpointListenerFactory());
+            bootProcess.setJmsEndpointListenerFactory(new PooledJmsEndpointListenerFactory());
 
             // add data to queue
             populateQueues(createEndpoints(connMgr, endptMgr), 15);
@@ -101,11 +101,23 @@ public class JmsBootProcessTest extends JmsTestCase {
     private void waitForAWhile(long time) {
         synchronized(this) {
 
-            try {
-                Thread.sleep(time);
-                bootProcess.doStop();
+            long whenToStop = System.currentTimeMillis() + time;
 
-            } catch(InterruptedException iex) {}
+            while (true) {
+                try {
+                    Thread.sleep(10000L);
+
+                    if (System.currentTimeMillis() >= whenToStop) {
+
+                        bootProcess.doStop();
+                        break;
+
+                    } else {
+//                        System.out.println(JmsThreadPool.getInstance().stats());
+                    }
+                    
+                } catch(InterruptedException iex) {}
+            }
         }
     }
 

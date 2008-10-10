@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.wsdl.Port;
 import javax.wsdl.Binding;
 import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap12.SOAP12Binding;
 import javax.wsdl.extensions.soap.SOAPBinding;
 
 import com.l7tech.wsdl.Wsdl;
@@ -81,7 +82,7 @@ public class ServicePanel extends WizardStepPanel {
                     java.util.List<ExtensibilityElement> bindingEels = (java.util.List<ExtensibilityElement>)binding.getExtensibilityElements();
                     for (ExtensibilityElement eel : bindingEels) {
                         // weird second part if to avoid class path conflict when running from idea where the cp is different than at runtime
-                        if (eel instanceof SOAPBinding && !eel.getClass().getName().equals("com.idoox.wsdl.extensions.soap12.SOAP12Binding")) {
+                        if ((eel instanceof SOAPBinding || eel instanceof SOAP12Binding) && !eel.getClass().getName().equals("com.idoox.wsdl.extensions.soap12.SOAP12Binding")) {
                             return res;
                         }
                     }

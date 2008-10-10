@@ -1,0 +1,234 @@
+package com.l7tech.server.transport.email;
+
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.message.EmailKnob;
+import com.l7tech.message.XmlKnob;
+import com.l7tech.message.MimeKnob;
+
+import javax.mail.internet.MimeMessage;
+import javax.mail.Header;
+import javax.mail.MessagingException;
+
+import org.springframework.context.ApplicationContext;
+import org.xml.sax.SAXException;
+
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Handles email messages received from an email listener. Stealth mode is always set, since it is
+ * currently not possible to return a response. The message is passed off to the message handler.
+ */
+public class EmailHandlerImpl implements EmailHandler {
+    private MessageProcessor messageProcessor;
+    private AuditContext auditContext;
+    private SoapFaultManager soapFaultManager;
+    private ClusterPropertyManager clusterPropertyManager;
+    private ClusterPropertyCache clusterPropertyCache;
+    private StashManagerFactory stashManagerFactory;
+    
+    public EmailHandlerImpl(ApplicationContext ctx) {
+        if (ctx == null) {
+            throw new IllegalArgumentException("Spring Context is required");
+        }
+        messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
+        auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
+        soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
+        clusterPropertyManager = (ClusterPropertyManager)ctx.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+        clusterPropertyCache = (ClusterPropertyCache)ctx.getBean("clusterPropertyCache", ClusterPropertyCache.class);
+        stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
+    }
+
+    public void onMessage( final EmailListenerConfig emailListenerCfg,
+                           final MimeMessage message )
+            throws EmailListenerRuntimeException
+    {
+        final MimeMessage emailResponse;
+        final InputStream requestStream;
+        final ContentTypeHeader ctype;
+        final Map<String, Object> reqEmailMsgProps;
+        final String soapAction;
+
+        AssertionStatus status = AssertionStatus.UNDEFINED;
+        boolean responseSuccess = false;
+        boolean messageTooLarge = false;
+        try {
+            // Init content and type
+            long size = 0;
+            String contentTypeValue = message.getContentType();
+            if(contentTypeValue == null) {
+                ctype = ContentTypeHeader.XML_DEFAULT;
+            } else {
+                ctype = ContentTypeHeader.parseValue(contentTypeValue);
+            }
+            size = message.getSize();
+            requestStream = message.getInputStream();
+
+            // enforce size restriction
+            int sizeLimit = emailListenerCfg.getMaxMessageSize();
+            if ( sizeLimit > 0 && size > sizeLimit ) {
+                messageTooLarge = true;
+            }
+
+            // Copies the request JMS message properties into the request JmsKnob.
+            final Map<String, Object> msgProps = new HashMap<String, Object>();
+            for(Enumeration e = message.getAllHeaders(); e.hasMoreElements();) {
+                Header header = (Header)e.nextElement();
+                msgProps.put(header.getName(), header.getValue());
+            }
+            reqEmailMsgProps = Collections.unmodifiableMap(msgProps);
+
+            // Gets the JMS message property to use as SOAPAction, if present.
+            String soapActionValue = null;
+            soapActionValue = (String)msgProps.get(SoapUtil.SOAPACTION);
+            if(soapActionValue == null) {
+                soapActionValue = ctype.getParam("action");
+                if(soapActionValue != null && _logger.isLoggable(Level.FINER))
+                    _logger.finer("Found email header to use for SOAPAction value: action=" + soapActionValue);
+            } else {
+                if(_logger.isLoggable(Level.FINER))
+                    _logger.finer("Found email header to use for SOAPAction value: SOAPAction=" + soapActionValue);
+            }
+            soapAction = soapActionValue;
+        } catch (IOException ioe) {
+            throw new EmailListenerRuntimeException("Error processing request message", ioe);
+        } catch (MessagingException me) {
+            throw new EmailListenerRuntimeException("Error processing request message", me);
+        }
+
+        emailResponse = buildMessageFromTemplate(emailListenerCfg, message);
+
+        try {
+            com.l7tech.message.Message request = new com.l7tech.message.Message();
+            request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
+            request.attachEmailKnob(new EmailKnob() {
+                public Map<String, Object> getEmailMsgPropMap() {
+                    return reqEmailMsgProps;
+                }
+                public String getSoapAction() {
+                    return soapAction;
+                }
+            });
+
+            final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
+                    new com.l7tech.message.Message());
+
+            String faultMessage = null;
+            String faultCode = null;
+
+            try {
+                context.setAuditContext(auditContext);
+                context.setSoapFaultManager(soapFaultManager);
+                context.setClusterPropertyCache(clusterPropertyCache);
+
+                context.setReplyExpected(false);
+
+                boolean stealthMode = false;
+                InputStream responseStream = null;
+                if ( !messageTooLarge ) {
+                    try {
+                        status = messageProcessor.processMessage(context);
+                        context.setPolicyResult(status);
+                        _logger.finest("Policy resulted in status " + status);
+                        if (context.getResponse().getKnob(XmlKnob.class) != null ||
+                                context.getResponse().getKnob(MimeKnob.class) != null) {
+                            // if the policy is not successful AND the stealth flag is on, drop connection
+                            if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
+                                _logger.info("Policy returned error and stealth mode is set. " +
+                                        "Not sending response message.");
+                                stealthMode = true;
+                            } else {
+                                responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
+                            }
+                        } else {
+                            _logger.finer("No response received");
+                            responseStream = null;
+                        }
+                    } catch ( PolicyVersionException pve ) {
+                        String msg1 = "Request referred to an outdated version of policy";
+                        _logger.log( Level.INFO, msg1 );
+                        faultMessage = msg1;
+                        faultCode = "Client";
+                    } catch ( Throwable t ) {
+                        _logger.log( Level.WARNING, "Exception while processing JMS message", t );
+                        faultMessage = t.getMessage();
+                        if ( faultMessage == null ) faultMessage = t.toString();
+                    }
+                } else {
+                    String msg1 = "Request message too large";
+                    _logger.log( Level.INFO, msg1 );
+                    faultMessage = msg1;
+                    faultCode = "Client";
+                }
+
+                if ( responseStream == null ) {
+                    if (context.isStealthResponseMode()) {
+                        _logger.info("No response data available and stealth mode is set. " +
+                                "Not sending response message.");
+                        stealthMode = true;
+                    } else {
+                        if ( faultMessage == null ) faultMessage = status.getMessage();
+                        try {
+                            String faultXml = SoapFaultUtils.generateSoapFaultXml(
+                                    (context.getService() != null) ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN,
+                                    faultCode == null ? "Server" : faultCode,
+                                    faultMessage, null, "");
+
+                            responseStream = new ByteArrayInputStream(faultXml.getBytes("UTF-8"));
+
+                            if (faultXml != null) {
+                                emailListenerCfg.getApplicationContext().publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                            }
+                        } catch (SAXException e) {
+                            throw new EmailListenerRuntimeException(e);
+                        }
+                    }
+                }
+
+                responseSuccess = true;
+            } catch (IOException e) {
+                throw new EmailListenerRuntimeException(e);
+            } finally {
+                try {
+                    auditContext.flush();
+                }
+                finally {
+                    if (context != null) {
+                        try {
+                            context.close();
+                        } catch (Throwable t) {
+                            _logger.log(Level.SEVERE, "soapRequest cleanup threw", t);
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
+    private MimeMessage buildMessageFromTemplate(EmailListenerConfig emailListenerCfg, MimeMessage template) {
+        return null;
+    }
+
+    private static final Logger _logger = Logger.getLogger(EmailHandlerImpl.class.getName());
+}

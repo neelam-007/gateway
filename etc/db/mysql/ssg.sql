@@ -72,6 +72,8 @@ CREATE TABLE internal_user (
   email varchar(128) default NULL,
   description varchar(255) default NULL,
   expiration bigint(20) NOT NULL,
+  password_expiry bigint(20) DEFAULT 0,
+  change_password boolean DEFAULT TRUE,
   PRIMARY KEY  (objectid),
   UNIQUE KEY l_idx (login)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -81,7 +83,7 @@ CREATE TABLE internal_user (
 --
 
 
-INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd2e738e2','','','','',-1);
+INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd2e738e2','','','','',-1,0,TRUE);
 
 --
 -- Table structure for table 'internal_user_group'
@@ -119,6 +121,36 @@ CREATE TABLE folder (
 
 
 INSERT INTO folder VALUES (-5002, 'Root Node', NULL);
+
+--
+-- Table to record system logon activity
+--
+DROP TABLE IF EXISTS logon_info;
+CREATE TABLE logon_info (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  provider_oid bigint(20) NOT NULL,
+  login varchar(255) NOT NULL,
+  fail_count int(11) NOT NULL DEFAULT 0,
+  last_attempted bigint(20) NOT NULL,
+  PRIMARY KEY (objectid),
+  UNIQUE KEY (provider_oid, login),
+  FOREIGN KEY (provider_oid) REFERENCES identity_provider(objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Table to record password changes being made
+--
+DROP TABLE IF EXISTS password_history;
+CREATE TABLE password_history (
+  objectid bigint(20) NOT NULL,
+  internal_user_oid bigint(20) NOT NULL,
+  last_changed bigint(20) NOT NULL,
+  order_id bigint(20) NOT NULL,
+  prev_password varchar(32),
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (internal_user_oid) REFERENCES internal_user (objectid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table 'published_service'
@@ -1007,6 +1039,7 @@ INSERT INTO rbac_role VALUES (-550,0,'Manage Cluster Status', null,null, 'Users 
 INSERT INTO rbac_permission VALUES (-551,0,-550,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-552,0,-550,'UPDATE',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-553,0,-550,'DELETE',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission VALUES (-554,0,-550,'READ',NULL,'METRICS_BIN');
 
 INSERT INTO rbac_role VALUES (-600,0,'Manage Certificates (truststore)', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete trusted certificates and policies for revocation checking.');
 INSERT INTO rbac_permission VALUES (-601,0,-600,'UPDATE',NULL,'TRUSTED_CERT');
@@ -1045,6 +1078,25 @@ INSERT INTO rbac_permission VALUES (-801,0,-800,'READ',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-802,0,-800,'CREATE',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-803,0,-800,'UPDATE',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-804,0,-800,'DELETE',NULL,'LOG_SINK');
+
+INSERT INTO rbac_role VALUES (-850,0,'Gateway Maintenance', null,null, 'Users assigned to the {0} role have the ability to perform Gateway maintenance tasks.');
+INSERT INTO rbac_permission VALUES (-851,0,-850,'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-852,0,-851);
+INSERT INTO rbac_predicate_attribute VALUES (-852,'name','audit.archiver.ftp.config');
+INSERT INTO rbac_permission VALUES (-853,0,-850,'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-854,0,-853);
+INSERT INTO rbac_predicate_attribute VALUES (-854,'name','audit.archiver.ftp.config');
+INSERT INTO rbac_permission VALUES (-855,0,-850,'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-856,0,-855);
+INSERT INTO rbac_predicate_attribute VALUES (-856,'name','audit.archiver.ftp.config');
+INSERT INTO rbac_permission VALUES (-857,0,-850,'DELETE',NULL,'AUDIT_RECORD');
+-- No predicates implies all entities
+
+INSERT INTO rbac_role VALUES (-900,0,'Manage Email Listeners', null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete email listeners.');
+INSERT INTO rbac_permission VALUES (-901,0,-900,'READ',NULL,'EMAIL_LISTENER');
+INSERT INTO rbac_permission VALUES (-902,0,-900,'CREATE',NULL,'EMAIL_LISTENER');
+INSERT INTO rbac_permission VALUES (-903,0,-900,'UPDATE',NULL,'EMAIL_LISTENER');
+INSERT INTO rbac_permission VALUES (-904,0,-900,'DELETE',NULL,'EMAIL_LISTENER');
 
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');
@@ -1085,7 +1137,29 @@ CREATE TABLE wsdm_subscription (
   last_notification bigint(20),
   owner_node_id varchar(36),
   PRIMARY KEY  (objectid),
-  UNIQUE KEY uuid (uuid)
+  UNIQUE KEY uuid (uuid),
+  FOREIGN KEY (notification_policy_guid) REFERENCES policy (guid)  
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS email_listener;
+CREATE TABLE email_listener (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  host varchar(128) NOT NULL,
+  port int(8) NOT NULL,
+  server_type varchar(4) NOT NULL,
+  use_ssl tinyint(1) NOT NULL,
+  delete_on_receive tinyint(1) NOT NULL,
+  username varchar(255) NOT NULL,
+  password varchar(32) NOT NULL,
+  folder varchar(255) NOT NULL,
+  poll_interval int(8) NOT NULL,
+  active tinyint(1) NOT NULL default 1,
+  owner_node_id varchar(36),
+  last_poll_time bigint(20),
+  last_message_id bigint(20),
+  PRIMARY KEY  (objectid)
+) TYPe=InnoDB DEFAULT CHARACTER SET utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;

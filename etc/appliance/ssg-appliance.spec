@@ -42,6 +42,11 @@ chmod -R '-x+X' %{buildroot}/jdk/jre/lib
 mv %{buildroot}/jdk %{buildroot}/opt/SecureSpan/JDK
 
 %build
+%ifarch i386
+#set innodb data file values for i386 / VM builds
+sed -i -e "s/^\(innodb_data_file_path=ibdata\):[^:]*:/\1:100M:/" %{buildroot}/etc/my.cnf.ssg
+sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf.ssg
+%endif
 
 %files
 # Root owned OS components
@@ -121,7 +126,6 @@ grep -q   ^gateway: /etc/passwd || useradd -g gateway -G 'pkcs11' gateway
 # If user layer7 already exists ensure group membership is ok, if it doesn't exist add it
 grep -qvL ^layer7: /etc/passwd || usermod -g layer7 -G 'pkcs11' layer7
 grep -q   ^layer7: /etc/passwd || useradd -g layer7 -G 'pkcs11' layer7
-
 
 grep -q ^ssgconfig: /etc/group || groupadd ssgconfig
 if [ -n "`grep ^ssgconfig: /etc/passwd`" ]; then
@@ -273,4 +277,3 @@ if [ "$1" = "0" ] ; then
     chkconfig --del ssgsysconfig
     chkconfig --del ssg
 fi
-

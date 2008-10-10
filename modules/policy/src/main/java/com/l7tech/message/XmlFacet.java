@@ -200,6 +200,11 @@ public class XmlFacet extends MessageFacet {
                 return delegate.getBytesIfAlreadyAvailable();
             }
 
+            public byte[] getBytesIfAvailableOrSmallerThan(int maxSize) throws IOException, NoSuchPartException {
+                if (fp && !firstPartValid) return null;
+                return delegate.getBytesIfAvailableOrSmallerThan(maxSize);
+            }
+
             public void setBodyBytes(byte[] newBody) throws IOException {
                 delegate.setBodyBytes(newBody);
                 if (fp) {

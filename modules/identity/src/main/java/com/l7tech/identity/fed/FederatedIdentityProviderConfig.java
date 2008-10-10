@@ -76,6 +76,12 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         setProperty(PROP_CERT_OIDS, oids);
     }
 
+    @Override
+    @Transient
+    protected String[] getUnexportablePropKeys() {
+        return new String[] {PROP_CERT_OIDS};
+    }
+
     @Transient
     public HashMap<String, FederatedGroup> getImportedGroups() {
         return importedGroups;

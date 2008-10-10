@@ -379,6 +379,49 @@ public class SecureSpanConstants {
          * As part of the password change, the existing client cert (if it exists) is revoked.
          */
         public static final String HEADER_NEWPASSWD = "L7-new-passwd";
+//
+//        /**
+//         * Sent by the client to the password service.  This contains the Base-64 encoded value of the old password.
+//         * The old password is needed because it needs to verify certain criteria from the old password that will affect
+//         * on the new password.
+//         */
+//        public static final String HEADER_OLDPASSWD = "L7-old-passwd";
+//
+        /**
+         * <p>Sent by the client to the message processor to indicate that Remote Domain Identity Injection
+         * was attempted for this request.</p>
+         * <p>It is illegal for more than one L7-Domain-ID-Status header to appear in the top-level headers of
+         * a single message.</p>
+         * <p>The value of this header is in the following format:
+         * <pre>{status}; {identifier1}="{headername1}", {identifier2}="{headername2}", ...</pre></p>
+         * <p>Where {status} is a status code as defined by {@link DomainIdStatusCode} (case-insensitive)
+         * and {identifier1} through {identifierN} are the names of included peer identifier values, and {headername1}
+         * through {headernameN} are the quoted (per MIME, as with parameters in a Content-Type header)
+         * names of HTTP headers that contain the corresponding values.</p>
+         * <p>The values of the headers themselves should be encoded per RFC 2047 if they need to contain characters
+         * that are illegal in header values, such as tabs or non-ASCII characters.</p>
+         * <p>It is illegal for the same identifier name to appear more than once in a single L7-Domain-ID-Status header.</p>
+         * <p><b>Value escaping</b>: values that contain whitespace, colons, or non-ASCII characters must be encoded
+         * per RFC 2047.  This can be done easily by running them through {@link javax.mail.internet.MimeUtility#encodeText},
+         * which also has the advantage of leaving the value unchanged if it doesn't need to be encoded.</p>
+         * <p>For example:
+         * <pre>
+         * L7-Domain-ID-Status: INCLUDED; username="X-Injected-User-Name", namespace="X-Injected-Domain-Name", program="X-Injected-Program-Name"
+         * X-Injected-User-Name: joeblow
+         * X-Injected-Domain-Name: SALES
+         * X-Injected-Program-Name: acmewarehouseclient.exe
+         * </pre></p>
+         * <p>A more complex example, where MIME encoding has been used to send non-ASCII values:
+         * <pre>
+         * L7-Domain-ID-Status: INCLUDED; username="X-Injected-User-Name", namespace="X-Injected-Domain-Name", program="X-Injected-Program-Name"
+         * X-Injected-User-Name: =?utf-8?q?jos=C3=A9hern=C3=A1ndez?=
+         * X-Injected-Domain-Name: =?utf-8?q?ingenier=C3=ADa?=
+         * X-Injected-Program-Name: =?utf-8?q?International_=D0=B6=E2=99=A5=C5=92.exe?=
+         * </pre></p>
+         * <p>The semicolon after {status} may be omitted if no identifier names are included.<p/>
+         * <p>See {@link DomainIdStatusHeader} for a utility class to parse and create this header's value.</p>
+         */
+        public static final String HEADER_DOMAINIDSTATUS = "L7-Domain-ID-Status";
     }
 
     /**

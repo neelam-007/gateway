@@ -6,6 +6,7 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.gateway.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -225,19 +226,19 @@ public class JmsAdminImpl implements JmsAdmin {
                 throw new JMSException("Unknown JMS session.");
             }
         } catch (JMSException e) {
-            logger.log(Level.INFO, "Caught JMSException while testing endpoint", e);
+            logger.log(Level.INFO, "Caught JMSException while testing endpoint" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
         } catch (NamingException e) {
-            logger.log(Level.INFO, "Caught NamingException while testing endpoint", e);
+            logger.log(Level.INFO, "Caught NamingException while testing endpoint" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
         } catch (JmsConfigException e) {
-            logger.log(Level.INFO, "Caught JmsConfigException while testing endpoint", e);
+            logger.log(Level.INFO, "Caught JmsConfigException while testing endpoint" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
         } catch (JmsNotSupportTopicException e) {
-            logger.log(Level.INFO, "Caught JmsNotSupportTopicException while testing endpoint", e);
+            logger.log(Level.INFO, "Caught JmsNotSupportTopicException while testing endpoint" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.getMessage(), e);
         } catch (Throwable t) {
-            logger.log(Level.INFO, "Caught Throwable while testing endpoint", t);
+            logger.log(Level.INFO, "Caught Throwable while testing endpoint" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
             throw new JmsTestException(t.toString());
         } finally {
             JmsUtil.closeQuietly(jmsQueueSender);

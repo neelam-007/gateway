@@ -93,7 +93,7 @@ public:
 	virtual void release() {
 		if (NULL != m_ptr) {
 			if (NULL != m_env)
-				m_env->DeleteLocalRef(obj);
+				m_env->DeleteLocalRef(m_ptr);
 			m_ptr = NULL;
 		}
 	}

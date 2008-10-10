@@ -15,6 +15,7 @@
     <bean id="adminContextFactory" class="com.l7tech.console.util.AdminContextFactory">
         <constructor-arg index="0">
             <list>
+                <ref bean="adminLogin"/>
                 <ref bean="identityAdmin"/>
                 <ref bean="auditAdmin"/>
                 <ref bean="schemaAdmin"/>
@@ -26,6 +27,7 @@
                 <ref bean="clusterStatusAdmin"/>
                 <ref bean="rbacAdmin"/>
                 <ref bean="transportAdmin"/>
+                <ref bean="emailListenerAdmin"/>
                 <ref bean="policyAdmin"/>
                 <ref bean="logSinkAdmin"/>
                 <ref bean="serviceAdmin"/>
@@ -93,6 +95,11 @@
     <bean id="transportAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/TransportAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.TransportAdmin"/>
+    </bean>
+
+    <bean id="emailListenerAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/EmailListenerAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailListenerAdmin"/>
     </bean>
 
     <bean id="policyAdmin" class="com.l7tech.console.policy.InvalidatingPolicyAdmin">

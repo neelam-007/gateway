@@ -269,6 +269,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                             auditor.logAndAudit(AssertionMessages.JMS_ROUTING_GETTING_RESPONSE);
                             jmsResponse = jmsConsumer.receive( timeout );
+
+                            if ( jmsResponse != null && !(jmsInboundDest instanceof TemporaryQueue))
+                                jmsResponse.acknowledge();
+
                         } finally {
                             if ( jmsConsumer != null ) jmsConsumer.close();
                         }

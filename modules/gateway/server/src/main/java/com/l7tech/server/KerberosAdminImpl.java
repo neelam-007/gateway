@@ -108,6 +108,7 @@ public class KerberosAdminImpl implements KerberosAdmin {
                 clusterPropertyManager.update(property);
             }
         } catch ( ObjectModelException ome ) {
+            ome.printStackTrace();
             throw new KerberosException( "Error persisting keytab.", ome );        
         }
     }

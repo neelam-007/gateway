@@ -28,6 +28,9 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
     private String searchFilter;
     private QueryAttributeMapping[] queryMappings;
     private long ldapProviderOid;
+    private long cachePeriod = 10;
+    private boolean enableCache = true;
+    private boolean failIfNoResults = false;
 
     public LDAPQueryAssertion() {
     }
@@ -68,7 +71,7 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
         othermappings.add(new ArrayTypeMapping(new Boolean[0], "bools"));
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
 
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         return meta;
     }
@@ -186,4 +189,27 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
         }
     }
     // end of wsp annoyance work around
+    public long getCachePeriod() {
+        return cachePeriod;
+    }
+
+    public void setCachePeriod(long cachePeriod) {
+        this.cachePeriod = cachePeriod;
+    }
+
+    public boolean isEnableCache() {
+        return enableCache;
+    }
+
+    public void setEnableCache(boolean enableCache) {
+        this.enableCache = enableCache;
+    }
+
+    public boolean isFailIfNoResults() {
+        return failIfNoResults;
+    }
+
+    public void setFailIfNoResults(boolean failIfNoResults) {
+        this.failIfNoResults = failIfNoResults;
+    }
 }

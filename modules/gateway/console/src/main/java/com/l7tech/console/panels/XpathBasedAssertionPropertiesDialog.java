@@ -411,7 +411,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     }
 
     private void showSampleMessageDialog(SampleMessage sm, final Functions.UnaryVoid<SampleMessageDialog> result) {
-        final SampleMessageDialog smd = new SampleMessageDialog(this, sm, false);
+        final SampleMessageDialog smd = new SampleMessageDialog(this, sm, false, namespaces);
         smd.pack();
         Utilities.centerOnScreen(smd);
         DialogDisplayer.display(smd, new Runnable() {

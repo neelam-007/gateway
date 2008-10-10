@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
@@ -44,6 +45,7 @@ public final class RegistryImpl extends Registry
     // add it to the reset method
     private ApplicationContext applicationContext;
     private AdminContext adminContext = null;
+    private AdminLogin adminLogin;
     private IdentityAdmin identityAdmin;
     private ServiceAdmin serviceAdmin;
     private FolderAdmin folderAdmin;
@@ -57,6 +59,7 @@ public final class RegistryImpl extends Registry
     private KerberosAdmin kerberosAdmin;
     private RbacAdmin rbacAdmin;
     private TransportAdmin transportAdmin;
+    private EmailListenerAdmin emailListenerAdmin;
     private PolicyAdmin policyAdmin;
     private LogSinkAdmin logSinkAdmin;
     private PolicyValidator policyValidator;
@@ -64,6 +67,18 @@ public final class RegistryImpl extends Registry
 
     public boolean isAdminContextPresent() {
         return adminContext != null;
+    }
+
+    /**
+     * @return the {@link IdentityAdmin} implementation
+     */
+    public synchronized AdminLogin getAdminLogin() {
+        checkAdminContext();
+        if (adminLogin != null) {
+            return adminLogin;
+        }
+        adminLogin = adminContext.getAdminLogin();
+        return adminLogin;
     }
 
     /**
@@ -216,6 +231,15 @@ public final class RegistryImpl extends Registry
         return transportAdmin;
     }
 
+    public EmailListenerAdmin getEmailListenerAdmin() {
+        checkAdminContext();
+        if (emailListenerAdmin != null) {
+            return emailListenerAdmin;
+        }
+        emailListenerAdmin = adminContext.getEmailListenerAdmin();
+        return emailListenerAdmin;
+    }
+
     public PolicyAdmin getPolicyAdmin() {
         checkAdminContext();
         if (policyAdmin != null) {
@@ -290,12 +314,13 @@ public final class RegistryImpl extends Registry
      */
     private void checkAdminContext() throws IllegalStateException {
         if (adminContext == null) {
-            throw new IllegalStateException("Admin Context is requred");
+            throw new IllegalStateException("Admin Context is required");
         }
     }
 
     private synchronized void resetAdminContext() {
         adminContext = null;
+        adminLogin = null;
         identityAdmin = null;
         serviceAdmin = null;
         jmsAdmin = null;

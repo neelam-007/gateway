@@ -76,6 +76,7 @@ public class DBActions {
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
         new DbVersion47Checker(),
+        new DbVersion46Checker(),
         new DbVersion45Checker(),
         new DbVersion44Checker(),
         new DbVersion43Checker(),

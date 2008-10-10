@@ -21,9 +21,10 @@ import com.l7tech.gui.util.FileChooserUtil;
  * @author $Author$
  * @version $Revision$
  */
-public class ViewAuditsOrLogsFromFileAction extends BaseAction {
+public class ViewAuditsOrLogsFromFileAction extends SecureAction {
 
     public ViewAuditsOrLogsFromFileAction() {
+        super(null, UI_AUDIT_WINDOW);
     }
 
     /**

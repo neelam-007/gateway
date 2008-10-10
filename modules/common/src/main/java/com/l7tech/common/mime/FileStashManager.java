@@ -9,10 +9,7 @@ package com.l7tech.common.mime;
 import com.l7tech.common.io.IOUtils;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 
 /**
  * A StashManager that caches each Part in its own file.
@@ -21,8 +18,8 @@ public class FileStashManager implements StashManager {
     private final File parentDirectory;
     private final String uniqueFilenamePrefix;
 
-    private HashMap stashed = new HashMap();
-    private int highestOrdinal = 0;
+    private ArrayList<FileInfo> stashed = new ArrayList<FileInfo>();
+    private ArrayList<IOException> thrown = new ArrayList<IOException>();
 
     /**
      * Create a new FileStashManager that will stash files into the specified parent directory, creating
@@ -49,19 +46,25 @@ public class FileStashManager implements StashManager {
     }
 
     public void stash(int ordinal, InputStream in) throws IOException {
-        if (ordinal > highestOrdinal) highestOrdinal = ordinal;
-        unstash(ordinal);
-        FileInfo fi = new FileInfo(makeFile(ordinal));
-        final OutputStream outputStream = fi.getOutputStream();
-        IOUtils.copyStream(in, outputStream);
-        outputStream.flush();
-        outputStream.close();
-        fi.closeOutputStream();
-        putFileInfo(ordinal, fi);
+        try {
+            while (stashed.size() <= ordinal) stashed.add(null);
+            while (thrown.size() <= ordinal) thrown.add(null);
+            unstash(ordinal);
+            FileInfo fi = new FileInfo(makeFile(ordinal));
+            final OutputStream outputStream = fi.getOutputStream();
+            IOUtils.copyStream(in, outputStream);
+            outputStream.flush();
+            outputStream.close();
+            fi.closeOutputStream();
+            stashed.set(ordinal, fi);
+            thrown.set(ordinal, null);
+        } catch (IOException e) {
+            thrown.set(ordinal, e);
+            throw e;
+        }
     }
 
     public void stash(int ordinal, byte[] in) throws IOException {
-        if (ordinal > highestOrdinal) highestOrdinal = ordinal;
         stash(ordinal, new ByteArrayInputStream(in)); // byte array doesn't help us in this case
     }
 
@@ -82,31 +85,39 @@ public class FileStashManager implements StashManager {
             return;
         }
         fi.close();
-        stashed.remove(new Integer(ordinal));
+        stashed.set(ordinal, null);
+        if (ordinal >= 0 && ordinal < thrown.size())
+            thrown.set(ordinal, null);
     }
 
     /** @return the stashed FileInfo for the specified ordinal, or null if there isn't one. */
     private FileInfo getFileInfo(int ordinal) {
-        return (FileInfo)stashed.get(new Integer(ordinal));
-    }
-
-    /** Put the specified FileInfo into our stashed hashmap under the specified ordinal. */
-    private void putFileInfo(int ordinal, FileInfo fi) {
-        stashed.put(new Integer(ordinal), fi);
+        if (stashed.size() <= ordinal || ordinal < 0)
+            return null;
+        return stashed.get(ordinal);
     }
 
     public long getSize(int ordinal) {
         FileInfo fi = getFileInfo(ordinal);
-        if (fi == null) return -1;
-        Long size = fi.getSize();
-        return size == null ? -1 : size.longValue();
+        return fi == null ? -1 : fi.getSize();
     }
 
     public InputStream recall(int ordinal) throws IOException, NoSuchPartException {
+        rethrowStashIOException(ordinal);
         FileInfo fi = getFileInfo(ordinal);
         if (fi == null)
             throw new NoSuchPartException("No part stashed with ordinal " + ordinal);
+
         return fi.getInputStream();
+    }
+
+    // re-throws the IOException that was thrown during stash(), if any
+    private void rethrowStashIOException(int ordinal) throws IOException {
+        if (thrown.size() <= ordinal || ordinal < 0)
+            return;
+
+        IOException ioex = thrown.get(ordinal);
+        if (ioex != null) throw ioex;
     }
 
     public boolean isByteArrayAvailable(int ordinal) {
@@ -122,7 +133,7 @@ public class FileStashManager implements StashManager {
     }
 
     public int getMaxOrdinal() {
-        return highestOrdinal;
+        return stashed.size();
     }
 
     public void close() {
@@ -130,10 +141,8 @@ public class FileStashManager implements StashManager {
     }
 
     private void close0() {
-        for (Iterator i = stashed.values().iterator(); i.hasNext();) {
-            FileInfo fileInfo = (FileInfo)i.next();
-            if (fileInfo != null)
-                fileInfo.close();
+        for (FileInfo fileInfo: stashed) {
+            if (fileInfo != null) fileInfo.close();
         }
         stashed.clear();
     }
@@ -141,7 +150,7 @@ public class FileStashManager implements StashManager {
     private static class FileInfo {
         private File file;
         private Long size = null;
-        private Map inputStreams = new WeakHashMap(); // map of outstanding inputstreams so they can be closed if necessary
+        private Map<InputStream,FileInfo> inputStreams = new WeakHashMap<InputStream,FileInfo>(); // map of outstanding inputstreams so they can be closed if necessary
         private OutputStream outputStream = null; // stored here while file is being stashed so it can be closed if necessary
 
         private FileInfo(File file) {
@@ -173,7 +182,7 @@ public class FileStashManager implements StashManager {
          * callers are advised to close the OutputStream themselves before calling this method.
          */
         private void closeOutputStream() {
-            try { outputStream.close(); } catch (IOException e) { } // expected to throw
+            try { outputStream.close(); } catch (IOException e) { /* expected to throw */ }
             outputStream = null;
         }
 
@@ -193,7 +202,7 @@ public class FileStashManager implements StashManager {
         private InputStream getInputStream() throws FileNotFoundException {
             if (file == null) throw new IllegalStateException("FileInfo is closed");
             if (outputStream != null) {
-                try { outputStream.close(); } catch (IOException e) { } // expected to throw
+                try { outputStream.close(); } catch (IOException e) { /* expected to throw */ }
                 outputStream = null;
             }
             InputStream is = new FileInputStream(file);
@@ -210,14 +219,15 @@ public class FileStashManager implements StashManager {
 
         private void close0() {
             if (outputStream != null) {
-                try {outputStream.close();} catch (IOException e) { } // expected to throw
+                try {outputStream.close();} catch (IOException e) { /* expected to throw */ }
                 outputStream = null;
             }
             if (inputStreams != null) {
-                for (Iterator ii = inputStreams.keySet().iterator(); ii.hasNext();) {
-                    InputStream inputStream = (InputStream)ii.next();
+                for (InputStream inputStream : inputStreams.keySet()) {
                     if (inputStream != null)
-                        try { inputStream.close(); } catch (IOException e) { } // expected to throw
+                        try {
+                            inputStream.close();
+                        } catch (IOException e) { /* expected to throw */ }
                 }
                 inputStreams.clear();
                 inputStreams = null;
@@ -228,15 +238,15 @@ public class FileStashManager implements StashManager {
             }
         }
 
-        /** @return the size of this file, if known, or null if it's not available. */
-        public Long getSize() {
+        /** @return the size of this file, if known, or -1 if it's not available. */
+        public long getSize() {
             if (file == null) throw new IllegalStateException("FileInfo is closed");
             if (size == null) {
                 if (outputStream != null)
-                    return null; // can't check size while outputstream is running
+                    return -1; // can't check size while outputstream is running
                 if (!file.exists())
-                    return null;
-                size = new Long(file.length());
+                    return -1;
+                size = file.length();
             }
             return size;
         }

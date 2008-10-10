@@ -28,6 +28,9 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 
 /**
+ *
+ * TODO: Need to add tests while waiting for responses (w/ tempQueues & reply-to-queue)
+ *
  * @author: vchan
  */
 @Ignore("These tests require a JMS queue")
@@ -35,12 +38,15 @@ public class ServerJmsRoutingAssertionTest {
 
     static {
         // configure the stub connection manager for the test
-        JmsConnectionManagerStub.setTestConfig(JmsConnectionManagerStub.TEST_CONFIG_MQS_OUT);
+        JmsConnectionManagerStub.setTestConfig(JmsConnectionManagerStub.TEST_CONFIG_AMQ_OUT); // apache activeMQ
+//        JmsConnectionManagerStub.setTestConfig(JmsConnectionManagerStub.TEST_CONFIG_MQS_OUT); // ibm MQSeries
+//        JmsConnectionManagerStub.setTestConfig(JmsConnectionManagerStub.TEST_CONFIG_FMQ_OUT); // fiorano MQ
     }
 
     private ApplicationContext appCtx;
     private WspReader policyReader;
     private ServerPolicyFactory factory;
+    private String testPolicy;
 
     // test policy data
     static final String TEST_POLICY_AMQ =
@@ -65,6 +71,22 @@ public class ServerJmsRoutingAssertionTest {
             "       <L7p:JmsRoutingAssertion>\n" +
             "            <L7p:EndpointName stringValue=\"cn=VCTEST.Q.OUT\"/>\n" +
             "            <L7p:EndpointOid boxedLongValue=\"104\"/>\n" +
+            "            <L7p:RequestJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\">\n" +
+            "                <L7p:Rules jmsMessagePropertyRuleArray=\"included\"/>\n" +
+            "            </L7p:RequestJmsMessagePropertyRuleSet>\n" +
+            "            <L7p:ResponseJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\">\n" +
+            "                <L7p:Rules jmsMessagePropertyRuleArray=\"included\"/>\n" +
+            "            </L7p:ResponseJmsMessagePropertyRuleSet>\n" +
+            "       </L7p:JmsRoutingAssertion>" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    static final String TEST_POLICY_FMQ =
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "       <L7p:JmsRoutingAssertion>\n" +
+            "            <L7p:EndpointName stringValue=\"vchan_out\"/>\n" +
+            "            <L7p:EndpointOid boxedLongValue=\"106\"/>\n" +
             "            <L7p:RequestJmsMessagePropertyRuleSet jmsMessagePropertyRuleSet=\"included\">\n" +
             "                <L7p:Rules jmsMessagePropertyRuleArray=\"included\"/>\n" +
             "            </L7p:RequestJmsMessagePropertyRuleSet>\n" +
@@ -108,6 +130,13 @@ public class ServerJmsRoutingAssertionTest {
 
         // configure the stub connection manager for this testcase
 //        JmsConnectionManagerStub.setTestConfig(JmsConnectionManagerStub.TEST_CONFIG_MQS_OUT);
+        // set the policy for the test
+        if (testPolicy == null) {
+            testPolicy = TEST_POLICY_AMQ;
+//            testPolicy = TEST_POLICY_MQSeries;
+//            testPolicy = TEST_POLICY_FMQ;
+        }
+
     }
 
     /**
@@ -120,7 +149,7 @@ public class ServerJmsRoutingAssertionTest {
         ServerJmsRoutingAssertion as;
         PolicyEnforcementContext peCtx;
         try {
-            as = getAssertion(TEST_POLICY_MQSeries);
+            as = getAssertion(testPolicy);
             peCtx = createPEContext(TEST_MSG_VALID);
 
             // gimme time to start the monitor
@@ -153,7 +182,7 @@ public class ServerJmsRoutingAssertionTest {
         PolicyEnforcementContext peCtx;
         ExecutorService exec = null;
         try {
-            as = getAssertion(TEST_POLICY_MQSeries);
+            as = getAssertion(testPolicy);
             peCtx = createPEContext(TEST_MSG_VALID);
 
             // 2 threads
@@ -182,13 +211,13 @@ public class ServerJmsRoutingAssertionTest {
     }
 
 
-    public void xxtestConcurrent4T() {
+    public void testConcurrent4T() {
 
         ServerJmsRoutingAssertion as;
         PolicyEnforcementContext peCtx;
         ExecutorService exec = null;
         try {
-            as = getAssertion(TEST_POLICY_MQSeries);
+            as = getAssertion(testPolicy);
             peCtx = createPEContext(TEST_MSG_VALID);
 
             // 4 threads

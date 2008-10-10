@@ -13,6 +13,7 @@ import com.l7tech.server.EntityManagerStub;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.sql.SQLException;
 
 /**
  *
@@ -42,5 +43,21 @@ public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,AuditR
 
     public Collection<AuditRecord> findPage(SortProperty sortProperty, boolean ascending, int offset, int count, AuditSearchCriteria criteria) throws FindException {
         return Collections.emptyList();
+    }
+
+    public long getMinOid(long oid) throws SQLException {
+        throw new UnsupportedOperationException();
+    }
+
+    public int deleteRangeByOid(long start, long end) {
+        throw new UnsupportedOperationException();
+    }
+
+    public long getMaxTableSpace() throws FindException {
+        throw new UnsupportedOperationException();
+    }
+
+    public long getCurrentUsage() throws FindException {
+        throw new UnsupportedOperationException();
     }
 }

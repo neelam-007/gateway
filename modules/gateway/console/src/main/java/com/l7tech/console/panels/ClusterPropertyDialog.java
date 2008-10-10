@@ -209,7 +209,7 @@ public class ClusterPropertyDialog extends JDialog {
         });
         propsTable.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2)
+                if (e.getClickCount() == 2 && e.getButton() == 1)
                     edit();
             }
         });
@@ -285,6 +285,8 @@ public class ClusterPropertyDialog extends JDialog {
     }
 
     private void edit() {
+        if (!propsTable.isRowSelected(propsTable.getSelectedRow())) // double-right-clicked
+            return;
         final ClusterProperty prop = properties.get(propsTable.getSelectedRow());
         final Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {

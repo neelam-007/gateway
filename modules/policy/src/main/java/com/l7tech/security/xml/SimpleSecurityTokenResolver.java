@@ -10,12 +10,14 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.util.ExceptionUtils;
 
+import javax.security.auth.x500.X500Principal;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.math.BigInteger;
 
 /**
  * A SecurityTokenResolver that is given a small list of certs that it is to recognize.
@@ -175,6 +177,23 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         for (final Cert cert : toSearch) {
             final String name = cert.getSubjectDn();
             if (name != null && name.equals(keyName))
+                return cert.getPayload();
+        }
+        return null;
+    }
+
+    public X509Certificate lookupByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
+        X509Certificate found = (X509Certificate)doLookupByIssuerAndSerial(certs, issuer, serial);
+        if (found != null) return found;
+        SignerInfo siFound = (SignerInfo)doLookupByIssuerAndSerial(keys, issuer, serial);
+        if (siFound != null) return siFound.getCertificateChain()[0];
+        return null;
+    }
+
+    private <C extends Cert> Object doLookupByIssuerAndSerial( final Collection<C> toSearch, final X500Principal issuer, final BigInteger serial ) {
+        for (final Cert cert : toSearch) {
+            final X509Certificate certificate = (X509Certificate) cert.getPayload();
+            if (certificate.getIssuerX500Principal().equals(issuer) && certificate.getSerialNumber().equals(serial))
                 return cert.getPayload();
         }
         return null;

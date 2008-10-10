@@ -9,6 +9,7 @@ import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -20,6 +21,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.security.cert.X509Certificate;
@@ -86,9 +88,12 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
         try {
             provider = getIdentityProvider();
         } catch (FindException e) {
-            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[0], e);
+            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             // fla fix, allow the policy to continue in case the credentials be valid for
             // another id assertion down the road (fix for bug 374)
+            return AssertionStatus.AUTH_FAILED;
+        } catch (ObjectNotFoundException e) {
+            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.AUTH_FAILED;
         }
 
@@ -102,8 +107,11 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
             } catch (InvalidClientCertificateException icce) {
                 auditor.logAndAudit(AssertionMessages.INVALID_CERT, pc.getLogin());
                 // set some response header so that the CP is made aware of this situation
-                context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
-                                                                      SecureSpanConstants.CERT_INVALID);
+                HttpResponseKnob httpResponseKnob = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+                if(httpResponseKnob != null) {
+                    httpResponseKnob.addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
+                                               SecureSpanConstants.CERT_INVALID);
+                }
                 lastStatus = authFailed(pc, icce);
             } catch (MissingCredentialsException mce) {
                 context.setAuthenticationMissing();
@@ -178,13 +186,13 @@ public abstract class ServerIdentityAssertion extends AbstractServerAssertion<Id
      * <code>identityProviderOid</code> property, using a cache if possible.
      *
      * @return
-     * @throws FindException
+     * @throws FindException if there was an error retrieving the provider
+     * @throws ObjectNotFoundException if the requested provider was not found
      */
-    protected IdentityProvider getIdentityProvider() throws FindException {
+    protected IdentityProvider getIdentityProvider() throws FindException, ObjectNotFoundException {
         IdentityProvider provider = identityProviderFactory.getProvider(identityAssertion.getIdentityProviderOid());
         if (provider == null) {
-            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST);
-            throw new FindException("id assertion refers to an id provider which does not exist anymore");
+            throw new ObjectNotFoundException("id assertion refers to an id provider which does not exist anymore");
         } else {
             return provider;
         }

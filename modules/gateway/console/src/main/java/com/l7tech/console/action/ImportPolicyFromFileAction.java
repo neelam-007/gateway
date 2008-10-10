@@ -8,6 +8,7 @@ import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.policy.Policy;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.policy.exporter.PolicyImporter;
+import com.l7tech.console.policy.exporter.PolicyImportCancelledException;
 import com.l7tech.console.tree.PolicyTemplatesFolderNode;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.TopComponents;
@@ -159,6 +160,8 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
                                           "Could not find policy export in the selected file or the imported policy contains errors",
                                           "Policy Not Found/Not Valid",
                                           JOptionPane.WARNING_MESSAGE, null);
+        } catch (PolicyImportCancelledException e) {
+            log.log(Level.INFO, "import from file \"" + chooser.getSelectedFile().getPath() + "\" was cancelled", e);
         }
 
         return false;

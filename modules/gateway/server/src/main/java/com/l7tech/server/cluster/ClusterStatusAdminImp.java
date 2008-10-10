@@ -86,6 +86,14 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         }
     }
 
+    public boolean isCluster() {
+        try {
+            return getClusterStatus().length > 1;
+        } catch(FindException e) {
+            return false;
+        }
+    }
+    
     /**
      * get status for all nodes recorded as part of the cluster.
      */

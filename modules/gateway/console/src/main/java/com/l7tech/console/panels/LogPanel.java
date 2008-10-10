@@ -1094,6 +1094,8 @@ public class LogPanel extends JPanel {
                 return "Object Deleted";
             case AdminAuditRecord.ACTION_LOGIN:
                 return "Admin Login";
+            case AdminAuditRecord.ACTION_LOGOUT:
+                return "Admin Logout";
             case AdminAuditRecord.ACTION_OTHER:
                 return "Other";
             default:
@@ -1840,21 +1842,21 @@ public class LogPanel extends JPanel {
     private void updateMsgFilterLevel(LogLevelOption newFilterLevel) {
         if (logLevelOption != newFilterLevel) {
             logLevelOption = newFilterLevel;
-            updateMsgFilter();
+            if(!isAuditType) updateMsgFilter();
         }
     }
 
     private void updateMsgFilterThreadId(String threadIdMatch) {
         if (threadIdMatch!=null && !threadIdMatch.equals(threadId)) {
             threadId = threadIdMatch;
-            updateMsgFilter();
+            if(!isAuditType) updateMsgFilter(); //probably don't need this since the thread id text field isn't shown in the Audit Window
         }
     }
 
     private void updateMsgFilterMessage(String messageMatch) {
         if (messageMatch!=null && !messageMatch.equals(message)) {
             message = messageMatch;
-            updateMsgFilter();
+            if(!isAuditType) updateMsgFilter();
         }
     }
 

@@ -10,9 +10,13 @@ import com.l7tech.message.Message;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
+import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.WssDecoratorTest;
 import com.l7tech.security.keys.AesKey;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.XmlUtil;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -165,9 +169,9 @@ public class JceProviderTest {
             log.info("Signed: " + CertUtils.toString(signedClientCert));
 
             log.info("pretest: signing XML message");
-//            final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
-//            WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
-//            new WssDecoratorImpl().decorateMessage(new Message(td.c.message), wssDecoratorTest.makeDecorationRequirements(td));
+            final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
+            WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
+            new WssDecoratorImpl().decorateMessage(new Message(td.c.message), td.req);
 
             log.info("pretest: checking XML message signature");
             ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(
@@ -185,13 +189,12 @@ public class JceProviderTest {
             }
         });
 
-//        final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
-//        reportTime("Prepare test document (baseline)", 10000 * scale, concur, new Testable() {
-//            public void run() throws Throwable {
-//                WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
-//                wssDecoratorTest.makeDecorationRequirements(td);
-//            }
-//        });
+        final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
+        reportTime("Prepare test document (baseline)", 10000 * scale, concur, new Testable() {
+            public void run() throws Throwable {
+                WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
+            }
+        });
 
         reportTime("Generate key pair", 4 * scale, concur, new Testable() {
             public void run() {
@@ -219,10 +222,10 @@ public class JceProviderTest {
 //        log.info("Before encryption: " + testXml);
         final String encryptedXml;
         {
-//            WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
-//            DecorationRequirements decorationRequirements = wssDecoratorTest.makeDecorationRequirements(td);
-//            new WssDecoratorImpl().decorateMessage(new Message(td.c.message), decorationRequirements);
-//            encryptedXml = XmlIOUtils.nodeToString(td.c.message);
+            WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
+            DecorationRequirements decorationRequirements = td.req;
+            new WssDecoratorImpl().decorateMessage(new Message(td.c.message), decorationRequirements);
+            encryptedXml = XmlUtil.nodeToString(td.c.message);
         }
 //        log.info("Encrypted XML message: " + encryptedXml);
 //
@@ -233,6 +236,14 @@ public class JceProviderTest {
 //                new WssDecoratorImpl().decorateMessage(new Message(td.c.message), decorationRequirements);
 //            }
 //        });
+
+        reportTime("Encrypt and sign document", 1000 * scale, concur, new Testable() {
+            public void run() throws Throwable {
+                WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
+                DecorationRequirements decorationRequirements = td.req;
+                new WssDecoratorImpl().decorateMessage(new Message(td.c.message), decorationRequirements);
+            }
+        });
 
         reportTime("Decrypt document and check signature", 200 * scale, concur, new Testable() {
             public void run() throws Throwable {

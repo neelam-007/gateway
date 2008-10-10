@@ -27,6 +27,15 @@ import java.util.Map;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public interface ClusterStatusAdmin {
     /**
+     * Returns true if this node is part of a cluster.
+     * @return true if this node is part of a cluster
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.SSG_CONNECTOR, stereotype=MethodStereotype.FIND_ENTITIES)
+    @Administrative(licensed=false)
+    boolean isCluster();
+
+    /**
      * Get status for all nodes part of the cluster.
      * @return An array of ClusterNodeInfo (one for each node)
      * @throws FindException if there was a server-side problem accessing the requested information

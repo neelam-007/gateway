@@ -134,7 +134,20 @@ public class PolicyExporter {
 
             if(!refs.contains(ref)) {
                 IncludedPolicyReference includedReference = (IncludedPolicyReference)ref;
-                Policy fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
+                Policy fragmentPolicy = null;
+                //bug 5316: if we are dealing with include assertions, we'll just get the policy fragment from the assertion.
+                if (assertion instanceof Include) {
+                    fragmentPolicy = ((Include)assertion).retrieveFragmentPolicy();
+                    //bug 5316: this is here to handle the scenario where if the policy was imported, added new policy
+                    //fragment and export it. The new added policy fragment needs to be created because it does not
+                    //exist in the assertion yet.
+                    if (fragmentPolicy == null) {
+                        fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
+                    }
+                } else {
+                    fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
+                }
+                
                 try {
                     traverseAssertionTreeForReferences(fragmentPolicy.getAssertion(), refs);
                 } catch(IOException e) {
@@ -150,6 +163,8 @@ public class PolicyExporter {
                     ref = new IdProviderReference(entityHeader.getOid());
                 } else if(entityHeader.getType().equals(EntityType.JMS_ENDPOINT)) {
                     ref = new JMSEndpointReference(entityHeader.getOid());
+                } else if(entityHeader.getType().equals(EntityType.TRUSTED_CERT)) {
+                    ref = new TrustedCertReference(entityHeader.getOid());
                 }
 
                 if(ref != null && !refs.contains(ref)) {

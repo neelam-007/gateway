@@ -71,7 +71,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         /** Connections from standalone SSM. */
         ADMIN_REMOTE,
 
-        /** The admin applet. */
+        /** Administration services offered over HTTP(S), i.e. the admin applet, ping and backup services. */
         ADMIN_APPLET,
 
         /** Certificate and policy discovery. */
@@ -92,9 +92,6 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         /** The HTTP-based SNMP query service. */
         SNMPQUERY,
 
-        /** The Gateway backup service. */
-        BACKUP,
-
         /** Agent web service for HP SOA Manager. */
         HPSOAM,
 
@@ -102,7 +99,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
          * All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc.
          * This does NOT include the PingServlet since the PingServlet has its own access rules.
          */
-        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, BACKUP, HPSOAM),
+        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, HPSOAM),
 
         /** Process Controller Service Node API*/
         PC_NODE_API,
@@ -546,7 +543,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     @Transient
     public List<PortRange> getTcpPortsUsed() {
         List<PortRange> ret = new ArrayList<PortRange>();
-        ret.add(new PortRange(port, port, false));
+        ret.add(new PortRange(port, port, false, getBindAddress()));
         PortRange range = getPortRange();
         if (range != null)
             ret.add(range);
@@ -565,7 +562,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
             if (countstr == null)
                 return null;
             int count = Integer.parseInt(countstr);
-            return new PortRange(start, start + count, false);
+            return new PortRange(start, start + count, false, getBindAddress());
         } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING, "Ignoring invalid port range settings for connector oid #" + getOid() + ": " + ExceptionUtils.getMessage(e), e);
             return null;

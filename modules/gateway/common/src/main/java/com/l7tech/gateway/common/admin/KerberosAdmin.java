@@ -8,6 +8,9 @@ import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 
 import java.util.Map;
 
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+
 /**
  * Remote interface to check Kerberos configuration.
  *
@@ -16,6 +19,7 @@ import java.util.Map;
  */
 @Secured
 @Administrative
+@Transactional(propagation= Propagation.SUPPORTS)
 public interface KerberosAdmin  {
 
     /**
@@ -69,5 +73,6 @@ public interface KerberosAdmin  {
      * @throws KerberosException if an error occurred.
      */
     @Secured(types= EntityType.CLUSTER_PROPERTY,stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
+    @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void installKeytab( byte[] data ) throws KerberosException;
 }

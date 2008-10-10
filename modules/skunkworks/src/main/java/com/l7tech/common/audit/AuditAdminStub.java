@@ -6,11 +6,13 @@ package com.l7tech.common.audit;
 
 import com.l7tech.util.OpaqueId;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 
 import java.util.Collection;
 import java.util.Date;
@@ -38,6 +40,18 @@ public class AuditAdminStub implements AuditAdmin {
 
     public void deleteOldAuditRecords() {
         throw new UnsupportedOperationException("Not supported in stub mode");
+    }
+
+    public void doAuditArchive() {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
+    }
+
+    public ClusterProperty getFtpAuditArchiveConfig() {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
+    }
+
+    public void setFtpAuditArchiveConfig(ClusterProperty prop) throws UpdateException {
+        throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
     public Collection<AuditRecord> findAuditRecords(String nodeid, Date startMsgDate, Date endMsgDate, int size) throws FindException {
@@ -80,6 +94,6 @@ public class AuditAdminStub implements AuditAdmin {
         return 168;
     }
 
-
-
+    public void auditViewGatewayAuditsAction() {
+    }
 }

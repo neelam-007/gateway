@@ -430,6 +430,9 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
     private static <AT extends Assertion> Functions.Binary< AssertionPropertiesEditor<AT>, Frame, AT >
     findPropertiesEditorFactory(ClassLoader loader, String apeClassname, Class<AT> assertionClass)
     {
+        if (apeClassname == null)
+            return null;
+
         final String assertionClassname = assertionClass.getName();
         try {
             // First check for (Frame, Assertion)

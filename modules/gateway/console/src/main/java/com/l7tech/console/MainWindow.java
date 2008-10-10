@@ -1,6 +1,7 @@
 package com.l7tech.console;
 
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
@@ -16,10 +17,7 @@ import com.l7tech.console.auditalerts.AuditAlertConfigBean;
 import com.l7tech.console.auditalerts.AuditAlertOptionsAction;
 import com.l7tech.console.auditalerts.AuditAlertsNotificationPanel;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.panels.LicenseDialog;
-import com.l7tech.console.panels.LogonDialog;
-import com.l7tech.console.panels.PreferencesDialog;
-import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonListener;
@@ -37,6 +35,7 @@ import com.l7tech.console.util.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.Timer;
@@ -159,6 +158,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     private NewInternalUserAction newInernalUserAction;
     private AuditAlertOptionsAction manageAuditAlertsAction;
     private ManageLogSinksAction manageLogSinksAction = null;
+    private ManageEmailListenersAction manageEmailListenersAction = null;
+    private ConfigureFtpAuditArchiverAction configureFtpAuditArchiver = null;
 
 
     private JPanel frameContentPane = null;
@@ -208,6 +209,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     public final static String FILTER_STATUS_SERVICES = "Filter: Services";
     public final static String FILTER_STATUS_POLICY_FRAGMENTS = "Filter: Policy Fragments";
 
+    private static final String WARNING_BANNER_PROP_NAME = "logon.warningBanner";
 
     /**
      * MainWindow constructor comment.
@@ -654,6 +656,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageRolesMenuItem());
             menu.add(getManageAuditAlertOptionsMenuItem());
             menu.add(getManageLogSinksAction());
+            menu.add(getManageEmailListenersAction());
+            menu.add(getConfigureFtpAuditArchiverAction());
 
 
             int mnemonic = menu.getText().toCharArray()[0];
@@ -1592,6 +1596,28 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageLogSinksAction;
     }
 
+    private Action getManageEmailListenersAction() {
+        if (manageEmailListenersAction != null)
+            return manageEmailListenersAction;
+
+        manageEmailListenersAction = new ManageEmailListenersAction();
+        manageEmailListenersAction.setEnabled(false);
+        this.addLogonListener(manageEmailListenersAction);
+        addPermissionRefreshListener(manageEmailListenersAction);
+        return manageEmailListenersAction;
+    }
+
+    private Action getConfigureFtpAuditArchiverAction() {
+        if (configureFtpAuditArchiver != null)
+            return configureFtpAuditArchiver;
+
+        configureFtpAuditArchiver = new ConfigureFtpAuditArchiverAction();
+        configureFtpAuditArchiver.setEnabled(false);
+        this.addLogonListener(configureFtpAuditArchiver);
+        addPermissionRefreshListener(configureFtpAuditArchiver);
+        return configureFtpAuditArchiver;
+    }
+
     private Action getManagePrivateKeysAction() {
         if (managePrivateKeysAction != null)
             return managePrivateKeysAction;
@@ -1670,6 +1696,9 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ViewAuditsOrLogsFromFileAction getAuditOrLogsFromFileAction() {
         if (auditOrLogFromFileAction != null) return auditOrLogFromFileAction;
         auditOrLogFromFileAction = new ViewAuditsOrLogsFromFileAction();
+        auditOrLogFromFileAction.setEnabled(false);
+        this.addLogonListener(auditOrLogFromFileAction);
+        addPermissionRefreshListener(auditOrLogFromFileAction);
         return auditOrLogFromFileAction;
     }
 
@@ -1864,6 +1893,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageClusterLicensesMenuItem());
             menu.add(getChangePasswordMenuItem(false));
             menu.add(getManageLogSinksAction());
+            menu.add(getManageEmailListenersAction());
+            menu.add(getConfigureFtpAuditArchiverAction());
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/Properties16.gif");
 
@@ -1978,11 +2009,18 @@ public class MainWindow extends JFrame implements SheetHolder {
                 JScrollPane identityScroller = new JScrollPane(getIdentitiesTree());
                 configureScrollPane(identityScroller);
                 treePanel.addTab("Identity Providers", identityScroller);
+                treePanel.setSelectedIndex(0);
+            } else {
+                treePanel.setEnabledAt(1, true);
+                treePanel.setSelectedIndex(0);
             }
         } else {
             if (treePanel.getTabCount() > 1) {
                 // Remove unwanted Identity Providers tab
-                treePanel.remove(1);
+                //treePanel.remove(1);
+                //bug 5357 - instead of removing the tab, we'll just disable the tab
+                treePanel.setEnabledAt(1, false);
+                treePanel.setSelectedIndex(0);
             }
         }
     }
@@ -1994,6 +2032,9 @@ public class MainWindow extends JFrame implements SheetHolder {
         JScrollPane assertionScroller = new JScrollPane(getAssertionPaletteTree());
         configureScrollPane(assertionScroller);
         paletteTabbedPane.addTab("Assertions", assertionScroller);
+        JScrollPane identityScroller = new JScrollPane(getIdentitiesTree());
+        configureScrollPane(identityScroller);
+        paletteTabbedPane.addTab("Identity Providers", identityScroller);
         Registry.getDefault().getLicenseManager().addLicenseListener(paletteTabbedPaneLicenseListener);
         return paletteTabbedPane;
     }
@@ -2150,7 +2191,11 @@ public class MainWindow extends JFrame implements SheetHolder {
             } catch (ActionVetoException e) {
                 return;
             }
+
+            SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+            if (securityProvider != null) securityProvider.logoff();
         }
+
         String maximized = Boolean.toString(getExtendedState()==Frame.MAXIMIZED_BOTH);
         this.setVisible(false);
         try {
@@ -2756,11 +2801,43 @@ public class MainWindow extends JFrame implements SheetHolder {
                       }
                   }
               }
+
+              try {
+                  showWarningBanner();
+              } catch(RuntimeException re) {
+                  log.log(Level.WARNING, "Unable to show warning banner: " + ExceptionUtils.getMessage(re) + ".",
+                          ExceptionUtils.getDebugException(re));
+              }
           }
 
           /* invoked on authentication failure */
           public void onAuthFailure() { }
       };
+
+    private void showWarningBanner() {
+        //determine if the warning banner is configured to be displayed
+        ClusterStatusAdmin csa = Registry.getDefault().getClusterStatusAdmin();
+        try {
+            ClusterProperty clusterProp = csa.findPropertyByName(WARNING_BANNER_PROP_NAME);
+            if (clusterProp != null && !clusterProp.getValue().equalsIgnoreCase("")) {
+                //warning banner is configured, need to display warning banner
+                final Frame parent = TopComponents.getInstance().getTopParent();
+                final WarningBanner warningBanner = new WarningBanner(parent, clusterProp.getValue());
+                warningBanner.pack();
+                Utilities.centerOnScreen(warningBanner);
+                DialogDisplayer.suppressSheetDisplay(warningBanner);
+                DialogDisplayer.display(warningBanner, parent, new Runnable() {
+                    public void run() {
+                        if (!warningBanner.isOkClicked() && !warningBanner.isCancelClicked()) {
+                            TopComponents.getInstance().disconnectFromGateway();
+                        }
+                    }
+                });
+            }
+        } catch (FindException fe) {
+            //no cluster property found, so we'll just ignore it
+        }
+    }
 
     /**
      * called when the policy currently edited gets deleted

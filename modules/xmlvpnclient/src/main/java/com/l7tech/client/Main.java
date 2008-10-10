@@ -14,9 +14,13 @@ import com.l7tech.proxy.MessageLogger;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Properties;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.TimerTask;
 
 /**
  * Begin execution of daemon-mode (no UI at all) client proxy.
@@ -64,7 +68,8 @@ public class Main {
         // Prepare .l7tech directory before initializing logging (Bug #1288)
         new File(Ssg.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
 
-        JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties");
+        String instDirPath = new File(Ssg.PROXY_CONFIG, "../logging.properties").getAbsolutePath();
+        JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties", instDirPath, false, true);
         JceProvider.init();
     }
 
@@ -79,6 +84,25 @@ public class Main {
 
         // ensures any missing configuration is initialized.
         new KerberosClient();
+
+        // read properties file from an optional settings file
+        String propertiesPath = Ssg.PROXY_CONFIG + File.separator + "xvc-system.properties";
+        File propsf = new File(propertiesPath);
+        if (propsf.exists()) {
+            try {
+                FileInputStream fis = new FileInputStream(propsf);
+                Properties props = new Properties();
+                props.load(fis);
+                fis.close();
+                if (props != null && props.size() > 0) {
+                    for (Object key : props.keySet()) {
+                        System.setProperty(key.toString(), props.getProperty(key.toString()));
+                    }
+                }
+            } catch (IOException e) {
+                log.log(Level.WARNING, "Error reading " + propertiesPath, e);
+            }
+        }
     }
 
     private static void deleteOldAttachments(File attachmentDir) {

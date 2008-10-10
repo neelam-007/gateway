@@ -1,0 +1,418 @@
+package com.l7tech.server.transport.ftp;
+
+import com.jscape.inet.ftp.Ftp;
+import com.jscape.inet.ftp.FtpException;
+import com.jscape.inet.ftps.Ftps;
+import com.jscape.inet.ftps.FtpsCertificateVerifier;
+
+import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.gateway.common.transport.ftp.*;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.util.HexUtils;
+import com.l7tech.common.io.CertUtils;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.X509TrustManager;
+import java.io.*;
+import java.net.UnknownHostException;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.text.MessageFormat;
+
+
+/**
+ * Utility class for building Ftp/Ftps clients in the connected state, ready to use for file transfers.
+ *
+ * @author jbufu
+ */
+public class FtpClientUtils {
+
+    private static final Logger logger = Logger.getLogger(FtpClientUtils.class.getName());
+    private static final Random random = new Random(System.currentTimeMillis());
+
+
+    private FtpClientUtils() {
+    }
+
+    /**
+     * Convenience proxy method for {@link com.l7tech.gateway.common.transport.ftp.FtpClientConfigImpl.newFtpConfig()}
+     *
+     * @param host
+     * @return
+     */
+    public static FtpClientConfig newConfig(String host) {
+        return FtpClientConfigImpl.newFtpConfig(host);
+    }
+
+    /**
+     * Creates a new, connected FTP client connected to the specified hostname.
+     */
+    public static Ftp newFtpClient(String host) throws FtpException {
+        return newFtpClient(FtpClientConfigImpl.newFtpConfig(host));
+    }
+    
+    /**
+     * Creates a new, connected FTP client using the provided FTP configuration.
+     */
+    public static Ftp newFtpClient(FtpClientConfig config) throws FtpException {
+        if (FtpCredentialsSource.SPECIFIED != config.getCredentialsSource())
+            throw new IllegalStateException("Cannot create FTP connection if crediantials are not specified.");
+
+        final Ftp ftp = new Ftp(config.getHost(), config.getUser(), config.getPass(), config.getPort());
+        if (config.getDebugStream() != null) {
+            ftp.setDebugStream(config.getDebugStream());
+            ftp.setDebug(true);
+        }
+        ftp.setTimeout(config.getTimeout());
+        ftpConnect(ftp);
+
+        String directory = config.getDirectory();
+        try {
+            if (directory != null && config.getDirectory().length() != 0) {
+                ftp.setDir(config.getDirectory());
+            }
+            ftp.setAuto(false);
+            ftp.setBinary();
+        } catch (FtpException e) {
+            ftp.disconnect();   // Closes connection before letting exception bubble up.
+            throw e;
+        }
+        return ftp;
+    }
+
+    public static Ftps newFtpsClient(FtpClientConfig config) throws FtpException {
+        return newFtpsClient(config, null, null);
+    }
+
+    public static Ftps newFtpsClient(FtpClientConfig config, SsgKeyStoreManager keyStoreManager) throws FtpException {
+        return newFtpsClient(config, keyStoreManager, null);
+    }
+
+    public static Ftps newFtpsClient(FtpClientConfig config, X509TrustManager trustManager) throws FtpException {
+        return newFtpsClient(config, null, trustManager);
+    }
+
+    /**
+     * Creates a new, connected FTPS client using the provided FTP configuration.
+     */
+    public static Ftps newFtpsClient(FtpClientConfig config, SsgKeyStoreManager keyStoreManager, X509TrustManager trustManager) throws FtpException {
+        if (FtpCredentialsSource.SPECIFIED != config.getCredentialsSource())
+            throw new IllegalStateException("Cannot create FTP connection if crediantials are not specified.");
+
+        if (FtpSecurity.FTP_UNSECURED == config.getSecurity())
+            throw new NullPointerException("Cannot generate FTPS connection for the configured FTP configuration.");
+
+        if (config.isVerifyServerCert() && trustManager == null)
+            throw new NullPointerException("Server certificate manager cannot be null if sever certificate validation is required.");
+
+        final Ftps ftps = new Ftps(config.getHost(), config.getUser(), config.getPass(), config.getPort());
+        if (config.getDebugStream() != null) {
+            ftps.setDebugStream(config.getDebugStream());
+            ftps.setDebug(true);
+        }
+        ftps.setTimeout(config.getTimeout());
+
+        CertificateVerifier certificateVerifier = null;
+        if (config.isVerifyServerCert()) {
+            certificateVerifier = new CertificateVerifier(trustManager, config.getHost());
+            ftps.setFtpsCertificateVerifier(certificateVerifier);
+        }
+
+        if (config.isUseClientCert()) {
+            if (config.getClientCertId() == -1 || config.getClientCertAlias() == null || keyStoreManager == null)
+                throw new IllegalArgumentException("Authentication with client certificate requested, but certificate id/alias/store not configured.");
+
+            try {
+                // Retrieves the private key and cert.
+                final SsgKeyFinder keyFinder = keyStoreManager.findByPrimaryKey(config.getClientCertId());
+                final SsgKeyEntry keyEntry = keyFinder.getCertificateChain(config.getClientCertAlias());
+                final X509Certificate[] certChain = keyEntry.getCertificateChain();
+                final PrivateKey privateKey = keyEntry.getPrivateKey();
+
+                // Creates a KeyStore object with a random password.
+                final byte[] randomBytes = new byte[16];
+                random.nextBytes(randomBytes);
+                final String privateKeyPassword = HexUtils.encodeBase64(randomBytes);
+                final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                keyStore.load(null, null);
+                final String alias = "ftp";
+                keyStore.setKeyEntry(alias, privateKey, privateKeyPassword.toCharArray(), certChain);
+
+                ftps.setClientCertificates(keyStore, privateKeyPassword);
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Assigned private key and certificate for FTPS client authentication. (key alias=" + config.getClientCertAlias() + ")");
+                }
+            } catch (Exception e) {
+                final StringBuilder msg = new StringBuilder("Cannot create keystore from private key (key alias=" + config.getClientCertAlias() + ") for authentication: " + e.toString());
+                if (e.getCause() != null) {
+                    msg.append(": ").append(e.getCause().toString());
+                }
+                throw new FtpException(msg.toString());
+            }
+        }
+
+        if (FtpSecurity.FTPS_EXPLICIT == config.getSecurity()) {
+            // Try AUTH TLS first. If that fails, then try AUTH SSL.
+            // We cannot use FEAT to check since not implemented by all FTP servers.
+            try {
+                ftpsConnect(ftps);  // Connects using AUTH TLS (default).
+            } catch (FtpException e) {
+                if (e.getException() instanceof UnknownHostException) {
+                    // If the failure was caused by host name problem, no need to
+                    // retry using AUTH SSL.
+                    throw e;
+                }
+                if (certificateVerifier != null) {
+                    // If the failure was caused by cert problem, no need to
+                    // retry using AUTH SSL; and we will replace the exception
+                    // with our own because ours has more specific message.
+                    certificateVerifier.throwIfFailed();
+                }
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Unable to connect using FTPS AUTH TLS. Retrying with AUTH SSL.");
+                }
+                ftps.setConnectionType(Ftps.AUTH_SSL);
+                ftpsConnect(ftps);
+            }
+        } else {
+            ftps.setConnectionType(Ftps.IMPLICIT_SSL);
+            try {
+                ftpsConnect(ftps);
+            } catch (FtpException e) {
+                if (certificateVerifier != null) {
+                    // If the failure was caused by cert problem, then replaces the
+                    // exception with our own because ours has more specific message.
+                    certificateVerifier.throwIfFailed();
+                }
+                throw e;
+            }
+        }
+
+        String directory = config.getDirectory();
+        try {
+            if (directory != null && directory.length() != 0) {
+                ftps.setDir(directory);
+            }
+            ftps.setAuto(false);
+            ftps.setBinary();
+        } catch (FtpException e) {
+            ftps.disconnect();  // Closes connection before letting exception bubble up.
+            throw e;
+        }
+        return ftps;
+    }
+
+    /**
+     * Wrapper method to call {@link Ftp#connect} that throws a better exception.
+     *
+     * The problem with calling {@link Ftp#connect} directly is that when the
+     * host is unavailable, it throws an exception with a message containing
+     * just the host name with no description. This wrapper replaces that with a
+     * clearer message.
+     */
+    private static void ftpConnect(Ftp ftp) throws FtpException {
+        try {
+            ftp.connect();
+        } catch (FtpException e) {
+            final Exception cause = e.getException();
+            if (cause instanceof UnknownHostException) {
+                e = new FtpException("Unknown host: " + ftp.getHostname(), cause);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Wrapper method to call {@link Ftps#connect} that throws a better exception.
+     *
+     * The problem with calling {@link Ftps#connect} directly is that when the
+     * host is unavailable, it throws an exception with a message containing
+     * just the host name with no description. This wrapper replaces that with a
+     * clearer message.
+     */
+    private static void ftpsConnect(Ftps ftps) throws FtpException {
+        try {
+            ftps.connect();
+        } catch (FtpException e) {
+            final Exception cause = e.getException();
+            if (cause instanceof UnknownHostException) {
+                e = new FtpException("Unknown host: " + ftps.getHostname(), cause);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Tests connection to FTP server and tries "cd" into remote directory.
+     *
+     * @throws com.l7tech.gateway.common.transport.ftp.FtpTestException if connection test failed
+     */
+    public static void testFtpConnection(FtpClientConfig config) throws FtpTestException {
+        // provide our own debug if the client is not watching the logs
+        ByteArrayOutputStream baos = null;
+        if (config.getDebugStream() == null) {
+            baos = new ByteArrayOutputStream();
+            config.setDebugStream(new PrintStream(baos));
+        }
+
+        Ftp ftp = null;
+        try {
+            ftp = newFtpClient(config);
+        } catch (FtpException e) {
+            throw new FtpTestException(e.getMessage(), baos != null ? baos.toString() : null);
+        } finally {
+            if (ftp != null) ftp.disconnect();
+            if (baos != null) {
+                config.getDebugStream().close();
+                config.setDebugStream(null);
+            }
+        }
+    }
+
+    /**
+     * Tests connection to FTPS server and tries "cd" into remote directory.
+     *
+     * @throws com.l7tech.gateway.common.transport.ftp.FtpTestException if connection test failed
+     */
+    public static void testFtpsConnection(FtpClientConfig config, SsgKeyStoreManager keyStoreManager, X509TrustManager trustManager) throws FtpTestException {
+        // provide our own debug if the client is not watching the logs
+        ByteArrayOutputStream baos = null;
+        if (config.getDebugStream() == null) {
+            baos = new ByteArrayOutputStream();
+            config.setDebugStream(new PrintStream(baos));
+        }
+
+        Ftps ftps = null;
+        try {
+            ftps = newFtpsClient(config, keyStoreManager, trustManager);
+        } catch (FtpException e) {
+            throw new FtpTestException(e.getMessage(), baos != null ? baos.toString() : null);
+        } finally {
+            if (ftps != null) ftps.disconnect();
+            if (baos != null) {
+                config.getDebugStream().close();
+                config.setDebugStream(null);
+            }
+        }
+    }
+
+    public static void upload(FtpClientConfig config, InputStream is, String filename) throws FtpException {
+        upload(config, is, filename, null, null);
+    }
+
+    public static void upload(FtpClientConfig config, InputStream is, String filename,
+                              SsgKeyStoreManager ssgKeyStore, X509TrustManager trustManager) throws FtpException {
+
+        if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
+            final Ftp ftp = FtpClientUtils.newFtpClient(config);
+
+            try {
+                ftp.upload(is, filename);
+            } finally {
+                ftp.disconnect();
+            }
+        } else {
+            final Ftps ftps = FtpClientUtils.newFtpsClient(config, ssgKeyStore, trustManager);
+
+            try {
+                ftps.upload(is, filename);
+            } finally {
+                ftps.disconnect();
+            }
+        }
+    }
+
+    public static OutputStream getUploadOutputStream(FtpClientConfig config, String filename) throws FtpException {
+        return getUploadOutputStream(config, filename, null, null);
+    }
+
+    public static OutputStream getUploadOutputStream(FtpClientConfig config, String filename,
+                            SsgKeyStoreManager ssgKeyStore, X509TrustManager trustManager) throws FtpException {
+        if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
+            Ftp ftp = FtpClientUtils.newFtpClient(config);
+            return ftp.getOutputStream(filename, 0, false);
+        } else {
+            Ftps ftps = FtpClientUtils.newFtpsClient(config, ssgKeyStore, trustManager);
+            try {
+            return ftps.getOutputStream(filename, 0, false);
+            } catch (IOException e) {
+                throw new FtpException("Error getting upload output stream.", e);
+            }
+        }
+    }
+
+    /**
+     * FTPS certificate verifier.
+     *
+     * <p>This is the way a verifier works: During {@link Ftps#connect}, the
+     * authorized() method gets invoked first. If authorized() returns false,
+     * then the verify() method will be invoked to verify the certificate,
+     * after which the authorized() method is invoked again. If it still
+     * returns false, an FtpException is thrown with the message
+     * "Could not authenticate when has not been authorized". It's not a very
+     * clear message so we provide a {@link #throwIfFailed} method to return a
+     * better exception message.
+     */
+    private static class CertificateVerifier implements FtpsCertificateVerifier {
+        private final X509TrustManager _trustManager;
+        private final String _hostName;
+        private boolean _authorized = false;
+        private FtpException _exception;
+
+        public CertificateVerifier(X509TrustManager trustManager, String hostName) {
+            assert(trustManager != null);
+            assert(hostName != null);
+            _trustManager = trustManager;
+            _hostName = hostName;
+        }
+
+        public boolean authorized() {
+            return _authorized;
+        }
+
+        public void verify(SSLSession sslSession) {
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest("Verifying FTP server (" + _hostName + ") SSL certificate using trusted certificate store.");
+            }
+            Certificate[] certs;
+            try {
+                certs = sslSession.getPeerCertificates();
+            } catch (SSLPeerUnverifiedException e) {
+                _exception = new FtpException(MessageFormat.format(SystemMessages.FTP_SSL_NO_CERT.getMessage(), _hostName, e.getMessage()));
+                return;
+            }
+            final X509Certificate[] x509certs = new X509Certificate[certs.length];
+            for (int i = 0; i < certs.length; ++ i) {
+                if (certs[i] instanceof X509Certificate) {
+                    x509certs[i] = (X509Certificate)certs[i];
+                } else {
+                    _exception = new FtpException(MessageFormat.format(SystemMessages.FTP_SSL_NOT_X509.getMessage(), _hostName));
+                    return;
+                }
+            }
+            try {
+                _trustManager.checkServerTrusted(x509certs, CertUtils.extractAuthType(sslSession.getCipherSuite()));
+                _authorized = true;
+                _exception = null;
+            } catch (CertificateException e) {
+                _exception = new FtpException(MessageFormat.format(SystemMessages.FTP_SSL_UNTRUSTED.getMessage(), _hostName, e.getMessage()));
+            }
+        }
+
+        /**
+         * @throws FtpException if an exception was encountered during {@link #verify}.
+         */
+        public void throwIfFailed() throws FtpException {
+            if (_exception != null) throw _exception;
+        }
+    }
+}

@@ -1,5 +1,7 @@
 package com.l7tech.kerberos;
 
+import javax.security.auth.kerberos.KerberosTicket;
+
 /**
  * Represents a kerberos service ticket.
  *
@@ -22,11 +24,25 @@ public final class KerberosServiceTicket {
      * @param ticket the ticket bytes
      */
     public KerberosServiceTicket(String client, String service, byte[] key, long expiry, KerberosGSSAPReqTicket ticket) {
+        this(client, service, key, expiry, ticket, null);
+    }
+
+    /**
+     * Create a new KerberosServiceTicket
+     *
+     * @param client the client principal name
+     * @param service the service principal name
+     * @param key the sub or session key
+     * @param ticket the ticket bytes
+     * @param delegatedKerberosTicket the delegated ticket (may be null)
+     */
+    public KerberosServiceTicket(String client, String service, byte[] key, long expiry, KerberosGSSAPReqTicket ticket, KerberosTicket delegatedKerberosTicket) {
         clientPrincipalName = client;
         servicePrincipalName = service;
         sessionOrSubKey = key;
         expires = expiry;
         gssApReqTicket = ticket;
+        this.delegatedKerberosTicket = delegatedKerberosTicket;
     }
 
     /**
@@ -75,6 +91,15 @@ public final class KerberosServiceTicket {
     }
 
     /**
+     * Get the delegated KerberosTicket.
+     *
+     * @return The ticket or null if not set
+     */
+    public KerberosTicket getDelegatedKerberosTicket() {
+        return delegatedKerberosTicket;
+    }
+
+    /**
      * Create a string representation of this ticket.
      */
     public String toString() {
@@ -88,4 +113,5 @@ public final class KerberosServiceTicket {
     private final byte[] sessionOrSubKey;
     private final long expires;
     private final KerberosGSSAPReqTicket gssApReqTicket;
+    private final KerberosTicket delegatedKerberosTicket;
 }

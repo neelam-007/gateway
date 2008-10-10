@@ -5,6 +5,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -23,6 +24,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import javax.xml.soap.SOAPConstants;
+import javax.xml.XMLConstants;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.*;
@@ -117,14 +120,19 @@ public class SoapFaultManager implements ApplicationContextAware {
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 try {
-                    Document tmp = XmlUtil.stringToDocument(GENERIC_FAULT);
+                    boolean useSoap12 = pec.getService() != null && pec.getService().getSoapVersion() == SoapVersion.SOAP_1_2;
+                    Document tmp = XmlUtil.stringToDocument(useSoap12 ? GENERIC_FAULT_SOAP_1_2 : GENERIC_FAULT);
                     NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
                     // populate @status element
                     Element policyResultEl = (Element)res.item(0);
                     policyResultEl.setAttribute("status", globalstatus.getMessage());
                     // populate the faultactor value
                     String actor = pec.getVariable("request.url").toString();
-                    res = tmp.getElementsByTagName("faultactor");
+                    if(useSoap12) {
+                        res = tmp.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role");
+                    } else {
+                        res = tmp.getElementsByTagName("faultactor");
+                    }
                     Element faultactor = (Element)res.item(0);
                     faultactor.setTextContent(actor);
                     output = XmlUtil.nodeToFormattedString(tmp);
@@ -151,29 +159,55 @@ public class SoapFaultManager implements ApplicationContextAware {
         String output = null;
         try {
             boolean policyVersionFault = pec.isRequestClaimingWrongPolicyVersion();
-            Document tmp = XmlUtil.stringToDocument( policyVersionFault ?
-                    POLICY_VERSION_EXCEPTION_FAULT : EXCEPTION_FAULT);
+            if(pec.getService() != null && pec.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
+                Document tmp = XmlUtil.stringToDocument(policyVersionFault ?
+                        POLICY_VERSION_EXCEPTION_FAULT_SOAP_1_2 : EXCEPTION_FAULT_SOAP_1_2);
 
-            if ( !policyVersionFault ) {
-                NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
-                Element policyResultEl = (Element)res.item(0);
+                if (!policyVersionFault) {
+                    NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
+                    Element policyResultEl = (Element) res.item(0);
 
-                // populate @status element
-                policyResultEl.setAttribute("status", e.getMessage());
+                    // populate @status element
+                    policyResultEl.setAttribute("status", e.getMessage());
+                }
+                // populate the faultactor value
+                String role;
+                try {
+                    role = pec.getVariable("request.url").toString();
+                    // todo, catch cases when this throws and just fix it
+                } catch (NoSuchVariableException notfound) {
+                    logger.log(Level.WARNING, "this variable is not found but should always be set", notfound);
+                    role = "ssg";
+                }
+                NodeList res = tmp.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role");
+                Element faultrole = (Element) res.item(0);
+                faultrole.setTextContent(role);
+                output = XmlUtil.nodeToFormattedString(tmp);
+            } else {
+                Document tmp = XmlUtil.stringToDocument(policyVersionFault ?
+                        POLICY_VERSION_EXCEPTION_FAULT : EXCEPTION_FAULT);
+
+                if (!policyVersionFault) {
+                    NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
+                    Element policyResultEl = (Element) res.item(0);
+
+                    // populate @status element
+                    policyResultEl.setAttribute("status", e.getMessage());
+                }
+                // populate the faultactor value
+                String actor;
+                try {
+                    actor = pec.getVariable("request.url").toString();
+                    // todo, catch cases when this throws and just fix it
+                } catch (NoSuchVariableException notfound) {
+                    logger.log(Level.WARNING, "this variable is not found but should always be set", notfound);
+                    actor = "ssg";
+                }
+                NodeList res = tmp.getElementsByTagName("faultactor");
+                Element faultactor = (Element) res.item(0);
+                faultactor.setTextContent(actor);
+                output = XmlUtil.nodeToFormattedString(tmp);
             }
-            // populate the faultactor value
-            String actor;
-            try {
-                actor = pec.getVariable("request.url").toString();
-                // todo, catch cases when this throws and just fix it
-            } catch (NoSuchVariableException notfound) {
-                logger.log(Level.WARNING, "this variable is not found but should always be set", notfound);
-                actor = "ssg";
-            }
-            NodeList res = tmp.getElementsByTagName("faultactor");
-            Element faultactor = (Element)res.item(0);
-            faultactor.setTextContent(actor);
-            output = XmlUtil.nodeToFormattedString(tmp);
         } catch (Exception el) {
             // should not happen
             logger.log(Level.WARNING, "Unexpected exception", el);
@@ -203,7 +237,8 @@ public class SoapFaultManager implements ApplicationContextAware {
     private String buildDetailedFault(PolicyEnforcementContext pec, AssertionStatus globalstatus, boolean includeSuccesses) {
         String output = null;
         try {
-            Document tmp = XmlUtil.stringToDocument(GENERIC_FAULT);
+            boolean useSoap12 = pec.getService() != null && pec.getService().getSoapVersion() == SoapVersion.SOAP_1_2;
+            Document tmp = XmlUtil.stringToDocument(useSoap12 ? GENERIC_FAULT_SOAP_1_2 : GENERIC_FAULT);
             NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
             // populate @status element
             Element policyResultEl = (Element)res.item(0);
@@ -219,7 +254,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 logger.log(Level.WARNING, "this variable is not found but should always be set", notfound);
                 actor = "ssg";
             }
-            res = tmp.getElementsByTagName("faultactor");
+            res = useSoap12 ? tmp.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role") : tmp.getElementsByTagName("faultactor");
             Element faultactor = (Element)res.item(0);
             faultactor.setTextContent(actor);
 
@@ -291,6 +326,24 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
 
+    private static final String GENERIC_FAULT_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:xml=\"" + XMLConstants.XML_NS_URI + "\" xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                         "    <soapenv:Body>\n" +
+                         "        <soapenv:Fault>\n" +
+                         "            <soapenv:Code>\n" +
+                         "                <soapenv:Value>soapenv:Receiver</soapenv:Value>\n" +
+                         "            </soapenv:Code>\n" +
+                         "            <soapenv:Reason>\n" +
+                         "                <soapenv:Text xml:lang=\"en-US\">Policy Falsified</soapenv:Text>\n" +
+                         "            </soapenv:Reason>\n" +
+                         "            <soapenv:Role/>\n" +
+                         "            <soapenv:Detail>\n" +
+                         "                <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                         "            </soapenv:Detail>\n" +
+                         "        </soapenv:Fault>\n" +
+                         "    </soapenv:Body>\n" +
+                         "</soapenv:Envelope>";
+
     private static final String EXCEPTION_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                         "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                         "    <soapenv:Body>\n" +
@@ -305,6 +358,24 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
 
+    private static final String EXCEPTION_FAULT_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:xml=\"" + XMLConstants.XML_NS_URI + "\" xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <soapenv:Code>\n" +
+                        "                <soapenv:Value>soapenv:Receiver</soapenv:Value>\n" +
+                        "            </soapenv:Code>\n" +
+                        "            <soapenv:Reason>\n" +
+                        "                <soapenv:Text xml:lang=\"en-US\">Error in assertion processing</soapenv:Text>\n" +
+                        "            </soapenv:Reason>\n" +
+                        "            <soapenv:Role/>\n" +
+                        "            <soapenv:Detail>\n" +
+                        "                <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "            </soapenv:Detail>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>";
+    
     private static final String POLICY_VERSION_EXCEPTION_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                         "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                         "    <soapenv:Body>\n" +
@@ -312,6 +383,21 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "            <faultcode>soapenv:Client</faultcode>\n" +
                         "            <faultstring>Incorrect policy version</faultstring>\n" +
                         "            <faultactor/>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>";
+
+    private static final String POLICY_VERSION_EXCEPTION_FAULT_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xml:lang=\"" + XMLConstants.XML_NS_URI + "\" xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <soapenv:Code>\n" +
+                        "                <soapenv:Value>soapenv:Sender</soapenv:Value>\n" +
+                        "            </soapenv:Code>\n" +
+                        "            <soapenv:Reason>\n" +
+                        "                <soapenv:Text xml:lang=\"en-US\">Incorrect policy version</soapenv:Text>\n" +
+                        "            </soapenv:Reason>\n" +
+                        "            <soapenv:Role/>\n" +
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";

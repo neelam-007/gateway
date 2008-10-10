@@ -45,9 +45,32 @@ public interface PartInfo {
      * into a byte array anyway.
      *
      * @return the body bytes of this part, if they are already available as a byte array, or null if they are not
-     *         available in that form
+     *         available in that form.
+     *        <b>Note:</b> any returned byte array is the live data, not a copy, and should <b>not be
+     *           modified</b> in any way.
      */
     public byte[] getBytesIfAlreadyAvailable();
+
+    /**
+     * Get this part's body as a byte array, creating a new byte array if necessary.
+     * <p/>
+     * If a byte array is already available internally, this method will just return that.
+     * Otherwise, this method will create a new byte array and return it as long as the {@link #getActualContentLength}
+     * is maxSize or smaller.
+     * <p/>
+     * <b>Note:</b> this method is intended to be used for debugging and logging purposes.  Production code should
+     * generally avoid assuming that part bodies are small enough to fit in memory -- even the XML part.
+     * Only use this method if your only alternative would be to just make a new byte array yourself.
+     *
+     * @param maxSize  Mamimum size if a new byte array needs to be created.  Ignored if a byte array is already
+     *                 available.
+     * @return a byte array containing all bytes from the current part, or null if the part size exceeds maxSize.
+     *        <b>Note:</b> the returned byte array should be assumed to be the live data, not a copy, and should <b>not be
+     *           modified</b> in any way.
+     * @throws IOException if there is an IOException while reading the part to produce a new byte array.
+     * @throws NoSuchPartException if this PartInfo's InputStream has already been destructively read.
+     */
+    public byte[] getBytesIfAvailableOrSmallerThan(int maxSize) throws IOException, NoSuchPartException;
 
     /**
      * Completely replace the body content of this multipart part.  This may require reading and discarding the
@@ -56,8 +79,8 @@ public interface PartInfo {
      * The Content-Length will be updated with the new length.
      *
      * @param newBody         the new body content to substitute.  May be empty but not null.
-     * @throws IOException    if there is a problem reading past the original part body in the main InputStream
-     * @throws IOException    if there is a problem stashing the new part body
+     * @throws IOException    if there is a problem reading past the original part body in the main InputStream; or,
+     *                        if there is a problem stashing the new part body
      */
     public void setBodyBytes(byte[] newBody) throws IOException;
 
@@ -88,8 +111,8 @@ public interface PartInfo {
      * The Content-Length header will be updated with the new, accurate information.
      *
      * @return The length of this part in bytes.  Always nonnegative, and always accurate.
-     * @throws IOException  if the main InputStream could not be read
-     * @throws IOException  if there was a problem recalling from the stash
+     * @throws IOException  if the main InputStream could not be read; or,
+     *                      if there was a problem recalling from the stash
      * @throws NoSuchPartException if this part's body has already been destructively read
      */
     public long getActualContentLength() throws IOException, NoSuchPartException;

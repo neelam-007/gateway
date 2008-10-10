@@ -60,7 +60,7 @@ public class AuditExporterTest {
     }
     
     public void testComposeSql() throws Exception {
-        String sql = AuditExporterImpl.composeSql(AuditExporterImpl.Dialect.MYSQL, -1, -1, null);
+        String sql = AuditExporterImpl.composeSql(AuditExporterImpl.Dialect.MYSQL, AuditExporterImpl.composeCountSql(-1, -1, null));
         System.out.println(sql);
     }
 

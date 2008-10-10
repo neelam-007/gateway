@@ -25,6 +25,8 @@ import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap12.SOAP12Body;
+import javax.wsdl.extensions.soap12.SOAP12Operation;
+import javax.wsdl.extensions.soap12.SOAP12Binding;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.BindingInput;
 import javax.wsdl.Input;
@@ -109,13 +111,17 @@ public class SoapUtil extends SoapConstants {
     }
 
     public static MessageFactory getMessageFactory() {
+        return getMessageFactory(SOAPConstants.SOAP_1_1_PROTOCOL);
+    }
+
+    public static MessageFactory getMessageFactory(String soapProtocol) {
         try {
             // bugzilla #2171, avoid 3rd party imposing their own implementations here
-            if ( SyspropUtil.getProperty("javax.xml.soap.MessageFactory") == null) {
+            if (SyspropUtil.getProperty("javax.xml.soap.MessageFactory") == null) {
                 SyspropUtil.setProperty("javax.xml.soap.MessageFactory",
-                                   "com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl");
+                        "com.sun.xml.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl");
             }
-            return MessageFactory.newInstance();
+            return MessageFactory.newInstance(soapProtocol);
         } catch (SOAPException e) {
             throw new RuntimeException(e); // can't happen
         }
@@ -260,7 +266,11 @@ public class SoapUtil extends SoapConstants {
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
         securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
-        setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
+        if(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(soapMsg.getDocumentElement().getNamespaceURI())) {
+            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "true");
+        } else {
+            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
+        }
 
         Element existing = DomUtils.findFirstChildElement(header);
         if (existing == null)
@@ -275,10 +285,19 @@ public class SoapUtil extends SoapConstants {
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
         securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
-        setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
+        boolean isSoap12 = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(soapMsg.getDocumentElement().getNamespaceURI());
+        if(isSoap12) {
+            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "true");
+        } else {
+            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
+        }
         if (actor != null) {
             // todo, should we create this actor with a ns ?
-            securityEl.setAttribute( SoapConstants.ACTOR_ATTR_NAME, actor);
+            if(isSoap12) {
+                setSoapAttr(securityEl, SoapUtil.ROLE_ATTR_NAME, actor);
+            } else {
+                securityEl.setAttribute(SoapUtil.ACTOR_ATTR_NAME, actor);
+            }
         }
         Element existing = DomUtils.findFirstChildElement(header);
         if (existing == null)
@@ -472,19 +491,25 @@ public class SoapUtil extends SoapConstants {
     }
 
     public static void nukeActorAttribute(Element el) {
-        el.removeAttribute( SoapConstants.ACTOR_ATTR_NAME);
+        String attrName = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(el.getOwnerDocument().getDocumentElement().getNamespaceURI()) ? SoapUtil.ROLE_ATTR_NAME : SoapUtil.ACTOR_ATTR_NAME;
+        el.removeAttribute(attrName);
         for (String ns : ENVELOPE_URIS) {
-            el.removeAttributeNS(ns, SoapConstants.ACTOR_ATTR_NAME);
+            el.removeAttributeNS(ns, attrName);
         }
     }
 
     public static String getActorValue(Element element) {
-        String localactor = element.getAttribute( SoapConstants.ACTOR_ATTR_NAME);
-        if (localactor == null || localactor.length() < 1) {
-            for (String ns : ENVELOPE_URIS) {
-                localactor = element.getAttributeNS(ns, SoapConstants.ACTOR_ATTR_NAME);
-                if (localactor != null && localactor.length() > 0) {
-                    return localactor;
+        String localactor = null;
+        if(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(element.getOwnerDocument().getDocumentElement().getNamespaceURI())) {
+            localactor = element.getAttributeNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, ROLE_ATTR_NAME);
+        } else {
+            localactor = element.getAttribute(SoapUtil.ACTOR_ATTR_NAME);
+            if (localactor == null || localactor.length() < 1) {
+                for (String ns : ENVELOPE_URIS) {
+                    localactor = element.getAttributeNS(ns, SoapUtil.ACTOR_ATTR_NAME);
+                    if (localactor != null && localactor.length() > 0) {
+                        return localactor;
+                    }
                 }
             }
         }
@@ -1103,6 +1128,9 @@ public class SoapUtil extends SoapConstants {
             if ( ee instanceof SOAPOperation ) {
                 SOAPOperation sop = (SOAPOperation)ee;
                 return sop.getSoapActionURI();
+            } else if( ee instanceof SOAP12Operation) {
+                SOAP12Operation sop = (SOAP12Operation)ee;
+                return sop.getSoapActionURI();
             }
         }
         return null;
@@ -1180,6 +1208,9 @@ public class SoapUtil extends SoapConstants {
                             if (eel instanceof javax.wsdl.extensions.soap.SOAPBody) {
                                 javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)eel;
                                 ns = body.getNamespaceURI();
+                            }  else if (eel instanceof javax.wsdl.extensions.soap12.SOAP12Body) {
+                                javax.wsdl.extensions.soap12.SOAP12Body body = (javax.wsdl.extensions.soap12.SOAP12Body) eel;
+                                ns = body.getNamespaceURI();
                             } else if (eel instanceof MIMEMultipartRelated) {
                                 MIMEMultipartRelated mime = (MIMEMultipartRelated)eel;
                                 List parts = mime.getMIMEParts();
@@ -1190,6 +1221,9 @@ public class SoapUtil extends SoapConstants {
                                         ExtensibilityElement mimeEel = (ExtensibilityElement)k.next();
                                         if (mimeEel instanceof javax.wsdl.extensions.soap.SOAPBody ) {
                                             javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)mimeEel;
+                                            ns = body.getNamespaceURI();
+                                        } else if (mimeEel instanceof javax.wsdl.extensions.soap12.SOAP12Body) {
+                                            javax.wsdl.extensions.soap12.SOAP12Body body = (javax.wsdl.extensions.soap12.SOAP12Body) mimeEel;
                                             ns = body.getNamespaceURI();
                                         }
                                     }
@@ -1311,6 +1345,9 @@ public class SoapUtil extends SoapConstants {
                         if (eel instanceof javax.wsdl.extensions.soap.SOAPBody) {
                             javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody) eel;
                             ns = body.getNamespaceURI();
+                        } else if (eel instanceof SOAP12Body) {
+                            SOAP12Body body = (SOAP12Body) eel;
+                            ns = body.getNamespaceURI();
                         } else if (eel instanceof MIMEMultipartRelated) {
                             MIMEMultipartRelated mime = (MIMEMultipartRelated) eel;
                             List parts = mime.getMIMEParts();
@@ -1321,6 +1358,9 @@ public class SoapUtil extends SoapConstants {
                                 for (ExtensibilityElement mimeEel : mimeEels) {
                                     if (mimeEel instanceof javax.wsdl.extensions.soap.SOAPBody) {
                                         javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody) mimeEel;
+                                        ns = body.getNamespaceURI();
+                                    } else if (mimeEel instanceof SOAP12Body) {
+                                        SOAP12Body body = (SOAP12Body) mimeEel;
                                         ns = body.getNamespaceURI();
                                     }
                                 }
@@ -1424,6 +1464,10 @@ public class SoapUtil extends SoapConstants {
                     javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)ee;
                     String uri = body.getNamespaceURI();
                     if (uri != null) return uri;
+                } else if (ee instanceof SOAP12Body) {
+                    SOAP12Body body = (SOAP12Body)ee;
+                    String uri = body.getNamespaceURI();
+                    if (uri != null) return uri;
                 }
             }
         }
@@ -1466,18 +1510,18 @@ public class SoapUtil extends SoapConstants {
     {
         //noinspection unchecked
         final List<ExtensibilityElement> bopEels = bindingOperation.getExtensibilityElements();
-        SOAPOperation soapOperation = null;
+        String operationStyle = null;
         for (ExtensibilityElement eel : bopEels) {
             if (eel instanceof SOAPOperation) {
-                soapOperation = (SOAPOperation) eel;
+                operationStyle = ((SOAPOperation) eel).getStyle();
+            } else if (eel instanceof SOAP12Operation) {
+                operationStyle = ((SOAP12Operation) eel).getStyle();
             }
         }
 
         final OperationType ot = bindingOperation.getOperation().getStyle();
         if (ot != null && ot != OperationType.REQUEST_RESPONSE && ot != OperationType.ONE_WAY)
             return null;
-
-        String operationStyle = soapOperation == null ? null : soapOperation.getStyle();
 
         BindingInput input = bindingOperation.getBindingInput();
         //noinspection unchecked
@@ -1487,6 +1531,10 @@ public class SoapUtil extends SoapConstants {
         for (ExtensibilityElement eel : eels) {
             if (eel instanceof javax.wsdl.extensions.soap.SOAPBody) {
                 javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)eel;
+                use = body.getUse();
+                namespace = body.getNamespaceURI();
+            }  else if (eel instanceof javax.wsdl.extensions.soap12.SOAP12Body) {
+                javax.wsdl.extensions.soap12.SOAP12Body body = (javax.wsdl.extensions.soap12.SOAP12Body)eel;
                 use = body.getUse();
                 namespace = body.getNamespaceURI();
             } else if (eel instanceof MIMEMultipartRelated) {
@@ -1499,6 +1547,10 @@ public class SoapUtil extends SoapConstants {
                 for (ExtensibilityElement partEel : partEels) {
                     if (partEel instanceof javax.wsdl.extensions.soap.SOAPBody) {
                         javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody) partEel;
+                        use = body.getUse();
+                        namespace = body.getNamespaceURI();
+                    } else if (partEel instanceof javax.wsdl.extensions.soap12.SOAP12Body) {
+                        javax.wsdl.extensions.soap12.SOAP12Body body = (javax.wsdl.extensions.soap12.SOAP12Body) partEel;
                         use = body.getUse();
                         namespace = body.getNamespaceURI();
                     }
@@ -1602,7 +1654,7 @@ public class SoapUtil extends SoapConstants {
      * Remove any empty SOAP Header from the specified SOAP document.
      *
      * @param doc the document to examine and possibly modify.  Required.
-     * @throws com.l7tech.common.xml.InvalidDocumentFormatException if the document is not a SOAP envelope or if there is more than one Header element
+     * @throws com.l7tech.util.InvalidDocumentFormatException if the document is not a SOAP envelope or if there is more than one Header element
      * @return true if an empty Header element was removed; or, false if the document was not modified.
      */
     public static boolean removeEmptySoapHeader(Document doc) throws InvalidDocumentFormatException {
@@ -1634,16 +1686,20 @@ public class SoapUtil extends SoapConstants {
         for (QName bindingName : bindings.keySet()) {
             Binding binding = bindings.get(bindingName);
             SOAPBinding soapBinding = null;
+            SOAP12Binding soap12Binding = null;
             //noinspection unchecked
             List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
             for (ExtensibilityElement element : bindingEels) {
                 if (element instanceof SOAPBinding) {
                     foundSoapBinding = true;
                     soapBinding = (SOAPBinding) element;
+                } else if (element instanceof SOAP12Binding) {
+                    foundSoapBinding = true;
+                    soap12Binding = (SOAP12Binding) element;
                 }
             }
 
-            if (soapBinding == null)
+            if (soapBinding == null && soap12Binding == null)
                 continue; // This isn't a SOAP binding; we don't care
             //noinspection unchecked
             List<BindingOperation> bindingOperations = binding.getBindingOperations();
@@ -1686,7 +1742,7 @@ public class SoapUtil extends SoapConstants {
                         hasHttpRequestKnob = Boolean.FALSE;
                     } else {
                         hasHttpRequestKnob = Boolean.TRUE;
-                        saction = stripQuotes(requestHttp.getHeaderSingleValue(SOAPACTION));
+                        saction = stripQuotes(requestHttp.getSoapAction());
                     }
                 }
                 return hasHttpRequestKnob.booleanValue();
@@ -1712,16 +1768,20 @@ public class SoapUtil extends SoapConstants {
         for (QName bindingName : bindings.keySet()) {
             Binding binding = bindings.get(bindingName);
             SOAPBinding soapBinding = null;
+            SOAP12Binding soap12Binding = null;
             //noinspection unchecked
             List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
             for (ExtensibilityElement element : bindingEels) {
                 if (element instanceof SOAPBinding) {
                     foundSoapBinding = true;
                     soapBinding = (SOAPBinding) element;
+                } else if (element instanceof SOAP12Binding) {
+                    foundSoapBinding = true;
+                    soap12Binding = (SOAP12Binding) element;
                 }
             }
 
-            if (soapBinding == null)
+            if (soapBinding == null && soap12Binding == null)
                 continue; // This isn't a SOAP binding; we don't care
             Operation res = getOperationFromBinding(binding, context);
             if (res != null) return res;

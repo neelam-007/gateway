@@ -25,6 +25,7 @@ import com.whirlycott.cache.Cache;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import javax.security.auth.x500.X500Principal;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.math.BigInteger;
 
 /**
  * Bean that can look up any certificate known to the SSG by thumbprint.
@@ -133,6 +135,10 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
         SignerInfo si = lookupPrivateKeyByKeyName(keyName);
         if (si != null) return si.getCertificateChain()[0];
 
+        return null;
+    }
+
+    public X509Certificate lookupByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
         return null;
     }
 

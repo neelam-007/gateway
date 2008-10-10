@@ -46,7 +46,7 @@ public class EditXmlSecurityRecipientContextAction extends NodeAction {
 
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final XmlSecurityRecipientContextEditor dlg = new XmlSecurityRecipientContextEditor(mw, assertion);
+        final XmlSecurityRecipientContextEditor dlg = new XmlSecurityRecipientContextEditor(mw, assertion, !node.canEdit());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

@@ -5,12 +5,14 @@ import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.spring.remoting.http.RemotingContext;
 import com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
@@ -38,6 +40,10 @@ import javax.swing.*;
 public class AdminContextImpl extends RemotingContext implements AdminContext {
 
     //- PUBLIC
+
+    public AdminLogin getAdminLogin() throws SecurityException {
+        return this.getRemoteInterfaceForEndpoint(AdminLogin.class);
+    }
 
     public IdentityAdmin getIdentityAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(IdentityAdmin.class);
@@ -97,6 +103,10 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
 
     public LogSinkAdmin getLogSinkAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(LogSinkAdmin.class);
+    }
+
+    public EmailListenerAdmin getEmailListenerAdmin() throws SecurityException {
+        return this.getRemoteInterfaceForEndpoint(EmailListenerAdmin.class);
     }
 
     //- PACKAGE

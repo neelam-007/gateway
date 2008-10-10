@@ -16,6 +16,8 @@ public class IOUtils {
     /**
      * Slurp at most maxLength bytes from stream into a byte array and return an array of the appropriate size.
      * The slurping will fail with an IOException if there are more than maxLength bytes remaining in the stream.
+     * <p/>
+     * Like the other slurpStream methods, this method does NOT close the input stream.
      *
      * @param stream  the stream to read.  Must not be null.
      * @param maxLength  the maximum number of bytes you are willing to recieve
@@ -42,6 +44,8 @@ public class IOUtils {
      * were read from stream.  The stream will be read until EOF or until the maximum specified number of bytes have
      * been read.  If you would like the array created for you with the exact size required, and don't mind
      * an extra array copy being involved, use {@link #slurpStream(java.io.InputStream, int)}.
+     * <p/>
+     * Like the other slurpStream methods, this method does NOT close the input stream.
      *
      * @param stream the stream to read
      * @param bb the array of bytes in which to read it
@@ -70,6 +74,8 @@ public class IOUtils {
      * byte array, use {@link #slurpStream(java.io.InputStream, int)}.
      * If you wish to provide your own buffer to prevent
      * copying, use {@link #slurpStream(java.io.InputStream, byte[])}.
+     * <p/>
+     * Like the other slurpStream methods, this method does NOT close the input stream.
      *
      * @param stream  the stream to slurp
      * @return a byte array containing the entire content of the stream, to EOF.  Never null.

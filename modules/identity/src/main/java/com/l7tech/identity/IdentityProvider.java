@@ -5,6 +5,7 @@ import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -70,4 +71,15 @@ public interface IdentityProvider<UT extends User, GT extends Group, UMT extends
      * @throws ValidationException If the user is no longer valid.
      */
     void validate(UT user) throws ValidationException;
+
+    boolean updateFailedLogonAttempt(LoginCredentials lc);
+
+    /**
+     * Checks if the user already has a  client certificate for the given provider.
+     *
+     * @param lc    Login credentials used for checking client  cert
+     * @return  TRUE if user has client cert
+     * @throws AuthenticationException
+     */
+    public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException;
 }

@@ -221,6 +221,12 @@ public class TrustedCertManagerImp
         return map;
     }
 
+    protected Collection<Map<String, Object>> getUniqueConstraints(final TrustedCert cert) {
+        Map<String,Object> map1 = new HashMap<String, Object>() {{ put("name", cert.getName()); }};
+        Map<String,Object> map2 = new HashMap<String, Object>() {{ put("subjectDn", cert.getSubjectDn()); }};
+        return Arrays.asList(map1, map2);
+    }
+
     @Override
     protected UniqueType getUniqueType() {
         return UniqueType.OTHER;

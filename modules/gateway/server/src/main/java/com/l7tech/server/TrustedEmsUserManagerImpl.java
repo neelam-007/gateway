@@ -20,6 +20,7 @@ import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -99,7 +100,7 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         map.put("providerOid", user.getProviderId());
 
         boolean didDelete = false;
-        List<TrustedEmsUser> found = findMatching(map);
+        List<TrustedEmsUser> found = findMatching(Arrays.asList(map));
         for (TrustedEmsUser trustedEmsUser : found) {
             if (logger.isLoggable(Level.INFO))
                 logger.log(Level.INFO, "Deleting EMS user mapping for user {0} ({1} on EMS {2})", new Object[] {
@@ -116,7 +117,7 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         map.put("providerOid", identityProviderOid);
 
         boolean didDelete = false;
-        List<TrustedEmsUser> found = findMatching(map);
+        List<TrustedEmsUser> found = findMatching(Arrays.asList(map));
         for (TrustedEmsUser trustedEmsUser : found) {
             if (logger.isLoggable(Level.INFO))
                 logger.log(Level.INFO, "Deleting EMS user mapping for user {0} on EMS {1}", new Object[] { trustedEmsUser, trustedEmsUser.getTrustedEms().getId() });
@@ -131,7 +132,7 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("trustedEms", trustedEms);
         map.put("emsUserId", emsUsername);
-        List<TrustedEmsUser> result = findMatching(map);
+        List<TrustedEmsUser> result = findMatching(Arrays.asList(map));
         if (result.size() > 1)
             throw new FindException("Found more than one user on ems " + trustedEms.getName() + " with username " + emsUsername);
         return result.size() == 1 ? result.get(0) : null;

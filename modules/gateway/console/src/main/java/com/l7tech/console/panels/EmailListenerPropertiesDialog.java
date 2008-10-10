@@ -1,0 +1,431 @@
+package com.l7tech.console.panels;
+
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.gateway.common.transport.email.EmailServerType;
+import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.DocumentSizeFilter;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.util.ValidationUtils;
+
+import javax.swing.*;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.text.AbstractDocument;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.text.MessageFormat;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: njordan
+ * Date: 26-Jun-2008
+ * Time: 4:27:22 PM
+ * To change this template use File | Settings | File Templates.
+ */
+public class EmailListenerPropertiesDialog extends JDialog {
+    public static final String TITLE = "Email Listener Properties";
+
+    /** Resource bundle with default locale */
+    private ResourceBundle resources = null;
+
+    private JPanel mainPanel;
+    private JButton cancelButton;
+    private JButton okButton;
+    private JTextField name;
+    private JTextField hostname;
+    private JSpinner port;
+    private JComboBox serverType;
+    private JCheckBox useSSLCheckbox;
+    private JTextField folderName;
+    private JButton folderBrowseButton;
+    private JSpinner checkInterval;
+    private JTextField username;
+    private JPasswordField password;
+    private JButton testButton;
+    private JCheckBox deleteOnReceiveCheckbox;
+    private JCheckBox activeCheckbox;
+
+    private EmailListener emailListener;
+    private InputValidator inputValidator;
+    private boolean confirmed = false;
+
+    /**
+     * Creates a new instance of EmailListenerPropertiesDialog. The fields in the dialog
+     * will be set from the values in the provided EmailListener and if the dialog is
+     * dismissed with the OK button, then the provided EmailListener will be updated with
+     * the values from the fields in this dialog.
+     *
+     * @param owner The owner of this dialog window
+     * @param emailListener The EmailListener to read values from and possibly update
+     */
+    public EmailListenerPropertiesDialog(Dialog owner, EmailListener emailListener) throws HeadlessException {
+        super(owner, TITLE, true);
+        this.emailListener = emailListener;
+        initialize();
+    }
+
+    /**
+     * Creates a new instance of EmailListenerPropertiesDialog. The fields in the dialog
+     * will be set from the values in the provided EmailListener and if the dialog is
+     * dismissed with the OK button, then the provided EmailListener will be updated with
+     * the values from the fields in this dialog.
+     *
+     * @param owner The owner of this dialog window
+     * @param emailListener The EmailListener to read values from and possibly update
+     */
+    public EmailListenerPropertiesDialog(Frame owner, EmailListener emailListener) throws HeadlessException {
+        super(owner, TITLE, true);
+        this.emailListener = emailListener;
+        initialize();
+    }
+
+    /**
+     * Loads locale-specific resources: strings, images, etc
+     */
+    private void initResources() {
+        Locale locale = Locale.getDefault();
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.EmailListenerPropertiesDialog", locale);
+    }
+
+    /**
+     * Initializes this dialog window and sets all of the fields based on the provided EmailListener
+     * object.
+     */
+    private void initialize() {
+        setContentPane(mainPanel);
+        initializeFields();
+
+        // Update all of the fields using the values from EmailListener
+        modelToView();
+
+        Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
+
+        pack();
+        Utilities.centerOnScreen(this);
+    }
+
+    /**
+     * Initializes the base settings fields.
+     */
+    private void initializeFields() {
+        initResources();
+
+        setTitle(resources.getString("emailListenerProperties.window.title"));
+        inputValidator = new InputValidator(this, resources.getString("emailListenerProperties.window.title"));
+
+        setContentPane(mainPanel);
+        pack();
+        setModal(true);
+        getRootPane().setDefaultButton(okButton);
+
+        // Attach the validator to the OK button
+        inputValidator.attachToButton(okButton, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onOk();
+            }
+        });
+
+        inputValidator.attachToButton(testButton, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onTest();
+            }
+        });
+
+        cancelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+
+        // When the type field is changed, enable or disable the tabs that aren't associated
+        // with the new type value.
+        serverType.setModel(new DefaultComboBoxModel(EmailServerType.values()));
+        serverType.setSelectedItem(EmailServerType.POP3);
+        serverType.setRenderer(new KeyedResourceRenderer(resources, "settings.serverType.{0}.text"));
+        serverType.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updatePortAndFolder();
+            }
+        });
+
+        useSSLCheckbox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                if(useSSLCheckbox.isSelected()) {
+                    port.setValue(((EmailServerType)serverType.getSelectedItem()).getDefaultSslPort());
+                } else {
+                    port.setValue(((EmailServerType)serverType.getSelectedItem()).getDefaultClearPort());
+                }
+            }
+        });
+
+        // Name field must not be empty and must not be longer than 128 characters
+        ((AbstractDocument)name.getDocument()).setDocumentFilter(new DocumentSizeFilter(128));
+        inputValidator.constrainTextFieldToBeNonEmpty("Name", name, new InputValidator.ComponentValidationRule(name) {
+            public String getValidationError() {
+                if( name.getText().trim().length()==0 ) {
+                    return resources.getString("settings.name.errors.empty");
+                }
+
+                return null;
+            }
+        });
+        inputValidator.validateWhenDocumentChanges(name);
+
+        // Hostname field must not be empty and must not be longer than 128 characters
+        ((AbstractDocument)hostname.getDocument()).setDocumentFilter(new DocumentSizeFilter(128));
+        inputValidator.constrainTextFieldToBeNonEmpty("Hostname", hostname, new InputValidator.ComponentValidationRule(hostname) {
+            public String getValidationError() {
+                if( hostname.getText().trim().length()==0 ) {
+                    return resources.getString("settings.hostname.errors.empty");
+                } else if ( !ValidationUtils.isValidCharacters(hostname.getText().trim(), ValidationUtils.ALPHA_NUMERIC + "_-.") ) {
+                    return resources.getString("settings.hostname.errors.chars");
+                }
+
+                return null;
+            }
+        });
+        inputValidator.validateWhenDocumentChanges(hostname);
+
+        // Port must be an integer between 1 and 65535
+        port.setModel(new SpinnerNumberModel(EmailServerType.POP3.getDefaultClearPort(), 1, 65535, 1));
+
+        serverType.setModel(new DefaultComboBoxModel(EmailServerType.values()));
+        serverType.setSelectedItem(EmailServerType.POP3);
+
+        // Username field must not be empty and must not be longer than 255 characters
+        ((AbstractDocument)username.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
+        inputValidator.constrainTextFieldToBeNonEmpty("Username", username, new InputValidator.ComponentValidationRule(username) {
+            public String getValidationError() {
+                if( username.getText().trim().length()==0 ) {
+                    return resources.getString("settings.username.errors.empty");
+                } else if ( !ValidationUtils.isValidCharacters(username.getText().trim(), ValidationUtils.ALPHA_NUMERIC + "_-.@") ) {
+                    return resources.getString("settings.username.errors.chars");
+                }
+
+                return null;
+            }
+        });
+        inputValidator.validateWhenDocumentChanges(username);
+
+        // Password field must not be empty and must not be longer than 32 characters
+        ((AbstractDocument)password.getDocument()).setDocumentFilter(new DocumentSizeFilter(32));
+        inputValidator.constrainTextFieldToBeNonEmpty("Password", password, new InputValidator.ComponentValidationRule(password) {
+            public String getValidationError() {
+                if( password.getPassword().length==0 ) {
+                    return resources.getString("settings.password.errors.empty");
+                }
+
+                return null;
+            }
+        });
+        inputValidator.validateWhenDocumentChanges(password);
+
+        // Folder field must not be empty and must not be longer than 255 characters
+        ((AbstractDocument)folderName.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
+        inputValidator.constrainTextFieldToBeNonEmpty("Folder", folderName, new InputValidator.ComponentValidationRule(folderName) {
+            public String getValidationError() {
+                if( folderName.getText().trim().length()==0 ) {
+                    return resources.getString("settings.folder.errors.empty");
+                } else if ( !ValidationUtils.isValidCharacters(folderName.getText().trim(), ValidationUtils.ALPHA_NUMERIC + "_-/. ") ) {
+                    return resources.getString("settings.folder.errors.chars");
+                }
+
+                return null;
+            }
+        });
+        inputValidator.validateWhenDocumentChanges(folderName);
+
+        folderBrowseButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                onBrowse();
+            }
+        });
+
+        // Interval must be an integer between greater than or equal to 1
+        checkInterval.setModel(new SpinnerNumberModel(5, 1, Integer.MAX_VALUE, 1));
+    }
+
+    public void setVisible(boolean b) {
+        if (b && !isVisible()) confirmed = false;
+        super.setVisible(b);
+    }
+
+    private void onBrowse() {
+        EmailListenerAdmin emailListenerAdmin = Registry.getDefault().getEmailListenerAdmin();
+        if(emailListenerAdmin == null) {
+            DialogDisplayer.showMessageDialog(this, "Failed to connect to the SSG!", "Connection Failure", JOptionPane.ERROR_MESSAGE, null);
+            return;
+        }
+
+        EmailServerType emailServerType = (EmailServerType)serverType.getSelectedItem();
+        boolean useSSL = useSSLCheckbox.isSelected();
+        String host = hostname.getText().trim();
+        int portNum = ((Number)port.getValue()).intValue();
+        String user = username.getText().trim();
+        String pass = new String(password.getPassword());
+
+        EmailListenerAdmin.IMAPFolder rootFolder = emailListenerAdmin.getIMAPFolderList(host, portNum, user, pass, useSSL);
+
+        if(rootFolder == null) {
+            DialogDisplayer.showMessageDialog(this, "Failed to connect to the email server.", "Connection Failure", JOptionPane.ERROR_MESSAGE, null);
+            return;
+        }
+
+        EmailListenerFolderList folderListDialog = new EmailListenerFolderList(this, rootFolder);
+        folderListDialog.setVisible(true);
+
+        if(folderListDialog.isConfirmed()) {
+            String path = folderListDialog.getSelectedFolderPath();
+            if(path != null) {
+                folderName.setText(path);
+            }
+        }
+    }
+
+    private void onOk() {
+        viewToModel();
+        confirmed = true;
+        dispose();
+    }
+
+    private void onTest() {
+        EmailListenerAdmin emailListenerAdmin = Registry.getDefault().getEmailListenerAdmin();
+        if(emailListenerAdmin == null) {
+            DialogDisplayer.showMessageDialog(this, "Failed to connect to the SSG!", "Connection Failure", JOptionPane.ERROR_MESSAGE, null);
+        }
+
+        EmailServerType emailServerType = (EmailServerType)serverType.getSelectedItem();
+        boolean useSSL = useSSLCheckbox.isSelected();
+        String host = hostname.getText().trim();
+        int portNum = ((Number)port.getValue()).intValue();
+        String user = username.getText().trim();
+        String pass = new String(password.getPassword());
+        String folder = folderName.getText().trim();
+
+        if(emailListenerAdmin.testEmailAccount(emailServerType, host, portNum, user, pass, useSSL, folder)) {
+            DialogDisplayer.showMessageDialog(this, "Connection Succeeded", "Success", JOptionPane.INFORMATION_MESSAGE, null);
+        } else {
+            DialogDisplayer.showMessageDialog(this, "Connection Failed", "Failure", JOptionPane.ERROR_MESSAGE, null);
+        }
+    }
+
+    private void updatePortAndFolder() {
+        if(serverType.getSelectedItem() == null) {
+            return;
+        }
+        
+        switch((EmailServerType)serverType.getSelectedItem()) {
+        case POP3:
+            port.setValue(useSSLCheckbox.isSelected() ? EmailServerType.POP3.getDefaultSslPort() : EmailServerType.POP3.getDefaultClearPort());
+            folderName.setText("INBOX");
+            folderName.setEnabled(false);
+            folderBrowseButton.setEnabled(false);
+            break;
+        case IMAP:
+            port.setValue(useSSLCheckbox.isSelected() ? EmailServerType.IMAP.getDefaultSslPort() : EmailServerType.IMAP.getDefaultClearPort());
+            folderName.setText("");
+            folderName.setEnabled(true);
+            folderBrowseButton.setEnabled(true);
+            break;
+        }
+    }
+
+    /**
+     * Updates the dialog fields to match the values from the backing EmailListener.
+     */
+    private void modelToView() {
+        name.setText(emailListener.getName());
+        activeCheckbox.setSelected(emailListener.isActive() || emailListener.getOid() == EmailListener.DEFAULT_OID);
+        serverType.setSelectedItem(emailListener.getServerType() == null ? EmailServerType.POP3 : emailListener.getServerType());
+        useSSLCheckbox.setSelected(emailListener.isUseSsl());
+        deleteOnReceiveCheckbox.setSelected(emailListener.isDeleteOnReceive());
+        hostname.setText(emailListener.getHost());
+        port.setValue(emailListener.getPort());
+        username.setText(emailListener.getUsername());
+        password.setText(emailListener.getPassword());
+        folderName.setText(emailListener.getFolder() != null && emailListener.getFolder().length() > 0 ? emailListener.getFolder() : "INBOX");
+        checkInterval.setValue(emailListener.getPollInterval());
+    }
+
+    /**
+     * Updates the backing EmailListener with the values from this dialog.
+     */
+    private void viewToModel() {
+        emailListener.setName(name.getText().trim());
+        emailListener.setActive(activeCheckbox.isSelected());
+        emailListener.setServerType((EmailServerType)serverType.getSelectedItem());
+        emailListener.setUseSsl(useSSLCheckbox.isSelected());
+        emailListener.setDeleteOnReceive(deleteOnReceiveCheckbox.isSelected());
+        emailListener.setHost(hostname.getText().trim());
+        emailListener.setPort(((Number)port.getValue()).intValue());
+        emailListener.setUsername(username.getText().trim());
+        emailListener.setPassword(new String(password.getPassword()));
+        emailListener.setFolder(folderName.getText().trim());
+        emailListener.setPollInterval(((Number)checkInterval.getValue()).intValue());
+    }
+
+    /** @return true if the dialog has been dismissed with the ok button */
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+
+    public static void main(String[] args) {
+        Frame f = new JFrame();
+        f.setVisible(true);
+        EmailListenerPropertiesDialog d = new EmailListenerPropertiesDialog(f, new EmailListener());
+        d.setVisible(true);
+        d.dispose();
+        f.dispose();
+    }
+
+    /**
+     * Renderer for items keyed into given resource bundle.
+     */
+    private static final class KeyedResourceRenderer extends JLabel implements ListCellRenderer {
+        private final ResourceBundle bundle;
+        private final String keyFormat;
+
+        public KeyedResourceRenderer( final ResourceBundle bundle,
+                                      final String keyFormat ) {
+            this.bundle = bundle;
+            this.keyFormat = keyFormat;
+        }
+
+        public Component getListCellRendererComponent( JList list,
+                                                       Object value,
+                                                       int index,
+                                                       boolean isSelected,
+                                                       boolean cellHasFocus)
+        {
+            Object[] keyFormatArgs = new Object[]{ value };
+
+            String label = "";
+            if ( value != null ) {
+                label = bundle.getString(MessageFormat.format(keyFormat, keyFormatArgs));
+            }
+
+            setText(label);
+
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+                setOpaque(true);
+            } else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+                setOpaque(false);
+            }
+
+            setEnabled(list.isEnabled());
+            setFont(list.getFont());
+
+            return this;
+        }
+    }
+}

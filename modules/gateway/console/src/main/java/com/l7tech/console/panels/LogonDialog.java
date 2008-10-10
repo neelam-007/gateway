@@ -8,20 +8,18 @@ import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.security.AuthenticationProvider;
-import com.l7tech.console.security.InvalidHostCertificateException;
-import com.l7tech.console.security.InvalidHostNameException;
-import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.security.*;
 import com.l7tech.gui.FilterDocument;
-import com.l7tech.console.util.History;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.SsmPreferences;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.TrustCertificateDialog;
+import com.l7tech.console.util.*;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.LoginRequireClientCertificateException;
 
 import javax.security.auth.login.LoginException;
+import javax.security.auth.login.AccountLockedException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -34,6 +32,10 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * This class is the SSG console Logon dialog.
@@ -68,6 +70,7 @@ public class LogonDialog extends JDialog {
     /* Command string for a login action (e.g.,a button or menu item). */
     private String CMD_LOGIN = "cmd.login";
 
+    private String CMD_MANAGE_CERT = "cmd.manage.cert";
 
     private JButton loginButton = null;
 
@@ -85,6 +88,16 @@ public class LogonDialog extends JDialog {
      * the server combo box *
      */
     private JComboBox serverComboBox = null;
+
+    private JRadioButton useCreds = null;
+    private JRadioButton useCert = null;
+    private JComboBox certSelection = null;
+    private JButton manageCertBtn = null;
+    private JLabel certLabel = null;
+    private ButtonGroup selection = null;
+    private JLabel passwordLabel = null;
+    private JLabel userNameLabel = null;
+    private Hashtable<String, X509Certificate> certsHash = new Hashtable<String, X509Certificate>();
 
     private Frame parentFrame;
     private History serverUrlHistory;
@@ -170,10 +183,44 @@ public class LogonDialog extends JDialog {
             contents.add(new JLabel(imageIcon), constraints);
         }
 
+        selection = new ButtonGroup();
+
+        useCreds = new JRadioButton(resources.getString("logon.radio.usernamePassword"));
+        useCreds.setSelected(true);
+        useCreds.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (useCreds.isSelected()) {
+                    //enable to enter username and password
+                    userNameLabel.setEnabled(true);
+                    userNameTextField.setEnabled(true);
+                    passwordLabel.setEnabled(true);
+                    passwordField.setEnabled(true);
+
+                    //disable certificate usage
+                    useCert.setSelected(false);
+                    certLabel.setEnabled(false);
+                    manageCertBtn.setEnabled(false);
+                    certSelection.setEnabled(false);
+
+                    //set login button
+                    loginButton.setEnabled(!userNameTextField.getText().equalsIgnoreCase("") &&
+                            (serverComboBox.getSelectedItem() != null && !((String)serverComboBox.getSelectedItem()).equalsIgnoreCase("")));
+                }
+            }
+        });
+        selection.add(useCreds);
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        constraints.gridwidth = 2;
+        constraints.anchor = GridBagConstraints.WEST;
+        contents.add(useCreds, constraints);
+
+
         userNameTextField = new JTextField(); //needed below
 
         // user name label
-        JLabel userNameLabel = new JLabel();
+        userNameLabel = new JLabel();
         userNameLabel.setToolTipText(resources.getString("userNameTextField.tooltip"));
         userNameTextField.setDocument(new FilterDocument(200,
                                                          new FilterDocument.Filter() {
@@ -205,24 +252,24 @@ public class LogonDialog extends JDialog {
         userNameLabel.setText(resources.getString("userNameTextField.label"));
 
         constraints.gridx = 0;
-        constraints.gridy = 1;
+        constraints.gridy = 2;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(5, 10, 0, 0);
+        constraints.insets = new Insets(0, 25, 0, 0);
         contents.add(userNameLabel, constraints);
 
         // user name text field
         userNameTextField.setToolTipText(resources.getString("userNameTextField.tooltip"));
         constraints.gridx = 1;
-        constraints.gridy = 1;
+        constraints.gridy = 2;
         constraints.weightx = 1.0;
         constraints.gridwidth = 3;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(5, 5, 0, 10);
+        constraints.insets = new Insets(5, 15, 0, 10);
         contents.add(userNameTextField, constraints);
 
         constraints.gridx = 3;
-        constraints.gridy = 1;
+        constraints.gridy = 2;
         constraints.gridwidth = 1;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -264,17 +311,17 @@ public class LogonDialog extends JDialog {
         passwordField = new JPasswordField(); // needed below
 
         // password label
-        JLabel passwordLabel = new JLabel();
+        passwordLabel = new JLabel();
         passwordLabel.setToolTipText(resources.getString("passwordField.tooltip"));
         passwordLabel.setDisplayedMnemonic(resources.getString("passwordField.mnemonic").charAt(0));
         passwordLabel.setText(resources.getString("passwordField.label"));
         passwordLabel.setLabelFor(passwordField);
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
-        constraints.gridy = 2;
+        constraints.gridy = 3;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(5, 10, 0, 0);
+        constraints.insets = new Insets(5, 25, 0, 0);
 
         contents.add(passwordLabel, constraints);
 
@@ -286,20 +333,103 @@ public class LogonDialog extends JDialog {
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
-        constraints.gridy = 2;
+        constraints.gridy = 3;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
         constraints.gridwidth = 3;
-        constraints.insets = new Insets(5, 5, 0, 10);
+        constraints.insets = new Insets(5, 15, 0, 10);
         contents.add(passwordField, constraints);
 
         constraints.gridx = 3;
-        constraints.gridy = 2;
+        constraints.gridy = 3;
         constraints.gridwidth = 1;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         contents.add(Box.createHorizontalStrut(100), constraints);
 
+        useCert = new JRadioButton(resources.getString("logon.radio.clientCert"));
+        useCert.setSelected(false);
+        useCert.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (useCert.isSelected()) {
+                    //disable to enter username and password
+                    userNameLabel.setEnabled(false);
+                    userNameTextField.setEnabled(false);
+                    passwordLabel.setEnabled(false);
+                    passwordField.setEnabled(false);
+
+                    //enable certificate usage
+                    useCert.setSelected(true);
+                    certLabel.setEnabled(true);
+                    certSelection.setEnabled(true);
+                    populateCertificateChoices();
+                    manageCertBtn.setEnabled(true);
+
+                    //set ok button enabled
+                    loginButton.setEnabled(certSelection.getItemCount() > 0 &&
+                            (serverComboBox.getSelectedItem() != null && !((String)serverComboBox.getSelectedItem()).equalsIgnoreCase("")));
+                }
+            }
+        });
+        selection.add(useCert);
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 4;
+        constraints.gridwidth = 2;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(15,0,0,0);
+        contents.add(useCert, constraints);
+
+        certLabel = new JLabel(resources.getString("logon.certificateLabel"));
+        certLabel.setEnabled(false);
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 5;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(2, 25, 0, 0);
+        contents.add(certLabel, constraints);
+
+        certSelection = new JComboBox();
+        populateCertificateChoices();
+        certSelection.setEnabled(false);
+        certSelection.setEditable(false);
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 5;
+        constraints.gridwidth = 3;
+        constraints.insets = new Insets(2, 15, 0, 10);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        contents.add(certSelection, constraints);
+
+        JPanel certBtnPanel = new JPanel();
+        certBtnPanel.setLayout(new BoxLayout(certBtnPanel, 0));
+        manageCertBtn = new JButton(resources.getString("logon.importCert"));
+        manageCertBtn.setActionCommand(CMD_MANAGE_CERT);
+        manageCertBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                windowAction(event.getActionCommand());
+            }
+        });
+        manageCertBtn.setEnabled(false);
+        certBtnPanel.add(manageCertBtn);
+
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 6;
+        constraints.gridwidth = 5;
+        constraints.insets = new Insets(5, 15, 0, 10);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.anchor = GridBagConstraints.EAST;
+        contents.add(certBtnPanel, constraints);
+
+        JSeparator sep = new JSeparator();
+        constraints = new GridBagConstraints();
+        constraints.gridwidth = 5;
+        constraints.gridy = 7;
+        constraints.insets = new Insets(10, 10, 0, 10);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        contents.add(sep, constraints);
 
         //url label
         JLabel serverLabel = new JLabel();
@@ -309,7 +439,7 @@ public class LogonDialog extends JDialog {
         serverLabel.setLabelFor(passwordField);
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
-        constraints.gridy = 3;
+        constraints.gridy = 8;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(20, 10, 0, 0);
@@ -326,7 +456,7 @@ public class LogonDialog extends JDialog {
         serverComboBox.setEditor(basicComboBoxEditor);
         serverComboBox.setToolTipText(resources.getString("serverField.tooltip"));
         constraints.gridx = 1;
-        constraints.gridy = 3;
+        constraints.gridy = 8;
         constraints.weightx = 1.0;
         constraints.gridwidth = 4;
         constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -360,7 +490,7 @@ public class LogonDialog extends JDialog {
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
-        constraints.gridy = 4;
+        constraints.gridy = 9;
         constraints.gridwidth = 3;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.CENTER;
@@ -458,6 +588,53 @@ public class LogonDialog extends JDialog {
                     doLogon();
                 }
             });
+        } else if (actionCommand.equals(CMD_MANAGE_CERT) ){
+
+            //popup a dialog to manage user certificate
+            X509Certificate cert = null;
+            try {
+                cert = getSelectedCertificate((String)certSelection.getSelectedItem());
+            } catch (Exception e) {
+                //do nothing
+                log.finest("Unable to get selected X509Certificate.");
+            }
+
+            UserIdentificationRequestDialog certManager = new UserIdentificationRequestDialog(certsHash);
+            Utilities.centerOnScreen(certManager);
+            Utilities.setAlwaysOnTop(this, false);
+            DialogDisplayer.display(certManager, null);
+            Utilities.setAlwaysOnTop(this, true);
+            populateCertificateChoices();
+            loginButton.setEnabled(certSelection.getItemCount() > 0 &&
+                (serverComboBox.getSelectedItem() != null && !((String)serverComboBox.getSelectedItem()).equalsIgnoreCase("")));
+        }
+    }
+
+    /**
+     * Populates the certificate selection combo box with possible certificates.
+     */
+    private void populateCertificateChoices() {
+        try {
+
+            Set<X509Certificate> certs = preferences.getKeys();
+            String[] items = new String[certs.size()];
+            certSelection.removeAllItems(); //clear any old ones
+            certsHash.clear();
+            int i=0;
+            for (X509Certificate cert : certs) {
+                certsHash.put((String) cert.getSubjectDN().getName(), cert);
+                items[i++] = ((String) cert.getSubjectDN().getName());
+                //certSelection.addItem((String) cert.getSubjectDN().getName());
+            }
+
+            Arrays.sort(items);
+            for (int j=0; j < items.length; j++) {
+                certSelection.addItem(items[j]);
+            }
+
+        } catch (Exception e) {
+            //do nothing
+            log.finest("Unable to load list of possible certificate for selection.");
         }
     }
 
@@ -469,7 +646,6 @@ public class LogonDialog extends JDialog {
         if(selectedHost!=null) selectedHost = selectedHost.trim();
         final String sHost = selectedHost;
 
-        boolean threw = true;
         LogonInProgressDialog progressDialog = null;
         try {
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
@@ -489,6 +665,12 @@ public class LogonDialog extends JDialog {
                   public Object construct() {
                       try {
                           AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
+                          //need to set the selected certificate if the user has selected to use client-cert login
+                          if (useCert.isSelected()) {
+                              String selected = (String) certSelection.getSelectedItem();
+                              setSelectedCertificateByDn(selected);
+                              authenticationCredentials = new PasswordAuthentication("", "".toCharArray());
+                          }
                           authProv.login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost));
                       } catch (Throwable e) {
                           if (!progressDialog1.isCancelled()) {
@@ -520,9 +702,12 @@ public class LogonDialog extends JDialog {
                       if (get() != null) {
                           dispose();
                           preferences.updateSystemProperties();
-                          // invoke the listener
                           if (logonListener != null) {
-                              logonListener.onAuthSuccess(authenticationCredentials.getUserName());
+                              if (useCert.isSelected()){
+                                  logonListener.onAuthSuccess(certsHash.get((String) certSelection.getSelectedItem()).getSubjectDN().getName());
+                              } else {
+                                  logonListener.onAuthSuccess(authenticationCredentials.getUserName());
+                              }
                           }
                       } else {
                           if (!progressDialog1.isCancelled()) {
@@ -543,18 +728,45 @@ public class LogonDialog extends JDialog {
                     progressDialog1.dispose();
                 }
             });
-
-            threw = false;
         } catch (Exception e) {
+            parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            if (progressDialog != null) progressDialog.dispose();
+
             handleLogonThrowable(e, sHost);
         } finally {
             //Update the host drop down with any host just entered in
             updateServerUrlHistory();
-            if (threw) {
-                parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                if (progressDialog != null) progressDialog.dispose();
-            }
         }
+    }
+
+    /**
+     * Parses through the list of certificate's dn and compares the DN provided by the parameter.  If a match is found
+     * it will set that certificate into the SSM preferences.
+     * 
+     * @param dn    The DN that will be used for comparison against list of certificates.
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     * @throws CertificateException
+     */
+    private void setSelectedCertificateByDn(String dn) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        preferences.setClientCertificate(certsHash.get(dn));
+    }
+
+    /**
+     * Tries to find the certificate matching the provide DN.
+     *
+     * @param dn    Dn that will be used for searching
+     * @return      X509Certificate if found, otherwise NULL
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     * @throws CertificateException
+     */
+    private X509Certificate getSelectedCertificate(String dn) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        //based on the select dn, find the certificate from the list
+        X509Certificate certificate = certsHash.get(dn);//preferences.getClientCertificate();
+        return certificate;
     }
 
     /**
@@ -585,6 +797,24 @@ public class LogonDialog extends JDialog {
         JOptionPane.
           showMessageDialog(parentFrame,
                             resources.getString("logon.invalid.credentials"),
+                            "Warning",
+                            JOptionPane.WARNING_MESSAGE);
+    }
+
+    private void showRequireClientCertificateMessage() {
+        parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        JOptionPane.
+          showMessageDialog(parentFrame,
+                            resources.getString("login.require.client.cert"),
+                            "Warning",
+                            JOptionPane.WARNING_MESSAGE);
+    }
+
+    private void showLockAccountMessage() {
+        parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        JOptionPane.
+          showMessageDialog(parentFrame,
+                            resources.getString("logon.lock.account"),
                             "Warning",
                             JOptionPane.WARNING_MESSAGE);
     }
@@ -687,10 +917,16 @@ public class LogonDialog extends JDialog {
      */
     private boolean isInputValid() {
         String userName = userNameTextField.getText();
-        if (null == userName || "".equals(userName)) {
+        if (null == userName || "".equals(userName) && useCreds.isSelected()) {
             log.finest("Empty user name, returning false");
             return false;
         }
+
+        if (useCert.isSelected() && certSelection.getSelectedItem() == null) {
+            log.finest("No certificate selected, returning false");
+            return false;
+        }
+
         if (serverComboBox == null) return false;
 
         JTextField editor = (JTextField)serverComboBox.getEditor().getEditorComponent();
@@ -738,9 +974,18 @@ public class LogonDialog extends JDialog {
             String msg = MessageFormat.format(resources.getString("logon.connect.error"), host);
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
-        else if (cause instanceof LoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException) {
+        else if (cause instanceof AccountLockedException) {
+            log.log(Level.WARNING, "Lock account, exceed failed login attempts.");
+            showLockAccountMessage();
+        }
+        else if (cause instanceof LoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException ||
+                cause instanceof LoginRequireClientCertificateException) {
             log.log(Level.WARNING, "Could not connect, authentication error.");
-            showInvalidCredentialsMessage();
+            if (cause instanceof LoginRequireClientCertificateException) {
+                showRequireClientCertificateMessage();
+            } else {
+                showInvalidCredentialsMessage();
+            }
         }
         else if (cause instanceof MalformedURLException) {
             String msg = resources.getString("logon.invalid.service.url");
@@ -759,8 +1004,29 @@ public class LogonDialog extends JDialog {
             acceptedInvalidHosts.add(ihne.getExpectedHost());
         }
         else if (cause instanceof InvalidHostCertificateException) {
-            String msg = MessageFormat.format(resources.getString("logon.certificate.problem"), host);
-            JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            X509Certificate cert = ((InvalidHostCertificateException)cause).getCertificate();
+            TrustCertificateDialog dialog = new TrustCertificateDialog((JFrame)TopComponents.getInstance().getTopParent(),
+                                                                       cert,
+                                                                       resources.getString("logon.ssg.untrustedCert.title"),
+                                                                       resources.getString("logon.ssg.untrustedCert.question"));
+            dialog.setVisible(true);
+            if( dialog.isTrusted() ) {
+                // import new certificate to trust store
+                boolean imported = false;
+                try {
+                    TopComponents.getInstance().getPreferences().importSsgCert( cert, cert.getSubjectDN().getName() );
+                    SecurityProvider securityProvider = getCredentialManager();
+                    securityProvider.getAuthenticationProvider().acceptServerCertificate( cert );
+                    imported = true;
+                } catch(Exception ex) {
+                    log.log(Level.WARNING, "Error importing new certifiate.", ex);
+                }
+
+                if ( imported ) {
+                    // try again
+                    doLogon();
+                }
+            }
         }
         else {
             ErrorManager.getDefault().notify(Level.WARNING, e, MessageFormat.format(resources.getString("logon.connect.error"), host));

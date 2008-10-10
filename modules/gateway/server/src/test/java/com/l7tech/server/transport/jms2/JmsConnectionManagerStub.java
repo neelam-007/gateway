@@ -21,10 +21,12 @@ import java.util.Collection;
 public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, EntityHeader> implements JmsConnectionManager {
 
 
-    public static final int TEST_CONFIG_AMQ_IN = 1000;
+    public static final int TEST_CONFIG_AMQ_IN  = 1000;
     public static final int TEST_CONFIG_AMQ_OUT = 1001;
-    public static final int TEST_CONFIG_MQS_IN = 1002;
+    public static final int TEST_CONFIG_MQS_IN  = 1002;
     public static final int TEST_CONFIG_MQS_OUT = 1003;
+    public static final int TEST_CONFIG_FMQ_IN  = 1004;
+    public static final int TEST_CONFIG_FMQ_OUT = 1005;
 
     private static int TEST_CONFIG = TEST_CONFIG_AMQ_IN;
 
@@ -55,6 +57,24 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
             "<entry key=\"com.l7tech.server.jms.prop.hardwired.service.bool\">false</entry>\n" +
             "</properties>";
 
+    // Configuration for apache Fiorano MQ
+    protected static final String QPROVIDER_FMQ = "fioranoMQ";
+    protected static final String FMQ_INITIAL_CONTEXT_FACTORY_CLASS = "fiorano.jms.runtime.naming.FioranoInitialContextFactory";
+    protected static final String FMQ_DEFAULT_QUEUE_FACTORY_URL = "primaryJMXQCF";
+    protected static final String FMQ_QUEUE_DEFAULT = "vchan_in";
+    protected static final String FMQ_JNDI_URL = "http://fioranowindows:1856";
+    protected static final String FMQ_CONN_PROPERTIES = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">\n" +
+            "<properties>\n" +
+            "<entry key=\"com.l7tech.server.jms.prop.customizer.class\">com.l7tech.server.transport.jms.prov.FioranoConnectionFactoryCustomizer</entry>\n" +
+            "<entry key=\"com.l7tech.server.jms.prop.queue.ssgKeyAlias\">SSL</entry>\n" +
+            "<entry key=\"java.naming.security.protocol\">SUN_SSL</entry>\n" +
+            "<entry key=\"com.l7tech.server.jms.prop.queue.useClientAuth\">true</entry>\n" +
+            "<entry key=\"com.l7tech.server.jms.prop.hardwired.service.bool\">false</entry>\n" +
+            "<entry key=\"SecurityManager\">com.l7tech.server.transport.jms.prov.fiorano.proxy.FioranoProxySecurityManager</entry>\n" +
+            "<entry key=\"com.l7tech.server.jms.prop.queue.ssgKeystoreId\">0</entry>\n" +
+            "</properties>";
+
     protected String DEFAULT_QUEUE_PROVIDER = QPROVIDER_AMQ;
 
     protected String queueProvider;
@@ -78,6 +98,8 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
                 result = QPROVIDER_AMQ;
             else if (TEST_CONFIG == TEST_CONFIG_MQS_IN || TEST_CONFIG == TEST_CONFIG_MQS_OUT)
                 result = QPROVIDER_MQS;
+            else if (TEST_CONFIG == TEST_CONFIG_FMQ_IN || TEST_CONFIG == TEST_CONFIG_FMQ_OUT)
+                result = QPROVIDER_FMQ;
             else
                 result = DEFAULT_QUEUE_PROVIDER;
 //        }
@@ -115,6 +137,9 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
         else if (provider == null && QPROVIDER_MQS.equals(qProv)) {
             provider = new JmsProvider("TestJmsProvider", MQS_INITIAL_CONTEXT_FACTORY_CLASS, MQS_DEFAULT_QUEUE_FACTORY_URL);
         }
+        else if (provider == null && QPROVIDER_FMQ.equals(qProv)) {
+            provider = new JmsProvider("TestJmsProvider", FMQ_INITIAL_CONTEXT_FACTORY_CLASS, FMQ_DEFAULT_QUEUE_FACTORY_URL);
+        }
 
         list.add(provider);
         return list;
@@ -138,13 +163,25 @@ public class JmsConnectionManagerStub extends EntityManagerStub<JmsConnection, E
             case TEST_CONFIG_MQS_IN: {
                 conn = provider.createConnection("cn=VCTEST.Q.IN", MQS_JNDI_URL);
                 conn.setOid(TEST_CONFIG_MQS_IN);
-//                conn.setProperties(MQS_CONN_PROPERTIES);
+//                conn.setProperties(MQS_CONN_PROPERTIES); // for ssl
                 break;
             }
             case TEST_CONFIG_MQS_OUT: {
                 conn = provider.createConnection("cn=VCTEST.Q.OUT", MQS_JNDI_URL);
                 conn.setOid(TEST_CONFIG_MQS_OUT);
 //                conn.setProperties(MQS_CONN_PROPERTIES);
+                break;
+            }
+            case TEST_CONFIG_FMQ_IN: {
+                conn = provider.createConnection("vchan_in", FMQ_JNDI_URL);
+                conn.setOid(TEST_CONFIG_FMQ_IN);
+//                conn.setProperties(FMQ_CONN_PROPERTIES); // for ssl
+                break;
+            }
+            case TEST_CONFIG_FMQ_OUT: {
+                conn = provider.createConnection("vchan_out", FMQ_JNDI_URL);
+                conn.setOid(TEST_CONFIG_FMQ_OUT);
+//                conn.setProperties(FMQ_CONN_PROPERTIES);
                 break;
             }
             default: {

@@ -87,8 +87,18 @@ public class InetAddressUtil {
         return false;
     }
 
-    public static long toLong(InetAddress addr) {
+    /**
+     * Pack an IPv4 address into the least significant DWORD of a long.
+     * The final octet of the IPv4 address is mapped to least significant byte of the long.
+     *
+     * @param addr an IP address to pack into a long.  Must be an IPv4 address.
+     * @return a long containing the packed IP address.
+     * @throws IllegalArgumentException if the addres is an IPv6 address.
+     */
+    public static long ipv4ToLong(InetAddress addr) throws IllegalArgumentException {        
         byte[] a = addr.getAddress();
+        if (a.length > 4)
+            throw new IllegalArgumentException("IPv6 address not supported");
         return ((0xFFL & a[0]) << 24) |
                ((0xFFL & a[1]) << 16) |
                ((0xFFL & a[2]) <<  8) |

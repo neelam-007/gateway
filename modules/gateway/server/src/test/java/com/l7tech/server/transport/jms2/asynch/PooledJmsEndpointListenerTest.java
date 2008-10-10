@@ -12,10 +12,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import javax.jms.BytesMessage;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Queue;
+import javax.jms.*;
 import javax.naming.NamingException;
 import java.util.List;
 
@@ -176,7 +173,8 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
                 return new TestJmsTask(getEndpointConfig(),
                         handOffJmsBag(getJmsBag()),
                         jmsMessage,
-                        getFailureQueue());
+                        getFailureQueue(),
+                        getConsumer());
 
             } catch (JMSException jex) {
                 throw new JmsRuntimeException("While creating new test JmsTask.",  jex);
@@ -197,8 +195,8 @@ public class PooledJmsEndpointListenerTest extends JmsTestCase {
         private boolean transactional;
         private javax.jms.Session jmsSession;
 
-        TestJmsTask(JmsEndpointConfig endpoint, JmsTaskBag jmsBag, Message jmsMessage, Queue failureQ) {
-            super(endpoint, jmsBag, jmsMessage, failureQ);
+        TestJmsTask(JmsEndpointConfig endpoint, JmsTaskBag jmsBag, Message jmsMessage, Queue failureQ, MessageConsumer consumer) {
+            super(endpoint, jmsBag, jmsMessage, failureQ, consumer);
 
             this.transactional = endpoint.isTransactional();
             this.jmsSession = jmsBag.getSession();

@@ -2,14 +2,15 @@ package com.l7tech.console.panels;
 
 import java.awt.Frame;
 import java.awt.Dialog;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import java.awt.event.*;
 import java.net.PasswordAuthentication;
 import java.util.Arrays;
 import javax.swing.*;
 
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.console.util.TopComponents;
 
 /**
  * Dialog for changing a password.
@@ -61,6 +62,14 @@ public class ChangePasswordDialog extends JDialog {
         return ok;
     }
 
+    public boolean isCancel() {
+        return cancel;
+    }
+
+    public boolean isHelp() {
+        return help;
+    }
+
     /**
      * Get the current password authentication.
      *
@@ -84,6 +93,34 @@ public class ChangePasswordDialog extends JDialog {
         blank(password);
 
         return pa;
+    }
+
+    /**
+     * This method will modify the behaviour of the cancel button to act as a disconnect button.  It will also
+     * change the behaviour of the windows "x" closing button on the top right corner of the window.  Essentially
+     * it will disconnect the user from the user when either one of these actions are performed.
+     */
+    public void changeCancelBehaviourToDisconnectBehaviour() {
+        //remove old one if any
+        cancelButton.removeActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent e) {
+            }
+        });
+
+        //if click on cancel button we want to disconnect them from the server
+        cancelButton.addActionListener(new ActionListener(){
+
+            public void actionPerformed(ActionEvent e) {
+                TopComponents.getInstance().disconnectFromGateway();
+            }
+        });
+
+        //if close window using top right corner (x) button, disconnect them from the server
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                TopComponents.getInstance().disconnectFromGateway();
+            }
+        });
     }
 
     /**
@@ -123,10 +160,13 @@ public class ChangePasswordDialog extends JDialog {
     private JButton cancelButton;
     private JLabel infoLabel;
     private JPanel mainPanel;
+    private JButton helpBtn;
 
     private final boolean usernameEditable;
     private String username;
     private boolean ok;
+    private boolean cancel;
+    private boolean help;
 
     private void initComponents(String message) {
         this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -134,6 +174,8 @@ public class ChangePasswordDialog extends JDialog {
         this.add(mainPanel);
 
         ok = false;
+        cancel = false;
+        help = false;
 
         if (message != null && message.length() > 0) {
             infoLabel.setText(message);
@@ -167,10 +209,37 @@ public class ChangePasswordDialog extends JDialog {
 
         cancelButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
+                cancel = true;
                 dispose();
             }
         });
 
+        helpBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                help = true;
+                final PasswordHelpDialog dialog = new PasswordHelpDialog();
+                Utilities.centerOnScreen(dialog);
+                DialogDisplayer.display(dialog, new Runnable() {
+                    public void run() {
+                        if (!dialog.isOk()) {
+                            dispose();
+                        }
+                    }
+                });
+            }
+        });
+
+        addWindowListener(new WindowAdapter() {
+            public void windowOpened(WindowEvent e) {
+                if (usernameEditable)
+                    userNameTextField.requestFocusInWindow();
+                else
+                    currentPasswordField.requestFocusInWindow();
+            }
+        });
+
+        Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
+        getRootPane().setDefaultButton(okButton);
         updateButtons();
         this.pack();
         Utilities.centerOnScreen(this);

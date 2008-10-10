@@ -71,7 +71,7 @@ public class ClientSecureConversation extends ClientAssertion {
             return AssertionStatus.NOT_APPLICABLE;
         }
         // Make sure the response's WssProcessor.Results contain a reference to the Secure Conversation
-        ProcessorResult pr = context.getResponse().getSecurityKnob().getProcessorResult();
+        ProcessorResult pr = ClientResponseWssConfidentiality.getOrCreateWssResults(context.getResponse());
         if (pr == null) {
             log.info("WSS processing was not done on this response.");
             return AssertionStatus.FAILED;

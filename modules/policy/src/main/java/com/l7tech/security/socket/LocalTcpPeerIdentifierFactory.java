@@ -66,7 +66,7 @@ public class LocalTcpPeerIdentifierFactory {
             }
 
             try {
-                Class implClass = Class.forName(IMPL_CLASSNAME);
+                Class implClass = Class.forName(IMPL_CLASSNAME, true, Thread.currentThread().getContextClassLoader());
                 Object objInst = implClass.newInstance();
                 if (!(objInst instanceof LocalTcpPeerIdentifier)) {
                     logger.log(Level.WARNING, NOSERVCOL + "system property " + PROP_IMPL_CLASSNAME + ": class is not assignable to LocalTcpPeerIdentifier");
@@ -75,6 +75,12 @@ public class LocalTcpPeerIdentifierFactory {
 
                 // If prototype instance creates successfully, we'll build a factory
                 final LocalTcpPeerIdentifier identifier = (LocalTcpPeerIdentifier) objInst;
+
+                if (!identifier.isAvailable()) {
+                    logger.log(Level.FINE, NOSERVCOL + "native support unavailable");
+                    return null;
+                }
+                
                 return new Functions.Nullary<LocalTcpPeerIdentifier>() {
                     public LocalTcpPeerIdentifier call() {
                         try {
@@ -87,6 +93,11 @@ public class LocalTcpPeerIdentifierFactory {
                     }
                 };
 
+            } catch (UnsatisfiedLinkError e) {
+                // For now, since we don't check the OS before trying to load the default impl, this will be the
+                // normal code path on systems other than Windows.
+                logger.log(Level.FINE, NOSERVCOL + "native support unavailable");
+                return null;
             } catch (LinkageError e) {
                 // For now, since we don't check the OS before trying to load the default impl, this will be the
                 // normal code path on systems other than Windows.

@@ -9,6 +9,9 @@ import com.l7tech.common.log.LogSinkAdminStub;
 import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
+import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.util.Pair;
@@ -25,6 +28,7 @@ import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.admin.FolderAdmin;
+import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -67,6 +71,10 @@ public class RegistryStub extends Registry {
 
     public boolean isAdminContextPresent() {
         return false;//serviceAdmin != null;
+    }
+
+    public AdminLogin getAdminLogin() {
+        return null;
     }
 
     public IdentityAdmin getIdentityAdmin() {
@@ -229,6 +237,61 @@ public class RegistryStub extends Registry {
 
             public Collection<Pair<PortRange, String>> findPortConflicts(SsgConnector unsavedConnector) throws FindException {
                 return Collections.emptyList();
+            }
+        };
+    }
+
+    public EmailListenerAdmin getEmailListenerAdmin() {
+        return new EmailListenerAdmin() {
+            private final EmailListener emailListener = new EmailListener(2468L,
+                                                                          "testuser@layer7tech.com",
+                                                                          "mail.layer7tech.com",
+                                                                          143,
+                                                                          EmailServerType.IMAP,
+                                                                          true,
+                                                                          true,
+                                                                          "testuser",
+                                                                          "password",
+                                                                          "Inbox",
+                                                                          5,
+                                                                          true,
+                                                                          "test-node",
+                                                                          System.currentTimeMillis(),
+                                                                          1L);
+            
+            public EmailListener findEmailListenerByPrimaryKey(long oid) throws FindException {
+                if(oid == 2468L) {
+                    return emailListener;
+                } else {
+                    throw new FindException("no email listener found with id " + oid);
+                }
+            }
+
+            public Collection<EmailListener> findAllEmailListeners() throws FindException {
+                return Arrays.asList(emailListener);
+            }
+
+            public long saveEmailListener(EmailListener emailListener) throws SaveException, UpdateException {
+                throw new SaveException("Unable to save any email listeners in stub mode");
+            }
+
+            public void deleteEmailListener(long oid) throws DeleteException, FindException {
+                throw new DeleteException("Unable to delete any email listeners in stub mode");
+            }
+
+            public IMAPFolder getIMAPFolderList(String hostname, int port, String username, String password, boolean useSSL) {
+                return null;
+            }
+
+            public boolean testEmailAccount(EmailServerType serverType,
+                                            String hostname,
+                                            int port,
+                                            String username,
+                                            String password,
+                                            boolean useSSL,
+                                            String folderName)
+            {
+                return true;
             }
         };
     }

@@ -6,13 +6,15 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 
 /**
  * Represents a routing assertion that provides the full functionality of the SecureSpan Bridge.
  */
 @RequiresSOAP()
-public class BridgeRoutingAssertion extends HttpRoutingAssertion {
+public class BridgeRoutingAssertion extends HttpRoutingAssertion implements UsesEntities {
     public BridgeRoutingAssertion(String protectedServiceUrl, String login, String password, String realm, int maxConnections) {
         super(protectedServiceUrl, login, password, realm, maxConnections);
     }
@@ -54,6 +56,10 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion {
      */
     public void setServerCertificateOid(Long serverCertificateOid) {
         this.serverCertificateOid = serverCertificateOid;
+    }
+
+    public void setServerCertificateName(String name) {
+        this.serverCertificateName = name;
     }
 
     /**
@@ -122,7 +128,25 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion {
 
     protected String policyXml = null;
     protected Long serverCertificateOid = null;
+    protected String serverCertificateName = null;
     protected boolean useSslByDefault = true;
     protected int httpPort = 0;
     protected int httpsPort = 0;
+
+    public EntityHeader[] getEntitiesUsed() {
+        if (serverCertificateOid != null) {
+            return new EntityHeader[] { new EntityHeader(serverCertificateOid.toString(), EntityType.TRUSTED_CERT, serverCertificateName, "Trusted certificate to be used by the bridge routing assertion")};
+        } else {
+            return new EntityHeader[0];
+        }
+    }
+
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if(oldEntityHeader.getType().equals(EntityType.TRUSTED_CERT) && serverCertificateOid != null &&
+                oldEntityHeader.getOid() == serverCertificateOid && newEntityHeader.getType().equals(EntityType.TRUSTED_CERT))
+        {
+            serverCertificateOid = newEntityHeader.getOid();
+            serverCertificateName = newEntityHeader.getName();
+        }
+    }
 }

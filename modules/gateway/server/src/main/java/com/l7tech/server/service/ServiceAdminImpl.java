@@ -2,6 +2,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.audit.SystemMessages;
@@ -179,7 +180,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             }
             if (ret == 200) {
                 //noinspection IOResourceOpenedButNotSafelyClosed
-                byte[] body = IOUtils.slurpStream(new ByteLimitInputStream(get.getResponseBodyAsStream(), 16, 10*1024*1024));
+                byte[] body = IOUtils.slurpStream(new ByteOrderMarkInputStream(new ByteLimitInputStream(get.getResponseBodyAsStream(), 16, 10*1024*1024)));
                 String charset = get.getResponseCharSet();
                 return new String(body, charset);
             } else {
@@ -258,7 +259,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     }
 
     private JobId<PolicyValidatorResult> validatePolicy(final Assertion assertion, final PolicyType policyType, final boolean soap, final Wsdl wsdl) {
-        return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find().wrapCallable(new Callable<PolicyValidatorResult>() {
+        return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<PolicyValidatorResult>() {
             public PolicyValidatorResult call() throws Exception {
                 try {
                     return policyValidator.validate(assertion, policyType, wsdl, soap, licenseManager);

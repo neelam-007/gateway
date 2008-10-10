@@ -6,11 +6,14 @@ import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.transport.jms2.AbstractJmsEndpointListener;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
+import com.l7tech.server.transport.jms2.JmsMessages;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
+import java.beans.PropertyChangeEvent;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -74,15 +77,6 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
                     handOff.getConnection(), handOff.getConnectionFactory(),
                     _endpointCfg.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
 
-            // remove the consumer (QueueReceiver)
-            try {
-                _consumer.close();
-            } catch (JMSException jex) {
-                // need to log
-            } finally {
-                _consumer = null;
-            }
-
             return handOff;
         }
     }
@@ -93,22 +87,20 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     @SuppressWarnings({"unchecked"})
     protected final void handleMessage(Message jmsMessage) throws JmsRuntimeException {
 
-        try {
-            if ( !_endpointCfg.isTransactional() ) {
-                // if not transactional, then ACK the message to remove from queue
-                jmsMessage.acknowledge();
-            }
-        } catch (JMSException ex) {
-            throw new JmsRuntimeException(ex);
-        }
+        // move message Ack to the JmsTask
 
         // create the JmsTask
         JmsTask task = newJmsTask(jmsMessage);
 
-        // fire-and-forget
-        JmsThreadPool.getInstance().newTask(task);
+        try {
+            // fire-and-forget
+            JmsThreadPool.getInstance().newTask(task);
 
-        // how to handle errors, if any ???
+        } catch (RejectedExecutionException reject) {
+            _logger.log(Level.WARNING, JmsMessages.WARN_THREADPOOL_LIMIT_REACHED, new String[] {ExceptionUtils.getMessage(reject)});
+            task.cleanup();
+            throw new JmsRuntimeException(reject);
+        }
     }
 
 
@@ -121,21 +113,35 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
      */
     protected JmsTask newJmsTask(Message jmsMessage) throws JmsRuntimeException {
 
+        boolean ok = true;
+        JmsTaskBag taskBag = null;
         try {
+
             // create the work task
-            return new JmsTask(getEndpointConfig(), handOffJmsBag(getJmsBag()), jmsMessage, getFailureQueue());
+            taskBag = handOffJmsBag(getJmsBag());
+            JmsTask task = new JmsTask(getEndpointConfig(), taskBag, jmsMessage, getFailureQueue(), _consumer);
+            return task;
 
         } catch (JMSException jex) {
-
+            ok = false;
             throw new JmsRuntimeException("From handleMessage", jex);
 
         } catch (JmsConfigException cex) {
-
+            ok = false;
             throw new JmsRuntimeException("From handleMessage", cex);
 
         } catch (NamingException nex) {
-
+            ok = false;
             throw new JmsRuntimeException("From handleMessage", nex);
+
+        } finally {
+            if (ok) {
+                // sinse the consumer (QueueReceiver) is associated with the previous session,
+                // remove it so that the next read will create a new one
+                _consumer = null;
+            } else if (taskBag != null) {
+                taskBag.close();
+            }
         }
     }
 
@@ -208,6 +214,17 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
             }
             return _failureQueue;
         }
+    }
+
+    /**
+     * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#propertyChange(java.beans.PropertyChangeEvent)
+     */
+    public void propertyChange(PropertyChangeEvent evt) {
+
+        super.propertyChange(evt);
+
+        // also check if the JmsThreadPool properties were changed
+        JmsThreadPool.getInstance().propertyChange(evt);
     }
 
     /**

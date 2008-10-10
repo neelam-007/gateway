@@ -5,17 +5,20 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.message.TcpKnob;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
+import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.SoapConstants;
@@ -23,20 +26,24 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.ServerConfig;
-
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.security.kerberos.KerberosRoutingClient;
+import com.l7tech.kerberos.KerberosServiceTicket;
+import com.l7tech.kerberos.KerberosException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
-import java.security.SignatureException;
-import java.security.cert.CertificateException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.util.logging.Logger;
 
 /**
  * Base class for routing assertions.
@@ -94,6 +101,9 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                     ProcessorResult pr = requestSec.getProcessorResult();
                     if (pr != null && pr.getProcessedActor() == SecurityActor.L7ACTOR) {
                         defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+                        if(defaultSecHeader == null) { // Try again looking for the secure_span actor
+                            defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR_OLD.getValue());
+                        }
                     } else {
                         defaultSecHeader = SoapUtil.getSecurityElement(doc);
                     }
@@ -226,6 +236,66 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             ag.attachStatement(document, statement, samlOptions);
         }
     }    
+
+    /**
+     * Method to handle creating a delegated Kerberos ticket for use in downstream routing.
+     *
+     * @param context the policy enforcement context
+     * @param server the server to that the delegated service ticket is destined for
+     * @return a valid KerberosServiceTicket based on validated creds.  Null if
+     * @throws KerberosException
+     */
+    protected KerberosServiceTicket getDelegatedKerberosTicket(PolicyEnforcementContext context, String server)
+       throws KerberosException
+    {
+        KerberosServiceTicket delegatedServiceTicket = null;
+
+        // first locate the Kerberos service ticket from the request
+        ProcessorResult wssResults = null;
+        wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+
+        KerberosServiceTicket kerberosServiceTicket = null;
+        if (wssResults == null) {
+            java.util.List<LoginCredentials> creds = context.getCredentials();
+
+            for (LoginCredentials cred: creds) {
+                if ( cred.getPayload() instanceof KerberosServiceTicket )
+                    kerberosServiceTicket = (KerberosServiceTicket) cred.getPayload();
+            }
+
+        } else {
+            XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
+            if (tokens == null) {
+              throw new KerberosException("No security tokens found in request");
+            }
+
+            for (int i = 0; i < tokens.length; i++) {
+                XmlSecurityToken tok = tokens[i];
+                if (tok instanceof KerberosSecurityToken) {
+                    kerberosServiceTicket = ((KerberosSecurityToken) tok).getTicket().getServiceTicket();
+                }
+                else if(tok instanceof SecurityContextToken) {
+                    SecurityContext securityContext = ((SecurityContextToken)tok).getSecurityContext();
+                    if(securityContext instanceof SecureConversationSession) {
+                        kerberosServiceTicket = (KerberosServiceTicket) ((SecureConversationSession) securityContext).getCredentials().getPayload();
+                    } else {
+                        logger.warning("Found security context of incorrect type '"+(securityContext==null ? "null" : securityContext.getClass().getName())+"'.");
+                    }
+                }
+            }
+        }
+
+        if (kerberosServiceTicket == null)
+            throw new KerberosException("No Kerberos service ticket found in the request");
+
+        // create the delegated service ticket
+        KerberosRoutingClient client = new KerberosRoutingClient();
+        delegatedServiceTicket =
+                client.getKerberosServiceTicket(KerberosRoutingClient.getGSSServiceName("http", server), kerberosServiceTicket);
+
+        return delegatedServiceTicket;
+    }
+
 
     /**
      * Get the connection timeout to use (set using a cluster/system property)

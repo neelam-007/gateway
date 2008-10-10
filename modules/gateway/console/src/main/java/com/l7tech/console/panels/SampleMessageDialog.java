@@ -11,6 +11,11 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
+
+import org.w3c.dom.*;
 
 /**
  * Used to edit {@link com.l7tech.gateway.common.service.SampleMessage}s.
@@ -27,21 +32,24 @@ public class SampleMessageDialog extends JDialog {
     private JPanel mainPanel;
     private JTextField nameField;
     private XMLContainer xmlContainer;
+    private Map<String, String> namespaces;
 
     private static final String TITLE = "Sample Message";
 
-    public SampleMessageDialog(Dialog owner, SampleMessage message, boolean allowOperationChange) throws HeadlessException {
+    public SampleMessageDialog(Dialog owner, SampleMessage message, boolean allowOperationChange, Map<String, String> namespaces) throws HeadlessException {
         super(owner, TITLE, true);
         this.message = message;
         this.allowOperationChange = allowOperationChange;
+        this.namespaces = namespaces;
         init();
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
-    public SampleMessageDialog(Frame owner, SampleMessage message, boolean allowOperationChange) throws HeadlessException {
+    public SampleMessageDialog(Frame owner, SampleMessage message, boolean allowOperationChange, Map<String, String> namespaces) throws HeadlessException {
         super(owner, TITLE, true);
         this.message = message;
         this.allowOperationChange = allowOperationChange;
+        this.namespaces = namespaces;
         init();
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
@@ -72,7 +80,29 @@ public class SampleMessageDialog extends JDialog {
                 if (allowOperationChange) message.setOperationName(operationNameField.getText());
                 String text = xmlContainer.getAccessibility().getText();
                 try {
-                    XmlUtil.stringToDocument(text);
+                    Document doc = XmlUtil.stringToDocument(text);
+                    Map<String, String> prefixMap = getPrefixesMap(doc);
+                    HashSet<String> keys = new HashSet<String>(prefixMap.size() + namespaces.size());
+                    keys.addAll(namespaces.keySet());
+                    keys.addAll(prefixMap.keySet());
+
+                    for(String key : keys) {
+                        if(namespaces.containsKey(key) && !prefixMap.containsKey(key)) {
+                            continue;
+                        } else if(!namespaces.containsKey(key) && prefixMap.containsKey(key)) {
+                            namespaces.put(key, prefixMap.get(key));
+                        } else if(namespaces.containsKey(key) && prefixMap.containsKey(key)) {
+                            if(!namespaces.get(key).equals(prefixMap.get(key))) {
+                                JOptionPane.showMessageDialog(
+                                        SampleMessageDialog.this,
+                                        "The prefix \"" + key + "\" does not match the prefix in the namespace table.",
+                                        "Invalid Prefix",
+                                        JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+                        }
+                    }
+
                     message.setXml(text);
                     ok = true;
                     dispose();
@@ -132,5 +162,30 @@ public class SampleMessageDialog extends JDialog {
 
     public boolean isOk() {
         return ok;
+    }
+
+    private Map<String, String> getPrefixesMap(Document doc) {
+        Map<String, String> prefixesMap = new HashMap<String, String>();
+        addPrefixesToMap(doc.getDocumentElement(), prefixesMap);
+
+        return prefixesMap;
+    }
+
+    private void addPrefixesToMap(Element el, Map<String, String> prefixesMap) {
+        NamedNodeMap attributes = el.getAttributes();
+        for(int i = 0;i < attributes.getLength();i++) {
+            Attr attribute = (Attr)attributes.item(i);
+            if(attribute.getName().startsWith("xmlns:")) {
+                prefixesMap.put(attribute.getName().substring(6), attribute.getValue());
+            }
+        }
+
+        NodeList children = el.getChildNodes();
+        for(int i = 0;i < children.getLength();i++) {
+            if(children.item(i) instanceof Element) {
+                Element child = (Element)children.item(i);
+                addPrefixesToMap(child, prefixesMap);
+            }
+        }
     }
 }

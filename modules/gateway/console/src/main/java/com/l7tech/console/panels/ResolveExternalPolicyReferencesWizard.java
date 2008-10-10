@@ -47,6 +47,8 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
                     // Skip this reference, since the conflict has gone away
                     panel = null;
                 }
+            } else if (refs[i] instanceof TrustedCertReference) {
+                panel = new ResolveForeignTrustedCertificatePanel(null,(TrustedCertReference)(refs[i]));
             }
             if (panel != null) {
                 if (firstPanel == null) {

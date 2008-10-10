@@ -233,9 +233,15 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             } catch (ServerNotActiveException e) {
                 logger.log(Level.WARNING, "cannot get remote ip", e);
             }
-            return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGIN,
-                                        "User logged in",
-                                        admin.getProviderId(), admin.getLogin(), admin.getId(), ip);
+            if ( le.getType() == LogonEvent.LOGON ) {
+                return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGIN,
+                                            "User logged in",
+                                            admin.getProviderId(), admin.getLogin(), admin.getId(), ip);
+            } else {
+                return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGOUT,
+                                            "User logged out",
+                                            admin.getProviderId(), admin.getLogin(), admin.getId(), ip);
+            }
         } else {
             throw new IllegalArgumentException("Can't handle events of type " + genericEvent.getClass().getName());
         }

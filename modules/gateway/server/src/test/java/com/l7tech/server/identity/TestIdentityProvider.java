@@ -9,8 +9,10 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
+import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.math.BigInteger;
 
 /**
  * @author mike
@@ -80,11 +82,23 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         throw new AuthenticationException("Invalid username or password");
     }
 
+    public X509Certificate findCertByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
+        return null;
+    }
+
     public IdentityProviderConfig getConfig() {
         return config;
     }
 
-    public UserManager<User> getUserManager() {
+    public boolean updateFailedLogonAttempt(LoginCredentials lc) {
+        return false;
+    }
+
+    public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
+        return false;  
+    }
+
+    public UserManager getUserManager() {
         return userman;
     }
 

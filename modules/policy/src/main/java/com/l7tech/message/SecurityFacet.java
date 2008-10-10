@@ -6,10 +6,14 @@ package com.l7tech.message;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.io.IOException;
+
+import org.xml.sax.SAXException;
 
 /**
  * Provides access to a {@link SecurityKnob} from a {@link Message}.
@@ -19,6 +23,7 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     private final List tokens = new ArrayList();
     private DecorationRequirements decorationRequirements = null;
     private Map decorationRequirementsForAlternateRecipients = new HashMap();
+    private ProcessorResultFactory lazyProcessor = null;
 
     /**
      * @param message  the Message that owns this aspect
@@ -37,8 +42,31 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
         tokens.add(token);
     }
 
+    /**
+     * @return the factory for lazily populating missing processor results, or null if not set.
+     */
+    public ProcessorResultFactory getLazyProcessor() {
+        return lazyProcessor;
+    }
+
+    /**
+     * Configure a factory for lazily populating processor results.
+     *
+     * @param lazyProcessor a factory for lazily producing a missing processor result, or null.
+     */
+    public void setProcessorResultFactory(ProcessorResultFactory lazyProcessor) {
+        this.lazyProcessor = lazyProcessor;
+    }
+
     public ProcessorResult getProcessorResult() {
         return processorResult;
+    }
+
+    public ProcessorResult getOrCreateProcessorResult() throws ProcessorException, SAXException, IOException {
+        if (processorResult != null || lazyProcessor == null)
+            return processorResult;
+
+        return processorResult = lazyProcessor.createProcessorResult();
     }
 
     public void setProcessorResult(ProcessorResult pr) {

@@ -68,7 +68,7 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
         // Determines the message object to apply XPath to.
-        Message message = null;
+        final Message message;
         if (req) {
             message = context.getRequest();
         } else {
@@ -105,7 +105,7 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
 
         CompiledXpath compiledXpath = getCompiledXpath();
         if (compiledXpath == null) {
-            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{getXpath()});
+            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, getXpath());
             //the xpath could not be compiled, so the assertion cannot work ... FAILED
             return AssertionStatus.FAILED;
         }
@@ -131,6 +131,7 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
         } catch (SAXException e) {
             auditNotXml();
             //can't proceed cause the XML message probably isn't well formed ... FAILED
+            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_IS, getXpath());
             return AssertionStatus.FAILED;
         }
 
@@ -147,7 +148,7 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
         if (xpathResult == null) {
             auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST_MI
                                     : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI,
-                                new String[]{getXpath()});
+                    getXpath());
 
             //the xpath ran, but nothing was matched ... FALSIFIED
             return AssertionStatus.FALSIFIED;
@@ -167,6 +168,7 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
                     return AssertionStatus.NONE;
                 }
                 auditor.logAndAudit(AssertionMessages.XPATH_RESULT_FALSE);
+                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_IS, getXpath());
                 context.setVariable(vresult, SimpleXpathAssertion.FALSE);
                 context.setVariable(vmultipleResults, SimpleXpathAssertion.FALSE);
                 context.setVariable(velement, SimpleXpathAssertion.FALSE);
@@ -210,7 +212,8 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
 
             default:
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                                    new String[] {" XPath evaluation produced unknown result type " + resultType});
+                        " XPath evaluation produced unknown result type " + resultType);
+                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_IS, getXpath());
                 return AssertionStatus.FAILED;
         }
 
@@ -219,12 +222,12 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
 
         final int size = ns.size();
         if (size > 1)
-            auditor.logAndAudit(AssertionMessages.XPATH_MULTIPLE_RESULTS, new String[] { Integer.toString(size) });
+            auditor.logAndAudit(AssertionMessages.XPATH_MULTIPLE_RESULTS, Integer.toString(size));
 
         if (size < 1) {
             auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST_MI
                                     : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI,
-                                new String[]{getXpath()});
+                    getXpath());
             return AssertionStatus.FALSIFIED;
         }
 

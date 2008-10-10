@@ -22,34 +22,33 @@ class UtilitiesJDK16 extends Utilities.Utils {
                               final int[] cols,
                               final boolean[] order,
                               final Comparator [] comparators) {
-        if(cols == null) throw new NullPointerException("Parameter cols must be not null");
-        if(order == null) throw new NullPointerException("Paramter order must not be null");
-
-        if(cols.length != order.length){
-            throw new IllegalArgumentException("Length of order array must match length of cols array.");
-        }
-
-        if(comparators != null){
-            if(cols.length != comparators.length){
-                throw new IllegalArgumentException("Length of comparators array must match length of cols array.");
-            }
-        }
-
         TableRowSorter sorter = new TableRowSorter(model);
-        java.util.List <RowSorter.SortKey> sortKeys = new ArrayList<RowSorter.SortKey>();
-        for ( int i=0; i< cols.length; i++ ) {
-            sortKeys.add(new RowSorter.SortKey(cols[i], order[i]?SortOrder.ASCENDING:SortOrder.DESCENDING));
-        }
-        sorter.setSortKeys(sortKeys);
+        if ( cols != null && order != null ) {
+            if( cols.length != order.length){
+                throw new IllegalArgumentException("Length of order array must match length of cols array.");
+            }
 
-        if( comparators != null){
-            for(int i = 0; i < comparators.length; i++){
-                if(comparators[i] != null){
-                    sorter.setComparator(i, comparators[i]);
+            if(comparators != null){
+                if(cols.length != comparators.length){
+                    throw new IllegalArgumentException("Length of comparators array must match length of cols array.");
+                }
+            }
+
+            java.util.List <RowSorter.SortKey> sortKeys = new ArrayList<RowSorter.SortKey>();
+            for ( int i=0; i< cols.length; i++ ) {
+                sortKeys.add(new RowSorter.SortKey(cols[i], order[i]?SortOrder.ASCENDING:SortOrder.DESCENDING));
+            }
+            sorter.setSortKeys(sortKeys);
+
+            if( comparators != null){
+                for(int i = 0; i < comparators.length; i++){
+                    if(comparators[i] != null){
+                        sorter.setComparator(i, comparators[i]);
+                    }
                 }
             }
         }
-
+        
         table.setRowSorter(sorter);
         sorter.sort();
     }

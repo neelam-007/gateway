@@ -4,11 +4,11 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.util.HexUtils;
-import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.User;
-import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
@@ -16,7 +16,10 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalUserManager;
+import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.transport.TransportModule;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -62,7 +65,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         try {
             results = authenticateRequestBasic(req);
         } catch (AuthenticationException e) {
-            logger.log(Level.WARNING, "Bad credentials, returning 401", e);
+            logger.log(Level.WARNING, "Bad credentials, returning 401: " + e.getMessage());
             sendBackError(res, HttpServletResponse.SC_UNAUTHORIZED, "Bad credentials");
             return;
         } catch (LicenseException e) {
@@ -106,6 +109,8 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         }
         // get the new password
         String newpasswd = req.getHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD);
+        LoginCredentials creds = findCredentialsBasic(req);
+        String oldpasswd = new String(creds.getCredentials());
         if (newpasswd == null || newpasswd.length() < 1) {
             logger.warning("The request did not include a new password in header " +
                            SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD + ", returning 400.");
@@ -120,32 +125,17 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, "Password should be b64ed.");
             return;
         }
-        // make sure it's different from current one
-        InternalUser tempUser;
-        try {
-            tempUser = new InternalUser(internalUser.getLogin());
-            tempUser.setCleartextPassword(newpasswd);
-        } catch (IllegalStateException e) {
-            logger.log(Level.SEVERE, "could not compare password", e);
-            sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-            return;
-        } catch (InvalidPasswordException e) {
-            logger.log(Level.WARNING, "new password not valid", e);
-            sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
-            return;
-        }
 
-        if (tempUser.getHashedPassword().equals(internalUser.getHashedPassword())) {
-            logger.warning("New password same as old one, returning 400.");
-            sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, "Please provide new password (different from old one)");
-            return;
-        }
         // DO IT!
         try {
             InternalUser newInternalUser = new InternalUser();
             newInternalUser.copyFrom(internalUser);
             newInternalUser.setVersion(internalUser.getVersion());
-            newInternalUser.setCleartextPassword(newpasswd);
+            //newInternalUser.setCleartextPassword(newpasswd);
+            PasswordEnforcerManager enforcer = new PasswordEnforcerManager(newInternalUser, newpasswd, HexUtils.encodePasswd(newInternalUser.getLogin(), newpasswd, HttpDigest.REALM), oldpasswd);
+            enforcer.isSTIGCompilance();
+            newInternalUser.setPasswordChanges(System.currentTimeMillis(), newpasswd);
+            newInternalUser.setPasswordExpiry(PasswordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
 
             InternalUserManager userManager = internalProvider.getUserManager();
             userManager.update(newInternalUser);

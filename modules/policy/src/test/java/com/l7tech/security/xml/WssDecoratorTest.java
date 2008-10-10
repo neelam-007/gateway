@@ -40,18 +40,24 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Tests that ensure that the WssDecorator can produce output for various configurations without throwing an
+ * exception.  In most cases these particular tests completely ignore the content of the output, other than to log it.
+ * For tests that actually look at the output to see if it makes sense, see WssRoundTripTest.
+ *
  * @author mike
  * @noinspection RedundantCast
  */
 public class WssDecoratorTest extends TestCase {
     private static Logger log = Logger.getLogger(WssDecoratorTest.class.getName());
     private static final String ACTOR_NONE = "";
+    public static final String TEST_WSSC_SESSION_ID = "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid";
 
     static {
         JceProvider.init();
@@ -116,33 +122,18 @@ public class WssDecoratorTest extends TestCase {
         }
     }
 
-    // TODO: replace most of the members in this class with a single DecorationRequirements field,
-    //       rather than having to maintain 2 separate bits of code that translate TestDocument into DecorationRequirements                                      
     public static class TestDocument {
         public Context c;
-        public Element senderSamlAssertion; // may be used instead of senderCert
-        public X509Certificate senderCert;
-        public PrivateKey senderKey;
-        public X509Certificate recipientCert;
         public PrivateKey recipientKey;
-        public boolean signTimestamp;
-        public byte[] secureConversationKey;   // may be used instead of a sender cert + sender key if using WS-SC
-        public Element[] elementsToEncrypt = new Element[0];
-        public Element[] elementsToSign = new Element[0];
-        public String[] attachmentsToSign = new String[0];
-        public boolean signAttachmentHeaders;
-        public boolean signSamlToken = false; // if true, SAML token should be signed
-        public KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;
-        public String encryptionAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName(); //default
-        public String encryptedKeySha1 = null;
-        public String signatureConfirmation = null;
-        public String actor = null;
-        public boolean encryptUsernameToken = false;
-        public String keyEncryptionAlgoritm;
-        public UsernameToken usernameToken = null;
-        public boolean useDerivedKeys = false;
-        public boolean signUsernameToken = false;
+        public DecorationRequirements req = new DecorationRequirements();
         public SecurityTokenResolver securityTokenResolver = null;
+
+        public TestDocument(Context c, DecorationRequirements req, PrivateKey recipientKey, SecurityTokenResolver securityTokenResolver) {
+            this.c = c;
+            this.recipientKey = recipientKey;
+            this.req = req;
+            this.securityTokenResolver = securityTokenResolver;
+        }
 
         public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,
@@ -183,87 +174,53 @@ public class WssDecoratorTest extends TestCase {
                             boolean useDerivedKeys, boolean signUsernameToken)
         {
             this.c = c;
-            this.senderSamlAssertion = senderSamlAssertion;
-            this.senderCert = senderCert;
-            this.senderKey = senderKey;
-            this.recipientCert = recipientCert;
+            req.setSenderSamlToken(senderSamlAssertion, signSamlToken);
+            req.setSenderMessageSigningCertificate(senderCert);
+            req.setSenderMessageSigningPrivateKey(senderKey);
+            req.setRecipientCertificate(recipientCert);
             this.recipientKey = recipientKey;
-            this.signTimestamp = signTimestamp;
-            if (elementsToEncrypt != null)
-                this.elementsToEncrypt = elementsToEncrypt;
-            if (encryptionAlgorithm != null)
-                this.encryptionAlgorithm = encryptionAlgorithm;
-            if (elementsToSign != null)
-                this.elementsToSign = elementsToSign;
-            this.secureConversationKey = secureConversationKey;
-            this.signSamlToken = signSamlToken;
-            this.keyInfoInclusionType = keyInfoInclusionType;
-            this.encryptedKeySha1 = encryptedKeySha1;
-            this.signatureConfirmation = signatureConfirmation;
-            this.actor = actor;
-            this.encryptUsernameToken = encryptUsernameToken;
-            this.usernameToken = senderUsernameToken;
-            this.useDerivedKeys = useDerivedKeys;
-            this.signUsernameToken = signUsernameToken;
+
+            req.setEncryptUsernameToken(encryptUsernameToken);
+            req.setUsernameTokenCredentials(senderUsernameToken);
+
+            if (secureConversationKey != null) {
+                if (encryptedKeySha1 == null) {
+                    // Use WS-SecureConversation derived key token
+                    req.setSecureConversationSession(new SimpleSecureConversationSession(
+                            TEST_WSSC_SESSION_ID,
+                            secureConversationKey,
+                            SoapUtil.WSSC_NAMESPACE
+                    ));
+                } else {
+                    // Use KeyInfo #EncryptedKeySHA1, referencing implicit EncryptedKey which recipient is expected
+                    // to already possess.
+                    req.setEncryptedKey(secureConversationKey);
+                    req.setEncryptedKeySha1(encryptedKeySha1);
+                }
+            }
+
+            if (elementsToEncrypt != null) req.getElementsToEncrypt().addAll(Arrays.asList(elementsToEncrypt));
+            if (encryptionAlgorithm != null) req.setEncryptionAlgorithm(encryptionAlgorithm);
+            if (elementsToSign != null) req.getElementsToSign().addAll(Arrays.asList(elementsToSign));
+            if (signTimestamp) req.setSignTimestamp();
+            req.setSignUsernameToken(signUsernameToken);
+
+
+            req.setKeyInfoInclusionType(keyInfoInclusionType);
+            req.setEncryptedKeySha1(encryptedKeySha1);
+            if (signatureConfirmation != null) req.addSignatureConfirmation(signatureConfirmation);
+            if (actor != null) req.setSecurityHeaderActor(actor.length() < 1 ? null : actor);
+            req.setUseDerivedKeys(useDerivedKeys);
         }
     }
 
     private void runTest(final TestDocument d) throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
-        DecorationRequirements reqs = makeDecorationRequirements(d);
 
-        decorator.decorateMessage(new Message(d.c.message), reqs);
+        decorator.decorateMessage(new Message(d.c.message), d.req);
 
         log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
-    }
-
-    public DecorationRequirements makeDecorationRequirements(final TestDocument d) {
-        DecorationRequirements reqs = new DecorationRequirements();
-        reqs.setSenderSamlToken(d.senderSamlAssertion, d.signSamlToken);
-        reqs.setSenderMessageSigningCertificate(d.senderCert);
-        reqs.setRecipientCertificate(d.recipientCert);
-        reqs.setSenderMessageSigningPrivateKey(d.senderKey);
-        reqs.setSignTimestamp();
-        reqs.setUsernameTokenCredentials(d.usernameToken);
-        reqs.setKeyInfoInclusionType(d.keyInfoInclusionType);
-        reqs.setSignatureConfirmation(d.signatureConfirmation);
-        reqs.setEncryptUsernameToken(d.encryptUsernameToken);
-        reqs.setSignUsernameToken(d.signUsernameToken);
-        reqs.setUseDerivedKeys(d.useDerivedKeys);
-        if (d.actor != null)
-            reqs.setSecurityHeaderActor(d.actor.length() < 1 ? null : d.actor);
-        if (d.secureConversationKey != null) {
-            if (d.encryptedKeySha1 == null) {
-                // Use WS-SecureConversation derived key token
-                reqs.setSecureConversationSession(new SimpleSecureConversationSession(
-                        "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid",
-                        d.secureConversationKey,
-                        SoapUtil.WSSC_NAMESPACE
-                ));
-            } else {
-                // Use KeyInfo #EncryptedKeySHA1, referencing implicit EncryptedKey which recipient is expected
-                // to already possess.
-                reqs.setEncryptedKey(d.secureConversationKey);
-                reqs.setEncryptedKeySha1(d.encryptedKeySha1);
-            }
-        }
-        if (d.elementsToEncrypt != null) {
-            for (Element anElementsToEncrypt : d.elementsToEncrypt) {
-                //noinspection unchecked
-                reqs.getElementsToEncrypt().add(anElementsToEncrypt);
-            }
-        }
-        if (d.encryptionAlgorithm != null) {
-            reqs.setEncryptionAlgorithm(d.encryptionAlgorithm);
-        }
-        if (d.elementsToSign != null) {
-            for (Element anElementsToSign : d.elementsToSign) {
-                //noinspection unchecked
-                reqs.getElementsToSign().add(anElementsToSign);
-            }
-        }
-        return reqs;
     }
 
     public void testSimpleDecoration() throws Exception {
@@ -357,8 +314,8 @@ public class WssDecoratorTest extends TestCase {
 
         WssDecorator decorator = new WssDecoratorImpl();
         DecorationRequirements dreq = new DecorationRequirements();
-        dreq.setSenderMessageSigningCertificate(td.senderCert);
-        dreq.setSenderMessageSigningPrivateKey(td.senderKey);
+        dreq.setSenderMessageSigningCertificate(td.req.getSenderMessageSigningCertificate());
+        dreq.setSenderMessageSigningPrivateKey(td.req.getSenderMessageSigningPrivateKey());
         dreq.setTimestampCreatedDate(new Date());
         dreq.setIncludeTimestamp(true);
         dreq.setSignTimestamp();
@@ -397,7 +354,7 @@ public class WssDecoratorTest extends TestCase {
                                                      false,
                                                      new Element[]{c.body},
                                                      new Element[0]);
-        testDocument.encryptionAlgorithm = encryptionAlgorithm;
+        testDocument.req.setEncryptionAlgorithm(encryptionAlgorithm);
         return testDocument;
     }
 
@@ -519,7 +476,7 @@ public class WssDecoratorTest extends TestCase {
         final Context c = new Context();
         Element senderSamlToken = createSenderSamlToken(null,
                                                         TestDocuments.getEttkClientCertificate(),
-                null, TestDocuments.getDotNetServerCertificate(),
+                TestDocuments.getDotNetServerCertificate(),
                                                         TestDocuments.getDotNetServerPrivateKey(),
                                                         version);
         return new TestDocument(c,
@@ -542,7 +499,7 @@ public class WssDecoratorTest extends TestCase {
         final Context c = new Context();
         Element senderSamlToken = createSenderSamlToken("fbunky",
                                                         null,
-                null, TestDocuments.getDotNetServerCertificate(),
+                                                        TestDocuments.getDotNetServerCertificate(),
                                                         TestDocuments.getDotNetServerPrivateKey(),
                                                         version);
         return new TestDocument(c,
@@ -560,7 +517,7 @@ public class WssDecoratorTest extends TestCase {
 
     private Element createSenderSamlToken(String subjectNameIdentifierValue,
                                           X509Certificate subjectCert,
-                                          String nameQualifier, X509Certificate issuerCert,
+                                          X509Certificate issuerCert,
                                           PrivateKey issuerPrivateKey,
                                           int version)
       throws Exception {
@@ -890,7 +847,7 @@ public class WssDecoratorTest extends TestCase {
                                  "abc11SignatureConfirmationValue11blahblahblah11==",
                                  ACTOR_NONE, null, false, false);
 
-        testDocument.encryptionAlgorithm = XencAlgorithm.AES_256_CBC.getXEncName(); 
+        testDocument.req.setEncryptionAlgorithm(XencAlgorithm.AES_256_CBC.getXEncName());
 
         return testDocument;
     }
@@ -906,7 +863,7 @@ public class WssDecoratorTest extends TestCase {
                 true,
                 null,
                 new Element[]{c.body});
-        td.keyEncryptionAlgoritm = SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2;
+        td.req.setKeyEncryptionAlgorithm(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
         return td;
     }
 
@@ -970,4 +927,36 @@ public class WssDecoratorTest extends TestCase {
              "\r\n" +
              "------=Part_-763936460.00306951464153826--\r\n";
 
+
+    public void testExplicitSignatureConfirmations() throws Exception {
+        runTest(getExplicitSignatureConfirmationsTestDocument());
+    }
+
+    public TestDocument getExplicitSignatureConfirmationsTestDocument() throws Exception {
+        final Context c = new Context();
+        TestDocument td =
+                new TestDocument(c,
+                        (Element)null,
+                        (X509Certificate)TestDocuments.getEttkClientCertificate(),
+                        (PrivateKey)TestDocuments.getEttkClientPrivateKey(),
+                        (X509Certificate)TestDocuments.getDotNetServerCertificate(),
+                        (PrivateKey)TestDocuments.getDotNetServerPrivateKey(),
+                        true,
+                        new Element[]{c.body},
+                        (String)null,
+                        new Element[]{c.body},
+                        null,
+                        false,
+                        KeyInfoInclusionType.CERT,
+                        false,
+                        null,
+                        null,
+                        ACTOR_NONE,
+                        null,
+                        false,
+                        false);
+        td.req.addSignatureConfirmation("abc11SignatureConfirmationValue11blahblahblah11==");
+        td.req.addSignatureConfirmation("abc11SignatureConfirmationValue22blahblahblah22==");
+        return td;
+    }
 }

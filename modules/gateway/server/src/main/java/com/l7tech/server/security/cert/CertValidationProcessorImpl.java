@@ -668,6 +668,11 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         trustedCertsByDn.remove(entry.subjectDn);
         trustedCertsBySKI.remove(entry.ski);
         trustedCertsByIssuerDnAndSerial.remove(new IDNSerialKey(entry.issuerDn, entry.serial));
+        if(trustAnchorsByDn.containsKey(entry.subjectDn)) {
+            Map<String, TrustAnchor> updatedTrustAnchors = new HashMap<String, TrustAnchor>(trustAnchorsByDn);
+            updatedTrustAnchors.remove(entry.subjectDn);
+            trustAnchorsByDn = Collections.unmodifiableMap(updatedTrustAnchors);
+        }
     }
 
     /** Caller must hold write lock */

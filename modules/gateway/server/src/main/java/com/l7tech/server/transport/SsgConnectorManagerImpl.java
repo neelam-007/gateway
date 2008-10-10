@@ -96,7 +96,7 @@ public class SsgConnectorManagerImpl
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("enabled", Boolean.TRUE);
         map.put("scheme", scheme);
-        List<SsgConnector> list = findMatching(map);
+        List<SsgConnector> list = findMatching(Arrays.asList(map));
         SsgConnector found = null;
         for (SsgConnector c : list) {
             if (c.offersEndpoint(endpoint) && scheme.equals(c.getScheme())) {

@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * @author alex
  */
-public abstract class Predicate implements Serializable {
+public abstract class Predicate implements Cloneable, Serializable {
     protected boolean negated;
 
     public Predicate() {
@@ -23,4 +23,9 @@ public abstract class Predicate implements Serializable {
     }
 
     public abstract String getSimpleName();
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {        
+        return super.clone();
+    }
 }

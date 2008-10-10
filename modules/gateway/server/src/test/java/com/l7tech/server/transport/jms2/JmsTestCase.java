@@ -45,6 +45,17 @@ public class JmsTestCase {
     // Random number generator used for tasks
     protected final Random rand = new Random(System.currentTimeMillis());
 
+    // sample message
+    final String MSG_STOCK_QUOTE =
+            "<soapenv:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:urn=\"urn:xmltoday-delayed-quotes\">\n" +
+            "   <soapenv:Header/>\n" +
+            "   <soapenv:Body>\n" +
+            "      <urn:getQuote soapenv:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n" +
+            "         <symbol xsi:type=\"xsd:string\">BMX</symbol>\n" +
+            "      </urn:getQuote>\n" +
+            "   </soapenv:Body>\n" +
+            "</soapenv:Envelope>";
+
     protected void setUp() throws Exception {
 
         if (appCtx == null) {
@@ -156,6 +167,7 @@ public class JmsTestCase {
                 for (int i=0; i<numData; i++) {
 
                     msgPayload = "<test><id>"+c.getDisplayName()+i+"</id><payload>MyPayload</payload></test>";
+//                    msgPayload = MSG_STOCK_QUOTE;
 
                     BytesMessage msg = session.createBytesMessage();
                     msg.writeBytes(msgPayload.getBytes());
@@ -236,7 +248,9 @@ public class JmsTestCase {
             if (connections == null) {
                 Collection<JmsConnection> result = new ArrayList<JmsConnection>();
                 for (int i=0; i<count; i++) {
-                    JmsConnection conn = provider.createConnection(AMQ_QUEUE_DEFAULT+testCase+"."+i, AMQ_JNDI_URL);
+//                    JmsConnection conn = provider.createConnection(AMQ_QUEUE_DEFAULT+testCase+"."+i, AMQ_JNDI_URL);
+//                    JmsConnection conn = provider.createConnection("vchan_in", FMQ_JNDI_URL);
+                    JmsConnection conn = provider.createConnection(FMQ_QUEUE_DEFAULT, FMQ_JNDI_URL);
                     conn.setOid(OidRoot++);
                     conn.setVersion(1);
                     result.add(conn);
@@ -293,7 +307,8 @@ public class JmsTestCase {
             endpt.setConnectionOid(conn.getOid());
             endpt.setName(conn.getName());
             endpt.setDestinationName(conn.getName());
-            endpt.setReplyType(JmsReplyType.AUTOMATIC);
+            endpt.setReplyType(JmsReplyType.REPLY_TO_OTHER);
+            endpt.setReplyToQueueName("VCHAN_REPLY");
             endpt.setDisabled(false);
             endpt.setMaxConcurrentRequests(1);
             endpt.setMessageSource(true);

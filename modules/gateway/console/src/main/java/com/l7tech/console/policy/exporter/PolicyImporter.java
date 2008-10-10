@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.HashMap;
@@ -61,7 +60,7 @@ public class PolicyImporter {
      *         not be resolved.
      * @throws InvalidPolicyStreamException somehing unexpected in the passed file.
      */
-    public static PolicyImporterResult importPolicy(Policy receiverPolicy, File input) throws InvalidPolicyStreamException {
+    public static PolicyImporterResult importPolicy(Policy receiverPolicy, File input) throws InvalidPolicyStreamException, PolicyImportCancelledException {
         String name = input.getPath();
         // Read XML document from this
         Document readDoc = null;

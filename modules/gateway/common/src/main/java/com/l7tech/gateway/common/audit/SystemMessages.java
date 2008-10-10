@@ -81,6 +81,7 @@ public class SystemMessages extends Messages {
     public static final M AUTH_USER_DISABLED = m(2100, Level.INFO, "User {0} is disabled");
     public static final M AUTH_USER_LOCKED   = m(2101, Level.INFO, "User {0} is locked");
     public static final M AUTH_USER_EXPIRED  = m(2102, Level.INFO, "User {0} has expired");
+    public static final M AUTH_USER_EXCEED_ATTEMPT = m(2103, Level.INFO, "User ''{0}'' has exceeded max. number of failed logon attempts.  User has attempted {1} out of {2} allowable failure attempts.");
 
     public static final M CERT_EXPIRY_CANT_FIND  = m(2150, Level.WARNING, "Unable to find trusted certificates to check for upcoming expirations; skipping this check");
     public static final M CERT_EXPIRY_BAD_CERT   = m(2151, Level.WARNING, "Unable to parse trusted certificate #{0} ({1}) in order to check for expiration; skipping");
@@ -89,6 +90,21 @@ public class SystemMessages extends Messages {
     public static final M CERT_EXPIRING_WARNING  = m(2154, Level.WARNING, "Trusted certificate #{0} ({1}) will expire in {2}");
     public static final M CERT_EXPIRED           = m(2155, Level.WARNING, "Trusted certificate #{0} ({1}) expired {2} ago");
     public static final M CERT_EXPIRY_BAD_PERIOD = m(2156, Level.WARNING, "New expiry period value {0} is not a valid time unit; using {1} instead");
+
+    // Audit Archiver
+    public static final M AUDIT_ARCHIVER_MESSAGE_PROCESSING_SUSPENDED  = m(2200, Level.SEVERE, "Message processing suspended by the Audit Archiver: {0}");
+    public static final M AUDIT_ARCHIVER_MESSAGE_PROCESSING_RESTARTED  = m(2201, Level.WARNING, "Message processing restarted by the Audit Archiver.");
+    public static final M AUDIT_ARCHIVER_JOB_STARTED  = m(2202, Level.WARNING, "Started Audit Archiver job");
+    public static final M AUDIT_ARCHIVER_JOB_ARCHIVED  = m(2203, Level.WARNING, "Archived and deleted audit records with objectid in [{0}:{1}]");
+    public static final M AUDIT_ARCHIVER_JOB_COMPLETE  = m(2204, Level.WARNING, "Completed Audit Archiver job.");
+    public static final M AUDIT_ARCHIVER_ERROR = m(2205, Level.WARNING, "Audit Archiver error: {0}");
+    public static final M AUDIT_ARCHIVER_IMMEDIATE_TRIGGER  = m(2206, Level.WARNING, "Immediate Audit Archive trigger requested.");
+
+
+    // FTP Client Utils
+    public static final M FTP_SSL_NO_CERT = m(2250, Level.WARNING, "FTP server ({0}) did not identify itself properly: {1}");
+    public static final M FTP_SSL_NOT_X509 = m(2251, Level.WARNING, "Cannot handle non-X.509 certificates from FTP server ({0})");
+    public static final M FTP_SSL_UNTRUSTED = m(2252, Level.WARNING, "Cannot establish trust of SSL certificate from FTP server ({0}): {1}");
 
     // MAX -                                      m(2999
 }

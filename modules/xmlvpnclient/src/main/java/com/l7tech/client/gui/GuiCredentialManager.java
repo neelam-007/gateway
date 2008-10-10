@@ -9,6 +9,7 @@ package com.l7tech.client.gui;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PleaseWaitDialog;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.gui.TrustCertificateDialog;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -16,7 +17,6 @@ import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgRuntime;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.client.gui.dialogs.LogonDialog;
-import com.l7tech.client.gui.dialogs.TrustCertificateDialog;
 import com.l7tech.proxy.ssl.SslPeer;
 
 import javax.swing.*;
@@ -335,7 +335,8 @@ class GuiCredentialManager extends CredentialManager {
         String mess = msg +
                 "Do you want to trust " + serverDesc + " using this server certificate?  " +
                 "If you don't know, click Cancel.";
-        final TrustCertificateDialog tcd = new TrustCertificateDialog(untrustedCertificate,
+        final TrustCertificateDialog tcd = new TrustCertificateDialog(Gui.getInstance().getFrame(),
+                                                                      untrustedCertificate,
                                                                       "Trust Certificate for " + serverDesc,
                                                                       mess);
         invokeOnSwingThread(new Runnable() {

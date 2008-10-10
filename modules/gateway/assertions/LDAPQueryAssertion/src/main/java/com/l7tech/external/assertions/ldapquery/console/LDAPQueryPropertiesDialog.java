@@ -44,6 +44,9 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JButton deleteButton;
     private JButton newButton;
     private JButton editButton;
+    private JCheckBox cacheLDAPAttributeValuesCheckBox;
+    private JSpinner cachePeriodSpinner;
+    private JCheckBox failIfNoResultsCheckBox;
     private boolean wasOKed = false;
     private LDAPQueryAssertion assertion;
     private java.util.List<QueryAttributeMapping> localMappings = new ArrayList<QueryAttributeMapping>();
@@ -108,6 +111,13 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             }
         });
 
+		 cacheLDAPAttributeValuesCheckBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                enableDisableCache();
+            }
+        });
+
+
         Utilities.equalizeButtonSizes(new JButton[]{okBut, editButton, deleteButton});
         enableButtons();
 
@@ -150,6 +160,9 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             }
         }
         searchField.setText(assertion.getSearchFilter());
+        cacheLDAPAttributeValuesCheckBox.setSelected(assertion.isEnableCache());
+        cachePeriodSpinner.setValue(assertion.getCachePeriod());
+        failIfNoResultsCheckBox.setSelected(assertion.isFailIfNoResults());
     }
 
     private void viewToModel() {
@@ -160,6 +173,9 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
         assertion.reassignQueryMappings(localMappings.toArray(new QueryAttributeMapping[localMappings.size()]));
         assertion.setSearchFilter(searchField.getText());
+        assertion.setEnableCache(cacheLDAPAttributeValuesCheckBox.isSelected());
+        assertion.setCachePeriod(Long.parseLong(cachePeriodSpinner.getValue().toString()));
+        assertion.setFailIfNoResults(failIfNoResultsCheckBox.isSelected());
     }
 
     private void doDeleteMapping() {
@@ -185,6 +201,14 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         long oid;
         public String toString() {
             return name;
+        }
+    }
+
+    private void enableDisableCache() {
+        if (cacheLDAPAttributeValuesCheckBox.isSelected()) {
+            cachePeriodSpinner.setEnabled(true);
+        } else {
+            cachePeriodSpinner.setEnabled(false);
         }
     }
 
@@ -249,6 +273,16 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     }
 
     public LDAPQueryAssertion getData(LDAPQueryAssertion assertion) {
+        Object selected = ldapCombo.getSelectedItem();
+        if (selected != null) {
+            ComboItem ci = (ComboItem)selected;
+            assertion.setLdapProviderOid(ci.oid);
+        }
+        assertion.reassignQueryMappings(localMappings.toArray(new QueryAttributeMapping[localMappings.size()]));
+        assertion.setSearchFilter(searchField.getText());
+        assertion.setEnableCache(cacheLDAPAttributeValuesCheckBox.isSelected());
+        assertion.setCachePeriod(Long.parseLong(cachePeriodSpinner.getValue().toString()));
+        assertion.setFailIfNoResults(failIfNoResultsCheckBox.isSelected());
         return assertion;
     }
 

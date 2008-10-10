@@ -18,16 +18,18 @@ import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.token.SignedPart;
+import com.l7tech.security.token.SignatureConfirmation;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.policy.assertion.xmlsec.SamlAssertionValidate;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import java.util.Collections;
 
 /**
  * Saml 2.0 assertion validation tests.
@@ -342,10 +344,10 @@ public class Saml2ValidationTest extends TestCase {
             public EncryptedElement[] getElementsThatWereEncrypted() { return new EncryptedElement[0];}
             public SignedElement[] getElementsThatWereSigned() { return new SignedElement[0]; }
             public SignedPart[] getPartsThatWereSigned() { return new SignedPart[0]; }
-            public String getLastSignatureConfirmation() { return null; }
             public String getLastKeyEncryptionAlgorithm() { return null; }
-            public String getLastSignatureValue() { return null; }
             public SecurityActor getProcessedActor() { return null; }
+            public List<String> getValidatedSignatureValues() { return Collections.emptyList(); }
+            public List<SignatureConfirmation> getSignatureConfirmationValues() { return Collections.emptyList(); }
             public String getSecurityNS() { return SoapUtil.SECURITY_NAMESPACE; }
             public SigningSecurityToken[] getSigningTokens(Element element) { return new SigningSecurityToken[0]; }
             public WssTimestamp getTimestamp() { return null; }

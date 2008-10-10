@@ -4,11 +4,14 @@
 package com.l7tech.policy.variable;
 
 import java.io.Serializable;
+import java.util.regex.Pattern;
 
 /**
  * Metadata describing a variable.  Applies mainly to built-in variables at this time.
  */
 public class VariableMetadata implements Serializable {
+    private static final Pattern VARIABLE_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9._\\-]*$");
+
     private final String name;
     private final boolean prefixed;
     private final boolean multivalued;
@@ -16,9 +19,10 @@ public class VariableMetadata implements Serializable {
     private final boolean settable;
     private final DataType type;
 
-    public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type) {
-        String err = validateName(name);
-        if (err != null) throw new IllegalArgumentException(err);
+    public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type)
+        throws VariableNameSyntaxException
+    {
+        assertNameIsValid(name);
         this.name = name;
         this.prefixed = prefixed;
         this.multivalued = multivalued;
@@ -94,21 +98,21 @@ public class VariableMetadata implements Serializable {
         }
     }
 
+    public static void assertNameIsValid(String name) throws VariableNameSyntaxException {
+        if (!isNameValid(name))
+            throw new VariableNameSyntaxException("Variable name must consist of a letter or underscore, and optional letters, digits, underscores, dashes, or periods.");
+    }
+
     public static boolean isNameValid(String name) {
-        return validateName(name) == null;
+        return VARIABLE_NAME_PATTERN.matcher(name).matches();
     }
 
     public static String validateName(String name) {
-        char c0 = name.charAt(0);
-        if (!(Character.isLetter(c0) || c0 == '_')) // We have more restrictive rules than Java for initial characters
-            return "variable names must not start with '" + c0 + "'";
-
-        for (int i = 0; i < name.toCharArray().length; i++) {
-            char c = name.toCharArray()[i];
-            if (c == '.') continue; // We allow '.', Java doesn't
-            if (!Character.isJavaIdentifierPart(c) || c == '$') // Java allows '$', we don't
-                return "variable names must not contain '" + c + "'";
+        try {
+            assertNameIsValid(name);
+            return null;
+        } catch (VariableNameSyntaxException e) {
+            return e.getMessage();
         }
-        return null;
     }
 }

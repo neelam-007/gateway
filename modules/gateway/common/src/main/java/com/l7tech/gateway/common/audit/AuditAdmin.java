@@ -11,8 +11,9 @@ import com.l7tech.util.OpaqueId;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.common.audit.AuditRecordHeader;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
@@ -92,6 +93,27 @@ public interface AuditAdmin extends GenericLogAdmin {
     @Secured(stereotype=DELETE_MULTI)
     @Administrative(licensed=false)
     void deleteOldAuditRecords() throws DeleteException;
+
+    /**
+     * Signals the Audit Archiver to start the archive job immediately
+     * (if it's not already currently being run by a node).
+     */
+    @Secured(types=AUDIT_RECORD, stereotype = DELETE_MULTI)
+    void doAuditArchive();
+
+    /**
+     * Retrieves the Audit Archiver FTP destination configured for the cluster.
+     */
+    @Secured(stereotype=FIND_ENTITY_BY_ATTRIBUTE)
+    ClusterProperty getFtpAuditArchiveConfig();
+
+    /**
+     * Saves / updates the Audit Archiver FTP destination with the provided config.
+     *
+     * @return  true if successfull, false if the save operation failed
+     */
+    @Secured(stereotype=SAVE_OR_UPDATE)
+    void setFtpAuditArchiveConfig(ClusterProperty prop) throws UpdateException;
 
     @Secured(stereotype=FIND_ENTITIES)
     @Administrative(licensed=false)

@@ -7,14 +7,17 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.message.*;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.HexUtils;
 
 import javax.wsdl.Operation;
 import javax.xml.namespace.QName;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.CertificateEncodingException;
 
 /**
  * @author alex
@@ -389,23 +393,18 @@ public class ServerVariables {
         }),
         new Variable(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                if (context.getClusterPropertyManager() != null) {
-                    try {
-                        if (name.length() < (BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 2)) {
-                            logger.warning("variable name " + name + " cannot be resolved to a cluster property");
-                            return null;
-                        }
-                        name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
-                        // TODO make this cache timeout configurable
-                        ClusterProperty cp = context.getClusterPropertyManager().getCachedEntityByName(name, 30000);
-                        if (cp == null || cp.isHiddenProperty()) return null;
-                        return cp.getValue();
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "exception querying for cluster property", e);
+                if (context.getClusterPropertyCache() != null) {
+                    if (name.length() < (BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 2)) {
+                        logger.warning("variable name " + name + " cannot be resolved to a cluster property");
                         return null;
                     }
+                    name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
+                    // TODO make this cache timeout configurable
+                    ClusterProperty cp = context.getClusterPropertyCache().getCachedEntityByName(name, 30000);
+                    if (cp == null) return null;
+                    return cp.getValue();
                 } else {
-                    logger.severe("cannot get ClusterPropertyManager through context");
+                    logger.severe("cannot get ClusterPropertyCache through context");
                     return null;
                 }
             }
@@ -425,11 +424,125 @@ public class ServerVariables {
                 if (pass == null || pass.length == 0) return null;
                 return new String(pass);
             }
-        })
+        }),
+
+        new Variable("request.ssl.clientCertificate", new Getter(){
+            public Object get(String name, PolicyEnforcementContext context){
+                List<LoginCredentials> allCreds = context.getCredentials();
+                for(LoginCredentials creds : allCreds){
+                    if(creds != null && creds.getFormat().isClientCert()){
+                        //can only have one credential of a particular type per ProcessingContext, so this must be it
+                        return creds.getClientCert();
+                    }
+                }
+                return null;
+            }
+        }),
+        new Variable("request.ssl.clientCertificate.base64", new Getter(){
+            public Object get(String name, PolicyEnforcementContext context){
+                List<LoginCredentials> allCreds = context.getCredentials();
+                for(LoginCredentials creds : allCreds){
+                    if(creds != null && creds.getFormat().isClientCert()){
+                        //can only have one credential of a particular type per ProcessingContext, so this must be it
+                        BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
+                        try{
+                            String encoding = "UTF-8";
+                            bos.write(HexUtils.encodeBase64(creds.getClientCert().getEncoded()).getBytes(encoding));
+                            return bos.toString(encoding);
+                        }catch(Exception e){
+                            return null;
+                        }finally{
+                            bos.close();
+                        }
+                    }
+                }
+                return null;
+            }
+        }),
+        new Variable("request.ssl.clientCertificate.pem", new Getter(){
+            public Object get(String name, PolicyEnforcementContext context) {
+                List<LoginCredentials> allCreds = context.getCredentials();
+                for (LoginCredentials creds : allCreds) {
+                    if (creds != null && creds.getFormat().isClientCert()) {
+                        //can only have one credential of a particular type per ProcessingContext, so this must be it
+                        try{
+                            return CertUtils.encodeAsPEM(creds.getClientCert());
+                        }catch(Exception e){
+                            logger.log(Level.SEVERE, "Error getting certificate's PEM value.", e);
+                            return null;
+                        }
+                    }
+                }
+                return null;
+            }
+        }),
+        new Variable("request.ssl.clientCertificate.der", new Getter(){
+            public Object get(String name, PolicyEnforcementContext context){
+                List<LoginCredentials> allCreds = context.getCredentials();
+                for(LoginCredentials creds : allCreds){
+                    if(creds != null && creds.getFormat().isClientCert()){
+                        //can only have one credential of a particular type per ProcessingContext, so this must be it
+                        try {
+                            return creds.getClientCert().getEncoded();
+                        } catch (CertificateEncodingException cee) {
+                            logger.log(Level.SEVERE, "Error getting certificate encoding.", cee);
+                            return null;
+                        }
+                    }
+                }
+                return null;
+            }
+        }),
+        new Variable("request.wss.signingcertificate", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                List<LoginCredentials> allCreds = context.getCredentials();
+                for (LoginCredentials creds : allCreds) {
+                    if (creds != null  && creds.getFormat().isClientCert() && creds.getCredentialSourceAssertion() == RequestWssX509Cert.class) {
+                        //can only have one credential of a particular type per ProcessingContext, so this must be it
+                        return creds.getClientCert();
+                    }
+                }
+                return null;
+            }
+        }),
+        new Variable("request.wss.signingcertificate.base64", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                List<LoginCredentials> allCreds = context.getCredentials();
+                for (LoginCredentials creds : allCreds) {
+                    if (creds != null  && creds.getFormat().isClientCert() && creds.getCredentialSourceAssertion() == RequestWssX509Cert.class) {
+                        //can only have one credential of a particular type per ProcessingContext, so this must be it
+                        try {
+                            return HexUtils.encodeBase64(creds.getClientCert().getEncoded(), true);//strip whitespaces
+                        } catch (Exception e) {
+                            logger.log(Level.SEVERE, "Error getting base64 value.", e);
+                            return null;
+                        }
+                    }
+                }
+                return null;
+            }
+        }),
+        new Variable("request.wss.signingcertificate.pem", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                List<LoginCredentials> allCreds = context.getCredentials();
+                for (LoginCredentials creds : allCreds) {
+                    if (creds != null  && creds.getFormat().isClientCert() && creds.getCredentialSourceAssertion() == RequestWssX509Cert.class) {
+                        //can only have one credential of a particular type per ProcessingContext, so this must be it
+                        try {
+                            return CertUtils.encodeAsPEM(creds.getClientCert());
+                        } catch (Exception e) {
+                            logger.log(Level.SEVERE, "Error getting certificate's PEM value.", e);
+                            return null;
+                        }
+                    }
+                }
+                return null;
+            }
+        }),
     };
 
     private static String getRequestRemoteIp(Message request) {
-        TcpKnob tk = (TcpKnob)request.getKnob(TcpKnob.class);
+        TcpKnob tk = (TcpKnob) request.getKnob(TcpKnob.class);
         return tk == null ? null : tk.getRemoteAddress();
     }
 
@@ -451,12 +564,12 @@ public class ServerVariables {
         String part = suffix.substring(1);
         URL url;
         if (u instanceof URL) {
-            url = (URL)u;
+            url = (URL) u;
         } else {
             try {
                 url = new URL(u.toString());
             } catch (MalformedURLException e) {
-                logger.log(Level.WARNING, "URL cannot be parsed: {0}", new String[] {u.toString()});
+                logger.log(Level.WARNING, "URL cannot be parsed: {0}", new String[]{u.toString()});
                 return null;
             }
         }
@@ -529,7 +642,7 @@ public class ServerVariables {
             if (BuiltinVariables.PREFIX_AUTHENTICATED_USERS.equals(variableType)) {
                 List<AuthenticationResult> authResultList = context.getAllAuthenticationResults();
                 List<String> authUsersList = new ArrayList<String>();
-                for (AuthenticationResult authResult: authResultList) {
+                for (AuthenticationResult authResult : authResultList) {
                     if (authResult != null) {
                         authUsersList.add(authResult.getUser().getName());
                     }
@@ -548,7 +661,8 @@ public class ServerVariables {
                     }
                     return user;
                 } else { // With suffix
-                    if (!suffix.startsWith(".")) throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the parameter name.");
+                    if (!suffix.startsWith("."))
+                        throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the parameter name.");
                     String indexS = name.substring(BuiltinVariables.PREFIX_AUTHENTICATED_USER.length() + 1);
                     try {
                         int index = Integer.parseInt(indexS);
@@ -597,7 +711,7 @@ public class ServerVariables {
 
     private static class SoapNamespaceGetter implements Getter {
         public Object get(String name, PolicyEnforcementContext context) {
-            SoapKnob soapKnob = (SoapKnob)context.getRequest().getKnob(SoapKnob.class);
+            SoapKnob soapKnob = (SoapKnob) context.getRequest().getKnob(SoapKnob.class);
             if (soapKnob == null) {
                 logger.info("Can't get SOAP namespace for non-SOAP message");
                 return null;

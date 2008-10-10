@@ -29,15 +29,17 @@ import org.xml.sax.SAXException;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.x500.X500Principal;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
-import java.text.ParseException;
 import java.text.MessageFormat;
+import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,6 +67,8 @@ public class WssProcessorImpl implements WssProcessor {
     private final Collection<SignedPart> partsThatWereSigned = new ArrayList<SignedPart>();
     private final Collection<XmlSecurityToken> securityTokens = new ArrayList<XmlSecurityToken>();
     private final Collection<DerivedKeyToken> derivedKeyTokens = new ArrayList<DerivedKeyToken>();
+    public final List<SignatureConfirmation> signatureConfirmationValues = new ArrayList<SignatureConfirmation>();
+    public final List<String> validatedSignatureValues = new ArrayList<String>();
 
     private X509Certificate senderCertificate = null;
     private SecurityTokenResolver securityTokenResolver = null;
@@ -85,8 +89,6 @@ public class WssProcessorImpl implements WssProcessor {
     private SecurityActor secHeaderActor;
     private boolean documentModified = false;
     private boolean encryptionIgnored = false;
-    private String lastSignatureValue = null;
-    private String lastSignatureConfirmation = null;
     private String lastKeyEncryptionAlgorithm = null;
     private boolean isWsse11Seen = false;
     private boolean isDerivedKeySeen = false; // If we see any derived keys, we'll assume we can derive our own keys in reponse
@@ -212,6 +214,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Resolve the relevent Security header
         Element l7secheader = SoapUtil.getSecurityElement(processedDocument, SecurityActor.L7ACTOR.getValue());
+        if(l7secheader == null) l7secheader = SoapUtil.getSecurityElement(processedDocument, SecurityActor.L7ACTOR_OLD.getValue());
         Element noactorsecheader = SoapUtil.getSecurityElement(processedDocument);
         if (l7secheader != null) {
             releventSecurityHeader = l7secheader;
@@ -427,7 +430,7 @@ public class WssProcessorImpl implements WssProcessor {
                             return;
                         // TODO Do we recognize WS-Addressing headers addressed to us?
 
-                        // Is it mustUnderstand = 1?
+                        // Is it mustUnderstand = 1 or mustUnderstand = true?
                         String mustUnderstand = SoapUtil.getMustUnderstandAttributeValue(element);
                         if (mustUnderstand == null || "0".equals(mustUnderstand) || "false".equals(mustUnderstand))
                             return;
@@ -511,7 +514,7 @@ public class WssProcessorImpl implements WssProcessor {
             logger.fine("Ignoring empty SignatureConfirmation header");
             return;
         }
-        lastSignatureConfirmation = value;
+        signatureConfirmationValues.add(new SignatureConfirmationImpl(securityChildToProcess, value));
     }
 
     private XmlSecurityToken findSecurityContextTokenBySessionId(String refUri) {
@@ -660,7 +663,6 @@ public class WssProcessorImpl implements WssProcessor {
 
     private ProcessorResult produceResult() {
         ProcessorResult processorResult = new ProcessorResult() {
-
             public SignedElement[] getElementsThatWereSigned() {
                 return elementsThatWereSigned.toArray(new SignedElement[elementsThatWereSigned.size()]);
             }
@@ -713,13 +715,12 @@ public class WssProcessorImpl implements WssProcessor {
                 return secHeaderActor;
             }
 
-            public String getLastSignatureValue() {
-                return lastSignatureValue;
+            public List<String> getValidatedSignatureValues() {
+                return validatedSignatureValues;
             }
 
-            public String getLastSignatureConfirmation()
-            {
-                return lastSignatureConfirmation;
+            public List<SignatureConfirmation> getSignatureConfirmationValues() {
+                return signatureConfirmationValues;
             }
 
             public String getLastKeyEncryptionAlgorithm() {
@@ -1465,6 +1466,69 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
+    class X509IssuerSerialOutput {
+        SigningSecurityTokenImpl signingToken;
+        X509Certificate signingCert;
+    }
+
+    public abstract class X509IssuerSerialSecurityToken extends SigningSecurityTokenImpl implements X509SecurityToken {
+        X509IssuerSerialSecurityToken(Element e) {
+            super(e);
+        }
+    }
+
+    private X509IssuerSerialOutput handleX509IssuerSerial(final Element str,
+                                                    SecurityContextFinder securityContextFinder)
+                                                    throws InvalidDocumentFormatException, ProcessorException {
+
+        final Element x509data = XmlUtil.findFirstChildElementByName(str, DsigUtil.DIGSIG_URI, "X509Data");
+        if (x509data != null) {
+            Element issuerSerial = XmlUtil.findFirstChildElementByName(x509data, DsigUtil.DIGSIG_URI, "X509IssuerSerial");
+            if (issuerSerial != null) {
+                logger.info("The signature refers to an X509IssuerSerial");
+                // read ds:X509IssuerName and ds:X509SerialNumber
+                Element X509IssuerNameEl = XmlUtil.findFirstChildElementByName(issuerSerial, DsigUtil.DIGSIG_URI, "X509IssuerName");
+                Element X509SerialNumberEl = XmlUtil.findFirstChildElementByName(issuerSerial, DsigUtil.DIGSIG_URI, "X509SerialNumber");
+                if (X509IssuerNameEl != null && X509SerialNumberEl != null) {
+                    // read the values
+                    String X509IssuerName = XmlUtil.getTextValue(X509IssuerNameEl);
+                    String X509SerialNumber = XmlUtil.getTextValue(X509SerialNumberEl);
+                    if (X509IssuerName != null && X509IssuerName.length() > 0 && X509SerialNumber != null && X509SerialNumber.length() > 0) {
+                        logger.info("Trying to lookup cert from LDAP with Issuer DN '" + X509IssuerName + "' and serial '" + X509SerialNumber + "'");
+                        final X509Certificate output = securityTokenResolver.lookupByIssuerAndSerial( new X500Principal(X509IssuerName), new BigInteger(X509SerialNumber) );
+                        if (output != null) {
+                            logger.info("Certificate found");
+                            X509IssuerSerialOutput res = new X509IssuerSerialOutput();
+                            res.signingCert = output;
+                            res.signingToken = new X509IssuerSerialSecurityToken(issuerSerial) {
+
+                                public String getElementId() {
+                                    String id = SoapUtil.getElementWsuId(str);
+                                    if (id == null) {
+                                        id = SoapUtil.getElementWsuId(x509data);
+                                    }
+                                    return id;
+                                }
+
+                                public SecurityTokenType getType() {
+                                    return SecurityTokenType.X509_ISSUER_SERIAL;
+                                }
+
+                                public X509Certificate getCertificate() {
+                                    return output;
+                                }
+                            };
+                            securityTokens.add(res.signingToken);
+                            return res;
+                        }
+                    }
+                    logger.info("Could not retrieve cert from LDAP");
+                }
+            }
+        }
+        return null;
+    }
+
     private void processReferenceList(Element referenceListEl) throws ProcessorException, InvalidDocumentFormatException {
         // get each element one by one
         List<Element> dataRefEls = DomUtils.findChildElementsByName(referenceListEl, SoapConstants.XMLENC_NS, SoapConstants.DATAREF_EL_NAME);
@@ -1722,8 +1786,14 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Process any STR that is used within the signature
         Element keyInfoStr = DomUtils.findFirstChildElementByName(keyInfoElement, SoapConstants.SECURITY_URIS_ARRAY, "SecurityTokenReference");
-        if (keyInfoStr != null && SoapUtil.getElementWsuId(keyInfoStr)!=null) {
+        if (keyInfoStr != null) {
             processSecurityTokenReference(keyInfoStr, securityContextFinder);
+
+            X509IssuerSerialOutput tmp = handleX509IssuerSerial(keyInfoStr, securityContextFinder);
+            if (tmp != null) {
+                signingCert = tmp.signingCert;
+                signingToken = tmp.signingToken;
+            }
         }
 
         if (signingCert == null && dkt != null) {
@@ -1749,10 +1819,10 @@ public class WssProcessorImpl implements WssProcessor {
             try {
                 signingCert.checkValidity();
             } catch (CertificateExpiredException e) {
-                logger.log(Level.WARNING, "Signing certificate expired " + signingCert.getNotAfter(), e);
+                logger.log(Level.WARNING, "Signing certificate expired " + signingCert.getNotAfter(), ExceptionUtils.getDebugException(e));
                 throw new ProcessorException(e);
             } catch (CertificateNotYetValidException e) {
-                logger.log(Level.WARNING, "Signing certificate is not valid until " + signingCert.getNotBefore(), e);
+                logger.log(Level.WARNING, "Signing certificate is not valid until " + signingCert.getNotBefore(), ExceptionUtils.getDebugException(e));
                 throw new ProcessorException(e);
             }
         }
@@ -1822,7 +1892,8 @@ public class WssProcessorImpl implements WssProcessor {
         Element sigValueEl = DomUtils.findOnlyOneChildElementByName(sigElement, sigElement.getNamespaceURI(), "SignatureValue");
         if (sigValueEl == null)
             throw new ProcessorException("Valid ds:Signature contained no ds:SignatureValue"); // can't happen
-        lastSignatureValue = DomUtils.getTextValue(sigValueEl);
+
+        validatedSignatureValues.add(XmlUtil.getTextValue(sigValueEl));
 
         // Remember which elements were covered
         final int numberOfReferences = validity.getNumberOfReferences();

@@ -16,6 +16,7 @@ import javax.swing.text.PlainDocument;
  */
 public class NumberField extends PlainDocument {
     private int maxDigits;
+    private int maxValue = Integer.MAX_VALUE;
 
     public NumberField() {
         maxDigits = String.valueOf(Integer.MAX_VALUE).length();
@@ -23,6 +24,11 @@ public class NumberField extends PlainDocument {
 
     public NumberField(int maxDigits) {
         this.maxDigits = maxDigits;
+    }
+
+    public NumberField(int maxDigits, int maxValue) {
+        this.maxDigits = maxDigits;
+        this.maxValue = maxValue;
     }
 
     /**
@@ -50,6 +56,16 @@ public class NumberField extends PlainDocument {
         int newLength = getText(0, getLength()).length() + str.length();
         if (newLength > maxDigits)
             return;
+
+        String newStringValue = getText(0, getLength()) + str;
+        try {
+            int newValue = Integer.parseInt(newStringValue);
+            if(newValue > maxValue) {
+                return;
+            }
+        } catch(NumberFormatException e) {
+            return;
+        }
         super.insertString(offs, str, a);
     }
 }

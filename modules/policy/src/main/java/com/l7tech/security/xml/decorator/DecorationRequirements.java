@@ -13,9 +13,7 @@ import org.w3c.dom.Element;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author mike
@@ -286,26 +284,28 @@ public class DecorationRequirements {
     }
 
     /**
-     * Set the wsse11:SignatureConfirmation value to use for this reply, if any.  This must be the still-base64-encoded
-     * content of the dsig:SignatureValue whose value is being confirmed.  A SignatureConfirmation value will
+     * Add a wsse11:SignatureConfirmation value to use for this reply, if any.  This must be the still-base64-encoded
+     * content of the dsig:SignatureValue whose value is being confirmed.  SignatureConfirmation values will
      * only be included in the decorated message if the rest of the decoration requirements are sufficient to
-     * allow the SignatureConfirmation to be signed.  That is, a signature source of some kind must also be supplied
+     * allow the SignatureConfirmation elements to be signed.  That is, a signature source of some kind must also be supplied
      * or else the signatureConfirmation will not be added to the decorated message.  Valid signature sources include
      * a sender cert with private key, a sender SAML holder-of-key token with subject private key,
      * a secure conversation session, or an EncryptedKeySHA1 reference plus associated EncryptedKey shared secret.
      *
      * @param signatureConfirmation the base64 SignatureValue of the signature that is to be confirmed, or null.
      */
-    public void setSignatureConfirmation(String signatureConfirmation) {
-        this.signatureConfirmation = signatureConfirmation;
+    public void addSignatureConfirmation(String signatureConfirmation) {
+        this.signatureConfirmations.add(signatureConfirmation);
     }
 
     /**
-     * @return the base64 SignatureValue of the signature that is to be confirmed, or null.
-     * @see #setSignatureConfirmation
+     * Get the wsse11:SignatureConfirmation values to include in this message.
+     *
+     * @return a list of base64 SignatureValue strings of the signatures that are to be confirmed.  May be empty but never null.
+     * @see #addSignatureConfirmation
      */
-    public String getSignatureConfirmation() {
-        return signatureConfirmation;
+    public Collection<String> getSignatureConfirmations() {
+        return signatureConfirmations;
     }
 
     /**
@@ -614,7 +614,7 @@ public class DecorationRequirements {
     private KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;
     private byte[] encryptedKey = null;
     private String encryptedKeySha1 = null;
-    private String signatureConfirmation = null;
+    private Set<String> signatureConfirmations = new HashSet<String>();
     private KerberosServiceTicket kerberosTicket = null;
     private boolean includeKerberosTicket = false;
     private String kerberosTicketId = null;

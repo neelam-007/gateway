@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.logon.LogonInfoManager;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.hibernate.*;
@@ -44,9 +45,11 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
 
     protected PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider;
     private final ClientCertManager clientCertManager;
+    private LogonInfoManager logonInfoManager;
 
-    protected PersistentUserManagerImpl( final ClientCertManager clientCertManager ) {
+    protected PersistentUserManagerImpl( final ClientCertManager clientCertManager, LogonInfoManager logonInfoManager ) {
         this.clientCertManager = clientCertManager;
+        this.logonInfoManager = logonInfoManager;
     }
 
     @Secured(operation=OperationType.READ)
@@ -164,6 +167,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
 
             // Revoke cert before deleting user (Bug #2963)
             revokeCert(userImp);
+            deleteLogonInfo(userImp);
             getHibernateTemplate().execute(new HibernateCallback(){
                 @SuppressWarnings({"unchecked"})
                 public Object doInHibernate( final Session session) throws HibernateException, SQLException {
@@ -349,6 +353,10 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     @Override
     protected void initDao() throws Exception {
         super.initDao();
+
+        if (logonInfoManager == null) {
+            throw new IllegalArgumentException("The Logon Info Manager is required");
+        }
     }
 
     /**
@@ -396,12 +404,25 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
+    /**
+     * Deletes the logon info record for the user that will be deleted.
+     *
+     * @param user  User object
+     */
+    private void deleteLogonInfo(User user) {
+        try {
+            logonInfoManager.delete(user.getProviderId(), user.getLogin());
+        } catch (DeleteException de) {
+            logger.log(Level.FINE, "Could not delete '" + user.getLogin() + "' logon info record.");
+        }
+    }
+
     @Override
-    protected Map<String, Object> getUniqueAttributeMap(UT entity) {
+    protected Collection<Map<String, Object>> getUniqueConstraints(UT entity) {
         Map<String, Object> attrs = new HashMap<String, Object>();
         attrs.put("providerId", entity.getProviderId());
         attrs.put("name", entity.getName());
-        return attrs;
+        return Arrays.asList(attrs);
     }
 
     @Override

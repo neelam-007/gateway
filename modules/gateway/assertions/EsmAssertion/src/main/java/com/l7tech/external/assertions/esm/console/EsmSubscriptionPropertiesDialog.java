@@ -17,6 +17,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * User: megery
@@ -94,6 +96,21 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
         } catch (FindException e) {
             throw new RuntimeException("Unable to load policies", e);
         }
+
+        // Sort the policies in alphabetical order
+        Collections.sort(notificationPolicyHeaders, new Comparator<PolicyHeaderWrapper>() {
+            public int compare(PolicyHeaderWrapper o1, PolicyHeaderWrapper o2) {
+                if(o1.getHeader() == null && o2.getHeader() != null) {
+                    return -1;
+                } else if(o1.getHeader() == null && o2.getHeader() == null) {
+                    return 0;
+                } else if(o1.getHeader() != null && o2.getHeader() == null) {
+                    return 1;
+                } else {
+                    return o1.getHeader().getName().compareTo(o2.getHeader().getName());
+                }
+            }
+        });
 
         listModel = new DefaultComboBoxModel(notificationPolicyHeaders.toArray(new PolicyHeaderWrapper[notificationPolicyHeaders.size()]));
         policyList.setModel(listModel);

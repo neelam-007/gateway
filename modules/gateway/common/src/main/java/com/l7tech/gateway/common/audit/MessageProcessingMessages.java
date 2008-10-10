@@ -40,6 +40,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M MESSAGE_VAR_NOT_SOAP        = m(3027, Level.INFO, "{0} is not SOAP");
     public static final M MESSAGE_VAR_NO_WSS          = m(3028, Level.INFO, "{0} did not contain any WSS level security");
     public static final M MESSAGE_VAR_BAD_WSS         = m(3029, Level.INFO, "{0} WSS processing failed: {1}");    
+    public static final M RESPONSE_IO_ERROR           = m(3030, Level.WARNING, "Response sent by the backend service generated an IOException: {0}.");
 
     // Service resolver messages
     public static final M SR_HTTPURI_CACHEDFAIL      = m(3100, Level.FINE, "Using cached failure @\"{0}\"");

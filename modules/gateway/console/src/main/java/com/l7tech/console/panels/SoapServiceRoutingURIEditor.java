@@ -30,11 +30,11 @@ public class SoapServiceRoutingURIEditor extends JDialog {
     private JTextField uriField;
     private JRadioButton customURIRadio;
     private JRadioButton noURIRadio;
-    private JLabel routingURL;
     private JButton okbutton;
     private JButton cancelbutton;
     private JButton helpbutton;
     private JPanel mainPanel;
+    private JEditorPane routingURL;
 
     private PublishedService subject;
     private boolean subjectAffected = false;

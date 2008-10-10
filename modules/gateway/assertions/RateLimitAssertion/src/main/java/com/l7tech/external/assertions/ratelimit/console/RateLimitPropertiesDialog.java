@@ -51,8 +51,8 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         okButton.addActionListener(this);
         cancelButton.addActionListener(this);
 
-        maxRequestsPerSecondField.setDocument(new NumberField(8));
-        concurrencyLimitField.setDocument(new NumberField(8));
+        maxRequestsPerSecondField.setDocument(new NumberField(5, 90000));
+        concurrencyLimitField.setDocument(new NumberField(5, 90000));
         concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.PresetInfo.DEFAULT_CONCURRENCY_LIMIT));
 
         ActionListener concListener = new ActionListener() {

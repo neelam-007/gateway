@@ -5,6 +5,8 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.FaultLevelPropertiesAction;
 import com.l7tech.policy.assertion.FaultLevel;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.xml.soap.SoapVersion;
 
 import javax.swing.*;
 
@@ -26,5 +28,11 @@ public class FaultLevelTreeNode extends LeafAssertionTreeNode {
 
     public Action getPreferredAction() {
         return new FaultLevelPropertiesAction(this);
+    }
+
+    public void serviceChanged(PublishedService service) {
+        if ( service != null ){
+            ((FaultLevel)assertion).setSoap12(service.getSoapVersion() == SoapVersion.SOAP_1_2);
+        }
     }
 }

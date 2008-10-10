@@ -54,6 +54,11 @@ public abstract class NodeAction extends SecureAction {
         this(node, allowedAssertionLicenses == null ? null : Arrays.asList(allowedAssertionLicenses), attemptedOperation);
     }
 
+    public NodeAction(AbstractTreeNode node, String featureSetNames, AttemptedOperation attemptedOperation) {
+        super(attemptedOperation, featureSetNames);
+        this.node = node;
+    }
+
     /**
      * set the tree that this node is associated with
      *

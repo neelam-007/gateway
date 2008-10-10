@@ -20,6 +20,7 @@ public class SoapConstants {
     protected static final QName[] EMPTY_QNAME_ARRAY = new QName[0];
     private static final String[] EMPTY_STRING_ARRAY = new String[0];// Namespace prefix constants
     public static final String SOAP_ENV_PREFIX = "soapenv";
+    public static final String SOAP_1_2_ENV_PREFIX = "s12";
     public static final String XMLNS = "xmlns";
     public static final String SECURITY_NAMESPACE_PREFIX = "wsse";// Namespace constants
     public static final String SECURITY_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
@@ -174,6 +175,8 @@ public class SoapConstants {
      * soap envelope xpath '/soapenv:Envelope'
      */
     public static final String SOAP_ENVELOPE_XPATH = "/" + SOAP_ENV_PREFIX + ":" + ENVELOPE_EL_NAME;
+    public static final String SOAP_1_2_ENVELOPE_XPATH = "/" + SOAP_1_2_ENV_PREFIX + ":" + ENVELOPE_EL_NAME;
+    
     /**
      * soap body xpath '/soapenv:Envelope/soapenv:Body'
      */

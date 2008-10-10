@@ -7,16 +7,17 @@
 package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -80,8 +81,10 @@ public abstract class ServerCredentialSourceAssertion extends AbstractServerAsse
                 throw new PolicyAssertionException(_data, cfe.getMessage(), cfe);
             } else {
                 challenge( context, authParams );
+                // bug#5230 - do not display the stack trace in the log
                 // Suppress exception trace by omitting exception argument
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO, null, cfe);
+                String cfeMessage = ExceptionUtils.getMessage(cfe);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {cfeMessage}, null);
 
                 if ( status == AssertionStatus.AUTH_REQUIRED )
                     context.setAuthenticationMissing();

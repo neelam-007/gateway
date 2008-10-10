@@ -15,7 +15,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -31,7 +30,7 @@ public class MimeHeader implements HttpHeader {
     /** Encoding used by MIME headers.  Actually limited to 7-bit ASCII per RFC, but UTF-8 is a safer choice. */
     public static final String ENCODING = "UTF-8";
 
-    // Bytes of common stuff needed when serializing mime header
+    // Common byte strings needed when serializing mime headers
     static final byte[] CRLF;
     protected static final byte[] SEMICOLON;
     protected static final byte[] COLON;
@@ -48,7 +47,7 @@ public class MimeHeader implements HttpHeader {
 
     private final String name;
     private final String mainValue;
-    protected final Map params;
+    protected final Map<String, String> params;
 
     protected byte[] serializedBytes;
     private String fullValue = null;
@@ -65,14 +64,14 @@ public class MimeHeader implements HttpHeader {
      *               Caller is responsible for ensuring that, if a map is provided, lookups in the map are case-insensitive.
      *
      */
-    protected MimeHeader(String name, String value, Map params) {
+    protected MimeHeader(String name, String value, Map<String, String> params) {
         if (name == null || value == null)
             throw new IllegalArgumentException("name and value must not be null");
         if (name.length() < 1)
             throw new IllegalArgumentException("name must not be empty");
         this.name = name;
         this.mainValue = value;
-        this.params = params == null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(params);
+        this.params = params == null ? Collections.<String, String>emptyMap() : Collections.unmodifiableMap(params);
     }
 
     /**
@@ -117,13 +116,16 @@ public class MimeHeader implements HttpHeader {
         return mainValue;
     }
 
-    /** @return the specified parameter, or null if it didn't exist. */
+    /**
+     * @param name the name of the parameter to get.
+     * @return the specified parameter, or null if it didn't exist.
+     */
     public String getParam(String name) {
-        return (String)params.get(name);
+        return params.get(name);
     }
 
     /** @return the entire params map.  Never null. */
-    protected Map getParams() {
+    public Map<String, String> getParams() {
         return params;
     }
 
@@ -175,7 +177,12 @@ public class MimeHeader implements HttpHeader {
         return getSerializedBytes().length;
     }
 
-    /** Reserialize entire header including name and trailing CRLF. */
+    /**
+     * Reserialize entire header including name and trailing CRLF.
+     *
+     * @param os the stream to which the header should be written.  Required.
+     * @throws java.io.IOException if there is an IOException while writing to the stream
+     */
     void write(OutputStream os) throws IOException {
         if (serializedBytes != null) {
             os.write(serializedBytes);
@@ -188,19 +195,33 @@ public class MimeHeader implements HttpHeader {
         os.write(CRLF);
     }
 
-    /** Write just the complete value part of this header, including all params. */
+    /**
+     * Write just the complete value part of this header, including all params.
+     *
+     * @param os the stream to which the value part should be written.  Required.
+     * @throws java.io.IOException if there is an IOException while writing to the stream
+     */
     void writeFullValue(OutputStream os) throws IOException {
         os.write(getMainValue().getBytes(ENCODING));
-        for (Iterator i = params.entrySet().iterator(); i.hasNext();) {
-            Map.Entry entry = (Map.Entry)i.next();
-            String name = (String)entry.getKey();
-            String value = (String)entry.getValue();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            String name = entry.getKey();
+            String value = entry.getValue();
             os.write(SEMICOLON);
             os.write(' ');
             writeParam(os, name, value);
         }
     }
 
+    /**
+     * Write a single parameter name and value to the specified output stream.
+     * This write the parameter name, and equals sign, and the parameter value.
+     * The value is quoted per the MIME header rules.
+     *
+     * @param os the stream to which the parameter should be written.  Required.
+     * @param name parameter name.  Required.
+     * @param value the raw (not yet quoted) parameter value.  Required.
+     * @throws java.io.IOException if there is an IOException while writing to the stream
+     */
     protected void writeParam(OutputStream os, String name, String value) throws IOException {
         os.write(name.getBytes(ENCODING));
         os.write('=');

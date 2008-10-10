@@ -12,6 +12,7 @@ import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.HashSet;
 
 /**
  * A row in the cluster_properties table. On the server-side, this is managed through
@@ -29,6 +30,19 @@ public class ClusterProperty extends NamedEntityImp {
 
     private String value;
     private String description;
+
+    // Currently, there are only a few hidden properties
+    // just hardcoded for now, rather than having a whole new DB column and support code
+    private static HashSet<String> hiddenInGui = new HashSet<String>();
+    static {
+        hiddenInGui.add("license");
+        hiddenInGui.add("audit.acknowledge.highestTime");
+        hiddenInGui.add("audit.archiverInProgress");
+        hiddenInGui.add("audit.archiver.ftp.config");
+        hiddenInGui.add("krb5.keytab");
+        hiddenInGui.add("keyStore.defaultSsl.alias");
+        hiddenInGui.add("keyStore.defaultCa.alias");
+    }
 
     public ClusterProperty() { }
 
@@ -64,20 +78,14 @@ public class ClusterProperty extends NamedEntityImp {
     public boolean isHiddenProperty() {
         // Currently, there's only a few hidden properties, so for now we'll just hardcode it rather than
         // add new metadata and support code
-        return "license".equals(_name)
-            || "audit.acknowledge.highestTime".equals(_name)
-            || "krb5.keytab".equals(_name)
-            || "keyStore.defaultSsl.alias".equals(_name)
-            || "keyStore.defaultCa.alias".equals(_name);
+        return hiddenInGui.contains(_name);
     }
 
     public boolean equals(Object other) {
+        if (! (other instanceof ClusterProperty) )
+            return false;
         ClusterProperty cp = (ClusterProperty)other;
-        if (cp == null) return false;
-        if (_oid != cp._oid) return false;
-        if (!(_name.equals(cp._name))) return false;
-        if (!(value.equals(cp.value))) return false;
-        return true;
+        return _oid == cp._oid && _name.equals(cp._name) && value.equals(cp.value);
     }
 
     public int hashCode() {

@@ -141,11 +141,13 @@ public class LogonDialog extends JDialog {
             contents.add(icon, constraints);
 
             JLabel badPasswordMessage = new JLabel("<html>Your user name or password was unauthorized.<br>Possible reasons:<ul>" +
-                                                   "<li> Incorrect user name" +
-                                                   "<li> Incorrect password for Gateway" +
-                                                   "<li> Incorrect password for client certificate" +
-                                                   "<li> Revoked client certificate" +
-                                                   "<li> Not authorized to use service");
+                                                   "<li> Incorrect user name</li>" +
+                                                   "<li> Incorrect password for Gateway</li>" +
+                                                   "<li> Incorrect password for client certificate</li>" +
+                                                   "<li> Revoked client certificate</li>" +
+                                                   "<li> Not authorized to use service</li>" +
+                                                   "<li> ﻿User name in some identity providers may <br/>" +
+                                                    "be case sensitive</li></ul></html>");
             constraints.gridx = 1;
             constraints.gridy = 0;
             constraints.gridwidth = 3;

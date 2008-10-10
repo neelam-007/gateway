@@ -9,7 +9,7 @@
 # Copyright: Layer 7 Technologies.
 
 
-
+#set up some of the base paths
 KERNELSOURCEROOT="/usr/src/kernels"
 ALLKERNELS=`ls ${KERNELSOURCEROOT}`
 INSTALL_BASE=tarari-installs
@@ -17,7 +17,8 @@ RPM_TOP="rpmbuild"
 RPM_SPEC="tarari.spec"
 RPM_SOURCES_ALL="tarari.tar.gz"
 RPM_SOURCES="tarari-kernel-drivers.tar.gz tarari.tar.gz"
-RPM_SERVER="http://rhel4/rhel4/rhel/4/i386/"
+# 64 bit kernel source = change this to the location of the kernel-devel rpms if you want to use fetch!
+RPM_SERVER="http://tyan64/rhel4/rhel/4/i386/"
 
 do_usage() {
 	cat >&1 <<-EOF
@@ -41,6 +42,8 @@ do_clean() {
 		echo "cleaning up drivers for ${WHICHKERNEL}"
 		echo "********************************************************"
 		(make KERNELSOURCE=${KERNELSOURCEROOT}/${WHICHKERNEL} clean)
+		#since the tarari Makefile doesn't know about our special kos, clean what's left
+		rm -f ${TARARIROOT}/drivers/*.ko
 	done
 }
 
@@ -48,14 +51,6 @@ do_clean() {
 # Make the Tarari drivers
 #
 do_make() {
-	if [ -d ${PWD}/${INSTALL_BASE}/*/usr/local/Tarari/src/drivers ] ; then
-		export TARARIROOT=$(ls -d ${PWD}/${INSTALL_BASE}/*/usr/local/Tarari)
-		pushd ${PWD}/${INSTALL_BASE}/*/usr/local/Tarari/src/drivers &>/dev/null
-	else
-		pushd .	&>/dev/null	
-	fi
-	echo "TARARIROOT=${TARARIROOT}"
-	[ -d "${TARARIROOT}" ] || exitfail "TARARIROOT does not exist [${TARARIROOT}]"
 	for WHICHKERNEL in ${ALLKERNELS}; do
 		KERNELSOURCE=${KERNELSOURCEROOT}/${WHICHKERNEL}
 		
@@ -68,6 +63,12 @@ do_make() {
 		echo "installing drivers for ${WHICHKERNEL}"
 		echo "********************************************************"
 		(make KERNELSOURCE=${KERNELSOURCEROOT}/${WHICHKERNEL} install)
+		#the tarari Makefile produces a cpp_base.ko but we need to support multiple versions, so
+		#we'll append the version of the kernel to the name and symlink at runtime.
+		#NOTE that we do this is an AWKward way since we need the kernel name in a specific format
+		#(that which uname -r reports when you are actually running the kernel)
+		ver=`echo ${WHICHKERNEL} | awk -F '-' '{print $1"-"$2$3}'`
+		mv ${TARARIROOT}/drivers/cpp_base.ko ${TARARIROOT}/drivers/cpp_base-${ver}.ko
 		
 		echo "********************************************************"
 		echo "cleaning up drivers for ${WHICHKERNEL}"
@@ -130,6 +131,8 @@ do_unpack() {
 # Package the already built Tarari software into an rpm
 #
 do_rpm() {
+    #we've previously changed to the TARARIROOT directory, so let's get back to our base dir.
+	popd
 	# Create rpm build directories and copy in source files
 	mkdir -p "${RPM_TOP}/BUILD" "${RPM_TOP}/RPMS" "${RPM_TOP}/SOURCES" "${RPM_TOP}/SPECS" "${RPM_TOP}/SRPMS"
 	[ -f "${RPM_SPEC}" ] || exitfail "Missing spec file: ${RPM_SPEC}"
@@ -181,6 +184,18 @@ exitfail() {
 	echo "${1}"
         exit 1
 }
+
+#use the TARARIROOT for this build as our working directory.
+#WARNING: this will fail to find the right directory if there is more than one raxj unpacked in ./tarari-installs
+if [ -d ${PWD}/${INSTALL_BASE}/*/usr/local/Tarari/src/drivers ] ; then
+	export TARARIROOT=$(ls -d ${PWD}/${INSTALL_BASE}/*/usr/local/Tarari)
+	pushd ${PWD}/${INSTALL_BASE}/*/usr/local/Tarari/src/drivers
+else
+	exitfail "the tarari source directory does not exist"	
+fi
+
+echo "TARARIROOT=${TARARIROOT}"
+[ -d "${TARARIROOT}" ] || exitfail "TARARIROOT does not exist [${TARARIROOT}]"
 
 case ${1} in
 	clean) 

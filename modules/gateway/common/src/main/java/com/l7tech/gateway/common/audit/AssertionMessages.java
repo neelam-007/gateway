@@ -57,6 +57,8 @@ public class AssertionMessages extends Messages {
     public static final M BRIDGEROUTE_REQUEST_NOT_SOAP      = m(4040, Level.WARNING, "Bridge routing failed because request is not SOAP.  Bridge Routing Assertion does not currently support non-SOAP requests.");
     public static final M HTTPROUTE_SOCKET_TIMEOUT          = m(4041, Level.WARNING, "Remote network connection timed out.");
     public static final M GENERIC_ROUTING_PROBLEM           = m(4042, Level.WARNING, "Problem routing to {0}. Error msg: {1}");
+    public static final M HTTPROUTE_USING_KERBEROS_ERROR    = m(4043, Level.WARNING, "Routing with Kerberos ticket failed with: {0}");
+    public static final M HTTPROUTE_BAD_GZIP_STREAM         = m(4044, Level.WARNING, "Bad GZip input stream.  A compressed request resulted in an uncompressed response.");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication required");
@@ -66,7 +68,7 @@ public class AssertionMessages extends Messages {
     public static final M CREDENTIALS_NOT_FOUND                   = m(4201, Level.WARNING, "No credentials found!");
     public static final M ALREADY_AUTHENTICATED                   = m(4202, Level.FINEST, "Request already authenticated");
     public static final M ID_PROVIDER_ID_NOT_SET                  = m(4203, Level.WARNING, "Cannot call checkRequest() when no valid identity provider OID has been set!");
-    public static final M ID_PROVIDER_NOT_FOUND                   = m(4204, Level.WARNING, "Could not find identity provider!");
+    public static final M ID_PROVIDER_NOT_FOUND                   = m(4204, Level.WARNING, "Could not find identity provider! ");
     public static final M ID_PROVIDER_NOT_EXIST                   = m(4205, Level.WARNING, "Identity assertion refers to a non-existent identity provider");
     public static final M AUTHENTICATED                           = m(4206, Level.FINE, "Authentication success {0}");
     public static final M INVALID_CERT                            = m(4207, Level.INFO, "Invalid client certificate for {0}");
@@ -147,6 +149,7 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST_MI    = m(4715, Level.INFO, "XPath pattern didn''t match request; assertion therefore fails; XPath is ''{0}''." );
     public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI   = m(4716, Level.INFO, "XPath pattern didn''t match response; assertion therefore fails; XPath is ''{0}''." );
     public static final M XPATH_NOT_ACCELERATED                   = m(4717, Level.FINE, "Multiple result elements expected, using non-accelerated XPath." );
+    public static final M XPATH_PATTERN_IS                        = m(4718, Level.FINE, "XPath is ''{0}''");
 
     // ServerRequestAcceleratedXpathAssertion & ServerResponseAcceleratedXpathAssertion messages
     public static final M ACCEL_XPATH_NO_HARDWARE                 = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software XPath processing");
@@ -230,10 +233,10 @@ public class AssertionMessages extends Messages {
 
     // ServerSchemaValidation
     public static final M SCHEMA_VALIDATION_VALIDATE_REQUEST                = m(5600, Level.FINEST, "Validating request document");
-    public static final M SCHEMA_VALIDATION_RESPONSE_NOT_XML                = m(5601, Level.WARNING, true, true, "Response not well-formed XML; cannot validate schema");
+    public static final M SCHEMA_VALIDATION_RESPONSE_NOT_XML                = m(5601, Level.INFO, true, true, "Response not well-formed XML; cannot validate schema");
     public static final M SCHEMA_VALIDATION_VALIDATE_RESPONSE               = m(5602, Level.FINEST, "Validating response document");
-    public static final M SCHEMA_VALIDATION_REQUEST_NOT_XML                 = m(5603, Level.WARNING, true, false, "Request not well-formed XML; cannot validate schema");
-    public static final M SCHEMA_VALIDATION_FAILED                          = m(5604, Level.WARNING, true, true, "Schema validation failure: {0}");
+    public static final M SCHEMA_VALIDATION_REQUEST_NOT_XML                 = m(5603, Level.INFO, true, false, "Request not well-formed XML; cannot validate schema");
+    public static final M SCHEMA_VALIDATION_FAILED                          = m(5604, Level.INFO, true, true, "Schema validation failure: {0}");
     public static final M SCHEMA_VALIDATION_SUCCEEDED                       = m(5605, Level.FINEST, "Schema validation success");
     /** @deprecated */ @Deprecated public static final M _UNUSED_SCHEMA_VALIDATION_EMPTY_BODY = m(5606, Level.FINE, "Nothing to validate because the body is empty");
     public static final M SCHEMA_VALIDATION_NO_ACCEL                        = m(5607, Level.INFO, "Schema cannot be hardware accelerated");
@@ -300,9 +303,6 @@ public class AssertionMessages extends Messages {
 
     // ServerFtpRoutingAssertion
     public static final M FTP_ROUTING_FAILED_UPLOAD = m(6050, Level.WARNING, "Failed to upload request to {0}: {1}");
-    public static final M FTP_ROUTING_SSL_NO_CERT = m(6051, Level.WARNING, "FTP server ({0}) did not identify itself properly: {1}");
-    public static final M FTP_ROUTING_SSL_NOT_X509 = m(6052, Level.WARNING, "Cannot handle non-X.509 certificates from FTP server ({0})");
-    public static final M FTP_ROUTING_SSL_UNTRUSTED = m(6053, Level.WARNING, "Cannot establish trust of SSL certificate from FTP server ({0}): {1}");
     public static final M FTP_ROUTING_PASSTHRU_NO_USERNAME = m(6054, Level.WARNING, "No user name found for passing through to FTP server");
 
     // ServerRequestWssSaml
@@ -574,6 +574,14 @@ public class AssertionMessages extends Messages {
     public static final M NCESVALID_CERT_NOT_USED   = m(8709, Level.WARNING, "{0} signing X.509 certificate does not cover expected elements");
     public static final M NCESVALID_CERT_VAL_ERROR  = m(8710, Level.WARNING, "{0} signing X.509 certificate validation error");
     public static final M NCESVALID_CERT_UNTRUSTED  = m(8711, Level.WARNING, "{0} signing X.509 certificate is not trusted");
+
+    public static final M DOMAINID_REQUEST_NOT_HTTP   = m(8780, Level.INFO, "Request is not HTTP; could not get domain ID injection header");
+    public static final M DOMAINID_NOT_ATTEMPTED      = m(8781, Level.INFO, "Requestor did not attempt to include domain ID information");
+    public static final M DOMAINID_BAD_REQUEST        = m(8782, Level.WARNING, "Invalid format for {0}: {1}");
+    public static final M DOMAINID_FAILED             = m(8783, Level.WARNING, "Requestor attempted to gather domain ID information but encountered an error");
+    public static final M DOMAINID_DECLINED           = m(8784, Level.INFO, "Requestor explicitly declines to provide domain ID information");
+    public static final M DOMAINID_INCOMPLETE         = m(8785, Level.WARNING, "Requestor provided incomplete domain ID information");
+    public static final M DOMAINID_IDENTIFIER_MISSING = m(8786, Level.WARNING, "Requestor did not include required identifier: {0}");
 
     public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");

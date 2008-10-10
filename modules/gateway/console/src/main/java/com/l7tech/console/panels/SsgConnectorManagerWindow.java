@@ -157,7 +157,7 @@ public class SsgConnectorManagerWindow extends JDialog {
     }
 
     private void editAndSave(final SsgConnector connector) {
-        final SsgConnectorPropertiesDialog dlg = new SsgConnectorPropertiesDialog(this, connector);
+        final SsgConnectorPropertiesDialog dlg = new SsgConnectorPropertiesDialog(this, connector, Registry.getDefault().getClusterStatusAdmin().isCluster());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

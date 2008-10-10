@@ -153,7 +153,7 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
             if (!connector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION))
                 throw new AccessControlException("Request not permitted on this port");
 
-            X509Certificate certificate = getCertificate(request);
+            X509Certificate certificate = RemoteUtils.getClientCertificate();
             if ( certificate==null ||
                  !CertUtils.certsAreEqual(defaultKey.getSslInfo().getCertificate(),certificate) ) {
                 throw new AccessControlException("Cluster request disallowed; missing or invalid credentials.");
@@ -189,22 +189,4 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
         }
     }
 
-    /**
-     * Extract the certificate from the HTTP request 
-     */
-    private X509Certificate getCertificate( final HttpServletRequest request ) {
-        X509Certificate cert = null;
-
-        Object certObj = request.getAttribute("javax.servlet.request.X509Certificate");
-        if ( certObj instanceof X509Certificate ) {
-            cert = (X509Certificate) certObj;
-        } else if ( certObj instanceof X509Certificate[] ) {
-            X509Certificate[] certs = ( X509Certificate[]) certObj;
-            if ( certs.length > 0 ) {
-                cert = certs[0];
-            }
-        }
-
-        return cert;
-    }
 }

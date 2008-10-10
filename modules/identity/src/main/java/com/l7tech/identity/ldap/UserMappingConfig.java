@@ -92,6 +92,14 @@ public class UserMappingConfig implements Serializable {
         this.passwdType = passwdType;
     }
 
+    public String getUserCertAttrName() {
+        return userCertAttrName;
+    }
+
+    public void setUserCertAttrName(String userCertAttrName) {
+        this.userCertAttrName = userCertAttrName;
+    }    
+
     private String objClass;
     private String nameAttrName;
     private String loginAttrName;
@@ -101,6 +109,7 @@ public class UserMappingConfig implements Serializable {
     private String emailNameAttrName;
     private String kerberosAttrName;
     private String kerberosEnterpriseAttrName;
+	private String userCertAttrName;
     private PasswdStrategy passwdType;
 
     @Override
@@ -112,6 +121,7 @@ public class UserMappingConfig implements Serializable {
 
         if (kerberosAttrName != null ? !kerberosAttrName.equals(userMappingConfig.kerberosAttrName) : userMappingConfig.kerberosAttrName != null) return false;
         if (kerberosEnterpriseAttrName != null ? !kerberosEnterpriseAttrName.equals(userMappingConfig.kerberosEnterpriseAttrName) : userMappingConfig.kerberosEnterpriseAttrName != null) return false;
+        if (userCertAttrName != null ? !userCertAttrName.equals(userMappingConfig.userCertAttrName) : userMappingConfig.userCertAttrName != null) return false;
         if (emailNameAttrName != null ? !emailNameAttrName.equals(userMappingConfig.emailNameAttrName) : userMappingConfig.emailNameAttrName != null) return false;
         if (firstNameAttrName != null ? !firstNameAttrName.equals(userMappingConfig.firstNameAttrName) : userMappingConfig.firstNameAttrName != null) return false;
         if (lastNameAttrName != null ? !lastNameAttrName.equals(userMappingConfig.lastNameAttrName) : userMappingConfig.lastNameAttrName != null) return false;
@@ -137,6 +147,7 @@ public class UserMappingConfig implements Serializable {
         result = 29 * result + (emailNameAttrName != null ? emailNameAttrName.hashCode() : 0);
         result = 29 * result + (kerberosAttrName != null ? kerberosAttrName.hashCode() : 0);
         result = 29 * result + (kerberosEnterpriseAttrName != null ? kerberosEnterpriseAttrName.hashCode() : 0);
+        result = 29 * result + (userCertAttrName != null ? userCertAttrName.hashCode() : 0);
         result = 29 * result + (passwdType != null ? passwdType.hashCode() : 0);
         return result;
     }

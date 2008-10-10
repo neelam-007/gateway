@@ -18,6 +18,10 @@ import java.util.Map;
 public class HttpRequestKnobAdapter implements HttpRequestKnob {
     private final String soapAction;
 
+    public HttpRequestKnobAdapter() {
+        this.soapAction = null;
+    }
+
     public HttpRequestKnobAdapter(String soapAction) {
         this.soapAction = soapAction;
     }

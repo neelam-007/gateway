@@ -36,11 +36,18 @@ public class SyspropUtil {
     }
 
     public static boolean getBoolean(String name) {
+        return getBoolean(name, false);
+    }
+
+    public static boolean getBoolean(String name, boolean dflt) {
         try {
-            return Boolean.getBoolean(name);
+            if (dflt)
+                return !"false".equalsIgnoreCase(getProperty(name));
+            else
+                return "true".equalsIgnoreCase(getProperty(name));
         } catch (AccessControlException e) {
-            logger.fine("Unable to access system property " + name + "; using default value of false");
-            return false;
+            logger.fine("Unable to access system property " + name + "; using default value of " + dflt);
+            return dflt;
         }
     }
 

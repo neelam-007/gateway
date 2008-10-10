@@ -29,10 +29,10 @@ import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.xml.SoapFaultDetail;
-import com.l7tech.xml.SoapFaultDetailImpl;
+import com.l7tech.xml.*;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import org.mortbay.jetty.HttpException;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Response;
@@ -53,8 +53,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.net.PasswordAuthentication;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -70,10 +71,20 @@ import java.util.regex.Pattern;
  */
 public class RequestHandler extends AbstractHandler {
     private static final Logger log = Logger.getLogger(RequestHandler.class.getName());
+
+    public static final String PROP_IGNORE_PAYLOAD_NS = "com.l7tech.proxy.ignorePayloadNS";
+    public static final String STYLESHEET_SUFFIX = "/ssg/wsil2xhtml.xml";
+
+    /**
+     * If set, Policy Attachment Keys generated for requests always have null for the payload namespace URI.
+     * Turn this on to avoid unnecessary parsing of the request if you know all services used with the same
+     * Gateway account will have unique SOAPAction headers or URIs.
+     */
+    private static final boolean IGNORE_PAYLOAD_NS = Boolean.valueOf(SyspropUtil.getString(PROP_IGNORE_PAYLOAD_NS, "false"));
+
     private SsgFinder ssgFinder;
     private MessageProcessor messageProcessor;
     private RequestInterceptor interceptor = NullRequestInterceptor.INSTANCE;
-    public static final String STYLESHEET_SUFFIX = "/ssg/wsil2xhtml.xml";
 
     /**
      * Client proxy HTTP handler.  Proxies all incoming SOAP calls to the given
@@ -90,7 +101,13 @@ public class RequestHandler extends AbstractHandler {
     // TODO what if the document includes multiple payload elements?  should probably fail if there's more than one nsuri used at once
     private PolicyAttachmentKey gatherPolicyAttachmentKey(final Request request, Document requestEnvelope, URL originalUrl) {
         String sa = request.getHeader("SOAPAction");
-        QName[] names = SoapUtil.getPayloadNames(requestEnvelope);
+
+        QName[] names = null;
+
+        if (!IGNORE_PAYLOAD_NS) {
+            names = SoapUtil.getPayloadNames(requestEnvelope);
+        }
+
         String nsUri = names == null || names.length < 1 ? null :names[0].getNamespaceURI();
         return new PolicyAttachmentKey(nsUri, sa, originalUrl.getFile());
     }
@@ -227,7 +244,6 @@ public class RequestHandler extends AbstractHandler {
         final Message ssgresponse = new Message();
         try {
             try {
-                // TODO: PERF: doing full XML parsing for every request is causing a performance bottleneck
                 ContentTypeHeader outerContentType = gatherContentTypeHeader(httpRequest);
 
                 prequest.initialize(Managers.createStashManager(),
@@ -247,6 +263,8 @@ public class RequestHandler extends AbstractHandler {
                                                        interceptor,
                                                        pak,
                                                        originalUrl);
+
+                context.setClientSocket((Socket)httpRequest.getConnection().getEndPoint().getTransport());
 
                 if (ssg.isChainCredentialsFromClient() && reqUsername != null && reqPassword != null)
                     context.setRequestCredentials(new LoginCredentials(reqUsername,
@@ -468,7 +486,8 @@ public class RequestHandler extends AbstractHandler {
                                                       ourMess + "\n    Gateway error message: " + ssgMess,
                                                       sfd.getFaultDetail(),
                                                       actor);
-                        context.getResponse().initialize(SoapFaultUtils.generateSoapFaultDocument(sfd, actor));
+                        String namespaceUri = context.getResponse().getXmlKnob().getDocumentReadOnly().getDocumentElement().getNamespaceURI();
+                        context.getResponse().initialize(SoapFaultUtils.generateSoapFaultDocument(SoapVersion.namespaceToSoapVersion(namespaceUri), sfd, actor));
                         haveFault = true;
                     }
                 }
@@ -479,8 +498,9 @@ public class RequestHandler extends AbstractHandler {
             } catch (SAXException e1) {
                 // Fallthrough and generate a new fault from our own exception, ignoring the SSG response
             }
-            if (!haveFault)
+            if (!haveFault) {
                 context.getResponse().initialize(exceptionToFault(e, null, context.getOriginalUrl()));
+            }
         } finally {
             CurrentSslPeer.clear();
         }
@@ -494,7 +514,8 @@ public class RequestHandler extends AbstractHandler {
      */
     private static Document exceptionToFault(Throwable t, String faultCode, URL actorUrl) {
         try {
-            return SoapFaultUtils.generateSoapFaultDocument(faultCode != null ? faultCode : "Server",
+            return SoapFaultUtils.generateSoapFaultDocument(SoapVersion.UNKNOWN,
+                                                            faultCode != null ? faultCode : "Server",
                                                             t.getMessage(),
                                                             null,
                                                             actorUrl.toExternalForm());

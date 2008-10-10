@@ -9,6 +9,7 @@ import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
@@ -47,7 +48,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
     //- PUBLIC
 
     public FtpServerManager(final AuditContext auditContext,
-                            final ClusterPropertyManager clusterPropertyManager,
+                            final ClusterPropertyCache clusterPropertyCache,
                             final MessageProcessor messageProcessor,
                             final SoapFaultManager soapFaultManager,
                             final StashManagerFactory stashManagerFactory,
@@ -59,7 +60,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
 
         this.auditContext = auditContext;
-        this.clusterPropertyManager = clusterPropertyManager;
+        this.clusterPropertyCache = clusterPropertyCache;
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
@@ -157,7 +158,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
 
     private final Set<String> schemes = new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_FTP, SsgConnector.SCHEME_FTPS));
     private final AuditContext auditContext;
-    private final ClusterPropertyManager clusterPropertyManager;
+    private final ClusterPropertyCache clusterPropertyCache;
     private final MessageProcessor messageProcessor;
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
@@ -252,7 +253,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
                 messageProcessor,
                 auditContext,
                 soapFaultManager,
-                clusterPropertyManager,
+                clusterPropertyCache,
                 stashManagerFactory);
 
         Properties props = asFtpProperties(connector);

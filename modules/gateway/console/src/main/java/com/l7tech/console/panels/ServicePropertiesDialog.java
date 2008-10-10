@@ -404,9 +404,10 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
 
-        if (!subject.isSoap()) {
+        if (!subject.isSoap() || subject.isInternal()) {
             if (newURI == null || newURI.length() <= 0 || newURI.equals("/")) { // non-soap service cannot have null routing uri
-                JOptionPane.showMessageDialog(this, "Cannot set empty uri on non-soap service");
+                String serviceType = subject.isInternal() ? "an internal" : "non-soap";
+                JOptionPane.showMessageDialog(this, "Cannot set empty URI on " + serviceType + " service");
                 return;
             } else if (newURI.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
                 JOptionPane.showMessageDialog(this, "custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);

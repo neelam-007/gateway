@@ -13,7 +13,6 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import java.util.Map;
-import java.util.Collections;
 import java.util.HashMap;
 import java.security.GeneralSecurityException;
 
@@ -27,13 +26,25 @@ public class JmsSslCustomizerSupport {
     /**
      * Get an SSLSocketFactory that is initialized to use the given key.
      *
-     * @param keystoreIdStr The ID of the keystore to use
-     * @param alias The alias of the key to use
+     * @param keystoreIdStr The ID of the keystore to use (or null for none)
+     * @param alias The alias of the key to use (or null for none)
      * @return The SSLSocketFactory or null
      * @throws JmsConfigException If an error occurs
      */
     public synchronized static SSLSocketFactory getSocketFactory( final String keystoreIdStr, final String alias ) throws JmsConfigException {
         return doGetSocketFactory( keystoreIdStr, alias );
+    }
+
+    /**
+     * Get an SSLContext that is initialized to use the given key (or no client auth).
+     *
+     * @param keystoreIdStr The ID of the keystore to use (or null for none)
+     * @param alias The alias of the key to use (or null for none)
+     * @return The SSLContext or null
+     * @throws JmsConfigException If an error occurs
+     */
+    public synchronized static SSLContext getSSLContext( final String keystoreIdStr, final String alias ) throws JmsConfigException {
+        return doGetSSLContext( keystoreIdStr, alias );
     }
 
     /**
@@ -66,26 +77,45 @@ public class JmsSslCustomizerSupport {
      *
      */
     private static SSLSocketFactory doGetSocketFactory( final String keystoreIdStr, final String alias ) throws JmsConfigException {
+        return doGetSSLContext(keystoreIdStr, alias).getSocketFactory();
+    }
+        
+    /**
+     *
+     */
+    private static SSLContext doGetSSLContext( final String keystoreIdStr, final String alias ) throws JmsConfigException {
         if (ssgKeyStoreManager == null) throw new IllegalStateException("SSG Keystore Manager must be set first");
         if (trustManager == null) throw new IllegalStateException("TrustManager must be set before first use");
 
-        // process keystore
-        long keystoreId;
-        try {
-            keystoreId = Long.parseLong( keystoreIdStr );
-        } catch ( NumberFormatException nfe ) {
-            throw new JmsConfigException("Bad keystore ID: " + keystoreIdStr);
+        final Pair<Long,String> keyId;
+        if ( keystoreIdStr==null && alias == null ) {
+            keyId = new Pair<Long,String>(-1L, "");
+        } else {
+            // process keystore
+            long keystoreId;
+            try {
+                keystoreId = Long.parseLong( keystoreIdStr );
+            } catch ( NumberFormatException nfe ) {
+                throw new JmsConfigException("Bad keystore ID: " + keystoreIdStr);
+            }
+
+            keyId = new Pair<Long,String>(keystoreId, alias);
         }
 
-        final Pair<Long,String> keyId = new Pair<Long,String>(keystoreId, alias);
         SSLContext instance = instancesByKeyEntryId.get(keyId);
         if (instance == null) {
             try {
-                SsgKeyEntry entry = ssgKeyStoreManager.lookupKeyByKeyAlias(alias, keystoreId);
-                KeyManager keyManager = new SingleCertX509KeyManager(entry.getCertificateChain(), entry.getPrivateKey());
+                KeyManager[] keyManagers;
+                if ( keystoreIdStr==null && alias == null ) {
+                    keyManagers = new KeyManager[0];
+                } else {
+                    SsgKeyEntry entry = ssgKeyStoreManager.lookupKeyByKeyAlias(alias, keyId.left);
+                    KeyManager keyManager = new SingleCertX509KeyManager(entry.getCertificateChain(), entry.getPrivateKey());
+                    keyManagers = new KeyManager[] { keyManager };
+                }
 
                 final SSLContext context = SSLContext.getInstance("SSL");
-                context.init(new KeyManager[] { keyManager },
+                context.init(keyManagers,
                              new TrustManager[] { trustManager } ,
                              null);
                 int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
@@ -100,6 +130,6 @@ public class JmsSslCustomizerSupport {
             instancesByKeyEntryId.put(keyId, instance);
         }
 
-        return instance.getSocketFactory();
+        return instance;
     }
 }

@@ -42,6 +42,10 @@ public final class KerberosGSSAPReqTicket {
         return bytes;
     }
 
+    public byte[] getSPNEGO() {
+        return GSSSpnego.addSpnegoWrapper(ticketBytes);
+    }
+
     /**
      * Get the decrypted ticket (if any)
      *

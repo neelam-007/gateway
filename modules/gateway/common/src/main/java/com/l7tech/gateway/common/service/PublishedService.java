@@ -9,18 +9,21 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.Aliasable;
 import com.l7tech.objectmodel.folder.HasFolder;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
+import javax.wsdl.BindingOperation;
+import javax.wsdl.xml.WSDLLocator;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.soap12.SOAP12Operation;
+import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -131,6 +134,38 @@ public class PublishedService extends NamedEntityImp implements HasFolder
     public synchronized void setWsdlXml(String wsdlXml) {
         _wsdlXml = wsdlXml;
         _parsedWsdl = null;
+        _soapVersion = SoapVersion.UNKNOWN;
+
+         try {
+             parsedWsdl();
+             if(_parsedWsdl != null) {
+                 for(BindingOperation bindingOperation : _parsedWsdl.getBindingOperations()) {
+                     Iterator eels = bindingOperation.getExtensibilityElements().iterator();
+                     ExtensibilityElement ee;
+                     while ( eels.hasNext() ) {
+                         ee = (ExtensibilityElement)eels.next();
+                         if ( ee instanceof SOAPOperation) {
+                             SOAPOperation sop = (SOAPOperation)ee;
+                             _soapVersion = SoapVersion.SOAP_1_1;
+                             break;
+                         } else if( ee instanceof SOAP12Operation) {
+                             SOAP12Operation sop = (SOAP12Operation)ee;
+                             _soapVersion = SoapVersion.SOAP_1_2;
+                             break;
+                         }
+                     }
+
+                     if(_soapVersion != SoapVersion.UNKNOWN) {
+                         break;
+                     }
+                 }
+             }
+         } catch(WSDLException e) {
+         }
+    }
+
+    public SoapVersion getSoapVersion() {
+        return _soapVersion;
     }
 
     /**
@@ -475,6 +510,14 @@ public class PublishedService extends NamedEntityImp implements HasFolder
         public Wsdl parseWsdl(String uri, String wsdl) throws WSDLException;
     }
 
+    public static interface WSDLLocatorFactory {
+        public WSDLLocator getWSDLLocator(String uri) throws WSDLException;
+    }
+
+    public static void setWSDLLocatorFactory(WSDLLocatorFactory wsdlLocatorFactory) {
+        WSDL_LOCATOR_FACTORY = wsdlLocatorFactory;
+    }
+
     /**
      * Generate a suitable name for a Policy associated with this service.
      *
@@ -498,6 +541,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder
     // ************************************************
     private String _wsdlUrl;
     private String _wsdlXml;
+    private SoapVersion _soapVersion = SoapVersion.UNKNOWN;
     private boolean _disabled;
     private boolean soap = true;
     private boolean internal = false;
@@ -513,6 +557,8 @@ public class PublishedService extends NamedEntityImp implements HasFolder
 
     private transient Set<String> httpMethods; // invariants: never null, always in sync with httpMethodNames
     private transient Boolean multipart;
+
+    private static WSDLLocatorFactory WSDL_LOCATOR_FACTORY = null;
 
     /**
      * Create a new set from the specified comma-delimited list of HTTP method names.
@@ -558,10 +604,15 @@ public class PublishedService extends NamedEntityImp implements HasFolder
      */
     private static class DefaultWsdlStrategy implements WsdlStrategy {
         public Wsdl parseWsdl(String uri, String wsdl) throws WSDLException {
-            InputSource source = new InputSource();
-            source.setSystemId(uri);
-            source.setCharacterStream(new StringReader(wsdl));
-            return Wsdl.newInstance(uri, source);
+            WSDLLocatorFactory wsdlLocatorFactory = WSDL_LOCATOR_FACTORY;
+            if(wsdlLocatorFactory == null) {
+                InputSource source = new InputSource();
+                source.setSystemId(uri);
+                source.setCharacterStream(new StringReader(wsdl));
+                return Wsdl.newInstance(uri, source);
+            } else {
+                return Wsdl.newInstance(wsdlLocatorFactory.getWSDLLocator(uri));
+            }
         }
     }
 }

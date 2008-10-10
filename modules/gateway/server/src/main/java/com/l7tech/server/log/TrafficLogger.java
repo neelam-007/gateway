@@ -7,6 +7,7 @@ import com.l7tech.common.io.IOUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -58,6 +59,19 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
     public static final String SERVCFG_ADDRES = "trafficLoggerRecordRes";
 
     /**
+     * serverconfig property name meaning
+     * whether to log traffic only for the services/policies that have
+     * the trafficLoggerSelect variable set
+     */
+    public static final String SERVCFG_SELECTIVE = "trafficLoggerSelective";
+
+    /**
+     * The name of the context variable used to mark a policy as selected for traffic logging.
+     */
+    public static final String CONTEXT_VAR_SELECT = "trafficlogger.select";
+
+
+    /**
      *
      */
     public TrafficLogger(final ServerConfig serverConfig,
@@ -79,6 +93,8 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
      *
      */
     public void propertyChange(final PropertyChangeEvent evt) {
+        logger.log(Level.CONFIG, "Property {0} changed; old value: ''{1}'', new value: ''{2}''",
+                   new Object[] {evt.getPropertyName(), evt.getOldValue(), evt.getNewValue()});
         updateSettings();
     }
 
@@ -105,6 +121,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
         String[] varsUsed;
         boolean includeReq;
         boolean includeRes;
+        boolean selective;
 
         ReentrantReadWriteLock.ReadLock lock = cacheLock.readLock();
         lock.lock();
@@ -113,9 +130,20 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
             varsUsed = this.varsUsed;
             includeReq = this.includeReq;
             includeRes = this.includeRes;
+            selective = this.selective;
         } finally {
             lock.unlock();
         }
+
+        boolean pecSelective = false;
+        try {
+            pecSelective = Boolean.parseBoolean((String) pec.getVariable(CONTEXT_VAR_SELECT));
+        } catch (NoSuchVariableException e) {
+            // do nothing, defaults to false
+        }
+
+        if (selective && ! pecSelective)
+            return;
 
         StringBuilder tolog = new StringBuilder();
         if (varsUsed.length > 0) {
@@ -131,7 +159,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
         }
 
         if (includeRes) {
-            String responseXml = null;
+            String responseXml;
             Message response = pec.getResponse();
             if (response.getKnob(MimeKnob.class) != null) {
                 responseXml = getMessageText(response, "response");
@@ -156,7 +184,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(TrafficLogger.class.getName());
-    private static final Logger trafficLogger = Logger.getLogger("com.l7tech.traffic");
+    private static final Logger trafficLogger = Logger.getLogger(SinkManagerImpl.TRAFFIC_LOGGER_NAME);
 
     private final ServerConfig serverConfig;
     private final SoapFaultManager soapFaultManager;
@@ -168,6 +196,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
     private String[] varsUsed = Syntax.getReferencedNames(detail);
     private boolean includeReq = false;
     private boolean includeRes = false;
+    private boolean selective = false;
 
     /**
      *
@@ -201,6 +230,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
         String tmpdetail = serverConfig.getProperty(SERVCFG_DETAIL);
         boolean tmpIncludeReq = Boolean.parseBoolean(serverConfig.getProperty(SERVCFG_ADDREQ));
         boolean tmpIncludeRes = Boolean.parseBoolean(serverConfig.getProperty(SERVCFG_ADDRES));
+        boolean tmpSelective = Boolean.parseBoolean(serverConfig.getProperty(SERVCFG_SELECTIVE));
 
         ReentrantReadWriteLock.WriteLock lock = cacheLock.writeLock();
         lock.lock();
@@ -208,6 +238,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
             includeReq = tmpIncludeReq;
             includeRes = tmpIncludeRes;
             detail = tmpdetail;
+            selective = tmpSelective;
             varsUsed = Syntax.getReferencedNames(detail);
             if (varsUsed == null) {
                 varsUsed = new String[0];

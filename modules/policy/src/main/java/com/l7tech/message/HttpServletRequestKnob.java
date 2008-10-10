@@ -7,10 +7,12 @@ package com.l7tech.message;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.ParameterizedString;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.IteratorEnumeration;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.xml.soap.SoapUtil;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -21,6 +23,8 @@ import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Implementation of {@link HttpRequestKnob} that knows how to obtain the HTTP request transport metadata
@@ -270,7 +274,19 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         return request;
     }
 
+    private static Pattern SOAP_1_2_ACTION_PATTERN = Pattern.compile(";\\s*action=([^;]+)(?:;|$)");
     public String getSoapAction() throws IOException {
-        return getHeaderSingleValue( SoapConstants.SOAPACTION);
+        String soapAction = getHeaderSingleValue(SoapUtil.SOAPACTION);
+        if(soapAction == null || soapAction.trim().length() == 0) {
+            String contentType = getHeaderSingleValue(HttpConstants.HEADER_CONTENT_TYPE);
+            if(contentType != null) {
+                Matcher m = SOAP_1_2_ACTION_PATTERN.matcher(contentType);
+                if(m.find()) {
+                    soapAction = m.group(1);
+                }
+            }
+        }
+
+        return soapAction;
     }
 }

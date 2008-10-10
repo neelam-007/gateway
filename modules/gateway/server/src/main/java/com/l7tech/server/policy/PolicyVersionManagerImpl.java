@@ -57,7 +57,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("oid", policyVersionOid);
         map.put("policyOid", policyOid);
-        List<PolicyVersion> found = findMatching(map);
+        List<PolicyVersion> found = findMatching(Arrays.asList(map));
         if (found == null || found.isEmpty())
             return null;
         if (found.size() > 1)
@@ -69,7 +69,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
     public List<PolicyVersion> findAllForPolicy(long policyOid) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("policyOid", policyOid);
-        return findMatching(map);
+        return findMatching(Arrays.asList(map));
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -78,7 +78,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         if (policyOid == Policy.DEFAULT_OID)
             throw new IllegalArgumentException("Unable to checkpoint policy without a valid OID");
 
-        AdminInfo adminInfo = AdminInfo.find();
+        AdminInfo adminInfo = AdminInfo.find(false);
         PolicyVersion ver = snapshot(newPolicy, adminInfo, activated, newEntity);
 
         // If a PolicyVersion with this ordinal already exists, this was a do-nothing policy change
@@ -110,7 +110,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("policyOid", policyOid);
         map.put("ordinal", versionOrdinal);
-        List<PolicyVersion> found = findMatching(map);
+        List<PolicyVersion> found = findMatching(Arrays.asList(map));
         if (found == null || found.isEmpty())
             return null;
         if (found.size() > 1) {
@@ -179,7 +179,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
                     FlushMode oldFlushMode = session.getFlushMode();
                     try {
                         session.setFlushMode(FlushMode.COMMIT);
-                        session.createQuery("update versioned PolicyVersion set active = :active where policyOid = :policyOid and oid != :versionOid")
+                        session.createQuery("update versioned PolicyVersion set active = :active where policyOid = :policyOid and oid <> :versionOid")
                                 .setBoolean("active", false)
                                 .setLong("policyOid", policyOid)
                                 .setLong("versionOid", versionOid)
@@ -199,7 +199,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("policyOid", policyOid);
         map.put("active", Boolean.TRUE);
-        List<PolicyVersion> found = findMatching(map);
+        List<PolicyVersion> found = findMatching(Arrays.asList(map));
         if (found == null || found.isEmpty())
             return null;
         if (found.size() > 1)

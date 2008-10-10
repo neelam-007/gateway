@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 
 /**
  * Find Dialog
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
@@ -120,7 +120,7 @@ public class FindIdentitiesDialog extends JDialog {
 
     /**
      * Creates new FindDialog for a given context
-     * 
+     *
      * @param parent the Frame from which the dialog is displayed
      * @param modal  true for a modal dialog, false for one that
      *               allows others windows to be active at the
@@ -497,7 +497,7 @@ public class FindIdentitiesDialog extends JDialog {
     /**
      * The user has selected an option. Here we close and
      * dispose the dialog too.
-     * 
+     *
      * @param actionCommand may be null
      */
     private void windowAction(String actionCommand) {
@@ -651,7 +651,7 @@ public class FindIdentitiesDialog extends JDialog {
           addListSelectionListener(new ListSelectionListener() {
               /**
                * Called whenever the value of the selection changes.
-               * 
+               *
                * @param e the event that characterizes the change.
                */
               public void valueChanged(ListSelectionEvent e) {
@@ -760,17 +760,31 @@ public class FindIdentitiesDialog extends JDialog {
           new DynamicTableModel.ObjectRowAdapter() {
               public Object getValue(Object o, int col) {
                   String text;
-                  if (o instanceof EntityHeader) {
+                  if(o instanceof IdentityHeader){
+                      IdentityHeader ih = (IdentityHeader)o;
+                      if(col == 2){
+                          text = ih.getDescription();
+                      }else if(col == 1){
+                          if(EntityType.USER.equals(ih.getType())){
+                           text = ih.getName();
+                          }else{
+                              text = ""; //userid/login doesn't make sense for group
+                          }
+                      }else{
+                          return ih;
+                      }
+                  }
+                  /*else if (o instanceof EntityHeader) {
                       EntityHeader eh = (EntityHeader)o;
                       if (col == 1) {
                           text = eh.getDescription();
                       } else {
                           return eh;
                       }
-                  } else {
+                  } */else {
                       throw new
                         IllegalArgumentException("Invalid argument type: "
-                        + "\nExpected: EntityHeader"
+                        + "\nExpected: IdentityHeader"
                         + "\nReceived: " + o.getClass().getName());
                   }
                   if (text == null) {
@@ -780,8 +794,7 @@ public class FindIdentitiesDialog extends JDialog {
               }
           };
 
-        String columns[] =
-          new String[]{"Name", "Description"};
+        String columns[] = new String[]{"Name", "Login", "Description"};
 
         tableModel = new DynamicTableModel(e, columns.length, columns, oa);
         searchResultTable.setModel(tableModel);
@@ -835,7 +848,7 @@ public class FindIdentitiesDialog extends JDialog {
 
     /**
      * instantiate the dialog for given AbstractTreeNode
-     * 
+     *
      * @param o the <CODE>Object</CODE> Expected entity header
      */
     private void showEntityDialog(Object o) {
@@ -965,16 +978,25 @@ public class FindIdentitiesDialog extends JDialog {
                   this.setBackground(table.getBackground());
                   this.setForeground(table.getForeground());
               }
-              if (value instanceof EntityHeader) {
-                  EntityHeader eh = (EntityHeader)value;
-                  if (EntityType.USER.equals(eh.getType()))
+              //if (value instanceof EntityHeader) {
+              if(value instanceof IdentityHeader) {
+                  //EntityHeader ih = (EntityHeader)value;
+                  IdentityHeader ih = (IdentityHeader)value;
+                  if (EntityType.USER.equals(ih.getType())){
                       setIcon(userIcon);
-                  else if (EntityType.GROUP.equals(eh.getType())) {
+                      String cn = ih.getCommonName();
+                      if(cn == null || cn.trim().length() < 1) {
+                          //if this IdentityHeader was created by casting and EntityHeader it won't have a value for cn
+                          cn = ih.getName();
+                      }
+                      setText(cn);
+                  } else if (EntityType.GROUP.equals(ih.getType())) {
                       setIcon(groupIcon);
-                  } else if (EntityType.MAXED_OUT_SEARCH_RESULT.equals(eh.getType())) {
+                      setText(ih.getName());
+                  } else if (EntityType.MAXED_OUT_SEARCH_RESULT.equals(ih.getType())) {
                       setIcon(stopIcon);
+                      setText(ih.getName());
                   }
-                  setText(eh.getName());
               } else {
                   setIcon(null);
                   setText(value.toString());
@@ -990,11 +1012,10 @@ public class FindIdentitiesDialog extends JDialog {
         if (providersComboBoxModel != null)
             return providersComboBoxModel;
 
-        providersComboBoxModel = new DefaultComboBoxModel();
         try {
+            providersComboBoxModel = new DefaultComboBoxModel();
             final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
-            EntityHeader[] headers =
-              admin.findAllIdentityProviderConfig();
+            EntityHeader[] headers = admin.findAllIdentityProviderConfig();
             for (EntityHeader header : headers) {
                 IdentityProviderConfig config = admin.findIdentityProviderConfigByID(header.getOid());
                 if (config == null) {
@@ -1005,9 +1026,10 @@ public class FindIdentitiesDialog extends JDialog {
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch ( FindException fe ) {
+            throw new RuntimeException("Error while loading identity provider list.", fe);        
         }
+
         return providersComboBoxModel;
     }
 

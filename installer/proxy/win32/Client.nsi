@@ -131,6 +131,20 @@ Function CheckPreviousInstalls
   done:
 FunctionEnd
 
+
+; Ensures that the "SecureSPan XML VPN Client" service is stopped, and unregistered 
+Function StopAndUnregisterService
+
+  ; Make sure service is stopped and removed first
+  ExecWait 'sc stop "SecureSpan XML VPN Client"' $0
+  DetailPrint "Stopping service returned with code $0"
+  Sleep  1000
+
+  ExecWait '"$INSTDIR\SSXVCService.exe" -uninstall "SecureSpan XML VPN Client"' $0
+  DetailPrint "Removal of service returned with code $0"
+
+FunctionEnd
+
 ;--------------------------------
 ;Installer Sections
 
@@ -147,6 +161,10 @@ Section "SecureSpan XML VPN Client" SecCopyUI
 
   SetOutPath "$INSTDIR"
   File "${BUILD_DIR}\..\native\win32\systray4j.dll"
+  File "${BUILD_DIR}\..\native\win32\peerident\Release\peerident.dll"
+  File "${BUILD_DIR}\..\native\win32\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest"
+  File "${BUILD_DIR}\..\native\win32\Microsoft.VC80.CRT\msvcp80.dll"
+  File "${BUILD_DIR}\..\native\win32\Microsoft.VC80.CRT\msvcr80.dll"
   File "${MUI_PRODUCT}.exe"
   File "${MUI_PRODUCT}.ini"
   File "${MUI_PRODUCT}.bat"
@@ -194,19 +212,33 @@ Section "SecureSpan XML VPN Client" SecCopyUI
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
   MessageBox MB_YESNO "Would you like the SecureSpan XML VPN Client to run as a Windows Service?" IDNO skipservice
-    ReadEnvStr $0 HOMEDRIVE
-    ReadEnvStr $1 HOMEPATH
-    StrCpy $2 "$0$1"
-    DetailPrint "SecureSpan XML VPN Client service will run using home directory $2"
-    ExecWait '"$INSTDIR\SSXVCService.exe" -install "SecureSpan XML VPN Client" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Client.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssxvc_out.log" -err "$INSTDIR\ssxvc_err.log" -description "Layer 7 Technologies SecureSpan XML VPN Client"' $0
-    DetailPrint "creation of service returned with code $0"
+    Call StopAndUnregisterService
+    DetailPrint "SecureSpan XML VPN Client service will run using home directory  $INSTDIR"
+    ExecWait '"$INSTDIR\ssxvcconfig.bat" /initSvcConf' $0
+    IntCmpU $0 0 initOk initFailed initFailed
+  initOk:
+    ExpandEnvStrings $0 "%systemroot%\System32\Config\SystemProfile"
+    ExecWait '"$INSTDIR\SSXVCService.exe" -install "SecureSpan XML VPN Client" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Client.jar" -Duser.home="$0" -Djava.library.path="$INSTDIR" -server -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Xms128m -Xmx512m -Xss256k -start com.l7tech.proxy.Main -out "$INSTDIR\ssxvc_out.log" -err "$INSTDIR\ssxvc_err.log" -description "Layer 7 Technologies SecureSpan XML VPN Client"' $0
+    IntCmpU $0 0 regservOk regservFailed regservFailed
+  regservOk:
     MessageBox MB_YESNO "Would you like to configure the SecureSpan XML VPN Client now?" IDNO endofserviceinstall
-        ExecWait '"$INSTDIR\jre\bin\javaw.exe" -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Client.jar" -config -hideMenus -quitLabel Continue' $0
+        ExpandEnvStrings $0 "%systemroot%\System32\Config\SystemProfile"
+        ExecWait '"$INSTDIR\jre\bin\javaw.exe" -Duser.home="$0" -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Client.jar" -config -hideMenus -quitLabel Continue' $0
         DetailPrint "XML VPN Client configuration returned with code $0"
     MessageBox MB_YESNO "Would you like to start the SecureSpan XML VPN Client service now?" IDNO endofserviceinstall
         ExecWait 'sc start "SecureSpan XML VPN Client"' $0
         DetailPrint "XML VPN Client service startup returned with code $0"
     goto endofserviceinstall
+
+  initFailed:
+    DetailPrint "initializing service config directory failed with code $0"
+    MessageBox MB_OK "Initializing service config directory failed with code $0"
+    Abort "Initializing service config directory failed with code $0"
+
+  regservFailed:
+    DetailPrint "registration of service failed with code $0"
+    MessageBox MB_OK "registration of service failed with code $0"
+    Abort "registration of service failed with code $0"
 
   ; choose shortcuts to installed based on whether it's being installed in service mode or GUI mode
   skipservice:
@@ -220,7 +252,8 @@ Section "SecureSpan XML VPN Client" SecCopyUI
     SetShellVarContext all
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start ${MUI_PRODUCT}.lnk" "sc" 'start "SecureSpan XML VPN Client"' "$INSTDIR\${MUI_PRODUCT}.exe"
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Stop ${MUI_PRODUCT}.lnk" "sc" 'stop "SecureSpan XML VPN Client"' "$INSTDIR\${MUI_PRODUCT}.exe"
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} Config.lnk" "$INSTDIR\jre\bin\javaw.exe" '-Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Client.jar" -config' "$INSTDIR\${MUI_PRODUCT}.exe"
+    ExpandEnvStrings $0 "%systemroot%\System32\Config\SystemProfile"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} Config.lnk" "$INSTDIR\jre\bin\javaw.exe" '-Dfile.encoding=UTF-8 -Duser.home="$0" -jar Client.jar -config' "$INSTDIR\${MUI_PRODUCT}.exe"
     SetShellVarContext current
 
   endofinstall:
@@ -260,7 +293,12 @@ Section "Uninstall"
   Delete "$INSTDIR\ssxvcconfig.bat"
   Delete "$INSTDIR\Client.jar"
   Delete "$INSTDIR\systray4j.dll"
-  RMDir /r "$INSTDIR\lib"
+  Delete "$INSTDIR\peerident.dll"
+  Delete "$INSTDIR\Microsoft.VC80.CRT.manifest"
+  Delete "$INSTDIR\msvcp80.dll"
+  Delete "$INSTDIR\msvcr80.dll"
+  ; DO NOT DELETE OR EDIT THIS LINE -- %%%JARFILE_DELETE_LINES%%%
+  RMDir "$INSTDIR\lib"
   RMDir /r "$INSTDIR\jre"
   RMDir /r "$INSTDIR\help"
   Delete "$INSTDIR\Uninstall.exe"

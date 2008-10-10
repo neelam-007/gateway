@@ -82,6 +82,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
 
     protected void setProperty(String name, Object value) {
         props.put(name, value);
+        propsXml = null;
     }
 
     /**
@@ -139,6 +140,43 @@ public class IdentityProviderConfig extends NamedEntityImp {
         }
     }
 
+    @Transient
+    protected String[] getUnexportablePropKeys() {
+        return new String[0];
+    }
+
+    /**
+     * for serialization during policy export
+     * to get the properties, call getProperty
+     */
+    @Transient
+    public String getExportableSerializedProps() throws java.io.IOException {
+        // if no props, return empty string
+        if (props.size() < 1) {
+            return "";
+        } else {
+            Map<String, Object> filteredProps = new HashMap<String, Object>(props);
+            for(String unexportablePropKey : getUnexportablePropKeys()) {
+                filteredProps.remove(unexportablePropKey);
+            }
+
+            BufferPoolByteArrayOutputStream output = null;
+            java.beans.XMLEncoder encoder = null;
+            try {
+                output = new BufferPoolByteArrayOutputStream();
+                encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
+                encoder.writeObject(filteredProps);
+                encoder.close(); // writes closing XML tag
+                encoder = null;
+                return output.toString("UTF-8");
+            }
+            finally {
+                if(encoder!=null) encoder.close();
+                ResourceUtils.closeQuietly(output);
+            }
+        }
+    }
+
     /**
      * for serialization by axis and hibernate only.
      */
@@ -157,12 +195,21 @@ public class IdentityProviderConfig extends NamedEntityImp {
     @Transient
     public boolean isAdminEnabled() {
         Boolean b = (Boolean) getProperty(ADMIN_ENABLED);
-        return b != null && b.booleanValue();
+        return b != null && b;
     }
-
 
     public void setAdminEnabled(boolean adminEnabled) {
         setProperty(ADMIN_ENABLED, adminEnabled);
+    }
+
+    @Transient
+    public boolean isUserCertsEnabled() {
+        Boolean b = (Boolean) getProperty(USERCERTS_ENABLED);
+        return b != null && b;
+    }
+
+    public void setUserCertsEnabled(boolean certsEnabled) {
+        setProperty(USERCERTS_ENABLED, certsEnabled);
     }
 
     @Transient
@@ -191,7 +238,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
 
     protected boolean getBooleanProperty(String prop, boolean dflt) {
         Boolean val = (Boolean)props.get(prop);
-        return val == null ? dflt : val.booleanValue();
+        return val == null ? dflt : val;
     }
 
     // ************************************************
@@ -199,6 +246,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
     // ************************************************
 
     private static final String ADMIN_ENABLED = "adminEnabled";
+    private static final String USERCERTS_ENABLED = "userCertsEnabled";
     private static final String PROP_CERTIFICATE_VALIDATION_TYPE = "certificateValidationType";
 
     protected String description;

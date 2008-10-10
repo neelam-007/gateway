@@ -309,6 +309,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
         public void proceed() {
             if (advices == null || this.adviceIndex == advices.length) {
                 treeModel.rawInsertNodeInto(newChild, parent, childLocation);
+                newChild.serviceChanged(getService());
             } else
                 this.advices[this.adviceIndex++].proceed(this);
         }

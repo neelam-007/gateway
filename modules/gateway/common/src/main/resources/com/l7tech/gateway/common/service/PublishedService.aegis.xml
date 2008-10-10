@@ -24,6 +24,7 @@
     <property name="httpMethodNames" ignore="true"/>
     <property name="multipart" ignore="true"/>
     <property name="laxResolution" ignore="true"/>
+    <property name="soapVersion" ignore="true"/>
     <property name="folderOid" ignore="true"/>
     <property name="oidAsLong" ignore="true"/>
 

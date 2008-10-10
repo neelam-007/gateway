@@ -5,15 +5,13 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspReader;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.List;
 import java.awt.*;
 
@@ -46,18 +44,18 @@ public class RemoteReferenceResolver {
      * @param references references parsed from a policy document.
      * @return false if the process cannot continue because the administrator canceled an operation for example.
      */
-    public boolean resolveReferences(ExternalReference[] references) throws InvalidPolicyStreamException {
-        Collection unresolved = new ArrayList();
+    public boolean resolveReferences(ExternalReference[] references) throws InvalidPolicyStreamException, PolicyImportCancelledException {
+        Set<ExternalReference> unresolved = new LinkedHashSet<ExternalReference>();
         for (ExternalReference reference : references) {
             if (!reference.verifyReference()) {
                 // for all references not resolved automatically add a page in a wizard
                 unresolved.add(reference);
             }
         }
-
         if (!unresolved.isEmpty()) {
-            ExternalReference[] unresolvedRefsArray = (ExternalReference[])unresolved.toArray(new ExternalReference[0]);
+            ExternalReference[] unresolvedRefsArray = unresolved.toArray(new ExternalReference[unresolved.size()]);
             final Frame mw = TopComponents.getInstance().getTopParent();
+            boolean wasCancelled = false;
             try {
                 ResolveExternalPolicyReferencesWizard wiz =
                         ResolveExternalPolicyReferencesWizard.fromReferences(mw, unresolvedRefsArray);
@@ -66,9 +64,13 @@ public class RemoteReferenceResolver {
                 wiz.setModal(true);
                 wiz.setVisible(true);
                 // if the wizard returns false, we must return
-                if (wiz.wasCanceled()) return false;
+                if (wiz.wasCanceled()) wasCancelled = true;
             } catch(Exception e) {
                 return false;
+            }
+
+            if(wasCancelled) {
+                throw new PolicyImportCancelledException();
             }
         }
         resolvedReferences = references;
@@ -96,7 +98,7 @@ public class RemoteReferenceResolver {
         if (rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion ca = (CompositeAssertion)rootAssertion;
             List children = ca.getChildren();
-            Collection childrenToRemoveFromCA = new ArrayList();
+            Collection<Assertion> childrenToRemoveFromCA = new ArrayList<Assertion>();
             for (Object aChildren : children) {
                 Assertion child = (Assertion) aChildren;
                 if (!traverseAssertionTreeForLocalization(child)) {
@@ -104,8 +106,8 @@ public class RemoteReferenceResolver {
                 }
             }
             // remove the children that are no longer wanted
-            for (Object aChildrenToRemoveFromCA : childrenToRemoveFromCA) {
-                ca.removeChild((Assertion) aChildrenToRemoveFromCA);
+            for (Assertion aChildrenToRemoveFromCA : childrenToRemoveFromCA) {
+                ca.removeChild(aChildrenToRemoveFromCA);
             }
             return true;
         } else {

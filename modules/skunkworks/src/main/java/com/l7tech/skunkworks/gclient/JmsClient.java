@@ -35,6 +35,7 @@ import java.util.Set;
  */
 public class JmsClient {
     private boolean isBytesMessage;
+    int timeToLive = -1;
 
     //- PUBLIC
 
@@ -82,6 +83,15 @@ public class JmsClient {
 
         if (data.containsKey("responseType") && "noreply".equals(data.get("responseType")) ) {
             routedRequestEndpoint.setReplyType(JmsReplyType.NO_REPLY);
+        }
+
+        //added new field to support time to live of the message
+        if (data.containsKey("timeToLive")) {
+            try {
+                timeToLive = Integer.parseInt((String)data.get("timeToLive"));
+            } catch (NumberFormatException nfe) {
+                timeToLive = -1;
+            }
         }
     }
 
@@ -153,7 +163,11 @@ public class JmsClient {
                 if ( inbound ) jmsConsumer = jmsSession.createConsumer( jmsInboundDest, selector );
             }
 
-            jmsProducer.send( jmsOutboundRequest );
+            if ( timeToLive == -1) {
+                jmsProducer.send( jmsOutboundRequest );
+            } else {
+                jmsProducer.send( jmsOutboundRequest, DeliveryMode.NON_PERSISTENT, 4, timeToLive );
+            }
 
             if ( inbound ) {
                 int timeout = 15000;

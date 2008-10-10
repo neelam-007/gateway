@@ -51,7 +51,7 @@ public class SecureHttpClient extends HttpClient {
         params.setConnectionTimeout(30000);
         params.setSoTimeout(60000);
 
-        getHostConfiguration().setHost("127.0.0.1", 80, getProtocol(getSSLSocketFactory()));
+        updateHostConfiguration();
         getParams().setBooleanParameter("http.protocol.expect-continue", Boolean.TRUE);
     }
 
@@ -75,9 +75,22 @@ public class SecureHttpClient extends HttpClient {
         return currentTrustFailureHandler != null;
     }
 
+    /**
+     * Sets the key manager to be used in the secure http client.
+     * @param keyManager
+     */
+    public static void setKeyManager(X509KeyManager keyManager) {
+        SecureHttpClient.keyManager = keyManager;
+    }
+
     //- PRIVATE
 
+    private static X509KeyManager keyManager;
     private static SSLTrustFailureHandler currentTrustFailureHandler;
+
+    private void updateHostConfiguration(){
+        getHostConfiguration().setHost("127.0.0.1", 80, getProtocol(getSSLSocketFactory()));
+    }
 
     private final KeyManager[] keyManagers;
 
@@ -99,31 +112,35 @@ public class SecureHttpClient extends HttpClient {
     }
 
     private static KeyManager[] getDefaultKeyManagers() {
-        return new KeyManager[] { new X509KeyManager() {
-            public String[] getClientAliases(String string, Principal[] principals) {
-                return new String[0];
-            }
+        X509KeyManager manager = keyManager;
+        if (manager == null) {
+            manager = new X509KeyManager() {
+                public String[] getClientAliases(String string, Principal[] principals) {
+                    return new String[0];
+                }
 
-            public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
-                return null;
-            }
+                public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+                    return null;
+                }
 
-            public String[] getServerAliases(String string, Principal[] principals) {
-                return new String[0];
-            }
+                public String[] getServerAliases(String string, Principal[] principals) {
+                    return new String[0];
+                }
 
-            public String chooseServerAlias(String string, Principal[] principals, Socket socket) {
-                return null;
-            }
+                public String chooseServerAlias(String string, Principal[] principals, Socket socket) {
+                    return null;
+                }
 
-            public X509Certificate[] getCertificateChain(String string) {
-                return new X509Certificate[0];
-            }
+                public X509Certificate[] getCertificateChain(String string) {
+                    return new X509Certificate[0];
+                }
 
-            public PrivateKey getPrivateKey(String string) {
-                return null;
-            }
-        } };
+                public PrivateKey getPrivateKey(String string) {
+                    return null;
+                }
+            };
+        }
+        return new KeyManager[] { manager };
     }
 
     private TrustManager[] getTrustManagers() {
@@ -167,9 +184,6 @@ public class SecureHttpClient extends HttpClient {
                         // be removed if we don't want to check the host name for trusted
                         // certificates.
                         sslTrustFailureHandler.handle(null, chain, authType, false);
-                        if (wrapme.getAcceptedIssuers().length == 0) {
-                            throw new CertificateException("No trusted issuers.");
-                        }
                         wrapme.checkServerTrusted(chain, authType);
                     } catch (CertificateException e) {
                         if (!sslTrustFailureHandler.handle(e, chain, authType, true)) {

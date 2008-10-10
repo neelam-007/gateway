@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.service.SampleMessage;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
 
 /**
  * @author emil
@@ -20,7 +21,7 @@ public class SampleMessageDialogTest {
       throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         SampleMessage sm = new SampleMessage(1234, "foo", "getQuote", "<xml/>");
-        SampleMessageDialog smd = new SampleMessageDialog((Dialog)null, sm, true);
+        SampleMessageDialog smd = new SampleMessageDialog((Dialog)null, sm, true, new HashMap<String, String>());
         smd.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         smd.pack();
         Utilities.centerOnScreen(smd);

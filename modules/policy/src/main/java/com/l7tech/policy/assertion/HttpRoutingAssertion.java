@@ -67,6 +67,12 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected HttpPassthroughRuleSet requestParamRules = new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{});
     protected boolean followRedirects = false;
     protected boolean failOnErrorStatus = true;
+    protected boolean gzipEncodeDownstream;
+
+    protected boolean krbDelegatedAuthentication;
+    protected boolean krbUseGatewayKeytab;
+    protected String krbConfiguredAccount;
+    protected String krbConfiguredPassword;
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -312,6 +318,10 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setRequestParamRules(source.getRequestParamRules());
         this.setResponseMsgDest(source.getResponseMsgDest());
         this.setResponseHeaderRules(source.getResponseHeaderRules());
+        this.setKrbConfiguredAccount(source.getKrbConfiguredAccount());
+        this.setKrbConfiguredPassword(source.getKrbConfiguredPassword());
+        this.setKrbDelegatedAuthentication(source.isKrbDelegatedAuthentication());
+        this.setGzipEncodeDownstream(source.isGzipEncodeDownstream());
     }
 
     public String[] getVariablesUsed() {
@@ -321,6 +331,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         if (!StringUtils.isEmpty(protectedServiceUrl)) tmp.append(protectedServiceUrl);
         if (!StringUtils.isEmpty(ntlmHost)) tmp.append(ntlmHost);
         if (!StringUtils.isEmpty(realm)) tmp.append(realm);
+        if (!StringUtils.isEmpty(krbConfiguredAccount)) tmp.append(krbConfiguredAccount);
+        if (!StringUtils.isEmpty(krbConfiguredPassword)) tmp.append(krbConfiguredPassword);
 
         if (requestMsgSrc != null) tmp.append(Syntax.SYNTAX_PREFIX).append(requestMsgSrc).append(Syntax.SYNTAX_SUFFIX);
 
@@ -390,6 +402,46 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     public void setKeyAlias(String keyid) {
         this.keyId = keyid;
+    }
+
+    public boolean isGzipEncodeDownstream() {
+        return gzipEncodeDownstream;
+    }
+
+    public void setGzipEncodeDownstream(boolean gzipEncodeDownstream) {
+        this.gzipEncodeDownstream = gzipEncodeDownstream;
+    }
+
+    public boolean isKrbDelegatedAuthentication() {
+        return krbDelegatedAuthentication;
+    }
+
+    public void setKrbDelegatedAuthentication(boolean krbDelegatedAuthentication) {
+        this.krbDelegatedAuthentication = krbDelegatedAuthentication;
+    }
+
+    public String getKrbConfiguredPassword() {
+        return krbConfiguredPassword;
+    }
+
+    public void setKrbConfiguredPassword(String krbConfiguredPassword) {
+        this.krbConfiguredPassword = krbConfiguredPassword;
+    }
+
+    public String getKrbConfiguredAccount() {
+        return krbConfiguredAccount;
+    }
+
+    public void setKrbConfiguredAccount(String krbConfiguredAccount) {
+        this.krbConfiguredAccount = krbConfiguredAccount;
+    }
+
+    public boolean isKrbUseGatewayKeytab() {
+        return krbUseGatewayKeytab;
+    }
+
+    public void setKrbUseGatewayKeytab(boolean krbUseGatewayKeytab) {
+        this.krbUseGatewayKeytab = krbUseGatewayKeytab;
     }
 
     public static String getVarHttpRoutingUrlHost() {

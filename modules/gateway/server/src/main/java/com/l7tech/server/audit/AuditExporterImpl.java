@@ -15,6 +15,7 @@ import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.*;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.DigestZipOutputStream;
 import com.l7tech.server.util.CompressedStringType;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -25,7 +26,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -40,7 +40,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 /**
  * Simple utility to export signed audit records.
@@ -56,8 +55,18 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     private static final String AUDITDETAILMESSAGEID = "ADMID:";
     private static final String SEPARATOR = "/-/_/-/";
     private static final int FETCH_SIZE_ROWS = Integer.MIN_VALUE;
-    private static final String SIG_XML = "<audit:AuditMetadata xmlns:audit=\"http://l7tech.com/ns/2004/Oct/08/audit\" />";
     private static final char DELIM = ':';
+    private static final String MD5_ALG = "MD5";
+    private static final String SHA1_ALG = "SHA-1";
+    private static final List<String> DIGEST_ALGS = new ArrayList<String>();
+    static {
+        DIGEST_ALGS.add(MD5_ALG);
+        DIGEST_ALGS.add(SHA1_ALG);
+    }
+    private static final String AUDITS_FILENAME = "audit.dat";
+    private static final String SIG_FILENAME = "sig.xml";
+    private static final String SIG_XML = "<audit:AuditMetadata xmlns:audit=\"http://l7tech.com/ns/2004/Oct/08/audit\" />";
+
     private static final Pattern badCharPattern = Pattern.compile("([^\\040-\\0176]|\\\\|\\" + DELIM + ")");
 
     private static AtomicBoolean initialized = new AtomicBoolean(false);
@@ -143,13 +152,9 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     /**
      * Composes the SQL statement to download audit records.
      *
-     * @param fromTime      minimum audit event time (milliseconds from epoch) to filter; -1 for no minimum
-     * @param toTime        maximum audit event time (milliseconds from epoch) to filter; -1 for no maximum
-     * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
      * @return SQL statement; never null
      */
-    static String composeSql( Dialect dialect, long fromTime, long toTime, long[] serviceOids) {
-        String clause = composeWhereClause(fromTime, toTime, serviceOids);
+    static String composeSql( Dialect dialect, String clause) {
         return MessageFormat.format( QUERIES_BY_DIALECT[dialect.ordinal()][QUERY_EXPORT], clause );
     }
 
@@ -170,6 +175,19 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         if (serviceOids != null && serviceOids.length > 0) {
             s.append(" AND audit_main.objectid = audit_message.objectid");
         }
+        return s.toString();
+    }
+
+    /**
+     * Composes the SQL statement for counting number of audit records eligible for download.
+     *
+     * @param startOid  Minimum objectid to be selected.
+     * @param endOid    Maximum objectid to be selected.
+     * @return SQL statement; never null
+     */
+    static String composeCountByOidSql(long startOid, long endOid) {
+        final StringBuilder s = new StringBuilder("SELECT COUNT(*) FROM audit_main");
+        s.append(composeOidWhereClause(startOid, endOid));
         return s.toString();
     }
 
@@ -208,6 +226,27 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         if (s.length() > 0) {
             s.insert(0, " WHERE ");
         }
+
+        return s.toString();
+    }
+
+    /**
+     * Composes the SQL WHERE clause based on the given contraints.
+     *
+     * @param startOid  Minimum objectid to be selected.
+     * @param endOid    Maximum objectid to be selected.
+     * @return SQL WHERE clause
+     */
+    static String composeOidWhereClause(long startOid, long endOid) {
+        final StringBuilder s = new StringBuilder();
+
+        s.append(" WHERE audit_main.objectid >= ");
+        s.append(startOid);
+
+        s.append(" AND ");
+
+        s.append("audit_main.objectid <= ");
+        s.append(endOid);
 
         return s.toString();
     }
@@ -285,27 +324,22 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * The row contains the column names; subsequent rows contain a dump of all the audit records.
      * No signature or other metadata is emitted.
      *
-     * @param fromTime      minimum audit event time (milliseconds from epoch) to filter; -1 for no minimum
-     * @param toTime        maximum audit event time (milliseconds from epoch) to filter; -1 for no maximum
-     * @param serviceOids   OIDs of services (thus filtering to service events only); null for no service filtering
-     * @param rawOut        the OutputStream to which the colon-delimited dump will be written.
+     * @param countSql      the query used to obtain the count of records to be exported
+     * @param selectSql     the query used to obtain the records to be exported
+     * @param zipOut        the OutputStream to which the colon-delimited dump will be written.
+     * @param previousExported the results of the previous export step in this batch, if any; can be null
      * @return the time in milliseconds of the most-recent audit record exported.
      */
-    private ExportedInfo exportAllAudits(long fromTime,
-                                         long toTime,
-                                         long[] serviceOids,
-                                         OutputStream rawOut)
+    private ExportedInfo exportAudits(String countSql, String selectSql, DigestZipOutputStream zipOut,
+                                      final long maxBytes, final ExportedInfo previousExported)
             throws SQLException, IOException, HibernateException, InterruptedException {
+        final long exportStartTime = System.currentTimeMillis();
         Connection conn;
         Statement st = null;
         ResultSet rs = null;
         Session session = null;
         try {
-            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
-            DigestOutputStream sha1Out = new DigestOutputStream(rawOut, sha1);
-            DigestOutputStream md5Out = new DigestOutputStream(sha1Out, md5);
-            PrintStream out = new PrintStream(md5Out, false, "UTF-8");
+            PrintStream out = new PrintStream(zipOut, false, "UTF-8");
 
             session = getSessionForExport();
             conn = getConnectionForExport(session);
@@ -313,7 +347,6 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             if ( dialect == Dialect.MYSQL )
                 st.setFetchSize(FETCH_SIZE_ROWS);
 
-            final String countSql = composeCountSql(fromTime, toTime, serviceOids);
             if (logger.isLoggable(Level.FINE)) logger.fine("countSql = " + countSql);
             rs = st.executeQuery(countSql);
 
@@ -324,10 +357,9 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             rs = null;
             synchronized (this) { approxNumToExport = ante; }
 
-            final String sql = composeSql(dialect, fromTime, toTime, serviceOids);
-            if (logger.isLoggable(Level.FINE)) logger.fine("sql = " + sql);
-            rs = st.executeQuery(sql);
-            if (rs == null) throw new SQLException("Unable to obtain audits with query: " + sql);
+            if (logger.isLoggable(Level.FINE)) logger.fine("sql = " + selectSql);
+            rs = st.executeQuery(selectSql);
+            if (rs == null) throw new SQLException("Unable to obtain audits with query: " + selectSql);
             ResultSetMetaData md = rs.getMetaData();
 
             int timecolumn = 3; // initial guess
@@ -356,7 +388,20 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             long lowestTime = Long.MAX_VALUE;
             long highestTime = Long.MIN_VALUE;
             synchronized (this) { numExportedSoFar = 0; }
-            while (rs.next()) {
+            boolean lastRow;
+            long recordsExported = previousExported != null ? previousExported.getRecordsExported() : 0L;
+            while (lastRow = rs.next()) {
+                // size check
+                if ( maxBytes > 0) { // only bother if the limit is set
+                    long recordSize = 0;
+                    for (int i = 1; i <= columns; ++i) {
+                        Clob clob = rs.getClob(i);
+                        if (clob != null) recordSize += clob.length();
+                    }
+                    if ( (maxBytes - zipOut.getZippedByteCount()) < 2L * recordSize / zipOut.getCompressionRatio() )
+                        break;
+                }
+
                 synchronized (this) { numExportedSoFar++; }
                 if (Thread.currentThread().isInterrupted())
                     throw new InterruptedException();
@@ -393,6 +438,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                     if (i < columns) out.print(DELIM);
                 }
                 out.print("\n");
+                recordsExported++;
 
                 if (needInitialFlush) {
                     out.flush();
@@ -402,12 +448,15 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
 
             out.flush();
 
+            synchronized (this) { this.highestTime = highestTime;}
+
             final long finalLowestId = lowestId;
             final long finalHighestId = highestId;
             final long finalLowestTime = lowestTime;
             final long finalHighestTime = highestTime;
-            final byte[] sha1Digest = sha1Out.getMessageDigest().digest();
-            final byte[] md5Digest = md5Out.getMessageDigest().digest();
+            final boolean finalHasTransferredFullRange = ! lastRow;
+            final long finalRecordsExported = recordsExported;
+            final DigestZipOutputStream finalZipOut = zipOut;
 
             return new ExportedInfo() {
                 public long getLowestId() {
@@ -426,17 +475,31 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                     return finalHighestTime;
                 }
 
-                public byte[] getSha1Hash() {
-                    return sha1Digest;
+                public boolean hasTransferredFullRange() {
+                    return finalHasTransferredFullRange;
                 }
 
-                public byte[] getMd5Hash() {
-                    return md5Digest;
+                public long getReceivedBytes() {
+                    return finalZipOut.getRawByteCount();
+                }
+
+                public long getTransferredBytes() {
+                    return finalZipOut.getZippedByteCount();
+                }
+
+                public long getRecordsExported() {
+                    return finalRecordsExported;
+                }
+
+                public long getExportStartTime() {
+                    return previousExported != null ? previousExported.getExportStartTime() : exportStartTime;
+                }
+
+                public long getExportEndTime() {
+                    return System.currentTimeMillis();
                 }
             };
 
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e); // can't happen
         } finally {
             // clear interrupted status - this is essential to avoid SQL errors
             Thread.interrupted();
@@ -528,37 +591,33 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         }
     }
 
-    private void addElement(Element parent, String indent, String ns, String p, String name, String value) {
+    private static void addElement(Element parent, String indent, String ns, String p, String name, String value) {
         parent.appendChild(DomUtils.createTextNode(parent, indent));
         Element e = DomUtils.createAndAppendElementNS(parent, name, ns, p);
         e.appendChild(DomUtils.createTextNode(e, value));
         parent.appendChild(DomUtils.createTextNode(parent, "\n"));
     }
 
-    @Transactional(propagation=Propagation.REQUIRED,readOnly=true,rollbackFor={},noRollbackFor=Throwable.class)
-    public void exportAuditsAsZipFile(long fromTime,
-                                      long toTime,
-                                      long[] serviceOids,
-                                      OutputStream fileOut,
-                                      X509Certificate signingCert,
-                                      PrivateKey signingKey)
-            throws IOException, SQLException, HibernateException, SignatureException, InterruptedException
-    {
-        final long startTime = System.currentTimeMillis();
-        BufferedOutputStream buffOut = new BufferedOutputStream(fileOut, 4096);
-        ZipOutputStream zipOut = null;
+    public void addXmlSignature(DigestZipOutputStream zip, ExportedInfo exportedInfo,
+                                        X509Certificate signingCert, PrivateKey signingKey) throws SignatureException {
         try {
-            zipOut = new ZipOutputStream(buffOut);
-            final String dateString = ISO8601Date.format(new Date(startTime));
-            zipOut.setComment( BuildInfo.getBuildString() + " - Exported Audit Records - Created " + dateString);
-            ZipEntry ze = new ZipEntry("audit.dat");
-            zipOut.putNextEntry(ze);
-            ExportedInfo exportedInfo = exportAllAudits(fromTime, toTime, serviceOids, zipOut);
-            long highestTime = exportedInfo.getLatestTime();
-            zipOut.flush();
-            buffOut.flush();
-            final long endTime = System.currentTimeMillis();
-            final String endTimeString = ISO8601Date.format(new Date(endTime));
+            if (zip == null) {
+                logger.warning("Cannot add signature; null output stream.");
+                return;
+            } else if (exportedInfo == null) {
+                logger.warning("Cannot add signature; null export data.");
+                return;
+// TODO [steve] enable this null check when EMS has signed audit downloads
+//            } else if (signingCert == null) {
+//                logger.warning("Cannot add signature; null signing cert.");
+//                return;
+            } else if (signingKey == null) {
+                logger.warning("Cannot add signature; null signing key.");
+                return;
+            }
+
+            final String startTimeString = ISO8601Date.format(new Date(exportedInfo.getExportStartTime()));
+            final String endTimeString = ISO8601Date.format(new Date(exportedInfo.getExportEndTime()));
 
             // Create XML signature
             Document d;
@@ -568,15 +627,15 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             String p = auditMetadata.getPrefix();
             auditMetadata.appendChild(DomUtils.createTextNode(auditMetadata, "\n"));
             final String i1 = "    ";
-            addElement(auditMetadata, i1, ns, p, "exportProcessStarting", dateString);
-            addElement(auditMetadata, i1, ns, p, "exportProcessStartingMillis", String.valueOf(startTime));
+            addElement(auditMetadata, i1, ns, p, "exportProcessStarting", startTimeString);
+            addElement(auditMetadata, i1, ns, p, "exportProcessStartingMillis", String.valueOf(exportedInfo.getExportStartTime()));
             auditMetadata.appendChild(DomUtils.createTextNode(auditMetadata, "\n"));
             addElement(auditMetadata, i1, ns, p, "exportProcessFinishing", endTimeString);
-            addElement(auditMetadata, i1, ns, p, "exportProcessFinishingMillis", String.valueOf(endTime));
+            addElement(auditMetadata, i1, ns, p, "exportProcessFinishingMillis", String.valueOf(exportedInfo.getExportEndTime()));
             auditMetadata.appendChild(DomUtils.createTextNode(auditMetadata, "\n" + i1));
 
             Element ead = DomUtils.createAndAppendElementNS(auditMetadata, "ExportedAuditData", ns, p);
-            ead.setAttribute("filename", "audit.dat");
+            ead.setAttribute("filename", AUDITS_FILENAME);
             ead.appendChild(DomUtils.createTextNode(auditMetadata, "\n"));
             auditMetadata.appendChild(DomUtils.createTextNode(auditMetadata, "\n"));
 
@@ -591,8 +650,8 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                        ISO8601Date.format(new Date(exportedInfo.getLatestTime())));
             addElement(ead, i2, ns, p, "latestAuditRecordDateMillis", String.valueOf(exportedInfo.getLatestTime()));
             ead.appendChild(DomUtils.createTextNode(ead, "\n"));
-            addElement(ead, i2, ns, p, "sha1Digest", HexUtils.hexDump(exportedInfo.getSha1Hash()));
-            addElement(ead, i2, ns, p, "md5Digest", HexUtils.hexDump(exportedInfo.getMd5Hash()));
+            addElement(ead, i2, ns, p, "sha1Digest", HexUtils.hexDump(zip.getDigest(SHA1_ALG)));
+            addElement(ead, i2, ns, p, "md5Digest", HexUtils.hexDump(zip.getDigest(MD5_ALG)));
             ead.appendChild(DomUtils.createTextNode(ead, i1));
 
             // TODO [steve] remove this null check when EMS has signed audit downloads
@@ -603,28 +662,38 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                 auditMetadata.appendChild(signature);
             }
 
-            zipOut.putNextEntry(new ZipEntry("sig.xml"));
+            zip.putNextEntry(new ZipEntry(SIG_FILENAME));
             byte[] xmlBytes = XmlUtil.nodeToString(d).getBytes("UTF-8");
-            zipOut.write(xmlBytes);
-            zipOut.close();
-            zipOut = null;
-            buffOut.close();
-            buffOut = null;
-            synchronized (this) { this.highestTime = highestTime; }
+            zip.write(xmlBytes);
+            zip.flush();
+
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SignatureStructureException e) {
             throw new CausedSignatureException(e);
         } catch (XSignatureException e) {
             throw new CausedSignatureException(e);
-        } finally {
-            ResourceUtils.closeQuietly(zipOut);
-            ResourceUtils.closeQuietly(buffOut);
-            // clear interrupted status - this is essential to avoid SQL errors
-            Thread.interrupted();
+        } catch (IOException e) {
+            throw new CausedSignatureException(e);
         }
     }
-    
+
+    private void exportAuditsAsZipFile(String countSql, String selectSql, OutputStream outputStream,
+                                      X509Certificate signingCert, PrivateKey signingKey)
+            throws IOException, SQLException, HibernateException, SignatureException, InterruptedException
+    {
+        DigestZipOutputStream zip = null;
+        try {
+            zip = newAuditExportOutputStream(outputStream);
+            ExportedInfo exportedInfo = exportAudits(countSql, selectSql, zip, -1, null);
+            addXmlSignature(zip, exportedInfo, signingCert, signingKey);
+        } finally {
+            // clear interrupted status - this is essential to avoid SQL errors
+            Thread.interrupted();
+            ResourceUtils.closeQuietly(zip);
+        }
+    }
+
     /**
      * Derby function to extract audit details in the expected format.
      *
@@ -667,4 +736,42 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
 
         return details.toString();
     }
+
+    @Transactional(propagation=Propagation.REQUIRED,readOnly=true,rollbackFor={},noRollbackFor=Throwable.class)
+    public void exportAuditsAsZipFile(long fromTime,
+                                      long toTime,
+                                      long[] serviceOids,
+                                      OutputStream outputStream,
+                                      X509Certificate signingCert,
+                                      PrivateKey signingKey)
+            throws IOException, SQLException, HibernateException, SignatureException, InterruptedException
+    {
+        exportAuditsAsZipFile(composeCountSql(fromTime, toTime, serviceOids),
+                              composeSql(dialect, composeWhereClause(fromTime, toTime, serviceOids)),
+                              outputStream, signingCert, signingKey);
+    }
+
+    @Transactional(propagation=Propagation.REQUIRED,readOnly=true,rollbackFor={},noRollbackFor=Throwable.class)
+    public ExportedInfo exportAudits(long startOid, long endOid, DigestZipOutputStream zipOut, long maxBytes, ExportedInfo previous)
+        throws IOException, SQLException, InterruptedException
+    {
+        return exportAudits(composeCountByOidSql(startOid, endOid), composeSql(dialect, composeOidWhereClause(startOid, endOid)),
+                            zipOut, maxBytes, previous);
+    }
+
+    public DigestZipOutputStream newAuditExportOutputStream(OutputStream os) throws IOException {
+        try {
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("Creating new audit exporter zip output stream.");
+            DigestZipOutputStream zip = new DigestZipOutputStream(os, DIGEST_ALGS);
+            String zipComment = BuildInfo.getBuildString() + " - Exported Audit Records - Created " + ISO8601Date.format(new Date(System.currentTimeMillis()));
+            zip.setComment(zipComment);
+            zip.putNextEntry(new ZipEntry(AUDITS_FILENAME));
+            zip.resetDigests(DIGEST_ALGS);
+            return zip;
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
 }

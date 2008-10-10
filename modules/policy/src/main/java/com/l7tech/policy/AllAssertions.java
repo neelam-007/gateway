@@ -5,6 +5,8 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.transport.PreemptiveCompression;
+import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -64,6 +66,8 @@ public class AllAssertions {
         new CookieCredentialSourceAssertion(),
         new RequestWssSaml(),
         new RequestWssSaml2(),
+        new PreemptiveCompression(),
+        new RemoteDomainIdentityInjection()
     };
 
     /**
@@ -122,6 +126,7 @@ public class AllAssertions {
         new CodeInjectionProtectionAssertion(),
         new SamlIssuerAssertion(),
         new Include(),
+        new WssVersionAssertion(),
     };
 
 
@@ -197,5 +202,8 @@ public class AllAssertions {
         new WsiSamlAssertion(),
         new SamlIssuerAssertion(),
         new Include(),
+        new WssVersionAssertion(),
+        new PreemptiveCompression(),
+        new RemoteDomainIdentityInjection(),
     };
 }

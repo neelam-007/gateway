@@ -4,6 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.Callable;
+import java.security.cert.X509Certificate;
 
 /**
  * Remoting utility methods.
@@ -64,6 +65,30 @@ public class RemoteUtils {
      */
     public static HttpServletRequest getHttpServletRequest() {
         return servletRequest.get();
+    }
+
+    /**
+     * Get the X509Certificate for the HttpServletRequest associated with the current thread.
+     *
+     * @return the X509Certificate, or null if one could not be found.
+     */
+    public static X509Certificate getClientCertificate() {
+        X509Certificate cert = null;
+
+        HttpServletRequest request = servletRequest.get();
+        if ( request != null ) {
+            Object certObj = request.getAttribute("javax.servlet.request.X509Certificate");
+            if ( certObj instanceof X509Certificate ) {
+                cert = (X509Certificate) certObj;
+            } else if ( certObj instanceof X509Certificate[] ) {
+                X509Certificate[] certs = ( X509Certificate[]) certObj;
+                if ( certs.length > 0 ) {
+                    cert = certs[0];
+                }
+            }
+        }
+
+        return cert;
     }
 
     /**

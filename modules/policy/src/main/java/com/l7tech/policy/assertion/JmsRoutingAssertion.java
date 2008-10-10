@@ -101,7 +101,11 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     }
 
     public EntityHeader[] getEntitiesUsed() {
-        return new EntityHeader[] { new EntityHeader(this.endpointOid.toString(), EntityType.JMS_ENDPOINT, endpointName, null)};
+        if(endpointOid != null) {
+            return new EntityHeader[] { new EntityHeader(endpointOid.toString(), EntityType.JMS_ENDPOINT, endpointName, null)};
+        } else {
+            return new EntityHeader[0];
+        }
     }
 
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {

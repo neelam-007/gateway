@@ -63,6 +63,9 @@ public class MessagesTest extends TestCase {
      */
     public void testMessageLevel() {
         for(int i=0; i<MESSAGE_MAX_ID; i++) {
+
+            if (i == 2200) continue; // skip check for "SSG processing stopped by archiver" message; needs to be severe
+
             AuditDetailMessage message = Messages.getAuditDetailMessageById(i);
             Level level = message==null ? null : message.getLevel();
             if(level!=null) {

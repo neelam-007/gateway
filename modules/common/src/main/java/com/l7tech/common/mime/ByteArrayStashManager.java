@@ -28,6 +28,7 @@ public class ByteArrayStashManager implements StashManager {
     public void stash(int ordinal, InputStream in) throws IOException {
         BufferPoolByteArrayOutputStream baos = null;
         try {
+            while (thrown.size() <= ordinal) thrown.add(null);
             baos = new BufferPoolByteArrayOutputStream(4096);
             IOUtils.copyStream(in, baos);
 
@@ -35,6 +36,9 @@ public class ByteArrayStashManager implements StashManager {
             byte[] data = baos.detachPooledByteArray();
 
             stash(ordinal, data, 0, length);
+        } catch (IOException e) {
+            thrown.set(ordinal, e);
+            throw e;
         } finally {
             if (baos != null) baos.close();
         }
@@ -61,14 +65,16 @@ public class ByteArrayStashManager implements StashManager {
      * @param length  the length of data in the byte array
      */
     public void stash(int ordinal, byte[] in, int offset, int length) {
-        while (stashed.size() <= ordinal)
-            stashed.add(null);
+        while (stashed.size() <= ordinal) stashed.add(null);
+        while (thrown.size() <= ordinal) thrown.add(null);
 
         final StashInfo removed;
         if (in != null)
             removed = stashed.set(ordinal, new StashInfo(in, offset, length));
         else
             removed = stashed.set(ordinal, null);
+
+        thrown.set(ordinal, null);
 
         if (removed != null)
             removed.release();
@@ -80,6 +86,8 @@ public class ByteArrayStashManager implements StashManager {
         StashInfo removed = stashed.set(ordinal, null);
         if (removed != null)
             removed.release();
+        if (thrown.size() <= ordinal || ordinal < 0)
+            thrown.set(ordinal, null);
     }
 
     public long getSize(int ordinal) {
@@ -93,8 +101,18 @@ public class ByteArrayStashManager implements StashManager {
     }
 
     public InputStream recall(int ordinal) throws IOException, NoSuchPartException {
+        rethrowStashIOException(ordinal);
         StashInfo stashInfo = getStashInfo(ordinal);
         return new ByteArrayInputStream(stashInfo.data, stashInfo.offset, stashInfo.length);
+    }
+
+    // re-throws the IOException that was thrown during stash(), if any
+    private void rethrowStashIOException(int ordinal) throws IOException {
+        if (thrown.size() <= ordinal || ordinal < 0)
+            return;
+
+        IOException ioex = thrown.get(ordinal);
+        if (ioex != null) throw ioex;
     }
 
     public boolean isByteArrayAvailable(int ordinal) {
@@ -141,6 +159,7 @@ public class ByteArrayStashManager implements StashManager {
     //- PRIVATE
 
     private final ArrayList<StashInfo> stashed = new ArrayList<StashInfo>();
+    private ArrayList<IOException> thrown = new ArrayList<IOException>();
 
     private StashInfo getStashInfo(int ordinal) throws NoSuchPartException {
         if (stashed.size() <= ordinal || ordinal < 0)

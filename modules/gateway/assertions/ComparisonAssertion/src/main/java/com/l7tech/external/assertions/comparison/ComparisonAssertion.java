@@ -193,4 +193,24 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
 
         return meta;
     }
+
+    @Override
+    public Object clone()  {
+        final ComparisonAssertion clone = new ComparisonAssertion();
+        try {
+            clone.setExpression1(getExpression1());
+
+            //we have an array of predicates which need to be manually cloned, clone each predicates
+            Predicate[] clonePreds = new Predicate[predicates.length];
+            for (int i = 0; i < predicates.length; i++) {
+                clonePreds[i] = (Predicate) predicates[i].clone();
+            }
+            clone.setPredicates(clonePreds);
+        } catch (CloneNotSupportedException cnse) {
+            //can this happen? Not sure what we want to do with this, doing what Assertion.clone() does (which may be bad)
+            throw new RuntimeException(cnse);
+        }
+
+        return clone;
+    }
 }

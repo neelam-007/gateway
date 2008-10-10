@@ -1,11 +1,16 @@
 package com.l7tech.util;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * A utility class that holds a two-item tuple.
+ * <p/>
+ * For convenience, this also provides a read-only implementation of {@link Map.Entry} with no
+ * backing Map; the left object corresponds to the Key and the right object corresponds to the Value.
+ * The {@link #setValue} method will thorw {@link UnsupportedOperationException}.
  */
-public class Pair<L,R> implements Serializable {
+public class Pair<L,R> implements Serializable, Map.Entry<L, R> {
     public final L left;
     public final R right;
 
@@ -14,15 +19,29 @@ public class Pair<L,R> implements Serializable {
         this.right = right;
     }
 
+    public L getKey() {
+        return left;
+    }
+
+    public R getValue() {
+        return right;
+    }
+
+    public R setValue(R value) {
+        throw new UnsupportedOperationException();
+    }
+
     /** @noinspection RedundantIfStatement*/
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null) return false;
+        if (!(o instanceof Map.Entry)) {
+            return false;
+        }
+        Map.Entry entry = (Map.Entry) o;
 
-        Pair pair = (Pair)o;
-
-        if (left != null ? !left.equals(pair.left) : pair.left != null) return false;
-        if (right != null ? !right.equals(pair.right) : pair.right != null) return false;
+        if (left != null ? !left.equals(entry.getKey()) : entry.getKey() != null) return false;
+        if (right != null ? !right.equals(entry.getValue()) : entry.getValue() != null) return false;
 
         return true;
     }

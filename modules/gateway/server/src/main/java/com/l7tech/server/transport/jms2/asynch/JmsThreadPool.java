@@ -2,9 +2,12 @@ package com.l7tech.server.transport.jms2.asynch;
 
 import com.l7tech.server.ServerConfig;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -12,12 +15,16 @@ import java.util.logging.Logger;
  *
  * @author: vchan
  */
-public class JmsThreadPool<T extends Runnable> {
+public class JmsThreadPool<T extends Runnable> implements PropertyChangeListener {
 
     private static final Logger _logger = Logger.getLogger(JmsThreadPool.class.getName());
 
     /** Singleton instance */
     private static JmsThreadPool _instance;
+
+    /* Cluster property keys */
+    private static final String PARAM_THREAD_LIMIT = "jmsListenerThreadLimit";
+    private static final String PARAM_THREAD_DISTRIBUTION = "jmsEndpointThreadDistribution";
 
     /* constants passed to the executor */
     private static int CORE_SIZE = 5;
@@ -35,7 +42,9 @@ public class JmsThreadPool<T extends Runnable> {
     private boolean initialized;
 
     /** Mutex */
-    private Object synchLock = new Object();
+    private final Object synchLock = new Object();
+    /** Mutex for ThreadPool singleton instance updates */
+    private static final Object updateLock = new Object();
 
     /** Thread pool stop flag */
     private boolean stop;
@@ -50,7 +59,7 @@ public class JmsThreadPool<T extends Runnable> {
         try {
             this.init();
         } catch (Exception ex) {
-            // TODO proper exception handling
+            // should not get to this point
             ex.printStackTrace();
         }
     }
@@ -60,13 +69,30 @@ public class JmsThreadPool<T extends Runnable> {
      *
      * @return the JmsThreadPool singleton
      */
-    public static final JmsThreadPool getInstance() {
+    public static JmsThreadPool getInstance() {
 
         if (_instance == null) {
             _instance = new JmsThreadPool();
         }
 
         return _instance;
+    }
+
+    /**
+     * Re-creates the singleton instance of the JmsThreadPool to pickup property changes.  Only
+     * used for cluster property changes.
+     */
+    private static void recreateInstance() {
+
+        JmsThreadPool oldThreadPool;
+        synchronized (updateLock) {
+            // clear the singleton instance so it gets re-created on next getInstance call;
+            oldThreadPool = _instance;
+            _instance = null;
+        }
+
+        // the shutdown is controlled and gives time to existing threads to complete execution
+        oldThreadPool.shutdown();
     }
 
     /**
@@ -104,6 +130,20 @@ public class JmsThreadPool<T extends Runnable> {
     }
 
 
+    public void propertyChange(PropertyChangeEvent evt) {
+
+        if (PARAM_THREAD_LIMIT.equals(evt.getPropertyName())) {
+
+            JmsThreadPool.recreateInstance();
+
+            String newValue = (evt.getNewValue() != null ? evt.getNewValue().toString() : null);
+            _logger.log(Level.CONFIG, "Updated JMS ThreadPool size to {0}.", newValue);
+
+        } else if (PARAM_THREAD_DISTRIBUTION.equals(evt.getPropertyName())) {
+            
+        }
+    }
+
     public void shutdown() {
         
         synchronized (synchLock) {
@@ -135,7 +175,6 @@ public class JmsThreadPool<T extends Runnable> {
             }
         }
     }
-
 
     /**
      * Add a new task for the workpool to execute.

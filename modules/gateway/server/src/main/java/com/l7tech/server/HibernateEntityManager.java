@@ -158,44 +158,58 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
-    protected List<ET> findMatching(final Map<String, Object> map) throws FindException {
-        for (Object o : map.values()) {
-            if (o == null) return Collections.emptyList();
-        }
-
+    /**
+     * Finds entities matching the specified critetia.
+     *
+     * @param maps Criteria specification: entries in a map are ANDed, items in the collection are ORed.
+     * @return a list of matching entities, or an empty list if none were found.
+     */
+    protected List<ET> findMatching(final Collection<Map<String, Object>> maps) throws FindException {
+        List<ET> result = new ArrayList<ET>();
         try {
-            //noinspection unchecked
-            return (List<ET>)getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
-                @Override
-                protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Criteria crit = session.createCriteria(getImpClass());
-                    for (Map.Entry<String,?> entry: map.entrySet()) {
-                        crit.add(Restrictions.eq(entry.getKey(), entry.getValue()));
+            maps: for (final Map<String, Object> map : maps) {
+                for (Object o : map.values())
+                    if (o == null) continue maps;
+
+                //noinspection unchecked
+                result.addAll(getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                    @Override
+                    protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                        Criteria crit = session.createCriteria(getImpClass());
+                        for (Map.Entry<String, ?> entry : map.entrySet()) {
+                            crit.add(Restrictions.eq(entry.getKey(), entry.getValue()));
+                        }
+                        return crit.list();
                     }
-                    return crit.list();
-                }
-            });
+                }));
+            }
         } catch (Exception e) {
             throw new FindException("Couldn't check uniqueness", e);
         }
+        return result;
     }
 
-    protected Map<String,Object> getUniqueAttributeMap(ET entity) {
+    /**
+     * Gets the entity uniquess constraints.
+     * 
+     * @return Uniquess constraint specification: entries in a map are ANDed, items in the collection are ORed.
+     */
+    protected Collection<Map<String, Object>> getUniqueConstraints(ET entity) {
         switch(getUniqueType()) {
             case NAME:
-                if (entity instanceof NamedEntity ) {
+                if (entity instanceof NamedEntity) {
                     NamedEntity namedEntity = (NamedEntity) entity;
                     Map<String,Object> map = new HashMap<String, Object>();
                     map.put("name", namedEntity.getName());
-                    return map;
+                    return Arrays.asList(map);
                 } else {
                     throw new IllegalArgumentException("UniqueType is NAME, but entity is not a NamedEntity");
                 }
             case NONE:
-                return Collections.emptyMap();
+                return Collections.emptySet();
             case OTHER:
             default:
-                throw new IllegalArgumentException("UniqueType is OTHER, but getUniqueAttributeMap() not overridden");
+                throw new IllegalArgumentException("UniqueType is OTHER, but getUniqueConstraints() not overridden");
         }
     }
 
@@ -204,15 +218,15 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString() });
         try {
             if (getUniqueType() != UniqueType.NONE) {
-                final Map<String, Object> newMap = getUniqueAttributeMap(entity);
+                final Collection<Map<String, Object>> constraints = getUniqueConstraints(entity);
                 List others;
                 try {
-                    others = findMatching(newMap);
+                    others = findMatching(constraints);
                 } catch (FindException e) {
                     throw new SaveException("Couldn't find previous version(s) to check uniqueness");
                 }
 
-                if (!others.isEmpty()) throw new DuplicateObjectException(describeAttributes(newMap) + " must be unique");
+                if (!others.isEmpty()) throw new DuplicateObjectException(describeAttributes(constraints) + " must be unique");
             }
 
             Object key = getHibernateTemplate().save(entity);
@@ -225,31 +239,31 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
-    private String describeAttributes(Map<String, Object> newMap) {
-        String what;
-        if (newMap.size() == 1) {
-            what = newMap.keySet().iterator().next();
-        } else if (newMap.size() > 1) {
-            StringBuilder sb = new StringBuilder();
-            for (Iterator<String> i = newMap.keySet().iterator(); i.hasNext();) {
-                String key = i.next();
-                sb.append(key);
-                if (i.hasNext()) sb.append(", ");
+    private String describeAttributes(Collection<Map<String, Object>> maps) {
+        StringBuilder result = new StringBuilder();
+        for (Map<String,Object> map : maps) {
+            if (map.size() == 0) continue;
+            result.append("(");
+            for (String key : map.keySet()) {
+                result.append(key).append(", ");
             }
-            what = sb.toString();
-        } else {
-            throw new IllegalStateException("Unique attribute map was empty");
+            result.delete(result.length()-2, result.length());
+            result.append(") ");
         }
-        return what;
+
+        if (result.length() == 0)
+            throw new IllegalStateException("Unique attribute map was empty");
+    
+        return result.toString();
     }
 
     public void update(ET entity) throws UpdateException {
         try {
             if (getUniqueType() != UniqueType.NONE) {
-                final Map<String, Object> newMap = getUniqueAttributeMap(entity);
+                final Collection<Map<String, Object>> constraints = getUniqueConstraints(entity);
                 List<ET> others;
                 try {
-                    others = findMatching(newMap);
+                    others = findMatching(constraints);
                 } catch (FindException e) {
                     throw new UpdateException("Couldn't find previous version(s) to check uniqueness");
                 }
@@ -257,7 +271,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 if (!others.isEmpty()) {
                     for (ET other : others) {
                         if (!entity.getId().equals(other.getId()) || !entity.getClass().equals(other.getClass())) {
-                            String message = describeAttributes(newMap) + " must be unique";
+                            String message = describeAttributes(constraints) + " must be unique";
                             // nested since DuplicateObjectException is a SaveException not an UpdateException
                             throw new UpdateException(message, new DuplicateObjectException(message));
                         }

@@ -201,7 +201,7 @@ report_error_auto(JNIEnv* env, const string prefix, DWORD err)
 bool 
 get_tcp_table(JNIEnv* env, vector<BYTE>& bytes)
 {
-	DWORD bytes_next_size = max(INITIAL_BUFFER_SIZE, bytes.capacity());
+	size_t bytes_next_size = max(INITIAL_BUFFER_SIZE, bytes.capacity());
 
 	for (;;) {
 		bytes.reserve(bytes_next_size);

@@ -45,7 +45,7 @@ public class HtmlFormDataAssertionPropertiesAction extends NodeAction {
     protected void performAction() {
         HtmlFormDataAssertion assertion = (HtmlFormDataAssertion) node.asAssertion();
         Frame mainWindow = TopComponents.getInstance().getTopParent();
-        final HtmlFormDataAssertionDialog dialog = new HtmlFormDataAssertionDialog(mainWindow, assertion);
+        final HtmlFormDataAssertionDialog dialog = new HtmlFormDataAssertionDialog(mainWindow, assertion, !node.canEdit());
         Utilities.setEscKeyStrokeDisposes(dialog);
         dialog.pack();
         Utilities.centerOnScreen(dialog);

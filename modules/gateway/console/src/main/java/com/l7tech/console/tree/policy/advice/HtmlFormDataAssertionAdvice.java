@@ -27,7 +27,7 @@ public class HtmlFormDataAssertionAdvice implements Advice {
 
         final HtmlFormDataAssertion assertion = (HtmlFormDataAssertion) assertions[0];
         final Frame mainWindow = TopComponents.getInstance().getTopParent();
-        final HtmlFormDataAssertionDialog dialog = new HtmlFormDataAssertionDialog(mainWindow, assertion);
+        final HtmlFormDataAssertionDialog dialog = new HtmlFormDataAssertionDialog(mainWindow, assertion, false);
 
         // Shows the dialog.
         dialog.pack();

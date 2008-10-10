@@ -7,13 +7,18 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
  */
 public final class PolicyVariableUtils {
+    private static final Logger logger = Logger.getLogger(PolicyVariableUtils.class.getName());
+
     public static Map<String, VariableMetadata> getVariablesSetByPredecessorsAndSelf(Assertion assertion) {
         Assertion ancestor = assertion.getPath()[0];
         Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
@@ -21,7 +26,7 @@ public final class PolicyVariableUtils {
             Assertion ass = (Assertion) i.next();
             if (ass instanceof SetsVariables) {
                 SetsVariables sv = (SetsVariables)ass;
-                for (VariableMetadata meta : sv.getVariablesSet()) {
+                for (VariableMetadata meta : getVariablesSetNoThrow(sv)) {
                     String name = meta.getName();
                     if (vars.containsKey(name)) {
                         vars.remove(name);  // So that case change in name will cause map key to be updated as well.
@@ -42,7 +47,7 @@ public final class PolicyVariableUtils {
             if (ass == assertion) break; // Can't use our own variables or those of any subsequent assertion
             if (ass.isEnabled() && ass instanceof SetsVariables) {
                 SetsVariables sv = (SetsVariables)ass;
-                for (VariableMetadata meta : sv.getVariablesSet()) {
+                for (VariableMetadata meta : getVariablesSetNoThrow(sv)) {
                     String name = meta.getName();
                     if (vars.containsKey(name)) {
                         vars.remove(name);  // So that case change in name will cause map key to be updated as well.
@@ -74,7 +79,7 @@ public final class PolicyVariableUtils {
         return vars;
     }
 
-    public static void simpleRecursiveGather(Assertion kid, Set<String> vars) {
+    private static void simpleRecursiveGather(Assertion kid, Set<String> vars) {
         if (kid instanceof CompositeAssertion) {
             CompositeAssertion compositeAssertion = (CompositeAssertion) kid;
             for (Iterator i = compositeAssertion.getChildren().iterator(); i.hasNext();) {
@@ -86,6 +91,37 @@ public final class PolicyVariableUtils {
             vars.addAll(Arrays.asList(usesVariables.getVariablesUsed()));
         }
     }
+
+    /**
+     * Wraps SetsVariables.getVariablesSet() with a version that can optionally catch the VariableNameSyntaxException
+     * and replace it with an empty VariableMetadata array.
+     *
+     * @param sv the SetsVariables to query.  Required.
+     * @param ignoreNameSyntaxExceptions if false, this method will behave excactly the same as SetsVariables.getVariablesSet().
+     *                                   If true, this method will catch any VariableNameSyntaxException and translate it into an empty metadata array.
+     * @return the variables set by this object.  May be empty, but should not normally be null.
+     * @throws VariableNameSyntaxException if ignoreNameSyntaxExceptions was false and VariableNameSyntaxException was thrown.
+     */
+    public static VariableMetadata[] getVariablesSet(SetsVariables sv, boolean ignoreNameSyntaxExceptions) throws VariableNameSyntaxException {
+        return ignoreNameSyntaxExceptions ? getVariablesSetNoThrow(sv) : sv.getVariablesSet();
+    }
+
+    /**
+     * Wraps SetsVariables.getVariablesSet() with a version that catches VariableNameSyntaxException,
+     * logs it, and returns an empty array.
+     *
+     * @param sv the SetsVariables to query.  Required.
+     * @return the variables set, or an empty array if VariableNameSyntaxExeption was thrown.
+     */
+    public static VariableMetadata[] getVariablesSetNoThrow(SetsVariables sv) {
+        try {
+            return sv.getVariablesSet();
+        } catch (VariableNameSyntaxException vnse) {
+            logger.log(Level.WARNING, "Unable to get variables set on " + sv.getClass().getName() + ": " + ExceptionUtils.getMessage(vnse));
+            return new VariableMetadata[0];
+        }
+    }
+
 
     private PolicyVariableUtils() { }
 }

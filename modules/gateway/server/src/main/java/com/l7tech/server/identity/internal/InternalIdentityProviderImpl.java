@@ -13,15 +13,19 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.event.identity.Authenticated;
 import com.l7tech.server.identity.*;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
+import com.l7tech.server.logon.LogonService;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.math.BigInteger;
 
 /**
  * IdentityProvider implementation for the internal identity provider.
@@ -45,6 +49,7 @@ public class InternalIdentityProviderImpl
     private CertificateAuthenticator certificateAuthenticator;
     private ApplicationContext springContext;
     private Auditor auditor;
+    private LogonService logonService;
 
     public InternalIdentityProviderImpl() {
     }
@@ -57,11 +62,20 @@ public class InternalIdentityProviderImpl
         return groupManager;
     }
 
+    public LogonService getLogonService() {
+        return logonService;
+    }
+
+    public void setLogonService(LogonService logonService) {
+        this.logonService = logonService;
+    }
+
     @Transactional(propagation=Propagation.REQUIRED, noRollbackFor=AuthenticationException.class)
     public AuthenticationResult authenticate( LoginCredentials pc )
             throws AuthenticationException
     {
         AuthenticationResult ar = null;
+        long now = System.currentTimeMillis();
         try {
             String login = pc.getLogin();
 
@@ -81,6 +95,7 @@ public class InternalIdentityProviderImpl
                 String err = "Credentials' login matches an internal user " + login + " but that " +
                         "account is now expired.";
                 logger.info(err);
+                auditor.logAndAudit(SystemMessages.AUTH_USER_EXPIRED, login);
                 throw new AuthenticationException(err);
             }
 
@@ -88,15 +103,22 @@ public class InternalIdentityProviderImpl
             if (format.isClientCert() || format == CredentialFormat.SAML) {
                 ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser, config.getCertificateValidationType(), auditor);
             } else {
+                logonService.hookPreLoginCheck(dbUser, now);
                 ar = autenticatePasswordCredentials(pc, dbUser);
             }
 
+            logonService.updateLogonAttempt(dbUser, ar);
             return ar;
         } finally {
             if (ar != null) {
                 springContext.publishEvent(new Authenticated(ar));
             }
         }
+    }
+
+    @Transactional(propagation=Propagation.SUPPORTS)
+    public X509Certificate findCertByIssuerAndSerial(X500Principal issuer, BigInteger serial) {
+        return null;
     }
 
     private AuthenticationResult autenticatePasswordCredentials(LoginCredentials pc, InternalUser dbUser)
@@ -154,6 +176,20 @@ public class InternalIdentityProviderImpl
         this.groupManager = groupManager;
     }
 
+    public boolean updateFailedLogonAttempt(LoginCredentials lc) {
+        String login = lc.getLogin();
+
+        InternalUser dbUser;
+        try {
+            dbUser = userManager.findByLogin(login);
+            logonService.updateLogonAttempt(dbUser, null);
+        } catch (FindException e) {
+            return false;
+        }
+
+        return true;
+    }
+
     public void setCertificateAuthenticator(CertificateAuthenticator certificateAuthenticator) {
         this.certificateAuthenticator = certificateAuthenticator;
     }
@@ -209,5 +245,22 @@ public class InternalIdentityProviderImpl
         }
 
         return expired;
+    }
+
+    public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
+        String login = lc.getLogin();
+        InternalUser dbUser = null;
+        try {
+            dbUser = userManager.findByLogin(login);
+            if (dbUser == null) return false;
+
+            //check if this user has already been assigned with a certificate, if the user has been issued with a
+            //certificate, it must use the certificate for the login
+            X509Certificate temp = (X509Certificate) clientCertManager.getUserCert(dbUser);
+            if ( temp != null ) return true;
+        } catch (FindException e) {
+            throw new AuthenticationException("Couldn't authenticate credentials", e);
+        }
+        return false;
     }
 }

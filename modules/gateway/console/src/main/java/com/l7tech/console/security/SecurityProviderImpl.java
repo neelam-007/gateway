@@ -15,6 +15,7 @@ import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.util.AdminContextFactory;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.identity.User;
@@ -58,6 +59,10 @@ public class SecurityProviderImpl extends SecurityProvider
         hostBuffer = new StringBuffer();
         certsByHost = new HashMap<String, X509Certificate>();
         permissiveSSLTrustFailureHandler = getTrustFailureHandler(hostBuffer);
+    }
+
+    public void acceptServerCertificate( final X509Certificate certificate ) {
+        certsByHost.values().remove(certificate);
     }
 
     /**
@@ -214,8 +219,11 @@ public class SecurityProviderImpl extends SecurityProvider
      */
     public void changePassword(final PasswordAuthentication auth, final PasswordAuthentication newAuth)
             throws LoginException {
-        AdminLogin adminLogin = (AdminLogin) applicationContext.getBean("adminLogin", AdminLogin.class);
-        adminLogin.changePassword(new String(auth.getPassword()), new String(newAuth.getPassword()));
+        if ( Registry.getDefault().isAdminContextPresent() ) {
+            Registry.getDefault().getAdminLogin().changePassword(new String(auth.getPassword()), new String(newAuth.getPassword()));
+        } else {
+            throw new LoginException("Not logged in.");
+        }
     }
 
     /**
@@ -364,7 +372,7 @@ public class SecurityProviderImpl extends SecurityProvider
             byte[] digested = d.digest();
             if (!Arrays.equals(certificate, digested)) {
                 logger.warning("Unable to verify the server certificate at (could mean invalid password entered) " + host);
-                throw new InvalidHostCertificateException("Unable to verify the server certificate at "+host);
+                throw new InvalidHostCertificateException(serverCertificate, "Unable to verify the server certificate at "+host);
             }
         } catch (NoSuchAlgorithmException e) {
             throw (SecurityException) new SecurityException().initCause(e);

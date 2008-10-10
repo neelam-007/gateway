@@ -10,9 +10,11 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author mike
@@ -120,6 +122,55 @@ public interface SsmPreferences {
      * @throws CertificateException
      */
     void importSsgCert(X509Certificate cert, String hostname) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException;
+
+    /**
+     * Saves the private key into the trust store.
+     *
+     * @param cert
+     * @param privateKey
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     * @throws CertificateException
+     */
+    void importPrivateKey(X509Certificate[] cert, PrivateKey privateKey) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException;
+
+    /**
+     * Get's a list of keys from the truststore.
+     *
+     * @return  A set of X509 certificates
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     * @throws CertificateException
+     */
+    Set<X509Certificate> getKeys() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException;
+
+    /**
+     * Get's a list of certificates from the truststore.
+     *
+     * @return  A set of X509 certificates
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     * @throws CertificateException
+     */
+    Set<X509Certificate> getCertificates() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException;
+
+    /**
+     * Deletes a certificate from the truststore
+     *
+     * @param cert  Certificate to be deleted.
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     * @throws CertificateException
+     */
+    void deleteCertificate(X509Certificate cert) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException;
+
+    void setClientCertificate(X509Certificate cert);
+
+    X509Certificate getClientCertificate();
 
     /**
      * Returns the value associated with the specified key

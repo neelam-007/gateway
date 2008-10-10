@@ -26,6 +26,9 @@ import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap12.SOAP12Address;
+import javax.wsdl.extensions.soap12.SOAP12Binding;
+import javax.wsdl.extensions.soap12.SOAP12Operation;
+import javax.wsdl.extensions.soap12.SOAP12Body;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLLocator;
 import javax.wsdl.xml.WSDLReader;
@@ -371,6 +374,9 @@ public class Wsdl implements Serializable {
                     if (element instanceof SOAPAddress) {
                         SOAPAddress sa = (SOAPAddress) element;
                         return sa.getLocationURI();
+                    } else if (element instanceof SOAP12Address) {
+                        SOAP12Address sa = (SOAP12Address) element;
+                        return sa.getLocationURI();
                     }
                 }
             }
@@ -427,7 +433,7 @@ public class Wsdl implements Serializable {
             if (bp instanceof HTTPBinding &&
                     (showBindings & HTTP_BINDINGS) == HTTP_BINDINGS) {
                 filtered.add(binding);
-            } else if (bp instanceof SOAPBinding &&
+            } else if ((bp instanceof SOAPBinding || bp instanceof SOAP12Binding) &&
                     (showBindings & SOAP_BINDINGS) == SOAP_BINDINGS) {
                 filtered.add(binding);
             }
@@ -817,6 +823,13 @@ public class Wsdl implements Serializable {
                     break;
                 }
                 return style;
+            } else if (element instanceof SOAP12Operation) {
+                SOAP12Operation so = (SOAP12Operation) element;
+                String style = so.getStyle();
+                if (style == null || "".equals(style)) {
+                    break;
+                }
+                return style;
             }
         }
         for (Binding binding : getBindings()) {
@@ -841,6 +854,9 @@ public class Wsdl implements Serializable {
         } else if (bindingProtocol instanceof SOAPBinding) {
             SOAPBinding sb = (SOAPBinding)bindingProtocol;
             return sb.getStyle();
+        } else if (bindingProtocol instanceof SOAP12Binding) {
+            SOAP12Binding sb = (SOAP12Binding)bindingProtocol;
+            return sb.getStyle();
         }
         return Wsdl.STYLE_DOCUMENT; //default
     }
@@ -861,7 +877,7 @@ public class Wsdl implements Serializable {
         //noinspection unchecked
         List<ExtensibilityElement> elements = b.getExtensibilityElements();
         for (ExtensibilityElement eel : elements) {
-            if (eel instanceof SOAPBinding) {
+            if (eel instanceof SOAPBinding || eel instanceof SOAP12Binding) {
                 return eel;
             } else if (eel instanceof HTTPBinding) {
                 return eel;
@@ -884,7 +900,7 @@ public class Wsdl implements Serializable {
     public String getSoapUse(Binding binding) throws IllegalArgumentException, WSDLException {
         String soapUse;
         ExtensibilityElement ee = getBindingProtocol(binding);
-        if (!(ee instanceof SOAPBinding)) {
+        if (!(ee instanceof SOAPBinding || ee instanceof SOAP12Binding)) {
             throw new IllegalArgumentException("Must be SOAP binding. +( " + getLocalName(binding) + " )");
         }
         Set<String> soapUseSet = new HashSet<String>();
@@ -937,6 +953,12 @@ public class Wsdl implements Serializable {
                     use = soapBody.getUse();
                     break;
                 }
+            } else if (eel instanceof SOAP12Body) {
+                SOAP12Body soapBody = (SOAP12Body) eel;
+                if (soapBody.getUse() != null) {
+                    use = soapBody.getUse();
+                    break;
+                }
             }
         }
         Set<String> useSet = new HashSet<String>();
@@ -950,6 +972,12 @@ public class Wsdl implements Serializable {
             for (ExtensibilityElement eel : extensibilityElements) {
                 if (eel instanceof SOAPBody) {
                     SOAPBody soapBody = (SOAPBody) eel;
+                    if (soapBody.getUse() != null) {
+                        use = soapBody.getUse();
+                        break;
+                    }
+                } else if (eel instanceof SOAP12Body) {
+                    SOAP12Body soapBody = (SOAP12Body) eel;
                     if (soapBody.getUse() != null) {
                         use = soapBody.getUse();
                         break;
@@ -1063,12 +1091,17 @@ public class Wsdl implements Serializable {
             //noinspection unchecked
             Collection<ExtensibilityElement> eels = input.getExtensibilityElements();
             for (ExtensibilityElement eel : eels) {
+                String uri = null;
                 if (eel instanceof SOAPBody) {
                     SOAPBody body = (SOAPBody) eel;
-                    String uri = body.getNamespaceURI();
-                    if (uri != null && !result.containsValue(uri)) {
-                        result.put(TEMP + ns++, uri);
-                    }
+                    uri = body.getNamespaceURI();
+                } else if (eel instanceof SOAP12Body) {
+                    SOAP12Body body = (SOAP12Body) eel;
+                    uri = body.getNamespaceURI();
+                }
+
+                if(uri != null && !result.containsValue(uri)) {
+                    result.put(TEMP + ns++, uri);
                 }
             }
         }
@@ -1104,6 +1137,11 @@ public class Wsdl implements Serializable {
                     if (body.getNamespaceURI() != null) {
                         return body.getNamespaceURI();
                     }
+                } else if (ee instanceof SOAP12Body) {
+                    SOAP12Body body = (SOAP12Body)ee;
+                    if (body.getNamespaceURI() != null) {
+                        return body.getNamespaceURI();
+                    }
                 }
             }
         }
@@ -1119,6 +1157,11 @@ public class Wsdl implements Serializable {
                 ee = (ExtensibilityElement)eels.next();
                 if (ee instanceof SOAPBody) {
                     SOAPBody body = (SOAPBody)ee;
+                    if (body.getNamespaceURI() != null) {
+                        return body.getNamespaceURI();
+                    }
+                } else if (ee instanceof SOAP12Body) {
+                    SOAP12Body body = (SOAP12Body)ee;
                     if (body.getNamespaceURI() != null) {
                         return body.getNamespaceURI();
                     }
@@ -1278,6 +1321,10 @@ public class Wsdl implements Serializable {
                 SOAPAddress sadd = (SOAPAddress) eel;
                 num++;
                 sadd.setLocationURI(url.toString());
+            } else if (eel instanceof SOAP12Address) {
+                SOAP12Address sadd = (SOAP12Address) eel;
+                num++;
+                sadd.setLocationURI(url.toString());
             }
         }
 
@@ -1293,6 +1340,11 @@ public class Wsdl implements Serializable {
         for (ExtensibilityElement eel : elements) {
             if (eel instanceof SOAPAddress) {
                 SOAPAddress sadd = (SOAPAddress) eel;
+                if (sadd.getLocationURI() != null) {
+                    return sadd.getLocationURI();
+                }
+            } else if (eel instanceof SOAP12Address) {
+                SOAP12Address sadd = (SOAP12Address) eel;
                 if (sadd.getLocationURI() != null) {
                     return sadd.getLocationURI();
                 }

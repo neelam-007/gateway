@@ -52,12 +52,14 @@ import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
+import javax.xml.XMLConstants;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -183,17 +185,35 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 logger.info("The request for a token was not authenticated");
                 SoapFaultLevel fault = new SoapFaultLevel();
                 fault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-                fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
-                        "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
-                        "    <soapenv:Body>\n" +
-                        "        <soapenv:Fault>\n" +
-                        "            <faultcode>l7:noauthentication</faultcode>\n" +
-                        "            <faultstring>The request for a token was not authenticated</faultstring>\n" +
-                        "            <faultactor>${request.url}</faultactor>\n" +
-                        "        </soapenv:Fault>\n" +
-                        "    </soapenv:Body>\n" +
-                        "</soapenv:Envelope>");
+                if(context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
+                    fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                            "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\" " +
+                            "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
+                            "    <soapenv:Body>\n" +
+                            "        <soapenv:Fault>\n" +
+                            "            <soapenv:Code>\n" +
+                            "                <soapenv:Value>l7:noauthentication</soapenv:Value>\n" +
+                            "            </soapenv:Code>\n" +
+                            "            <soapenv:Reason>\n" +
+                            "                <soapenv:Text xml:lang=\"en-US\">The request for a token was not authenticated</soapenv:Text>\n" +
+                            "            </soapenv:Reason>\n" +
+                            "            <soapenv:Role>${request.url}</soapenv:Role>\n" +
+                            "        </soapenv:Fault>\n" +
+                            "    </soapenv:Body>\n" +
+                            "</soapenv:Envelope>");
+                } else {
+                    fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
+                            "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
+                            "    <soapenv:Body>\n" +
+                            "        <soapenv:Fault>\n" +
+                            "            <faultcode>l7:noauthentication</faultcode>\n" +
+                            "            <faultstring>The request for a token was not authenticated</faultstring>\n" +
+                            "            <faultactor>${request.url}</faultactor>\n" +
+                            "        </soapenv:Fault>\n" +
+                            "    </soapenv:Body>\n" +
+                            "</soapenv:Envelope>");
+                }
                 context.setFaultlevel(fault);
                 return status;
             }

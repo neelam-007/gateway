@@ -355,10 +355,12 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
     private final FieldTableCellRenderer _fieldTableCellRenderer = new FieldTableCellRenderer();
     private final HtmlFormDataAssertion _assertion;
     private boolean _modified;
+    private boolean readonly;
 
-    public HtmlFormDataAssertionDialog(Frame owner, final HtmlFormDataAssertion assertion) throws HeadlessException {
+    public HtmlFormDataAssertionDialog(Frame owner, final HtmlFormDataAssertion assertion, boolean readonly) throws HeadlessException {
         super(owner, "HTML Form Data Properties", true);
         _assertion = assertion;
+        this.readonly = readonly;
 
         _allowGetCheckbox.setSelected(assertion.isAllowGet());
         _allowPostCheckbox.setSelected(assertion.isAllowPost());
@@ -552,7 +554,7 @@ public class HtmlFormDataAssertionDialog extends JDialog implements TableModelLi
      */
     private void enableOkButton() {
         final boolean hasWarning = _fieldTableModel.hasWarning();
-        _okButton.setEnabled((_allowGetCheckbox.isSelected() || _allowPostCheckbox.isSelected())
+        _okButton.setEnabled(!readonly && (_allowGetCheckbox.isSelected() || _allowPostCheckbox.isSelected())
                              && !hasWarning);
         if (hasWarning) {
             _warningLabel.setIcon(WARNING_ICON);

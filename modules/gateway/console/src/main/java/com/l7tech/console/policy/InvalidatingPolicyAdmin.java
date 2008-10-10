@@ -60,7 +60,7 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         return delegate.saveAlias(policyAlias);
     }
 
-    public void deletePolicy( long policyOid ) throws PolicyDeletionForbiddenException, DeleteException, FindException {
+    public void deletePolicy( long policyOid ) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
         delegate.deletePolicy( policyOid );
         fireEntityDelete( policyOid );
     }

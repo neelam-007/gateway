@@ -65,6 +65,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     public void setTrustFailureHandler(SSLTrustFailureHandler failureHandler) {
         synchronized (lock) {
             this.trustFailureHandler = failureHandler;
+            this.getHttpClient().getHttpConnectionManager().closeIdleConnections(0);
         }
     }
 

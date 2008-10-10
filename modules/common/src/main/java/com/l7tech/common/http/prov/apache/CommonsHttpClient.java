@@ -153,7 +153,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
         // Note that we only set if there is a non-default value specified
         // this allows the system wide default to be used for the bridge
-        if (params.isUseExpectContinue() && !useHttp1_0) { // ignore expect-continue unless > HTTP 1.0           
+        if (params.isUseExpectContinue() && !useHttp1_0) { // ignore expect-continue unless > HTTP 1.0
             clientParams.setBooleanParameter("http.protocol.expect-continue", Boolean.valueOf(params.isUseExpectContinue()));
         }
         if (!params.isUseKeepAlives() && !useHttp1_0) {

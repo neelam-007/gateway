@@ -1,23 +1,23 @@
 package com.l7tech.kerberos;
 
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.Principal;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.net.URL;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.kerberos.KerberosKey;
-import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.net.URL;
+import java.security.Principal;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -27,6 +27,11 @@ import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KrbApReq;
+import sun.security.krb5.Checksum;
+import sun.security.krb5.Credentials;
+import sun.security.krb5.EncryptedData;
+import sun.security.krb5.KrbCred;
+import sun.security.krb5.PrincipalName;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 
@@ -138,22 +143,45 @@ public class KerberosClient {
      * @return the ticket
      * @throws KerberosException on error
      */
-    public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName) throws KerberosException {
-        KerberosServiceTicket ticket;
+    public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName, boolean isOutboundRouting)
+        throws KerberosException
+    {
+        KerberosServiceTicket ticket = null;
+        LoginContext loginContext = null;
+        KerberosTicketRepository.Key ticketCacheKey = null;
+        Subject cacheSubject = null;
+
         try {
-            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_INIT, kerberosSubject);
-            try {
-                loginContext.login();
-            }
-            catch(LoginException le) {
-                // if there is no available ticket cache try the other module
-                loginContext = new LoginContext(LOGIN_CONTEXT_INIT_CREDS, kerberosSubject, callbackHandler);
-                loginContext.login();
+            // check against the ticket cache when doing outbound routing
+            ticketCacheKey = ticketCache.generateKey(servicePrincipalName, "useKeytab");
+            cacheSubject = ticketCache.getSubject(ticketCacheKey);
+
+            final Subject krbSubject;
+            if (cacheSubject != null) {
+                krbSubject = cacheSubject;
+
+            } else {
+                if (isOutboundRouting) {
+                    loginContext  = new LoginContext(LOGIN_CONTEXT_OUT_KEYTAB, kerberosSubject, getServerCallbackHandler(KerberosConfig.getKeytabPrincipal()));
+                    loginContext.login();
+                } else {
+                    loginContext  = new LoginContext(LOGIN_CONTEXT_INIT, kerberosSubject);
+                    try {
+                        loginContext.login();
+                    }
+                    catch(LoginException le) {
+                        // if there is no available ticket cache try the other module
+                        loginContext = new LoginContext(LOGIN_CONTEXT_INIT_CREDS, kerberosSubject, callbackHandler);
+                        loginContext.login();
+                    }
+                }
+
+                krbSubject = kerberosSubject;
             }
 
             // disable inspection until we can use 1.6 api
             //noinspection unchecked
-            ticket = (KerberosServiceTicket) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
+            ticket = (KerberosServiceTicket) Subject.doAs(krbSubject, new PrivilegedExceptionAction(){
                 public KerberosServiceTicket run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
                     GSSManager manager = GSSManager.getInstance();
@@ -173,7 +201,7 @@ public class KerberosClient {
 
                         byte[] bytes = context.initSecContext(new byte[0], 0, 0);
 
-                        KerberosTicket ticket = getTicket(kerberosSubject.getPrivateCredentials(), serviceName, manager);
+                        KerberosTicket ticket = getTicket(krbSubject.getPrivateCredentials(), serviceName, manager);
 
                         KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
                         KerberosServiceTicket kst = new KerberosServiceTicket(ticket.getClient().getName(),
@@ -192,8 +220,17 @@ public class KerberosClient {
                     }
                 }
             });
+
+            // for outbound routing, cache the creds
+            if (ticket != null && isOutboundRouting && cacheSubject == null) {
+                ticketCache.add(ticketCacheKey, krbSubject, loginContext, ticket);
+            }
+
             try{
-                loginContext.logout();
+                // do not logout when doing outbound routing because the creds are
+                // cached for later requests
+                if (loginContext != null && !isOutboundRouting)
+                    loginContext.logout();
             }
             catch(LoginException le) {
                 //whatever.
@@ -203,6 +240,12 @@ public class KerberosClient {
             throw new KerberosException("Could not login", le);
         }
         catch(PrivilegedActionException pae) {
+
+            // if we used cached credentials, discard it
+            if (cacheSubject != null && ticketCacheKey != null) {
+                ticketCache.remove(ticketCacheKey);
+            }
+
             throw new KerberosException("Error creating Kerberos Service Ticket for service '"+servicePrincipalName+"'", pae.getCause());
         }
 
@@ -247,13 +290,70 @@ public class KerberosClient {
                         EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
                         EncryptionKey subKey = apReq.getSubKey();
 
+                        Checksum checksum = apReq.getChecksum();
+                        EncryptionKey key = sessionKey;
+
+                        byte[] checksumBytes = checksum.getBytes();
+                        int flags = readInt(checksumBytes, 20);
+                        //if ((flags & 2) != 0)
+                        //    throw new KerberosException("Session not established (mutual authentication not supported).");
+
+                        KerberosTicket delegatedKerberosTicket = null;
+                        if ((flags & 2) > 0) {
+                            int credLen = readShort(checksumBytes, 26);
+                            byte[] credBytes = new byte[credLen];
+                            System.arraycopy(checksumBytes, 28, credBytes, 0, credLen);
+
+                            Credentials delegatedCred;
+                            int etype = key.getEType();
+                            if (logger.isLoggable(Level.FINER)) {
+                                logger.log(Level.FINER,
+                                        "Encryption type is ''{0}'', size is {1}.",
+                                        new Object[]{Integer.valueOf(etype), Integer.valueOf(key.getBytes().length*8)});
+                            }
+                            if (etype == EncryptedData.ETYPE_ARCFOUR_HMAC ||
+                                etype == EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96 ||
+                                etype == EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96) {
+                                delegatedCred = new KrbCred(credBytes, key).getDelegatedCreds()[0];
+                            } else {
+                                delegatedCred = new KrbCred(credBytes, EncryptionKey.NULL_KEY).getDelegatedCreds()[0];
+                            }
+                            EncryptionKey delegatedSessionKey = delegatedCred.getSessionKey();
+
+                            PrincipalName cPrinc = delegatedCred.getClient();
+                            KerberosPrincipal client = null;
+                            if (cPrinc != null) {
+                                client =  new KerberosPrincipal(cPrinc.getName());
+                            }
+
+                            PrincipalName sPrinc = delegatedCred.getServer();
+                            KerberosPrincipal server = null;
+                            if (sPrinc != null) {
+                                server = new KerberosPrincipal(sPrinc.getName());
+                            }
+
+                            delegatedKerberosTicket = new KerberosTicket(
+                                              delegatedCred.getEncoded(),
+                                              client,
+                                              server,
+                                              delegatedSessionKey.getBytes(),
+                                              delegatedSessionKey.getEType(),
+                                              delegatedCred.getFlags(),
+                                              delegatedCred.getAuthTime() == null ? new java.util.Date() : delegatedCred.getAuthTime(),
+                                              delegatedCred.getStartTime(),
+                                              delegatedCred.getEndTime(),
+                                              delegatedCred.getRenewTill(),
+                                              delegatedCred.getClientAddresses());
+                        }
+
                         byte[] keyBytes = (subKey==null ? sessionKey : subKey).getBytes();
 
                         return new KerberosServiceTicket(apReq.getCreds().getClient().getName(),
                                                          gssPrincipal,
                                                          keyBytes,
                                                          apReq.getCreds().getEndTime().getTime(),
-                                                         gssAPReqTicket);
+                                                         gssAPReqTicket,
+                                                         delegatedKerberosTicket);
                     }
                     finally {
                         if(scontext!=null) scontext.dispose();
@@ -276,10 +376,14 @@ public class KerberosClient {
         }
         catch(PrivilegedActionException pae) {
             Throwable cause = pae.getCause();
-            if (cause instanceof KerberosException) { // the don't wrap, just re-throw
+            if (cause instanceof KerberosException) { // then don't wrap, just re-throw
                 throw (KerberosException) cause;
             }
-            throw new KerberosException("Error creating Kerberos Service Ticket", cause);
+
+            String clockMsg = null;
+            if (cause.getMessage().contains("Clock"))
+                clockMsg = ": time synchronization issue";
+            throw new KerberosException("Error creating Kerberos Service Ticket"+clockMsg, cause);
         }
 
         return ticket;
@@ -443,9 +547,7 @@ public class KerberosClient {
         acceptPrincipal = null;        
     }
 
-    //- PACKAGE
-
-    static Oid getKerberos5Oid() throws KerberosException {
+    public static Oid getKerberos5Oid() throws KerberosException {
         Oid k5oid = kerb5Oid;
         if(k5oid==null) {
             try {
@@ -458,6 +560,24 @@ public class KerberosClient {
             kerb5Oid = k5oid; // stash for later ...
         }
         return k5oid;
+    }
+
+    //- PROTECTED
+
+    // used for outbound routing with kerberos
+    protected static final String LOGIN_CONTEXT_OUT_KEYTAB = "com.l7tech.common.security.kerberos.outbound.keytab";
+    protected static final String LOGIN_CONTEXT_OUT_CONFIG_ACCT = "com.l7tech.common.security.kerberos.outbound.account"; // "com.l7tech.common.security.kerberos.delegation";
+
+    /**
+     * Kerberos credentials cache
+     */
+    protected static KerberosTicketRepository ticketCache;
+
+    protected final Subject kerberosSubject;
+    protected CallbackHandler callbackHandler;
+
+    protected int getKerberosTicketLifetime() {
+        return KERBEROS_LIFETIME;
     }
 
     //- PRIVATE
@@ -479,23 +599,22 @@ public class KerberosClient {
     private static final String LOGIN_CONTEXT_ACCEPT_INIT = "com.l7tech.common.security.kerberos.acceptinit";
 
     private static final String KERBEROS_LIFETIME_PROPERTY = "com.l7tech.common.security.kerberos.lifetime";
-    private static final Integer KERBEROS_LIFETIME_DEFAULT = 60 * 15; // seconds
+    private static final Integer KERBEROS_LIFETIME_DEFAULT = 60 * 60; // in seconds, default ==> 1 hour
     private static final Integer KERBEROS_LIFETIME = SyspropUtil.getInteger(KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT);
 
     private static Oid kerb5Oid;
     private static String acceptPrincipal;
 
-    private final Subject kerberosSubject;
-    private CallbackHandler callbackHandler;
-
     static {
-        KerberosConfig.checkConfig();
+        KerberosConfig.checkConfig( null, null );
+        ticketCache = KerberosTicketRepository.getInstance();
+        ticketCache.setKerberosTicketLifetime(KERBEROS_LIFETIME * 1000L);
     }
 
     /**
      * Get a ticket from the given set of Objects that is for the given service.
      */
-    private KerberosTicket getTicket(Set info, GSSName service, GSSManager manager) throws IllegalStateException {
+    protected KerberosTicket getTicket(Set info, GSSName service, GSSManager manager) throws IllegalStateException {
         KerberosTicket ticket = null;
 
         for( Object o : info ) {
@@ -592,6 +711,23 @@ public class KerberosClient {
             }
         };
     }
+
+    private static int readShort(byte[] data, int offset) {
+        if(data.length < (offset+2)) throw new IllegalArgumentException("Not enough data to read short!");
+
+        return (data[offset+0]&0xFF)
+            | ((data[offset+1]&0xFF) <<  8);
+    }
+
+    private static int readInt(byte[] data, int offset) {
+        if(data.length < (offset+4)) throw new IllegalArgumentException("Not enough data to read int!");
+
+        return (data[offset+0]&0xFF)
+            | ((data[offset+1]&0xFF) <<  8)
+            | ((data[offset+2]&0xFF) << 16)
+            | ((data[offset+3]&0xFF) << 24);
+    }
+
 
     //- TESTING
 

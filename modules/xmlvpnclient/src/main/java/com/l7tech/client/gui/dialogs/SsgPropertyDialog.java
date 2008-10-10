@@ -757,6 +757,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             getNetworkPane().setDefaultLocalEndpoint(ssg.makeDefaultLocalEndpoint());
             getNetworkPane().setCurrentLocalEndpoint(ssg.getLocalEndpoint());
             getNetworkPane().setWsdlEndpointSuffix(ClientProxy.WSIL_SUFFIX);
+            getNetworkPane().setCompression(ssg.isCompress());
 
             if (ssg.isGeneric()) {
                 getFieldServerAddress().setText(ssg.getServerUrl());
@@ -801,6 +802,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     ssg.setSsgAddress(getFieldServerAddress().getText().trim().toLowerCase());
                     commitPorts();
                 }
+
+                ssg.setCompress(getNetworkPane().getCompression());
 
                 if (!ssg.isFederatedGateway()) {
                     TrustedSsgIdentityPanel tp = (TrustedSsgIdentityPanel)ssgIdentityPane;

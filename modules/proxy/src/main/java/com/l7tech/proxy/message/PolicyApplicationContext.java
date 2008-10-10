@@ -19,6 +19,8 @@ import com.l7tech.security.wstrust.TokenServiceClient;
 import com.l7tech.security.wstrust.WsTrustConfig;
 import com.l7tech.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.socket.LocalTcpPeerIdentifierFactory;
+import com.l7tech.security.socket.LocalTcpPeerIdentifier;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
@@ -46,6 +48,7 @@ import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
+import java.net.Socket;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
@@ -66,6 +69,9 @@ public class PolicyApplicationContext extends ProcessingContext {
     private static final int WSSC_PREEXPIRE_SEC = 30;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
+    private static final Map<Socket, Map<String, String>> socketCredentialCache =
+            Collections.synchronizedMap(new WeakHashMap<Socket, Map<String, String>>());
+
     private final Ssg ssg;
     private final RequestInterceptor requestInterceptor;
     private final PolicyAttachmentKey policyAttachmentKey;
@@ -82,6 +88,8 @@ public class PolicyApplicationContext extends ProcessingContext {
     private LoginCredentials requestCredentials = null;
     private boolean usedKerberosTicketReference = false;
     private String wsaNamespaceUri;
+    private Socket clientSocket = null;
+    private Map<String, String> clientSocketCredentials = null;
 
     // Policy settings, filled in by traversing policy tree, and which can all be rolled back by reset()
     private static class PolicySettings {
@@ -98,9 +106,18 @@ public class PolicyApplicationContext extends ProcessingContext {
         private String messageId = null;
         private Map pendingDecorations = new LinkedHashMap();
         public boolean useWsaMessageId;
+        private DomainIdInjectionFlags domainIdInjectionFlags = new DomainIdInjectionFlags();
+        private boolean ssgRequestedCompression = false;
     }
 
     private PolicySettings policySettings = new PolicySettings();
+
+    public static class DomainIdInjectionFlags {
+        public boolean enable = false;
+        public String userHeaderName;
+        public String domainHeaderName;
+        public String processHeaderName;
+    }
 
     /**
      * Create a new policy application context.  This holds information not specific to the request or response
@@ -921,7 +938,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             if (flags[flagChallenge])
                 throw new HttpChallengeRequiredException();
 
-            KerberosServiceTicket kst = client.getKerberosServiceTicket(KerberosClient.getServicePrincipalName(serviceName,hostName));
+            KerberosServiceTicket kst = client.getKerberosServiceTicket(KerberosClient.getServicePrincipalName(serviceName,hostName), false);
 
             setUsedKerberosServiceTicketReference(false);
             ssg.getRuntime().kerberosTicket(kst);
@@ -940,6 +957,52 @@ public class PolicyApplicationContext extends ProcessingContext {
             else {
                 throw new GeneralSecurityException("Could not get Kerberos Ticket", ke);
             }
+        }
+    }
+
+    /**
+     * Give this PAC access to the low level client socket.
+     * This is required to use {@link #getClientSocketCredentials}.
+     *
+     * @param clientSocket the client socket.
+     */
+    public void setClientSocket(Socket clientSocket) {
+        this.clientSocket = clientSocket;
+    }
+
+    /**
+     * Get the client socket credentials, if available.
+     * This requires that the raw client socket has been registered with this PAC using {@link #setClientSocket}.
+     *
+     * @return a Map that contains client socket credentials, or null if none are available.
+     *         <p/>
+     *         The Map keys are identifiers documented for {@link LocalTcpPeerIdentifier}.
+     */
+    public Map<String, String> getClientSocketCredentials() {
+        if (clientSocketCredentials != null)
+            return clientSocketCredentials;
+
+        Socket sock = this.clientSocket;
+        if (sock == null)
+            return null;
+
+        Map<String, String> ret = socketCredentialCache.get(sock);
+        if (ret != null)
+            return ret;
+
+        if (!LocalTcpPeerIdentifierFactory.isAvailable())
+            return null;
+
+        LocalTcpPeerIdentifier ident = LocalTcpPeerIdentifierFactory.createIdentifier();
+
+        try {
+            ident.identifyTcpPeer(sock);
+            this.clientSocketCredentials = ret = ident.getIdentifierMap();
+            socketCredentialCache.put(sock, ret);
+            return ret;
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to gather local client socket credentials: " + ExceptionUtils.getMessage(e), e);
+            return null;
         }
     }
 
@@ -1072,5 +1135,17 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public void setEncryptedKeySha1(String encryptedKeySha1) {
         this.encryptedKeySha1 = encryptedKeySha1;
+    }
+
+    public DomainIdInjectionFlags getDomainIdInjectionFlags() {
+        return policySettings.domainIdInjectionFlags;
+    }
+
+    public boolean isSsgRequestedCompression() {
+        return policySettings.ssgRequestedCompression;
+    }
+
+    public void setSsgRequestedCompression(boolean ssgRequestedCompression) {
+        this.policySettings.ssgRequestedCompression = ssgRequestedCompression;
     }
 }

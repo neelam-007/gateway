@@ -86,14 +86,17 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private DefaultComboBoxModel interfaceComboBoxModel;
     private DefaultListModel propertyListModel = new DefaultListModel();
     private List<String> toBeRemovedProperties = new ArrayList<String>();
+    private boolean isCluster = false;
 
-    public SsgConnectorPropertiesDialog(Frame owner, SsgConnector connector) {
+    public SsgConnectorPropertiesDialog(Frame owner, SsgConnector connector, boolean isCluster) {
         super(owner, DIALOG_TITLE);
+        this.isCluster = isCluster;
         initialize(connector);
     }
 
-    public SsgConnectorPropertiesDialog(Dialog owner, SsgConnector connector) {
+    public SsgConnectorPropertiesDialog(Dialog owner, SsgConnector connector, boolean isCluster) {
         super(owner, DIALOG_TITLE);
+        this.isCluster = isCluster;
         initialize(connector);
     }
 
@@ -333,6 +336,18 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         interfaceComboBoxModel = new DefaultComboBoxModel(entries.toArray());
         interfaceComboBox.setModel(interfaceComboBoxModel);
+
+        if(isCluster) {
+            interfaceComboBox.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    if(!INTERFACE_ANY.equals(interfaceComboBox.getSelectedItem())) {
+                        JOptionPane.showMessageDialog(SsgConnectorPropertiesDialog.this,
+                                "Using an interface other than \"" + INTERFACE_ANY + "\" with a cluster can have unexpected effects.",
+                                "Possible Input Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
+        }
     }
 
     public static class JCheckBoxListModel extends AbstractListModel {

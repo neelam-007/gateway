@@ -35,7 +35,15 @@ public abstract class LocalTcpPeerIdentifier {
     /** The name of the program that was executed to create the client process, or null or empty if not known or not relevant. */
     public static final String IDENTIFIER_PROGRAM = "program";
 
-
+    /**
+     * Check if all resources needed for this implementation to work are available.
+     *
+     * @return true iff. this implementation's {@link #identifyTcpPeer} could be expected to work in this environment.
+     */
+    public boolean isAvailable() {
+        return true;
+    }
+    
     /**
      * Attempt to identify the user that owns the process that owns the other side of the specified Socket,
      * which is expected to represent an already established TCP connection.
@@ -68,7 +76,15 @@ public abstract class LocalTcpPeerIdentifier {
         return Collections.unmodifiableSet(identifiers.keySet());
     }
 
-
+    /**
+     * Get the identifiers as a Map.
+     *
+     * @return the identifier map.  Never null, but will be empty unless a call to {@link #identifyTcpPeer} has succeeded.
+     */
+    public Map<String, String> getIdentifierMap() {
+        return Collections.unmodifiableMap(identifiers);
+    }
+    
     /**
      * Get the unique user identifier that was found in the last call to {@link #identifyTcpPeer(java.net.Socket)}.
      * <p/>

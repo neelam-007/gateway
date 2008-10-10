@@ -12,12 +12,15 @@ import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
+import java.sql.SQLException;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public interface AuditRecordManager extends EntityManager<AuditRecord, AuditRecordHeader> {
+    public static final String PROP_NAME = "name";
+    public static final String PROP_MSG = "message";
 
     enum SortProperty {
         TIME("millis"), MESSAGE("message"), LEVEL("strLvl");
@@ -84,4 +87,12 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, AuditReco
      * @throws FindException if an error occurs
      */
     Collection<AuditRecord> findPage( final SortProperty sortProperty, final boolean ascending, final int offset, final int count, final AuditSearchCriteria criteria ) throws FindException;
+
+    long getMinOid(long lowerLomit) throws SQLException;
+
+    public int deleteRangeByOid(final long start, final long end) throws SQLException;
+
+    public long getMaxTableSpace() throws FindException;
+    
+    public long getCurrentUsage() throws FindException;
 }

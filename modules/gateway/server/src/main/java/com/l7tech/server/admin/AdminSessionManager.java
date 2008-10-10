@@ -13,6 +13,8 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.LoginRequireClientCertificateException;
+import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -25,6 +27,7 @@ import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalGroupManager;
 import com.l7tech.server.identity.internal.InternalUserManager;
+import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.security.rbac.RoleManagerIdentitySource;
 import com.l7tech.server.ServerConfig;
@@ -35,7 +38,11 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
+import javax.security.auth.login.LoginException;
+import javax.security.auth.login.CredentialExpiredException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.logging.Level;
@@ -53,6 +60,7 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
     //- PUBLIC
 
     public AdminSessionManager( final ServerConfig config ) {
+        this.serverConfig = config;
         this.groupCache = new GroupCache( "PrincipalCache_unified", config );
     }
 
@@ -91,7 +99,7 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
      * @return The user or null if not authenticated.
      * @throws ObjectModelException If an error occurs during authentication.
      */
-    public User authenticate( final LoginCredentials creds ) throws ObjectModelException {
+    public User authenticate( final LoginCredentials creds ) throws ObjectModelException, LoginException {
         // Try internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers;
         synchronized(providerSync) {
@@ -99,23 +107,78 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
         }
         User user = null;
 
+        boolean needsClientCert = false;
+        IdentityProvider providerFoundUser = null;  //temp provider container to know which provider first failed to authenticate
         for (IdentityProvider provider : providers) {
             try {
-                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
-                User authdUser = authResult == null ? null : authResult.getUser();
-                if ( authdUser != null ) {
-                    //Validate the user , now authenticated so that we know all of their group roles
-                    checkPerms(authdUser);
-                    logger.info("Authenticated on " + provider.getConfig().getName());
-                    user = authdUser;
+                //exit loop if the user needs a client certificate to login
+                if (needsClientCert) {
                     break;
+                }
+
+                //verify if the client was assigned with a cert already and require to use it.  We only inforce this
+                //for internal identity provider
+                boolean useSTIG = serverConfig.getBooleanProperty("security.stig.enabled", true);
+                if (useSTIG) {
+                    if (creds.getFormat() == CredentialFormat.CLEARTEXT && hasClientCert(creds, provider)) {
+                        needsClientCert = true;
+                        throw new LoginRequireClientCertificateException();
+                    }
+                }
+
+                try {
+                    AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
+                    User authdUser = authResult == null ? null : authResult.getUser();
+                    if ( authdUser != null ) {
+                        //Validate the user , now authenticated so that we know all of their group roles
+                        checkPerms(authdUser);
+                        logger.info("Authenticated on " + provider.getConfig().getName());
+
+                        //Ensure password not expired
+                        if (PasswordEnforcerManager.isPasswordExpired(user) ) {
+                            throw new CredentialExpiredException("Password expired.");
+                        }
+
+                        user = authdUser;
+                        break;
+                    }
+                } catch ( BadCredentialsException bce ) {
+                    //we have found our first username with bad credentials, so we'll update the logon attempt
+                    //on this particular one and not on preceeding ones
+                    if ( providerFoundUser == null  ) {
+                        providerFoundUser = provider;
+                    }
                 }
             } catch (AuthenticationException e) {
                 logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
             }
         }
 
+        if (user == null) {
+            //if we have failed to authenticate this user from all provider, we'll need to update failed logon attempt
+            //for the first provider that found user with the same username
+            if (providerFoundUser != null) {
+                providerFoundUser.updateFailedLogonAttempt(creds);
+            }
+            if (needsClientCert) {
+                throw new LoginRequireClientCertificateException();
+            }
+        }
+
         return user;
+    }
+
+    /**
+     * Method to verify that a given login credentials already has a client certificate associated to the user already
+     * under the internal identity provider only.
+     *
+     * @param lc    The login credentials
+     * @param provider  The internal identity provider
+     * @return  TRUE if user has client certificate already
+     * @throws AuthenticationException
+     */
+    private boolean hasClientCert(LoginCredentials lc, IdentityProvider provider) throws AuthenticationException {
+        return provider.hasClientCert(lc);
     }
 
     /**
@@ -155,7 +218,11 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
 
                 if ( authenticatedUser instanceof InternalUser ) {
                     InternalUser internalUser = (InternalUser) authenticatedUser;
-                    internalUser.setCleartextPassword(newPassword);
+                    checkPerms(internalUser);
+                    PasswordEnforcerManager enforcer = new PasswordEnforcerManager(user, newPassword, HexUtils.encodePasswd(user.getLogin(), newPassword, HttpDigest.REALM), password);
+                    enforcer.isSTIGCompilance();
+                    ((InternalUser)user).setPasswordChanges(System.currentTimeMillis(), newPassword);
+                    ((InternalUser)user).setPasswordExpiry(PasswordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
                     ((InternalIdentityProvider)identityProvider).getUserManager().update(internalUser);
                     passwordUpdated = true;
                 } else {
@@ -186,6 +253,8 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
         String cookie = HexUtils.encodeBase64(bytes, true);
 
         sessionMap.put(cookie, new SessionHolder(authenticatedUser, cookie, sessionInfo));
+        if (logger.isLoggable(Level.FINE))
+            logger.log(Level.FINE, "Authenticated user {0}, setting admin session cookie: {1}", new String[]{authenticatedUser.getName(), cookie});
         return cookie;
     }
 
@@ -212,7 +281,10 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
     public synchronized User resumeSession( final String session ) throws AuthenticationException, ObjectModelException {
         if (session == null) throw new NullPointerException();
         SessionHolder holder = (SessionHolder)sessionMap.get(session);
-        if (holder == null) return null;
+        if (holder == null) {
+            logger.log(Level.WARNING, "Admin session/cookie not found: {0}.", session);
+            return null;
+        }
         holder.onUsed();
 
         User user = holder.getUser();
@@ -384,6 +456,7 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
     private final SecureRandom random = new SecureRandom();
     private final Object providerSync = new Object();
     private final GroupCache groupCache;
+    private final ServerConfig serverConfig;
 
     private Set<IdentityProvider> adminProviders;
 

@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.message.*;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -26,6 +27,7 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -36,15 +38,16 @@ import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
+import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceStatistics;
 import org.springframework.beans.factory.InitializingBean;
@@ -79,6 +82,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final AuditContext auditContext;
     private final ServerConfig serverConfig;
     private final TrafficLogger trafficLogger;
+    private SoapFaultManager soapFaultManager;
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicLong signedAttachmentMaxSize = new AtomicLong();
 
@@ -101,7 +105,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             ServiceMetricsManager metricsManager,
                             AuditContext auditContext,
                             ServerConfig serverConfig,
-                            TrafficLogger trafficLogger)
+                            TrafficLogger trafficLogger,
+                            SoapFaultManager soapFaultManager )
       throws IllegalArgumentException {
         if (sc == null) throw new IllegalArgumentException("Service Cache is required");
         if (pc == null) throw new IllegalArgumentException("Policy Cache is required");
@@ -111,6 +116,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (auditContext == null) throw new IllegalArgumentException("Audit Context is required");
         if (serverConfig == null) throw new IllegalArgumentException("Server Config is required");
         if (trafficLogger == null) throw new IllegalArgumentException("Traffic Logger is required");
+        if (soapFaultManager == null) throw new IllegalArgumentException("SoapFaultManager is required");
         this.serviceCache = sc;
         this.policyCache = pc;
         this.wssDecorator = wssd;
@@ -120,6 +126,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.auditContext = auditContext;
         this.serverConfig = serverConfig;
         this.trafficLogger = trafficLogger;
+        this.soapFaultManager = soapFaultManager;
         initSettings(SETTINGS_RECHECK_MILLIS);
     }
 
@@ -141,7 +148,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
+        throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException {
         return reallyProcessMessage(context);
     }
 
@@ -155,10 +162,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private AssertionStatus reallyProcessMessage(final PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
+        throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException, MessageProcessingSuspendedException {
         context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
         // License check hook
         licenseManager.requireFeature(GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR);
+
+        // no-processing mode check
+        if (Lock.INSTANCE.isSuspended()) {
+            throw new MessageProcessingSuspendedException(Lock.INSTANCE.getReason());
+        }
 
         final Message request = context.getRequest();
         final Message response = context.getResponse();
@@ -284,6 +296,30 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             status = serverPolicy.checkRequest(context);
             
+            // fail early if there are any (I/O) errors reading the response
+            MimeKnob mk;
+            try {
+                // attempts to read and stash the whole response
+                mk = (MimeKnob) response.getKnob(MimeKnob.class);
+                if (mk != null) mk.getFirstPart().getActualContentLength();
+            } catch (IOException e) {
+                // create fault to be sent
+                String fault = soapFaultManager.constructExceptionFault(e, context);
+
+                // there's no response message; substitute with the fault, so that the actual response that will be sent is audited
+                response.initialize(
+                    (context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) ?
+                    ContentTypeHeader.SOAP_1_2_DEFAULT : ContentTypeHeader.XML_DEFAULT, 
+                    fault.getBytes());
+
+                auditor.logAndAudit(MessageProcessingMessages.RESPONSE_IO_ERROR, e.getMessage());
+
+                // pass the exception up to the SOAP servlet
+                throw new MessageResponseIOException(fault, e);
+            } catch (NoSuchPartException e) {
+                throw new RuntimeException(e); // The first part should always be available
+            }
+
             // Execute deferred actions for request, then response
             if (status == AssertionStatus.NONE) {
                 status = AssertionStatus.UNDEFINED;
@@ -521,7 +557,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
     private static final Level DEFAULT_MESSAGE_AUDIT_LEVEL = Level.INFO;
     private static final AuditDetailMessage.Hint HINT_SAVE_REQUEST = AuditDetailMessage.Hint.getHint("MessageProcessor.saveRequest");
-    private static final AuditDetailMessage.Hint HINT_SAVE_RESPONSE = AuditDetailMessage.Hint.getHint("MessageProcessor.saveRequest");
+    private static final AuditDetailMessage.Hint HINT_SAVE_RESPONSE = AuditDetailMessage.Hint.getHint("MessageProcessor.saveResponse");
 
     private Auditor auditor;
     final Logger logger = Logger.getLogger(getClass().getName());
@@ -629,7 +665,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     context.setAuditLevel(Level.WARNING);
                     SoapFaultLevel cfault = new SoapFaultLevel();
                     cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-                    cfault.setFaultTemplate(SoapFaultUtils.badKeyInfoFault(getIncomingURL(context)));
+                    cfault.setFaultTemplate(SoapFaultUtils.badKeyInfoFault(context.getService() != null ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN, getIncomingURL(context)));
                     context.setFaultlevel(cfault);
                     assertionStatusHolder[0] = AssertionStatus.FAILED;
                     return false;
@@ -667,5 +703,24 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             return true;
         }
+    }
+
+    /**
+     * Global flag used to put the SSG in a "no-processing" mode.
+     */
+    public static enum Lock {
+        INSTANCE;
+
+        private boolean suspended = false;
+        private String reason = "";
+
+        public boolean isSuspended() { return suspended; }
+
+        public void suspend() { suspended = true; reason = ""; }
+        public void suspend(String reason) { suspended = true; this.reason = reason; }
+
+        public void resume() { suspended = false; }
+
+        public String getReason() { return reason; }
     }
 }

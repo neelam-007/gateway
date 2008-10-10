@@ -161,6 +161,9 @@
                 <L7p:WsiSamlAssertion/>
                 <L7p:SamlIssuer/>
                 <L7p:Include/>
+                <L7p:WssVersion/>
+                <L7p:PreemptiveCompression/>
+                <L7p:RemoteDomainIdentityInjection/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

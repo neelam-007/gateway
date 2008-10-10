@@ -21,11 +21,11 @@ public class GroupPrincipal implements Principal {
     
     public GroupPrincipal(String name, IdentityHeader groupHeader){
         this.name = name;
-        this.groupHeader = new IdentityHeader(groupHeader);
+        this.groupHeader = new IdentityHeader(groupHeader.getProviderOid(), groupHeader);
     }
 
     public IdentityHeader getGroupHeader() {
-        return new IdentityHeader(groupHeader);
+        return new IdentityHeader(groupHeader.getProviderOid(), groupHeader);
     }
 
     public String getName() {

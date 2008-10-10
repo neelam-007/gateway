@@ -36,8 +36,14 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
      */
     public void afterPropertiesSet() throws Exception {
         String keytabBase64 = config.getPropertyCached(KERBEROS_KEYTAB_PROP);
-        if ( keytabBase64 != null) {
-            updateKerberosConfig( keytabBase64 );
+        String realm = config.getProperty(ServerConfig.PARAM_KERBEROS_CONFIG_REALM);
+        String kdc = config.getProperty(ServerConfig.PARAM_KERBEROS_CONFIG_KDC);
+
+        synchronized( configSync ) {
+            this.keytabB64 = keytabBase64;
+            this.realm = realm;
+            this.kdc = kdc;
+            updateKerberosConfig( keytabBase64, kdc, realm );
         }
     }
 
@@ -47,8 +53,37 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
      * @param evt the property change event
      */
     public void propertyChange(PropertyChangeEvent evt) {
+        boolean updated = false;
+
         if ( KERBEROS_KEYTAB_PROP.equals(evt.getPropertyName() ) && evt.getNewValue() != null ) {
-            updateKerberosConfig( evt.getNewValue().toString() );                    
+            updated = true;
+            synchronized( configSync ) {
+                keytabB64 = evt.getNewValue().toString();
+            }
+        } else if (ServerConfig.PARAM_KERBEROS_CONFIG_REALM.equals(evt.getPropertyName())) {
+            updated = true;
+            synchronized( configSync ) {
+                if (evt.getNewValue() == null) {
+                    realm = null;
+                } else {
+                    realm = evt.getNewValue().toString();
+                }
+            }
+        } else if ((ServerConfig.PARAM_KERBEROS_CONFIG_KDC).equals(evt.getPropertyName()) ) {
+            updated = true;
+            synchronized( configSync ) {
+                if (evt.getNewValue() == null) {
+                    kdc = null;
+                } else {
+                    kdc = evt.getNewValue().toString();
+                }
+            }
+        }
+
+        if ( updated ) {
+            synchronized( configSync ) {
+                updateKerberosConfig( keytabB64, kdc, realm );
+            }
         }
     }
 
@@ -61,22 +96,28 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
     private final ServerConfig config;
     private final MasterPasswordManager clusterEncryptionManager;
 
+    private String keytabB64;
+    private String kdc;
+    private String realm;
+
     /**
      * Re-create the Kerberos config file "krb5.conf" based on the updated cluster properties for
      * Realm / KDC.
      */
-    private void updateKerberosConfig( final String keytabB64 ) {
-        synchronized( configSync ) {
-            logger.config("(Re)Generating kerberos configuration.");
-            try {
-                KerberosUtils.configureKerberos( HexUtils.decodeBase64(new String(clusterEncryptionManager.decryptPassword(keytabB64))) );
-            } catch (KerberosException ke) {
-                logger.log(Level.WARNING, "Unable to update Kerberos config following cluster property change.", ke);
-            } catch (ParseException pe) {
-                logger.log(Level.WARNING, "Unable to update Kerberos config following cluster property change (decryption failed) '"+pe.getMessage()+"'.", ExceptionUtils.getDebugException(pe));
-            } catch (IOException ke) {
-                logger.log(Level.WARNING, "Unable to update Kerberos config following cluster property change (invalid data).", ExceptionUtils.getDebugException(ke));
+    private void updateKerberosConfig( final String keytabB64, final String kdc, final String realm ) {
+        logger.config("(Re)Generating kerberos configuration.");
+        try {
+            byte[] keytab = null;
+            if ( keytabB64 != null ) {
+                keytab = HexUtils.decodeBase64(new String(clusterEncryptionManager.decryptPassword(keytabB64)));
             }
+            KerberosUtils.configureKerberos( keytab, kdc, realm );
+        } catch (KerberosException ke) {
+            logger.log(Level.WARNING, "Unable to update Kerberos config following cluster property change.", ke);
+        } catch (ParseException pe) {
+            logger.log(Level.WARNING, "Unable to update Kerberos config following cluster property change (decryption failed) '"+pe.getMessage()+"'.", ExceptionUtils.getDebugException(pe));
+        } catch (IOException ke) {
+            logger.log(Level.WARNING, "Unable to update Kerberos config following cluster property change (invalid data).", ExceptionUtils.getDebugException(ke));
         }
     }
 }

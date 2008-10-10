@@ -18,7 +18,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
@@ -59,7 +59,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     private static MessageProcessor messageProcessor = null;
     private static AuditContext auditContext = null;
     private static SoapFaultManager soapFaultManager = null;
-    private static ClusterPropertyManager clusterPropertyManager = null;
+    private static ClusterPropertyCache clusterPropertyCache = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
 
     /**
@@ -166,7 +166,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
-        clusterPropertyManager = (ClusterPropertyManager) applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+        clusterPropertyCache = (ClusterPropertyCache) applicationContext.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
         ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
@@ -514,7 +514,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         try {
             context.setAuditContext(auditContext);
             context.setSoapFaultManager(soapFaultManager);
-            context.setClusterPropertyManager(clusterPropertyManager);
+            context.setClusterPropertyCache(clusterPropertyCache);
 
             //TODO cleanup cookie init?
             context.addCookie(new HttpCookie("cookie", "invalue", 0, null, null));

@@ -9,6 +9,7 @@ import javax.swing.*;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.DialogDisplayer;
 
 /**
  * Dialog for changing a password.
@@ -123,6 +124,7 @@ public class ChangePasswordDialog extends JDialog {
     private JButton cancelButton;
     private JLabel infoLabel;
     private JPanel mainPanel;
+    private JButton helpBtn;
 
     private final boolean usernameEditable;
     private String username;
@@ -168,6 +170,20 @@ public class ChangePasswordDialog extends JDialog {
         cancelButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
                 dispose();
+            }
+        });
+
+        helpBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                final PasswordHelpDialog dialog = new PasswordHelpDialog();
+                Utilities.centerOnScreen(dialog);
+                DialogDisplayer.display(dialog, new Runnable() {
+                    public void run() {
+                        if (!dialog.isOk()) {
+                            dispose();
+                        }
+                    }
+                });
             }
         });
 

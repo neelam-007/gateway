@@ -166,6 +166,8 @@ public final class ConstructorInvocation {
             throws ClassNotFoundException, WrongSuperclassException,
                    AbstractClassException, NoMatchingPublicConstructorException
     {
+        if (prospectClassname == null)
+            throw new NullPointerException("prospectClassname is required");
         //noinspection unchecked
         Class<OUT> prospectClass = (Class<OUT>)Class.forName(prospectClassname, true, loader);
         if (!requiredSuperclass.isAssignableFrom(prospectClass))

@@ -297,7 +297,8 @@ Section "Uninstall"
   ExecWait '"$INSTDIR\bin\cleanup_services.cmd"' $0
   DetailPrint "SSG Services removal returned with code $0"
 
-  RMDir /r "$INSTDIR"
+  ;Disabled: Might erase entire disk if INSTDIR is empty -- see Bug #5544
+  ;RMDir /r "$INSTDIR"
 
   ; Remove shortcut
   ReadRegStr ${TEMP} "${MUI_STARTMENUPAGE_REGISTRY_ROOT}" "${MUI_STARTMENUPAGE_REGISTRY_KEY}" "${MUI_STARTMENUPAGE_REGISTRY_VALUENAME}"

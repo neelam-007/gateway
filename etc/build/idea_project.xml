@@ -31,6 +31,7 @@
             <entry name="?*.ks"/>
             <entry name="?*.pfx"/>
             <entry name="?*.index"/>
+            <entry name="?*.sql"/>
         </wildcardResourcePatterns>
     </component>
     <component name="JavacSettings">

@@ -9,6 +9,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.PersistentUserManagerImpl;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.logon.LogonInfoManager;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,8 +34,9 @@ public class InternalUserManagerImpl
     private final RoleManager roleManager;
 
     public InternalUserManagerImpl(final RoleManager roleManager,
-                                   final ClientCertManager clientCertManager) {
-        super( clientCertManager );
+                                   final ClientCertManager clientCertManager,
+                                   final LogonInfoManager logonInfoManager) {
+        super( clientCertManager, logonInfoManager );
         this.roleManager = roleManager;
     }
 
@@ -49,7 +51,7 @@ public class InternalUserManagerImpl
     @Transactional(propagation=Propagation.SUPPORTS)
     public IdentityHeader userToHeader(InternalUser user) {
         InternalUser imp = cast(user);
-        return new IdentityHeader(imp.getProviderId(), imp.getId(), EntityType.USER, imp.getLogin(), null);
+        return new IdentityHeader(imp.getProviderId(), imp.getId(), EntityType.USER, imp.getLogin(), null, imp.getName());
     }
 
     public InternalUser reify(UserBean bean) {
@@ -62,6 +64,8 @@ public class InternalUserManagerImpl
         iu.setOid(bean.getId() == null ? InternalUser.DEFAULT_OID : Long.valueOf(bean.getId()));
         iu.setHashedPassword(bean.getHashedPassword());
         iu.setSubjectDn(bean.getSubjectDn());
+        iu.setChangePassword(bean.isChangePassword());
+        iu.setPasswordExpiry(bean.getPasswordExpiry());
         return iu;
     }
 
@@ -104,7 +108,7 @@ public class InternalUserManagerImpl
 
         // if password has changed, any cert should be revoked
         if (!originalPasswd.equals(newPasswd)) {
-            logger.info("Revoking cert for updatedUser " + originalUser.getLogin() + " because he is changing his passwd.");
+            logger.info("Revoking cert for updatedUser " + originalUser.getLogin() + " because he is changing his password.");
             // must revoke the cert
 
             revokeCert(originalUser);
@@ -141,7 +145,7 @@ public class InternalUserManagerImpl
 
 /*
     @Override
-    protected Map<String, Object> getUniqueAttributeMap(InternalUser entity) {
+    protected Map<String, Object> getUniqueConstraints(InternalUser entity) {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("login", entity.getLogin());
         map.put("providerId", entity.getProviderId());

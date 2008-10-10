@@ -1267,7 +1267,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     public Action getUDDIImportAction() {
-        return new SecureAction(null, SecureAction.LIC_AUTH_ASSERTIONS) {
+        return new SecureAction(null, "set:core") {
             @Override
             public boolean isAuthorized() {
                 PublishedService svc = getPublishedService();

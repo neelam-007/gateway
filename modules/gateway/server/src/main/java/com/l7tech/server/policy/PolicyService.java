@@ -44,13 +44,13 @@ import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.MissingRequiredElementException;
 import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.xml.soap.SoapFaultUtils;
-import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.*;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -208,7 +208,6 @@ public class PolicyService extends ApplicationObjectSupport {
         return XmlUtil.stringToDocument(wspWriter.getPolicyXmlAsString());
     }
 
-
     /**
      * The filtered policy is contained in the soapResponse
      */
@@ -219,6 +218,7 @@ public class PolicyService extends ApplicationObjectSupport {
         final XmlKnob reqXml = context.getRequest().getXmlKnob();
         final SecurityKnob reqSec = context.getRequest().getSecurityKnob();
         final Message response = context.getResponse();
+        final SoapVersion soapVersion = (context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) ? SoapVersion.SOAP_1_2 : SoapVersion.SOAP_1_1;
 
         // We need a Document
         Document requestDoc;
@@ -234,7 +234,7 @@ public class PolicyService extends ApplicationObjectSupport {
                                                   securityTokenResolver);
             reqSec.setProcessorResult(wssOutput);
         } catch (Exception e) {
-            response.initialize(exceptionToFault(e));
+            response.initialize(exceptionToFault(soapVersion, e));
             context.setPolicyResult(AssertionStatus.BAD_REQUEST);
             return;
         }
@@ -246,7 +246,7 @@ public class PolicyService extends ApplicationObjectSupport {
             policyId = getRequestedPolicyId(requestDoc);
             relatesTo = SoapUtil.getL7aMessageId(requestDoc);
         } catch (InvalidDocumentFormatException e) {
-            response.initialize(exceptionToFault(e));
+            response.initialize(exceptionToFault(soapVersion, e));
             context.setPolicyResult(AssertionStatus.BAD_REQUEST);
             return;
         }
@@ -259,14 +259,19 @@ public class PolicyService extends ApplicationObjectSupport {
             logger.info("cannot find target policy from id: " + policyId);
             Document fault;
             try {
-                fault = SoapFaultUtils.generateSoapFaultDocument(SoapUtil.FC_SERVER,
+                String soapProtocol = null;
+                if(context.getService() != null) {
+                    soapProtocol = context.getService().getSoapVersion().getProtocol();
+                }
+                fault = SoapFaultUtils.generateSoapFaultDocument(soapVersion,
+                                                                 SoapUtil.FC_SERVER,
                                                                  "policy " + policyId + " not found",
                                                                  null,
                                                                  "");
             } catch (IOException e) {
-                fault = exceptionToFault(e);
+                fault = exceptionToFault(soapVersion, e);
             } catch (SAXException e) {
-                fault = exceptionToFault(e);
+                fault = exceptionToFault(soapVersion, e);
             }
             response.initialize(fault);
             context.setPolicyResult(AssertionStatus.BAD_REQUEST);
@@ -294,13 +299,13 @@ public class PolicyService extends ApplicationObjectSupport {
                 status = policyPolicy.checkRequest(context);
                 context.setPolicyResult(status);
             } catch (IOException e) {
-                response.initialize(exceptionToFault(e));
-                logger.log(Level.WARNING, "problem running policy download policy", e);
+                response.initialize(exceptionToFault(soapVersion, e));
+                logger.log(Level.WARNING, "problem running policy download policy", ExceptionUtils.getDebugException(e));
                 context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
             } catch (PolicyAssertionException e) {
-                response.initialize(exceptionToFault(e));
-                logger.log(Level.WARNING, "problem running policy download policy", e);
+                response.initialize(exceptionToFault(soapVersion, e));
+                logger.log(Level.WARNING, "problem running policy download policy", ExceptionUtils.getDebugException(e));
                 context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
             }
@@ -312,18 +317,18 @@ public class PolicyService extends ApplicationObjectSupport {
                 User user = context.getLastAuthenticatedUser();
                 policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, false);
             } catch (FilteringException e) {
-                response.initialize(exceptionToFault(e));
-                logger.log(Level.WARNING, "problem preparing response", e);
+                response.initialize(exceptionToFault(soapVersion, e));
+                logger.log(Level.WARNING, "problem preparing response: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
             } catch (IOException e) {
-                response.initialize(exceptionToFault(e));
-                logger.log(Level.WARNING, "problem preparing response", e);
+                response.initialize(exceptionToFault(soapVersion, e));
+                logger.log(Level.WARNING, "problem preparing response: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
             } catch (SAXException e) {
-                response.initialize(exceptionToFault(e));
-                logger.log(Level.WARNING, "problem preparing response", e);
+                response.initialize(exceptionToFault(soapVersion, e));
+                logger.log(Level.WARNING, "problem preparing response: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
             }
@@ -332,16 +337,33 @@ public class PolicyService extends ApplicationObjectSupport {
         if (policyDoc == null) {
             SoapFaultLevel fault = new SoapFaultLevel();
             fault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-            fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                    "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
-                    "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
-                    "    <soapenv:Body>\n" +
-                    "        <soapenv:Fault>\n" +
-                    "            <faultcode>Server</faultcode>\n" +
-                    "            <faultstring>unauthorized policy download</faultstring>\n" +
-                    "        </soapenv:Fault>\n" +
-                    "    </soapenv:Body>\n" +
-                    "</soapenv:Envelope>");
+            if(soapVersion == SoapVersion.SOAP_1_2) {
+                fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\" " +
+                        "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <soapenv:Code>\n" +
+                        "                <soapenv:Value>soapenv:Receiver</soapenv:Value>\n" +
+                        "            </soapenv:Code>\n" +
+                        "            <soapenv:Reason>\n" +
+                        "                <soapenv:Text xml:lang=\"en-US\">unauthorized policy download</soapenv:Text>\n" +
+                        "            </soapenv:Reason>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>");
+            } else {
+                fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
+                        "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultstring>unauthorized policy download</faultstring>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>");
+            }
             context.setFaultlevel(fault);
             context.setPolicyResult(AssertionStatus.AUTH_FAILED);
 
@@ -354,12 +376,12 @@ public class PolicyService extends ApplicationObjectSupport {
             response.initialize(wrapFilteredPolicyInResponse(policyDoc, policyVersion, relatesTo, signResponse));
             context.setPolicyResult(AssertionStatus.NONE);
         } catch (GeneralSecurityException e) {
-            response.initialize(exceptionToFault(e));
-            logger.log(Level.WARNING, "problem preparing response", e);
+            response.initialize(exceptionToFault(soapVersion, e));
+            logger.log(Level.WARNING, "problem preparing response: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             context.setPolicyResult(AssertionStatus.SERVER_ERROR);
         } catch (DecoratorException e) {
-            response.initialize(exceptionToFault(e));
-            logger.log(Level.WARNING, "problem preparing response", e);
+            response.initialize(exceptionToFault(soapVersion, e));
+            logger.log(Level.WARNING, "problem preparing response: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             context.setPolicyResult(AssertionStatus.SERVER_ERROR);
         }
     }
@@ -444,14 +466,15 @@ public class PolicyService extends ApplicationObjectSupport {
         return serviceId;
     }
 
-    private Document exceptionToFault(Exception e) {
-        logger.log(Level.INFO, e.getMessage(), e);
+    private Document exceptionToFault(SoapVersion soapVersion, Exception e) {
+        logger.log(Level.FINE, "Building fault due to: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         try {
             Document fault;
             if (e instanceof SoapFaultDetail) {
-                fault = SoapFaultUtils.generateSoapFaultDocument((SoapFaultDetail)e, SoapUtil.FC_SERVER);
+                fault = SoapFaultUtils.generateSoapFaultDocument(soapVersion, (SoapFaultDetail)e, SoapUtil.FC_SERVER);
             } else {
-                fault = SoapFaultUtils.generateSoapFaultDocument(SoapUtil.FC_SERVER,
+                fault = SoapFaultUtils.generateSoapFaultDocument(soapVersion,
+                                                                 SoapUtil.FC_SERVER,
                                                                  e.getMessage(),
                                                                  null,
                                                                  e.getClass().getName());

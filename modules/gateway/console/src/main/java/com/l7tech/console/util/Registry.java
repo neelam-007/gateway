@@ -6,11 +6,13 @@ import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.admin.FolderAdmin;
+import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
@@ -69,6 +71,11 @@ public abstract class Registry {
     /**
      * @return the {@link IdentityAdmin} implementation
      */
+    public abstract AdminLogin getAdminLogin();
+
+    /**
+     * @return the {@link IdentityAdmin} implementation
+     */
     public abstract IdentityAdmin getIdentityAdmin();
 
     /**
@@ -123,6 +130,11 @@ public abstract class Registry {
     public abstract TransportAdmin getTransportAdmin();
 
     /**
+     * @return the email listener admin interface implementation.
+     */
+    public abstract EmailListenerAdmin getEmailListenerAdmin();
+
+    /**
      * @return the Policy admin interface implementation.
      */
     public abstract PolicyAdmin getPolicyAdmin();
@@ -157,6 +169,10 @@ public abstract class Registry {
 
         public boolean isAdminContextPresent() {
             return false;
+        }
+
+        public AdminLogin getAdminLogin() {
+            return null;
         }
 
         public IdentityAdmin getIdentityAdmin() {
@@ -218,6 +234,10 @@ public abstract class Registry {
         }
 
         public TransportAdmin getTransportAdmin() {
+            return null;
+        }
+
+        public EmailListenerAdmin getEmailListenerAdmin() {
             return null;
         }
 

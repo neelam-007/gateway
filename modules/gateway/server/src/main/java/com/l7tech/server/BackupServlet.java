@@ -70,7 +70,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
     }
 
     protected SsgConnector.Endpoint getRequiredEndpoint() {
-        return SsgConnector.Endpoint.BACKUP;
+        return SsgConnector.Endpoint.ADMIN_APPLET;
     }
 
     public void init(ServletConfig config) throws ServletException {

@@ -66,6 +66,8 @@ public class NewInternalUserDialog extends JDialog {
     private boolean passwordFieldFilled = false;
     private boolean passwordConfirmFieldFilled = false;
 
+    private JCheckBox forceChangePassword;
+
     /**
      * Create a new NewInternalUserDialog fdialog for a given Company
      *
@@ -230,10 +232,26 @@ public class NewInternalUserDialog extends JDialog {
         additionalProperties.setBorder(null);
         panel.add(additionalProperties, constraints);
 
+        constraints = new GridBagConstraints();
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 5;
+        constraints.gridwidth = 2;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 0.0;
+        constraints.insets = new Insets(12, 9, 0, 0);
+        forceChangePassword = new JCheckBox(resources.getString("forceChangePassword.label"));
+        forceChangePassword.setSelected(true);
+        forceChangePassword.setToolTipText(resources.getString("forceChangePassword.tooltip"));
+        forceChangePassword.setHorizontalTextPosition(SwingConstants.LEADING);
+        panel.add(forceChangePassword, constraints);
+
+
         // button panel
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
-        constraints.gridy = 5;
+        constraints.gridy = 6;
         constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
@@ -245,7 +263,7 @@ public class NewInternalUserDialog extends JDialog {
         // bottom filler
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
-        constraints.gridy = 6;
+        constraints.gridy = 7;
         constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.CENTER;
@@ -502,6 +520,7 @@ public class NewInternalUserDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.USER);
                             header.setName(user.getName());
+                            user.setChangePassword(forceChangePassword.isSelected());
                             final String userId =
                                     Registry.getDefault().getIdentityAdmin().saveUser(
                                             IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID,

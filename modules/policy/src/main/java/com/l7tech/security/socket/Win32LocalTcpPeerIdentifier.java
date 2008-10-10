@@ -16,19 +16,11 @@ class Win32LocalTcpPeerIdentifier extends LocalTcpPeerIdentifier {
     private static final Logger logger = Logger.getLogger(Win32LocalTcpPeerIdentifier.class.getName());
 
     @SuppressWarnings({"UnusedDeclaration"})
-    private int pid;             // Set by native method
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    private int sid;             // Set by native method
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    private String username;     // Set by native method
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    private String domain;       // Set by native method
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    private String program;      // Set by native method
+    public int pid;             // Set by native method
+    public int sid;             // Set by native method
+    public String username;     // Set by native method
+    public String domain;       // Set by native method
+    public String program;      // Set by native method
 
 
     Win32LocalTcpPeerIdentifier() {
@@ -45,8 +37,8 @@ class Win32LocalTcpPeerIdentifier extends LocalTcpPeerIdentifier {
         if (!haveNativeLib)
             throw new UnsatisfiedLinkError("Win32LocalTcpPeerIdentifier is not available on this system");
 
-        final long longsock = sockAddr == null ? 0 : InetAddressUtil.toLong(sockAddr);
-        if (!nativeIdentifyTcpPeer(longsock, includeAllLoopback, sockPort, InetAddressUtil.toLong(peerAddr), peerPort))
+        final long longsock = sockAddr == null ? 0 : InetAddressUtil.ipv4ToLong(sockAddr);
+        if (!nativeIdentifyTcpPeer(longsock, includeAllLoopback, sockPort, InetAddressUtil.ipv4ToLong(peerAddr), peerPort))
             return false;
 
         putIdentifier(IDENTIFIER_PID, String.valueOf(pid));
@@ -67,7 +59,7 @@ class Win32LocalTcpPeerIdentifier extends LocalTcpPeerIdentifier {
      *         <b>false</b> if the service is unavailable.  Instances of this class can be created but
      *         {@link #identifyTcpPeer} will always throw UnsatisfiedLinkError.
      */
-    public static boolean isAvailable() {
+    public boolean isAvailable() {
         return haveNativeLib;
     }
 
@@ -125,7 +117,7 @@ class Win32LocalTcpPeerIdentifier extends LocalTcpPeerIdentifier {
             System.loadLibrary("peerident");
             worked = true;
         } catch (Throwable t) {
-            logger.log(Level.INFO, "Win32 peer ident services unavailable: Unable to load and initialize native library: " +
+            logger.log(Level.WARNING, "Win32 peer ident services unavailable: Unable to load and initialize native library: " +
                     ExceptionUtils.getMessage(t), t);
         }
         haveNativeLib = worked;

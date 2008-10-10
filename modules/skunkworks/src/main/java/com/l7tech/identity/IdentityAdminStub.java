@@ -10,13 +10,6 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.PersistentUser;
-import com.l7tech.identity.User;
-import com.l7tech.identity.GroupMembership;
-import com.l7tech.identity.PersistentGroup;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -176,6 +169,10 @@ public class IdentityAdminStub implements IdentityAdmin {
         return null; // TODO ?
     }
 
+    public boolean validateSTIGCompilance(User user, String newPassword, String oldPassword) throws InvalidPasswordException {
+        return false;
+    }
+    
     public void revokeCert(User user) throws UpdateException, ObjectNotFoundException {
     }
 
@@ -264,4 +261,6 @@ public class IdentityAdminStub implements IdentityAdmin {
         return out;
     }
 
+    public void resetLogonFailCount(User user) throws FindException, UpdateException {
+    }
 }

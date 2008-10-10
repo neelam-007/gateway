@@ -13,15 +13,14 @@ import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.PersistentUserManagerImpl;
+import com.l7tech.server.logon.LogonInfoManager;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * The {@link com.l7tech.identity.UserManager} for {@link FederatedIdentityProvider}s.
@@ -34,8 +33,8 @@ public class FederatedUserManagerImpl
         extends PersistentUserManagerImpl<FederatedUser, FederatedGroup, FederatedUserManager, FederatedGroupManager>
         implements FederatedUserManager
 {
-    public FederatedUserManagerImpl( final ClientCertManager clientCertManager ) {
-        super(clientCertManager);
+    public FederatedUserManagerImpl( final ClientCertManager clientCertManager, LogonInfoManager logonInfoManager ) {
+        super(clientCertManager, logonInfoManager);
     }
 
     public void configure(FederatedIdentityProvider provider) {
@@ -44,7 +43,7 @@ public class FederatedUserManagerImpl
 
     @Transactional(propagation=Propagation.SUPPORTS)
     public IdentityHeader userToHeader(FederatedUser user ) {
-        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getName(), null);
+        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getName(), null, user.getName());
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -151,11 +150,11 @@ public class FederatedUserManagerImpl
     }
 
     @Override
-    protected Map<String, Object> getUniqueAttributeMap(FederatedUser entity) {
+    protected Collection<Map<String,Object>> getUniqueConstraints(FederatedUser entity) {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("providerId", entity.getProviderId());
         map.put("name", entity.getName());
-        return map;
+        return Arrays.asList(map);
     }
 
     @Override

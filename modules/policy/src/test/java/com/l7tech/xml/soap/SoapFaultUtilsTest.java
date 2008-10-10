@@ -49,7 +49,7 @@ public class SoapFaultUtilsTest extends TestCase {
             exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", faultDetails);
         }
 
-        String fault = SoapFaultUtils.generateSoapFaultXml(faultCode, faultString, exceptiondetails, faultActor);
+        String fault = SoapFaultUtils.generateSoapFaultXml(SoapVersion.SOAP_1_1, faultCode, faultString, exceptiondetails, faultActor);
         logger.info("Raw result:\n" + fault);
         Document output = XmlUtil.stringToDocument(fault);
         logger.info("Parsed result:\n" + XmlUtil.nodeToFormattedString(output));

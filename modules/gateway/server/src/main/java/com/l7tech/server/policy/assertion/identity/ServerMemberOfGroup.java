@@ -7,12 +7,14 @@ package com.l7tech.server.policy.assertion.identity;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Logger;
@@ -43,7 +45,12 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
         if (cg != null && !isStale(cg.cacheTime)) {
             group = cg.group;
         } else {
-            GroupManager gman = getIdentityProvider().getGroupManager();
+            GroupManager gman = null;
+            try {
+                gman = getIdentityProvider().getGroupManager();
+            } catch (ObjectNotFoundException e) {
+                auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            }
             if (_data.getGroupId() != null) {
                 group = gman.findByPrimaryKey(_data.getGroupId());
             }
@@ -65,14 +72,25 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
      * is a member of the <code>Group</code> with which this assertion was initialized.
      */
     public AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
+        GroupManager gman;
         try {
+            gman = getIdentityProvider().getGroupManager();
+        } catch (ObjectNotFoundException e) {
+            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.UNAUTHORIZED;
+        } catch (FindException e) {
+            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.UNAUTHORIZED;
+        }
+
+        try {
+
             Group targetGroup = getGroup(context);
             if (targetGroup == null) {
                 auditor.logAndAudit(AssertionMessages.GROUP_NOTEXIST);
                 return AssertionStatus.UNAUTHORIZED;
             }
 
-            GroupManager gman = getIdentityProvider().getGroupManager();
             Boolean wasMember = authResult.getCachedGroupMembership(targetGroup);
             if (wasMember == null) {
                 if (authResult.getUser() != null &&

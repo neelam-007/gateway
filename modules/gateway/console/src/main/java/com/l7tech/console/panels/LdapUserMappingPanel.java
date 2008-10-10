@@ -83,6 +83,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
             userMapping.setObjClass(objectClass.getText());
             userMapping.setNameAttrName(nameAttribute.getText());
             userMapping.setEmailNameAttrName(emailAttribute.getText());
+            userMapping.setUserCertAttrName(certAttribute.getText());
             userMapping.setFirstNameAttrName(firstNameAttribute.getText());
             userMapping.setLastNameAttrName(lastNameAttribute.getText());
             userMapping.setLoginAttrName(loginNameAttribute.getText());
@@ -223,6 +224,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
 
             UserMappingConfig userMapping = (UserMappingConfig) settings;
             emailAttribute.setText(userMapping.getEmailNameAttrName());
+            certAttribute.setText(userMapping.getUserCertAttrName());
             firstNameAttribute.setText(userMapping.getFirstNameAttrName());
             lastNameAttribute.setText(userMapping.getLastNameAttrName());
             loginNameAttribute.setText(userMapping.getLoginAttrName());
@@ -250,6 +252,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
      */
     private void clearDisplay() {
         emailAttribute.setText("");
+        certAttribute.setText("");
         firstNameAttribute.setText("");
         lastNameAttribute.setText("");
         loginNameAttribute.setText("");
@@ -307,6 +310,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
 
     private void enableUserMappingTextFields(boolean enable) {
         emailAttribute.setEnabled(enable);
+        certAttribute.setEnabled(enable);
         firstNameAttribute.setEnabled(enable);
         lastNameAttribute.setEnabled(enable);
         loginNameAttribute.setEnabled(enable);
@@ -519,6 +523,8 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         lastNameAttribute = new JTextField();
         emailAttributeLabel = new JLabel();
         emailAttribute = new JTextField();
+        certAttributeLabel = new JLabel();
+        certAttribute = new JTextField();
 
 
         /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
@@ -684,11 +690,29 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
         userAttributePanel.add(emailAttribute, gridBagConstraints);
 
+		certAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
+        certAttributeLabel.setText("Certificate: ");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 11;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        userAttributePanel.add(certAttributeLabel, gridBagConstraints);
+
+        certAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
+        certAttribute.setToolTipText("The name of the LDAP attribute containing the X.509 certificate for this user (optional)");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 11;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
+        userAttributePanel.add(certAttribute, gridBagConstraints);
+
         kerberosAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
         kerberosAttributeLabel.setText(resources.getString("kerberosAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridy = 12;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         userAttributePanel.add(kerberosAttributeLabel, gridBagConstraints);
@@ -697,7 +721,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         kerberosAttribute.setToolTipText(resources.getString("kerberosAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridy = 12;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
         userAttributePanel.add(kerberosAttribute, gridBagConstraints);
@@ -706,7 +730,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         kerberosEnterpriseAttributeLabel.setText(resources.getString("kerberosEnterpriseAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 12;
+        gridBagConstraints.gridy = 13;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         userAttributePanel.add(kerberosEnterpriseAttributeLabel, gridBagConstraints);
@@ -715,7 +739,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         kerberosEnterpriseAttribute.setToolTipText(resources.getString("kerberosEnterpriseAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 12;
+        gridBagConstraints.gridy = 13;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
         userAttributePanel.add(kerberosEnterpriseAttribute, gridBagConstraints);
@@ -856,6 +880,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private JLabel attributeTitleLabel;
     private JLabel firstNameAttributeLabel;
     private JLabel emailAttributeLabel;
+    private JLabel certAttributeLabel;
     private JLabel lastNameAttributeLabel;
     private JLabel loginNameAttributeLabel;
     private JLabel kerberosAttributeLabel;
@@ -867,6 +892,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private JLabel valueTitleLabel;
 
     private JTextField emailAttribute;
+    private JTextField certAttribute;
     private JTextField firstNameAttribute;
     private JTextField lastNameAttribute;
     private JTextField loginNameAttribute;

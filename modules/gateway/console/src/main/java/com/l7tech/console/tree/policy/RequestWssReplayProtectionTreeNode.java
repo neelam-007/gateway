@@ -35,7 +35,7 @@ public class RequestWssReplayProtectionTreeNode extends LeafAssertionTreeNode<Re
         }
 
         protected void performAction() {
-            final ReplayProtectionPropertiesDialog dlg = new ReplayProtectionPropertiesDialog(TopComponents.getInstance().getTopParent(), true, assertion, false);
+            final ReplayProtectionPropertiesDialog dlg = new ReplayProtectionPropertiesDialog(TopComponents.getInstance().getTopParent(), true, assertion, !canEdit());
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             DialogDisplayer.display(dlg, new Runnable() {

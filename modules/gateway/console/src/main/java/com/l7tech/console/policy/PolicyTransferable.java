@@ -5,32 +5,33 @@
 
 package com.l7tech.console.policy;
 
-import com.l7tech.util.CausedIOException;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
 import java.awt.datatransfer.*;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a snippet of policy XML that can be placed on the clipboard.
  */
 public class PolicyTransferable implements Transferable, ClipboardOwner {
     public static final DataFlavor ASSERTION_DATAFLAVOR;
+    public static final DataFlavor HEADLESS_GROUP_DATAFLAVOR;
     static {
-        DataFlavor df;
+        DataFlavor assFlavor;
+        DataFlavor headFlavor;
         try {
-            df = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType + ";class=" + AbstractTreeNode.class.getName());
+            assFlavor = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType + ";class=" + AbstractTreeNode.class.getName());
+            headFlavor = new DataFlavor(String.class, "Ungrouped Policy Assertions");
         } catch (ClassNotFoundException e) {
-            df = null;
+            assFlavor = null;
+            headFlavor = null;
         }
-        ASSERTION_DATAFLAVOR = df;
+        ASSERTION_DATAFLAVOR = assFlavor;
+        HEADLESS_GROUP_DATAFLAVOR = headFlavor;
     }
 
 
@@ -38,24 +39,29 @@ public class PolicyTransferable implements Transferable, ClipboardOwner {
     // Instance fields
     //
 
-    private transient AbstractTreeNode treeNode = null; // in-process only; clipboard gets only plain text
+    private transient AbstractTreeNode[] treeNodes = null; // in-process only; clipboard gets only plain text
     private String policyXml = null;
-
+    private boolean ignoreRoot = false;
 
     //
     // Constructors
     //
 
-    public PolicyTransferable(AbstractTreeNode treeNode) {
-        if (treeNode == null) throw new NullPointerException("No policy tree node provided");
-        this.treeNode = treeNode;
+    /**
+     * Create a PolicyTransferable from one or more AbstractTreeNodes.
+     *
+     * @param treeNodes  tree nodes to transfer.  Must be non-empty.  Nodes must be siblings.
+     */
+    public PolicyTransferable(AbstractTreeNode[] treeNodes) {
+        if (treeNodes == null || treeNodes.length < 1 || treeNodes[0] == null) throw new NullPointerException("No policy tree nodes provided");
+        this.treeNodes = treeNodes;
         this.policyXml = null;
     }
 
     public PolicyTransferable(String policyXml) {
         if (policyXml == null) throw new NullPointerException("No policy XML snippet provided");
         this.policyXml = policyXml;
-        this.treeNode = null;
+        this.treeNodes = null;
     }
 
 
@@ -64,15 +70,11 @@ public class PolicyTransferable implements Transferable, ClipboardOwner {
     //
 
     public DataFlavor[] getTransferDataFlavors() {
-        if (treeNode != null) {
-            return new DataFlavor[] {
-                    ASSERTION_DATAFLAVOR,
-                    DataFlavor.stringFlavor,
-            };
-        }
-        return new DataFlavor[] {
-                DataFlavor.stringFlavor,
-        };
+        List<DataFlavor> ret = new ArrayList<DataFlavor>();
+        if (treeNodes != null) ret.add(ASSERTION_DATAFLAVOR);
+        ret.add(HEADLESS_GROUP_DATAFLAVOR);
+        ret.add(DataFlavor.stringFlavor);
+        return ret.toArray(new DataFlavor[ret.size()]);
     }
 
     /**
@@ -84,14 +86,42 @@ public class PolicyTransferable implements Transferable, ClipboardOwner {
     public String getPolicyXml() {
         if (policyXml != null) return policyXml;
 
-        if (treeNode != null) {
-            Assertion ass = treeNode.asAssertion();
-            if (ass == null)
-                return null;
+        if (treeNodes != null) {
+            AllAssertion ass = new AllAssertion();
+            for(AbstractTreeNode node : treeNodes) {
+                ass.addChild(node.asAssertion());
+            }
+            ignoreRoot = true;
             return WspWriter.getPolicyXml(ass);
         }
 
-        return null;
+        // can't happen
+        throw new IllegalStateException("No policyXml or treeNodes");
+    }
+
+    /**
+     * @return true if the root assertion of the policy tree represented by this transferable is just a
+     * grouping placeholder and should not be considered part of the information being transferred. 
+     */
+    public boolean isIgnoreRoot() {
+        return ignoreRoot;
+    }
+
+    void setIgnoreRoot(boolean ignoreRoot) {
+        this.ignoreRoot = ignoreRoot;
+    }
+
+    /**
+     * Convert this PolicyTransferable into a version that is safe to export to the system clipboard.
+     * Advertising the ASSERTION_DATAFLAVOR seems to prevent clipboard export from succeeding, possibly
+     * because it is javaJVMLocalObjectMimeType which is documented as working only "within the same JVM".
+     *
+     * @return a new PolicyTransferable instance that offers the same data, but only in XML string format.  Never null.
+     */
+    public PolicyTransferable asClipboardSafe() {
+        PolicyTransferable ret = new PolicyTransferable(getPolicyXml());
+        ret.setIgnoreRoot(this.ignoreRoot);
+        return ret;
     }
 
     /**
@@ -99,44 +129,30 @@ public class PolicyTransferable implements Transferable, ClipboardOwner {
      *
      * @return the assertion tree node, or null if there isn't one.
      */
-    public AbstractTreeNode getTreeNode() {
-        return treeNode;
+    public AbstractTreeNode[] getTreeNodes() {
+        return treeNodes;
     }
 
     public boolean isDataFlavorSupported(DataFlavor flavor) {
-        return ASSERTION_DATAFLAVOR.equals(flavor) ? treeNode != null : DataFlavor.stringFlavor.equals(flavor);
+        return HEADLESS_GROUP_DATAFLAVOR.equals(flavor) || (ASSERTION_DATAFLAVOR.equals(flavor) ? treeNodes != null : DataFlavor.stringFlavor.equals(flavor));
     }
 
     public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
         if (flavor == null) throw new NullPointerException("No DataFlavor provided");
         if (!isDataFlavorSupported(flavor)) throw new UnsupportedFlavorException(flavor);
 
-        Class wantClass = flavor.getRepresentationClass();
-
         // Try assertion tree node
         if (ASSERTION_DATAFLAVOR.equals(flavor)) {
-            if (treeNode != null)
-                return treeNode;
+            if (treeNodes != null)
+                return treeNodes;
             throw new UnsupportedFlavorException(flavor);
         }
 
-        // Try DOM XML
-        if (Node.class.equals(wantClass) || Element.class.equals(wantClass) || Document.class.equals(wantClass)) {
-            try {
-                Document doc = XmlUtil.stringToDocument(policyXml);
-                if (Element.class.equals(wantClass))
-                    return doc.getDocumentElement();
-                return doc;
-            } catch (SAXException e) {
-                throw new CausedIOException(e);
-            }
-        }
+        Class wantClass = flavor.getRepresentationClass();
 
-        // Try fallback to XML encoded as plain text
-        if (flavor.isFlavorTextType() &&
-                (wantClass == null || CharSequence.class.equals(wantClass) || String.class.equals(wantClass))) {
-            return policyXml;
-        }
+        if ((HEADLESS_GROUP_DATAFLAVOR.equals(flavor) || flavor.isFlavorTextType()) &&
+               wantClass == null || CharSequence.class.equals(wantClass) || String.class.equals(wantClass))
+            return getPolicyXml();
 
         // Nothing we can do for them
         throw new UnsupportedFlavorException(flavor);

@@ -8,19 +8,23 @@ import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Enforces that a specific element in a request is signed.
@@ -46,16 +50,16 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
         AssertionStatus result =  super.checkRequest(context);
         if (result == AssertionStatus.NONE) {
             ProcessorResult wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
-            if (wssResults != null && wssResults.isWsse11Seen() && wssResults.getLastSignatureValue() != null) {
-                context.addDeferredAssertion(this, deferredSignatureConfirmation(wssResults.getLastSignatureValue()));
+            if (wssResults != null && context.isResponseWss11() && !wssResults.getValidatedSignatureValues().isEmpty()) {
+                context.addDeferredAssertion(this, deferredSignatureConfirmation(data, auditor, wssResults.getValidatedSignatureValues()));
             }
         }
         return result;
     }
 
     // A deferred job that tries to attach a SignatureConfirmation to the response, if the response is SOAP.
-    private ServerAssertion deferredSignatureConfirmation(final String signatureConfirmation) {
-        return new AbstractServerAssertion(data) {
+    public static ServerAssertion deferredSignatureConfirmation(Assertion owner, final Auditor auditor, final List<String> signatureConfirmations) {
+        return new AbstractServerAssertion<Assertion>(owner) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
                 DecorationRequirements wssReq;
 
@@ -63,9 +67,11 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
                     if (!context.getResponse().isSoap()) {
                         auditor.logAndAudit(AssertionMessages.REQUEST_WSS_INT_RESPONSE_NOT_SOAP);
                         // FALLTHROUGH: We'll still send the response; it just won't contain a SignatureConfirmation
-                    } else {
+                    } else if(context.getResponse().getSecurityKnob().getDecorationRequirements().length > 0){
                         wssReq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
-                        wssReq.setSignatureConfirmation(signatureConfirmation);
+
+                        for (String confirmation : signatureConfirmations)
+                            wssReq.addSignatureConfirmation(confirmation);
                     }
                 } catch (SAXException e) {
                     throw new CausedIOException(e);
@@ -91,27 +97,23 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
             SigningSecurityToken sst = null;
             Set securityTokenElements = getSecurityTokenElements(wssResults);
 
-            for (int i = 0; i < elements.length; i++) {
-                ParsedElement element = elements[i];
-                if(element instanceof SignedElement) {
+            for (ParsedElement element : elements) {
+                if (element instanceof SignedElement) {
                     SignedElement signedElement = (SignedElement) element;
-                    if(!securityTokenElements.contains(signedElement.asElement())) {
-                        if(sst==null) {
+                    if (!securityTokenElements.contains(signedElement.asElement())) {
+                        if (sst == null) {
                             sst = signedElement.getSigningSecurityToken();
-                        }
-                        else {
-                            if(sst!=signedElement.getSigningSecurityToken()) {
+                        } else {
+                            if (sst != signedElement.getSigningSecurityToken()) {
                                 //auditor.logAndAudit(AssertionMessages.REQUEST_WSS_INT_REQUEST_MULTI_SIGNED);
                                 valid = false;
                                 break;
                             }
                         }
-                    }
-                    else {
+                    } else {
                         logger.fine("Not checking single signature source for signed security token.");
                     }
-                }
-                else {
+                } else {
                     // Can't happen; log and ignore.
                     logger.info("Unable to check element (not signed)");
                 }
@@ -125,13 +127,12 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
         return false;
     }
 
-    private Set getSecurityTokenElements(ProcessorResult wssResults) {
-        Set tokenElements = new HashSet();
+    private Set<Element> getSecurityTokenElements(ProcessorResult wssResults) {
+        Set<Element> tokenElements = new HashSet<Element>();
         SecurityToken[] sts = wssResults.getXmlSecurityTokens();
         if(sts!=null) {
-            for (int i = 0; i < sts.length; i++) {
-                SecurityToken st = sts[i];
-                if(st instanceof SigningSecurityToken) {
+            for (SecurityToken st : sts) {
+                if (st instanceof SigningSecurityToken) {
                     SigningSecurityToken sst = (SigningSecurityToken) st;
                     tokenElements.add(sst.asElement());
                 }

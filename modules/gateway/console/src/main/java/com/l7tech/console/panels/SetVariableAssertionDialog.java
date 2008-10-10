@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.Iterator;
+import java.util.TreeSet;
 
 /**
  * Dialog for {@link com.l7tech.policy.assertion.SetVariableAssertion}.
@@ -80,9 +81,10 @@ public class SetVariableAssertionDialog extends JDialog {
         clearContentTypeStatus();
         clearExpressionStatus();
 
-        _predecessorVariables = contextAssertion==null ?
+        Set<String> vars = contextAssertion==null ?
                 PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet() :
                 PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(contextAssertion).keySet();
+        _predecessorVariables = new TreeSet<String>(vars);
 
         // Populates data type combo box with supported data types.
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.STRING));
@@ -304,7 +306,7 @@ public class SetVariableAssertionDialog extends JDialog {
         final java.util.List<String> badNames = new LinkedList<String>();
         for (String name : names) {
             if (BuiltinVariables.getMetadata(name) == null &&
-                Syntax.getMatchingName(name, _predecessorVariables) == null) {
+                Syntax.getMatchingName(name, _predecessorVariables, true) == null) {
                 badNames.add(name);
             }
         }

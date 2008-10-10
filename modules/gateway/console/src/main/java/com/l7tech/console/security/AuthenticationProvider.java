@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.VersionException;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
 
 /**
  * The SSM <code>AuthenticationProvider</code> implementations provide authentications
@@ -58,5 +59,10 @@ public interface AuthenticationProvider {
      * Logoff the session
      */
     void logoff();
+
+    /**
+     *
+     */
+    void acceptServerCertificate( X509Certificate certificate );
 
 }

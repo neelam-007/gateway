@@ -3,7 +3,6 @@ package com.l7tech.server.wsdm;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceMetricsManager;
@@ -58,7 +57,7 @@ public class Aggregator implements ServiceStateMonitor {
         // Calculate ESM metrics by summing all available service metrics bins.
         // See http://sarek/mediawiki/index.php?title=ESM#Calculating_ESM_Metrics for explanation.
         try {
-            Map<Long,MetricsSummaryBin> dailyBins = metricsManager.summarizeByService(null, MetricsBin.RES_DAILY, null, Long.MAX_VALUE, null, false);
+            Map<Long,MetricsSummaryBin> dailyBins = metricsManager.summarizeByService(null, MetricsBin.RES_DAILY, null, null, null, false);
             Collection<PublishedService> services = serviceManager.findAll();
             for (PublishedService ps : services) {
                 MetricsSummaryBin dailySummary = dailyBins.get(ps.getOid());
@@ -66,15 +65,15 @@ public class Aggregator implements ServiceStateMonitor {
                 MetricsSummaryBin fineSummary;
 
                 if(dailySummary == null) {
-                    hourlySummary = metricsManager.summarizeByService(null, MetricsBin.RES_HOURLY, null, Long.MAX_VALUE, new long[] {ps.getOid()}, false).get(ps.getOid());
+                    hourlySummary = metricsManager.summarizeByService(null, MetricsBin.RES_HOURLY, null, null, new long[] {ps.getOid()}, false).get(ps.getOid());
                 } else {
-                    hourlySummary = metricsManager.summarizeByService(null, MetricsBin.RES_HOURLY, dailySummary.getPeriodEnd(), Long.MAX_VALUE, new long[] {ps.getOid()}, false).get(ps.getOid());
+                    hourlySummary = metricsManager.summarizeByService(null, MetricsBin.RES_HOURLY, dailySummary.getPeriodEnd(), null, new long[] {ps.getOid()}, false).get(ps.getOid());
                 }
 
                 if(hourlySummary == null) {
-                    fineSummary = metricsManager.summarizeByService(null, MetricsBin.RES_FINE, dailySummary == null ? null : dailySummary.getPeriodEnd(), Long.MAX_VALUE, new long[] {ps.getOid()}, false).get(ps.getOid());
+                    fineSummary = metricsManager.summarizeByService(null, MetricsBin.RES_FINE, dailySummary == null ? null : dailySummary.getPeriodEnd(), null, new long[] {ps.getOid()}, false).get(ps.getOid());
                 } else {
-                    fineSummary = metricsManager.summarizeByService(null, MetricsBin.RES_FINE, hourlySummary.getPeriodEnd(), Long.MAX_VALUE, new long[] {ps.getOid()}, false).get(ps.getOid());
+                    fineSummary = metricsManager.summarizeByService(null, MetricsBin.RES_FINE, hourlySummary.getPeriodEnd(), null, new long[] {ps.getOid()}, false).get(ps.getOid());
                 }
 
                 List<MetricsBin> summaries = new ArrayList<MetricsBin>(3);

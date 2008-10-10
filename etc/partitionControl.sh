@@ -112,7 +112,7 @@ control() {
             fi
         elif [ "${COMMAND}" == "forcestop" ] ; then
             if [ "$LOG_REDIRECTION_OPERATOR" = "|" -a -n "$LOG_REDIRECTION_DEST" ]; then
-                (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh stop -force" <&- 2>&1 | ${LOG_REDIRECTION_DEST}) &/dev/null &
+                (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh stop -force" <&- 2>&1 | ${LOG_REDIRECTION_DEST}) &>/dev/null &
             else
                 if [ "$LOG_REDIRECTION_OPERATOR" = ">" -a -n "$LOG_REDIRECTION_DEST" ]; then
                     output_file="${LOG_REDIRECTION_DEST}"

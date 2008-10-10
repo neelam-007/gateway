@@ -2,7 +2,9 @@ package com.l7tech.security.xml;
 
 import com.l7tech.security.token.KerberosSecurityToken;
 
+import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
+import java.math.BigInteger;
 
 /**
  * Wraps an existing SecurityTokenResolver with a new one that delegates unknown resolutions to it.
@@ -43,6 +45,14 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
     public X509Certificate lookupByKeyName(String keyName) {
         for (SecurityTokenResolver delegate : delegates) {
             X509Certificate result = delegate.lookupByKeyName(keyName);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    public X509Certificate lookupByIssuerAndSerial( X500Principal issuer, BigInteger serial ) {
+        for (SecurityTokenResolver delegate : delegates) {
+            X509Certificate result = delegate.lookupByIssuerAndSerial( issuer, serial );
             if (result != null) return result;
         }
         return null;

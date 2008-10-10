@@ -70,7 +70,7 @@ public class PortRange implements Serializable, PortOwner {
     }
 
     private static boolean devicesOverlap(InetAddress left, InetAddress right) {
-        return right == null || left == null || left.equals(right);
+        return right == null || left == null || left.isAnyLocalAddress() || right.isAnyLocalAddress() || left.equals(right);
     }
 
     public boolean isPortUsed(int port, boolean udp, InetAddress otherDevice) {

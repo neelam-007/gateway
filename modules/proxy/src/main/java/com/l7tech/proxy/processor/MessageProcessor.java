@@ -11,6 +11,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.message.*;
@@ -29,6 +30,7 @@ import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.util.CertificateDownloader;
 import com.l7tech.proxy.util.SslUtils;
+import com.l7tech.proxy.util.DomainIdInjector;
 import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.SecurityActor;
@@ -39,9 +41,7 @@ import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.*;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.soap.SoapFaultUtils;
@@ -52,6 +52,8 @@ import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -65,10 +67,13 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * The core of the Client Proxy.
@@ -77,7 +82,9 @@ public class MessageProcessor {
     private static final Logger log = Logger.getLogger(MessageProcessor.class.getName());
 
     public static final String PROPERTY_LOGPOSTS = "com.l7tech.proxy.processor.logPosts";
+    public static final String PROPERTY_LOGPOSTS_BYTELIMIT = "com.l7tech.proxy.processor.logPosts.byteLimit";
     public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
+    public static final String PROPERTY_LOGRESPONSE_BYTELIMIT = "com.l7tech.proxy.processor.logResponses.byteLimit";
     public static final String PROPERTY_LOGRAWRESPONSESTREAM = "com.l7tech.proxy.processor.logRawResponseStream"; // if true, logs raw response InputStream to System.err
     public static final String PROPERTY_LOGATTACHMENTS = "com.l7tech.proxy.processor.logAttachments";
     public static final String PROPERTY_REFORMATLOGGEDXML = "com.l7tech.proxy.processor.reformatLoggedXml";
@@ -256,7 +263,7 @@ public class MessageProcessor {
             log.severe("The Gateway password that was used to obtain this client cert is no longer valid -- deleting the client cert");
             try {
                 ssg.getRuntime().getSsgKeyStoreManager().deleteClientCert();
-            } catch (KeyStoreCorruptException e1) {                                       
+            } catch (KeyStoreCorruptException e1) {
                 ssg.getRuntime().handleKeyStoreCorrupt();
                 // FALLTHROUGH -- retry, creating new keystore
             }
@@ -393,44 +400,8 @@ public class MessageProcessor {
                 }
 
                 if (result == AssertionStatus.NONE) {
-                    // Ensure L7a:MessageID exists if we are supposed to have one
-                    final Message request = context.getRequest();
-                    final Document requestDoc = request.getXmlKnob().getDocumentReadOnly();
-                    final String messageId = context.getMessageId();
-                    if (messageId != null) {
-                        if (context.isUseWsaMessageId()) {
-                            final String otherWsaNamespaceUri = context.getWsaNamespaceUri();
-                            if (SoapUtil.getWsaMessageId(requestDoc, otherWsaNamespaceUri) == null)
-                                SoapUtil.setWsaMessageId(requestDoc, otherWsaNamespaceUri, messageId);
-                        } else {
-                            if (SoapUtil.getL7aMessageId(requestDoc) == null)
-                                SoapUtil.setL7aMessageId(requestDoc, messageId);
-                        }
-
-                    }
-
-                    // Do all WSS processing all at once
-                    if (request.isSoap()) {
-                        log.info("Running pending request through WS-Security decorator");
-                        Date ts = context.getSsg().getRuntime().getDateTranslatorToSsg().translate(new Date());
-                        Integer expiryMillis = Integer.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
-                        DecorationRequirements[] wssrequirements = context.getAllDecorationRequirements();
-                        for (int i = 0; i < wssrequirements.length; i++) {
-                            DecorationRequirements wssrequirement = wssrequirements[i];
-                            wssrequirement.setTimestampCreatedDate(ts);
-                            if (expiryMillis != null) {
-                                wssrequirement.setTimestampTimeoutMillis(expiryMillis.intValue());
-                            }
-                            WssDecorator.DecorationResult dresult =
-                                    wssDecorator.decorateMessage(
-                                            request,
-                                            wssrequirement);
-                            context.setEncryptedKeySecretKey(dresult.getEncryptedKeySecretKey());
-                            context.setEncryptedKeySha1(dresult.getEncryptedKeySha1());
-                        }
-                    } else {
-                        log.info("Request isn't SOAP; skipping WS-Security decoration");
-                    }
+                    applyRequestMessageId(context);
+                    applyWssDecorator(context);
                 }
 
             } catch (PolicyAssertionException e) {
@@ -455,6 +426,61 @@ public class MessageProcessor {
                 log.warning("Policy evaluated with an error: " + result + "; aborting");
                 throw new ConfigurationException("Unable to decorate request; policy evaluated with error: " + result);
             }
+        }
+    }
+
+    // Ensure request has an L7a:MessageID, if we are supposed to have one
+    private void applyRequestMessageId(PolicyApplicationContext context) throws SAXException, IOException, InvalidDocumentFormatException {
+        final String messageId = context.getMessageId();
+        if (messageId == null)
+            return;
+
+        final XmlKnob requestXml = context.getRequest().getXmlKnob();
+        final Document requestDoc = requestXml.getDocumentReadOnly();
+        if (context.isUseWsaMessageId()) {
+            final String otherWsaNamespaceUri = context.getWsaNamespaceUri();
+            if (SoapUtil.getWsaMessageId(requestDoc, otherWsaNamespaceUri) == null) {
+                requestXml.getDocumentWritable(); // upgrade to writable DOM
+                SoapUtil.setWsaMessageId(requestDoc, otherWsaNamespaceUri, messageId);
+            }
+        } else {
+            if (SoapUtil.getL7aMessageId(requestDoc) == null) {
+                requestXml.getDocumentWritable(); // upgrade to writable DOM
+                SoapUtil.setL7aMessageId(requestDoc, messageId);
+            }
+        }
+    }
+
+    // Do all WSS processing for request
+    private void applyWssDecorator(PolicyApplicationContext context) throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException, SAXException, IOException {
+        // Check for decoration requirements first, since it's fast
+        final DecorationRequirements[] allDecReq = context.getAllDecorationRequirements();
+        if (allDecReq.length < 1) {
+            log.fine("No decoration requirements for request; skipping WS-Security decoration");
+            return;
+        }
+
+        // Check for SOAP only if there are decoration requirements, since it requires a parse
+        final Message request = context.getRequest();
+        if (!request.isSoap()) {
+            log.fine("Request isn't SOAP; skipping WS-Security decoration");
+            return;
+        }
+
+        log.info("Running pending request through WS-Security decorator");
+        Date ts = context.getSsg().getRuntime().getDateTranslatorToSsg().translate(new Date());
+        Integer expiryMillis = Integer.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
+        for (DecorationRequirements wssrequirement : allDecReq) {
+            wssrequirement.setTimestampCreatedDate(ts);
+            if (expiryMillis != null) {
+                wssrequirement.setTimestampTimeoutMillis(expiryMillis);
+            }
+            WssDecorator.DecorationResult dresult =
+                    wssDecorator.decorateMessage(
+                            request,
+                            wssrequirement);
+            context.setEncryptedKeySecretKey(dresult.getEncryptedKeySecretKey());
+            context.setEncryptedKeySha1(dresult.getEncryptedKeySha1());
         }
     }
 
@@ -492,7 +518,7 @@ public class MessageProcessor {
         Message response = context.getResponse();
         SoapFaultDetail responseFaultDetail = null;
         String faultCodeString = null;
-        if (response.isSoap() && response.getSoapKnob().isFault())
+        if (response.getHttpResponseKnob().getStatus() != 200 && response.isSoap() && response.getSoapKnob().isFault())
             responseFaultDetail = response.getSoapKnob().getFaultDetail();
         if (responseFaultDetail != null && responseFaultDetail.getFaultCode() != null) {
             faultCodeString = responseFaultDetail.getFaultCode().trim();
@@ -592,6 +618,39 @@ public class MessageProcessor {
         private WrappedInputStreamFactoryException(Throwable t) { initCause(t); };
     }
 
+    class GZipOutput {
+        public InputStream zippedIS;
+        public long zippedContentLength;
+    }
+    private GZipOutput clearToGZipInputStream(final InputStream in) {
+        // log.info("Compression #Bridge out");
+        log.fine("compressing input stream for downstream SSG");
+
+        try {
+            //byte[] originalBytes = HexUtils.slurpStream(in);
+            //in.close();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            GZIPOutputStream gzos = new GZIPOutputStream(baos);
+            IOUtils.copyStream(in, gzos);
+            //gzos.write(originalBytes);
+            in.close();
+            gzos.close();
+            baos.close();
+            byte[] zippedBytes = baos.toByteArray();
+            ByteArrayInputStream bais = new ByteArrayInputStream(zippedBytes);
+            log.fine("Zipped output to " + zippedBytes.length + " bytes");
+            GZipOutput output = new GZipOutput();
+            output.zippedIS = bais;
+            output.zippedContentLength = zippedBytes.length;
+            return output;
+        } catch (Exception e) {
+            log.log(Level.WARNING, "error zipping payload", e);
+        }
+        GZipOutput output = new GZipOutput();
+        output.zippedIS = in;
+        return output;
+    }
+
     /**
      * Call the Ssg and obtain its response to the current message.
      *
@@ -647,75 +706,30 @@ public class MessageProcessor {
 
         try {
             setAuthenticationAndBufferingState(context, params, httpClient instanceof RerunnableGenericHttpClient);
-            params.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, context.getPolicyAttachmentKey().getSoapAction()));
-            params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, context.getOriginalUrl().toString()));
+            addRequestHeaders(context, ssg, params, request);
 
-            // Let the Gateway know what policy version we used for the request.
-            Policy policy = context.getActivePolicy();
-            if (policy != null && policy.getVersion() != null && !policy.isAlwaysValid())
-                params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion()));
-
-            final Document decoratedDocument = request.getXmlKnob().getDocumentReadOnly();
-            String postBody = XmlUtil.nodeToString(decoratedDocument);
+            final boolean iscompressed = (ssg.isCompress() || context.isSsgRequestedCompression());
+            GZipOutput resgz = null;
+            if (iscompressed) {
+                InputStream out = request.getMimeKnob().getEntireMessageBodyAsInputStream();
+                resgz = clearToGZipInputStream(out);
+                params.addExtraHeader(new GenericHttpHeader("content-encoding", "gzip"));
+                params.setContentLength(resgz.zippedContentLength);
+            }
+            final InputStream zippedInputStream = resgz != null ? resgz.zippedIS : null;
 
             if (LogFlags.logPosts) {
-                if (LogFlags.reformatLoggedXml) {
-                    log.info("Posting to Gateway (reformatted):\n" +
-                             XmlUtil.nodeToFormattedString(decoratedDocument));
-                } else {
-                    if (LogFlags.logAttachments && request.getMimeKnob().isMultipart()) {
-                        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
-                        try {
-                            InputStream bodyStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
-                            IOUtils.copyStream(bodyStream, baos);
-                            log.info("Posting to Gateway (unformatted, including attachments):\n" +
-                                     baos.toString(request.getMimeKnob().getOuterContentType().getEncoding()));
-                        } finally {
-                            baos.close();
-                        }
-                    } else {
-                        log.info("Posting to Gateway (unformatted):\n" + postBody);
-                    }
-                }
-            }
-
-            params.addExtraHeader(new GenericHttpHeader(MimeUtil.CONTENT_TYPE, request.getMimeKnob().getOuterContentType().getFullValue()));
-            if (ssg.isHttpHeaderPassthrough()) {
-                // Pass through all other headers from request to response, but without overwriting any Bridge header
-                HttpHeadersKnob httpHeadersKnob = (HttpHeadersKnob)request.getKnob(HttpHeadersKnob.class);
-                if (httpHeadersKnob != null) {
-                    HttpHeader[] heads = httpHeadersKnob.getHeaders().toArray();
-                    for (HttpHeader head : heads) {
-                        if (ssg.shouldCopyHeader(head.getName()))
-                            params.addExtraHeader(head);
-                    }
-                }
+                logRequest(request);
             }
 
             final RequestInterceptor interceptor = context.getRequestInterceptor();
             if (interceptor != null)
                 interceptor.onBackEndRequest(context, params.getExtraHeaders());
+
+
             httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);
 
-            // If failover enabled, set an InputStreamFactory to prevent the failover client from buffering
-            // everything in RAM
-            if (httpRequest instanceof RerunnableHttpRequest) {
-                RerunnableHttpRequest reReq = (RerunnableHttpRequest)httpRequest;
-                reReq.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
-                    public InputStream getInputStream() {
-                        try {
-                            return request.getMimeKnob().getEntireMessageBodyAsInputStream();
-                        } catch (IOException e) {
-                            throw new WrappedInputStreamFactoryException(e);
-                        } catch (NoSuchPartException e) {
-                            throw new WrappedInputStreamFactoryException(e);
-                        }
-                    }
-                });
-            } else {
-                final InputStream bodyInputStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
-                httpRequest.setInputStream(bodyInputStream);                
-            }
+            configureRequestFailover(ssg, request, httpRequest, zippedInputStream, iscompressed);
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
             httpResponse = httpRequest.getResponse();
@@ -725,93 +739,13 @@ public class MessageProcessor {
 
             HttpHeaders responseHeaders = httpResponse.getHeaders();
             if (!ssg.isHttpHeaderPassthrough()) gatherCookies(url, responseHeaders, context);  // Bug #3006
-            String certStatus = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.CERT_STATUS);
-
-            if (SecureSpanConstants.CERT_INVALID.equalsIgnoreCase(certStatus)) {
-                // The request failed because of a bad client cert; we need to get a new cert and retry
-                handleCertStatusInvalid(context, httpResponse);
-                /* NOT REACHED */
-            } else if (SecureSpanConstants.CERT_STALE.equalsIgnoreCase(certStatus)) {
-                // The request succeeded, but the SSG hints that our client cert is stale (signed by the former occupant)
-                // We'll complete the request normally, and then see to our client cert
-                // Bug #2094: mlyons: postpone replacing the client cert until after we undecorate the response
-                // TODO instead of (just) doing this, we should really cache the client cert in the context
-                //      for the duration of the request.   As is, undecoration can still be screwed up
-                //      if another request in another thread gets a stale cert message while we are waiting
-                //      for a reply to our request.
-                log.info("Gateway response contained a " +
-                        SecureSpanConstants.HttpHeaders.CERT_STATUS + ": " + SecureSpanConstants.CERT_STALE +
-                        " header.  Request succeeded, but will get new client cert afterward.");
-                context.runOnClose(new Runnable() {
-                    public void run() {
-                        handleCertStatusStale(context);
-                    }
-                });
-            }
-
-            String policyUrlStr = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
-            if (policyUrlStr != null) {
-                log.info("Gateway response contained a PolicyUrl header: " + policyUrlStr);
-                // Have we already updated a policy while processing this request?
-                if (context.isPolicyUpdated()) {
-                    final String msg = "Gateway rejected message for non-compliance with policy.  " +
-                                       "Updating the policy did not help.";
-                    logResponseError(msg, httpResponse, context);
-                    throw new ConfigurationException(msg);
-                }
-                String serviceid = null;
-                try {
-                    URL policyUrl = new URL(policyUrlStr);
-                    Matcher psfm = findPolicyServiceFile.matcher(policyUrl.getFile());
-                    if (psfm.find())
-                        ssg.getRuntime().setPolicyServiceFile(psfm.group(1));
-                    // force the policy URL to point at the SSG hostname the user typed
-                    policyUrl = new URL(policyUrl.getProtocol(), ssg.getSsgAddress(), policyUrl.getPort(), policyUrl.getFile());
-                    String query = policyUrl.getQuery();
-                    Matcher m = findServiceid.matcher(query);
-                    if (m.matches())
-                        serviceid = m.group(1);
-                    if (serviceid == null || serviceid.length() < 1) {
-                        final String msg = "Gateway sent us a Policy URL from which we were unable to extract the service ID.";
-                        logResponseError(msg, httpResponse, context);
-                        throw new ConfigurationException(msg);
-                    }
-
-                } catch (MalformedURLException e) {
-                    final String msg = "Gateway sent us an invalid Policy URL.";
-                    logResponseError(msg, httpResponse, context);
-                    throw new ConfigurationException(msg);
-                }
-
-                try {
-                    context.downloadPolicy(serviceid);
-                } catch (ClientCertificateRevokedException ccre) {
-                    try {
-                        handleCertStatusInvalid(context, httpResponse);
-                    } catch (PolicyRetryableException pre) {
-                        // thrown after new policy is downloaded
-                    }
-                    context.downloadPolicy(serviceid);
-                }
-
-                if (status != 200) {
-                    log.info("Retrying request with the new policy");
-                    throw new PolicyRetryableException();
-                }
-                log.info("Will use new policy for future requests.");
-            }
-
-
+            checkResponseCertStatus(context, httpResponse, responseHeaders);
+            checkResponsePolicyUrl(context, ssg, httpResponse, status, responseHeaders);
             String contentTypeStr = responseHeaders.getOnlyOneValue(MimeUtil.CONTENT_TYPE);
-            log.info("Response Content-Type: " + contentTypeStr);
-            if (contentTypeStr == null || contentTypeStr.length() < 1) {
-                final String msg = "Response from Gateway did not include a Content-Type";
-                logResponseError(msg, httpResponse, context);
-                checkStatus(status, responseHeaders, url, ssg);
-                throw new IOException(msg);
-            }
+            checkResponseContentType(context, url, ssg, httpResponse, status, responseHeaders, contentTypeStr);
             final ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(contentTypeStr);
-            InputStream responseBodyAsStream = httpResponse.getInputStream();
+            InputStream responseBodyAsStream = checkResponseGzip(httpResponse);
+
 
             if (LogFlags.logRawResponseStream)
                 responseBodyAsStream = new TeeInputStream(responseBodyAsStream, System.err);
@@ -843,62 +777,32 @@ public class MessageProcessor {
             });
             httpResponse = null; // no longer need to close the response
 
-            Document responseDocument = response.isXml() ? response.getXmlKnob().getDocumentWritable() : null;
-
             if (LogFlags.logResponse) {
-                final MimeKnob respMime = response.getMimeKnob();
-                if (LogFlags.reformatLoggedXml && responseDocument != null) {
-                    String logStr = respMime.getOuterContentType().toString() + "\r\n" +
-                            XmlUtil.nodeToFormattedString(responseDocument);
-                    log.info("Got response from Gateway (reformatted):\n" + logStr);
-                } else {
-                    if (responseDocument == null || (LogFlags.logAttachments && respMime.isMultipart())) {
-                        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
-                        try {
-                            InputStream bodyStream = respMime.getEntireMessageBodyAsInputStream();
-                            IOUtils.copyStream(bodyStream, baos);
-                            log.info("Got " + respMime.getOuterContentType().getMainValue() + " response from Gateway (unformatted, including attachments):\n" +
-                                     baos.toString(respMime.getOuterContentType().getEncoding()));
-                        } finally {
-                            baos.close();
-                        }
-                    } else {
-                        String logStr = respMime.getOuterContentType().toString() + "\r\n" +
-                                XmlUtil.nodeToString(responseDocument);
-                        log.info("Got response from Gateway (unformatted):\n" + logStr);
+                logResponse(response);
+            }
+
+            ((SecurityFacet)response.getSecurityKnob()).setProcessorResultFactory(new ProcessorResultFactory() {
+                public ProcessorResult createProcessorResult() throws ProcessorException, SAXException, IOException {
+                    log.info("Running SSG response through WS-Security undecorator");
+                    SecurityContextFinder scf = makeResponseSecurityContextFinder(context);
+                    try {
+                        return wssProcessResponse(context, ssg, response, scf);
+                    } catch(IOException e) {
+                        throw e;
+                    } catch(SAXException e) {
+                        throw e;
+                    } catch(Exception e) {
+                        throw new ProcessorException("Unable to undecorate response: " + ExceptionUtils.getMessage(e), e);
                     }
                 }
+            });
+
+            if("always".equals(ssg.getProperties().get("response.security.stripHeader")) ||
+               "secure_span".equals(ssg.getProperties().get("response.security.stripHeader")))
+            {
+                response.getSecurityKnob().getOrCreateProcessorResult();
             }
 
-            log.info("Running SSG response through WS-Security undecorator");
-            SecurityContextFinder scf = null;
-            final String sessionId = context.getSecureConversationId();
-            if (sessionId != null) {
-                final byte[] sessionKey = context.getSecureConversationSharedSecret();
-                scf = new SecurityContextFinder() {
-                    public SecurityContext getSecurityContext(String securityContextIdentifier) {
-                        return new SecurityContext() {
-                            public byte[] getSharedSecret() {
-                                return sessionKey;
-                            }
-                        };
-                    }
-                };
-            }
-
-            ProcessorResult processorResult = null;
-            if (response.isSoap()) {
-                try {
-                    processorResult = wssProcessResponse(context, ssg, response, scf, responseDocument);
-                } catch (MessageNotSoapException e) {
-                    /* FALLTHROUGH and use null */
-                }
-            }
-            if (processorResult == null) {
-                log.info("Response from Gateway is not SOAP.");
-            }
-
-            response.getSecurityKnob().setProcessorResult(processorResult);
             response.getHttpResponseKnob().setStatus(status);
             checkStatus(status, responseHeaders, url, ssg);
         } catch (WrappedInputStreamFactoryException e) {
@@ -916,6 +820,244 @@ public class MessageProcessor {
         }
     }
 
+    private SecurityContextFinder makeResponseSecurityContextFinder(PolicyApplicationContext context) {
+        SecurityContextFinder scf = null;
+        final String sessionId = context.getSecureConversationId();
+        if (sessionId != null) {
+            final byte[] sessionKey = context.getSecureConversationSharedSecret();
+            scf = new SecurityContextFinder() {
+                public SecurityContext getSecurityContext(String securityContextIdentifier) {
+                    return new SecurityContext() {
+                        public byte[] getSharedSecret() {
+                            return sessionKey;
+                        }
+                    };
+                }
+            };
+        }
+        return scf;
+    }
+
+    private static InputStream checkResponseGzip(GenericHttpResponse httpResponse) throws IOException {
+        InputStream responseBodyAsStream = httpResponse.getInputStream();
+
+        final String maybegzipencoding = httpResponse.getHeaders().getOnlyOneValue("content-encoding");
+        if (maybegzipencoding != null && maybegzipencoding.contains("gzip")) { // case of value ?
+            if (responseBodyAsStream != null ){
+                // log.info("Compression #Bridge in");
+                log.fine("detected compression on incoming response");
+                responseBodyAsStream = new GZIPInputStream(responseBodyAsStream);
+            }
+        }
+        return responseBodyAsStream;
+    }
+
+    private void checkResponseContentType(PolicyApplicationContext context, URL url, Ssg ssg, GenericHttpResponse httpResponse, int status, HttpHeaders responseHeaders, String contentTypeStr) throws IOException, BadCredentialsException {
+        log.info("Response Content-Type: " + contentTypeStr);
+        if (contentTypeStr == null || contentTypeStr.length() < 1) {
+            final String msg = "Response from Gateway did not include a Content-Type";
+            logResponseError(msg, httpResponse, context);
+            checkStatus(status, responseHeaders, url, ssg);
+            throw new IOException(msg);
+        }
+    }
+
+    private void checkResponsePolicyUrl(PolicyApplicationContext context, Ssg ssg, GenericHttpResponse httpResponse, int status, HttpHeaders responseHeaders) throws IOException, ConfigurationException, OperationCanceledException, GeneralSecurityException, HttpChallengeRequiredException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, PolicyLockedException, BadCredentialsException {
+        String policyUrlStr = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
+        if (policyUrlStr != null) {
+            log.info("Gateway response contained a PolicyUrl header: " + policyUrlStr);
+            // Have we already updated a policy while processing this request?
+            if (context.isPolicyUpdated()) {
+                final String msg = "Gateway rejected message for non-compliance with policy.  " +
+                        "Updating the policy did not help.";
+                logResponseError(msg, httpResponse, context);
+                throw new ConfigurationException(msg);
+            }
+            String serviceid = null;
+            try {
+                URL policyUrl = new URL(policyUrlStr);
+                Matcher psfm = findPolicyServiceFile.matcher(policyUrl.getFile());
+                if (psfm.find())
+                    ssg.getRuntime().setPolicyServiceFile(psfm.group(1));
+                // force the policy URL to point at the SSG hostname the user typed
+                policyUrl = new URL(policyUrl.getProtocol(), ssg.getSsgAddress(), policyUrl.getPort(), policyUrl.getFile());
+                String query = policyUrl.getQuery();
+                Matcher m = findServiceid.matcher(query);
+                if (m.matches())
+                    serviceid = m.group(1);
+                if (serviceid == null || serviceid.length() < 1) {
+                    final String msg = "Gateway sent us a Policy URL from which we were unable to extract the service ID.";
+                    logResponseError(msg, httpResponse, context);
+                    throw new ConfigurationException(msg);
+                }
+
+            } catch (MalformedURLException e) {
+                final String msg = "Gateway sent us an invalid Policy URL.";
+                logResponseError(msg, httpResponse, context);
+                throw new ConfigurationException(msg);
+            }
+
+            try {
+                context.downloadPolicy(serviceid);
+            } catch (ClientCertificateRevokedException ccre) {
+                try {
+                    handleCertStatusInvalid(context, httpResponse);
+                } catch (PolicyRetryableException pre) {
+                    // thrown after new policy is downloaded
+                }
+                context.downloadPolicy(serviceid);
+            }
+
+            if (status != 200) {
+                log.info("Retrying request with the new policy");
+                throw new PolicyRetryableException();
+            }
+            log.info("Will use new policy for future requests.");
+        }
+    }
+
+    private void configureRequestFailover(final Ssg ssg, final Message request, GenericHttpRequest httpRequest, final InputStream zippedInputStream, final boolean iscompressed) throws IOException, NoSuchPartException {
+        // If failover enabled, set an InputStreamFactory to prevent the failover client from buffering
+        // everything in RAM
+        if (httpRequest instanceof RerunnableHttpRequest) {
+            RerunnableHttpRequest reReq = (RerunnableHttpRequest)httpRequest;
+            reReq.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
+                public InputStream getInputStream() {
+                    try {
+                        if (iscompressed) {
+                            return zippedInputStream;
+                        } else {
+                            return request.getMimeKnob().getEntireMessageBodyAsInputStream();
+                        }
+                    } catch (IOException e) {
+                        throw new WrappedInputStreamFactoryException(e);
+                    } catch (NoSuchPartException e) {
+                        throw new WrappedInputStreamFactoryException(e);
+                    }
+                }
+            });
+        } else {
+            if (iscompressed) {
+                httpRequest.setInputStream(zippedInputStream);
+            } else {
+                final InputStream bodyInputStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
+                httpRequest.setInputStream(bodyInputStream);
+            }
+        }
+    }
+
+    private void addRequestHeaders(PolicyApplicationContext context, Ssg ssg, GenericHttpRequestParams params, Message request) throws IOException {
+        params.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, context.getPolicyAttachmentKey().getSoapAction()));
+        params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, context.getOriginalUrl().toString()));
+
+        // Let the Gateway know what policy version we used for the request.
+        Policy policy = context.getActivePolicy();
+        if (policy != null && policy.getVersion() != null && !policy.isAlwaysValid())
+            params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion()));
+
+        params.addExtraHeader(new GenericHttpHeader(MimeUtil.CONTENT_TYPE, request.getMimeKnob().getOuterContentType().getFullValue()));
+        if (ssg.isHttpHeaderPassthrough()) {
+            // Pass through all other headers from request to response, but without overwriting any Bridge header
+            HttpHeadersKnob httpHeadersKnob = (HttpHeadersKnob)request.getKnob(HttpHeadersKnob.class);
+            if (httpHeadersKnob != null) {
+                HttpHeader[] heads = httpHeadersKnob.getHeaders().toArray();
+                for (HttpHeader head : heads) {
+                    if (ssg.shouldCopyHeader(head.getName()))
+                        params.addExtraHeader(head);
+                }
+            }
+        }
+
+        DomainIdInjector.injectHeaders(context, params);
+    }
+
+    private void logRequest(Message request) throws SAXException, IOException, NoSuchPartException {
+        if (LogFlags.reformatLoggedXml) {
+            final Document decoratedDocument = request.getXmlKnob().getDocumentReadOnly();
+            log.info("Posting to Gateway (reformatted):\n" +
+                     XmlUtil.nodeToFormattedString(decoratedDocument));
+        } else {
+            final String encoding = request.getMimeKnob().getOuterContentType().getEncoding();
+            if (LogFlags.logAttachments && request.getMimeKnob().isMultipart()) {
+                BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                try {
+                    InputStream bodyStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
+                    IOUtils.copyStream(bodyStream, baos);
+                    log.info("Posting to Gateway (unformatted, including attachments):\n" +
+                             baos.toString(encoding));
+                } finally {
+                    baos.close();
+                }
+            } else {
+                final PartInfo firstPart = request.getMimeKnob().getFirstPart();
+                byte[] postBodyBytes = firstPart.getBytesIfAvailableOrSmallerThan(LogFlags.logPostsByteLimit);
+                if (postBodyBytes != null) {
+                    String postBody = new String(postBodyBytes, encoding);
+                    log.info("Posting to Gateway (unformatted):\n" + postBody);
+                } else {
+                    log.info("Posting to Gateway (not shown due to large size of " + firstPart.getActualContentLength() + " bytes");
+                }
+            }
+        }
+    }
+
+    private void checkResponseCertStatus(final PolicyApplicationContext context, GenericHttpResponse httpResponse, HttpHeaders responseHeaders) throws GenericHttpException, ConfigurationException, BadCredentialsException, KeyStoreCorruptException, OperationCanceledException, PolicyRetryableException, ClientCertificateException, HttpChallengeRequiredException {
+        String certStatus = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.CERT_STATUS);
+
+        if (SecureSpanConstants.CERT_INVALID.equalsIgnoreCase(certStatus)) {
+            // The request failed because of a bad client cert; we need to get a new cert and retry
+            handleCertStatusInvalid(context, httpResponse);
+            /* NOT REACHED */
+        } else if (SecureSpanConstants.CERT_STALE.equalsIgnoreCase(certStatus)) {
+            // The request succeeded, but the SSG hints that our client cert is stale (signed by the former occupant)
+            // We'll complete the request normally, and then see to our client cert
+            // Bug #2094: mlyons: postpone replacing the client cert until after we undecorate the response
+            // TODO instead of (just) doing this, we should really cache the client cert in the context
+            //      for the duration of the request.   As is, undecoration can still be screwed up
+            //      if another request in another thread gets a stale cert message while we are waiting
+            //      for a reply to our request.
+            log.info("Gateway response contained a " +
+                    SecureSpanConstants.HttpHeaders.CERT_STATUS + ": " + SecureSpanConstants.CERT_STALE +
+                    " header.  Request succeeded, but will get new client cert afterward.");
+            context.runOnClose(new Runnable() {
+                public void run() {
+                    handleCertStatusStale(context);
+                }
+            });
+        }
+    }
+
+    private void logResponse(Message response) throws IOException, NoSuchPartException, SAXException {
+        final MimeKnob respMime = response.getMimeKnob();
+        final ContentTypeHeader contentType = respMime.getOuterContentType();
+        if (LogFlags.reformatLoggedXml && response.isXml()) {
+            String logStr = contentType.toString() + "\r\n" +
+                    XmlUtil.nodeToFormattedString(response.getXmlKnob().getDocumentReadOnly());
+            log.info("Got response from Gateway (reformatted):\n" + logStr);
+        } else {
+            if (!response.isXml() || (LogFlags.logAttachments && respMime.isMultipart())) {
+                BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                try {
+                    InputStream bodyStream = respMime.getEntireMessageBodyAsInputStream();
+                    IOUtils.copyStream(bodyStream, baos);
+                    log.info("Got " + contentType.getMainValue() + " response from Gateway (unformatted, including attachments):\n" +
+                             baos.toString(contentType.getEncoding()));
+                } finally {
+                    baos.close();
+                }
+            } else {
+                byte[] respBytes = respMime.getFirstPart().getBytesIfAvailableOrSmallerThan(LogFlags.logResponseByteLimit);
+                if (respBytes == null) {
+                    log.info("Got response from Gateway (not shown; size is " + respMime.getFirstPart().getActualContentLength() + " bytes)");
+                } else {
+                    String logStr = contentType.toString() + "\r\n" +
+                            new String(respBytes, contentType.getEncoding());
+                    log.info("Got response from Gateway (unformatted):\n" + logStr);
+                }
+            }
+        }
+    }
+
     /**
      * Run a response through the WSS processor.
      * Caller is responsible for ensuring that the response is SOAP before calling this.
@@ -924,7 +1066,6 @@ public class MessageProcessor {
      * @param ssg       the Ssg object.  Required
      * @param response  the response to process.  Required
      * @param scf       the SecurityContextFinder, or null to disable WS-SecureConversation support
-     * @param responseDocument  the reponse XML document.  Required
      * @return the ProcessorResult.  Never null.
      * @throws IOException                    if there was a network problem getting the message response from the SSG; or
      *                                          if there was a network problem downloading a policy from the SSG
@@ -945,8 +1086,7 @@ public class MessageProcessor {
     private ProcessorResult wssProcessResponse(final PolicyApplicationContext context,
                                                final Ssg ssg,
                                                Message response,
-                                               SecurityContextFinder scf,
-                                               Document responseDocument)
+                                               SecurityContextFinder scf)
             throws KeyStoreCorruptException, BadCredentialsException, HttpChallengeRequiredException,
                    OperationCanceledException, ProcessorException, InvalidDocumentFormatException,
                    GeneralSecurityException, SAXException, IOException
@@ -991,42 +1131,53 @@ public class MessageProcessor {
                 return new WssTimestampWrapper(wssTimestampRaw, ssg.getRuntime().getDateTranslatorFromSsg());
             }
         };
-        maybeStripSecurityHeader(ssg, responseDocument, processorResult);
+        maybeStripSecurityHeader(ssg, response, processorResult);
 
 
         return processorResult;
     }
 
-    private void maybeStripSecurityHeader(Ssg ssg, Document doc, ProcessorResult processorResult) throws InvalidDocumentFormatException {
-        final String stripMode = ssg.getProperties().get("response.security.stripHeader"); // "always" or "secure_span"; default "always"
-                
+    private void maybeStripSecurityHeader(Ssg ssg, Message response, ProcessorResult processorResult) throws InvalidDocumentFormatException, SAXException, IOException {
+        final String stripMode = ssg.getProperties().get("response.security.stripHeader"); // "always", "when processed" or "secure_span"; default "when processed"
+
         if ("secure_span".equals(stripMode)) {
             // the processed security header will be deleted iff. it was explicitely addressed to us
             if (processorResult.getProcessedActor() != null &&
-                processorResult.getProcessedActor() == SecurityActor.L7ACTOR) {
+                (processorResult.getProcessedActor() == SecurityActor.L7ACTOR ||
+                processorResult.getProcessedActor() == SecurityActor.L7ACTOR_OLD))
+            {
+                XmlKnob xmlKnob = response.getXmlKnob();
+                Document doc = xmlKnob.getDocumentReadOnly();
                 Element eltodelete = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+                if(eltodelete == null) {
+                    eltodelete = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR_OLD.getValue());
+                }
                 if (eltodelete == null) {
                     log.warning("the security element was already deleted somehow?"); // should not happen
                 } else {
+                    xmlKnob.getDocumentWritable(); // mark DOM as dirty
                     eltodelete.getParentNode().removeChild(eltodelete);
+                    SoapUtil.removeEmptySoapHeader(doc);
                 }
             }
         } else {
             // always remove the processed security header
             SecurityActor procActor = processorResult.getProcessedActor();
             final Element del;
+            final XmlKnob xmlKnob = response.getXmlKnob();
+            Document doc = xmlKnob.getDocumentReadOnly();
             if (procActor == null) {
                 del = SoapUtil.getSecurityElement(doc);
             } else {
                 del = SoapUtil.getSecurityElement(doc, procActor.getValue());
             }
 
-            if (del != null)
+            if (del != null) {
+                xmlKnob.getDocumentWritable(); // mark DOM as dirty
                 del.getParentNode().removeChild(del);
+                SoapUtil.removeEmptySoapHeader(doc);
+            }
         }
-
-        // If we are about to leave behind an empty SOAP Header, remove that too
-        SoapUtil.removeEmptySoapHeader(doc);
     }
 
     private void handleCertStatusStale(PolicyApplicationContext context) {
@@ -1137,7 +1288,8 @@ public class MessageProcessor {
             throws IOException
     {
         String responseStr = "";
-        InputStream responseBodyAsStream = httpResponse.getInputStream();
+        InputStream responseBodyAsStream = checkResponseGzip(httpResponse);
+
         if (responseBodyAsStream != null) {
             byte[] output = IOUtils.slurpStream(responseBodyAsStream);
             responseStr = new String(output);
@@ -1221,7 +1373,9 @@ public class MessageProcessor {
 
     private static class LogFlags {
         private static final boolean logPosts = Boolean.getBoolean(PROPERTY_LOGPOSTS);
+        private static final int logPostsByteLimit = SyspropUtil.getInteger(PROPERTY_LOGPOSTS_BYTELIMIT, 1024 * 512);
         private static final boolean logResponse = Boolean.getBoolean(PROPERTY_LOGRESPONSE);
+        private static final int logResponseByteLimit = SyspropUtil.getInteger(PROPERTY_LOGRESPONSE_BYTELIMIT, 1024 * 512);
         private static final boolean logRawResponseStream = Boolean.getBoolean(PROPERTY_LOGRAWRESPONSESTREAM);
         private static final boolean logAttachments = Boolean.getBoolean(PROPERTY_LOGATTACHMENTS);
         private static final boolean reformatLoggedXml = Boolean.getBoolean(PROPERTY_REFORMATLOGGEDXML);

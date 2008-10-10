@@ -1,6 +1,7 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.util.Functions;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.AssertionPath;
@@ -26,6 +27,10 @@ import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.WspReader;
 
 import javax.wsdl.BindingOperation;
@@ -145,6 +150,10 @@ class PathValidator {
             }
         }
 
+        if (a instanceof WssVersionAssertion) {
+            processWssVersionAssertion((WssVersionAssertion) a);
+        }
+
         if (a instanceof IdentityAssertion) {
             processAccessControl((IdentityAssertion)a);
         }
@@ -193,6 +202,74 @@ class PathValidator {
         processOtherRemainingAssertion(a);
 
         setSeen(a.getClass());
+    }
+
+    private void processWssVersionAssertion(WssVersionAssertion assertion) {
+        boolean foundPreRoutingWssAssertion = false;
+        boolean foundPostRoutingWssAssertion = false;
+
+        int routingAssertionIndex = getRoutingAssertionIndex();
+        if (routingAssertionIndex == -1) return;
+
+        int pathLength = assertionPath.getPathCount();
+        for (int i = 0; i < pathLength && (!foundPreRoutingWssAssertion || !foundPostRoutingWssAssertion); i++) {
+            //get the assertion at this index
+            Assertion a = assertionPath.getPathAssertion(i);
+            if (!foundPreRoutingWssAssertion) {
+                //check if this assertion satisfies the pre-routing WSS requirement
+                if (isPreRoutingWssSigningOrEncryptionAssertion(a) && i < routingAssertionIndex) {
+                    foundPreRoutingWssAssertion = true;
+                }
+            }
+            if (!foundPostRoutingWssAssertion) {
+                //check if this assertion satisfies the post-routing WSS requirement
+                if (isPostRoutingWssSigningOrEncryptionAssertion(a) && i > routingAssertionIndex) {
+                    foundPostRoutingWssAssertion = true;
+                }
+            }
+        }
+
+        if (!foundPreRoutingWssAssertion && !foundPostRoutingWssAssertion) {
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
+                    "WS-Security version 1.1 is specified but insufficient WS-Security signing or encryption assertions exist in the policy.", null));
+        } else if (!foundPreRoutingWssAssertion) {
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
+                    "No WS-Security signing or encryption assertion before route. Policy may not produce WSS v1.1 compliant messages.", null));
+        } else if (!foundPostRoutingWssAssertion) {
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
+                    "No WS-Security signing or encryption assertion after route. Policy may not produce WSS v1.1 compliant messages.", null));
+        }
+    }
+
+    private int getRoutingAssertionIndex() {
+        Assertion[] pathAssertions = assertionPath.getPath();
+        for (int i = 0; i < pathAssertions.length; i++) {
+            Assertion a = pathAssertions[i];
+            if (a instanceof RoutingAssertion) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private boolean isPreRoutingWssSigningOrEncryptionAssertion(Assertion a) {
+        //TODO WssKerberos & WssSaml requests won't necessarily be signed
+
+        return (a instanceof RequestWssX509Cert) ||
+                (a instanceof RequestWssIntegrity) ||
+                (a instanceof SecureConversation) ||
+                (a instanceof EncryptedUsernameTokenAssertion) ||
+                (a instanceof RequestWssConfidentiality) ||
+                (a instanceof RequestWssKerberos) ||
+                (a instanceof RequestWssSaml) ||
+                ((a instanceof RequestWssTimestamp) && ((RequestWssTimestamp) a).isSignatureRequired() && ((RequestWssTimestamp) a).getTarget() == TargetMessageType.REQUEST);
+    }
+
+    private boolean isPostRoutingWssSigningOrEncryptionAssertion(Assertion a) {
+        return (a instanceof ResponseWssIntegrity) ||
+                (a instanceof ResponseWssConfidentiality) ||
+                (a instanceof ResponseWssSecurityToken) ||
+                ((a instanceof ResponseWssTimestamp) && ((ResponseWssTimestamp) a).isSignatureRequired());
     }
 
     private void processXslTransformation(XslTransformation xslt) {
@@ -268,15 +345,7 @@ class PathValidator {
             if (!seenCredentials(a)) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath, "Access control specified without " +
                   "authentication scheme.", null));
-            } else {
-                // if the credential source is not HTTP Basic
-                if (!haveSeen(ASSERTION_HTTPBASIC) && !haveSeen(ASSERTION_COOKIECREDS) && !haveSeen(ASSERTION_XPATHCREDENTIALS)){
-                    result.addWarning(new PolicyValidatorResult.
-                      Warning(a, assertionPath, "HTTP Basic Authentication, HTTP Cookie session token or XPath Credentials are usually used as the authentication " +
-                        "schemes when a policy contains a Custom Assertion.", null));
-                }
             }
-
             if (seenCustomAuth) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have an access control Custom " +
                   "Assertion in this path.", null));

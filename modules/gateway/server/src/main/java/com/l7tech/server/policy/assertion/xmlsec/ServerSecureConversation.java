@@ -92,7 +92,7 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
                     // here, we must override the soapfault detail in order to send the fault required by the spec
                     SoapFaultLevel cfault = new SoapFaultLevel();
                     cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-                    cfault.setFaultTemplate(SoapFaultUtils.badContextTokenFault(getIncomingURL(context)));
+                    cfault.setFaultTemplate(SoapFaultUtils.badContextTokenFault(context.getService().getSoapVersion(), getIncomingURL(context)));
                     context.setFaultlevel(cfault);
                     return AssertionStatus.AUTH_FAILED;
                 }

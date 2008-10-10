@@ -75,8 +75,8 @@ public class KerberosUtils {
      * @param keytab The keytab data to use
      * @throws KerberosException if an error occurs
      */
-    public static void configureKerberos(byte[] keytab) throws KerberosException {
-        KerberosConfig.generateKerberosConfig(keytab);
+    public static void configureKerberos(byte[] keytab, String kdc, String realm ) throws KerberosException {
+        KerberosConfig.generateKerberosConfig(keytab, kdc, realm);
         KerberosClient.reset();
     }
 

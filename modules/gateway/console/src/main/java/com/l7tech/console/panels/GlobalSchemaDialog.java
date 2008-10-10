@@ -349,7 +349,8 @@ public class GlobalSchemaDialog extends JDialog {
 
             // then check on SSG
             try {
-                if (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) {
+                if ( (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) &&
+                     reg.getSchemaAdmin().findByTNS(importns).isEmpty() ) {
                     if (importloc != null) {
                         unresolvedImportsList.add(importloc);
                     } else {

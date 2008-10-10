@@ -79,7 +79,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
         final XmlKnob responseXml = response.getXmlKnob();
         final SecurityKnob responseSec = response.getSecurityKnob();
         Document soapmsg = responseXml.getDocumentReadOnly();
-        ProcessorResult wssRes = responseSec.getProcessorResult();
+        ProcessorResult wssRes = ClientResponseWssConfidentiality.getOrCreateWssResults(response);
         if (wssRes == null) {
             log.info("WSS processing was not done on this response.");
             return AssertionStatus.FAILED;

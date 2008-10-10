@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlException;
+import java.security.cert.X509Certificate;
 
 /**
  * Interface used to establish and manage an admin session.
@@ -55,6 +56,18 @@ public interface AdminLogin {
     @Administrative(authenticated =false, licensed=false)
     AdminLoginResult login(String username, String password)
             throws AccessControlException, LoginException;
+
+    /**
+     * Method that allows admins to login, returning an interface to the server.  It will use the CN as a lookup
+     * to match the login name.
+     *
+     * @param cert  The certificate that will be used for the login authentication
+     * @return      An {@link AdminLoginResult} if the login was successful, or throws exception.  Never return null.
+     * @throws AccessControlException on access deniedfor the given login credentials
+     * @throws LoginException on failed login
+     */
+    @Administrative(authenticated=false, licensed=false)
+    AdminLoginResult login(X509Certificate cert) throws AccessControlException, LoginException;
 
     /**
      * Method that allows admin to login using an existing session.

@@ -5,7 +5,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.message.HttpServletRequestKnob;
@@ -20,8 +19,8 @@ import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
-import com.l7tech.identity.UserBean;
 import com.l7tech.identity.AnonymousUserReference;
+import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -30,10 +29,14 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.custom.CustomAuditorImpl;
+import com.l7tech.server.policy.ServiceFinderImpl;
+import com.l7tech.server.policy.CertificateFinderImpl;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.security.cert.TrustedCertManager;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -87,12 +90,12 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
 
         if (!checkDescriptor(descriptor)) {
             logger.warning("Invalid custom assertion descriptor detected for '" + customAssertion.getClass() + "'\n" +
-              " this policy element is misconfigured and will cause the policy to fail.");
+                    " this policy element is misconfigured and will cause the policy to fail.");
             throw new PolicyAssertionException(data, "Custom assertion is misconfigured");
         }
         Class sa = descriptor.getServerAssertion();
         try {
-            serviceInvocation = (ServiceInvocation)sa.newInstance();
+            serviceInvocation = (ServiceInvocation) sa.newInstance();
             serviceInvocation.setCustomAssertion(customAssertion);
             new CustomAuditorImpl(auditor).register(serviceInvocation);
         } catch (InstantiationException e) {
@@ -103,7 +106,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
     }
 
     private static void saveServletKnobs(PolicyEnforcementContext pec, Map context) {
-        final HttpServletRequestKnob hsRequestKnob = (HttpServletRequestKnob)pec.getRequest().getKnob(HttpServletRequestKnob.class);
+        final HttpServletRequestKnob hsRequestKnob = (HttpServletRequestKnob) pec.getRequest().getKnob(HttpServletRequestKnob.class);
         if (hsRequestKnob != null) {
             String[] headerNames = hsRequestKnob.getHeaderNames();
             for (int i = 0; i < headerNames.length; i++) {
@@ -115,7 +118,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             if (httpServletRequest != null)
                 context.put("httpRequest", httpServletRequest);
         }
-        final HttpServletResponseKnob hsResponseKnob = (HttpServletResponseKnob)pec.getResponse().getKnob(HttpServletResponseKnob.class);
+        final HttpServletResponseKnob hsResponseKnob = (HttpServletResponseKnob) pec.getResponse().getKnob(HttpServletResponseKnob.class);
         final HttpServletResponse httpServletResponse = hsResponseKnob == null ? null : hsResponseKnob.getHttpServletResponse();
         if (httpServletResponse != null)
             context.put("httpResponse", wrap(httpServletResponse, pec));
@@ -123,7 +126,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (customAssertion == null) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "CustomAssertionHolder contains no CustomAssertion" });
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"CustomAssertionHolder contains no CustomAssertion"});
             return AssertionStatus.SERVER_ERROR;
         }
         // Bugzilla #707 - removed the logger.entering()/exiting() as they are just for debugging purpose
@@ -138,7 +141,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 Thread.currentThread().setContextClassLoader(customAssertionClass.getClassLoader());
             }
 
-            if(serviceInvocation == null) initialize();
+            if (serviceInvocation == null) initialize();
 
             try {
                 PublishedService service = context.getService();
@@ -146,7 +149,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 final CustomAssertionDescriptor descriptor = getCustomAssertionRegistrar().getDescriptor(customAssertionClass);
 
                 if (!checkDescriptor(descriptor)) {
-                    auditor.logAndAudit(AssertionMessages.CA_INVALID_CA_DESCRIPTOR, new String[] {customAssertion.getClass().getName()});
+                    auditor.logAndAudit(AssertionMessages.CA_INVALID_CA_DESCRIPTOR, new String[]{customAssertion.getClass().getName()});
                     throw new PolicyAssertionException(data, "Custom assertion is misconfigured, service '" + service.getName() + "'");
                 }
                 Subject subject = new Subject();
@@ -154,7 +157,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 if (principalCredentials != null) {
                     String principalName = principalCredentials.getLogin();
                     auditor.logAndAudit(AssertionMessages.CA_CREDENTIAL_INFO,
-                            new String[] {service.getName(), descriptor.getServerAssertion().getName(), principalName});
+                            new String[]{service.getName(), descriptor.getServerAssertion().getName(), principalName});
 
                     if (principalName != null) {
                         subject.getPrincipals().add(new CustomAssertionPrincipal(principalName));
@@ -180,7 +183,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                             }
                         }
                         finally {
-                            if(customService!=null) customService.onCompletion();
+                            if (customService != null) customService.onCompletion();
                         }
                         return null;
                     }
@@ -196,30 +199,29 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 return AssertionStatus.NONE;
             } catch (PrivilegedActionException e) {
                 if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
-                    auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
+                    auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[]{
                             customAssertion.getName(),
-                            "Authentication (login) failed: " + ExceptionUtils.toStringDeep(e, true) });
+                            "Authentication (login) failed: " + ExceptionUtils.toStringDeep(e, true)});
                     return AssertionStatus.AUTH_FAILED;
                 } else if (ExceptionUtils.causedBy(e.getException(), GeneralSecurityException.class)) {
                     if (isAuthAssertion) {
-                        auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
+                        auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[]{
                                 customAssertion.getName(),
                                 "Authorization (access control) failed: " + ExceptionUtils.toStringDeep(e, true)});
                         return AssertionStatus.UNAUTHORIZED;
-                    }
-                    else {
-                        auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
+                    } else {
+                        auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[]{
                                 customAssertion.getName(),
-                                "Assertion failed: " + ExceptionUtils.toStringDeep(e, true) });
+                                "Assertion failed: " + ExceptionUtils.toStringDeep(e, true)});
                         return AssertionStatus.FALSIFIED;
                     }
                 }
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Failed to invoke the custom assertion"}, e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Failed to invoke the custom assertion"}, e);
                 return AssertionStatus.FAILED;
             } catch (AccessControlException e) {
-                auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
+                auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[]{
                         customAssertion.getName(),
-                        "Authorization (access control) failed: " + ExceptionUtils.toStringDeep(e, true) });
+                        "Authorization (access control) failed: " + ExceptionUtils.toStringDeep(e, true)});
                 return AssertionStatus.UNAUTHORIZED;
             }
         } finally {
@@ -233,10 +235,10 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
 
 
     private CustomAssertionsRegistrar getCustomAssertionRegistrar() {
-        if (customAssertionRegistrar !=null) {
+        if (customAssertionRegistrar != null) {
             return customAssertionRegistrar;
         }
-        customAssertionRegistrar = (CustomAssertionsRegistrar)applicationContext.getBean("customAssertionRegistrar");
+        customAssertionRegistrar = (CustomAssertionsRegistrar) applicationContext.getBean("customAssertionRegistrar");
 
         return customAssertionRegistrar;
     }
@@ -306,7 +308,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
      * context for later.
      */
     private static HttpServletResponse wrap(HttpServletResponse response, final PolicyEnforcementContext pec) {
-        return new HttpServletResponseWrapper(response){
+        return new HttpServletResponseWrapper(response) {
 
             /**
              * Don't actually add to the response here, save it for later.
@@ -338,8 +340,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         };
     }
 
-    private abstract class CustomService
-    {
+    private abstract class CustomService {
         protected void onCompletion() {
         }
     }
@@ -354,7 +355,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         public CustomServiceResponse(PolicyEnforcementContext pec) throws IOException, SAXException {
             this.pec = pec;
             try {
-                this.document = (Document)pec.getResponse().getXmlKnob().getDocumentReadOnly().cloneNode(true);
+                this.document = (Document) pec.getResponse().getXmlKnob().getDocumentReadOnly().cloneNode(true);
             } catch (Exception e) {
                 this.document = null;
                 logger.log(Level.FINE, "cannot get response xml", e);
@@ -369,6 +370,8 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
 
             // plug in the message parts in here
             context.put("messageParts", extractParts(pec.getResponse()));
+            //add the ServiceFinder
+            context.put("serviceFinder", new ServiceFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager"))));
 
             securityContext = new SecurityContext() {
                 public Subject getSubject() {
@@ -390,11 +393,11 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         }
 
         public Document getRequestDocument() {
-            return requestDocument;    
+            return requestDocument;
         }
 
         public void setDocument(Document document) {
-            XmlKnob respXml = (XmlKnob)pec.getResponse().getKnob(XmlKnob.class);
+            XmlKnob respXml = (XmlKnob) pec.getResponse().getKnob(XmlKnob.class);
             if (respXml == null)
                 pec.getResponse().initialize(document);
             else
@@ -442,7 +445,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         private final SecurityContext securityContext;
 
         public CustomServiceRequest(PolicyEnforcementContext pec)
-          throws IOException, SAXException {
+                throws IOException, SAXException {
             this.pec = pec;
             try {
                 this.document = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
@@ -458,6 +461,8 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             context.put("originalCookies", Collections.unmodifiableCollection(new ArrayList(newCookies)));
             // plug in the message parts in here
             context.put("messageParts", extractParts(pec.getRequest()));
+            //add ServiceFinder
+            context.put("serviceFinder", new ServiceFinderImpl(new CertificateFinderImpl((TrustedCertManager) applicationContext.getBean("trustedCertManager"))));
 
             securityContext = new SecurityContext() {
                 public Subject getSubject() {
@@ -480,7 +485,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         }
 
         public void setDocument(Document document) {
-            XmlKnob reqXml = (XmlKnob)pec.getRequest().getKnob(XmlKnob.class);
+            XmlKnob reqXml = (XmlKnob) pec.getRequest().getKnob(XmlKnob.class);
             if (reqXml == null)
                 pec.getRequest().initialize(document);
             else
@@ -506,7 +511,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             Collection originals = (Collection) context.get("originalCookies");
             for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
                 Cookie cookie = (Cookie) iterator.next();
-                if(!originals.contains(cookie)) {
+                if (!originals.contains(cookie)) {
                     // doesn't really matter if this has already been added
                     pec.addCookie(CookieUtils.fromServletCookie(cookie, true));
                 }

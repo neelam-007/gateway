@@ -4,12 +4,11 @@ import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.identity.BadCredentialsException;
-import com.l7tech.identity.IssuedCertNotPresentedException;
-import com.l7tech.identity.MissingCredentialsException;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
 import com.l7tech.security.xml.SignerInfo;
@@ -51,6 +50,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         defaultKey = (DefaultKey)getApplicationContext().getBean("defaultKey", DefaultKey.class);
+        providerConfigManager = (IdentityProviderConfigManager)getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
         auditContext = (AuditContext)getApplicationContext().getBean("auditContext", AuditContext.class);
     }
 
@@ -115,6 +115,27 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
         if (!clientCertManager.userCanGenCert(authenticatedUser, requestCert)) {
             logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
+              " Contact your administrator for more info.");
+            return;
+        }
+
+        try {
+            long oid  = authenticatedUser.getProviderId();
+            IdentityProviderConfig conf = providerConfigManager.findByPrimaryKey(oid);
+            if (conf instanceof LdapIdentityProviderConfig) {
+                LdapIdentityProviderConfig ldapIdentityProviderConfig = (LdapIdentityProviderConfig) conf;
+                if (ldapIdentityProviderConfig.isUserCertsEnabled()) {
+                   logger.log(Level.WARNING,
+                        "The LDAP Identity provider \"" + ldapIdentityProviderConfig.getName() + "\" allows client certs. Cannot grant a CSR for users with certs in LDAP.");
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
+                        " Contact your administrator for more info.");
+                    return;
+                }
+            }
+        } catch (FindException e) {
+            logger.log(Level.SEVERE,
+                    "Couldn't look up the identity provider for the user : " + authenticatedUser.getLogin() + " CSR denied");
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
               " Contact your administrator for more info.");
             return;
@@ -227,6 +248,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     }
 
     private DefaultKey defaultKey;
+    private IdentityProviderConfigManager providerConfigManager;
     private AuditContext auditContext;
 
     public static final String AUTH_HEADER_NAME = "Authorization";

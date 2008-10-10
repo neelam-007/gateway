@@ -42,7 +42,7 @@ public class EditKeyAliasForAssertion extends NodeAction {
 
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final AssertionKeyAliasEditor dlg = new AssertionKeyAliasEditor(mw, assertion);
+        final AssertionKeyAliasEditor dlg = new AssertionKeyAliasEditor(mw, assertion, !node.canEdit());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

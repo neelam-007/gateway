@@ -11,11 +11,13 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.message.JmsKnob;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -51,13 +53,9 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
-    private ClusterPropertyManager clusterPropertyManager;
+    private ClusterPropertyCache clusterPropertyCache;
     private StashManagerFactory stashManagerFactory;
-
-
-//    public JmsRequestHandlerImpl() {
-//        super();
-//    }
+    private MessageProducer responseProducer;
 
     public JmsRequestHandlerImpl(ApplicationContext ctx) {
 
@@ -68,7 +66,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
-        clusterPropertyManager = (ClusterPropertyManager)ctx.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+        clusterPropertyCache = (ClusterPropertyCache)ctx.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
@@ -195,7 +193,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                 try {
                     context.setAuditContext(auditContext);
                     context.setSoapFaultManager(soapFaultManager);
-                    context.setClusterPropertyManager(clusterPropertyManager);
+                    context.setClusterPropertyCache(clusterPropertyCache);
 
                     final Destination replyToDest = jmsRequest.getJMSReplyTo();
                     if (replyToDest != null || jmsRequest.getJMSCorrelationID() != null) {
@@ -251,6 +249,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                             if ( faultMessage == null ) faultMessage = status.getMessage();
                             try {
                                 String faultXml = SoapFaultUtils.generateSoapFaultXml(
+                                        (context.getService() != null) ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN,
                                         faultCode == null ? SoapUtil.FC_SERVER : faultCode,
                                         faultMessage, null, "");
 
@@ -343,6 +342,15 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     }
                 }
             }
+
+            // bug #5415 - we will close the MessageProducer only after a transaction is committed
+            if (responseProducer != null) {
+                try {
+                    responseProducer.close();
+                } catch (JMSException jex) {
+                    // ignore at this point
+                } 
+            }
         }
     }
 
@@ -379,26 +387,23 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                 _logger.fine( "No response will be sent!" );
             } else {
                 _logger.fine( "Sending response to " + jmsReplyDest );
-                MessageProducer producer = null;
-                try {
-                    Session session = bag.getSession();
-                    if ( session instanceof QueueSession ) {
-                        producer = ((QueueSession)session).createSender( (Queue)jmsReplyDest );
-                    } else if ( session instanceof TopicSession ) {
-                        producer = ((TopicSession)session).createPublisher( (Topic)jmsReplyDest );
-                    } else {
-                        producer = session.createProducer( jmsReplyDest );
-                    }
 
-                    final String newCorrId = endpointCfg.getEndpoint().isUseMessageIdForCorrelation() ?
-                            jmsRequestMsg.getJMSMessageID() :
-                            jmsRequestMsg.getJMSCorrelationID();
-                    jmsResponseMsg.setJMSCorrelationID(newCorrId);
-                    producer.send( jmsResponseMsg );
-                    _logger.fine( "Sent response to " + jmsReplyDest );
-                } finally {
-                    if ( producer != null ) producer.close();
+                // bug #5415 - we will close the MessageProducer only after a transaction is committed
+                Session session = bag.getSession();
+                if ( session instanceof QueueSession ) {
+                    responseProducer = ((QueueSession)session).createSender( (Queue)jmsReplyDest );
+                } else if ( session instanceof TopicSession ) {
+                    responseProducer = ((TopicSession)session).createPublisher( (Topic)jmsReplyDest );
+                } else {
+                    responseProducer = session.createProducer( jmsReplyDest );
                 }
+
+                final String newCorrId = endpointCfg.getEndpoint().isUseMessageIdForCorrelation() ?
+                        jmsRequestMsg.getJMSMessageID() :
+                        jmsRequestMsg.getJMSCorrelationID();
+                jmsResponseMsg.setJMSCorrelationID(newCorrId);
+                responseProducer.send( jmsResponseMsg );
+                _logger.fine( "Sent response to " + jmsReplyDest );
             }
             sent = true;
         } catch ( JMSException e ) {
@@ -437,10 +442,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
     public void setSoapFaultManager(SoapFaultManager soapFaultManager) {
         this.soapFaultManager = soapFaultManager;
-    }
-
-    public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
-        this.clusterPropertyManager = clusterPropertyManager;
     }
 
     public void setStashManagerFactory(StashManagerFactory stashManagerFactory) {

@@ -39,7 +39,19 @@ public abstract class Syntax {
      * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found 
      */
     public static String getMatchingName(String name, Set names) {
-        final String lname = name.toLowerCase();
+        return getMatchingName(name, names, false);
+    }
+
+    /**
+     * Finds the longest period-delimited subname of the provided name that matches at least one of the known names
+     * in the provided Set, or null if no match can be found.
+     * @param name the full name to search for
+     * @param names the set of names to search within
+     * @param preserveCase whether to preserve the case of the provided variable name
+     * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found
+     */
+    public static String getMatchingName(String name, Set names, boolean preserveCase) {
+        final String lname = preserveCase ? name : name.toLowerCase();
         if (names.contains(lname)) return lname;
 
         int pos = lname.length();

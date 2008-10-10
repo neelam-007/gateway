@@ -15,7 +15,9 @@ import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
@@ -38,6 +40,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Random;
 
 public class AdminLoginImpl
         extends ApplicationObjectSupport
@@ -51,21 +54,22 @@ public class AdminLoginImpl
     private final SsgKeyStoreManager ssgKeyStoreManager;
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
+    private ServerConfig serverConfig;
 
     public AdminLoginImpl(DefaultKey defaultKey, SsgKeyStoreManager ssgKeyStoreManager) {
         this.defaultKey = defaultKey;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
     }
 
-    public AdminLoginResult login( final String username, final String password )
-            throws AccessControlException, LoginException
-    {
-        if (username == null || password == null) {
-            throw new AccessControlException("Username and password are both required");
-        }
+    public AdminLoginResult login(X509Certificate cert) throws AccessControlException, LoginException {
+
+        //the implementation of this method will be very similar to the one that uses the username/password as
+        //login credentials, except that we'll use the client certificate as the login credentials instead
+        if (cert == null) throw new AccessControlException("Client certificate required.");
 
         try {
-            LoginCredentials creds = new LoginCredentials(username, password.toCharArray(), null);
+            //make certificate login credentials
+            LoginCredentials creds = LoginCredentials.makeCertificateCredentials(cert, null);
             User user = sessionManager.authenticate( creds );
 
             boolean remoteLogin = true;
@@ -77,7 +81,70 @@ public class AdminLoginImpl
             }
 
             if (user == null) {
-                getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + username + "'"));
+                getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
+                throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
+            }
+
+            if (remoteLogin) {
+                logger.info("User '" + user.getLogin() + "' logged in from IP '" + remoteIp + "'.");
+            } else {
+                logger.finer("User '" + user.getLogin() + "' logged in locally.");
+            }
+
+            String cookie = "-";
+            if (remoteLogin) {
+                // If local, caller is responsible for generating event/session if required
+                getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
+                cookie = sessionManager.createSession(user, null);
+            }
+
+            return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion());
+        } catch (ObjectModelException e) {
+            logger.log(Level.WARNING, "Authentication provider error", e);
+            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
+        }
+    }
+
+    public AdminLoginResult login(String username, String password)
+            throws AccessControlException, LoginException
+    {
+        if (username == null || password == null) {
+            throw new AccessControlException("Username and password are both required");
+        }
+        String login = username;
+
+        try {
+            LoginCredentials creds;
+            if ( !username.equalsIgnoreCase("") ) {
+                creds = new LoginCredentials(username, password.toCharArray(), null);
+            } else {
+                X509Certificate cert = RemoteUtils.getClientCertificate();
+                if ( cert == null ) {
+                    throw new AccessControlException("Username and password or certificate is required.");
+                }
+
+                creds = LoginCredentials.makeCertificateCredentials(cert, SslAssertion.class);
+                login = creds.getLogin();
+            }
+
+            boolean remoteLogin = true;
+            String remoteIp = null;
+            try {
+                remoteIp = RemoteUtils.getClientHost();
+            } catch (ServerNotActiveException snae) {
+                remoteLogin = false;
+            }
+
+            User user;
+            try {
+                user = sessionManager.authenticate( creds );
+            } catch(LoginRequireClientCertificateException e) {
+                getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
+                throw e;
+            }
+
+            if (user == null) {
+                getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
                 throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
             }
 
@@ -114,8 +181,8 @@ public class AdminLoginImpl
             if ( !sessionManager.changePassword( remoteUser, currentPassword, newPassword ) ) {
                 throw new FailedLoginException("'" + remoteUser.getLogin() + "'" + " could not be authenticated");
             }
-
         } catch (InvalidPasswordException ipe) {
+            logger.log(Level.WARNING, ipe.getMessage());
             throw new IllegalArgumentException(ipe.getMessage());    
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
@@ -123,7 +190,7 @@ public class AdminLoginImpl
         } 
     }
 
-    public AdminLoginResult resume( final String sessionId ) throws AuthenticationException {
+    public AdminLoginResult resume(String sessionId) throws AuthenticationException {
         User user = null;
         try {
             user = sessionManager.resumeSession(sessionId);
@@ -140,6 +207,7 @@ public class AdminLoginImpl
 
     public void logout() {
         User user = JaasUtils.getCurrentUser();
+        getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGOFF));
         sessionManager.destroySession(user);
     }
 
@@ -176,8 +244,11 @@ public class AdminLoginImpl
                 }
             }
 
-            if (digestWith == null) {
-                digestWith = Integer.toString(AdminLoginImpl.class.hashCode() * 17) + username;
+            // If we don't known the password use a value that will fail but will
+            // always give the same value for the name. This may help prevent discovery of
+            // admin account usernames
+            if ( digestWith == null ) {
+                digestWith = username + AdminLogin.class.hashCode();
             }
 
             X509Certificate certificate = getCurrentConnectorCertificate();
@@ -239,6 +310,14 @@ public class AdminLoginImpl
 
         SsgKeyEntry entry = ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, keystoreId);
         return entry == null ? getDefaultSslCertificate() : entry.getCertificate();
+    }
+
+    public ServerConfig getServerConfig() {
+        return serverConfig;
+    }
+
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
     }
 
     public void afterPropertiesSet() throws Exception {

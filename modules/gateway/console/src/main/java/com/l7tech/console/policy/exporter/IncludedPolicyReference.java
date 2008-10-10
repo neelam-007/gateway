@@ -69,6 +69,12 @@ public class IncludedPolicyReference extends ExternalReference {
         
         try {
             Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(policyReference.retrievePolicyGuid());
+            //bug 5316: if we arent able to find the policy from the database, and the assertion is an Include instance
+            //then we could almost guarantee that the fragment policy exists in the assertion (policyReference), so we'll
+            //grab the policy from there
+            if (policy == null) {
+                policy = policyReference.retrieveFragmentPolicy();
+            }
             this.name = (name == null)? policy.getName() : name;
             this.type = policy.getType();
             this.soap = policy.isSoap();
@@ -115,6 +121,7 @@ public class IncludedPolicyReference extends ExternalReference {
                         return false;
                     }
                 } catch(Exception e) {
+                    // do nothing
                 }
 
                 return true;
@@ -291,5 +298,21 @@ public class IncludedPolicyReference extends ExternalReference {
         if(useType == UseType.RENAME) {
             this.oldName = oldName;
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof IncludedPolicyReference)) {
+            return false;
+        }
+
+        IncludedPolicyReference other = (IncludedPolicyReference)o;
+
+        return (guid == null ? other.guid == null : guid.equals(other.guid));
+    }
+
+    @Override
+    public int hashCode() {
+        return (guid != null ? guid.hashCode() : 0);
     }
 }

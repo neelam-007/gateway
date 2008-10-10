@@ -35,9 +35,10 @@ import java.util.*;
  */
 public class SoapMessageGenerator {
 
-    private static final String PREVIX_SCHEMA  ="xsd";
-    private static final String PREVIX_SCHEMA_INSTANCE  ="xsi";
-    private static final String PREFIX_SOAP = "soapenv";
+    private static final String PREFIX_SCHEMA ="xsd";
+    private static final String PREFIX_SCHEMA_INSTANCE ="xsi";
+    private static final String PREFIX_SOAP11 = "soapenv";
+    private static final String PREFIX_SOAP12 = "s12";
     private MessageInputGenerator messageInputGenerator;
     private Wsdl.UrlGetter wsdlUrlGetter;
     private Wsdl wsdl;
@@ -196,6 +197,24 @@ public class SoapMessageGenerator {
         return null;
     }
 
+    private String getSoapProtocolForBindingOperation(BindingOperation bindingOperation) {
+        BindingInput bi = bindingOperation.getBindingInput();
+        if (bi != null) {
+            Iterator eels = bi.getExtensibilityElements().iterator();
+            ExtensibilityElement ee;
+            while (eels.hasNext()) {
+                ee = (ExtensibilityElement)eels.next();
+                if (ee instanceof javax.wsdl.extensions.soap.SOAPBody) {
+                    return SOAPConstants.SOAP_1_1_PROTOCOL;
+                } else if (ee instanceof javax.wsdl.extensions.soap12.SOAP12Body) {
+                    return SOAPConstants.SOAP_1_2_PROTOCOL;
+                }
+            }
+        }
+
+        return SOAPConstants.SOAP_1_1_PROTOCOL;
+    }
+
     /**
      * Generate the soap request envelope and the target namespace
      *
@@ -204,14 +223,19 @@ public class SoapMessageGenerator {
      */
     private Object[] generateEnvelope(BindingOperation bindingOperation)
       throws SOAPException {
-        MessageFactory messageFactory = SoapUtil.getMessageFactory();
+        final String soapProtocol = getSoapProtocolForBindingOperation(bindingOperation);
+        final String soapNsPrefix = getSoapNsPrefixForSoapProtocol(soapProtocol);
+        MessageFactory messageFactory = SoapUtil.getMessageFactory(soapProtocol);
         SOAPMessage soapMessage = messageFactory.createMessage();
         SOAPPart soapPart = soapMessage.getSOAPPart();
         SOAPEnvelope envelope = soapPart.getEnvelope();
-        setPrefix(PREFIX_SOAP, envelope);
+
+        setPrefix(soapNsPrefix, envelope);
         envelope.removeNamespaceDeclaration("SOAP-ENV");
-        setPrefix(PREFIX_SOAP, envelope.getBody());
-        setPrefix(PREFIX_SOAP, envelope.getHeader());
+        envelope.removeNamespaceDeclaration("soapenv");
+        envelope.removeNamespaceDeclaration("env");
+        setPrefix(soapNsPrefix, envelope.getBody());
+        setPrefix(soapNsPrefix, envelope.getHeader());
         verifyNamespaces(envelope);
         String targetNameSpace = wsdl.getDefinition().getTargetNamespace();
 
@@ -229,10 +253,23 @@ public class SoapMessageGenerator {
                     if (encodingStyles != null && !encodingStyles.isEmpty()) {
                         envelope.setEncodingStyle(encodingStyles.get(0).toString());
                     }
+                } else if(ee instanceof javax.wsdl.extensions.soap12.SOAP12Body) {
+                    javax.wsdl.extensions.soap12.SOAP12Body body = (javax.wsdl.extensions.soap12.SOAP12Body)ee;
+                    String uri = body.getNamespaceURI();
+                    if (uri != null) targetNameSpace = uri;
+                    if (body.getEncodingStyle() != null) {
+                        envelope.setEncodingStyle(body.getEncodingStyle().toString());
+                    }
                 }
             }
         }
         return new Object[]{soapMessage, targetNameSpace};
+    }
+
+    private String getSoapNsPrefixForSoapProtocol(String soapProtocol) {
+        return SOAPConstants.SOAP_1_2_PROTOCOL.equals(soapProtocol)
+                ? PREFIX_SOAP12
+                : PREFIX_SOAP11;        
     }
 
     private void setPrefix(String prefix, SOAPElement element) {
@@ -255,10 +292,14 @@ public class SoapMessageGenerator {
             prefixes.add(envelope.getNamespaceURI(it.next().toString()));
         }
 
+        boolean isSoap12 = isSoap12(envelope);
+        String soapNsPrefix = isSoap12 ? PREFIX_SOAP12 : PREFIX_SOAP11;
+        String soapNsUri = isSoap12 ? SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE: SOAPConstants.URI_NS_SOAP_ENVELOPE;
+
         String requirePrefixes[][] = {
-            {PREVIX_SCHEMA, XMLConstants.W3C_XML_SCHEMA_NS_URI},
-            {PREVIX_SCHEMA_INSTANCE, XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI},
-            {PREFIX_SOAP, SOAPConstants.URI_NS_SOAP_ENVELOPE},
+            {PREFIX_SCHEMA, XMLConstants.W3C_XML_SCHEMA_NS_URI},
+            {PREFIX_SCHEMA_INSTANCE, XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI},
+            {soapNsPrefix, soapNsUri},
         };
 
         for (int i = 0; i < requirePrefixes.length; i++) {
@@ -267,6 +308,10 @@ public class SoapMessageGenerator {
                 envelope.addNamespaceDeclaration(requirePrefix[0], requirePrefix[1]);
             }
         }
+    }
+
+    private boolean isSoap12(SOAPEnvelope envelope) {
+        return SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(envelope.getNamespaceURI());
     }
 
     /**

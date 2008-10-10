@@ -33,6 +33,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -51,6 +52,10 @@ public class AuditRecordManagerImpl
         extends HibernateEntityManager<AuditRecord, AuditRecordHeader>
         implements AuditRecordManager, ApplicationContextAware
 {
+    private static final String SQL_GET_MIN_OID = "SELECT MIN(objectid) FROM audit_main WHERE objectid > ?";
+    private static final String SQL_INNODB_DATA = "SHOW VARIABLES LIKE 'innodb_data_file_path'";
+    private static final String SQL_CURRENT_USAGE = "SHOW TABLE STATUS";
+
     //- PUBLIC
 
     public void setApplicationContext(ApplicationContext applicationContext) {
@@ -138,6 +143,131 @@ public class AuditRecordManagerImpl
         new Thread(runnable).start();
     }
 
+    public long getMinOid(long lowerLimit) throws SQLException {
+        final Session session = getSession();
+        PreparedStatement stmt = null;
+        try {
+            final Connection conn = session.connection();
+            stmt = conn.prepareStatement(SQL_GET_MIN_OID);
+            stmt.setLong(1, lowerLimit);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                String min = rs.getString(1);
+                if (min == null || "null".equalsIgnoreCase(min)) {
+                    logger.log(Level.FINE, "Min audit record object id not retrieved (table empty?).");
+                } else {
+                    return Long.parseLong(min);
+                }
+            }
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
+            releaseSession(session);
+        }
+        return -1;
+    }
+
+    public int deleteRangeByOid(final long start, final long end) throws SQLException {
+        final Session session = getSession();
+        PreparedStatement deleteStmt = null;
+        try {
+            final Connection conn = session.connection();
+            deleteStmt = conn.prepareStatement("DELETE FROM audit_main WHERE objectid >= ? AND objectid <= ? LIMIT 10000");
+            deleteStmt.setLong(1, start);
+            deleteStmt.setLong(2, end);
+            return deleteStmt.executeUpdate();
+        } finally {
+            ResourceUtils.closeQuietly(deleteStmt);
+            releaseSession(session);
+        }
+    }
+
+    /**
+     * Gets the autoextend:max defined for the innodb table space, from the innodb_data_file_paths MySQL variable.
+     *
+     * @return  Max table space size in bytes, or -1 if not defined 
+     * @throws FindException if an error was encountered and the value could not be retrieved
+     */
+    public long getMaxTableSpace() throws FindException {
+        final Session session = getSession();
+        PreparedStatement statement = null;
+        try {
+            final Connection conn = session.connection();
+            statement = conn.prepareStatement(SQL_INNODB_DATA);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs != null && rs.next()) {
+                String innodbData = rs.getString("value");
+                int index = innodbData.lastIndexOf(":autoextend:max:");
+                if (index > 0) {
+                    String max = innodbData.substring(index + 16);
+                    return getLongSize(max);
+                } else if (innodbData.indexOf(":autoextend") > 0) {
+                    return -1;
+                } else {
+                    // use fixed size(es)
+                    long max = 0;
+                    String[] datafiles = innodbData.split(";");
+                    for (String datafile : datafiles) {
+                        String[] tokens = datafile.split(":");
+                        if (tokens.length > 1) {
+                            max += getLongSize(tokens[1]);
+                        }
+                    }
+                    return max;
+                }
+            }
+
+            return -1; // rs empty
+
+        } catch (SQLException e) {
+            throw new FindException("Error retrieving max space allocated for the innodb tablespace.", e);
+        } catch (NumberFormatException ne) {
+            throw new FindException("Error retrieving max space allocated for the innodb tablespace.", ne);
+        } finally {
+            ResourceUtils.closeQuietly(statement);
+            releaseSession(session);
+        }
+    }
+
+    // gets a long out of a mysql / innodb size specification NNNN[M|G]
+    private long getLongSize(String max) {
+        long multiplier = 1L;
+        if ("m".equalsIgnoreCase(max.substring(max.length()-1)))
+            multiplier = 0x100000L;
+        else if ("g".equalsIgnoreCase(max.substring(max.length()-1)))
+            multiplier = 0x40000000L;
+        return multiplier * Long.parseLong(multiplier > 1 ? max.substring(0, max.length() -1) : max);
+    }
+
+    public long getCurrentUsage() throws FindException {
+        final Session session = getSession();
+        PreparedStatement statement = null;
+        try {
+            final Connection conn = session.connection();
+            statement = conn.prepareStatement(SQL_CURRENT_USAGE);
+            ResultSet rs = statement.executeQuery();
+            if (rs != null) {
+                long data_length = 0L;
+                long index_length = 0L;
+                while (rs.next()) {
+                    data_length += rs.getLong("data_length");
+                    index_length += rs.getLong("index_length");
+                }
+                long usage = data_length + index_length;
+                logger.log(Level.FINE, "Current usage: ''{0}'' bytes", usage);
+                return usage;
+            }
+        } catch (SQLException e) {
+            throw new FindException("Error retrieving max space allocated for the innodb tablespace.", e);
+        } finally {
+            ResourceUtils.closeQuietly(statement);
+            releaseSession(session);
+        }
+
+        // shouldn't happen
+        throw new FindException("Error retrieving max space allocated for the innodb tablespace; no data retrieved.");
+    }
+
     public Class<AuditRecord> getImpClass() {
         return AuditRecord.class;
     }
@@ -171,6 +301,11 @@ public class AuditRecordManagerImpl
     private static final String PROP_MESSAGE = "message";
     private static final String PROP_SERVICE_NAME = "name";
     private static final String PROP_REQUEST_ID = "strRequestId";
+    public static final String PROP_NAME = "name";
+    public static final String PROP_MSG = "message";
+
+    private static final String DELETE_RANGE_START = "delete_range_start";
+    private static final String DELETE_RANGE_END = "delete_range_end";
 
     private static final String DELETE_MYSQL = "DELETE FROM audit_main WHERE audit_level <> ? AND time < ? LIMIT 10000";
     private static final String DELETE_DERBY = "DELETE FROM audit_main where objectid in (SELECT objectid FROM (SELECT ROW_NUMBER() OVER() as rownumber, objectid FROM audit_main WHERE audit_level <> ?  and time < ?) AS foo WHERE rownumber <= 10000)";

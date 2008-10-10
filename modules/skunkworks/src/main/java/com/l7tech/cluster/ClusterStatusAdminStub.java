@@ -39,6 +39,10 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
         throw new UnsupportedOperationException();
     }
 
+    public boolean isCluster() {
+        return false;
+    }
+    
     public ClusterNodeInfo[] getClusterStatus() {
 
         ClusterNodeInfo[] cluster = new ClusterNodeInfo[8];

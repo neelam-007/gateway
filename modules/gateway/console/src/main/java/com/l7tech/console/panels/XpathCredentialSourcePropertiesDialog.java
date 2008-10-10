@@ -4,6 +4,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.SoapConstants;
@@ -74,6 +75,9 @@ public class XpathCredentialSourcePropertiesDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                if(xpathCredsAssertion.getSoapVersion() == SoapVersion.SOAP_1_2 && !namespaces.containsKey("s12")) {
+                    namespaces.put("s12", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
+                }
                 xpathCredsAssertion.setXpathExpression(new XpathExpression(loginXpathField.getText(), namespaces));
                 xpathCredsAssertion.setPasswordExpression(new XpathExpression(passwordXpathField.getText(), namespaces));
                 xpathCredsAssertion.setRemoveLoginElement(removeLoginCheckbox.isSelected());
@@ -109,6 +113,9 @@ public class XpathCredentialSourcePropertiesDialog extends JDialog {
     }
 
     private void editNamespaces() {
+        if(xpathCredsAssertion.getSoapVersion() == SoapVersion.SOAP_1_2 && !namespaces.containsKey("s12")) {
+            namespaces.put("s12", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
+        }
         final NamespaceMapEditor nseditor = new NamespaceMapEditor(this, namespaces, null);
         nseditor.pack();
         Utilities.centerOnScreen(nseditor);

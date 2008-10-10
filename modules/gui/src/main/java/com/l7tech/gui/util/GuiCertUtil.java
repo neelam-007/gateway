@@ -57,9 +57,10 @@ public class GuiCertUtil {
         assertParentIsFrameOrDialog(parent);
 
         final JFileChooser fc = FileChooserUtil.createJFileChooser();
-        FileFilter pemFilter = buildFilter(".pem", "(*.pem) PEM/BASE64 X.509 certificates.");
-        FileFilter cerFilter = buildFilter(".cer", "(*.cer) DER encoded X.509 certificates.");
-        FileFilter p12Filter = buildFilter(".p12", "(*.p12) PKCS 12 key store.");
+        fc.setFileHidingEnabled(false);
+        FileFilter pemFilter = buildFilter(new String[] {".pem"}, "(*.pem) PEM/BASE64 X.509 certificates.");
+        FileFilter cerFilter = buildFilter(new String[] {".cer"}, "(*.cer) DER encoded X.509 certificates.");
+        FileFilter p12Filter = buildFilter(new String[] {".p12", ".pfx"}, "(*.p12, *.pfx) PKCS 12 key store.");
 
         if (privateKeyRequired) {
             fc.setDialogTitle("Load Private Key");
@@ -98,7 +99,7 @@ public class GuiCertUtil {
                             } else if (selectedFileName.endsWith(".cer") ||
                                      selectedFileName.endsWith(".der")) {
                                 selectedFilter = cerFilter;
-                            } else if (selectedFileName.endsWith(".p12")) {
+                            } else if (selectedFileName.endsWith(".p12") || selectedFileName.endsWith(".pfx")) {
                                 selectedFilter = p12Filter;
                             }
                         }
@@ -232,7 +233,7 @@ public class GuiCertUtil {
                             }
                             else {
                                 JOptionPane.showMessageDialog(parent, "Error reading file", "Could not read certificate.", JOptionPane.ERROR_MESSAGE);
-                                logger.log(Level.WARNING, "Error reading certificate data", ioe);
+                                logger.log(Level.WARNING, "Error reading certificate data. " + ExceptionUtils.getMessage(ioe));
                                 continue;
                             }
                         }
@@ -294,8 +295,8 @@ public class GuiCertUtil {
         final JFileChooser fc = FileChooserUtil.createJFileChooser();
         fc.setDialogTitle("Save certificate as ...");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
-        FileFilter pemFilter = buildFilter(".pem", "(*.pem) PEM/BASE64 X.509 certificates.");
-        FileFilter cerFilter = buildFilter(".cer", "(*.cer) DER encoded X.509 certificates.");
+        FileFilter pemFilter = buildFilter(new String[] {".pem"}, "(*.pem) PEM/BASE64 X.509 certificates.");
+        FileFilter cerFilter = buildFilter(new String[] {".cer"}, "(*.cer) DER encoded X.509 certificates.");
         fc.addChoosableFileFilter(pemFilter);
         fc.addChoosableFileFilter(cerFilter);
         fc.setMultiSelectionEnabled(false);
@@ -382,10 +383,20 @@ public class GuiCertUtil {
 
     private static final String SAVE_DIALOG_ERROR_TITLE = "Error saving certificate";
 
-    private static FileFilter buildFilter(final String extension, final String description) {
+    private static FileFilter buildFilter(final String[] extensions, final String description) {
         return new FileFilter() {
             public boolean accept(File f) {
-                return  f.isDirectory() || f.getName().toLowerCase().endsWith(extension);
+                if(f.isDirectory()) {
+                    return true;
+                } else {
+                    for(String extension : extensions) {
+                        if(f.getName().toLowerCase().endsWith(extension)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
             }
             public String getDescription() {
                 return description;

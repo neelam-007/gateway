@@ -6,14 +6,11 @@
 
 package com.l7tech.security.xml.processor;
 
-import com.l7tech.security.token.EncryptedElement;
-import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.token.SignedElement;
-import com.l7tech.security.token.SigningSecurityToken;
-import com.l7tech.security.token.SignedPart;
+import com.l7tech.security.token.*;
 import com.l7tech.security.xml.SecurityActor;
 import org.w3c.dom.Element;
 
+import java.util.List;
 
 /**
  * @author mike
@@ -57,13 +54,12 @@ public class ProcessorResultWrapper implements ProcessorResult {
         return delegate.getProcessedActor();
     }
 
-    public String getLastSignatureValue() {
-        return delegate.getLastSignatureValue();
+    public List<String> getValidatedSignatureValues() {
+        return delegate.getValidatedSignatureValues();
     }
 
-    public String getLastSignatureConfirmation()
-    {
-        return delegate.getLastSignatureConfirmation();
+    public List<SignatureConfirmation> getSignatureConfirmationValues() {
+        return delegate.getSignatureConfirmationValues();
     }
 
     public String getLastKeyEncryptionAlgorithm()

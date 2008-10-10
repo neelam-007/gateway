@@ -389,6 +389,20 @@ public final class Message {
     }
 
     /**
+     * Configure this Message as a Email Message.  This attaches a {@link javax.mail.internet.MimeMessage} to this
+     * Message.  A Message may have at most one Email knob.
+     *
+     * @param emailKnob source of Email message.  May not be null.
+     * @throws IllegalStateException if this Message is already configured as a JMS Message
+     */
+    public void attachEmailKnob(EmailKnob emailKnob) throws IllegalStateException {
+        if (getKnob(EmailKnob.class) != null)
+            throw new IllegalStateException("This Message is already configured as an Email Message");
+        rootFacet = new EmailFacet(this, rootFacet, emailKnob);
+        invalidateCachedKnobs();
+    }
+
+    /**
      * Configure this Message as an FTP Message.  This attaches an FTP STOR command to this
      * Message.  A Message may have at most one FTP knob.
      *

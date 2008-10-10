@@ -57,12 +57,14 @@ public class CaptureProperty extends JDialog {
         setContentPane(mainPanel);
         setTitle(title);
         descField.setText(description);
+        descField.setCaretPosition(0);
         if(property.getName() != null) {
             keyComboBox.setModel(new DefaultComboBoxModel(new String[]{property.getName()}));
             keyComboBox.setSelectedIndex(0);
             keyComboBox.setEnabled(false);
             keyComboBox.setEditable(false);
             valueField.setText(property.getValue());
+            valueField.setCaretPosition(0);
         } else {
             valueField.setText("");
             if (descriptors == null || descriptors.isEmpty()) {

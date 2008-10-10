@@ -79,6 +79,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private String serverUrl = null; // Special URL for generic (non-SSG) services
     private String failoverStrategyName = FailoverStrategyFactory.ORDERED.getName();
     private boolean genericService = false; // true if the server is not actually an SSG
+    private boolean compress = false;
     private int httpConnectTimeout = -1;
     private int httpReadTimeout = -1;
     private Map<String, String> properties = new LinkedHashMap<String, String>();
@@ -447,6 +448,14 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     public void setSavePasswordToDisk(boolean savePasswordToDisk) {
         this.savePasswordToDisk = savePasswordToDisk;
         getRuntime().setCachedPassword(getRuntime().getCachedPassword());
+    }
+
+    public boolean isCompress() {
+        return compress;
+    }
+
+    public void setCompress(boolean compress) {
+        this.compress = compress;
     }
 
     public int getSslPort() {

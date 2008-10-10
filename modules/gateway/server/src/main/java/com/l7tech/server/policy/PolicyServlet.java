@@ -1,6 +1,6 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.Policy;
 import com.l7tech.common.http.HttpConstants;
@@ -84,7 +84,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private SoapFaultManager soapFaultManager;
     private byte[] serverCertificate;
     private ServerConfig serverConfig;
-    private ClusterPropertyManager clusterPropertyManager;
+    private ClusterPropertyCache clusterPropertyCache;
     private PolicyPathBuilder policyPathBuilder;
     private PolicyCache policyCache;
 
@@ -98,7 +98,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             DefaultKey ku = (DefaultKey)applicationContext.getBean("defaultKey", DefaultKey.class);
             serverCertificate = ku.getSslInfo().getCertificate().getEncoded();
             serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
-            clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
+            clusterPropertyCache = (ClusterPropertyCache)applicationContext.getBean("clusterPropertyCache");
             PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
             policyPathBuilder = pathBuilderFactory.makePathBuilder();
             policyCache = (PolicyCache) applicationContext.getBean( "policyCache", PolicyCache.class );
@@ -147,7 +147,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             context = new PolicyEnforcementContext(request, response);
             context.setAuditContext(auditContext);
             context.setSoapFaultManager(soapFaultManager);
-            context.setClusterPropertyManager(clusterPropertyManager);
+            context.setClusterPropertyCache(clusterPropertyCache);
             boolean success = false;
 
             try {

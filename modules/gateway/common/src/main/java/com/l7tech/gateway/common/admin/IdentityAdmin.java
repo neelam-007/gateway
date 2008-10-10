@@ -377,4 +377,14 @@ public interface IdentityAdmin {
     @Secured(types=GROUP, stereotype=GET_IDENTITY_PROPERTY_BY_ID, relevantArg=1)
     Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws FindException;
 
+    /**
+     * Resets the logon fail count to zero without changing the last login attempted time value.
+     *
+     * @param user  User to update the fail count
+     * @throws FindException
+     * @throws UpdateException
+     */
+    @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)
+    void resetLogonFailCount(User user) throws FindException, UpdateException;
+
 }
