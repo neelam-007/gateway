@@ -170,6 +170,8 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_ADD_MAPPINGS_INTO_AUDIT = "customerMapping.addToGatewayAuditEvents";
     public static final String PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS = "customerMapping.addToServiceMetrics";
 
+    public static final String PARAM_CERTIFICATE_DISCOVERY_ENABLED = "services.certificateDiscoveryEnabled";
+
     public static final String PARAM_EMAIL_LISTENER_THREAD_LIMIT = "emailListenerThreadLimit";
     public static final String PARAM_EMAIL_LISTENER_THREAD_DISTRIBUTION = "emailListenerThreadDistribution";
 

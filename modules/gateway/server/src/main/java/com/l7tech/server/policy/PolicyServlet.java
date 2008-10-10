@@ -384,7 +384,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         byte[] pemEncodedServerCertificate = pemEncodedServerCertificateString.getBytes("UTF-8");
 
         // Insert Cert-Check-NNN: headers if we can.
-        if (username != null && nonce != null) {
+        boolean certificateDiscoveryEnabled = Boolean.valueOf(
+            ServerConfig.getInstance().getProperty(ServerConfig.PARAM_CERTIFICATE_DISCOVERY_ENABLED));
+        if (certificateDiscoveryEnabled && username != null && nonce != null) {
             Collection<CertificateCheckInfo> checks = findCheckInfos(username, pemEncodedServerCertificate, nonce);
             for (CertificateCheckInfo info : checks) {
                 if (info != null) {
