@@ -57,7 +57,9 @@ harden() {
   echo 'export TMOUT=900' >> /etc/profile
 
   # GEN000020
+  sed -i -e '/s1:2345:respawn:/sbin/agetty -L 9600 ttyS1 vt100/d' /etc/inittab
   sed -i -e '/~~:S:wait:/sbin/sulogin/d' /etc/inittab
+  echo "s1:2345:respawn:/sbin/agetty -L 9600 ttyS1 vt100" >> /etc/inittab
   echo "~~:S:wait:/sbin/sulogin" >> /etc/inittab
 
   # GEN000440
