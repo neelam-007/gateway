@@ -1,33 +1,33 @@
 package com.l7tech.server.ems.pages;
 
+import org.apache.wicket.IRequestTarget;
+import org.apache.wicket.Page;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.ResourceReference;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.WicketAjaxReference;
+import org.apache.wicket.behavior.AbstractAjaxBehavior;
+import org.apache.wicket.behavior.HeaderContributor;
+import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.ISortableDataProvider;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
-import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.markup.html.form.Button;
-import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WicketEventReference;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.behavior.HeaderContributor;
-import org.apache.wicket.behavior.AbstractAjaxBehavior;
-import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.markup.html.form.Button;
+import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.IRequestTarget;
-import org.apache.wicket.Page;
-import org.apache.wicket.ResourceReference;
+import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebApplication;
-import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.WicketAjaxReference;
 import org.mortbay.util.ajax.JSON;
 
-import java.util.List;
-import java.util.Map;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Wicket component for YUI table
@@ -74,6 +74,7 @@ public class YuiDataTable extends Panel {
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONTAINER ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATASOURCE ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATATABLE ) );
+        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_PAGINATOR ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONNECTION ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_JSON ) );
 

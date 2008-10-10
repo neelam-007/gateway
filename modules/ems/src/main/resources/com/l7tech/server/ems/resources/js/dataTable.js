@@ -24,82 +24,6 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, so
 
     var defaultPageSize = 10;
 
-    // function to generate a query string for the DataSource.  Also used
-    // as the state indicator for the History Manager
-    var generateStateString = function (start,count,key,dir) {
-        start = start || 0;
-        key   = key || sortBy;
-        dir   = dir || sortDir;
-        return "results="+count+"&startIndex="+start+"&sort="+key+"&dir="+dir;
-    };
-
-    // function to extract the key values from the state string
-    var parseStateString = function (state) {
-        return {
-            results    : /\bresults=(\d+)/.test(state)    ? parseInt(RegExp.$1) : defaultPageSize,
-            startIndex : /\bstartIndex=(\d+)/.test(state) ? parseInt(RegExp.$1) : 0,
-            sort       : /\bsort=(\w+)/.test(state)       ? RegExp.$1 : sortBy,
-            dir        : /\bdir=(\w+)/.test(state)        ? RegExp.$1 : sortDir
-        };
-    };
-
-    // function to handle onStateChange events from Browser History Manager
-    var doRequest = function (state, paginationState) {
-        // Use the DataTable's baked in server-side pagination handler
-        var callback = null;
-        if ( paginationState ) {
-            callback = {
-                success  : myDataTable.onDataReturnSetRows,
-                failure  : myDataTable.onDataReturnSetRows,
-                argument : {
-                    startIndex : paginationState.recordOffset,
-                    pagination : paginationState
-                },
-                scope : myDataTable };
-        } else {
-            callback = {
-                success  : myDataTable.onDataReturnSetRows,
-                failure  : myDataTable.onDataReturnSetRows,
-                scope : myDataTable };
-        }
-
-        myDataSource.sendRequest(state, callback);
-    };
-
-    var handlePagination = function (state,datatable) {
-        var sortedBy  = datatable.get('sortedBy');
-
-        var newState = generateStateString(
-                            state.recordOffset,
-                            state.rowsPerPage,
-                            sortedBy.key,
-                            sortedBy.dir);
-
-        doRequest(newState, state);
-    };
-
-    // function used to intercept sorting requests
-    var handleSorting = function (oColumn) {
-        // Which direction
-        var sDir = "asc";
-
-        // Already sorted?
-        if(oColumn.key === this.get("sortedBy").key) {
-            sDir = (this.get("sortedBy").dir === YAHOO.widget.DataTable.CLASS_ASC) ?
-                    "asc" : "desc";
-        }
-
-        var count = this.get("paginator").get("rowsPerPage");
-        var newState = generateStateString(0, count, oColumn.key, sDir);
-
-        doRequest(newState);
-    };
-    
-
-    // Create initial state.  Parse the state string into an object literal.
-    var initialRequest = generateStateString(0,defaultPageSize,sortBy,sortDir),
-        state          = parseStateString(initialRequest);
-
     // Create the DataSource
     myDataSource = new YAHOO.util.DataSource(dataUrl);
     myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;
@@ -128,14 +52,13 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, so
     myPaginator.setAttributeConfig('lastPageLinkLabel',     {value:'<img src="../images/gotoLast.png" alt="" />', validator:YAHOO.lang.isString});
 
     var myConfig = {
+        dynamicData : true,
         paginator : myPaginator,
-        paginationEventHandler : handlePagination,
-        // generateRequest : generateStateString, // moot
         sortedBy : {
-            key : state.sort,
-            dir : state.dir
+            key : sortBy,
+            dir : sortDir
         },
-        initialRequest : initialRequest
+        initialRequest : 'sort=' + sortBy + '&dir=' + sortDir + '&startIndex=0&results=' + defaultPageSize
     };
 
     // Instantiate DataTable
@@ -146,11 +69,10 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, so
         myConfig             // Other configurations
     );
 
-    // Listen to header link clicks to sort the column
-    myDataTable.subscribe('theadCellClickEvent', myDataTable.onEventSortColumn);
-
-    // Override the DataTable's sortColumn method with our intercept handler
-    myDataTable.sortColumn = handleSorting;
+    myDataTable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) {
+        oPayload.totalRecords = oResponse.meta.totalRecords;
+        return oPayload;
+    }
 
     if ( selectionControlIds || selectionCallback ) {
         // Subscribes to events for row selection.
