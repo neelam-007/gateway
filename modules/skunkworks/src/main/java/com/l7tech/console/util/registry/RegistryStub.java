@@ -47,6 +47,7 @@ import java.net.PasswordAuthentication;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.security.cert.X509Certificate;
 
 
 /**
@@ -308,6 +309,9 @@ public class RegistryStub extends Registry {
             }
 
             public void logoff() {                
+            }
+
+            public void acceptServerCertificate(X509Certificate certificate) {                
             }
         };
     }

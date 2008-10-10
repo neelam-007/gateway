@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.VersionException;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
 
 /**
  * The client credential manager stub mode. Just collect the credentials and
@@ -37,5 +38,8 @@ public class SecurityProviderStub extends SecurityProvider {
      * Logoff the session, default implementation, that does nothing
      */
     public void logoff() {
+    }
+
+    public void acceptServerCertificate(X509Certificate certificate) {
     }
 }
