@@ -37,7 +37,9 @@
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="resolution" isForPrompting="false" class="java.lang.Integer">
+    <parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
+    <parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="resolution" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[($P{INTERVAL_UNIT_OF_TIME}.equals( "HOUR" ))?new Integer(1):new Integer(2)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="valueList" isForPrompting="false" class="java.util.List">
@@ -48,7 +50,7 @@ $P{MAPPING_VALUE_5}})]]></defaultValueExpression>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createMappingQuery($P{INTERVAL_START},
 $P{INTERVAL_END},$P{SERVICE_ID}, $P{MAPPING_KEYS}, $P{valueList}, null,
-$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE})]]></defaultValueExpression>
+$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USER})]]></defaultValueExpression>
 	</parameter>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 

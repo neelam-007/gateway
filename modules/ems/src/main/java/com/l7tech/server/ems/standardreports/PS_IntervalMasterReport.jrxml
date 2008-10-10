@@ -23,7 +23,7 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
-	<style
+	<style 
 		name="TableCell"
 		isDefault="true"
 		vAlign="Middle"
@@ -38,7 +38,7 @@
 		isPdfEmbedded="false"
 	>
 	</style>
-	<style
+	<style 
 		name="FrameStyle"
 		isDefault="false"
 		vAlign="Middle"
@@ -50,7 +50,7 @@
 					<rightPen lineWidth="1.0" lineStyle="Solid"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameTableBottom"
 		isDefault="false"
 		backcolor="#D6D6D6"
@@ -63,7 +63,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameTableTop"
 		isDefault="false"
 		backcolor="#E8EDB4"
@@ -74,7 +74,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameHeaderTableRow"
 		isDefault="false"
 		backcolor="#DBD3B0"
@@ -86,7 +86,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameDetailTableRow"
 		isDefault="false"
 		backcolor="#F8F8F8"
@@ -133,7 +133,9 @@
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List"/>
-	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
+    <parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
+    <parameter name="AUTHENTICATED_USERS" isForPrompting="false" class="java.util.List"/>
+    <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
@@ -192,7 +194,7 @@ IN clause with and 'AND before it]]></parameterDescription>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createMasterMappingQuery($P{startTimeMilli},$P{endTimeMilli}
 ,$P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
-$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></defaultValueExpression>
+$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})]]></defaultValueExpression>
 	</parameter>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
@@ -205,6 +207,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 	<field name="MAPPING_VALUE_3" class="java.lang.String"/>
 	<field name="MAPPING_VALUE_4" class="java.lang.String"/>
 	<field name="MAPPING_VALUE_5" class="java.lang.String"/>
+	<field name="AUTHENTICATED_USER" class="java.lang.String"/>
 
 	<variable name="TIME_PERIOD_DS" class="java.lang.Object" resetType="Group" resetGroup="SERVICE" calculation="Nothing">
 		<variableExpression><![CDATA[new com.l7tech.server.ems.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})]]></variableExpression>
@@ -277,7 +280,8 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 	</variable>
 
 		<group  name="MAPPINGS" >
-			<groupExpression><![CDATA[$F{MAPPING_VALUE_1}+$F{MAPPING_VALUE_2}+$F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
+			<groupExpression><![CDATA[$F{MAPPING_VALUE_1}+$F{MAPPING_VALUE_2}+$F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}
++$F{MAPPING_VALUE_5}+$F{AUTHENTICATED_USER}]]></groupExpression>
 			<groupHeader>
 			<band height="18"  isSplitAllowed="true" >
 				<frame>					<reportElement
@@ -289,26 +293,22 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 						height="18"
 						key="frame-7"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
 						x="5"
 						y="0"
-						width="436"
-						height="17"
+						width="529"
+						height="18"
 						key="textField-86"/>
 					<box></box>
 					<textElement>
 						<font isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Value: " +
-(
-((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_1}))?"":$F{MAPPING_VALUE_1})+" "+
-((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_2}))?"":$F{MAPPING_VALUE_2})+" "+
-((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_3}))?"":$F{MAPPING_VALUE_3})+" "+
-((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_4}))?"":$F{MAPPING_VALUE_4})+" "+
-((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_5}))?"":$F{MAPPING_VALUE_5})
-).trim()]]></textFieldExpression>
+com.l7tech.server.ems.standardreports.Utilities.getMappingValueDisplayString(
+$F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, 
+$F{MAPPING_VALUE_5}}, $P{MAPPING_KEYS})]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -606,13 +606,13 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 						height="18"
 						key="frame-15"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
 						x="5"
-						y="-1"
-						width="436"
-						height="17"
+						y="0"
+						width="529"
+						height="18"
 						key="textField-93"/>
 					<box></box>
 					<textElement>
@@ -1421,7 +1421,13 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<subreportParameter  name="IS_DETAIL">
 						<subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
 					</subreportParameter>
-					<dataSourceExpression><![CDATA[$V{TIME_PERIOD_DS}]]></dataSourceExpression>
+                    <subreportParameter  name="USE_USER">
+						<subreportParameterExpression><![CDATA[$P{USE_USER}]]></subreportParameterExpression>
+					</subreportParameter>
+                    <subreportParameter  name="AUTHENTICATED_USER">
+						<subreportParameterExpression><![CDATA[$F{AUTHENTICATED_USER}]]></subreportParameterExpression>
+					</subreportParameter>
+                    <dataSourceExpression><![CDATA[$V{TIME_PERIOD_DS}]]></dataSourceExpression>
 					<returnValue subreportVariable="THROUGHPUT_SUM" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
 					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX" calculation="Highest"/>
@@ -1454,7 +1460,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX_OPERATION" calculation="Highest"/>
 					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG_OPERATION" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG_OPERATION" calculation="Average"/>
-					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport_Detail.jasper"]]></subreportExpression>
+					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport.jasper"]]></subreportExpression>
 				</subreport>
 				</frame>			</band>
 		</detail>

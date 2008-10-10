@@ -45,8 +45,10 @@
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List"/>
+    <parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
+    <parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
 
-	<field name="INTERVAL_START" class="java.lang.Long"/>
+    <field name="INTERVAL_START" class="java.lang.Long"/>
 	<field name="INTERVAL_END" class="java.lang.Long"/>
 
 	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
@@ -146,7 +148,13 @@
 					<subreportParameter  name="IS_DETAIL">
 						<subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
 					</subreportParameter>
-					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+                    <subreportParameter  name="USE_USER">
+						<subreportParameterExpression><![CDATA[$P{USE_USER}]]></subreportParameterExpression>
+					</subreportParameter>
+                    <subreportParameter  name="AUTHENTICATED_USER">
+						<subreportParameterExpression><![CDATA[$P{AUTHENTICATED_USER}]]></subreportParameterExpression>
+					</subreportParameter>
+                    <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 					<returnValue subreportVariable="THROUGHPUT" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
 					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX" calculation="Highest"/>
@@ -155,7 +163,7 @@
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX" calculation="Highest"/>
 					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG" calculation="Average"/>
-					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport_subreport0_Detail.jasper"]]></subreportExpression>
+					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport_subreport0.jasper"]]></subreportExpression>
 				</subreport>
 			</band>
 		</detail>

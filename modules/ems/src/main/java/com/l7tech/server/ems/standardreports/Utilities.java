@@ -334,86 +334,181 @@ public class Utilities {
         return sb.toString();
     }
 
-
     /**
+     * Create the sql required to get performance statistics for a specific period of time, for a possible specifc set of
+     * service id's, operations, mapping keys and values, mapping values AND or LIKE logic and authenticated users.
+     * Below is an example query. The comments in the code relate to the section's listed in the query here in the
+     * javadoc
+     * PLACEHOLDERS: Any where below where ';' could be selected is done for the following reasons:-
+     * 1) The reporting software will always get fields, for which it has defined variables
+     * 2) Group by can always include this column, so long as the placeholder value is the same for all columns, the
+     * results are unaltered
+     * 3) Order by can always include this column, so long as the placeholder value is the same for all columns, the
+     * results are unaltered
+     * 
+     * SECTION A: The logic for determing the performance statistics for a specific interval of time is hard coded, and
+     * has no need to change at runtime. This hardcoded query also contains logic to make processing easier.
      *
-     * This is the general query we are going to create.
-     * What's dynamic in this query is the key's from message_context_message_keys table which we are including
-     * in the query.
-     * There are 4 main areas in this query:-
-     * SECTION A: Select out the metrics as normal
-     * SECTION B: For every key included in the query, we need its corresponding mapping_value from
-     * message_context_message_values table. As the key can be used in any index we need to pick the correct column
-     * to use for each key and give this derived column a value so we can group by it in section D
-     * SECTION C: For every key included we need to add an OR block which as an entire block are added as an AND
-     * constraint. All 5 mapping key's are checked, and corresponding values if we are filtering mapping values.
-     * if none of the keys match the key specified the overall AND constraint will fail and the row will not be included
-     * SECTION D: For every key included, we need to group by it's value derived in section B. This allows us to
-     * get the data grouped to produce a data set for each distinct set of values together, for every key supplied
-     *                       //todo [Donal] update the sql here, as it's now out of date
-       **********SECTION A**********
-     SELECT count(*) as count, p.objectid,
-         SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT,
-         MIN(smd.front_min) as FRTM,
-         MAX(smd.front_max) as FRTMX,
-         if(SUM(smd.front_sum), if(SUM(smd.attempted), SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA,
-         MIN(smd.back_min) as BRTM,
-         MAX(smd.back_max) as BRTMX,
-         if(SUM(smd.back_sum), if(SUM(smd.completed), SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA,
-         if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP',
-
-        **********SECTION B**********
-     CASE WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
-     WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
-     WHEN mcmk.mapping2_key = 'IP_ADDRESS' THEN mcmv.mapping2_value
-     WHEN mcmk.mapping3_key = 'IP_ADDRESS' THEN mcmv.mapping3_value
-     WHEN mcmk.mapping4_key = 'IP_ADDRESS' THEN mcmv.mapping4_value
-     WHEN mcmk.mapping5_key = 'IP_ADDRESS' THEN mcmv.mapping5_value
-     END as IP_ADDRESS,
-     CASE WHEN mcmk.mapping1_key = 'Customer' THEN mcmv.mapping1_value
-     WHEN mcmk.mapping1_key = 'Customer' THEN mcmv.mapping1_value
-     WHEN mcmk.mapping2_key = 'Customer' THEN mcmv.mapping2_value
-     WHEN mcmk.mapping3_key = 'Customer' THEN mcmv.mapping3_value
-     WHEN mcmk.mapping4_key = 'Customer' THEN mcmv.mapping4_value
-     WHEN mcmk.mapping5_key = 'Customer' THEN mcmv.mapping5_value
-     END as Customer
-     FROM service_metrics sm, published_service p, service_metrics_details smd, message_context_mapping_values mcmv, message_context_mapping_keys mcmk
-     WHERE p.objectid = sm.published_service_oid
-     AND sm.objectid = smd.service_metrics_oid
-     AND smd.mapping_values_oid = mcmv.objectid
-     AND mcmv.mapping_keys_oid = mcmk.objectid
-        **********SECTION C**********
-     AND (
-         (mcmk.mapping1_key = 'IP_ADDRESS')
-         OR
-         (mcmk.mapping2_key = 'IP_ADDRESS')
-         OR
-         (mcmk.mapping3_key = 'IP_ADDRESS')
-         OR
-         (mcmk.mapping4_key = 'IP_ADDRESS')
-         OR
-         (mcmk.mapping5_key = 'IP_ADDRESS')
-         )
-     AND
-     (
-         (mcmk.mapping1_key = 'Customer' )
-         OR
-         (mcmk.mapping2_key = 'Customer' )
-         OR
-         (mcmk.mapping3_key = 'Customer' )
-         OR
-         (mcmk.mapping4_key = 'Customer' )
-         OR
-         (mcmk.mapping5_key = 'Customer' )
+     * SECTION B: AUTHENTICATED_USER column ALWAYS appears in the select statement HOWEVER it either has the real value
+     * of mcmv.auth_user_id OR it is selected as ';'.
+     *
+     * SECTION C: SERVICE_OPERATION_VALUE column ALWAYS appears in the select statement HOWEVER it either has the real value
+     * of mcmv.auth_user_id OR it is selected as ';'.
+     *
+     * SECTION D 1: For every key in the List<String> keys, a case statement is created. It is very important to understand
+     * how this section works, as it explains why these queries work when the entries in message_context_message_values
+     * (mcmv) can contain keys from message_context_message_keys (mcmk) in any order.
+     * Although the keys can appear in any order in mcmv, we select these values out of any of the mappingx_key (x:1-5)
+     * columns and place it into a derived column with the value MAPPING_VALUE_X (x:1-5). The order of the keys in
+     * List<String> keys, determines what MAPPING_VALUE_X column it applies to.
+     * Within each case statement we are looking for the existence of a specific key in any of 5 column locations. The
+     * key WILL ALWAYS exist due to the WHERE constraint that follows. The WHERE constraint guarantees that any rows
+     * found from the joins in the from clause, will ALWAYS contain rows which have ALL of the keys in List<String> keys
+     * Note: The implementation of service_metric_detail bins, normalizes the keys used by any mcmv bin instance. This 
+     * means that although the keys can be in any order in a message context assertion, any assertion with the same
+     * keys in any order, will always use the same key from mcmk.
+     *
+     * SECTION D 2: We ALWAYS select out every MAPPINGX_VALUE (X:1-5) values from mcmv. After we have created a CASE
+     * statement for each key in List<String> keys, the remaining unused values are selected out with the place holder
+     * value of ';'.
+     *
+     * SECTION E: The tables used in the query are not dynamic and neither are any of the joins
+     *
+     * SECTION F: The value of resolution can be either 1 (Hourly) or 2 (Daily)
+     *
+     * SECTION G: The time period for the query is for A SPECIFIC interval. The interval is inclusive of the start time
+     * and exclusive of the end time.
+     *
+     * SECTION H: (Optional) If serviceIds is not null or empty, then all values from the Collection are placed inside
+     * an IN constraint, otherwise no SQL is added to the overall query
+     *
+     * SECTION I: (Optional) If isDetail is true AND operations is not null or empty, then all values from the Collection
+     * are placed inside an IN constraint, otherwise no SQL is added to the overall query
+     *
+     * SECTION J: (Optional) If useUser is true AND authenticatedUsers is not null or empty, then all values from the
+     * Collection are placed inside an IN constraint, otherwise no SQL is added to the overall query
+     *
+     * SECTION K: This section compliments the CASE queries in the select clause. For every key in List<String> keys,
+     * for which a CASE statement was created, it's guaranteed that a corresponding AND block is created here.
+     * For each key, the AND block ensures that any matching rows, contain the key in any of the key locations 1-5.
+     *
+     * SECTION K 1: If it is determined that valid values for value constraints have been supplied, see
+     * keyValuesSupplied variable below, then the AND block also includes a constraint on the mcmk value column. Note
+     * that there is an implicit logical relationship between a mappingx_value and mappingx_key columns, even though
+     * there is no referential relationship. For each possible location of a key, the corresponding value column is
+     * checked, to confirm that when the key has a specific value, that the value matches the supplied filter constraint.
+     * Whether the constraint is expressed as AND or LIKE is determined by the values of valueConstraintAndOrLike.
+     * NOTE: It is outside the logic of this method to do any wild card translating on the filter values contained in
+     * keyValueConstraints. If a key's value is to be constrained by LIKE, then the value must have the sql wildcard
+     * characters, '%' and '_', at the correct locations already, if required
+     *
+     * SECTION L: The group by order is important. Performance Statistics information can never be grouped across
+     * services, although it can be aggreated across services, after grouping. The major group element is therefore
+     * service id, followed by operation. This guarantees that any resulting row is always at the service level, and
+     * from there it can be further broken down by operation, and then mapping value. The mapping values can in
+     * reality be in any order here however due to how the keys are processed in the CASE statements, being determined
+     * from the List<String> keys supplied, the first X mapping values are NEVER placeholders, placeholders always come
+     * last.  
+     *
+     * SECTION M: The order by order is important. Mapping values are ALWAYS ordered first, AUTHENTICATED_USER IS A
+     * mapping value. They are the major order aspect, by which we want to view data. We want to look at data in terms
+     * of a set of mapping values, which represent the concept of an individual requestor type, of a service.
+     * Note that due to how the keys are processed in the CASE statements, being determined from the List<String> keys
+     * supplied, the first X mapping values are NEVER placeholders, placeholders always come last.
+     * Following the mapping values is the service id and the operation. Service id must come before operation, as it
+     * is a bigger group type. We want to either view the mapping data at the service level and from there possibly the
+     * operation level.
+     *
+     * <pre>
+SELECT
+     ----SECTION A----
+p.objectid as SERVICE_ID,
+p.name as SERVICE_NAME,
+p.routing_uri as ROUTING_URI,
+SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT,
+MIN(smd.front_min) as FRTM,
+MAX(smd.front_max) as FRTMX,
+if(SUM(smd.front_sum), if(SUM(smd.attempted), SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA,
+MIN(smd.back_min) as BRTM,
+MAX(smd.back_max) as BRTMX,
+if(SUM(smd.back_sum), if(SUM(smd.completed), SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA,
+if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP' ,
+     ----SECTION B----
+mcmv.auth_user_id AS AUTHENTICATED_USER,
+     ----SECTION C----
+mcmv.service_operation AS SERVICE_OPERATION_VALUE,
+     ----SECTION D 1----
+CASE
+	WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
+	WHEN mcmk.mapping2_key = 'IP_ADDRESS' THEN mcmv.mapping2_value
+	WHEN mcmk.mapping3_key = 'IP_ADDRESS' THEN mcmv.mapping3_value
+	WHEN mcmk.mapping4_key = 'IP_ADDRESS' THEN mcmv.mapping4_value
+	WHEN mcmk.mapping5_key = 'IP_ADDRESS' THEN mcmv.mapping5_value
+END AS MAPPING_VALUE_1,
+CASE
+	WHEN mcmk.mapping1_key = 'CUSTOMER' THEN mcmv.mapping1_value
+	WHEN mcmk.mapping2_key = 'CUSTOMER' THEN mcmv.mapping2_value
+	WHEN mcmk.mapping3_key = 'CUSTOMER' THEN mcmv.mapping3_value
+	WHEN mcmk.mapping4_key = 'CUSTOMER' THEN mcmv.mapping4_value
+	WHEN mcmk.mapping5_key = 'CUSTOMER' THEN mcmv.mapping5_value
+END AS MAPPING_VALUE_2,
+     ----SECTION D 2----
+';' AS MAPPING_VALUE_3,
+';' AS MAPPING_VALUE_4,
+';' AS MAPPING_VALUE_5
+     ----SECTION E----
+FROM
+service_metrics sm, published_service p, service_metrics_details smd, message_context_mapping_values mcmv, message_context_mapping_keys mcmk
+WHERE
+p.objectid = sm.published_service_oid AND
+sm.objectid = smd.service_metrics_oid AND
+smd.mapping_values_oid = mcmv.objectid AND
+mcmv.mapping_keys_oid = mcmk.objectid  AND
+     ----SECTION F----
+sm.resolution = 2  AND
+     ----SECTION G----
+sm.period_start >=1220252459000 AND
+sm.period_start <1222844459000 AND
+     ----SECTION H----
+p.objectid IN (229384) AND
+     ----SECTION I----
+mcmv.service_operation IN ('listProducts')
+     ----SECTION J----
+AND mcmv.auth_user_id IN ('Ldap User 1')  AND
+    ----SECTION K----
+(
+	( mcmk.mapping1_key  = 'IP_ADDRESS'
+     ----SECTION K 1----
+     AND mcmv.mapping1_value  = '127.0.0.2'
      )
-        **********SECTION D**********
-     GROUP BY p.objectid, IP_ADDRESS, Customer
-
-
-    /**
-     * @param startTimeInclusiveMilli
-     * @param endTimeInclusiveMilli
-     * @param serviceIds
+	OR
+	( mcmk.mapping2_key  = 'IP_ADDRESS'  AND mcmv.mapping2_value  = '127.0.0.2' )
+	OR
+	( mcmk.mapping3_key  = 'IP_ADDRESS'  AND mcmv.mapping3_value  = '127.0.0.2' )
+	OR
+	( mcmk.mapping4_key  = 'IP_ADDRESS'  AND mcmv.mapping4_value  = '127.0.0.2' )
+	OR
+	( mcmk.mapping5_key  = 'IP_ADDRESS'  AND mcmv.mapping5_value  = '127.0.0.2' )
+) AND
+(
+	( mcmk.mapping1_key  = 'CUSTOMER'  AND mcmv.mapping1_value  = 'Silver' )
+	OR
+	( mcmk.mapping2_key  = 'CUSTOMER'  AND mcmv.mapping2_value  = 'Silver' )
+	OR
+	( mcmk.mapping3_key  = 'CUSTOMER'  AND mcmv.mapping3_value  = 'Silver' )
+	OR
+	( mcmk.mapping4_key  = 'CUSTOMER'  AND mcmv.mapping4_value  = 'Silver' )
+	OR
+	( mcmk.mapping5_key  = 'CUSTOMER'  AND mcmv.mapping5_value  = 'Silver' )
+)
+     ----SECTION L----
+GROUP BY p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER , MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5
+     ----SECTION M----
+ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5 ,p.objectid, SERVICE_OPERATION_VALUE
+</pre>
+     * @param startTimeInclusiveMilli time_period start time inclusive
+     * @param endTimeInclusiveMilli time_period end time exclsuvie
+     * @param serviceIds if supplied the published_service_oid from service_metrics will be constrained by these values
      * @param keys the list of keys representing the mapping keys
      * @param keyValueConstraints the values which each key must be equal to, Can be null or empty
      * @param valueConstraintAndOrLike for each key and value, if a value constraint exists as the index, the index into this
@@ -423,6 +518,12 @@ public class Utilities {
      * @param isDetail if true then the service_operation's real value is used in the select, group and order by,
      * otherwise operation is selected as 1. To facilitate this service_operation is always selected as
      * SERVICE_OPERATION_VALUE so that the real column is not used when isDetail is false
+     * @param operations if isDetail is true, the where clauses constrains the values of service_operation from the
+     * table message_context_mapping_values, with the values in operaitons 
+     * @param useUser if true the auth_user_id column from message_context_mapping_values will be included in the
+     * select, group by and order by clauses
+     * @param authenticatedUsers if useUser is true, the where clause will constrain the values of
+     * message_context_mapping_values, with the values in authenticatedUsers 
      * @return String query
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
@@ -437,42 +538,50 @@ public class Utilities {
         boolean keyValuesSupplied = checkMappingQueryParams(keys,
                 keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
 
-        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
+        checkResolutionParameter(resolution);
         
+        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
+
+        //----SECTION A----
         StringBuilder sb = new StringBuilder(aggregateSelect);
-
+        //----SECTION B----
         addUserToSelect(useUser, sb);
-
+        //----SECTION C----
         addOperationToSelect(isDetail, sb);
-
+        //----SECTION D's----
         addCaseSQL(keys, sb);
-
+        //----SECTION E----
         sb.append(mappingJoin);
-
+        //----SECTION F----
         addResolutionConstraint(resolution, sb);
 
+        //----SECTION G----
         if(useTime){
             addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
         }
-
+        //----SECTION H----
         if(serviceIds != null && !serviceIds.isEmpty()){
             addServiceIdConstraint(serviceIds, sb);
         }
 
+        //----SECTION I----
         if(isDetail && operations != null && !operations.isEmpty()){
             addOperationConstraint(operations, sb);
         }
-
+        //----SECTION J----
         if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
             addUserConstraint(authenticatedUsers, sb);
         }
 
+        //----SECTION K----
         if(keyValuesSupplied){
             addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
         }
 
+        //----SECTION L----
         addGroupBy(sb);
 
+        //----SECTION M----
         addMappingOrder(sb);
 
         System.out.println(sb.toString());
@@ -480,34 +589,51 @@ public class Utilities {
     }
 
     /**
-     * Helper method to turn single service id and operation value into collections
-     * @param startTimeInclusiveMilli
-     * @param endTimeInclusiveMilli
-     * @param serviceId
-     * @param keys
-     * @param keyValueConstraints
-     * @param valueConstraintAndOrLike
-     * @param resolution
-     * @param isDetail
-     * @param operation
-     * @return
+     * Convenience method called from sub reports. Instead of taking in collections of service ids, operations and
+     * authenticated users, it takes in string values, places them in a collection and then calls createMappingQuery,
+     * which this method delegates to.
+     * See createMappingQuery for an explanation of how the query returned is created and how it works.
+     * @param startTimeInclusiveMilli start of the time period to query for inclusive, can be null, so long as
+     * endTimeInclusiveMilli is also null
+     * @param endTimeInclusiveMilli end of the time period to query for exclusive, can be null, so long as
+     * startTimeInclusiveMilli is also null
+     * @param serviceId service ids to constrain query with
+     * @param keys mapping keys to use, must be at least 1
+     * @param keyValueConstraints values to constrain possible key values with
+     * @param valueConstraintAndOrLike and or like in sql for any values supplied as constraints on keys, can be null
+     * and empty. If it is, then AND is used by default.
+     * @param resolution hourly or daily = 1 or 2
+     * @param isDetail true when the sql represents a detail master report, which means service_operation is included
+     * in the distinct select list. When isDetail is true, the values in the operations list is used as a filter constraint.
+     * @param operation if isDetail is true and operations is non null and non empty, then the sql returned
+     * will be filtered by the values in operations
+     * @param useUser if true the auth_user_id column from message_context_mapping_values will be included in the
+     * select, group by and order by clauses
+     * @param authenticatedUser if useUser is true, the where clause will constrain the values of
+     * message_context_mapping_values, with the value of authenticatedUsers 
+     * @return String sql
+     * @throws NullPointerException if startIntervalMilliSeconds or endIntervalMilliSeconds is null
+     * @return String sql query
      */
     public static String createMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Long serviceId, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-                                            String operation, boolean useUser, List<String> authenticatedUser){
+                                            String operation, boolean useUser, String authenticatedUser){
 
         if(serviceId == null) throw new IllegalArgumentException("Service Id must be supplied");
         List<String> sIds = new ArrayList<String>();
         sIds.add(serviceId.toString());
-        List<String> operationList = null;
-        if(operation != null){
-            operationList = new ArrayList<String>();
+        List<String> operationList = new ArrayList<String>();
+        if(operation != null && !operation.equals("") && !operation.equals(SQL_PLACE_HOLDER)){
             operationList.add(operation);
         }
+        List<String> authUsers = new ArrayList<String>();
+        if(authenticatedUser != null && !authenticatedUser.equals("") && !authenticatedUser.equals(SQL_PLACE_HOLDER)){
+            authUsers.add(authenticatedUser);
+        }
         return createMappingQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, keys, keyValueConstraints,
-                valueConstraintAndOrLike, resolution, isDetail, operationList, useUser, authenticatedUser);
+                valueConstraintAndOrLike, resolution, isDetail, operationList, useUser, authUsers);
     }
 
     private static void addUserToSelect(boolean useUser, StringBuilder sb) {
@@ -545,7 +671,12 @@ public class Utilities {
             "AND sm.objectid = smd.service_metrics_oid AND smd.mapping_values_oid = mcmv.objectid AND mcmv.mapping_keys_oid = mcmk.objectid ";
 
     /**
-     *
+     * Creates the sql which can be used in a master jasper report. Query returns a distinct list of services, operaitons,
+     * users and mappings which can be used to drive sub queries
+     * The sql returned is very similar to the sql created by createMappingQuery, as is the processing below and these
+     * methods could be refactored to be just a single method with an extra parameter. See createMappingQuery for more
+     * information on how the sql is created.
+     * 
      * @param startTimeInclusiveMilli start of the time period to query for inclusive, can be null, so long as
      * endTimeInclusiveMilli is also null
      * @param endTimeInclusiveMilli end of the time period to query for exclusive, can be null, so long as
@@ -560,6 +691,10 @@ public class Utilities {
      * in the distinct select list. When isDetail is true, the values in the operations list is used as a filter constraint.
      * @param operations if isDetail is true and operations is non null and non empty, then the sql returned
      * will be filtered by the values in operations
+     * @param useUser if true the auth_user_id column from message_context_mapping_values will be included in the
+     * select, group by and order by clauses
+     * @param authenticatedUsers if useUser is true, the where clause will constrain the values of
+     * message_context_mapping_values, with the values in authenticatedUsers
      * @return String sql
      * @throws NullPointerException if startIntervalMilliSeconds or endIntervalMilliSeconds is null
      */
@@ -567,15 +702,19 @@ public class Utilities {
                                                   Collection<String> serviceIds, List<String> keys,
                                                   List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-                                            List<String> operations){
+                                            List<String> operations, boolean useUser, List<String> authenticatedUsers){
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
         boolean keyValuesSupplied = checkMappingQueryParams(keys,
-                keyValueConstraints, valueConstraintAndOrLike, isDetail, true);//todo [Donal] update this
+                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
 
+        checkResolutionParameter(resolution);
+        
         if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
         
         StringBuilder sb = new StringBuilder(distinctFrom);
+
+        addUserToSelect(useUser, sb);
 
         addCaseSQL(keys,sb);
 
@@ -595,6 +734,10 @@ public class Utilities {
 
         if(isDetail && operations != null && !operations.isEmpty()){
             addOperationConstraint(operations, sb);
+        }
+
+        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
+            addUserConstraint(authenticatedUsers, sb);
         }
         
         if(keyValuesSupplied){//then the lengths have to match from above constraint
@@ -706,6 +849,12 @@ public class Utilities {
             return true;
         }
         return false;
+    }
+
+    private static void checkResolutionParameter(int resolution){
+        if(resolution != 1 && resolution != 2){
+            throw new IllegalArgumentException("Resolution can only be 1 (Hourly) or 2 (Daily)");
+        }
     }
 
     private static void addMappingOrder(StringBuilder sb) {
@@ -971,9 +1120,9 @@ Value is included in all or none, comment is just illustrative
         sql = createMappingQuery(null, null, null, keys, null, null,2, true, new ArrayList<String>(), false, null);
         System.out.println("Mapping sql with operation is: " + sql);
 
-        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, false, null);
+        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, false, null, false, null);
         System.out.println("Master sql is: " + sql);
-        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, true, null);
+        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, true, null, false, null);
         System.out.println("Master sql with operaitons is: " + sql);
 
 //        List<String> valuesList = createValueList(keys, new String[]{"one", "two", "three"});
@@ -1008,6 +1157,16 @@ Value is included in all or none, comment is just illustrative
         
         sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, null, true, authUsers);
         System.out.println("User value sql is: " + sql);
+
+        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, true, null, true, null);
+        System.out.println("Master sql with users is: " + sql);
+
+        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, true, null, true, authUsers);
+        System.out.println("Master sql with specific users is: " + sql);
+
+        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, false, null, true, authUsers);
+        System.out.println("Master sql with users and no operations is: " + sql);
+        
     }
 
 }
