@@ -249,7 +249,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         jndiPasswordField.setDocument(new MaxLengthDocument(32));
         // Case 2: in the Queue Tab
         qcfTextField.setDocument(new MaxLengthDocument(255));
-        queueNameTextField.setDocument(new MaxLengthDocument(255));
+        queueNameTextField.setDocument(new MaxLengthDocument(128));
         queueUsernameTextField.setDocument(new MaxLengthDocument(32));
         queuePasswordField.setDocument(new MaxLengthDocument(32));
         // Case 3: in the Inbound or Outbound Options Tab
@@ -814,6 +814,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 // We just want to show the message "No published services available." in the combo box.
                 // So "-1" is just a dummy ServiceOID and it won't be used since the checkbox is set to disabled.
                 serviceNameCombo.addItem(new ComboItem("No published services available.", -1));
+                associateQueueWithPublishedRadioButton.setEnabled(false);
             }
         } else {
             java.util.List<EntityHeader> onlySoapServicesList = new ArrayList<EntityHeader>();
