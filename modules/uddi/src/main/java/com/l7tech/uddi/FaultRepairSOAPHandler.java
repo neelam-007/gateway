@@ -11,6 +11,7 @@ import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPMessage;
 import javax.xml.soap.SOAPException;
 import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -44,7 +45,7 @@ class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
 {
     //- PUBLIC
     
-    public Set getHeaders() {
+    public Set<QName> getHeaders() {
         return null;
     }
 
@@ -60,7 +61,7 @@ class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
     public boolean handleMessage(final SOAPMessageContext context) {
         Boolean outboundProperty = (Boolean) context.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 
-        if ( outboundProperty!=null && !outboundProperty.booleanValue() ) {
+        if ( outboundProperty!=null && !outboundProperty ) {
             SOAPMessage soapMessage = context.getMessage();
 
             if ( soapMessage != null ) {
@@ -89,7 +90,7 @@ class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
     public boolean handleFault(final SOAPMessageContext context) {
         Boolean outboundProperty = (Boolean) context.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 
-        if ( outboundProperty!=null && !outboundProperty.booleanValue() ) {
+        if ( outboundProperty!=null && !outboundProperty ) {
             SOAPMessage soapMessage = context.getMessage();
 
             if ( soapMessage != null ) {
@@ -262,7 +263,7 @@ class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
                     NodeList subElementChildren = subelement.getChildNodes();
                     for (int i=0; i<subElementChildren.getLength(); i++) {
                         Node subNode = subElementChildren.item(i);
-                        replacement.appendChild(subNode);                        
+                        replacement.appendChild(subNode);
                     }
                 }
             }

@@ -219,7 +219,8 @@ class GenericUDDIClient implements UDDIClient {
                     //findBinding.setCategoryBag(bindingCategoryBag);
 
                     // Find tModel keys for the WSDL portType/binding
-                    List<String> modelKeys = new ArrayList();
+                    List<String> modelKeys = new ArrayList<String>();
+                    List<String> modelInstanceUrl = new ArrayList<String>();
                     BindingDetail bd = inquiryPort.findBinding(findBinding);
                     for (BindingTemplate bindingTemplate : bd.getBindingTemplate()) {
                         AccessPoint accessPoint = bindingTemplate.getAccessPoint();
@@ -231,11 +232,24 @@ class GenericUDDIClient implements UDDIClient {
                         List<TModelInstanceInfo> infos = bindingTemplate.getTModelInstanceDetails().getTModelInstanceInfo();
                         for (TModelInstanceInfo tmii : infos) {
                             modelKeys.add(tmii.getTModelKey());
+
+                            // bug 5330 - workaround for Centrasite problem with fetching wsdl
+                            String tmiiWsdlUrl = extractOverviewUrl(tmii);
+                            if (tmiiWsdlUrl != null) {
+                                modelInstanceUrl.add(tmiiWsdlUrl);
+                                break;
+                            }
                         }
                     }
 
                     // Get the WSDL url
-                    if ( !modelKeys.isEmpty() ) {
+                    if ( !modelInstanceUrl.isEmpty() ) {
+
+                        // there should only be one
+                        String name = get(serviceInfo.getName(), "service name", false).getValue();
+                        services.add(new UDDINamedEntityImpl(serviceInfo.getServiceKey(), name, null, modelInstanceUrl.get(0)));
+
+                    } else if ( !modelKeys.isEmpty() ) {
                         GetTModelDetail getTModels = new GetTModelDetail();
                         getTModels.setAuthInfo(authToken);
                         getTModels.getTModelKey().addAll(modelKeys);
@@ -248,7 +262,7 @@ class GenericUDDIClient implements UDDIClient {
                                     OverviewURL url = doc.getOverviewURL();
                                     if ( url!= null && OVERVIEW_URL_TYPE_WSDL.equals(url.getUseType()) ) {
                                         String name = get(serviceInfo.getName(), "service name", false).getValue();
-                                        services.add(new UDDINamedEntityImpl(serviceInfo.getServiceKey().toString(), name, null, url.getValue()));
+                                        services.add(new UDDINamedEntityImpl(serviceInfo.getServiceKey(), name, null, url.getValue()));
                                         break modelloop;
                                     }
                                 }
@@ -1202,5 +1216,42 @@ class GenericUDDIClient implements UDDIClient {
         accessPoint.setUseType(protocol);
         accessPoint.setValue(uri);
         return accessPoint;
+    }
+
+    /**
+     * Attempt to extracts the wsdl location URL from the TModelInstance.  It searches for the .wsdl
+     * extension, if it is not found, then null is returned.
+     *
+     * @param tmInst the TModelInstance to extract the URL from
+     * @return the string for the WSDL location, null if it cannot be found in the TModel
+     */
+    private String extractOverviewUrl(TModelInstanceInfo tmInst) {
+
+        String result = null;
+        try {
+            if (tmInst != null && !tmInst.getInstanceDetails().getOverviewDoc().isEmpty()) {
+
+                for (OverviewDoc overview : tmInst.getInstanceDetails().getOverviewDoc()) {
+                    if (overview.getOverviewURL() != null) {
+                        result = overview.getOverviewURL().getValue();
+                    }
+                }
+            }
+        } catch (Throwable ex) {
+          // ignore any exceptions
+        }
+
+        if (result != null && result.contains(".wsdl")) {
+            result = result.substring(0, result.indexOf(".wsdl")+5);
+
+        } else if (result != null && result.contains(".WSDL")) {
+            result = result.substring(0, result.indexOf(".WSDL")+5);
+
+        } else {
+            result = null;
+
+        }
+
+        return result;
     }
 }

@@ -43,6 +43,10 @@ public class UDDIClientAgent implements UddiAgent {
         resultRowsMax = Integer.parseInt(rowsMax);
         String batchSize = props.getProperty(PROP_RESULT_BATCH_SIZE, "100");
         resultBatchSize = Integer.parseInt(batchSize);
+
+        if(resultBatchSize > resultRowsMax){
+            resultBatchSize = resultRowsMax;
+        }
     }
 
     /**
@@ -69,7 +73,7 @@ public class UDDIClientAgent implements UddiAgent {
         UDDIClient uddi = info == null ?
                 UDDIClientFactory.getInstance().newUDDIClient(inquiryUrl, null, null, username, pwStr, null) :
                 UDDIClientFactory.getInstance().newUDDIClient(inquiryUrl, info, username, pwStr, null);
-        List<WsdlInfo> wsdlInfos = new ArrayList();
+        List<WsdlInfo> wsdlInfos = new ArrayList<WsdlInfo>();
         try {
             for (int i=0; wsdlInfos.size() < resultRowsMax; i++) {
                 int head = i*resultBatchSize;
@@ -87,7 +91,7 @@ public class UDDIClientAgent implements UddiAgent {
             throw new UddiAgentException(iue.getMessage(), iue);
         }
 
-        boolean maxedOutSearch = wsdlInfos.size()>=resultRowsMax && uddi.listMoreAvailable();
+        boolean maxedOutSearch = wsdlInfos.size()>=resultRowsMax || uddi.listMoreAvailable();
 
         if (maxedOutSearch) {
             wsdlInfos.subList(resultRowsMax, wsdlInfos.size()).clear();
