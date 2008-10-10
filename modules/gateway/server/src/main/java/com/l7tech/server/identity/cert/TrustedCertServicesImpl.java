@@ -40,8 +40,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
             checkIssuerIsTrusted(serverCertChain, issuerDn);
 
         } catch (Exception e) {
-            if (e instanceof TrustedCertManager.UnknownCertificateException)
-                throw (CertificateException) e;
+            if (e instanceof CertificateException) throw (CertificateException) e;
 
             logger.log(Level.WARNING, e.getMessage(), e);
 
@@ -68,8 +67,14 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
     private void checkIssuerIsTrusted(X509Certificate[] serverCertChain, String issuerDn) throws FindException, CertificateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         Collection<TrustedCert> caTrusts = getCertsBySubjectDnFiltered(issuerDn, true, EnumSet.of(TrustedCert.TrustedFor.SIGNING_SERVER_CERTS), null);
 
-        if (caTrusts.isEmpty())
-            throw new TrustedCertManager.UnknownCertificateException("Couldn't find CA cert with DN '" + issuerDn + "'");
+        if (caTrusts.isEmpty()) {
+            String subjectDn = serverCertChain[0].getSubjectDN().getName();
+            if ( trustedCertManager.getCachedCertsBySubjectDn(subjectDn).isEmpty() ) {
+                throw new TrustedCertManager.UnknownCertificateException("Couldn't find CA cert with DN '" + issuerDn + "'");
+            } else {
+                throw new CertificateException("Server cert '" + subjectDn + "' found but not trusted for SSL.");
+            }
+        }
 
         for (TrustedCert caTrust : caTrusts) {
             X509Certificate caTrustCert = caTrust.getCertificate();
