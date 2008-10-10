@@ -164,6 +164,7 @@ public class LicenseDialog extends JDialog {
 
         if (disconnectManagerOnClose) {
             // disconnect from SSG
+            TopComponents.getInstance().setConnectionLost(true);
             TopComponents.getInstance().disconnectFromGateway();
         }
     }
@@ -208,8 +209,6 @@ public class LicenseDialog extends JDialog {
                                 return;
                             }
 
-                            Registry reg = Registry.getDefault();
-                            ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
                             try {
                                 ClusterProperty licProp = admin.findPropertyByName("license");
                                 if (licProp != null) {
@@ -224,8 +223,8 @@ public class LicenseDialog extends JDialog {
                                 return;
                             }
 
-                            TopComponents.getInstance().setConnectionLost(true);
-                            TopComponents.getInstance().disconnectFromGateway();
+                            disconnectManagerOnClose = true;
+                            onClose();
                         }
                     }
                 );
@@ -233,126 +232,6 @@ public class LicenseDialog extends JDialog {
         });
 
         setRemoveButtonVisibleOrInvisible();
-
-        installButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                findLicenseStream(new Functions.BinaryVoid<InputStream, Throwable>() {
-                    public void call(InputStream is, Throwable ioe) {
-                        try {
-                            if (ioe != null) throw new CausedIOException(ioe);
-                            if (is == null) return;
-                            String licenseXml = XmlUtil.nodeToString(XmlUtil.parse(is));
-
-                            if (showingLicenseOrError) {
-                                // Last chance to confirm installation over top of an existing license
-                                final String cancel = "    Cancel    ";
-                                final String destroyIt = " Destroy Existing License ";
-                                String options[] = { destroyIt, cancel };
-                                String valid = licensePanel.isValidLicense() ? "valid" : "invalid";
-
-                                int confResult = JOptionPane.showOptionDialog(
-                                        LicenseDialog.this,
-                                        "Are you sure you want to REPLACE the existing " + valid + " license with the\nnew license?",
-                                        "Destroy Existing License",
-                                        JOptionPane.YES_NO_CANCEL_OPTION,
-                                        JOptionPane.WARNING_MESSAGE,
-                                        null,
-                                        options,
-                                        cancel);
-                                if (confResult != 0)
-                                    return;
-                            }
-
-                            try {
-                                // Show click wrap license
-                                if (!eulaConfirmed(licenseXml))
-                                    return;
-
-                                admin.installNewLicense(licenseXml);
-                            } catch (InvalidLicenseException e1) {
-                                final String msg = ExceptionUtils.getMessage(e1);
-
-                                String postDated = "is not yet valid: becomes valid on";
-                                if (msg.indexOf(postDated) < 1) {
-                                    // Not post-dated; something else is wrong with it
-                                    JOptionPane.showMessageDialog(LicenseDialog.this,
-                                                                  "That license is invalid and cannot be installed:\n" +
-                                                                          ExceptionUtils.getMessage(e1),
-                                                                  "Unable to install license",
-                                                                  JOptionPane.ERROR_MESSAGE);
-                                    return;
-                                }
-
-                                final String cancel = "    Cancel    ";
-                                final String force = "  Forcibly Install Invalid License  ";
-                                String options[] = { force, cancel };
-
-                                int confResult = JOptionPane.showOptionDialog(
-                                        LicenseDialog.this,
-                                        "That license is not valid, but might become valid in the future:\n\n\t" +
-                                        msg +
-                                        "\n\n" +
-                                        "Do you want to force the invalid license to be installed?",
-                                        "Invalid License File",
-                                        JOptionPane.YES_NO_CANCEL_OPTION,
-                                        JOptionPane.WARNING_MESSAGE,
-                                        null,
-                                        options,
-                                        cancel);
-                                if (confResult != 0)
-                                    return;
-
-                                try {
-                                    // Go behind the license manager's back and forcibly install the invalid license
-                                    ClusterProperty licProp = admin.findPropertyByName("license");
-                                    if (licProp == null) licProp = new ClusterProperty("license", licenseXml);
-                                    admin.saveProperty(licProp);
-                                    // Fallthrough and update the license panel
-                                } catch (ObjectModelException e2) {
-                                    JOptionPane.showMessageDialog(LicenseDialog.this,
-                                                                  "Unable to forcibly install this license file: " +
-                                                                          ExceptionUtils.getMessage(e2),
-                                                                  "Unable to install license file",
-                                                                  JOptionPane.ERROR_MESSAGE);
-                                    return;
-                                }
-                            }
-
-                            try {
-                                License license = admin.getCurrentLicense();
-                                showingLicenseOrError = license != null;
-                                licensePanel.setLicense(license);
-                                TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
-                                Registry.getDefault().getLicenseManager().setLicense(license);
-                                installButton.setText(showingLicenseOrError ? "Change License" : "Install License");
-                                pack();
-                            } catch (InvalidLicenseException e1) {
-                                licensePanel.setLicenseError(ExceptionUtils.getMessage(e1));
-                                showingLicenseOrError = true;
-                                pack();
-                            }
-
-                            setRemoveButtonVisibleOrInvisible();
-                        } catch (IOException ex) {
-                            JOptionPane.showMessageDialog(LicenseDialog.this,
-                                                          "Unable to read this license file: " + ExceptionUtils.getMessage(ex),
-                                                          "Unable to read license file",
-                                                          JOptionPane.ERROR_MESSAGE);
-                        } catch (SAXException e1) {
-                            JOptionPane.showMessageDialog(LicenseDialog.this,
-                                                          "The specified license file isn't well-formed XML: " + ExceptionUtils.getMessage(e1),
-                                                          "Unable to read license file",
-                                                          JOptionPane.ERROR_MESSAGE);
-                        } catch (UpdateException e1) {
-                            logger.log(Level.SEVERE, "Unable to install license: " + ExceptionUtils.getMessage(e1), e1);
-                        } finally {
-                            if (is != null) //noinspection EmptyCatchBlock
-                                try { is.close(); } catch (IOException ex) {}
-                        }
-                    }
-                });
-            }
-        });
 
         // create the add action listener
         installButton.addActionListener(createInstallButtonAction());
@@ -471,8 +350,6 @@ public class LicenseDialog extends JDialog {
                     if (ioe != null) throw new CausedIOException(ioe);
                     if (is == null) return;
                     String licenseXml = XmlUtil.nodeToString(XmlUtil.parse(is));
-                    Registry reg = Registry.getDefault();
-                    ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
 
                     if (showingLicenseOrError) {
                         // Last chance to confirm installation over top of an existing license
@@ -554,8 +431,8 @@ public class LicenseDialog extends JDialog {
                         showingLicenseOrError = license != null;
                         licensePanel.setLicense(license);
                         TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
-                        reg.getLicenseManager().setLicense(license);
-                        installButton.setVisible(false);
+                        Registry.getDefault().getLicenseManager().setLicense(license);
+                        installButton.setText(showingLicenseOrError ? "Change License" : "Install License");
                         pack();
                         success.add(0, Boolean.TRUE);
                     } catch (InvalidLicenseException e1) {
@@ -563,6 +440,8 @@ public class LicenseDialog extends JDialog {
                         showingLicenseOrError = true;
                         pack();
                     }
+
+                    setRemoveButtonVisibleOrInvisible();
                 } catch (IOException ex) {
                     JOptionPane.showMessageDialog(LicenseDialog.this,
                                                   "Unable to read this license file: " + ExceptionUtils.getMessage(ex),
