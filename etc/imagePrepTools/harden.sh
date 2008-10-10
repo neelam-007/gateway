@@ -57,8 +57,10 @@ harden() {
   echo 'export TMOUT=900' >> /etc/profile
 
   # GEN000020
-  sed -i -e '/s1:2345:respawn:/sbin/agetty -L 9600 ttyS1 vt100/d' /etc/inittab
+  sed -i -e '/s0.*ttyS0/d' /etc/inittab
+  sed -i -e '/s1.*ttyS1/d' /etc/inittab
   sed -i -e '/~~:S:wait:/sbin/sulogin/d' /etc/inittab
+  echo "s0:2345:respawn:/sbin/agetty -L 9600 ttyS0 vt100" >> /etc/inittab
   echo "s1:2345:respawn:/sbin/agetty -L 9600 ttyS1 vt100" >> /etc/inittab
   echo "~~:S:wait:/sbin/sulogin" >> /etc/inittab
 
@@ -68,9 +70,7 @@ harden() {
   # GEN000460
   sed -i -e '/pam_tally\.so/d' /etc/pam.d/system-auth
 
-  echo "Checking pam_tally2"
   if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9].*unlock_time=1200' /etc/pam.d/system-auth; then
-	  echo "Modifying pam_tally2"
 
 	 # delete any auth required pam_tally2 lines to be sure
 	 sed -i -e '/auth\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
@@ -544,6 +544,14 @@ fi
 # GEN000020
 if [ ! "`grep '~~:S:wait:/sbin/sulogin' /etc/inittab`" ] ; then
 	echo "Error - sulogin not in /etc/inittab"
+fi
+
+# bug 5534
+if [ ! "`grep 's0.*ttyS0' /etc/inittab`" ] ; then
+	echo "Error - ttyS0 not in /etc/inittab"
+fi
+if [ ! "`grep 's.*ttyS1' /etc/inittab`" ] ; then
+	echo "Error - ttyS1 not in /etc/inittab"
 fi
 
 # GEN000440
