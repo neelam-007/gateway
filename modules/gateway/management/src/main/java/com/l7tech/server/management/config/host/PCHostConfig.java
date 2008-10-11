@@ -28,6 +28,7 @@ public class PCHostConfig extends HostConfig {
      * {@link com.l7tech.server.management.config.node.PCNodeConfig}.
      */
     private Set<IpAddressConfig> ipAddresses = new HashSet<IpAddressConfig>();
+    private Set<TrustedCertFeature> trustedCerts = new HashSet<TrustedCertFeature>();
 
     @OneToMany(cascade=CascadeType.ALL, mappedBy = "host", fetch=FetchType.EAGER)
     public Set<IpAddressConfig> getIpAddresses() {
@@ -38,11 +39,21 @@ public class PCHostConfig extends HostConfig {
         this.ipAddresses = ipAddresses;
     }
 
+    public Set<TrustedCertFeature> getTrustedCerts() {
+        return trustedCerts;
+    }
+
+    public void setTrustedCerts(Set<TrustedCertFeature> trustedCerts) {
+        this.trustedCerts = trustedCerts;
+    }
+
     @Transient
     public Set<HostFeature> getFeatures() {
         final Set<HostFeature> features = new HashSet<HostFeature>();
         final Set<IpAddressConfig> ips = getIpAddresses();
         if (ips != null) features.addAll(ips);
+        final Set<TrustedCertFeature> certs = getTrustedCerts();
+        if (certs != null) features.addAll(certs);
         return features;
     }
 
@@ -58,5 +69,4 @@ public class PCHostConfig extends HostConfig {
         sb.append("</host>");
         return sb.toString();
     }
-
 }

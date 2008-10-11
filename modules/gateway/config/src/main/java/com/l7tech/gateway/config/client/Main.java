@@ -2,27 +2,23 @@ package com.l7tech.gateway.config.client;
 
 import com.l7tech.gateway.config.client.beans.ConfigurationBean;
 import com.l7tech.gateway.config.client.beans.ConfigurationBeanProvider;
-import com.l7tech.gateway.config.client.beans.ProcessControllerConfigurationBeanProvider;
+import com.l7tech.gateway.config.client.beans.DatabaseConfigBeanProvider;
 import com.l7tech.gateway.config.client.options.Option;
-import com.l7tech.gateway.config.client.options.OptionSet;
 import com.l7tech.gateway.config.client.options.OptionGroup;
+import com.l7tech.gateway.config.client.options.OptionSet;
 import com.l7tech.util.JdkLoggerConfigurator;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import java.io.Console;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.logging.Logger;
+import java.net.URL;
+import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.net.URL;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.JAXBException;
 
 /**
  * Main class for configuration wizard.
@@ -41,7 +37,7 @@ public class Main {
 
         boolean success = false;
         try {
-            ConfigurationBeanProvider provider = new ProcessControllerConfigurationBeanProvider(new URL("https://127.0.0.1:8765/services/nodeManagementApi"));
+            ConfigurationBeanProvider provider = new DatabaseConfigBeanProvider(new URL("https://127.0.0.1:8765/services/nodeManagementApi"));
             if ( !provider.isValid() ) {
                 System.exit(3);
             } else if ( !provider.loadConfiguration().isEmpty() ) {
@@ -310,7 +306,7 @@ public class Main {
         
         ConfigurationBean configBean = configBeans.get( option.getId() );
         if ( configBean != null ) {
-            value = configBean.getConfigValue();
+            value = configBean.getConfigValue().toString();
         }
         
         if ( value == null ) {

@@ -46,6 +46,8 @@ public final class ProcessControllerStandalone {
             pc.startNode(args[arg++], true);
         } else if ("stop".equalsIgnoreCase(verb)) {
             pc.stopNode(args[arg++], ProcessController.DEFAULT_STOP_TIMEOUT);
+        } else if ("cli".equalsIgnoreCase(verb)) {
+            
         } else {
             throw new IllegalStateException("Unsupported command verb: " + verb);
         }

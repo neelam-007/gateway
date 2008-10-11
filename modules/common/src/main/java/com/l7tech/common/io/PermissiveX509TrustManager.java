@@ -1,4 +1,4 @@
-package com.l7tech.common.http;
+package com.l7tech.common.io;
 
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.X509Certificate;
@@ -9,11 +9,11 @@ import java.security.cert.CertificateException;
  */
 public class PermissiveX509TrustManager implements X509TrustManager {
     public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        return; // permissive
+        // permissive
     }
 
     public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        return; // permissive
+        // permissive
     }
 
     public X509Certificate[] getAcceptedIssuers() {

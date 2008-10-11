@@ -28,6 +28,7 @@ public interface ConfigService {
 
     String NODEPROPERTIES_ENABLED = "node.enabled";
     String NODEPROPERTIES_ID = "node.id";
+    String DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME = "remoteNodeManagementTruststore.p12";
 
     HostConfig getHost();
 

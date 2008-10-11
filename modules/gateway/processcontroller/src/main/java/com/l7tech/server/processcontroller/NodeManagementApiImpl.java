@@ -48,7 +48,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         if (req == null) throw new IllegalStateException("Couldn't get HttpServletRequest");
 
         try {
-            InetAddress addr = InetAddress.getByName(req.getRemoteAddr());
+            final InetAddress addr = InetAddress.getByName(req.getRemoteAddr()); // TODO maybe special-case "127.0.0.1" and "localhost" to avoid the DNS lookup?
             if (addr.isLoopbackAddress()) {
                 logger.fine("Allowing connection from localhost with no client certificate");
                 return;

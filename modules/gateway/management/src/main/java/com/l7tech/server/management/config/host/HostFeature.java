@@ -7,7 +7,7 @@ import com.l7tech.server.management.config.Feature;
 
 /** @author alex */
 public abstract class HostFeature extends Feature<HostConfig, HostFeatureType> {
-    HostFeature(PCHostConfig parent, HostFeatureType tag) {
+    protected HostFeature(PCHostConfig parent, HostFeatureType tag) {
         super(parent, tag, tag.isUnique());
     }
 

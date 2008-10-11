@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -31,10 +30,9 @@ public class BootstrapConfig {
     private static final Logger logger = Logger.getLogger(BootstrapConfig.class.getName());
     private static final String DEFAULT_ALIAS = "processController";
 
-    public static void main(String[] args) throws IOException, GeneralSecurityException {
+    public static void main(String[] args) {
         try {
-            realMain();
-            System.exit(0);
+            System.exit(realMain());
         } catch (DieDieDie e) {
             logger.log(Level.SEVERE, e.getMessage(), e.getCause());
             System.exit(e.status);
@@ -55,37 +53,48 @@ public class BootstrapConfig {
         }
     }
 
-    private static void realMain() {
-        final String pcDirName = System.getProperty("com.l7tech.server.processcontroller.homeDirectory");
-        if (pcDirName == null) throw new DieDieDie("com.l7tech.server.processcontroller.homeDirectory is required", 1);
+    private static int realMain() {
+        final String pcHomeDirName = System.getProperty("com.l7tech.server.processcontroller.homeDirectory");
+        if (pcHomeDirName == null) throw new DieDieDie("com.l7tech.server.processcontroller.homeDirectory is required", 1);
 
-        final File pcDir = new File(pcDirName);
-        if (!pcDir.exists()) throw new DieDieDie(pcDir.getAbsolutePath() + " does not exist", 2);
+        final File pcDir = checkFile(new File(pcHomeDirName), true);
+        final File etcDir = checkFile(new File(pcDir,"etc"), true);
 
-        final File etcDir = new File(pcDir,"etc");
         final File hostPropertiesFile = new File(etcDir, "host.properties");
-
-        final File etcConfDir = new File(etcDir,"conf");
         if (hostPropertiesFile.exists()) {
-            logger.info("Found existing " + hostPropertiesFile.getAbsolutePath());
+            logger.fine("Found existing " + hostPropertiesFile.getAbsolutePath());
             // TODO do we care what's in there?
-            System.exit(0);
-            return;
+            return 0;
         }
 
-        final File masterPasswordFile = new File(etcConfDir, "omp.dat");
-        if (!masterPasswordFile.exists()) throw new DieDieDie(masterPasswordFile.getAbsolutePath() + " does not exist!", 3);
+        final File ksFile = checkFile(new File(etcDir, "localhost.p12"), false);
+        final String ksPass = generatePassword();
+        createKeystore(ksFile, ksPass);
+        createPropertiesFile(hostPropertiesFile, ksFile, getMasterPasswordManager(etcDir).encryptPassword(ksPass.toCharArray()));
 
-        MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder(masterPasswordFile) );
+        return 0;
+    }
 
-        logger.info("Generating keypair...");
-        FileOutputStream kfos = null;
-        final File ksFile = new File(etcDir, "localhost.p12");
-        if (ksFile.exists()) throw new DieDieDie("Keystore file " + ksFile.getAbsolutePath() + " already exists", 6);
-        byte[] passBytes = new byte[4];
+    private static String generatePassword() {
+        final byte[] passBytes = new byte[4];
         new SecureRandom().nextBytes(passBytes);
-        String pass = HexUtils.hexDump(passBytes);
+        return HexUtils.hexDump(passBytes);
+    }
+
+    private static File checkFile(File file, boolean mustExist) {
+        if (mustExist == file.exists()) return file;
+
+        throw new DieDieDie(file.getAbsolutePath() + (mustExist ? " does not exist" : " already exists"), 2);
+    }
+
+    private static MasterPasswordManager getMasterPasswordManager(File etcDir) {
+        return new MasterPasswordManager(new DefaultMasterPasswordFinder(checkFile(new File(new File(etcDir,"conf"), "omp.dat"), true)));
+    }
+
+    private static String createKeystore(final File ksFile, final String pass) {
+        FileOutputStream kfos = null;
         try {
+            logger.info("Generating keypair...");
             KeyPair keyPair = JceProvider.generateRsaKeyPair(1024);
             X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(new X500Principal("cn=localhost"), 3652, keyPair, false);
             KeyStore ks = KeyStore.getInstance("PKCS12");
@@ -95,15 +104,18 @@ public class BootstrapConfig {
             ks.store(kfos, pass.toCharArray());
             logger.info("Created " + ksFile.getAbsolutePath());
         } catch (Exception e) {
-            throw new DieDieDie("Unable to create default keystore", 4, e);
+            throw new DieDieDie("Unable to create keystore", 4, e);
         } finally {
             ResourceUtils.closeQuietly(kfos);
         }
+        return pass;
+    }
 
-        Properties newProps = new Properties();
+    private static void createPropertiesFile(final File hostPropertiesFile, final File keystoreFile, final String obfKeystorePass) {
+        final Properties newProps = new Properties();
         newProps.setProperty(ConfigService.HOSTPROPERTIES_ID, UUID.randomUUID().toString());
-        newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREFILE, ksFile.getAbsolutePath());
-        newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREPASSWORD, masterPasswordManager.encryptPassword(pass.toCharArray()));
+        newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREFILE, keystoreFile.getAbsolutePath());
+        newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREPASSWORD, obfKeystorePass);
         newProps.setProperty(ConfigService.HOSTPROPERTIES_JRE, System.getProperty("java.home"));
 
         FileOutputStream pfos = null;
@@ -112,7 +124,7 @@ public class BootstrapConfig {
             newProps.store(new OutputStreamWriter(pfos), null);
             logger.info("Created " + hostPropertiesFile.getAbsolutePath());
         } catch (IOException e) {
-            throw new DieDieDie("Unable to write create default properties file", 5, e);
+            throw new DieDieDie("Unable to create default host.properties file", 5, e);
         } finally {
             ResourceUtils.closeQuietly(pfos);
         }

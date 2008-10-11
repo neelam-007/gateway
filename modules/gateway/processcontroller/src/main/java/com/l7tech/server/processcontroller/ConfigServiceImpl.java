@@ -222,7 +222,7 @@ public class ConfigServiceImpl implements ConfigService {
         String trustStoreType;
         File trustStoreFile;
         if (trustStoreFilename == null) {
-            trustStoreFile = new File(configDirectory, "remoteNodeManagementTruststore.p12");
+            trustStoreFile = new File(configDirectory, DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME);
             if (!trustStoreFile.exists()) {
                 logger.info("No remote node management truststore found; continuing with remote node management disabled");
                 return Collections.emptySet();

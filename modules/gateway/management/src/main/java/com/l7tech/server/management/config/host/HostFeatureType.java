@@ -5,7 +5,8 @@ package com.l7tech.server.management.config.host;
 
 /** @author alex */
 public enum HostFeatureType {
-    IP(false);
+    IP(false),
+    TRUSTED_CERT(false);
 
     private final boolean unique;
 

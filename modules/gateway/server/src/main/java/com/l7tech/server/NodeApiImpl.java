@@ -16,45 +16,37 @@ import com.l7tech.server.management.config.monitoring.MonitoringScheme;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.transport.http.HttpTransportModule;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /**
- * Implementation of the Service Node API used by the Process Controller.
+ * Implementation of the Cluster Node API hosted by the Cluster Node and used by the Process Controller.
  *
- * TODO authentication/trust?
  * @author alex
  */
-public class NodeApiImpl implements NodeApi, ApplicationContextAware {
+public class NodeApiImpl implements NodeApi {
     private static final Logger logger = Logger.getLogger(NodeApiImpl.class.getName());
 
-    /** Injected by Spring post-construct */
     @Resource
-    private ServerConfig serverConfig;
+    private ServerConfig serverConfig; // Injected by Spring
 
-    /** Injected by Spring post-construct */
     @Resource
-    private SsgConnectorManager ssgConnectorManager;
+    private SsgConnectorManager ssgConnectorManager; // Injected by Spring
 
-    /** Injected by Spring post-construct */
     @Resource
-    private ShutdownWatcher shutdowner;
+    private ShutdownWatcher shutdowner; // Injected by Spring
 
-    /** Injected by CXF to get access to request metadata */
     @Resource
-    private WebServiceContext context;
+     private WebServiceContext wscontext; // Injected by CXF to get access to request metadata (e.g. HttpServletRequest)
 
     @PostConstruct
     private void start() {
@@ -73,7 +65,7 @@ public class NodeApiImpl implements NodeApi, ApplicationContextAware {
 
     private void checkRequest() {
         if (!isProcessControllerPresent()) throw new IllegalStateException(NODE_NOT_CONFIGURED_FOR_PC);
-        final HttpServletRequest hsr = (HttpServletRequest)context.getMessageContext().get(MessageContext.SERVLET_REQUEST);
+        final HttpServletRequest hsr = (HttpServletRequest)wscontext.getMessageContext().get(MessageContext.SERVLET_REQUEST);
         if (hsr == null) throw new IllegalStateException("Request received outside of expected servlet context");
         try {
             HttpTransportModule.requireEndpoint(hsr, SsgConnector.Endpoint.PC_NODE_API);
@@ -91,7 +83,7 @@ public class NodeApiImpl implements NodeApi, ApplicationContextAware {
 
     public void ping() {
         checkRequest();
-        logger.info("ping");
+        logger.fine("ping");
     }
 
     public Set<SsgConnector> getConnectors() throws FindException {
@@ -101,44 +93,41 @@ public class NodeApiImpl implements NodeApi, ApplicationContextAware {
 
     public NodeStatus getNodeStatus() {
         checkRequest();
-        logger.info("getNodeStatus");
+        logger.fine("getNodeStatus");
         return new NodeStatus();
     }
 
     public void pushMonitoringScheme(MonitoringScheme scheme) throws UpdateException {
         checkRequest();
-        logger.info("pushMonitoringScheme");
+        logger.fine("pushMonitoringScheme");
     }
 
     public MonitoringScheme getMonitoringScheme() throws FindException {
         checkRequest();
-        logger.info("getMonitoringScheme");
+        logger.fine("getMonitoringScheme");
         return null;
     }
 
     public Set<EventSubscription> subscribeEvents(Set<String> eventIds) throws UnsupportedEventException, SaveException {
         checkRequest();
-        logger.info("subscribeEvents");
+        logger.fine("subscribeEvents");
         return null;
     }
 
     public Set<EventSubscription> renewEventSubscriptions(Set<String> subscriptionIds) throws UpdateException {
         checkRequest();
-        logger.info("renewEventSubscriptions");
+        logger.fine("renewEventSubscriptions");
         return null;
     }
 
     public void releaseEventSubscriptions(Set<String> subscriptionIds) throws DeleteException {
         checkRequest();
-        logger.info("releaseEventSubscriptions");
+        logger.fine("releaseEventSubscriptions");
     }
 
     public Object getProperty(String propertyId) throws UnsupportedPropertyException, FindException {
         checkRequest();
-        logger.info("getProperty");
+        logger.fine("getProperty");
         return null;
-    }
-
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
     }
 }
