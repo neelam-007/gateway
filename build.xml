@@ -2258,6 +2258,15 @@
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.manager.MasterPassphraseChanger"/>
             </manifest>
         </jar>
+
+        <jar jarfile="${build.dir}/configwizard/ConfigProcessController.jar">
+            <manifest>
+                <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
+                <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
+                <attribute name="X-Layer7-Jar" value="../controller/lib/layer7-gateway-config-${build.version}-dev-b1.jar"/> <!-- TODO [steve] fix configuration jar naming -->
+                <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.client.beans.trust.TrustInterviewer"/>
+            </manifest>
+        </jar>
     </target>
 
     <!--

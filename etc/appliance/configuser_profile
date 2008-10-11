@@ -46,16 +46,17 @@ do
         echo "4) Logout (no reboot)"
         echo "5) Reboot the SSG appliance (apply the new configuration)"
         echo "6) Change the Master Passphrase"
+        echo "7) Configure Remote Management"
         if [ "${SCA_PRESENT}" == "true" ] ; then
-            echo "7) Back up the Master Key to USB flash drive"
+            echo "8) Back up the Master Key to USB flash drive"
         fi
 
         if [ "${EM_PRESENT}" == "true" ] ; then
             /sbin/chkconfig ssem && true # && true due to set -e
             if [ ${?} -eq 0 ] ; then
-                echo "8) Disable Enterprise Manager server"
+                echo "9) Disable Enterprise Manager server"
             else
-                echo "8) Enable Enterprise Manager server"
+                echo "9) Enable Enterprise Manager server"
             fi
         fi
 
@@ -105,7 +106,12 @@ do
                     echo "Press enter to continue";
                     read;
                     clear;;
-                *)  if [ "$choice" == "7" ] && [ "${SCA_PRESENT}" == "true" ]; then
+                7)  clear;
+                    (${CONFWIZARD} -processController);
+                    echo "Press enter to continue";
+                    read;
+                    clear;;
+                *)  if [ "$choice" == "8" ] && [ "${SCA_PRESENT}" == "true" ]; then
                         clear;
                         echo "Checking for USB drive"
                         (sudo ${MASTERKEYMANAGE} probe &> /dev/null);
@@ -133,7 +139,7 @@ do
                             echo "Press enter to continue."
                             read;
                         fi
-                    elif [ "$choice" == "8" ] && [ "${EM_PRESENT}" == "true" ]; then
+                    elif [ "$choice" == "9" ] && [ "${EM_PRESENT}" == "true" ]; then
                         /sbin/chkconfig ssem && true # && true due to set -e
                         if [ ${?} -eq 0 ] ; then
                             echo "Disabing Enterprise Manager server."

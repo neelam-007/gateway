@@ -33,7 +33,14 @@ cd "${SSPC_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSPC_HOME}"
 
 # Run the config bootstrapper if it looks like this is the first time we've run
 if [ ! -f "${SSPC_HOME}/etc/host.properties" ] ; then
-  "${JAVA_HOME}/bin/java" -classpath "$SSPC_HOME/Controller.jar" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig
+
+  if [ -z "${PC_USER}" ] ; then
+    "${JAVA_HOME}/bin/java" -classpath "$SSPC_HOME/Controller.jar" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig
+  else
+    export JAVA_HOME SSPC_HOME
+    runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -classpath "$SSPC_HOME/Controller.jar" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig'
+  fi
+
   if [ ${?} -ne 0 ]; then
     fail "${?}" "Error saving initial configuration."
   fi

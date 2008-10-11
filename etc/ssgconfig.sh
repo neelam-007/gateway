@@ -32,6 +32,8 @@ launch(){
 
 if [ "${1}" == "-changeMasterPassphrase" ] ; then
   launch "ConfigMasterPassphrase" "$*"
+elif [ "${1}" == "-processController" ] ; then
+  launch "ConfigProcessController" "$*"
 else
   launch "ConfigWizard" "$*"
 fi

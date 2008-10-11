@@ -11,6 +11,7 @@ import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.JdkLoggerConfigurator;
 
 import java.io.*;
 import java.security.GeneralSecurityException;
@@ -37,6 +38,7 @@ public class TrustInterviewer {
 
     private static final String DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME = "remoteNodeManagementTruststore.jks";
     public static void main(String[] args) throws ConfigurationException {
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
         final File pcHomeDir = new File(".." + FS + "controller");
         final File etcDirectory = new File(pcHomeDir, "etc");
         final File etcConfDirectory = new File(etcDirectory, "conf");
