@@ -23,7 +23,7 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
-	<style 
+	<style
 		name="TableCell"
 		isDefault="true"
 		vAlign="Middle"
@@ -38,7 +38,7 @@
 		isPdfEmbedded="false"
 	>
 	</style>
-	<style 
+	<style
 		name="FrameStyle"
 		isDefault="false"
 		vAlign="Middle"
@@ -50,7 +50,7 @@
 					<rightPen lineWidth="1.0" lineStyle="Solid"/>
 </box>
 	</style>
-	<style 
+	<style
 		name="FrameTableBottom"
 		isDefault="false"
 		backcolor="#D6D6D6"
@@ -63,7 +63,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style 
+	<style
 		name="FrameTableTop"
 		isDefault="false"
 		backcolor="#E8EDB4"
@@ -74,7 +74,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style 
+	<style
 		name="FrameHeaderTableRow"
 		isDefault="false"
 		backcolor="#DBD3B0"
@@ -86,7 +86,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style 
+	<style
 		name="FrameDetailTableRow"
 		isDefault="false"
 		backcolor="#F8F8F8"
@@ -135,6 +135,9 @@
 	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="AUTHENTICATED_USERS" isForPrompting="false" class="java.util.List"/>
+	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
+		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
+	</parameter>
 	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
@@ -192,9 +195,14 @@ IN clause with and 'AND before it]]></parameterDescription>
 : $P{serviceIdDisplayText}]]></defaultValueExpression>
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createMasterMappingQuery($P{startTimeMilli},$P{endTimeMilli}
+		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
+com.l7tech.server.ems.standardreports.Utilities.createMasterMappingQuery($P{startTimeMilli},$P{endTimeMilli}
 ,$P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
-$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})]]></defaultValueExpression>
+$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
+:
+com.l7tech.server.ems.standardreports.Utilities.getNoMappingDistinctQuery($P{startTimeMilli},$P{endTimeMilli}
+,$P{SERVICE_NAME_TO_ID_MAP}.values(),$P{resolution}.intValue())
+)]]></defaultValueExpression>
 	</parameter>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
@@ -284,6 +292,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 +$F{MAPPING_VALUE_5}+$F{AUTHENTICATED_USER}]]></groupExpression>
 			<groupHeader>
 			<band height="18"  isSplitAllowed="true" >
+				<printWhenExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
@@ -307,13 +316,14 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Value: " +
 com.l7tech.server.ems.standardreports.Utilities.getMappingValueDisplayString(
-$F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, 
+$F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}}, $P{MAPPING_KEYS})]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
 			<band height="36"  isSplitAllowed="true" >
+				<printWhenExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
@@ -771,7 +781,10 @@ $F{MAPPING_VALUE_5}}, $P{MAPPING_KEYS})]]></textFieldExpression>
 			<groupExpression><![CDATA[$F{SERVICE_OPERATION_VALUE}]]></groupExpression>
 			<groupHeader>
 			<band height="18"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[new Boolean(!com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean(
+!com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
+&& $P{IS_CONTEXT_MAPPING}.booleanValue()
+)]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameDetailTableRow"
 						mode="Opaque"
@@ -799,7 +812,10 @@ $F{MAPPING_VALUE_5}}, $P{MAPPING_KEYS})]]></textFieldExpression>
 			</groupHeader>
 			<groupFooter>
 			<band height="18"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[new Boolean(!com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean(
+!com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
+&& $P{IS_CONTEXT_MAPPING}.booleanValue()
+)]]></printWhenExpression>
 				<frame>					<reportElement
 						style="TableCell"
 						mode="Opaque"
@@ -1165,7 +1181,10 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayString($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{VALUE_EQUAL_OR_LIKE},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
+com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayString
+($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{VALUE_EQUAL_OR_LIKE},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())
+:"None")]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -1275,7 +1294,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?"Yes":"No"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())?"Yes":"No"]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -1298,7 +1317,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						height="18"
 						key="frame-29"
 						positionType="Float">
-							<printWhenExpression><![CDATA[new Boolean($P{IS_DETAIL}.booleanValue())]]></printWhenExpression>
+							<printWhenExpression><![CDATA[new Boolean($P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())]]></printWhenExpression>
 						</reportElement>
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
@@ -1430,6 +1449,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<subreportParameter  name="RESOLUTION">
 						<subreportParameterExpression><![CDATA[$P{resolution}]]></subreportParameterExpression>
 					</subreportParameter>
+					<subreportParameter  name="IS_CONTEXT_MAPPING">
+						<subreportParameterExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></subreportParameterExpression>
+					</subreportParameter>
 					<dataSourceExpression><![CDATA[$V{TIME_PERIOD_DS}]]></dataSourceExpression>
 					<returnValue subreportVariable="THROUGHPUT_SUM" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
@@ -1463,7 +1485,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX_OPERATION" calculation="Highest"/>
 					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG_OPERATION" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG_OPERATION" calculation="Average"/>
-					<subreportExpression  class="java.lang.String"><![CDATA["/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_SubIntervalMasterReport.jasper"]]></subreportExpression>
+					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport.jasper"]]></subreportExpression>
 				</subreport>
 				</frame>			</band>
 		</detail>
@@ -1771,6 +1793,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 		</pageFooter>
 		<summary>
 			<band height="18"  isSplitAllowed="true" >
+				<printWhenExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"

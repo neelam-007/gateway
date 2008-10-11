@@ -684,6 +684,49 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         return sb.toString();
     }
 
+    public static String getNoMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                            Long serviceId, int resolution){
+
+        if(serviceId == null) throw new IllegalArgumentException("Service id must be supplied");
+        List<String> sIds = new ArrayList<String>();
+        sIds.add(serviceId.toString());
+
+        return getNoMappingQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, resolution);
+    }
+
+    public static String getNoMappingDistinctQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                                Collection<String> serviceIds, int resolution){
+
+
+        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
+        if(!useTime) throw new IllegalArgumentException("Both start and end time must be specified");
+        checkResolutionParameter(resolution);
+
+        StringBuilder sb = new StringBuilder(distinctFrom);
+
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS AUTHENTICATED_USER");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS SERVICE_OPERATION_VALUE");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_1");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_2");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_3");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_4");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_5");
+        
+        sb.append(noMappingJoin);
+
+        addResolutionConstraint(resolution, sb);
+
+        addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+
+        if(serviceIds != null && !serviceIds.isEmpty()){
+            addServiceIdConstraint(serviceIds, sb);
+        }
+
+        sb.append(" ORDER BY p.objectid ");
+        System.out.println(sb.toString());
+        return sb.toString();
+    }
+
     private static void addOperationToSelect(boolean isDetail, StringBuilder sb) {
         if(isDetail){
             sb.append(",  mcmv.service_operation AS SERVICE_OPERATION_VALUE");
@@ -1160,7 +1203,7 @@ Value is included in all or none, comment is just illustrative
         String intervalEnd = "2008/09/16 13:00";
         long intervalEndMilli = Utilities.getAbsoluteMilliSeconds(intervalEnd);
 
-        String sql = getNoMappingQuery(intervalStartMilli, intervalEndMilli, null,1);
+        String sql = getNoMappingQuery(intervalStartMilli, intervalEndMilli, new ArrayList<String>(), 1);
         System.out.println(sql);
     }
 

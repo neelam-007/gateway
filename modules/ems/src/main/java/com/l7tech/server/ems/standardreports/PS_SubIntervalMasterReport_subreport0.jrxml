@@ -37,20 +37,28 @@
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
-    <parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
-    <parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
-    <parameter name="resolution" isForPrompting="false" class="java.lang.Integer">
-		<defaultValueExpression ><![CDATA[($P{INTERVAL_UNIT_OF_TIME}.equals( "HOUR" ))?new Integer(1):new Integer(2)]]></defaultValueExpression>
+	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
+	<parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
+	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
+		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="valueList" isForPrompting="false" class="java.util.List">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createValueList($P{MAPPING_KEYS},
+		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
+com.l7tech.server.ems.standardreports.Utilities.createValueList($P{MAPPING_KEYS},
 new String[]{$P{MAPPING_VALUE_1}, $P{MAPPING_VALUE_2}, $P{MAPPING_VALUE_3}, $P{MAPPING_VALUE_4},
-$P{MAPPING_VALUE_5}})]]></defaultValueExpression>
+$P{MAPPING_VALUE_5}})
+:null)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createMappingQuery($P{INTERVAL_START},
+		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
+com.l7tech.server.ems.standardreports.Utilities.createMappingQuery($P{INTERVAL_START},
 $P{INTERVAL_END},$P{SERVICE_ID}, $P{MAPPING_KEYS}, $P{valueList}, null,
-$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USER})]]></defaultValueExpression>
+$P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USER})
+:
+com.l7tech.server.ems.standardreports.Utilities.getNoMappingQuery($P{INTERVAL_START},
+$P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
+)]]></defaultValueExpression>
 	</parameter>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
