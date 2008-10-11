@@ -134,8 +134,8 @@ CREATE TABLE logon_info (
   fail_count int(11) NOT NULL DEFAULT 0,
   last_attempted bigint(20) NOT NULL,
   PRIMARY KEY (objectid),
-  UNIQUE KEY (provider_oid, login),
-  FOREIGN KEY (provider_oid) REFERENCES identity_provider(objectid) ON DELETE CASCADE
+  UNIQUE KEY unique_provider_login (provider_oid, login),
+  CONSTRAINT logon_info_provider FOREIGN KEY (provider_oid) REFERENCES identity_provider(objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -615,7 +615,7 @@ CREATE TABLE audit_message (
   KEY idx_request_id (request_id),
   KEY idx_service_oid (service_oid),
   FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid)
+  CONSTRAINT message_context_mapping FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS audit_system;
@@ -877,7 +877,7 @@ CREATE TABLE rbac_assignment (
   PRIMARY KEY  (objectid),
   UNIQUE KEY unique_assignment (provider_oid,role_oid,identity_id, entity_type),
   FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE,  
+  CONSTRAINT rbac_assignment_provider FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE,  
   INDEX i_rbacassign_poid (provider_oid),
   INDEX i_rbacassign_uid (identity_id)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;

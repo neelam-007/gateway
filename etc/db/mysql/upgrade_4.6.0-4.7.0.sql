@@ -9,9 +9,7 @@
 --
 SET FOREIGN_KEY_CHECKS=0;
 
-BEGIN;
-ALTER TABLE rbac_assignment ADD CONSTRAINT `identity_provider_ibfk_1` FOREIGN KEY (`provider_oid`) REFERENCES `identity_provider` (`objectid`) ON DELETE CASCADE;
-COMMIT;
+ALTER TABLE rbac_assignment ADD CONSTRAINT rbac_assignment_provider FOREIGN KEY (`provider_oid`) REFERENCES `identity_provider` (`objectid`) ON DELETE CASCADE;
 
 --
 -- Rename audit detail column to avoid reserved word
@@ -101,6 +99,7 @@ UPDATE service_metrics set objectid = @rowid := @rowid + 1;
 UPDATE service_metrics set front_min = NULL, front_max = NULL where resolution = 0 and attempted = 0;
 UPDATE service_metrics set back_min = NULL, back_max = NULL where resolution = 0 and completed = 0;
 ALTER TABLE service_metrics ADD CONSTRAINT PRIMARY KEY (objectid);
+ALTER TABLE service_metrics ADD CONSTRAINT UNIQUE KEY (nodeid,published_service_oid,resolution,period_start);
 
 DROP TABLE IF EXISTS service_metrics_details;
 CREATE TABLE service_metrics_details (
@@ -124,7 +123,7 @@ CREATE TABLE service_metrics_details (
 -- Add a new column, mapping_values_oid into audit_message
 --
 ALTER TABLE audit_message ADD COLUMN mapping_values_oid BIGINT(20);
-ALTER TABLE audit_message ADD CONSTRAINT FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid);
+ALTER TABLE audit_message ADD CONSTRAINT message_context_mapping FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid);
 
 --
 -- Folder changes
@@ -207,6 +206,23 @@ CREATE TABLE trusted_ems_user (
   FOREIGN KEY (trusted_ems_oid) REFERENCES trusted_ems (objectid) ON DELETE CASCADE,
   FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Add objectid to logon_info
+--
+ALTER TABLE logon_info DROP FOREIGN KEY logon_info_ibfk_1;
+ALTER TABLE logon_info DROP PRIMARY KEY;
+ALTER TABLE logon_info ADD COLUMN objectid bigint(20) NOT NULL;
+SET @rowid = 100000;
+UPDATE logon_info set objectid = @rowid := @rowid + 1;
+ALTER TABLE logon_info ADD CONSTRAINT PRIMARY KEY (objectid);
+ALTER TABLE logon_info ADD CONSTRAINT unique_provider_login UNIQUE KEY (provider_oid, login);
+ALTER TABLE logon_info ADD CONSTRAINT logon_info_provider FOREIGN KEY (provider_oid) REFERENCES identity_provider(objectid) ON DELETE CASCADE;
+
+--
+-- Fix password history type
+--
+ALTER TABLE password_history MODIFY COLUMN order_id bigint(20) NOT NULL;
 
 --
 -- Reenable FK at very end of script
