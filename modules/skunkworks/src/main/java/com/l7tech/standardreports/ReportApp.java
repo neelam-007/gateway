@@ -34,6 +34,7 @@ public class ReportApp
     private static final String INTERVAL_NUM_OF_TIME_UNITS = "INTERVAL_NUM_OF_TIME_UNITS";
     private static final String REPORT_RAN_BY = "REPORT_RAN_BY";
 
+    private static final String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
     private static final String IS_DETAIL = "IS_DETAIL";
     //Optional
     private static final String SERVICE_NAME_TO_ID_MAP = "SERVICE_NAME_TO_ID_MAP";
@@ -85,7 +86,7 @@ public class ReportApp
 
 		String taskName = args[0];
 
-        FileInputStream fileInputStream = new FileInputStream("report.properties");
+        FileInputStream fileInputStream = new FileInputStream("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/report.properties");
         prop.load(fileInputStream);
         String fileName = prop.getProperty(REPORT_FILE_NAME_NO_ENDING);
 
@@ -184,8 +185,12 @@ public class ReportApp
         if(!nameToId.isEmpty()) parameters.put(SERVICE_NAME_TO_ID_MAP, nameToId);
 
         //relative and absolute time
-        Boolean b = Boolean.parseBoolean(prop.getProperty(IS_RELATIVE).toString());
+        Boolean b = Boolean.parseBoolean(prop.getProperty(IS_RELATIVE));
         parameters.put(IS_RELATIVE, b);
+
+        b = Boolean.parseBoolean(prop.getProperty(IS_CONTEXT_MAPPING));
+        parameters.put(IS_CONTEXT_MAPPING, b);
+
         parameters.put(RELATIVE_TIME_UNIT, prop.getProperty(RELATIVE_TIME_UNIT));
         i = Integer.parseInt(prop.getProperty(RELATIVE_NUM_OF_TIME_UNITS).toString());
         parameters.put(RELATIVE_NUM_OF_TIME_UNITS, i);
@@ -217,13 +222,13 @@ public class ReportApp
         parameters.put(AUTHENTICATED_USERS, authUser);
 
 
-        //Object o = JRLoader.loadObject("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/"+fileName+".jasper");
-        Object o = JRLoader.loadObject(fileName+".jasper");
+        Object o = JRLoader.loadObject("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/"+fileName+".jasper");
+        //Object o = JRLoader.loadObject(fileName+".jasper");
         JasperReport jr = (JasperReport) o;
         parameters.put(JR_REPORT, jr);
 
-        JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
-        //JasperFillManager.fillReportToFile("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/"+fileName+".jasper", parameters, getConnection(prop));
+        //JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
+        JasperFillManager.fillReportToFile("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/"+fileName+".jasper", parameters, getConnection(prop));
 
         System.err.println("Filling time : " + (System.currentTimeMillis() - start));
     }

@@ -24,7 +24,7 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
-	<style
+	<style 
 		name="DefaultText"
 		isDefault="true"
 	>
@@ -45,10 +45,11 @@
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List"/>
-    <parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
-    <parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
+	<parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
 
-    <field name="INTERVAL_START" class="java.lang.Long"/>
+	<field name="INTERVAL_START" class="java.lang.Long"/>
 	<field name="INTERVAL_END" class="java.lang.Long"/>
 
 	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
@@ -148,13 +149,16 @@
 					<subreportParameter  name="IS_DETAIL">
 						<subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
 					</subreportParameter>
-                    <subreportParameter  name="USE_USER">
+					<subreportParameter  name="USE_USER">
 						<subreportParameterExpression><![CDATA[$P{USE_USER}]]></subreportParameterExpression>
 					</subreportParameter>
-                    <subreportParameter  name="AUTHENTICATED_USER">
+					<subreportParameter  name="AUTHENTICATED_USER">
 						<subreportParameterExpression><![CDATA[$P{AUTHENTICATED_USER}]]></subreportParameterExpression>
 					</subreportParameter>
-                    <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					<subreportParameter  name="RESOLUTION">
+						<subreportParameterExpression><![CDATA[$P{RESOLUTION}]]></subreportParameterExpression>
+					</subreportParameter>
+					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 					<returnValue subreportVariable="THROUGHPUT" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
 					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX" calculation="Highest"/>
@@ -163,7 +167,7 @@
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX" calculation="Highest"/>
 					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG" calculation="Average"/>
-					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport_subreport0.jasper"]]></subreportExpression>
+					<subreportExpression  class="java.lang.String"><![CDATA["/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_SubIntervalMasterReport_subreport0.jasper"]]></subreportExpression>
 				</subreport>
 			</band>
 		</detail>

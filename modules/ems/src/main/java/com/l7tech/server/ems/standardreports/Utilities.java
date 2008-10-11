@@ -34,6 +34,7 @@ public class Utilities {
     public static final String WEEK = "WEEK";
     public static final String MONTH = "MONTH";
     private static final int NUM_MAPPING_KEYS = 5;
+    public static final String AUTHENTICATED_USER = "Authenticated User";
 
     /**
      * Relative time is calculated to a fixed point of time depending on the unit of time supplied. For day, week
@@ -79,6 +80,8 @@ public class Utilities {
      */
     public static Integer getResolutionFromTimePeriod(Integer hourRetentionPeriod, Long startTimeMilli, Long endTimeMilli){
 
+        if(startTimeMilli >= endTimeMilli) throw new IllegalArgumentException("Start time must be before end time");
+        
         long duration = endTimeMilli - startTimeMilli;
         long dayMillis = getMilliSecondsForTimeUnit(Utilities.DAY);
         long maxHourRenentionMilli = dayMillis * hourRetentionPeriod;
@@ -584,7 +587,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         //----SECTION M----
         addMappingOrder(sb);
 
-        System.out.println(sb.toString());
+//        System.out.println(sb.toString());
         return sb.toString();
     }
 
@@ -645,6 +648,42 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         }
     }
 
+    public static String getNoMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                            Collection<String> serviceIds, int resolution){
+
+
+        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
+        if(!useTime) throw new IllegalArgumentException("Both start and end time must be specified");
+        checkResolutionParameter(resolution);
+
+        StringBuilder sb = new StringBuilder(noMappingAggregateSelect);
+
+        //fill in place holder's
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS AUTHENTICATED_USER");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS SERVICE_OPERATION_VALUE");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_1");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_2");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_3");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_4");
+        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_5");
+
+        sb.append(noMappingJoin);
+
+        addResolutionConstraint(resolution, sb);
+
+        addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+
+        if(serviceIds != null && !serviceIds.isEmpty()){
+            addServiceIdConstraint(serviceIds, sb);
+        }
+
+//        addGroupBy(sb);
+        sb.append(" GROUP BY p.objectid ");
+
+        System.out.println(sb.toString());
+        return sb.toString();
+    }
+
     private static void addOperationToSelect(boolean isDetail, StringBuilder sb) {
         if(isDetail){
             sb.append(",  mcmv.service_operation AS SERVICE_OPERATION_VALUE");
@@ -664,11 +703,24 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             "SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA, MIN(smd.back_min) as BRTM, " +
             "MAX(smd.back_max) as BRTMX, if(SUM(smd.back_sum), if(SUM(smd.completed), " +
             "SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA, " +
-            "if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP' ";
+            "if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP'" +
+            " ,'1' as CONSTANT_GROUP ";
+
+    private final static String noMappingAggregateSelect = "SELECT '1' as CONSTANT_GROUP, count(*) as count, p.objectid as SERVICE_ID, " +
+            "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
+            "SUM(if(sm.completed, sm.completed,0)) as THROUGHPUT, MIN(sm.front_min) as FRTM, " +
+            "MAX(sm.front_max) as FRTMX, if(SUM(sm.front_sum), if(SUM(sm.attempted), " +
+            "SUM(sm.front_sum)/SUM(sm.attempted),0), 0) as FRTA, MIN(sm.back_min) as BRTM, " +
+            "MAX(sm.back_max) as BRTMX, if(SUM(sm.back_sum), if(SUM(sm.completed), " +
+            "SUM(sm.back_sum)/SUM(sm.completed),0), 0) as BRTA, " +
+            "if(SUM(sm.attempted), ( 1.0 - ( ( (SUM(sm.authorized) - SUM(sm.completed)) / SUM(sm.attempted) ) ) ) , 0) as 'AP' ";
 
     private final static String mappingJoin = " FROM service_metrics sm, published_service p, service_metrics_details smd," +
             " message_context_mapping_values mcmv, message_context_mapping_keys mcmk WHERE p.objectid = sm.published_service_oid " +
             "AND sm.objectid = smd.service_metrics_oid AND smd.mapping_values_oid = mcmv.objectid AND mcmv.mapping_keys_oid = mcmk.objectid ";
+
+    private final static String noMappingJoin = " FROM service_metrics sm, published_service p WHERE " +
+            "p.objectid = sm.published_service_oid ";
 
     /**
      * Creates the sql which can be used in a master jasper report. Query returns a distinct list of services, operaitons,
@@ -1005,9 +1057,14 @@ Value is included in all or none, comment is just illustrative
      */
     public static String getMappingValueDisplayString(String authUser, String [] keyValues, List<String> keys){
 
-        if(authUser == null || authUser.equals("")) throw new NullPointerException("authUser must have a non null and non empty value");
-        if(keyValues == null || keyValues.length == 0) throw new NullPointerException("keyValues must be non null and have at least 1 value");
-        if(keys == null || keys.size()== 0) throw new NullPointerException("keys must be non null and have at least 1 value");        
+        if(authUser == null || authUser.equals(""))
+            throw new NullPointerException("authUser must have a non null and non empty value");//as it always exists in select
+        if(keyValues == null){
+            keyValues = new String[]{};
+        }
+        if(keys == null){
+            keys = new ArrayList<String>();        
+        }
         if(keyValues.length < keys.size()) throw new IllegalArgumentException("Length of keyValues must equal length of keys");
 
 
@@ -1033,10 +1090,81 @@ Value is included in all or none, comment is just illustrative
             sb.append(s+": " + keyValues[i1]);
         }
 
+        System.out.println("Display mapping: " + sb.toString());
         return sb.toString();
     }
 
+    /**
+     * From the auth user, keys, values and filter constraints get a string which displays this information for the user
+     * in the report info section of a report
+     * @param authUsers Auth user string, can be null or empty
+     * @param keys mapping keys, can be null or empty so long as isDetail or useUser is true
+     * @param keyValueConstraints
+     * @param valueConstraintAndOrLike
+     * @param isDetail
+     * @param useUser
+     * @return String for displaying in report info section of report
+     */
+    public static String getMappingReportInfoDisplayString(List<String> authUsers, List<String> keys,
+                                                           List<String> keyValueConstraints,
+                                                           List<String> valueConstraintAndOrLike, boolean isDetail,
+                                                           boolean useUser){
+        boolean keyValuesSupplied = checkMappingQueryParams(keys,
+                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
+
+        System.out.println( "authUsers: " + authUsers + " keys: " + keys + "keyValueConstraints: "
+                + keyValueConstraints+" valueConstraintAndOrLike: "+valueConstraintAndOrLike+
+                " isDetail: " + isDetail+ " " +useUser);
+
+        StringBuilder sb = new StringBuilder();
+        boolean firstComma = false;
+        if(useUser){
+            sb.append(AUTHENTICATED_USER);
+        }
+        if(useUser && authUsers != null && !authUsers.isEmpty()){
+            sb.append(": (");
+            for (int i = 0; i < authUsers.size(); i++) {
+                String s = authUsers.get(i);
+                if(i != 0) sb.append(", ");
+                sb.append(s);
+            }
+            sb.append(")");
+            firstComma = true;
+        }
+
+        for (int i1 = 0; i1 < keys.size(); i1++) {
+            String s = keys.get(i1);
+            //valueConstraintAndOrLike
+            if(firstComma){
+                sb.append(", ");
+                firstComma = false;
+            }
+            if(i1 != 0){
+                sb.append(", ");
+            }
+            sb.append(s);
+            if(keyValuesSupplied){
+                String value = keyValueConstraints.get(i1);
+                if(value != null && !value.equals("")) sb.append(" (" + keyValueConstraints.get(i1) + ")");
+            }
+        }
+
+        System.out.println("sb: " + sb.toString());
+        return sb.toString();
+    }
+
+
     public static void main(String [] args) throws ParseException {
+        String intervalStart = "2008/09/16 12:00";
+        long intervalStartMilli = Utilities.getAbsoluteMilliSeconds(intervalStart);
+        String intervalEnd = "2008/09/16 13:00";
+        long intervalEndMilli = Utilities.getAbsoluteMilliSeconds(intervalEnd);
+
+        String sql = getNoMappingQuery(intervalStartMilli, intervalEndMilli, null,1);
+        System.out.println(sql);
+    }
+
+    public static void main1(String [] args) throws ParseException {
 //        String date = "2008-09-18 15:08";
 //        System.out.println(Utilities.getAbsoluteMilliSeconds(date));
 //        date = "2008-09-18 15:09";
@@ -1114,6 +1242,38 @@ Value is included in all or none, comment is just illustrative
         useAnd.add("AND");
         useAnd.add("AND");
 
+        List<String> authUsers = new ArrayList<String>();
+        authUsers.add("Donal");
+        authUsers.add("Ldap User 1");
+
+        String displayVal = getMappingReportInfoDisplayString(null, keys, values, useAnd, false, false);
+        System.out.println("Keys and values: " + displayVal);
+
+        displayVal = getMappingReportInfoDisplayString(null, keys, values, useAnd, true, false);
+        System.out.println("Keys and values, isDetail: " + displayVal);
+
+        displayVal = getMappingReportInfoDisplayString(null, keys, values, useAnd, true, false);
+        System.out.println("Keys and values, isDetail: " + displayVal);
+
+        displayVal = getMappingReportInfoDisplayString(null, keys, values, useAnd, true, true);
+        System.out.println("Keys and values, use user: " + displayVal);
+
+        displayVal = getMappingReportInfoDisplayString(authUsers, keys, values, useAnd, true, true);
+        System.out.println("Keys and values, use user with auth users: " + displayVal);
+
+        values.clear();
+        values.add(null);
+        values.add("Gold");
+
+        displayVal = getMappingReportInfoDisplayString(authUsers, keys, values, useAnd, true, true);
+        System.out.println("Keys and values, no ip value: " + displayVal);
+
+        StringBuilder sb = new StringBuilder();
+        String s = null;
+        sb.append(s);
+        System.out.println(sb.toString());
+
+/*
         String sql = createMappingQuery(null, null, null, keys, null, null,2, false, new ArrayList<String>(), false, null);
         System.out.println("Mapping sql is: " + sql);
 
@@ -1125,10 +1285,6 @@ Value is included in all or none, comment is just illustrative
         sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, true, null, false, null);
         System.out.println("Master sql with operaitons is: " + sql);
 
-//        List<String> valuesList = createValueList(keys, new String[]{"one", "two", "three"});
-//        for(String s: valuesList){
-//            System.out.println(s);
-//        }
 
         values = new ArrayList<String>();
         values.add("127.0.0.1");
@@ -1154,7 +1310,7 @@ Value is included in all or none, comment is just illustrative
 
         List<String> authUsers = new ArrayList<String>();
         authUsers.add("Donal");
-        
+
         sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, null, true, authUsers);
         System.out.println("User value sql is: " + sql);
 
@@ -1166,7 +1322,8 @@ Value is included in all or none, comment is just illustrative
 
         sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, false, null, true, authUsers);
         System.out.println("Master sql with users and no operations is: " + sql);
-        
+*/
+
     }
 
 }
