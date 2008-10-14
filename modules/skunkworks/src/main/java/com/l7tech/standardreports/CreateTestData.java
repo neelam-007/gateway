@@ -223,10 +223,10 @@ public class CreateTestData {
 
         timeUnitChanges = 0;
         if(unitOfTime.equals(Utilities.HOUR)){
-            maxUnitChanges = 31;
+            maxUnitChanges = 744;
             fileName = "HourlyData";
         }else if(unitOfTime.equals(Utilities.DAY)){
-            maxUnitChanges = 12;
+            maxUnitChanges = 365;
             fileName = "DailyData";
         }else{
             throw new IllegalArgumentException("Unsupported unit of time supplied: " + unitOfTime);
@@ -308,25 +308,18 @@ public class CreateTestData {
         long intervalToUse;
         if(unitOfTime.equals(Utilities.HOUR)){
             cal.add(Calendar.HOUR_OF_DAY, -1);
-            if(cal.get(Calendar.DAY_OF_MONTH) != currentDay){
-                currentDay = cal.get(Calendar.DAY_OF_MONTH);
-                timeUnitChanges++;
-                if(timeUnitChanges >= maxUnitChanges) return null;
-            }
             resolutionToUse = hourlyResolution;
             intervalToUse = hourlyInterval;
         }else if(unitOfTime.equals(Utilities.DAY)){
             cal.add(Calendar.DAY_OF_MONTH, -1);
-            if(cal.get(Calendar.MONTH) != currentMonth){
-                currentMonth = cal.get(Calendar.MONTH);
-                timeUnitChanges++;
-                if(timeUnitChanges >= maxUnitChanges) return null;
-            }
             resolutionToUse = dailyResolution;
             intervalToUse = dailyInterval;
         }else{
             throw new IllegalArgumentException("Unsupported unit of time supplied: " + unitOfTime);
         }
+
+        timeUnitChanges++;
+        if(timeUnitChanges >= maxUnitChanges) return null;
 
         int [] tpStats = getThroughPutStats();
         int [] responseTimes = getResponseTimes();
@@ -383,7 +376,6 @@ public class CreateTestData {
     }
 
     /**
-     * Run for every distinct set of mapping key values, which would make up a new row in mcmk
      * @param args
      * @throws Exception
      */

@@ -60,7 +60,7 @@ public class Utilities {
     private final static String distinctFrom = "SELECT distinct p.objectid as SERVICE_ID, p.name as SERVICE_NAME, " +
             "p.routing_uri as ROUTING_URI ";
 
-    private final static String aggregateSelect = "SELECT count(*) as count, p.objectid as SERVICE_ID, " +
+    private final static String aggregateSelect = "SELECT p.objectid as SERVICE_ID, " +
             "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
             "SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT, MIN(smd.front_min) as FRTM, " +
             "MAX(smd.front_max) as FRTMX, if(SUM(smd.front_sum), if(SUM(smd.attempted), " +

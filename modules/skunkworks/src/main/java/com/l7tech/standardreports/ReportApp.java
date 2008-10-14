@@ -52,13 +52,13 @@ public class ReportApp
 
     private static final String MAPPING_KEYS = "MAPPING_KEYS";
     private static final String MAPPING_VALUES = "MAPPING_VALUES";
-    private static final String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
-    private static final String MAPPING_KEY = "MAPPING_KEY";
-    private static final String MAPPING_VALUE = "MAPPING_VALUE";
-    private static final String OPERATIONS = "OPERATIONS";
+    public static final String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
+    public static final String MAPPING_KEY = "MAPPING_KEY";
+    public static final String MAPPING_VALUE = "MAPPING_VALUE";
+    public static final String OPERATIONS = "OPERATIONS";
 
     private static final String USE_USER = "USE_USER";
-    private static final String AUTHENTICATED_USERS = "AUTHENTICATED_USERS";
+    public static final String AUTHENTICATED_USERS = "AUTHENTICATED_USERS";
 
     //db props
     private static final String CONNECTION_STRING = "CONNECTION_STRING";
