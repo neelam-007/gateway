@@ -14,6 +14,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.text.ParseException;
 
+import org.junit.Test;
+
 /**
  * Test coverage for class Utilities
  * Various tests test the method createMappingQuery. Each test is testing a specific characteristic of the sql
@@ -26,6 +28,7 @@ public class UtilitiesTest extends TestCase {
      * Checks that only 1 case statement exists in the returned sql
      * Checks that all other mapping keys are supplied in the select sql
      */
+    @Test
     public void testCreateMappingQuery_OneKey(){
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
@@ -63,6 +66,7 @@ public class UtilitiesTest extends TestCase {
     /**
      * Checks that all values supplied as constraints on keys are used correctly in the generated sql
      */
+    @Test
     public void testCreateMappingQuery_KeyValues(){
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
@@ -109,6 +113,7 @@ public class UtilitiesTest extends TestCase {
     /**
      * Check that any AND / LIKE filter constraints supplied are used correctly
      */
+    @Test
     public void testCreateMappingQuery_KeyValuesFilters(){
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
@@ -162,6 +167,7 @@ public class UtilitiesTest extends TestCase {
      * Test that when isDetail is true, no keys or other parameters are required, except for resolution
      * Checks that the real value of mcmv.service_operation is selected and not a placeholder
      */
+    @Test
     public void testCreateMappingQuery_OnlyDetail(){
         String sql =
                 Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null ,null,1,true ,null ,false ,null);
@@ -177,6 +183,7 @@ public class UtilitiesTest extends TestCase {
      * Checks that the real value for user is selected and not a placeholder
      *
      */
+    @Test
     public void testCreateMappingQuery_UseUser(){
         List<String> users = new ArrayList<String>();
         users.add("Donal");
@@ -203,6 +210,7 @@ public class UtilitiesTest extends TestCase {
      * Checks that the resolution being supplied, is always used
      * Checks that any resolution other than 1 or 2, causes an exception
      */
+    @Test
     public void testCreateMappingQuery_Resolution(){
 
         String sql =
@@ -229,6 +237,7 @@ public class UtilitiesTest extends TestCase {
      * Checks that start and end time are used correctly.
      * Checks that incorrect values cause an exception
      */
+    @Test
     public void testCreateMappingQuery_Time(){
 
         Calendar cal = Calendar.getInstance();
@@ -258,6 +267,7 @@ public class UtilitiesTest extends TestCase {
      * Tests that any service id's provided are used in the query
      * Checks that when no ids are supplied, there is no constraint in the generated sql
      */
+    @Test
     public void testCreateMappingQuery_ServiceIds(){
 
         List<String> serviceIds = new ArrayList<String>();
@@ -285,6 +295,7 @@ public class UtilitiesTest extends TestCase {
         assertTrue(index == -1);
     }
 
+    @Test
     public void testCreateMappingQuery_Operations(){
 
         List<String> operations = new ArrayList<String>();
@@ -315,6 +326,7 @@ public class UtilitiesTest extends TestCase {
     /**
      * Confirms that all fields which should be selected, are.
      */
+    @Test
     public void testCreateMappingQuery_SelectFields(){
 
         String sql = Utilities.createMappingQuery(false, null, null, new ArrayList<String>(), null, null, null, 1, true,
@@ -363,6 +375,7 @@ public class UtilitiesTest extends TestCase {
     /**
      * Checks that the gruop by order has all columns required present, and in the correct order.
      */
+    @Test
     public void testCreateMappingQuery_GroupBy(){
         String sql =
                 Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null,null,1, true, null,false,null);
@@ -375,6 +388,7 @@ public class UtilitiesTest extends TestCase {
     /**
      * Checks that the gruop by order has all columns required present, and in the correct order.
      */
+    @Test
     public void testCreateMappingQuery_OrderBy(){
         String sql =
                 Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null,null,1, true, null,false,null);
@@ -387,6 +401,7 @@ public class UtilitiesTest extends TestCase {
     /**
      * When the mapping query is a distinct query, check that all the expected fields are returned.
      */
+    @Test
     public void testCreateMappingQuery_SelectDistinctFields(){
 
         String sql = Utilities.createMappingQuery(true, null, null, new ArrayList<String>(), null, null, null, 1, true,
@@ -420,6 +435,7 @@ public class UtilitiesTest extends TestCase {
      * Tests that the list created by createValueList is correct
      * Checks that IllegalArgumentException is thrown, when a key does not have a valid value
      */
+    @Test
     public void testCreateValueList(){
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
@@ -455,6 +471,7 @@ public class UtilitiesTest extends TestCase {
     /**
      * Tests that the value returned from getAbsoluteMilliSeconds is correct  
      */
+    @Test
     public void testGetAbsoluteMilliSeconds() throws Exception{
         String date = "2008/10/13 14:12";
         Date d = Utilities.DATE_FORMAT.parse(date);
@@ -469,6 +486,7 @@ public class UtilitiesTest extends TestCase {
      * based on the unit of time supplied
      * @throws Exception
      */
+    @Test
     public void testGetCalendarForTimeUnit() throws Exception{
         Calendar control = Calendar.getInstance();
         control.set(Calendar.MINUTE, 0);
@@ -504,6 +522,7 @@ public class UtilitiesTest extends TestCase {
      * Test that the display string returned from getIntervalDisplayDate are correct 
      * @throws Exception 
      */
+    @Test
     public void testGetIntervalDisplayDate() throws Exception{
         String startDate = "2008/08/01 14:12";
         String endDate = "2008/10/13 15:12";
@@ -533,6 +552,7 @@ public class UtilitiesTest extends TestCase {
      * Checks that the returned list has the correct number of intervals for each interval unit of time tested
      * Checks that IllegalArgumentException is thrown if the arguments are incorrect
      */
+    @Test
     public void testGetIntervalsForTimePeriod() throws Exception{
         String startDate = "2008/10/12 00:00";
         String endDate = "2008/10/13 00:00";
@@ -609,6 +629,7 @@ public class UtilitiesTest extends TestCase {
      * Tests the display string generated for the context mapping section of the report info section on a report.
      * Tests the string generated based on the various parameter combinations which this method accecpts
      */
+    @Test
     public void testGetMappingReportInfoDisplayString(){
         String val = Utilities.getMappingReportInfoDisplayString(null, null, null, true, false);
         assertTrue(val.equals(Utilities.onlyIsDetailDisplayText));
@@ -673,6 +694,7 @@ public class UtilitiesTest extends TestCase {
      * Tests the display string generated for each table of data for each distinct set of mapping values found.
      * Tests the string generated based on the various parameter combinations which this method accecpts
      */
+    @Test
     public void testGetMappingValueDisplayString(){
         boolean exception = false;
         try{
@@ -718,6 +740,7 @@ public class UtilitiesTest extends TestCase {
         assertTrue(exception);
     }
 
+    @Test
     public void testGetMilliSecondAsStringDate() throws Exception{
         String date = "2008/10/13 16:38";
         Date d = Utilities.DATE_FORMAT.parse(date);
@@ -727,6 +750,7 @@ public class UtilitiesTest extends TestCase {
         assertTrue(date.equals(milliAsDate));
     }
 
+    @Test
     public void testGetMillisForEndTimePeriod(){
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.MINUTE, 0);
@@ -745,6 +769,7 @@ public class UtilitiesTest extends TestCase {
         assertTrue(calendar.getTimeInMillis() == endTimeMilli);
     }
 
+    @Test
     public void testGetNoMappingQuery_ValidInputs() throws ParseException {
         boolean exception = false;
         try{
@@ -769,6 +794,7 @@ public class UtilitiesTest extends TestCase {
         
     }
 
+    @Test
     public void testGetNoMappingQuery_SelectFields() throws ParseException {
 
         String startDate = "2008/10/01 00:00";
@@ -821,6 +847,7 @@ public class UtilitiesTest extends TestCase {
      * Checks that start and end time are used correctly.
      * Checks that incorrect values cause an exception
      */
+    @Test
     public void testGetNoMappingQuery_Time(){
 
         Calendar cal = Calendar.getInstance();
@@ -848,6 +875,7 @@ public class UtilitiesTest extends TestCase {
      * Checks that the resolution being supplied, is always used
      * Checks that any resolution other than 1 or 2, causes an exception
      */
+    @Test
     public void testGetNoMappingQuery_Resolution() throws ParseException {
         String startDate = "2008/10/01 00:00";
         long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
@@ -877,6 +905,7 @@ public class UtilitiesTest extends TestCase {
      * Tests that any service id's provided are used in the query
      * Checks that when no ids are supplied, there is no constraint in the generated sql
      */
+    @Test
     public void testGetNoMappingQuery_ServiceIds() throws ParseException {
         String startDate = "2008/10/01 00:00";
         long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
@@ -910,6 +939,7 @@ public class UtilitiesTest extends TestCase {
     /**
      * Checks that the group by clause has the objectid column present. Only required when isMasterQuery is false
      */
+    @Test
     public void testGetNoMappingQuery_GroupBy() throws ParseException {
         String startDate = "2008/10/01 00:00";
         long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
@@ -921,6 +951,7 @@ public class UtilitiesTest extends TestCase {
         assertTrue(index != -1);
     }
 
+    @Test
     public void testGetNoMappingQuery_SelectDistinctFields() throws ParseException {
 
         String startDate = "2008/10/01 00:00";
@@ -956,6 +987,7 @@ public class UtilitiesTest extends TestCase {
      * Checks that the order by clause has the objectid column present.
      * Only required when isMasterQuery is true
      */
+    @Test
     public void testGetNoMappingQuery_OrderBy() throws ParseException {
         String startDate = "2008/10/01 00:00";
         long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
@@ -971,6 +1003,7 @@ public class UtilitiesTest extends TestCase {
      * Confirm that the relative calculation for each unit of time allowed, yields the correct milli second time
      * in the past
      */
+    @Test
     public void testGetRelativeMilliSecondsInPast(){
 
         //if this test fails it could be because the clock changed hour between
@@ -1025,6 +1058,7 @@ public class UtilitiesTest extends TestCase {
     /**
      * Ensure for various start and end times, that the correct resolution is used in sql queries
      */
+    @Test
     public void testGetResolutionFromTimePeriod() throws ParseException {
         Calendar cal = Calendar.getInstance();
         long startTime = cal.getTimeInMillis();         
@@ -1050,6 +1084,7 @@ public class UtilitiesTest extends TestCase {
     /**
      * Test the returned string is formatted correctly
      */
+    @Test
     public void testGetStringNamesFromCollection(){
         List<String> strings = new ArrayList<String>();
         strings.add("one");
@@ -1065,6 +1100,7 @@ public class UtilitiesTest extends TestCase {
         
     }
 
+    @Test
     public void testIsPlaceHolderValue(){
         String val = Utilities.SQL_PLACE_HOLDER;
         assertTrue(Utilities.isPlaceHolderValue(val));
