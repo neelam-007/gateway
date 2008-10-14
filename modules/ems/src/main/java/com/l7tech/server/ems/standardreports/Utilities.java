@@ -14,7 +14,7 @@ import java.util.*;
 
 public class Utilities {
 
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm");
     private static final SimpleDateFormat HOUR_DATE_FORMAT = new SimpleDateFormat("HH:mm");
     private static final SimpleDateFormat DAY_HOUR_DATE_FORMAT = new SimpleDateFormat("MM/dd HH:mm");
     private static final SimpleDateFormat DAY_DATE_FORMAT = new SimpleDateFormat("E MM/dd");
@@ -33,26 +33,78 @@ public class Utilities {
     public static final String DAY = "DAY";
     public static final String WEEK = "WEEK";
     public static final String MONTH = "MONTH";
-    private static final int NUM_MAPPING_KEYS = 5;
-    public static final String AUTHENTICATED_USER = "Authenticated User";
+    public static final int NUM_MAPPING_KEYS = 5;
+    public static final String AUTHENTICATED_USER_DISPLAY = "Authenticated User";
+
+    //SQL select fields
+    public static final String SERVICE_ID = "SERVICE_ID";
+    public static final String SERVICE_NAME = "SERVICE_NAME";
+    public static final String ROUTING_URI = "ROUTING_URI";
+    public static final String THROUGHPUT = "THROUGHPUT";
+    public static final String FRTM = "FRTM";
+    public static final String FRTMX = "FRTMX";
+    public static final String FRTA = "FRTA";
+    public static final String BRTM = "BRTM";
+    public static final String BRTMX = "BRTMX";
+    public static final String AP = "AP";
+    //todo [Donal] check if constant group still needed?
+    public static final String CONSTANT_GROUP = "CONSTANT_GROUP";
+    public static final String AUTHENTICATED_USER = "AUTHENTICATED_USER";
+    public static final String SERVICE_OPERATION_VALUE = "SERVICE_OPERATION_VALUE";
+    public static final String MAPPING_VALUE_1 = "MAPPING_VALUE_1";
+    public static final String MAPPING_VALUE_2 = "MAPPING_VALUE_2";
+    public static final String MAPPING_VALUE_3 = "MAPPING_VALUE_3";
+    public static final String MAPPING_VALUE_4 = "MAPPING_VALUE_4";
+    public static final String MAPPING_VALUE_5 = "MAPPING_VALUE_5";
+
+    private final static String distinctFrom = "SELECT distinct p.objectid as SERVICE_ID, p.name as SERVICE_NAME, " +
+            "p.routing_uri as ROUTING_URI ";
+
+    private final static String aggregateSelect = "SELECT count(*) as count, p.objectid as SERVICE_ID, " +
+            "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
+            "SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT, MIN(smd.front_min) as FRTM, " +
+            "MAX(smd.front_max) as FRTMX, if(SUM(smd.front_sum), if(SUM(smd.attempted), " +
+            "SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA, MIN(smd.back_min) as BRTM, " +
+            "MAX(smd.back_max) as BRTMX, if(SUM(smd.back_sum), if(SUM(smd.completed), " +
+            "SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA, " +
+            "if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP'" +
+            " ,'1' as CONSTANT_GROUP ";
+
+    private final static String noMappingAggregateSelect = "SELECT '1' as CONSTANT_GROUP, count(*) as count, p.objectid as SERVICE_ID, " +
+            "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
+            "SUM(if(sm.completed, sm.completed,0)) as THROUGHPUT, MIN(sm.front_min) as FRTM, " +
+            "MAX(sm.front_max) as FRTMX, if(SUM(sm.front_sum), if(SUM(sm.attempted), " +
+            "SUM(sm.front_sum)/SUM(sm.attempted),0), 0) as FRTA, MIN(sm.back_min) as BRTM, " +
+            "MAX(sm.back_max) as BRTMX, if(SUM(sm.back_sum), if(SUM(sm.completed), " +
+            "SUM(sm.back_sum)/SUM(sm.completed),0), 0) as BRTA, " +
+            "if(SUM(sm.attempted), ( 1.0 - ( ( (SUM(sm.authorized) - SUM(sm.completed)) / SUM(sm.attempted) ) ) ) , 0) as 'AP' ";
+
+    private final static String mappingJoin = " FROM service_metrics sm, published_service p, service_metrics_details smd," +
+            " message_context_mapping_values mcmv, message_context_mapping_keys mcmk WHERE p.objectid = sm.published_service_oid " +
+            "AND sm.objectid = smd.service_metrics_oid AND smd.mapping_values_oid = mcmv.objectid AND mcmv.mapping_keys_oid = mcmk.objectid ";
+
+    private final static String noMappingJoin = " FROM service_metrics sm, published_service p WHERE " +
+            "p.objectid = sm.published_service_oid ";
+
+    public final static String onlyIsDetailDisplayText = "Detail Report";
 
     /**
      * Relative time is calculated to a fixed point of time depending on the unit of time supplied. For day, week
      * and month 00:00 of the current day is used (end of time period is not exclusive) minus the unitOfTime x
      * numberOfUnits. The start of the time period is inclusive.
-     * week = 7 days, month = 30 days
      * E.g. if the current date is (yyyy-mm-dd hh:mm) 2008-09-22 17:48 and the unitOfTime is HOUR and the numerOfUnits
      * is 1, then the relative calculation will be done from 2008-09-22 17:00 (x) and the number of milliseconds
-     * returned will be (x - (numberOfUnits x unitOfTime)) - epoch. In this example if ou convert the returned long
+     * returned will be (x - (numberOfUnits x unitOfTime)). In this example if you convert the returned long
      * into a date, it would report it's time as 2008-09-22 16:00
      * For day, week and month the time used for the relative calculation is 00:00 of the current day.
      * In calculations a week = 7 days.
-     * Month will use whole months, not including any time from the current month.
+     * Month uses whole months, not including any time from the current month.
      * @param numberOfUnits How many unitOfTime to use
      * @param unitOfTime valid values are HOUR, DAY, WEEK and MONTH
      * @return
      */
     public static long getRelativeMilliSecondsInPast(int numberOfUnits, String unitOfTime){
+        checkUnitOfTime(unitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});
         Calendar calendar = getCalendarForTimeUnit(unitOfTime);
         long calTime = calendar.getTimeInMillis();
 
@@ -75,7 +127,8 @@ public class Utilities {
      * then the daily bin resolution is used, otherwise hourly is used.
      * @param startTimeMilli start of time period, in milliseconds, since epoch
      * @param endTimeMilli end of time period, in milliseconds, since epoch
-     * @param hourRetentionPeriod SSG's current hourly bin max retention policy value
+     * @param hourRetentionPeriod SSG's current hourly bin max retention policy value, number of days hourly data is
+     * kept for
      * @return
      */
     public static Integer getResolutionFromTimePeriod(Integer hourRetentionPeriod, Long startTimeMilli, Long endTimeMilli){
@@ -94,18 +147,12 @@ public class Utilities {
     /**
      * Get the date string representation of a time value in milliseconds
      * @param timeMilliSeconds the number of milliseconds since epoch
-     * @return a date in the format yyyy-MM-dd HH:mm
+     * @return a date in the format yyyy/MM/dd HH:mm
      */
     public static String getMilliSecondAsStringDate(Long timeMilliSeconds){
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(timeMilliSeconds);
         return DATE_FORMAT.format(cal.getTime());
-    }
-
-    public static String getMilliSecondAsHourDate(Long timeMilliSeconds){
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(timeMilliSeconds);
-        return HOUR_DATE_FORMAT.format(cal.getTime());
     }
 
     /**
@@ -116,18 +163,21 @@ public class Utilities {
      * modified to highlight to the user the crossing of the time boundary
      * E.g. across midnight when the interval unit of time is 1 hour
      * @param startIntervalMilliSeconds milli second value since epoch
+     * @param endIntervalMilliSeconds milli second value since epoch 
      * @param intervalUnitOfTime HOUR, DAY, WEEK or MONTH
-     * @return
+     * @return String representing the date, to be displayed to the viewer of the report
      */
     public static String getIntervalDisplayDate(Long startIntervalMilliSeconds, Long endIntervalMilliSeconds,
                                         String intervalUnitOfTime){
+        checkUnitOfTime(intervalUnitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});
+        
         Calendar calStart = Calendar.getInstance();
         calStart.setTimeInMillis(startIntervalMilliSeconds);
 
         Calendar calEnd = Calendar.getInstance();
         calEnd.setTimeInMillis(endIntervalMilliSeconds);
 
-
+        //todo [Donal] could validate that the end time is an hour, day..etc from the start time
         if(intervalUnitOfTime.equals(HOUR)){
             return DAY_HOUR_DATE_FORMAT.format(calStart.getTime()) + " - " +
                         HOUR_DATE_FORMAT.format(calEnd.getTime());
@@ -151,7 +201,8 @@ public class Utilities {
 
     /**
      * Get the number of milliseconds representing the end of the period represtented by the unitOfTime
-     * For Hour this is the end of the previous hour, for Day, Week and Month it's 00:00 today
+     * For Hour this is the end of the previous hour, for Day and Week it's 00:00 today. For Months it's also the
+     * 1st day of the Month
      * @param unitOfTime
      * @return
      */
@@ -159,7 +210,22 @@ public class Utilities {
         return Utilities.getCalendarForTimeUnit(unitOfTime).getTimeInMillis();
     }
 
+    private static void checkUnitOfTime(String unitSupplied, String [] allowableUnits){
+        for(String s: allowableUnits){
+            if(unitSupplied.equals(s)){
+                return;
+            }
+        }
+        StringBuilder allUnits = new StringBuilder();
+        for(String s: allowableUnits){
+            allUnits.append(s).append(" ");
+        }
+        throw new IllegalArgumentException(unitSupplied + " is not a supported unit of time. Allowable units are: "
+                + allUnits.toString());
+    }
+
     public static Calendar getCalendarForTimeUnit(String unitOfTime){
+        checkUnitOfTime(unitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});
         Calendar calendar = Calendar.getInstance();
 
         //Set the calendar to be the correct end of time period
@@ -186,7 +252,7 @@ public class Utilities {
      * @throws IllegalArgumentException if an incorrect unit of time is supplied
      */
     private static long getMilliSecondsForTimeUnit(String unitOfTime){
-
+        checkUnitOfTime(unitOfTime, new String[]{HOUR, DAY, WEEK});
         if(unitOfTime.equals("HOUR")){
             return 3600000L;
         }else if(unitOfTime.equals("DAY")){
@@ -219,6 +285,7 @@ public class Utilities {
      * Note: The last interval may be shorter than expected if the interval does not divide evenly into the time period
      * @param timePeriodStartInclusive When does the time period start. See Utilities.getRelativeMilliSeconds() for
      * how to get the timePeriodStartInclusive value
+     * @param timePeriodEndExclusive end of time period
      * @param intervalNumberOfUnits The length of an interval is numberOfUnits x unitOfTime
      * @param intervalUnitOfTime valid values are HOUR, DAY, WEEK and MONTH
      * @return List<Long> the ordered list of long's representing the start of each interval. The last long represents
@@ -237,6 +304,7 @@ public class Utilities {
             startDate+" value = "+ timePeriodStartInclusive+" end: " + endDate+" value = " + timePeriodEndExclusive);
         }
 
+        checkUnitOfTime(intervalUnitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});        
         List<Long> returnList = new ArrayList<Long>();
 
         if(!intervalUnitOfTime.equals(MONTH)){
@@ -295,27 +363,6 @@ public class Utilities {
             returnList.add(timePeriodEndExclusive);
         }
         return returnList;
-    }
-
-    /**
-     * Convert the strings in the supplied collection into a valid SQL 'IN' style query e.g.
-     * (1,2,3,4) where 1,2,3 and 4 are service oid's.
-     * @param values Is a Collection of Service string oid's
-     * @return String to be used as the 'x' -> select * from y where where objectid in x
-     */
-    public static String getServiceIdInQuery(Collection values){
-        if(values.isEmpty()) return "(0)";
-
-        Iterator iter = values.iterator();
-        StringBuilder sb = new StringBuilder("(");
-        int i = 0;
-        while(iter.hasNext()){
-            if(i != 0) sb.append(",");
-            sb.append(iter.next());
-            i++;
-        }
-        sb.append(")");
-        return sb.toString();
     }
 
     /**
@@ -530,7 +577,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * @return String query
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
-    public static String createMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+    public static String createMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Collection<String> serviceIds, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
@@ -546,7 +593,12 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
 
         //----SECTION A----
-        StringBuilder sb = new StringBuilder(aggregateSelect);
+        StringBuilder sb = null;
+        if(isMasterQuery){
+            sb = new StringBuilder(distinctFrom);
+        }else{
+            sb = new StringBuilder(aggregateSelect);
+        }
         //----SECTION B----
         addUserToSelect(useUser, sb);
         //----SECTION C----
@@ -581,9 +633,11 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
         }
 
-        //----SECTION L----
-        addGroupBy(sb);
-
+        if(!isMasterQuery){
+            //----SECTION L----
+            addGroupBy(sb);
+        }
+        
         //----SECTION M----
         addMappingOrder(sb);
 
@@ -635,7 +689,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         if(authenticatedUser != null && !authenticatedUser.equals("") && !authenticatedUser.equals(SQL_PLACE_HOLDER)){
             authUsers.add(authenticatedUser);
         }
-        return createMappingQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, keys, keyValueConstraints,
+        return createMappingQuery(false, startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, keys, keyValueConstraints,
                 valueConstraintAndOrLike, resolution, isDetail, operationList, useUser, authUsers);
     }
 
@@ -648,7 +702,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         }
     }
 
-    public static String getNoMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+    public static String getNoMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Collection<String> serviceIds, int resolution){
 
 
@@ -656,7 +710,12 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         if(!useTime) throw new IllegalArgumentException("Both start and end time must be specified");
         checkResolutionParameter(resolution);
 
-        StringBuilder sb = new StringBuilder(noMappingAggregateSelect);
+        StringBuilder sb = null;
+        if(isMasterQuery){
+            sb = new StringBuilder(distinctFrom);
+        }else{
+            sb = new StringBuilder(noMappingAggregateSelect);
+        }
 
         //fill in place holder's
         sb.append(", '"+SQL_PLACE_HOLDER+ "' AS AUTHENTICATED_USER");
@@ -677,10 +736,11 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             addServiceIdConstraint(serviceIds, sb);
         }
 
-//        addGroupBy(sb);
-        sb.append(" GROUP BY p.objectid ");
-
-        System.out.println(sb.toString());
+        if(isMasterQuery){
+            sb.append(" ORDER BY p.objectid ");
+        }else{
+            sb.append(" GROUP BY p.objectid ");
+        }
         return sb.toString();
     }
 
@@ -691,40 +751,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         List<String> sIds = new ArrayList<String>();
         sIds.add(serviceId.toString());
 
-        return getNoMappingQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, resolution);
-    }
-
-    public static String getNoMappingDistinctQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                                Collection<String> serviceIds, int resolution){
-
-
-        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
-        if(!useTime) throw new IllegalArgumentException("Both start and end time must be specified");
-        checkResolutionParameter(resolution);
-
-        StringBuilder sb = new StringBuilder(distinctFrom);
-
-        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS AUTHENTICATED_USER");
-        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS SERVICE_OPERATION_VALUE");
-        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_1");
-        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_2");
-        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_3");
-        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_4");
-        sb.append(", '"+SQL_PLACE_HOLDER+ "' AS MAPPING_VALUE_5");
-        
-        sb.append(noMappingJoin);
-
-        addResolutionConstraint(resolution, sb);
-
-        addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
-
-        if(serviceIds != null && !serviceIds.isEmpty()){
-            addServiceIdConstraint(serviceIds, sb);
-        }
-
-        sb.append(" ORDER BY p.objectid ");
-        System.out.println(sb.toString());
-        return sb.toString();
+        return getNoMappingQuery(false, startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, resolution);
     }
 
     private static void addOperationToSelect(boolean isDetail, StringBuilder sb) {
@@ -736,132 +763,29 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         }
     }
 
-    private final static String distinctFrom = "SELECT distinct p.objectid as SERVICE_ID, p.name as SERVICE_NAME, " +
-            "p.routing_uri as ROUTING_URI ";
-
-    private final static String aggregateSelect = "SELECT count(*) as count, p.objectid as SERVICE_ID, " +
-            "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
-            "SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT, MIN(smd.front_min) as FRTM, " +
-            "MAX(smd.front_max) as FRTMX, if(SUM(smd.front_sum), if(SUM(smd.attempted), " +
-            "SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA, MIN(smd.back_min) as BRTM, " +
-            "MAX(smd.back_max) as BRTMX, if(SUM(smd.back_sum), if(SUM(smd.completed), " +
-            "SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA, " +
-            "if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP'" +
-            " ,'1' as CONSTANT_GROUP ";
-
-    private final static String noMappingAggregateSelect = "SELECT '1' as CONSTANT_GROUP, count(*) as count, p.objectid as SERVICE_ID, " +
-            "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
-            "SUM(if(sm.completed, sm.completed,0)) as THROUGHPUT, MIN(sm.front_min) as FRTM, " +
-            "MAX(sm.front_max) as FRTMX, if(SUM(sm.front_sum), if(SUM(sm.attempted), " +
-            "SUM(sm.front_sum)/SUM(sm.attempted),0), 0) as FRTA, MIN(sm.back_min) as BRTM, " +
-            "MAX(sm.back_max) as BRTMX, if(SUM(sm.back_sum), if(SUM(sm.completed), " +
-            "SUM(sm.back_sum)/SUM(sm.completed),0), 0) as BRTA, " +
-            "if(SUM(sm.attempted), ( 1.0 - ( ( (SUM(sm.authorized) - SUM(sm.completed)) / SUM(sm.attempted) ) ) ) , 0) as 'AP' ";
-
-    private final static String mappingJoin = " FROM service_metrics sm, published_service p, service_metrics_details smd," +
-            " message_context_mapping_values mcmv, message_context_mapping_keys mcmk WHERE p.objectid = sm.published_service_oid " +
-            "AND sm.objectid = smd.service_metrics_oid AND smd.mapping_values_oid = mcmv.objectid AND mcmv.mapping_keys_oid = mcmk.objectid ";
-
-    private final static String noMappingJoin = " FROM service_metrics sm, published_service p WHERE " +
-            "p.objectid = sm.published_service_oid ";
-
     /**
-     * Creates the sql which can be used in a master jasper report. Query returns a distinct list of services, operaitons,
-     * users and mappings which can be used to drive sub queries
-     * The sql returned is very similar to the sql created by createMappingQuery, as is the processing below and these
-     * methods could be refactored to be just a single method with an extra parameter. See createMappingQuery for more
-     * information on how the sql is created.
-     * 
-     * @param startTimeInclusiveMilli start of the time period to query for inclusive, can be null, so long as
-     * endTimeInclusiveMilli is also null
-     * @param endTimeInclusiveMilli end of the time period to query for exclusive, can be null, so long as
-     * startTimeInclusiveMilli is also null
-     * @param serviceIds service ids to constrain query with
-     * @param keys mapping keys to use, must be at least 1
-     * @param keyValueConstraints values to constrain possible key values with
-     * @param valueConstraintAndOrLike and or like in sql for any values supplied as constraints on keys, can be null
-     * and empty. If it is, then AND is used by default.
-     * @param resolution hourly or daily = 1 or 2
-     * @param isDetail true when the sql represents a detail master report, which means service_operation is included
-     * in the distinct select list. When isDetail is true, the values in the operations list is used as a filter constraint.
-     * @param operations if isDetail is true and operations is non null and non empty, then the sql returned
-     * will be filtered by the values in operations
-     * @param useUser if true the auth_user_id column from message_context_mapping_values will be included in the
-     * select, group by and order by clauses
-     * @param authenticatedUsers if useUser is true, the where clause will constrain the values of
-     * message_context_mapping_values, with the values in authenticatedUsers
-     * @return String sql
-     * @throws NullPointerException if startIntervalMilliSeconds or endIntervalMilliSeconds is null
-     */
-    public static String createMasterMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                                  Collection<String> serviceIds, List<String> keys,
-                                                  List<String> keyValueConstraints,
-                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-                                            List<String> operations, boolean useUser, List<String> authenticatedUsers){
-        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
-
-        boolean keyValuesSupplied = checkMappingQueryParams(keys,
-                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
-
-        checkResolutionParameter(resolution);
-        
-        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
-        
-        StringBuilder sb = new StringBuilder(distinctFrom);
-
-        addUserToSelect(useUser, sb);
-
-        addCaseSQL(keys,sb);
-
-        addOperationToSelect(isDetail, sb);
-
-        sb.append(mappingJoin);
-
-        addResolutionConstraint(resolution, sb);
-
-        if(useTime){
-            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
-        }
-
-        if(serviceIds != null && !serviceIds.isEmpty()){
-            addServiceIdConstraint(serviceIds, sb);
-        }
-
-        if(isDetail && operations != null && !operations.isEmpty()){
-            addOperationConstraint(operations, sb);
-        }
-
-        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
-            addUserConstraint(authenticatedUsers, sb);
-        }
-        
-        if(keyValuesSupplied){//then the lengths have to match from above constraint
-            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
-        }
-
-        addMappingOrder(sb);
-
-        System.out.println(sb.toString());
-        return sb.toString();
-    }
-
-    /**
-     * Convert a list of string params into a list. This is needed by a sub query which is going to select out
-     * aggregate values for SPECIFIC values of keys for a specific interval.
-     * We are only interested in values of args, which have an index within the size of keys. Keys will hold up to
-     * 5 values, and args WILL hold 5 values, currently. However some of args will just be placeholders, with the value
-     * '1'. This is as all queries always include all mapping_value_x (x:1-5), so when less than 5 keys are used, then
-     * their select value is just 1, so it has no affect on group and order by operations.
-     * If any of the string values equal '1' indicating a placeholder, then null is added into that location
+     * Convert a list of string params into a list. This is a convenience method for sub queries, which is going to
+     * select out aggregate values for SPECIFIC values of keys for a specific interval. The sub query is fed values
+     * for each mapping value from it's master report. Before it can call createMappingQuery it needs to know what
+     * specific values to constrain the keys for, for this sub query.
+     * We are only interested in values of args, which have an index within the size of keys. Keys will have up to
+     * 5 values, and args WILL have 5 values, currently. However some of args will just be placeholders, with the value
+     * SQL_PLACE_HOLDER. This is as all queries always include all mapping_value_x (x:1-5), so when less than 5 keys are used, then
+     * their select value is just SQL_PLACE_HOLDER, so it has no affect on group and order by operations.
+     * If any of the string values equal SQL_PLACE_HOLDER indicating a placeholder, then null is added into that location
      * in the returned list
      * @param args String values for the keys
      * @return List representation of the args
+     * @throws IllegalArgumentException if any index from keys results in a null or SQL_PLACE_HOLDER value from args
      */
     public static List<String> createValueList(List<String> keys, String... args){
 
+        if(keys.size() > args.length) throw new IllegalArgumentException("Parameter keys must never be greater in size " +
+                "than parameter args");
+
         List<String> returnList = new ArrayList<String>();
 
-        for (int i = 0; i < args.length && i < keys.size(); i++) {
+        for (int i = 0; i < keys.size(); i++) {
             String s = args[i];
             if (s == null || s.equals(SQL_PLACE_HOLDER)) throw new IllegalArgumentException("Any value of args with a valid index " +
                     "into keys, must contain a real value and not null or " + SQL_PLACE_HOLDER);
@@ -896,7 +820,9 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         if(keys == null || keys.isEmpty()){
             if(!useUser){
                 if(!isDetail){
-                    throw new IllegalArgumentException("Mapping queries require at least one value in the keys list");
+                    throw new IllegalArgumentException("Non detail mapping queries require at least one value in " +
+                            "the keys list");
+
                 }
             }
         }
@@ -1063,11 +989,11 @@ Value is included in all or none, comment is just illustrative
             if(i != 1){
                 sb.append(" OR ");
             }
-            sb.append("( mcmk.mapping").append(i).append("_key ");
+            sb.append("( mcmk.mapping").append(i).append("_key");
             sb.append(" = '").append(key).append("' ");
 
             if(value != null && !value.equals("")){
-                sb.append(" AND mcmv.mapping").append(i).append("_value ");
+                sb.append("AND mcmv.mapping").append(i).append("_value");
                 if(andValue){
                     sb.append(" = '").append(value).append("' ");
                 }else{
@@ -1098,23 +1024,31 @@ Value is included in all or none, comment is just illustrative
      * @throws NullPointerException if any argument is null or empty for it's type
      * @throws IllegalStateException if keyValues ever has the place holder value for any value from keys
      */
-    public static String getMappingValueDisplayString(String authUser, String [] keyValues, List<String> keys){
+    public static String getMappingValueDisplayString(String authUser, List<String> keys, String [] keyValues){
 
         if(authUser == null || authUser.equals(""))
-            throw new NullPointerException("authUser must have a non null and non empty value");//as it always exists in select
+            throw new NullPointerException("authUser must have a non null and non empty value. " +
+                    "It can be the placeholder value");//as it always exists in select
+
+        if(authUser.equals(SQL_PLACE_HOLDER) && (keys == null || keys.isEmpty())
+                && (keyValues == null || keyValues.length == 0)){
+            throw new IllegalArgumentException("authUser must be supplied (non null, emtpy and not a placeholder or" +
+                    " valid keys and values must be supplied");
+        }
+
         if(keyValues == null){
             keyValues = new String[]{};
         }
         if(keys == null){
             keys = new ArrayList<String>();        
         }
-        if(keyValues.length < keys.size()) throw new IllegalArgumentException("Length of keyValues must equal length of keys");
+        if(keyValues.length != keys.size()) throw new IllegalArgumentException("Length of keyValues must equal length of keys");
 
 
         StringBuilder sb = new StringBuilder();
         boolean firstComma = false;
         if(!authUser.equals(SQL_PLACE_HOLDER)){
-            sb.append("Authenticated User: " + authUser+ " ");
+            sb.append("Authenticated User: " + authUser);
             firstComma = true;
         }
 
@@ -1132,8 +1066,6 @@ Value is included in all or none, comment is just illustrative
             }
             sb.append(s+": " + keyValues[i1]);
         }
-
-        System.out.println("Display mapping: " + sb.toString());
         return sb.toString();
     }
 
@@ -1143,26 +1075,21 @@ Value is included in all or none, comment is just illustrative
      * @param authUsers Auth user string, can be null or empty
      * @param keys mapping keys, can be null or empty so long as isDetail or useUser is true
      * @param keyValueConstraints
-     * @param valueConstraintAndOrLike
      * @param isDetail
      * @param useUser
      * @return String for displaying in report info section of report
      */
     public static String getMappingReportInfoDisplayString(List<String> authUsers, List<String> keys,
                                                            List<String> keyValueConstraints,
-                                                           List<String> valueConstraintAndOrLike, boolean isDetail,
+                                                           boolean isDetail,
                                                            boolean useUser){
         boolean keyValuesSupplied = checkMappingQueryParams(keys,
-                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
-
-        System.out.println( "authUsers: " + authUsers + " keys: " + keys + "keyValueConstraints: "
-                + keyValueConstraints+" valueConstraintAndOrLike: "+valueConstraintAndOrLike+
-                " isDetail: " + isDetail+ " " +useUser);
+                keyValueConstraints, null, isDetail, useUser);
 
         StringBuilder sb = new StringBuilder();
         boolean firstComma = false;
         if(useUser){
-            sb.append(AUTHENTICATED_USER);
+            sb.append(AUTHENTICATED_USER_DISPLAY);
         }
         if(useUser && authUsers != null && !authUsers.isEmpty()){
             sb.append(": (");
@@ -1175,6 +1102,17 @@ Value is included in all or none, comment is just illustrative
             firstComma = true;
         }
 
+        if(keys == null){
+            //The only constraint on the params is that if all are null, then isDetail or useUser must be true,
+            //however if sb is empty here, then useUser was false, in which case it's a detail query. Show something
+            //instead of nothing for this corner case.
+            if(sb.toString().equals("")){
+                return onlyIsDetailDisplayText;                
+            }else{
+                return sb.toString();
+            }
+        }
+        
         for (int i1 = 0; i1 < keys.size(); i1++) {
             String s = keys.get(i1);
             //valueConstraintAndOrLike
@@ -1191,182 +1129,6 @@ Value is included in all or none, comment is just illustrative
                 if(value != null && !value.equals("")) sb.append(" (" + keyValueConstraints.get(i1) + ")");
             }
         }
-
-        System.out.println("sb: " + sb.toString());
         return sb.toString();
     }
-
-
-    public static void main(String [] args) throws ParseException {
-        String intervalStart = "2008/09/16 12:00";
-        long intervalStartMilli = Utilities.getAbsoluteMilliSeconds(intervalStart);
-        String intervalEnd = "2008/09/16 13:00";
-        long intervalEndMilli = Utilities.getAbsoluteMilliSeconds(intervalEnd);
-
-        String sql = getNoMappingQuery(intervalStartMilli, intervalEndMilli, new ArrayList<String>(), 1);
-        System.out.println(sql);
-    }
-
-    public static void main1(String [] args) throws ParseException {
-//        String date = "2008-09-18 15:08";
-//        System.out.println(Utilities.getAbsoluteMilliSeconds(date));
-//        date = "2008-09-18 15:09";
-//        System.out.println(Utilities.getAbsoluteMilliSeconds(date));
-
-//        long endOfLastHour = Utilities.getRelativeMilliSecondsInPast(1, "HOUR");
-//
-//        Calendar cal = Calendar.getInstance();
-//        cal.setTimeInMillis(endOfLastHour);
-//        Date d = cal.getTime();
-//        //System.out.println(DATE_FORMAT.format(d));
-//
-//        long startOfYesterday = Utilities.getRelativeMilliSecondsInPast(1, "DAY");
-//        cal.setTimeInMillis(startOfYesterday);
-//        d = cal.getTime();
-//        //System.out.println(DATE_FORMAT.format(d));
-//
-//        long timePeriodEnd = Utilities.getCalendarForTimeUnit("DAY").getTimeInMillis();
-//        List<Long> intervals = Utilities.getIntervalsForTimePeriod(startOfYesterday, timePeriodEnd, 1, "HOUR");
-//
-//        for(Long l: intervals){
-//            cal.setTimeInMillis(l);
-//            d = cal.getTime();
-//            System.out.println(DATE_FORMAT.format(d));
-//        }
-
-//        String intervalStart = "2008/09/16 12:00";
-//        long intervalStartMilli = Utilities.getAbsoluteMilliSeconds(intervalStart);
-//        String intervalEnd = "2008/09/16 13:00";
-//        long intervalEndMilli = Utilities.getAbsoluteMilliSeconds(intervalEnd);
-//
-//        System.out.println("Start: " + intervalStartMilli + " End: " + intervalEndMilli);
-//
-//        System.out.println("HOUR: " + Utilities.getIntervalDisplayDate(intervalStartMilli, intervalEndMilli, HOUR));
-//        System.out.println("DAY: " + Utilities.getIntervalDisplayDate(intervalStartMilli, intervalEndMilli, DAY));
-//        System.out.println("WEEK: " + Utilities.getIntervalDisplayDate(intervalStartMilli, intervalEndMilli, WEEK));
-//        System.out.println("MONTH: " + Utilities.getIntervalDisplayDate(intervalStartMilli, intervalEndMilli, MONTH));
-//
-//        long monthTime = Utilities.getRelativeMilliSecondsInPast(2, WEEK);
-//        Calendar cal = Calendar.getInstance();
-//        cal.setTimeInMillis(monthTime);
-//        System.out.println("Month: " + DATE_FORMAT.format(cal.getTime()));
-
-//        long relativeStartMilli = Utilities.getRelativeMilliSecondsInPast(1, MONTH);
-//        long relativeEndMilli = Utilities.getMillisForEndTimePeriod(MONTH);
-//
-//        List<Long> intervals = Utilities.getIntervalsForTimePeriod(relativeStartMilli, relativeEndMilli, 10, DAY);
-//        Calendar cal = Calendar.getInstance();
-//        for(Long l: intervals){
-//            cal.setTimeInMillis(l);
-//            System.out.println(DATE_FORMAT.format(cal.getTime()));
-//        }
-
-//        List<String> l = new ArrayList<String>();
-//        for(int i =0; i < 10; i++){
-//            l.add(""+i);
-//        }
-//
-//        System.out.print(Utilities.getServiceIdInQuery(l));
-//        System.out.print(System.getProperty("line.separator"));
-//        System.out.print(Utilities.getStringNamesFromCollection(l));
-
-//        String date = Utilities.getMilliSecondAsStringDate(1222239651000L);
-//        System.out.println("Date: " + date);
-
-        List<String > keys  = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("Customer");
-
-        List<String> values = new ArrayList<String>();
-        values.add("127.0.0.1");
-        values.add("Gold");
-
-        List<String> useAnd = new ArrayList<String>();
-        useAnd.add("AND");
-        useAnd.add("AND");
-
-        List<String> authUsers = new ArrayList<String>();
-        authUsers.add("Donal");
-        authUsers.add("Ldap User 1");
-
-        String displayVal = getMappingReportInfoDisplayString(null, keys, values, useAnd, false, false);
-        System.out.println("Keys and values: " + displayVal);
-
-        displayVal = getMappingReportInfoDisplayString(null, keys, values, useAnd, true, false);
-        System.out.println("Keys and values, isDetail: " + displayVal);
-
-        displayVal = getMappingReportInfoDisplayString(null, keys, values, useAnd, true, false);
-        System.out.println("Keys and values, isDetail: " + displayVal);
-
-        displayVal = getMappingReportInfoDisplayString(null, keys, values, useAnd, true, true);
-        System.out.println("Keys and values, use user: " + displayVal);
-
-        displayVal = getMappingReportInfoDisplayString(authUsers, keys, values, useAnd, true, true);
-        System.out.println("Keys and values, use user with auth users: " + displayVal);
-
-        values.clear();
-        values.add(null);
-        values.add("Gold");
-
-        displayVal = getMappingReportInfoDisplayString(authUsers, keys, values, useAnd, true, true);
-        System.out.println("Keys and values, no ip value: " + displayVal);
-
-        StringBuilder sb = new StringBuilder();
-        String s = null;
-        sb.append(s);
-        System.out.println(sb.toString());
-
-/*
-        String sql = createMappingQuery(null, null, null, keys, null, null,2, false, new ArrayList<String>(), false, null);
-        System.out.println("Mapping sql is: " + sql);
-
-        sql = createMappingQuery(null, null, null, keys, null, null,2, true, new ArrayList<String>(), false, null);
-        System.out.println("Mapping sql with operation is: " + sql);
-
-        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, false, null, false, null);
-        System.out.println("Master sql is: " + sql);
-        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, true, null, false, null);
-        System.out.println("Master sql with operaitons is: " + sql);
-
-
-        values = new ArrayList<String>();
-        values.add("127.0.0.1");
-        values.add("Bronze");
-        sql = createMappingQuery(null, null, 229376L, keys, values, null,2, false, null, false, null);
-        System.out.println("Subreport no detail sql is: " + sql);
-
-        List<String> operations = new ArrayList<String>();
-        operations.add("listProducts");
-        operations.add("listOrders");
-
-        sql = createMappingQuery(null, null, new ArrayList<String>(), keys, values, null,2, true, operations, false, null);
-        System.out.println("Operation sql specific keys and value is: " + sql);
-
-        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, operations, false, null);
-        System.out.println("Operation sql is: " + sql);
-
-        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, null, false, null);
-        System.out.println("Empty operation sql is: " + sql);
-
-        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, null, true, null);
-        System.out.println("User sql is: " + sql);
-
-        List<String> authUsers = new ArrayList<String>();
-        authUsers.add("Donal");
-
-        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, null, true, authUsers);
-        System.out.println("User value sql is: " + sql);
-
-        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, true, null, true, null);
-        System.out.println("Master sql with users is: " + sql);
-
-        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, true, null, true, authUsers);
-        System.out.println("Master sql with specific users is: " + sql);
-
-        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, false, null, true, authUsers);
-        System.out.println("Master sql with users and no operations is: " + sql);
-*/
-
-    }
-
 }

@@ -167,16 +167,6 @@
 + $P{RELATIVE_TIME_UNIT}.toLowerCase().substring(1, $P{RELATIVE_TIME_UNIT}.length())
 + (($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue() > 1)? "s":"")]]></defaultValueExpression>
 	</parameter>
-	<parameter name="serviceIdInClause" isForPrompting="false" class="java.lang.String">
-		<parameterDescription><![CDATA[When SERVICE_NAME_TO_ID_MAP is null or has empty values, then this parameter is the empty string '' otherwise it has a valid
-IN clause with and 'AND before it]]></parameterDescription>
-		<defaultValueExpression ><![CDATA[($P{SERVICE_NAME_TO_ID_MAP} == null || $P{SERVICE_NAME_TO_ID_MAP}.values() == null
- || $P{SERVICE_NAME_TO_ID_MAP}.values().isEmpty())?
- ""
-: com.l7tech.server.ems.standardreports.Utilities.getServiceIdInQuery($P{SERVICE_NAME_TO_ID_MAP}.values())
-
-]]></defaultValueExpression>
-	</parameter>
 	<parameter name="resolution" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getResolutionFromTimePeriod($P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
 	</parameter>
@@ -193,7 +183,7 @@ IN clause with and 'AND before it]]></parameterDescription>
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
-com.l7tech.server.ems.standardreports.Utilities.createMappingQuery($P{startTimeMilli},
+com.l7tech.server.ems.standardreports.Utilities.createMappingQuery(false, $P{startTimeMilli},
 		 $P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
 $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
 : com.l7tech.server.ems.standardreports.Utilities.getNoMappingQuery
@@ -672,8 +662,8 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Value: " +
 com.l7tech.server.ems.standardreports.Utilities.getMappingValueDisplayString(
-$F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}}, $P{MAPPING_KEYS})]]></textFieldExpression>
+$F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
+$F{MAPPING_VALUE_5}})]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="FrameHeaderTableRow"
@@ -1493,7 +1483,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
 com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayString
-($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{VALUE_EQUAL_OR_LIKE},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())
+($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())
 :"None")]]></textFieldExpression>
 				</textField>
 				<staticText>
