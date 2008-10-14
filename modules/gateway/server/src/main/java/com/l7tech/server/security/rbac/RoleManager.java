@@ -122,4 +122,12 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
      * @throws UpdateException If there is not an acceptable role assignment.
      */
     void validateRoleAssignments() throws UpdateException;
+
+    /**
+     * Deletes the role assignments for the user.
+     *
+     * @param user  The user whose role assignments will be deleted.
+     * @throws DeleteException
+     */
+    void deleteRoleAssignmentsForUser(final User user) throws DeleteException;
 }

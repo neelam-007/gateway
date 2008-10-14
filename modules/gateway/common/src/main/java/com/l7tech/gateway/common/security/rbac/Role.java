@@ -111,6 +111,21 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         roleAssignments.add(new RoleAssignment(this, user.getProviderId(), user.getId(), EntityType.USER));
     }
 
+    /**
+     * Removes an {@link RoleAssignment} that was assigned by the provided {@link User} to this Role.
+     *
+     * @param user  The user that will be used to remove the user's assignment roles.
+     */
+    public void removeAssignedUser(User user) {
+        final Set<RoleAssignment> tmpRoleAssignments = roleAssignments;
+        for (RoleAssignment roleAssignment : tmpRoleAssignments) {
+            if (roleAssignment.getIdentityId().equals(user.getId()) && roleAssignment.getProviderId() == user.getProviderId()) {
+                roleAssignments.remove(roleAssignments);
+            }
+        }
+
+    }
+
     public String toString() {
         return _name;
     }

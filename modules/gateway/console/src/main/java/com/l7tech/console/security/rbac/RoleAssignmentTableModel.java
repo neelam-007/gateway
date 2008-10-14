@@ -7,9 +7,12 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.identity.Identity;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,6 +32,7 @@ public class RoleAssignmentTableModel  extends AbstractTableModel {
     public final static String USER_GROUPS = "User / Groups";
     
     private String columnNames [] = new String[]{IDENTITY_PROVIDER, USER_GROUPS};
+    private static final Logger logger = Logger.getLogger(RoleAssignmentTableModel.class.getName());
 
     /**
      * Comparator used to compare users and groups in the USER_GROUPS column in a role assignee table
@@ -52,7 +56,11 @@ public class RoleAssignmentTableModel  extends AbstractTableModel {
         if(role == null) return;//can function without any roles - to show an empty table
         this.role = role;
         for(RoleAssignment ra: this.role.getRoleAssignments()){
-            addRoleAssignment(ra);
+            try {
+                addRoleAssignment(ra);
+            } catch (FindException fe) {
+                logger.log(Level.FINE, "Cannot find user for role: " + fe.getMessage(), ExceptionUtils.getDebugException(fe));
+            }
         }
     }
 
@@ -66,13 +74,14 @@ public class RoleAssignmentTableModel  extends AbstractTableModel {
     }
     
     public void addRoleAssignment(RoleAssignment ra) throws FindException, DuplicateObjectException {
-        roleAssignments.add(ra);
         IdentityHolder iH = null;
         try{
             iH = new IdentityHolder(ra);
         }catch(IdentityHolder.NoSuchUserException nsue){
             throw new FindException("Can't assign deleted user", nsue);
         }
+        roleAssignments.add(ra);
+
         //check if ra is a duplicate
         if(this.roleAssignmentToIdentityHolder.containsKey(ra)){
             String userType = ra.getEntityType();

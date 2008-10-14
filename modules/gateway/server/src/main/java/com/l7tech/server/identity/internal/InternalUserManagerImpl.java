@@ -129,6 +129,11 @@ public class InternalUserManagerImpl
         }
     }
 
+    @Override
+    protected void preDelete(InternalUser user) throws DeleteException {
+        roleManager.deleteRoleAssignmentsForUser(user);
+    }
+
     protected String getNameFieldname() {
         return "login";
     }

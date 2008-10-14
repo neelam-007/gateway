@@ -356,4 +356,20 @@ public class RoleManagerImpl
 
         return result;
     }
+
+    public void deleteRoleAssignmentsForUser(final User user) throws DeleteException {
+        try {
+            Collection<Role> roles = getAssignedRoles(user);
+            for (Role role : roles) {
+                role.removeAssignedUser(user);
+                update(role);
+            }
+        } catch (FindException fe) {
+            logger.log(Level.INFO, "Failed to find assigned roles for user '" + user.getLogin() + "' for provider " + user.getProviderId());
+            throw new DeleteException("Failed to delete role assignment for user '" + user.getLogin() +"'");
+        } catch (UpdateException ue) {
+            logger.log(Level.INFO, "Failed to update role for assigned roles deletion");
+            throw new DeleteException("Failed to delete role assignment for user '" + user.getLogin() +"'");
+        }
+    }
 }
