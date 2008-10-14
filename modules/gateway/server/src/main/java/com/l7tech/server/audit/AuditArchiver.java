@@ -1,29 +1,27 @@
 package com.l7tech.server.audit;
 
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.cluster.ClusterLock;
-import static com.l7tech.server.ServerConfig.*;
-import com.l7tech.server.event.system.AuditArchiverEvent;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.gateway.common.audit.AuditRecord;
-
-import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-import java.sql.SQLException;
-
-import org.springframework.beans.factory.InitializingBean;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.ServerConfig;
+import static com.l7tech.server.ServerConfig.*;
+import com.l7tech.server.cluster.ClusterLock;
+import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.event.system.AuditArchiverEvent;
 import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContextAware;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.sql.SQLException;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.locks.Lock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -174,18 +172,18 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
     }
 
     private void ssgRestart() {
-        if (MessageProcessor.Lock.INSTANCE.isSuspended()) {
+        if (MessageProcessor.SuspendStatus.INSTANCE.isSuspended()) {
             logger.warning("Restarting SSG message processing");
-            MessageProcessor.Lock.INSTANCE.resume();
+            MessageProcessor.SuspendStatus.INSTANCE.resume();
             auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_MESSAGE_PROCESSING_RESTARTED);
             getApplicationContext().publishEvent(new AuditArchiverEvent(this));
         }
     }
 
     private void ssgSuspend(String reason) {
-        if ( !MessageProcessor.Lock.INSTANCE.isSuspended() ) {
+        if ( !MessageProcessor.SuspendStatus.INSTANCE.isSuspended() ) {
             logger.severe("Suspending SSG message processing: " + reason);
-            MessageProcessor.Lock.INSTANCE.suspend(reason);
+            MessageProcessor.SuspendStatus.INSTANCE.suspend(reason);
             auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_MESSAGE_PROCESSING_SUSPENDED, reason);
             getApplicationContext().publishEvent(new AuditArchiverEvent(this));
         }

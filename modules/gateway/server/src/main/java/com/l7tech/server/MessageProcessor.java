@@ -3,34 +3,29 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.MessageProcessingMessages;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceStatistics;
+import com.l7tech.message.*;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
-import com.l7tech.security.xml.processor.*;
-import com.l7tech.util.Background;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.soap.SoapFaultUtils;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.InvalidDocumentSignatureException;
-import com.l7tech.xml.MessageNotSoapException;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.security.xml.processor.ProcessorException;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.MessageProcessed;
@@ -48,8 +43,15 @@ import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceStatistics;
+import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.InvalidDocumentSignatureException;
+import com.l7tech.xml.MessageNotSoapException;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.xml.sax.SAXException;
@@ -63,6 +65,8 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -168,8 +172,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         licenseManager.requireFeature(GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR);
 
         // no-processing mode check
-        if (Lock.INSTANCE.isSuspended()) {
-            throw new MessageProcessingSuspendedException(Lock.INSTANCE.getReason());
+        if (SuspendStatus.INSTANCE.isSuspended()) {
+            throw new MessageProcessingSuspendedException(SuspendStatus.INSTANCE.getReason());
         }
 
         final Message request = context.getRequest();
@@ -708,19 +712,59 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     /**
      * Global flag used to put the SSG in a "no-processing" mode.
      */
-    public static enum Lock {
+    public static enum SuspendStatus {
         INSTANCE;
 
         private boolean suspended = false;
         private String reason = "";
 
-        public boolean isSuspended() { return suspended; }
+        private final ReadWriteLock mutex = new ReentrantReadWriteLock(false);
 
-        public void suspend() { suspended = true; reason = ""; }
-        public void suspend(String reason) { suspended = true; this.reason = reason; }
+        public boolean isSuspended() {
+            try {
+                mutex.readLock().lock();
+                return suspended;
+            } finally {
+                mutex.readLock().unlock();
+            }
+        }
 
-        public void resume() { suspended = false; }
+        public void suspend() {
+            try {
+                mutex.writeLock().lock();
+                suspended = true;
+                reason = "";
+            } finally {
+                mutex.writeLock().unlock();
+            }
+        }
 
-        public String getReason() { return reason; }
+        public void suspend(String reason) {
+            try {
+                mutex.writeLock().lock();
+                suspended = true;
+                this.reason = reason;
+            } finally {
+                mutex.writeLock().unlock();
+            }
+        }
+
+        public void resume() {
+            try {
+                mutex.writeLock().lock();
+                suspended = false;
+            } finally {
+                mutex.writeLock().unlock();
+            }
+        }
+
+        public String getReason() {
+            try {
+                mutex.readLock().lock();
+                return reason;
+            } finally {
+                mutex.readLock().unlock();
+            }
+        }
     }
 }
