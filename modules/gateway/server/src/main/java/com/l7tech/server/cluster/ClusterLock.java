@@ -1,22 +1,20 @@
 package com.l7tech.server.cluster;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.StaleUpdateException;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Random;
-
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.TransactionStatus;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.StaleUpdateException;
+import com.l7tech.objectmodel.UpdateException;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -29,11 +27,10 @@ public class ClusterLock implements Lock {
 
     private static final Logger logger = Logger.getLogger(ClusterLock.class.getName());
 
-    private static final Random random = new Random();
-    private long id = random.nextLong(); // todo: come up with a friendlier id type
+    private final long id = new Random().nextLong(); // todo: come up with a friendlier id type
 
     private final ClusterPropertyManager clusterPropertyManager;
-    protected PlatformTransactionManager transactionManager; // required for TransactionTemplate
+    protected final PlatformTransactionManager transactionManager; // required for TransactionTemplate
 
     private final String lockPropertyName;
     private final long staleTimeout; // millisesoncs
@@ -162,9 +159,9 @@ public class ClusterLock implements Lock {
 
 
     private static class ClusterLockEntry {
-        private boolean locked;
-        private long when;
-        private long owner;
+        private final boolean locked;
+        private final long when;
+        private final long owner;
 
         private ClusterLockEntry(boolean l, long w, long o) {
             locked = l;
