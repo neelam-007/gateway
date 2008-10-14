@@ -10,9 +10,9 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 import org.hibernate.*;
-import org.hibernate.criterion.Restrictions;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -102,7 +102,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                         crit.add( restriction );
                     }
 
-                    ScrollableResults results = crit.scroll( ScrollMode.SCROLL_SENSITIVE );
+                    final ScrollableResults results = crit.scroll( ScrollMode.SCROLL_SENSITIVE );
                     results.last();
                     return results.getRowNumber();
                 }
@@ -474,7 +474,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             getHibernateTemplate().execute(new HibernateCallback() {
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     //noinspection unchecked
-                    ET entity = (ET)session.get(et.getClass(), et.getOid());
+                    ET entity = (ET)session.get(getImpClass(), et.getOid());
                     if (entity == null) {
                         session.delete(et);
                     } else {
@@ -837,6 +837,24 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
 
         return deleted;
+    }
+
+    protected List<ET> findByPropertyMaybeNull(final String property, final String value) throws FindException {
+        try {
+            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    final Criteria crit = session.createCriteria(getImpClass());
+                    if (value == null) {
+                        crit.add(Restrictions.isNull(property));
+                    } else {
+                        crit.add(Restrictions.eq(property, value));
+                    }
+                    return crit.list();
+                }
+            });
+        } catch (DataAccessException e) {
+            throw new FindException("Couldn't find cert(s)", e);
+        }
     }
 
     protected UniqueType getUniqueType() {
