@@ -114,9 +114,10 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         if ( databaseConfig == null ) {
             throw new SaveException( "Database configuration is required." );
         }
+        node.getDatabases().add(databaseConfig);
 
         try {
-            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), null, clusterPassphrase, databaseConfig );
+            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), true, null, clusterPassphrase, databaseConfig );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
@@ -142,9 +143,38 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         return nodes;
     }
 
+    /**
+     * TODO support updates other than enable/disable 
+     */
     public void updateNode(NodeConfig node) throws UpdateException, RestartRequiredException {
         checkRequest();
-        throw new UnsupportedOperationException("Not yet implemented");
+
+        final String nodeName = node.getName();
+        final Map<String,NodeConfig> nodes = configService.getHost().getNodes();
+        PCNodeConfig currentNodeConfig = (PCNodeConfig)nodes.get(nodeName);
+        if (currentNodeConfig == null) throw new UpdateException("Node '" + nodeName + "' not found.");
+
+        currentNodeConfig.setEnabled( node.isEnabled() );
+
+        try {
+            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), null, null, null );
+        } catch ( IOException ioe ) {
+            logger.log(Level.WARNING, "Error during node configuration.", ioe );
+            throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
+        }
+
+        NodeStateType currentState = processController.getNodeState(nodeName);
+        if ( node.isEnabled() && NodeStateType.RUNNING != currentState ) {
+            try {
+                processController.startNode( currentNodeConfig, false );
+            } catch (IOException ioe) {
+                logger.log( Level.WARNING, "Error starting node.", ioe );
+                throw new UpdateException("Error starting node '"+ExceptionUtils.getMessage(ioe)+"'.");
+            }
+        } else if ( !node.isEnabled() && NodeStateType.STOPPED != currentState ) {
+            processController.stopNode( nodeName, ProcessController.DEFAULT_STOP_TIMEOUT );
+        }
+
     }
 
     public void deleteNode(String nodeName, int shutdownTimeout) throws DeleteException, ForcedShutdownException {

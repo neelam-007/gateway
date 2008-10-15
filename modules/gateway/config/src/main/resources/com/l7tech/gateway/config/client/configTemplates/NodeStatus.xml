@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<optionSet id="status">
+    <description>
+----------------------------------------------------------------------
+SecureSpan Gateway Enabled/Disabled
+----------------------------------------------------------------------</description>
+    <prompt>
+----------------------------------------------------------------------
+Enable/Disable SecureSpan Gateway
+----------------------------------------------------------------------
+At any time type "quit" to quit.</prompt>
+
+    <!--
+      Options for Database configuration
+    -->
+    <option id="enabled" type="BOOLEAN" order="100" name="Enabled">
+        <configName>enabled</configName>
+        <configValue>true</configValue>
+        <description>Node Enabled State</description>
+        <prompt>Enable or disable the node.</prompt>
+    </option>
+
+</optionSet>

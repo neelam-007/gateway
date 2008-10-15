@@ -28,7 +28,7 @@ public class UpdateWizardIntroStep extends BaseConsoleStep {
     public void doUserInterview(boolean validated) throws WizardNavigationException {
          printText(new String[] {
                 "This wizard will install selected updates to the SecureSpan Gateway Appliance (SSG)" + getEolChar(),
-                "Press <Enter> to continue" + getEolChar(),
+                "Press [Enter] to continue" + getEolChar(),
         });
 
         try {

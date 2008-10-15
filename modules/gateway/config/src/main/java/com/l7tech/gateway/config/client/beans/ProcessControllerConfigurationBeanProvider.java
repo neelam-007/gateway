@@ -1,37 +1,66 @@
 package com.l7tech.gateway.config.client.beans;
 
 import com.l7tech.server.management.api.node.NodeManagementApi;
+import com.l7tech.objectmodel.FindException;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.frontend.ClientProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.xml.ws.soap.SOAPFaultException;
 import java.net.URL;
+import java.net.MalformedURLException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * ConfigurationBeanProvider that is backed by the Process Controller
  */
 public abstract class ProcessControllerConfigurationBeanProvider implements ConfigurationBeanProvider {
+
     //- PUBLIC
 
     public ProcessControllerConfigurationBeanProvider( final URL nodeManagementUrl ) {
         this.nodeManagementUrl = nodeManagementUrl;
     }
 
-    //- PRIVATE
+    public ProcessControllerConfigurationBeanProvider( final String nodeManagementUrl ) {
+        try {
+            this.nodeManagementUrl = new URL(nodeManagementUrl);
+        } catch ( MalformedURLException murle ) {
+            throw new IllegalArgumentException("Invalid URL '"+nodeManagementUrl+"'", murle);
+        }
+    }
 
-    private final URL nodeManagementUrl;
-    private NodeManagementApi managementService;
+    public boolean isValid() {
+        boolean valid = false;
+
+        NodeManagementApi managementService = getManagementService();
+        try {
+            managementService.listNodes();
+            valid = true;
+        } catch ( FindException fe ) {
+            logger.log(Level.WARNING, "Error listing nodes", fe );
+        } catch ( SOAPFaultException sf ) {
+            logger.log(Level.WARNING, "Error listing nodes", sf );
+        }
+
+        return valid;
+    }
+
+    //- PROTECTED
+
+    protected final Logger logger = Logger.getLogger( getClass().getName() );
 
     protected NodeManagementApi getManagementService() {
         NodeManagementApi managementService = this.managementService;
 
         if ( managementService == null ) {
-            ClientProxyFactoryBean factory = new ClientProxyFactoryBean();
+            JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
             factory.setServiceClass(NodeManagementApi.class);
             factory.setAddress(nodeManagementUrl.toString());
             Client c = factory.getClientFactoryBean().create();
@@ -56,5 +85,10 @@ public abstract class ProcessControllerConfigurationBeanProvider implements Conf
          }
 
         return managementService;
-    }
+    }    
+
+    //- PRIVATE
+
+    private final URL nodeManagementUrl;
+    private NodeManagementApi managementService;
 }

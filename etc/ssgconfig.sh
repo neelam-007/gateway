@@ -28,6 +28,8 @@ launch(){
     else
         ${JAVA_HOME}/bin/java ${OPTIONS} -jar ${1}.jar ${2}
     fi
+
+    return $?
 }
 
 if [ "${1}" == "-changeMasterPassphrase" ] ; then

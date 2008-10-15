@@ -30,6 +30,90 @@ doLogout() {
     exit
 }
 
+confirmedMessage() {
+    echo "${1}"
+    echo "Press [Enter] to continue";
+    read;
+}
+
+doConfiguration() {
+    isMenuValid="n"
+    while [ "$isMenuValid" != "y" ]
+    do
+        clear
+        echo "This menu allows you to configure the SecureSpan Gateway application"
+        echo "What would you like to do?"
+            echo "1) Upgrade the SecureSpan Gateway database on this appliance"
+            echo "2) Configure the SecureSpan Gateway application on this appliance"
+            echo "3) Display the current SecureSpan Gateway configuration"
+            echo "4) Enable or disable the SecureSpan Gateway application"
+            echo "5) Display the current SecureSpan Gateway enabled/disabled state"
+            echo "6) Exit menu"
+
+            echo -n "Please make a selection: "
+            read choice
+
+            case $choice in
+                    1)
+                        clear;
+                        confirmedMessage "DB Upgrade not yet implemented."
+                        clear;;
+                    2)
+                        clear;
+                        (${CONFWIZARD});
+                        STATUS=$?
+                        if [ $STATUS -eq 2 ] ; then
+                          confirmedMessage "Node is already configured."
+                        elif [ $STATUS -eq 3 ] ; then
+                          confirmedMessage "Configuration service not available (please reboot)"
+                        elif [ $STATUS -eq 5 ] ; then
+                          confirmedMessage "Unexpected error in configuration service."
+                        fi
+                        clear;;
+                    3)
+                        clear;
+                        (${CONFWIZARD} show);
+                        STATUS=$?
+                        if [ $STATUS -eq 2 ] ; then
+                          confirmedMessage "Node is not yet configured."
+                        elif [ $STATUS -eq 3 ] ; then
+                          confirmedMessage "Configuration service not available (please reboot)"
+                        elif [ $STATUS -eq 5 ] ; then
+                          confirmedMessage "Unexpected error in configuration service."
+                        fi
+                        clear;;
+                    4)
+                        clear;
+                        (${CONFWIZARD} edit status);
+                        STATUS=$?
+                        if [ $STATUS -eq 2 ] ; then
+                          confirmedMessage "Node is not yet configured."
+                        elif [ $STATUS -eq 3 ] ; then
+                          confirmedMessage "Configuration service not available (please reboot)"
+                        elif [ $STATUS -eq 5 ] ; then
+                          confirmedMessage "Unexpected error in configuration service."
+                        fi
+                        clear;;
+                    5)
+                        clear;
+                        (${CONFWIZARD} show status);
+                        STATUS=$?
+                        if [ $STATUS -eq 2 ] ; then
+                          confirmedMessage "Node is not yet configured."
+                        elif [ $STATUS -eq 3 ] ; then
+                          confirmedMessage "Configuration service not available (please reboot)"
+                        elif [ $STATUS -eq 5 ] ; then
+                          confirmedMessage "Unexpected error in configuration service."
+                        fi
+                        clear;;
+                    *)
+                        clear;
+                        isMenuValid="y";
+                        clear;;
+            esac
+    done
+}
+
 checkForSca
 checkForEm
 isValid="n"
@@ -76,20 +160,10 @@ do
                            (${SYSWIZARD} -printConfig);;
                         *) echo "That is not a valid selection"
                     esac
-                    echo "Press enter to continue";
-                    read;
+                    confirmedMessage ""
                     clear;;
                 2)  clear;
-                    (${CONFWIZARD});
-                    if [ $? -eq 2 ] ; then
-                      echo "Node is already configured."
-                    elif [ $? -eq 3 ] ; then
-                      echo "Configuration service not available (please reboot)"
-                    elif [ $? -eq 5 ] ; then
-                      echo "Unexpected error in configuration service."
-                    fi
-                    echo "Press enter to continue";
-                    read;
+                    doConfiguration
                     clear;;
                 3)  clear;
                     (${GETROOT});
@@ -103,13 +177,11 @@ do
                     clear;;
                 6)  clear;
                     (${CONFWIZARD} -changeMasterPassphrase);
-                    echo "Press enter to continue";
-                    read;
+                    confirmedMessage ""
                     clear;;
                 7)  clear;
                     (${CONFWIZARD} -processController);
-                    echo "Press enter to continue";
-                    read;
+                    confirmedMessage ""
                     clear;;
                 *)  if [ "$choice" == "8" ] && [ "${SCA_PRESENT}" == "true" ]; then
                         clear;
@@ -117,9 +189,7 @@ do
                         (sudo ${MASTERKEYMANAGE} probe &> /dev/null);
                         if [ ${?} != 0 ] ; then
                             echo ""
-                            echo "The USB drive could not be found. Please attach the USB drive and try again."
-                            echo "Press enter to continue."
-                            read;
+                            confirmedMessage "The USB drive could not be found. Please attach the USB drive and try again."
                         else
                             echo "Found the USB drive. Continuing..."
                             echo -n "Enter the keystore password:"
@@ -131,31 +201,27 @@ do
                             (sudo ${MASTERKEYMANAGE} backup ${ksPassword} ${MASTER_KEY_BACKUP_FILE_NAME} ${masterKeyBackupPassword});
                             if [ ${?} != 0 ] ; then
                                 echo ""
-                                echo "The master key backup did not succeed. See the error message above for details."
+                                confirmedMessage "The master key backup did not succeed. See the error message above for details."
                             else
                                 echo ""
-                                echo "The master key backup was successfull."
+                                confirmedMessage "The master key backup was successfull."
                             fi
-                            echo "Press enter to continue."
-                            read;
                         fi
                     elif [ "$choice" == "9" ] && [ "${EM_PRESENT}" == "true" ]; then
                         /sbin/chkconfig ssem && true # && true due to set -e
                         if [ ${?} -eq 0 ] ; then
                             echo "Disabing Enterprise Manager server."
                             sudo /sbin/chkconfig ssem off
-                            echo "Enterprise Manager server disabled."
+                            confirmedMessage "Enterprise Manager server disabled."
                         else
                             echo "Enabling Enterprise Manager server."
                             sudo /sbin/chkconfig ssem on
-                            echo "Enterprise Manager server enabled."
+                            confirmedMessage "Enterprise Manager server enabled."
                         fi
-                        sleep 3
                         clear;
                     else
                         isValid="n";
-                        echo "That is not a valid selection";
-                        echo "Press enter to continue";
+                        confirmedMessage "That is not a valid selection";
                         read;
                     fi;;
         esac

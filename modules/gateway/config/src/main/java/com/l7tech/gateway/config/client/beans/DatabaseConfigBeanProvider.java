@@ -9,34 +9,22 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import org.apache.cxf.binding.soap.SoapFault;
 
-import java.net.URL;
+import javax.xml.ws.soap.SOAPFaultException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * ConfigurationBeanProvider for process controller / node configuration.
+ *
+ * @since 4.7
+ */
 public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBeanProvider implements ConfigurationBeanProvider {
 
     //- PUBLIC
 
-    public DatabaseConfigBeanProvider( final URL nodeManagementUrl ) {
+    public DatabaseConfigBeanProvider( final String nodeManagementUrl ) {
         super(nodeManagementUrl);
-    }
-
-
-    public boolean isValid() {
-        boolean valid = false;
-
-        NodeManagementApi managementService = getManagementService();
-        try {
-            Set<NodeManagementApi.NodeHeader> nodeHeaders = managementService.listNodes();
-            valid = nodeHeaders == null || nodeHeaders.isEmpty();
-        } catch ( FindException fe ) {
-            logger.log(Level.WARNING, "Error listing nodes", fe );
-        } catch ( SoapFault sf ) {
-            logger.log(Level.WARNING, "Error listing nodes", sf );
-        }
-
-        return valid;
     }
 
     public Collection<ConfigurationBean> loadConfiguration() throws ConfigurationException {
@@ -58,7 +46,7 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
             }
         } catch ( FindException fe ) {
             throw new ConfigurationException( "Error loading node configuration.", fe );
-        } catch ( SoapFault sf ) {
+        } catch ( SOAPFaultException sf ) {
             throw new ConfigurationException( "Error loading node configuration", sf );
         }
 
@@ -99,7 +87,7 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
             }
         } catch ( ObjectModelException ome ) {
             throw new ConfigurationException( "Error storing node configuration", ome );
-        } catch ( SoapFault sf ) {
+        } catch ( SOAPFaultException sf ) {
             throw new ConfigurationException( "Error storing node configuration", sf );
         } catch ( NodeManagementApi.RestartRequiredException rre ) {
             logger.log( Level.WARNING, "Restart required to apply configuration." );
@@ -110,9 +98,16 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
         List<ConfigurationBean> configuration = new ArrayList<ConfigurationBean>();
 
         if ( config != null ) {
+            logger.info("Processing configuration.");
+
             if ( config.getDatabases() != null ) {
+                logger.info("Processing "+config.getDatabases().size()+" databases.");
+
                 for ( DatabaseConfig dbConfig : config.getDatabases() ) {
-                    if ( dbConfig.getType() != DatabaseType.NODE_ALL ) continue;
+                    if ( dbConfig.getType() != DatabaseType.NODE_ALL ) {
+                        logger.info("Skipping database configuration with type '"+ dbConfig.getType() +"'.");
+                        continue;
+                    }
 
                     // host
                     if ( dbConfig.getHost() != null ) {
@@ -201,8 +196,6 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
     }
 
     //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger( DatabaseConfigBeanProvider.class.getName() );
 
     private NodeConfig config;
 }

@@ -5,6 +5,7 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.config.manager.db.DBActions;
 
 import java.util.logging.Logger;
@@ -39,6 +40,7 @@ public class NodeConfigurationManager {
      *
      * @param name The name of the node to configure ("default")
      * @param nodeid The unique identifier to use for the node.
+     * @param enabled Is the node enabled?
      * @param defaultClusterHostname The cluster hostname to use by default (may be null).
      * @param clusterPassword The cluster password
      * @param databaseConfig The database configuration to use.
@@ -46,7 +48,8 @@ public class NodeConfigurationManager {
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public static void configureGatewayNode( final String name,
-                                             final String nodeid,                                              
+                                             final String nodeid,
+                                             final Boolean enabled,
                                              final String defaultClusterHostname,
                                              final String clusterPassword,
                                              final DatabaseConfig databaseConfig ) throws IOException {
@@ -64,15 +67,17 @@ public class NodeConfigurationManager {
         }
 
         // Update DB
-        DBActions dbActions = new DBActions();
-        String dbVersion = dbActions.checkDbVersion( databaseConfig );
-        if ( dbVersion != null && dbVersion.equals("5.0") ) {
-            throw new CausedIOException("Database version mismatch '"+dbVersion+"'.");
-        }
-        if ( dbVersion == null ) { // then create the DB
-            String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
-            File sqlScriptFile = new File( pathToSqlScript ).getCanonicalFile();
-            dbActions.createDb( databaseConfig, sqlScriptFile.getAbsolutePath(), false );            
+        if ( databaseConfig != null ) {
+            DBActions dbActions = new DBActions();
+            String dbVersion = dbActions.checkDbVersion( databaseConfig );
+            if ( dbVersion != null && !dbVersion.equals(BuildInfo.getFormalProductVersion()) ) {
+                throw new CausedIOException("Database version mismatch '"+dbVersion+"'.");
+            }
+            if ( dbVersion == null ) { // then create the DB
+                String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
+                File sqlScriptFile = new File( pathToSqlScript ).getCanonicalFile();
+                dbActions.createDb( databaseConfig, sqlScriptFile.getAbsolutePath(), false );
+            }
         }
 
         // Update config
@@ -83,6 +88,7 @@ public class NodeConfigurationManager {
         props.setListDelimiter((char)0);
 
         // Read the existing properties (if any)
+        Boolean setEnabled = enabled;
         if ( nodeProperties.exists() ) {
             logger.log( Level.INFO, "Loading node configuration from ''{0}''.", nodeProperties.getAbsolutePath());
             FileInputStream origFis = null;
@@ -96,20 +102,29 @@ public class NodeConfigurationManager {
             } finally {
                 ResourceUtils.closeQuietly(origFis);
             }
+        } else {
+            // validate that we have enough settings to create a valid configuration
+            if ( nodeid == null || clusterPassword == null || databaseConfig == null ) {
+                throw new CausedIOException("Missing configuration parameters, cannot create new configuration for node '"+nodeName+"'.");
+            }
+
+            if ( setEnabled == null ) setEnabled = true;
         }
 
         MasterPasswordManager mpm = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
-        String encDatabasePassword = mpm.encryptPassword( databaseConfig.getNodePassword().toCharArray() );
-        String encClusterPassword = mpm.encryptPassword( clusterPassword.toCharArray() );
+        String encDatabasePassword = databaseConfig==null ? null : mpm.encryptPassword( databaseConfig.getNodePassword().toCharArray() );
+        String encClusterPassword = clusterPassword==null ? null : mpm.encryptPassword( clusterPassword.toCharArray() );
 
-        props.setProperty( "node.id", nodeid );
-        props.setProperty( "node.enabled", "true" );
-        props.setProperty( "node.cluster.pass", encClusterPassword );
-        props.setProperty( "node.db.host", databaseConfig.getHost() );
-        props.setProperty( "node.db.port", Integer.toString(databaseConfig.getPort()) );
-        props.setProperty( "node.db.name", databaseConfig.getName() );
-        props.setProperty( "node.db.user", databaseConfig.getNodeUsername() );
-        props.setProperty( "node.db.pass", encDatabasePassword );
+        setPropertyIfNotNull( props, "node.id", nodeid );
+        setPropertyIfNotNull( props, "node.enabled", setEnabled );
+        setPropertyIfNotNull( props, "node.cluster.pass", encClusterPassword );
+        if ( databaseConfig != null ) {
+            setPropertyIfNotNull( props, "node.db.host", databaseConfig.getHost() );
+            setPropertyIfNotNull( props, "node.db.port", Integer.toString(databaseConfig.getPort()) );
+            setPropertyIfNotNull( props, "node.db.name", databaseConfig.getName() );
+            setPropertyIfNotNull( props, "node.db.user", databaseConfig.getNodeUsername() );
+            setPropertyIfNotNull( props, "node.db.pass", encDatabasePassword );
+        }
 
         FileOutputStream origFos = null;
         try {
@@ -121,6 +136,12 @@ public class NodeConfigurationManager {
             throw new CausedIOException("Error writing properties file '"+nodeProperties.getAbsolutePath()+"'.", e);
         } finally {
             ResourceUtils.closeQuietly(origFos);
+        }
+    }
+
+    private static void setPropertyIfNotNull( final PropertiesConfiguration props, final String propName, final Object propValue ) {
+        if ( propValue != null ) {
+            props.setProperty( propName, propValue.toString() );
         }
     }
 

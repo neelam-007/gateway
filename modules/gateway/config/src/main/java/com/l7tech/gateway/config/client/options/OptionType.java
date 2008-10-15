@@ -1,5 +1,9 @@
 package com.l7tech.gateway.config.client.options;
 
+import java.text.Format;
+import java.text.FieldPosition;
+import java.text.ParsePosition;
+
 /**
  * Type for a configuration option.
  *
@@ -24,7 +28,7 @@ public enum OptionType {
     /**
      * A password (should not be displayed in UI or recorded in logs)
      */
-    PASSWORD("^[\\p{Graph}\\p{Blank}]{0,255}$", true),
+    PASSWORD("^[\\p{Graph}\\p{Blank}]{0,255}$", true, null),
 
     /**
      * A file path
@@ -44,7 +48,12 @@ public enum OptionType {
     /**
      * A username / login
      */
-    USERNAME("^[\\p{Graph}\\p{Blank}]{1,255}$");
+    USERNAME("^[\\p{Graph}\\p{Blank}]{1,255}$"),
+
+    /**
+     * A true / false value
+     */
+    BOOLEAN("^(?:[YyNn]|[Yy][Ee][Ss]|[Nn][Oo]|[TtFf]|[Tt][Rr][Uu][Ee]|[Ff][Aa][Ll][Ss][Ee])$", false, new BooleanFormat());
 
     /**
      * The default validation regex for this option type.
@@ -53,6 +62,15 @@ public enum OptionType {
      */
     public String getDefaultRegex() {
         return defaultPattern;
+    }
+
+    /**
+     * Get the Format associated with the type.
+     *
+     * @return The format or null if none.
+     */
+    public Format getFormat() {
+        return format;    
     }
 
     /**
@@ -67,14 +85,36 @@ public enum OptionType {
     //- PRIVATE
         
     private String defaultPattern;
+    private Format format;
     private boolean hidden;
     
     private OptionType( String pattern ) {
-        this( pattern, false );
+        this( pattern, false, null );
     }
     
-    private OptionType( String pattern, boolean hidden ) {
+    private OptionType( String pattern, boolean hidden, Format format ) {
         this.defaultPattern = pattern;
         this.hidden = hidden;
-    } 
+        this.format = format;
+    }
+
+    private static final class BooleanFormat extends Format {
+        public StringBuffer format( final Object obj, final StringBuffer toAppendTo, final FieldPosition pos) {
+            return toAppendTo.append(((Boolean)obj).booleanValue() ? "Y" : "N");
+        }
+
+        public Object parseObject( final String source, final ParsePosition pos) {
+            Boolean result = Boolean.FALSE;
+
+            if ( source != null) {
+                pos.setIndex(source.length());
+
+                if ( source.toLowerCase().startsWith("y") || source.toLowerCase().startsWith("t") ) {
+                    result = Boolean.TRUE;
+                }
+            }
+
+            return result;
+        }
+    }
 }

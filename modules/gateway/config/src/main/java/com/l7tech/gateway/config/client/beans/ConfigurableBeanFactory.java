@@ -12,7 +12,7 @@ public abstract class ConfigurableBeanFactory<T extends ConfigurationBean> exten
     private final int max;
 
     protected ConfigurableBeanFactory(String id, String name, int min, int max) {
-        super(id, name, null, false);
+        super(id, name, null, null, false);
         this.min = min;
         this.max = max;
     }

@@ -9,6 +9,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.management.api.node.ProcessControllerApi;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
 import org.apache.cxf.endpoint.Client;
@@ -21,10 +22,12 @@ import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.xml.ws.soap.SOAPFaultException;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.cert.X509Certificate;
+import java.net.ConnectException;
 
 /** @author alex */
 public class ProcessControllerEventProxyImpl implements ProcessControllerEventProxy {
@@ -45,6 +48,7 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
         }
     };
 
+    @SuppressWarnings({"UnusedDeclaration"})
     @PostConstruct
     private void start() {
         if (isProcessControllerPresent())
@@ -54,6 +58,7 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
         Background.scheduleRepeated(new Background.SafeTimerTask(task), 15634, 5339);
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     @PreDestroy
     private void stop() {
         task.cancel();
@@ -81,7 +86,11 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
                     logger.fine("Process Controller is still alive");
                 }
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to connect to Process Controller", e);
+                if ( ExceptionUtils.causedBy( e, ConnectException.class ) ) {
+                    logger.log(Level.WARNING, "Unable to connect to Process Controller");
+                } else {
+                    logger.log(Level.WARNING, "Error connecting to Process Controller", e);
+                }
                 processControllerApi = null;
             }
         }
@@ -126,14 +135,24 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
                         case EntityInvalidationEvent.CREATE:
                             try {
                                 SsgConnector conn = ssgConnectorManager.findByPrimaryKey(oid);
-                                getProcessControllerApi(false).connectorCreated(conn);
+                                ProcessControllerApi api = getProcessControllerApi(false);
+                                if ( api != null ) {
+                                    api.connectorCreated(conn);
+                                }
                             } catch (FindException e) {
                                 logger.log(Level.WARNING, "Unable to find recently created SsgConnector #" + oid, e);
-                                continue;
+                            } catch (SOAPFaultException sfe) {
+                                if ( ExceptionUtils.causedBy( sfe, ConnectException.class ) ) {
+                                    logger.log(Level.WARNING, "Connection error while notifiying process controller of new connector " + oid);
+                                } else {
+                                    logger.log(Level.WARNING, "Error while notifiying process controller of new connector " + oid, sfe);
+                                }
                             }
-                        //noinspection fallthrough
+                            break;
                         case EntityInvalidationEvent.UPDATE: // TODO
+                            break;
                         case EntityInvalidationEvent.DELETE: // TODO
+                            break;
                     }
                 }
             }

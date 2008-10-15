@@ -14,7 +14,7 @@ public class ConfiguredTrustedCert extends ConfigurationBean<X509Certificate> im
     private final boolean existing;
 
     ConfiguredTrustedCert(X509Certificate cert, boolean existing) {
-        super("host.controller.remoteNodeManagement.trustedCert", "Trusted Certificate", cert, true);
+        super("host.controller.remoteNodeManagement.trustedCert", "Trusted Certificate", cert, null, true);
         this.existing = existing;
     }
 

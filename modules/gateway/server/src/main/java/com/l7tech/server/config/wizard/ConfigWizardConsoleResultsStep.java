@@ -120,7 +120,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep {
     public void showPartitionActionErrorMessage(String message) {
         List<String> messages = new ArrayList<String>();
         messages.add("**** " + message + " ****");
-        messages.add("Press Enter to continue");
+        messages.add("Press [Enter] to continue");
         try {
             getData(messages.toArray(new String[0]),"", (String[]) null,null);
         } catch (IOException e) {
@@ -133,7 +133,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep {
     public void showPartitionActionMessage(String message) {
         List<String> messages = new ArrayList<String>();
         messages.add(message);
-        messages.add("Press Enter to continue");
+        messages.add("Press [Enter] to continue");
         try {
             getData(messages.toArray(new String[0]),"", (String[]) null,null);
         } catch (IOException e) {

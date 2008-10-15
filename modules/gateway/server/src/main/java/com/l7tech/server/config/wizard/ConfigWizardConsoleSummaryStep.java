@@ -39,7 +39,7 @@ public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
 
             printText(new String[] {
                     "\n",
-                    "Press <Enter> to continue\n"
+                    "Press [Enter] to continue\n"
             });
             handleInput(readLine());
         } catch (IOException e) {

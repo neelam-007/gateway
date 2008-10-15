@@ -165,7 +165,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             tempList.addAll(allowedEntries);
             tempList.add(defaultValue);
             acceptedEntries = tempList.toArray(new String[0]);
-            prompts.add("Please make a selection [Enter for next page]: ");
+            prompts.add("Please make a selection (press [Enter] for next page): ");
         }
 
         String tzSelection = getData(prompts.toArray(new String[0]), defaultValue, acceptedEntries,null);
