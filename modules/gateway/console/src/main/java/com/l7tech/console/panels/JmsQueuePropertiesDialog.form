@@ -558,6 +558,7 @@
                     <properties>
                       <selected value="true"/>
                       <text value="Default to normal resolution"/>
+                      <toolTipText value="&lt;html&gt;This option has the SecureSpan Gateway use its normal service resolution procedure.&lt;/html&gt;"/>
                     </properties>
                   </component>
                   <component id="59554" class="javax.swing.JRadioButton" binding="useJmsMsgPropAsSoapActionRadioButton">
@@ -568,6 +569,7 @@
                       <actionCommand value="Get SOAPAction values from the specified JMS message property for service resolution:"/>
                       <label value="Get SOAPAction values from the specified JMS message property for service resolution:"/>
                       <text value="Get SOAPAction values from the specified JMS message property for service resolution:"/>
+                      <toolTipText value="&lt;html&gt;This option uses a specific JMS message property as the &quot;SOAPAction&quot;&lt;p&gt;for service resolution purposes.&lt;/html&gt;"/>
                     </properties>
                   </component>
                   <component id="d601c" class="javax.swing.JRadioButton" binding="associateQueueWithPublishedRadioButton">
@@ -578,6 +580,7 @@
                       <actionCommand value="Associate queue with published service (bypass resolution)"/>
                       <label value="Associate queue with published service (bypass resolution)"/>
                       <text value="Associate queue with published service (bypass resolution)"/>
+                      <toolTipText value="&lt;html&gt;This option associates this inbound JMS queue with a published service. This is&lt;p&gt;useful if you need to publish the same WSDL multiple times and have the same&lt;p&gt;target namespace, yet still be consumed through JMS.&lt;/html&gt;"/>
                     </properties>
                   </component>
                   <grid id="c0831" binding="propertyNamePanel" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
