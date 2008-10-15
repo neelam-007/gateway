@@ -23,7 +23,7 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
-	<style
+	<style 
 		name="TableCell"
 		isDefault="true"
 		vAlign="Middle"
@@ -38,7 +38,7 @@
 		isPdfEmbedded="false"
 	>
 	</style>
-	<style
+	<style 
 		name="FrameStyle"
 		isDefault="false"
 		vAlign="Middle"
@@ -50,7 +50,7 @@
 					<rightPen lineWidth="1.0" lineStyle="Solid"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameTableBottom"
 		isDefault="false"
 		backcolor="#D6D6D6"
@@ -63,7 +63,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameTableTop"
 		isDefault="false"
 		backcolor="#E8EDB4"
@@ -74,7 +74,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameHeaderTableRow"
 		isDefault="false"
 		backcolor="#DBD3B0"
@@ -86,7 +86,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameDetailTableRow"
 		isDefault="false"
 		backcolor="#F8F8F8"

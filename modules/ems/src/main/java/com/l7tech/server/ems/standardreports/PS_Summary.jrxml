@@ -24,7 +24,7 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
-	<style
+	<style 
 		name="TableCell"
 		isDefault="true"
 		mode="Transparent"
@@ -40,7 +40,7 @@
 		isPdfEmbedded="false"
 	>
 	</style>
-	<style
+	<style 
 		name="FrameStyle"
 		isDefault="false"
 		vAlign="Middle"
@@ -52,7 +52,7 @@
 					<rightPen lineWidth="1.0" lineStyle="Solid"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameTableBottom"
 		isDefault="false"
 		backcolor="#D6D6D6"
@@ -65,7 +65,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameTableTop"
 		isDefault="false"
 		backcolor="#E8EDB4"
@@ -76,7 +76,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameHeaderTableRow"
 		isDefault="false"
 		backcolor="#DBD3B0"
@@ -86,7 +86,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameDetailTableRow"
 		isDefault="false"
 		backcolor="#F8F8F8"
@@ -96,7 +96,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style
+	<style 
 		name="FrameTotalTableRow"
 		isDefault="false"
 		backcolor="#D6D6D6"
@@ -212,7 +212,6 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 	<field name="MAPPING_VALUE_5" class="java.lang.String"/>
 	<field name="AUTHENTICATED_USER" class="java.lang.String"/>
 	<field name="CONSTANT_GROUP" class="java.lang.String"/>
-	<field name="count" class="java.lang.String"/>
 
 	<variable name="SERVICE_ID" class="java.lang.Long" resetType="Report" calculation="Nothing">
 		<variableExpression><![CDATA[$F{SERVICE_ID}]]></variableExpression>
