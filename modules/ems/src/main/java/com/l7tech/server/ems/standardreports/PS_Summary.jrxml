@@ -187,7 +187,7 @@ com.l7tech.server.ems.standardreports.Utilities.createMappingQuery(false, $P{sta
 		 $P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
 $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
 : com.l7tech.server.ems.standardreports.Utilities.getNoMappingQuery
-($P{startTimeMilli},$P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(),$P{resolution}.intValue())
+(false, $P{startTimeMilli},$P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(),$P{resolution}.intValue())
 )]]></defaultValueExpression>
 	</parameter>
 	<parameter name="JR_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>

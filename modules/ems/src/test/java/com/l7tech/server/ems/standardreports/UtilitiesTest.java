@@ -730,7 +730,7 @@ public class UtilitiesTest extends TestCase {
         val = Utilities.getMappingValueDisplayString("Donal", keys, values.toArray(new String[]{}));
         assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": Donal, "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
         
-        values.add("GOLD");
+        values.remove(1);
         exception = false;
         try{
             Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, keys, values.toArray(new String[]{}));

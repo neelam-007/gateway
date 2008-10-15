@@ -1042,7 +1042,7 @@ Value is included in all or none, comment is just illustrative
         if(keys == null){
             keys = new ArrayList<String>();        
         }
-        if(keyValues.length != keys.size()) throw new IllegalArgumentException("Length of keyValues must equal length of keys");
+        if(keyValues.length < keys.size()) throw new IllegalArgumentException("Length of keyValues must equal length of keys");
 
 
         StringBuilder sb = new StringBuilder();
