@@ -11,12 +11,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.*;
 
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperExportManager;
-import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.util.JRLoader;
 import net.sf.jasperreports.view.JasperViewer;
+import com.l7tech.server.ems.standardreports.ScripletHelper;
 
 
 public class ReportApp
@@ -70,7 +68,7 @@ public class ReportApp
     private static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
     private static final String REPORT_FILE_NAME_NO_ENDING = "REPORT_FILE_NAME_NO_ENDING";
     private static final Properties prop = new Properties();
-    private static final String JR_REPORT = "JR_REPORT";
+    private static final String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
 
 
     /**
@@ -86,7 +84,7 @@ public class ReportApp
 
 		String taskName = args[0];
 
-        FileInputStream fileInputStream = new FileInputStream("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/report.properties");
+        FileInputStream fileInputStream = new FileInputStream("report.properties");
         prop.load(fileInputStream);
         String fileName = prop.getProperty(REPORT_FILE_NAME_NO_ENDING);
 
@@ -222,13 +220,19 @@ public class ReportApp
         parameters.put(AUTHENTICATED_USERS, authUser);
 
 
-        Object o = JRLoader.loadObject("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/"+fileName+".jasper");
-        //Object o = JRLoader.loadObject(fileName+".jasper");
-        JasperReport jr = (JasperReport) o;
-        parameters.put(JR_REPORT, jr);
+        JasperPrint jp = JasperFillManager.fillReport("StyleGenerator.jasper", parameters);
+        Map sMap = jp.getStylesMap();
+        if(sMap == null) throw new NullPointerException("sMap is null");
+        
+        parameters.put(STYLES_FROM_TEMPLATE, sMap);
+
+        //Only required because jasper reports for some reason ignores the value of scriptletClass from the
+        //jasperreport element attribute, so specifying it as a parameter explicitly fixes this issue
+        ScripletHelper sh = new ScripletHelper();
+        parameters.put("REPORT_SCRIPTLET", sh);
 
         //JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
-        JasperFillManager.fillReportToFile("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/"+fileName+".jasper", parameters, getConnection(prop));
+        JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
 
         System.err.println("Filling time : " + (System.currentTimeMillis() - start));
     }

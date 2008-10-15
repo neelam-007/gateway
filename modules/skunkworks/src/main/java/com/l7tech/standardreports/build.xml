@@ -5,6 +5,7 @@
 	<property name="class.name" value="com.l7tech.standardreports.ReportApp" />
     <property name="test_data_class.name" value="com.l7tech.standardreports.CreateTestData" />
     <property name="ems.classes.dir" value="../../../../../../../../modules/ems/build/classes" />
+    <property name="lib" value="../../../../../../../../lib" />
     <property name="ems.dependency.dir" value="../../../../../../../../modules/ems/build/dependency" />
 
     <property name="jasper.jrxml_files" value="../../../../../../../../modules/ems/src/main/java/com/l7tech/server/ems/standardreports" />
@@ -14,6 +15,9 @@
         <!-- Don't want the ems jar as may compile the ems classes during development-->
         <pathelement location="${ems.classes.dir}" />
         <fileset dir="${ems.dependency.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${lib}">
             <include name="**/*.jar"/>
         </fileset>
     </path>
@@ -42,7 +46,9 @@
 	</target>
 
 	<target name="fill" description="Fills the compiled report design with data and produces the .jrprint file.">
-		<java classname="${class.name}">
+
+        <copy file="../../../../../../../../modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Styles.jrtx" todir="."/>
+        <java classname="${class.name}">
 			<arg value="fill"/>
 			<classpath refid="classpath"/>
 		</java>

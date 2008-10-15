@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<!DOCTYPE jasperTemplate PUBLIC "-//JasperReports//DTD Template//EN"
+        "http://jasperreports.sourceforge.net/dtds/jaspertemplate.dtd">
+<jasperTemplate>
+    <style
+            name="TableCell"
+            isDefault="true"
+            mode="Transparent"
+            vAlign="Middle"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+    </style>
+    <style
+            name="FrameStyle"
+            isDefault="false"
+            vAlign="Middle"
+            >
+        <box>
+            <pen lineWidth="1.0" lineStyle="Solid"/>
+            <topPen lineWidth="1.0" lineStyle="Solid"/>
+            <leftPen lineWidth="1.0" lineStyle="Solid"/>
+            <bottomPen lineWidth="1.0" lineStyle="Solid"/>
+            <rightPen lineWidth="1.0" lineStyle="Solid"/>
+        </box>
+    </style>
+            <!--backcolor="#0000ff" - blue-->
+    <!--#D6D6D6-->
+    <style
+            name="FrameTableBottom"
+            isDefault="false"
+            backcolor="#D6D6D6"
+            vAlign="Middle"
+            >
+        <box>
+            <pen lineWidth="1.0"/>
+            <topPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+    <!--#0000ff-->
+    <style
+            name="FrameTableTop"
+            isDefault="false"
+            backcolor="#E8EDB4"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+    <style
+            name="FrameHeaderTableRow"
+            isDefault="false"
+            backcolor="#DBD3B0"
+            vAlign="Middle"
+            >
+        <box>
+            <leftPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+    <style
+            name="FrameDetailTableRow"
+            isDefault="false"
+            backcolor="#F8F8F8"
+            vAlign="Middle"
+            >
+        <box>
+            <leftPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+    <style
+            name="FrameTotalTableRow"
+            isDefault="false"
+            backcolor="#D6D6D6"
+            >
+        <box>
+            <leftPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+</jasperTemplate>
