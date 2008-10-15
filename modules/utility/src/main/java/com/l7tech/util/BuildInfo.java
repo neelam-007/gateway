@@ -88,6 +88,15 @@ public class BuildInfo {
     }
 
     /**
+     * Get the human readable formal product version string, i.e. "4.7.0"
+     *
+     *  @return The 3 digit, dot separated version string.
+     */
+    public static String getFormalProductVersion() {
+        return getProductVersionMajor() + "." + getProductVersionMinor() + "." + getProductVersionSubMinor();
+    }
+
+    /**
      * Get the strict product major version, ie "3".  NOTE: Licenses bind to this.
      *
      * @return The major version string
