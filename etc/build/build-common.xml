@@ -53,6 +53,20 @@
     </path>
 
     <!--
+      Classpath for Jasper Reports compiler
+    -->
+    <path id="jasperreports.classpath">
+        <file file="${src.root}/lib/repository/jasperreports/jasperreports-3.0.0.jar"/>
+        <fileset dir="${src.root}/lib/repository/org.apache.tomcat">
+            <include name="*.jar"/>
+        </fileset>
+        <file file="${src.root}/lib/repository/commons-digester/commons-digester-1.7.jar"/>
+        <file file="${src.root}/lib/repository/commons-collections/commons-collections-3.2.jar"/>
+        <file file="${src.root}/lib/repository/commons-logging/commons-logging-1.1.jar"/>
+        <file file="${src.root}/lib/repository/commons-beanutils/commons-beanutils-1.7.0.jar"/>
+    </path>
+
+    <!--
       Task definition defaults for ivy resolve
     -->
     <presetdef name="ivy-resolve">
@@ -88,6 +102,35 @@
             <classpath refid="lib.path.id"/>
         </javac>
     </presetdef>
+
+    <!--
+      Task definition for Jasper Report compiler
+    -->
+    <taskdef name="jrc" classname="net.sf.jasperreports.ant.JRAntCompileTask">
+        <classpath refid="jasperreports.classpath"/>
+    </taskdef>
+
+    <!--
+      Modules Jasper Reports compiler definition with presets
+    -->
+    <macrodef name="module-jrc">
+        <attribute name="srcdir"/>
+        <attribute name="destdir"/>
+        <attribute name="classpathref"/>
+        <sequential>
+            <jrc destdir="@{destdir}">
+                <src>
+                    <fileset dir="@{srcdir}">
+                        <include name="**/*.jrxml"/>
+                    </fileset>
+                </src>
+                <classpath>
+                    <pathelement path="@{destdir}"/>
+                    <path refid="@{classpathref}"/>
+                </classpath>
+            </jrc>
+        </sequential>
+    </macrodef>
 
     <!--
       Modules IDEA form compiler definition with some presets
@@ -238,6 +281,9 @@
     <target name="compile-main-forms" if="module.source.available" depends="compile-main-init, compile-main-java">
         <module-javac2 srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>
     </target>
+    <target name="compile-main-jasper" if="module.jasper.available" depends="compile-main-init, compile-main-java">
+        <module-jrc srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>
+    </target>
     <target name="compile-main-resources" if="module.resources.available" depends="compile-main-init">
         <copy todir="${classes.main.dir}" preservelastmodified="true">
             <fileset dir="${src.main.res.dir}" includes="**/*.properties"/>
@@ -250,7 +296,7 @@
         </copy>
     </target>
     <target name="compile" description="Compile" if="module.source.available"
-            depends="compile-main-java, compile-main-forms, compile-main-resources">
+            depends="compile-main-java, compile-main-forms, compile-main-jasper, compile-main-resources">
     </target>
 
     <!--

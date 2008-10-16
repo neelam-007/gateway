@@ -10,6 +10,17 @@
 
     <property name="jasper.jrxml_files" value="../../../../../../../../modules/ems/src/main/java/com/l7tech/server/ems/standardreports" />
 
+    <path id="jrc.classpath">
+        <file file="${lib}/repository/jasperreports/jasperreports-3.0.0.jar"/>
+        <fileset dir="${lib}/repository/org.apache.tomcat">
+            <include name="*.jar"/>
+        </fileset>
+        <file file="${lib}/repository/commons-digester/commons-digester-1.7.jar"/>
+        <file file="${lib}/repository/commons-collections/commons-collections-3.2.jar"/>
+        <file file="${lib}/repository/commons-logging/commons-logging-1.1.jar"/>
+        <file file="${lib}/repository/commons-beanutils/commons-beanutils-1.7.0.jar"/>
+    </path>
+
     <path id="classpath">
         <pathelement location="." />
         <!-- Don't want the ems jar as may compile the ems classes during development-->
@@ -17,12 +28,8 @@
         <fileset dir="${ems.dependency.dir}">
             <include name="**/*.jar"/>
         </fileset>
-        <fileset dir="${lib}">
-            <include name="**/*.jar"/>
-        </fileset>
+        <file file="${lib}/repository/junit/junit-4.4.jar"/>
     </path>
-
-
 
     <target name="javac" description="Compiles the java source files of the test application.">
 
@@ -33,7 +40,7 @@
 
 	<target name="compile" description="Compiles all the XML report designs and produces the .jasper files.">
 		<taskdef name="jrc" classname="net.sf.jasperreports.ant.JRAntCompileTask">
-			<classpath refid="classpath"/>
+			<classpath refid="jrc.classpath"/>
 		</taskdef>
 		<jrc destdir="./">
 			<src>
