@@ -91,12 +91,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JRadioButton outboundMessageIdRadioButton;
     private JPanel inboundCorrelationPanel;
     private JPanel outboundCorrelationPanel;
-    private JPanel msgResolutionPanel;
     private JRadioButton defaultToNormalResolutionRadioButton;
     private JRadioButton useJmsMsgPropAsSoapActionRadioButton;
     private JRadioButton associateQueueWithPublishedRadioButton;
-    private JPanel propertyNamePanel;
-    private JPanel serviceNamePanel;
+    private JPanel inboundOptionsPanel;
+    private JPanel outboundOptionsPanel;
 
     private JmsConnection connection = null;
     private JmsEndpoint endpoint = null;
@@ -1043,6 +1042,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         });
         securityFormAuthorizationPreparer.prepare(jndiExtraPropertiesOuterPanel);
         securityFormAuthorizationPreparer.prepare(queueExtraPropertiesOuterPanel);
+        securityFormAuthorizationPreparer.prepare(inboundOptionsPanel);
+        securityFormAuthorizationPreparer.prepare(outboundOptionsPanel);
     }
 
     private void onTest() {
