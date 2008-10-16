@@ -286,7 +286,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                 InternalUser internalUser = (InternalUser)user;
                 // Password expiration is wrong for new users
                 if(isSave) {
-                    internalUser.setPasswordExpiry(PasswordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
+                    internalUser.setPasswordExpiry(passwordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
                 } else {
                     User u = userManager.findByPrimaryKey(internalUser.getId());
                     InternalUser existingDude = null;
@@ -296,7 +296,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
                     if(existingDude != null) {
                         if(!internalUser.getHashedPassword().equals(existingDude.getHashedPassword())) {
-                            internalUser.setPasswordExpiry(PasswordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
+                            internalUser.setPasswordExpiry(passwordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
                         }
                     }
                 }

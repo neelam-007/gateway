@@ -30,6 +30,8 @@ import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
+import javax.security.auth.login.CredentialExpiredException;
+import javax.security.auth.login.AccountLockedException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.rmi.server.ServerNotActiveException;
@@ -67,13 +69,15 @@ public class AdminLoginImpl
         //login credentials, except that we'll use the client certificate as the login credentials instead
         if (cert == null) throw new AccessControlException("Client certificate required.");
 
+        String remoteIp = null;
+        LoginCredentials creds = null;
         try {
             //make certificate login credentials
-            LoginCredentials creds = LoginCredentials.makeCertificateCredentials(cert, null);
+            creds = LoginCredentials.makeCertificateCredentials(cert, null);
             User user = sessionManager.authenticate( creds );
 
             boolean remoteLogin = true;
-            String remoteIp = null;
+
             try {
                 remoteIp = RemoteUtils.getClientHost();
             } catch (ServerNotActiveException snae) {
@@ -102,6 +106,10 @@ public class AdminLoginImpl
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
+        } catch (FailAttemptsExceededException faee) {
+            //shouldn't happen for certificates
+            getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
+            throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded max. failed logon attempts.");
         }
     }
 
@@ -141,6 +149,10 @@ public class AdminLoginImpl
             } catch(LoginRequireClientCertificateException e) {
                 getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
                 throw e;
+            } catch (FailAttemptsExceededException faee) {
+                //reached to the max number of failed attempts, we'll need to lock the account.
+                getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
+                throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded max. failed logon attempts.");
             }
 
             if (user == null) {
@@ -166,6 +178,22 @@ public class AdminLoginImpl
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         }
+    }
+
+    @Administrative(authenticated = false, licensed = false)
+    public AdminLoginResult loginWithPasswordUpdate(String username, String oldPassword, String newPassword)
+            throws AccessControlException, LoginException, InvalidPasswordException {
+
+        //attempt to change the password
+        try {
+            sessionManager.changePassword(username, oldPassword, newPassword);
+        } catch (ObjectModelException ome) {
+            //generally this is caused where new password is not STIG compiliant
+            throw new InvalidPasswordException(ome.getMessage());
+        }
+
+        //password change was successful, proceed to login
+        return login(username, newPassword);
     }
 
     public void changePassword(final String currentPassword, final String newPassword) throws LoginException {

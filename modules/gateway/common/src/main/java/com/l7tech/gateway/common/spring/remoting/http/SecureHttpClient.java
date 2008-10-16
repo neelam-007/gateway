@@ -230,4 +230,12 @@ public class SecureHttpClient extends HttpClient {
             }
         }, 443);
     }
+
+    /**
+     * Resets the connection by closing any idle connections and recreates the SSL connections.
+     */
+    public void resetConnection() {
+        this.getHttpConnectionManager().closeIdleConnections(0);
+        updateHostConfiguration();
+    }
 }

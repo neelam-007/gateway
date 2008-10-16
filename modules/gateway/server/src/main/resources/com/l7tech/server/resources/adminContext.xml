@@ -76,7 +76,8 @@
     <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager">
         <constructor-arg index="0" ref="serverConfig"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
-        <property name="roleManager" ref="roleManager"/>        
+        <property name="roleManager" ref="roleManager"/>
+        <property name="passwordEnforcerManager" ref="passwordEnforcerManager"/>
     </bean>
 
     <!--==============================================================-

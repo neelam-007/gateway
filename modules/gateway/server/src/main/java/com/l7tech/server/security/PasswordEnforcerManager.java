@@ -32,31 +32,19 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
     private static final int ALLOWABLE_PASSWORD_CHANGES_IN_DAYS = 1;
     private static final int MIN_CHAR_DIFFER = 4;
 
-    private User user;
-    private String newPassword;
-    private String hashedNewPassword;
-    private String currentUnHashedPassword;
-
     private static int PASSWORD_EXPIRY;
-    private static ServerConfig SERVER_CONFIG;
-    private static RoleManager ROLE_MANAGER;
+    private ServerConfig serverConfig;
+    private RoleManager roleManager;
 
     public PasswordEnforcerManager(ServerConfig serverConfig, RoleManager roleManager) {
         if (serverConfig == null ) throw new IllegalArgumentException("ServerConfig cannot be null.");
 
-        SERVER_CONFIG = serverConfig;
-        ROLE_MANAGER = roleManager;
+        this.serverConfig = serverConfig;
+        this.roleManager = roleManager;
         PASSWORD_EXPIRY = serverConfig.getIntProperty(ServerConfig.PARAM_PASSWORD_EXPIRY, DEFAULT_PASSWORD_EXPIRE_IN_DAYS);
         if ( PASSWORD_EXPIRY <= 0 || PASSWORD_EXPIRY > 90 ) {
              PASSWORD_EXPIRY = DEFAULT_PASSWORD_EXPIRE_IN_DAYS;
         }
-    }
-
-    public PasswordEnforcerManager(final User user, final String newPassword, final String hashedNewPassword, final String currentUnHashedPassword) {
-        this.user = user;
-        this.newPassword = newPassword;
-        this.hashedNewPassword = hashedNewPassword;
-        this.currentUnHashedPassword = currentUnHashedPassword;
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
@@ -76,26 +64,33 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
     }
 
     public boolean isSTIGEnforced() {
-        return SERVER_CONFIG.getBooleanProperty("security.stig.enabled", true);
+        return serverConfig.getBooleanProperty("security.stig.enabled", true);
     }
 
     /**
-     * This method will verify the password to make sure that it complies with STIG
-     *
-     * @return TRUE if STIG compilance, otherwise throws exception
-     * @throws InvalidPasswordException
+     * Verifies is the password is STIG compilant.  Will throw an exception when a particular STIG constraint is not
+     * satisfied.
+     * 
+     * @param user  The user
+     * @param newPassword   The new password to be checked against
+     * @param hashedNewPassword The hashed version of the new password
+     * @param currentUnHashedPassword   The unhased of the current password, used for comparison of the new and old password
+     * @return  TRUE if the password is stig compiliant.
+     * @throws InvalidPasswordException Thrown when STIG is satsified.
      */
-    public boolean isSTIGCompilance() throws InvalidPasswordException {
+    public boolean isSTIGCompilance(final User user, final String newPassword,
+                                    final String hashedNewPassword,
+                                    final String currentUnHashedPassword) throws InvalidPasswordException {
         boolean check = true;
-        if(SERVER_CONFIG != null) {
-            check = SERVER_CONFIG.getBooleanProperty("security.stig.enabled", true);
+        if (serverConfig != null) {
+            check = serverConfig.getBooleanProperty("security.stig.enabled", true);
         }
 
-        if(check) {
-            validatePasswordChangesAllowable();
-            validatePasswordString();
-            validatePasswordIsDifferent();
-            validateAgainstPrevPasswords();
+        if (check) {
+            validatePasswordChangesAllowable(user);
+            validatePasswordString(newPassword);
+            validatePasswordIsDifferent(newPassword, currentUnHashedPassword);
+            validateAgainstPrevPasswords(user, hashedNewPassword);
         }
 
         return true;
@@ -110,9 +105,10 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
      *  - contains at least one special character
      *  - does not contain consecutively repeating characters
      *
+     * @param newPassword   the new password
      * @throws InvalidPasswordException
      */
-    private void validatePasswordString() throws InvalidPasswordException {
+    private void validatePasswordString(final String newPassword) throws InvalidPasswordException {
 
         if ( newPassword.length() < MIN_CHARACTER_LENGTH || newPassword.length() > MAX_CHARACTER_LENGTH)
             throw new InvalidPasswordException("Password must be between 8 and 32 characters in length.");
@@ -146,7 +142,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
      *
      * @throws InvalidPasswordException
      */
-    private void validatePasswordIsDifferent() throws InvalidPasswordException {
+    private void validatePasswordIsDifferent(final String newPassword, final String currentUnHashedPassword) throws InvalidPasswordException {
         HashSet<String> oldChars = new HashSet<String>();
         for (int i=0; i<currentUnHashedPassword.length(); i++)
             oldChars.add(currentUnHashedPassword.substring(i,i+1));
@@ -163,9 +159,11 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
      * This method will validate that the new password meets all of the following:
      *  - new password not resued within x-number of password changes
      *
+     * @param user  The user
+     * @param hashedNewPassword The new hashed password
      * @throws InvalidPasswordException
      */
-    private void validateAgainstPrevPasswords() throws InvalidPasswordException {
+    private void validateAgainstPrevPasswords(final User user, final String hashedNewPassword) throws InvalidPasswordException {
         //compare the new hashedPassword to the previous passwords
         if ( user instanceof InternalUser) {
             List<PasswordChangeRecord> changes = ((InternalUser) user).getPasswordChangesHistory();
@@ -182,9 +180,10 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
     /**
      * Validate to see if the password can be changed based on the allowable password changes timeframe.
      *
+     * @param user  The user
      * @throws InvalidPasswordException
      */
-    public void validatePasswordChangesAllowable() throws InvalidPasswordException {
+    public void validatePasswordChangesAllowable(final User user) throws InvalidPasswordException {
         long now = System.currentTimeMillis();
         Calendar xDaysAgo = Calendar.getInstance();
         xDaysAgo.setTimeInMillis(now);
@@ -220,7 +219,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
      */
     public boolean hasAdminRole(InternalUser internalUser) {
         try {
-            Collection<Role> roles = ROLE_MANAGER.getAssignedRoles(internalUser);
+            Collection<Role> roles = roleManager.getAssignedRoles(internalUser);
 
             if (roles == null) return false;
             for (Role role : roles) {
@@ -241,7 +240,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
      *              to create the expiry date
      * @return  The long format of the expiry date
      */
-    public static long getSTIGExpiryPasswordDate(final long time) {
+    public long getSTIGExpiryPasswordDate(final long time) {
         return calcExpiryDate(time, PASSWORD_EXPIRY);
     }
 
@@ -252,7 +251,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
      * @param user  The internal user instance
      * @return  TRUE if the password has expired, otherwise FALSE.
      */
-    public static boolean isPasswordExpired( final User user ){
+    public boolean isPasswordExpired( final User user ){
         if (user instanceof InternalUser){
             final InternalUser internalUser = (InternalUser) user;
 
@@ -278,7 +277,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
      * @param numOfDays The number of days to expiry date
      * @return  The long format of the expiry date                                              
      */
-    public static long calcExpiryDate(final long time, int numOfDays) {
+    public long calcExpiryDate(final long time, int numOfDays) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(time);
         cal.add(Calendar.DAY_OF_YEAR, numOfDays);

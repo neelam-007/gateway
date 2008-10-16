@@ -7,6 +7,7 @@ package com.l7tech.gateway.common.admin;
 
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.InvalidPasswordException;
 
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlException;
@@ -68,6 +69,26 @@ public interface AdminLogin {
      */
     @Administrative(authenticated=false, licensed=false)
     AdminLoginResult login(X509Certificate cert) throws AccessControlException, LoginException;
+
+    /**
+     * Method that allows admins to change the expired password and login in one pass.  The new password will have to be
+     * STIG compiliant inorder to successfully make the change and proceed with login process.  If the new password is
+     * not STIG compiliant, then it will fail the entire login and password change process.  This method is generally
+     * used when the password has expired and require the user to change to a new password before logging into the
+     * manager.
+     *
+     * @param username  The name of the user
+     * @param oldPassword   The old password used for authentication (so cannot change other people's password)
+     * @param newPassword   The new password to be changed to (must be STIG compiliant)
+     * @return  An {@link AdminLoginResult} if both the password change and login was successful, or throws exceptions.
+     *          Never returns NULL.
+     * @throws AccessControlException   Access denied for the given login credentials
+     * @throws LoginException           Failed to login
+     * @throws InvalidPasswordException Password is not STIG compilant
+     */
+    @Administrative(authenticated=false, licensed=false)
+    AdminLoginResult loginWithPasswordUpdate(String username, String oldPassword, String newPassword)
+            throws AccessControlException, LoginException, InvalidPasswordException;
 
     /**
      * Method that allows admin to login using an existing session.

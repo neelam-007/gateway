@@ -22,6 +22,7 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
+import com.l7tech.objectmodel.InvalidPasswordException;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -69,8 +70,8 @@ public class SecurityProviderImpl extends SecurityProvider
      * Determines if the passed credentials will grant access to the admin service.
      * If successful, those credentials will be cached for future admin ws calls.
      */
-    public void login(PasswordAuthentication creds, String host, boolean validate)
-            throws LoginException, VersionException {
+    public void login(PasswordAuthentication creds, String host, boolean validate, String newPassword)
+            throws LoginException, VersionException, InvalidPasswordException {
         boolean authenticated = false;
         serverCertificateChain = null;
         resetCredentials();
@@ -102,7 +103,16 @@ public class SecurityProviderImpl extends SecurityProvider
                 certsByHost.values().remove(serverCertificate);
             }
 
-            AdminLoginResult result = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
+            AdminLoginResult result;
+            //determine the type of logon process should be performed
+            if (newPassword == null) {
+                //proceed with normal logon process
+                result = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
+            } else {
+                //proceed with password change and then logon process
+                result = adminLogin.loginWithPasswordUpdate(creds.getUserName(), new String(creds.getPassword()), newPassword);
+            }
+
             // Update the principal with the actual internal user
 
             String remoteVersion = checkRemoteProtocolVersion(result);

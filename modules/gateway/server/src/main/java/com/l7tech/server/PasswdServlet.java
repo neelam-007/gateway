@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProvider;
@@ -29,6 +30,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.logging.Level;
 
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
 /**
  * This servlet lets a client change the password of his internal account.
  * This is only applicable for accounts of the internal id provider.
@@ -42,8 +46,13 @@ import java.util.logging.Level;
  * Date: Jun 17, 2004<br/>
  */
 public class PasswdServlet extends AuthenticatableHttpServlet {
+    private PasswordEnforcerManager passwordEnforcerManager;
+
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+
+        WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        this.passwordEnforcerManager = (PasswordEnforcerManager)appcontext.getBean("passwordEnforcerManager", PasswordEnforcerManager.class);
     }
 
     protected String getFeature() {
@@ -132,10 +141,9 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             newInternalUser.copyFrom(internalUser);
             newInternalUser.setVersion(internalUser.getVersion());
             //newInternalUser.setCleartextPassword(newpasswd);
-            PasswordEnforcerManager enforcer = new PasswordEnforcerManager(newInternalUser, newpasswd, HexUtils.encodePasswd(newInternalUser.getLogin(), newpasswd, HttpDigest.REALM), oldpasswd);
-            enforcer.isSTIGCompilance();
+            passwordEnforcerManager.isSTIGCompilance(newInternalUser, newpasswd, HexUtils.encodePasswd(newInternalUser.getLogin(), newpasswd, HttpDigest.REALM), oldpasswd);
             newInternalUser.setPasswordChanges(System.currentTimeMillis(), newpasswd);
-            newInternalUser.setPasswordExpiry(PasswordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
+            newInternalUser.setPasswordExpiry(passwordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
 
             InternalUserManager userManager = internalProvider.getUserManager();
             userManager.update(newInternalUser);
@@ -153,7 +161,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "could not complete operation, returning 500", e);
             sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         } catch (InvalidPasswordException e) {
-            logger.log(Level.SEVERE, "password was not valid", e);
+            logger.log(Level.SEVERE, "password was not valid", ExceptionUtils.getDebugException(e));
             sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }

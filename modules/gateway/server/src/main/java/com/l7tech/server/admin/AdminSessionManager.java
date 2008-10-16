@@ -7,14 +7,7 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
-import com.l7tech.identity.ValidationException;
-import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.LoginRequireClientCertificateException;
-import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -72,6 +65,10 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
         this.identityProviderFactory = identityProviderFactory;
     }
 
+    public void setPasswordEnforcerManager(final PasswordEnforcerManager passwordEnforcerManager) {
+        this.passwordEnforcerManager = passwordEnforcerManager;
+    }
+
     public void afterPropertiesSet() throws Exception {
         setupAdminProviders();
     }
@@ -99,7 +96,7 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
      * @return The user or null if not authenticated.
      * @throws ObjectModelException If an error occurs during authentication.
      */
-    public User authenticate( final LoginCredentials creds ) throws ObjectModelException, LoginException {
+    public User authenticate( final LoginCredentials creds ) throws ObjectModelException, LoginException, FailAttemptsExceededException {
         // Try internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers;
         synchronized(providerSync) {
@@ -135,7 +132,7 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
                         logger.info("Authenticated on " + provider.getConfig().getName());
 
                         //Ensure password not expired
-                        if (PasswordEnforcerManager.isPasswordExpired(user) ) {
+                        if (passwordEnforcerManager.isPasswordExpired(authdUser)) {
                             throw new CredentialExpiredException("Password expired.");
                         }
 
@@ -151,6 +148,9 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
                 }
             } catch (AuthenticationException e) {
                 logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
+                if (ExceptionUtils.causedBy(e, FailAttemptsExceededException.class)) {
+                    throw new FailAttemptsExceededException(e.getMessage());
+                }
             }
         }
 
@@ -179,6 +179,37 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
      */
     private boolean hasClientCert(LoginCredentials lc, IdentityProvider provider) throws AuthenticationException {
         return provider.hasClientCert(lc);
+    }
+
+    /**
+     * Change password for the given user.  This is just another method to assist in changing the password by supplying
+     * a username instead of the user object.
+     *  
+     * @param username  The username
+     * @param password  The password for the user
+     * @param newPassword   The new password for the user
+     * @return  TRUE if the password was changed
+     * @throws ObjectModelException 
+     */
+    public boolean changePassword(final String username, final String password, final String newPassword) throws ObjectModelException {
+        //try the internal first (internal accounts with the same credentials should hide externals)
+        Set<IdentityProvider> providers;
+        synchronized(providerSync) {
+            providers = adminProviders;
+        }
+
+        //find the user based on the username
+        User user = null;
+        for (IdentityProvider provider : providers) {
+            user = provider.getUserManager().findByLogin(username);
+            if (user != null) break;
+        }
+
+        //if failed to find the user from all providers, cannot change the password
+        if(user == null) return false;
+
+        //proceed to change the password
+        return changePassword(user, password, newPassword);
     }
 
     /**
@@ -219,10 +250,9 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
                 if ( authenticatedUser instanceof InternalUser ) {
                     InternalUser internalUser = (InternalUser) authenticatedUser;
                     checkPerms(internalUser);
-                    PasswordEnforcerManager enforcer = new PasswordEnforcerManager(user, newPassword, HexUtils.encodePasswd(user.getLogin(), newPassword, HttpDigest.REALM), password);
-                    enforcer.isSTIGCompilance();
-                    ((InternalUser)user).setPasswordChanges(System.currentTimeMillis(), newPassword);
-                    ((InternalUser)user).setPasswordExpiry(PasswordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
+                    passwordEnforcerManager.isSTIGCompilance(internalUser, newPassword, HexUtils.encodePasswd(internalUser.getLogin(), newPassword, HttpDigest.REALM), password);
+                    internalUser.setPasswordChanges(System.currentTimeMillis(), newPassword);
+                    internalUser.setPasswordExpiry(passwordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
                     ((InternalIdentityProvider)identityProvider).getUserManager().update(internalUser);
                     passwordUpdated = true;
                 } else {
@@ -449,6 +479,7 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
     // spring components
     private IdentityProviderFactory identityProviderFactory;
     private RoleManager roleManager;
+    private PasswordEnforcerManager passwordEnforcerManager;
 
     //
     @SuppressWarnings({"deprecation"})

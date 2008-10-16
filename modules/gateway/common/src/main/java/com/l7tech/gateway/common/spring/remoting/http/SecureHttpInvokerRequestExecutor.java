@@ -59,13 +59,17 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
         SessionSupport.SessionInfo info = sessionInfoHolder.getSessionInfo();
         info.host = host;
         info.port = port;
-        info.sessionId = sessionId;
+        info.sessionId = sessionId;               
     }
 
     public void setTrustFailureHandler(SSLTrustFailureHandler failureHandler) {
         synchronized (lock) {
             this.trustFailureHandler = failureHandler;
-            this.getHttpClient().getHttpConnectionManager().closeIdleConnections(0);
+            HttpClient httpClient = super.getHttpClient();
+            if ( httpClient instanceof SecureHttpClient) {
+                //reset connections
+                ((SecureHttpClient) httpClient).resetConnection();
+            }
         }
     }
 

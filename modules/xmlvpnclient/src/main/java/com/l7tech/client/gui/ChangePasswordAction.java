@@ -193,7 +193,7 @@ class ChangePasswordAction extends AbstractAction {
                                      "newly-revoked client certificate.", e1);
                     return;
                 } catch (BadPasswordFormatException e1) {
-                    log.log(Level.WARNING, e1.getMessage(), e1);
+                    log.log(Level.WARNING, e1.getMessage(), ExceptionUtils.getDebugException(e1));
                     Gui.errorMessage("Unable to change your password. The Gateway has rejected your " +
                                      "new password. \n" + e1.getMessage());
                     return;

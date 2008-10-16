@@ -6,6 +6,7 @@
 package com.l7tech.console.security;
 
 import com.l7tech.gateway.common.VersionException;
+import com.l7tech.objectmodel.InvalidPasswordException;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
@@ -22,15 +23,21 @@ public interface AuthenticationProvider {
 
     /**
      * Subclasses implement this method to provide the concrete login implementation.
+     * <br/>
+     * If the newPassword field is provided, then it will attempt to change the user's password to the new password
+     * and then perform the logon process.  If the new password is not valid, then an exception is thrown and the
+     * logon and change password fails.  If the newPassword field is NULL, then it will perform as a normal logon prcoess.
      *
      * @param creds the credentials to authenticate
      * @param host the host to authenticate with
      * @param validateHost true to validate the hosts name against its certificate
+     * @param newPassword   If not NULL, then it will perform to change password first then do the logon afterwards.
+     * @throws InvalidPasswordException If the new password is no valid.  Generally not STIG compiliant.
      *
      * @see com.l7tech.console.security.SecurityProviderImpl
      */
-    void login(PasswordAuthentication creds, String host, boolean validateHost)
-      throws LoginException, VersionException;
+    void login(PasswordAuthentication creds, String host, boolean validateHost, String newPassword)
+      throws LoginException, VersionException, InvalidPasswordException;
 
     /**
      * Connect to a session that is already established and waiting for us.

@@ -8,7 +8,6 @@ import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.*;
 import com.l7tech.gui.FilterDocument;
@@ -17,9 +16,11 @@ import com.l7tech.console.util.*;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.LoginRequireClientCertificateException;
+import com.l7tech.objectmodel.InvalidPasswordException;
 
 import javax.security.auth.login.LoginException;
 import javax.security.auth.login.AccountLockedException;
+import javax.security.auth.login.CredentialExpiredException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -107,6 +108,9 @@ public class LogonDialog extends JDialog {
     // Cache version info here so we don't do needless repeat calls to get it again   TODO move this somewhere more reasonable
     public static String remoteProtocolVersion;
     public static String remoteSoftwareVersion;
+
+    //flag to determine if the login dialog should be display
+    private boolean displayLogin = true;
 
     /**
      * Create a new LogonDialog
@@ -585,7 +589,7 @@ public class LogonDialog extends JDialog {
             setVisible(false);
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    doLogon();
+                    doLogon(null, null);
                 }
             });
         } else if (actionCommand.equals(CMD_MANAGE_CERT) ){
@@ -638,7 +642,15 @@ public class LogonDialog extends JDialog {
         }
     }
 
-    private void doLogon() {
+    /**
+     * Does the actual logon process.
+     * If both the parameters are set to NULL, then it proceeds as a normal logon.  If both fields are not NULL, then
+     * it will treat as a change password and logon process.
+     *
+     * @param newPassword   The new password that should be changed for the login user
+     * @param authCreds   The credentials to be used for changing the password and logon
+     */
+    private void doLogon(final String newPassword, final PasswordAuthentication authCreds) {
         authenticationCredentials = new PasswordAuthentication(userNameTextField.getText(), passwordField.getPassword());
         final Container parentContainer = getParent();
         // service URL
@@ -671,7 +683,15 @@ public class LogonDialog extends JDialog {
                               setSelectedCertificateByDn(selected);
                               authenticationCredentials = new PasswordAuthentication("", "".toCharArray());
                           }
-                          authProv.login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost));
+
+                          //determine which approach to logon based on the parameters
+                          if (newPassword == null && authCreds == null) {
+                              //normal logon process
+                              authProv.login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost), null);
+                          } else {
+                              //require to change the password and logon
+                              authProv.login(authCreds, sHost, !acceptedInvalidHosts.contains(sHost), newPassword);
+                          }
                       } catch (Throwable e) {
                           if (!progressDialog1.isCancelled()) {
                               memoException = e;
@@ -714,7 +734,8 @@ public class LogonDialog extends JDialog {
                               if (logonListener != null) {
                                   logonListener.onAuthFailure();
                               }
-                              setVisible(true);
+
+                              setVisible(displayLogin);
                           }
                       }
                   }
@@ -978,11 +999,41 @@ public class LogonDialog extends JDialog {
             log.log(Level.WARNING, "Lock account, exceed failed login attempts.");
             showLockAccountMessage();
         }
+        else if (cause instanceof InvalidPasswordException) {
+            //problems with the new password (most likely not STIG compiliant), re-ask the user to enter a better password
+            ChangePasswordDialog changePasswordDialog = new ChangePasswordDialog(this, cause.getMessage(), userNameTextField.getText(), false);
+            changePasswordDialog.setVisible(true);
+            if (changePasswordDialog.wasOk()) {
+                displayLogin = false;
+                String newPassword = new String(changePasswordDialog.getNewPasswordAuthentication().getPassword());
+                PasswordAuthentication newPasswordAuth = changePasswordDialog.getCurrentPasswordAuthentication();
+                changePasswordDialog.setVisible(false);
+                changePasswordDialog.dispose();
+                doLogon(newPassword, newPasswordAuth);  //try logon again
+            } else {
+                displayLogin = true;
+            }
+        }
         else if (cause instanceof LoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException ||
                 cause instanceof LoginRequireClientCertificateException) {
             log.log(Level.WARNING, "Could not connect, authentication error.");
             if (cause instanceof LoginRequireClientCertificateException) {
                 showRequireClientCertificateMessage();
+            } else if (ExceptionUtils.causedBy(cause, CredentialExpiredException.class)) {
+                //the credential was expired, we'll need to provide them a way to enter their new password
+                ChangePasswordDialog changePasswordDialog =
+                        new ChangePasswordDialog(this, "Password expired, please change your password.", userNameTextField.getText(), false);
+                changePasswordDialog.setVisible(true);
+                if (changePasswordDialog.wasOk()) {
+                    displayLogin = false;
+                    String newPassword = new String(changePasswordDialog.getNewPasswordAuthentication().getPassword());
+                    PasswordAuthentication newPasswordAuth = changePasswordDialog.getCurrentPasswordAuthentication();
+                    changePasswordDialog.setVisible(false);
+                    changePasswordDialog.dispose();
+                    doLogon(newPassword, newPasswordAuth);  //try again
+                } else {
+                    displayLogin = true;
+                }
             } else {
                 showInvalidCredentialsMessage();
             }
@@ -1024,7 +1075,7 @@ public class LogonDialog extends JDialog {
 
                 if ( imported ) {
                     // try again
-                    doLogon();
+                    doLogon(null, null);
                 }
             }
         }
