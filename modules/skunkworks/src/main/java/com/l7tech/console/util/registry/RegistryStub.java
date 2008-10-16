@@ -299,7 +299,8 @@ public class RegistryStub extends Registry {
 
     public SecurityProvider getSecurityProvider() {
         return new SecurityProvider() {
-            public void login(PasswordAuthentication creds, String host, boolean validateHost) throws LoginException, VersionException {
+            public void login(PasswordAuthentication creds, String host, boolean validateHost, String newPassword)
+                    throws LoginException, VersionException, InvalidPasswordException {                
             }
 
             public void login(String sessionId, String host) throws LoginException, VersionException {
