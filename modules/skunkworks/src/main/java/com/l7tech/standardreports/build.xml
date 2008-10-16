@@ -47,7 +47,7 @@
 
 	<target name="fill" description="Fills the compiled report design with data and produces the .jrprint file.">
 
-        <copy file="../../../../../../../../modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Styles.jrtx" todir="."/>
+        <copy file="../../../../../../../ems/src/main/resources/com/l7tech/server/ems/standardreports/Styles.jrtx" todir="."/>
         <java classname="${class.name}">
 			<arg value="fill"/>
 			<classpath refid="classpath"/>
@@ -92,6 +92,7 @@
 			<fileset dir="." includes="**/*.rtf" />
 			<fileset dir="." includes="**/*.pdf" />
             <fileset dir="." includes="**/*.sql" />
+            <fileset dir="." includes="**/*.jrtx" />
         </delete>
 	</target>
 
