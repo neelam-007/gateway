@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+
 import javax.swing.*;
 import javax.naming.Context;
 import java.util.Properties;
@@ -16,12 +18,12 @@ public class FioranoJndiExtraPropertiesPanel extends JmsExtraPropertiesPanel {
     private JCheckBox sslCheckbox;
 
     /**
-     * @see fiorano.jms.runtime.naming.FioranoJNDIContext#SSL_SECURITY_MANAGER
+     * From fiorano.jms.runtime.naming.FioranoJNDIContext#SSL_SECURITY_MANAGER
      */
     private static final String PROP_SEC_MANAGER = "SecurityManager";
 
     /**
-     * @see fiorano.jms.runtime.naming.FioranoJNDIContext#PROTOCOL_JSSE_SSL
+     * From fiorano.jms.runtime.naming.FioranoJNDIContext#PROTOCOL_JSSE_SSL
      */
     private static final String SECURITY_PROTOCOL_JSSE_SSL = "SUN_SSL";
 
@@ -39,8 +41,9 @@ public class FioranoJndiExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         Properties properties = new Properties();
 
         if ( sslCheckbox.isSelected() ){
-            properties.put(Context.SECURITY_PROTOCOL, SECURITY_PROTOCOL_JSSE_SSL);
-            properties.put(PROP_SEC_MANAGER, "com.l7tech.server.transport.jms.prov.fiorano.proxy.FioranoProxySecurityManager");
+            properties.setProperty(Context.SECURITY_PROTOCOL, SECURITY_PROTOCOL_JSSE_SSL);
+            properties.setProperty(PROP_SEC_MANAGER, "com.l7tech.server.transport.jms.prov.fiorano.FioranoSecurityManager");
+            properties.setProperty(JmsConnection.PROP_CUSTOMIZER, "com.l7tech.server.transport.jms.prov.FioranoConnectionFactoryCustomizer");
         }
 
         return properties;

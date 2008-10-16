@@ -27,6 +27,14 @@ public class JmsUtil {
     private static final Logger logger = Logger.getLogger(JmsUtil.class.getName());
     public static final String DEFAULT_ENCODING = "UTF-8";
 
+    private static ClassLoader contextClassLoader;
+
+    public static void setContextClassLoader( final ClassLoader contextClassLoader ) {
+        if ( JmsUtil.contextClassLoader == null ) {
+            JmsUtil.contextClassLoader = contextClassLoader;
+        }
+    }
+
     /**
      * Establishes a connection to a JMS provider, returning the necessary {@link ConnectionFactory},
      * {@link Connection} and {@link Session} inside a {@link JmsBag}.
@@ -90,6 +98,10 @@ public class JmsUtil {
             mapper.substitutePropertyValues(props);
         Context jndiContext = null;
 
+        final ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+        if ( contextClassLoader != null ) {
+            Thread.currentThread().setContextClassLoader( contextClassLoader );
+        }
         try {
             jndiContext = new InitialContext( props );
             String cfUrl = dcfUrl;
@@ -183,6 +195,7 @@ public class JmsUtil {
             logger.log( Level.WARNING, "Caught RuntimeException while attempting to connect to JMS provider" );
             throw (JmsConfigException)new JmsConfigException(rte.toString()).initCause(rte);
         } finally {
+            Thread.currentThread().setContextClassLoader(contextLoader);            
             try { if ( sess != null ) sess.close(); } catch (Throwable t) { logit(t); }
             try { if ( conn != null ) conn.close(); } catch (Throwable t) { logit(t); }
             try { if ( jndiContext != null ) jndiContext.close(); } catch (Throwable t) { logit(t); }

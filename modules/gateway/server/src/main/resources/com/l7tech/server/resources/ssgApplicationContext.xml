@@ -1111,4 +1111,54 @@
 
     <bean id="processControllerEventProxy" class="com.l7tech.server.ProcessControllerEventProxyImpl"/>
 
+    <bean id="systemClassLoader" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="java.lang.ClassLoader"/>
+        <property name="targetMethod" value="getSystemClassLoader"/>
+    </bean>
+    <bean  id="extensionClassLoader" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref="systemClassLoader"/>
+        <property name="targetMethod" value="getParent"/>
+    </bean>
+    <!--
+      Resource classloader that is configured to load Fiorano JMS and the associated
+      Gateway provider class(es) in a shared classloader.
+
+      Other JMS classes will be loaded as before from the extension classloader.
+    -->
+    <bean id="jmsClassLoader" class="com.l7tech.server.util.ResourceClassLoader">
+        <constructor-arg index="0">
+            <!--
+              Filtering classloader that will load bootstrap and extension classes, plus
+              the listed gateway packages and classes.
+            -->
+            <bean class="com.l7tech.server.util.FilterClassLoader">
+                <constructor-arg index="0" ref="extensionClassLoader"/>
+                <constructor-arg index="1" ref="systemClassLoader"/>
+                <constructor-arg index="2">
+                    <list>
+                        <value>com.l7tech.server.transport.jms.prov.fiorano</value>
+                        <value>com.l7tech.server.transport.jms.JmsSslCustomizerSupport</value>
+                        <value>com.l7tech.server.transport.jms.JmsConfigException</value>
+                    </list>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="1">
+            <list>
+                <value>fiorano</value>
+                <value>com.fiorano</value>
+                <value>com.l7tech.server.transport.jms.prov.fiorano</value>
+            </list>
+        </constructor-arg>
+    </bean>
+    <bean id="jmsInit" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.jms.JmsUtil"/>
+        <property name="targetMethod" value="setContextClassLoader"/>
+        <property name="arguments">
+            <list>
+                <ref local="jmsClassLoader"/>
+            </list>
+        </property>
+    </bean>
+
 </beans>
