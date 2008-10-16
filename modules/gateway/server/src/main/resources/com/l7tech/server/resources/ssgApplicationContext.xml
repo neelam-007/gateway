@@ -540,7 +540,7 @@
         <property name="jmsEndpointManager" ref="jmsEndpointManager"/>
     </bean>
     <!-- jms endpoint manager -->
-    <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerImpl" parent="hibernateBean">
+    <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerImpl" parent="hibernateBean" depends-on="jmsInit">
     </bean>
     <!-- jms property mapper -->
     <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
