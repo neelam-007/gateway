@@ -32,7 +32,7 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
     @Resource
     private RoleManager roleManager;
 
-    @Resource
+    @Resource(name="trustedCertManager")
     private TrustedCertManager trustedCertManager;
 
     public Class<? extends Entity> getImpClass() {

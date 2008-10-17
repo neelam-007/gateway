@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 /**
  * Knows about the location and passwords for the SSL and CA keystores, server certificates, etc.
  */
-class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
+public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(DefaultKeyImpl.class.getName());
 
     private static final Pattern KEYSTORE_ID_AND_ALIAS_PATTERN = Pattern.compile("^(-?\\d+):(.*)$");

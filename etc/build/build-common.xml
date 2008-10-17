@@ -34,8 +34,8 @@
     <property name="module.version.default.target" value="1.0"/>
     <property name="module.version.target" value="${module.version.default.target}"/>
     <property name="module.classpath.prefix" value="lib/"/>
-    <property name="module.compile.source" value="1.5"/>
-    <property name="module.compile.target" value="1.5"/>
+    <property name="module.compile.source" value="1.6"/>
+    <property name="module.compile.target" value="1.6"/>
     <property name="module.compile.optimize" value="off"/>
     <property name="module.compile.excludes" value=""/>
     <property name="module.jar.index" value="false"/>
@@ -138,8 +138,8 @@
     <presetdef name="module-javac2">
         <javac2t
                 debug="on"
-                source="1.5"
-                target="1.5"
+                source="${module.compile.source}"
+                target="${module.compile.target}"
                 optimize="on"
                 >
             <include name="**/*.form"/>
@@ -155,7 +155,14 @@
             <echo>Generating script for ${ant.project.name} obfuscation.</echo>
             <ivy-resolve conf="optional,runtime,compile"/>
             <ivy:cachepath pathid="lib.obfuscate.path.id" conf="compile"/>
-            <pathconvert property="lib.obfuscate.path.text" targetos="unix" pathsep="&quot;${line.separator}&quot;" refid="lib.obfuscate.path.id"/>
+            <path id="full.obfuscate.path.id">
+                <pathelement path="${sun.boot.class.path}"/>
+                <fileset dir="${java.home}/lib/ext">
+                    <include name="*.jar"/>                    
+                </fileset>
+                <path refid="lib.obfuscate.path.id"/>
+            </path>
+            <pathconvert property="lib.obfuscate.path.text" targetos="unix" pathsep="&quot;${line.separator}&quot;" refid="full.obfuscate.path.id"/>
             <copy file="@{zkmFilePath}" tofile="${build.dir}/etc/obfuscation.zkm" overwrite="true">
                 <filterset>
                     <filter token="CP" value="${lib.obfuscate.path.text}"/>
