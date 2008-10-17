@@ -106,12 +106,12 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         return groupman;
     }
 
-    public Collection<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
-        return Collections.emptyList();
+    public EntityHeaderSet<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
+        return EntityHeaderSet.empty();
     }
 
-    public Collection<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
-        return Collections.emptyList();
+    public EntityHeaderSet<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
+        return EntityHeaderSet.empty();
     }
 
     public String getAuthRealm() {
@@ -311,7 +311,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public Collection<IdentityHeader> search(String searchString) throws FindException {
+        public EntityHeaderSet<IdentityHeader> search(String searchString) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 

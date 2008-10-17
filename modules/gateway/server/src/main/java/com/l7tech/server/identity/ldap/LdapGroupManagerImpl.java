@@ -34,10 +34,6 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     public synchronized void configure(LdapIdentityProvider provider) {
         identityProvider = provider;
         identityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
-
-        MAX_EXCEEDED = new IdentityHeader(identityProvider.getConfig().getOid(),
-            "noid", EntityType.MAXED_OUT_SEARCH_RESULT, "Too Many Entries",
-            "This search yields too many entities. Please narrow your search criterion.");
     }
 
     /**
@@ -365,7 +361,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         }
         uberGroupMembershipFilter.append(")");
 
-        Set<IdentityHeader> output = new HashSet<IdentityHeader>();
+        EntityHeaderSet<IdentityHeader> output = new EntityHeaderSet<IdentityHeader>();
         if (somethingToSearchFor) {
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
@@ -410,7 +406,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                     logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
                                            "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
                                            e);
-                    output.add(MAX_EXCEEDED);
+                    output.setMaxExceeded(identityProvider.getMaxSearchResultSize());
                     // dont throw here, we still want to return what we got
                 } catch (NamingException e) {
                     String msg = "error getting next answer";
@@ -488,7 +484,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         LdapIdentityProvider identityProvider = getIdentityProvider();
         LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
 
-        Set<IdentityHeader> output = new HashSet<IdentityHeader>();
+        EntityHeaderSet<IdentityHeader> output = new EntityHeaderSet<IdentityHeader>();
         String filter = subGroupSearchString(dn);
         if (filter != null) {
             SearchControls sc = new SearchControls();
@@ -508,10 +504,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 }
             } catch (SizeLimitExceededException e) {
                 // add something to the result that indicates the fact that the search criteria is too wide
-                logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
-                                       "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
-                                       e);
-                output.add(MAX_EXCEEDED);
+                logger.log(Level.FINE, "the search results exceeded the maximum.", e);
+                output.setMaxExceeded(identityProvider.getMaxSearchResultSize());
                 // dont throw here, we still want to return what we got
             } catch (NamingException e) {
                 logger.log(Level.WARNING, "naming exception with filter " + filter, e);
@@ -587,7 +581,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      *
      * @return a collection containing EntityHeader objects
      */
-    public Set<IdentityHeader> getUserHeaders(LdapGroup group) throws FindException {
+    public EntityHeaderSet<IdentityHeader> getUserHeaders(LdapGroup group) throws FindException {
         NamingEnumeration answer = null;
         DirContext context = null;
 
@@ -595,7 +589,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             LdapIdentityProvider identityProvider = getIdentityProvider();
             LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
 
-            Set<IdentityHeader> headers = new HashSet<IdentityHeader>();
+            EntityHeaderSet<IdentityHeader> headers = new EntityHeaderSet<IdentityHeader>();
 
             String dn = group.getDn();
             context = identityProvider.getBrowseContext();
@@ -763,7 +757,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         return identityProvider.getUserManager();
     }
 
-    private void collectOUGroupMembers(DirContext context, String dn, Set<IdentityHeader> memberHeaders) throws NamingException {
+    private void collectOUGroupMembers(DirContext context, String dn, EntityHeaderSet<IdentityHeader> memberHeaders) throws NamingException {
         LdapIdentityProvider identityProvider = getIdentityProvider();
         long maxSize = identityProvider.getMaxSearchResultSize();
         if (memberHeaders.size() >= maxSize) return;
@@ -788,10 +782,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             }
         } catch (SizeLimitExceededException e) {
             // add something to the result that indicates the fact that the search criteria is too wide
-            logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
-                                   "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
-                                   e);
-            memberHeaders.add(MAX_EXCEEDED);
+            logger.log(Level.FINE, "the search results exceeded the maximum.", e);
+            memberHeaders.setMaxExceeded(identityProvider.getMaxSearchResultSize());
             // dont throw here, we still want to return what we got
         }
         answer.close();
@@ -820,17 +812,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             }
         } catch (SizeLimitExceededException e) {
             // add something to the result that indicates the fact that the search criteria is too wide
-            logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
-                                   "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
-                                   e);
-            IdentityHeader maxExceeded = new IdentityHeader(
-                    getProviderOid(),
-                    "noid",
-                    EntityType.MAXED_OUT_SEARCH_RESULT,
-                    "Too Many Entries",
-                    "This search yields too many entities. " +
-                    "Please narrow your search criterion.");
-            memberHeaders.add(maxExceeded);
+            logger.log(Level.FINE, "the search results exceeded the maximum.", e);
+            memberHeaders.setMaxExceeded(identityProvider.getMaxSearchResultSize());
             // dont throw here, we still want to return what we got
         }
         answer.close();
@@ -907,6 +890,5 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     private LdapIdentityProviderConfig identityProviderConfig;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private LdapIdentityProvider identityProvider;
-    private IdentityHeader MAX_EXCEEDED;
     private long providerOid;
 }

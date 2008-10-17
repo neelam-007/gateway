@@ -3,34 +3,36 @@ package com.l7tech.server.identity.ldap;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.kerberos.KerberosServiceTicket;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.Background;
-import com.l7tech.util.Pair;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.identity.ldap.*;
+import com.l7tech.identity.ldap.GroupMappingConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.mapping.LdapAttributeMapping;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.kerberos.KerberosServiceTicket;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.ConfigurableIdentityProvider;
+import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
+import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
+import com.l7tech.util.ResourceUtils;
 import com.sun.jndi.ldap.LdapURL;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
@@ -39,9 +41,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import javax.naming.*;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.common.io.CertUtils;
-
 import javax.naming.directory.*;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -637,7 +636,7 @@ public class LdapIdentityProviderImpl
      * @param searchString the search string for the users and group names, use "*" for all
      * @return a collection containing EntityHeader objects
      */
-    public Collection<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
+    public EntityHeaderSet<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
         if (types == null || types.length < 1) {
             throw new IllegalArgumentException("must pass at least one type");
         }
@@ -670,9 +669,7 @@ public class LdapIdentityProviderImpl
             filter = groupSearchFilterWithParam(searchString);
 
         // no group mapping is now allowed
-        if (filter == null) {
-            return Collections.emptySet();
-        }
+        if (filter == null) return EntityHeaderSet.empty();
 
         return doSearch(filter);
     }
@@ -813,8 +810,8 @@ public class LdapIdentityProviderImpl
     }
 
 
-    private Collection<IdentityHeader> doSearch(String filter) throws FindException {
-        Collection<IdentityHeader> output = new TreeSet<IdentityHeader>();
+    private EntityHeaderSet<IdentityHeader> doSearch(String filter) throws FindException {
+        EntityHeaderSet<IdentityHeader> output = new EntityHeaderSet<IdentityHeader>(new TreeSet<IdentityHeader>());
         DirContext context = null;
         NamingEnumeration answer = null;
         try {
@@ -837,17 +834,8 @@ public class LdapIdentityProviderImpl
             }
         } catch (SizeLimitExceededException e) {
             // add something to the result that indicates the fact that the search criteria is too wide
-            logger.log(Level.FINE, "the search results exceede the maximum. adding a " +
-                                   "EntityType.MAXED_OUT_SEARCH_RESULT to the results '" +
-                                   e.getMessage() + "'");
-
-            IdentityHeader maxExceeded = new IdentityHeader(config.getOid(),
-                                                        "noid",
-                                                        EntityType.MAXED_OUT_SEARCH_RESULT,
-                                                        "Search criterion too wide",
-                                                        "This search yields too many entities. " +
-                                                        "Please narrow your search criterion.");
-            output.add(maxExceeded);
+            logger.log(Level.FINE, "the search results exceede the maximum: '" + e.getMessage() + "'");
+            output.setMaxExceeded(getMaxSearchResultSize());
             // dont throw here, we still want to return what we got
         } catch (javax.naming.AuthenticationException ae) {
             logger.log(Level.WARNING, "LDAP authentication error '" + ExceptionUtils.getMessage(ae) + "'.", ExceptionUtils.getDebugException(ae));
@@ -866,14 +854,14 @@ public class LdapIdentityProviderImpl
         return output;
     }
 
-    public Collection<IdentityHeader> search(boolean getusers, boolean getgroups, IdentityMapping mapping, Object attValue) throws FindException {
+    public EntityHeaderSet<IdentityHeader> search(boolean getusers, boolean getgroups, IdentityMapping mapping, Object attValue) throws FindException {
         if (mapping instanceof LdapAttributeMapping) {
             LdapAttributeMapping lam = (LdapAttributeMapping) mapping;
             String attName = lam.getCustomAttributeName();
 
             if (!(getusers || getgroups)) {
                 logger.info("Nothing to search for - specified EntityType not supported by this IdentityMapping");
-                return Collections.emptyList();
+                return EntityHeaderSet.empty();
             }
 
             String userFilter = null;

@@ -182,8 +182,8 @@ public class RegistryStub extends Registry {
                 throw new DeleteException("Can't delete roles in stub mode");
             }
 
-            public EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException {
-                return new EntityHeader[] {new EntityHeader(role.getId(), com.l7tech.objectmodel.EntityType.RBAC_ROLE, role.getName(), role.getDescription())};
+            public EntityHeaderSet<EntityHeader> findEntities(Class<? extends Entity> entityClass) throws FindException {
+                return new EntityHeaderSet<EntityHeader>(new EntityHeader(role.getId(), com.l7tech.objectmodel.EntityType.RBAC_ROLE, role.getName(), role.getDescription()));
             }
         };
     }

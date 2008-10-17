@@ -4,6 +4,7 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
+import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
@@ -241,7 +242,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
 
-    public Collection<IdentityHeader> search(String searchString) throws FindException {
+    public EntityHeaderSet<IdentityHeader> search(String searchString) throws FindException {
         LdapIdentityProvider identityProvider = getIdentityProvider();
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }

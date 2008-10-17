@@ -3,13 +3,14 @@
  */
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.util.Functions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityHeaderSet;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -73,13 +74,13 @@ public class FindEntityDialog extends JDialog {
         Utilities.setEnterAction(this, okAction);
         Utilities.setEscKeyStrokeDisposes(this);
 
-        EntityHeader[] headers;
+        EntityHeaderSet<EntityHeader> headers;
         try {
             headers = Registry.getDefault().getRbacAdmin().findEntities(entityType.getEntityClass());
         } catch (Exception e) {
             throw new RuntimeException("Couldn't find " + entityType.getName(), e);
         }
-        list.setModel(new DefaultComboBoxModel(headers));
+        list.setModel(new DefaultComboBoxModel(headers.toArray(new EntityHeader[headers.size()])));
         list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 enableDisable();

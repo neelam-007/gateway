@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -28,26 +27,27 @@ import java.util.logging.Logger;
 public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinder {
     private static final Logger logger = Logger.getLogger(EntityFinderImpl.class.getName());
     private IdentityProviderFactory identityProviderFactory;
+    private static final int MAX_RESULTS = 100;
 
     public void setIdentityProviderFactory(IdentityProviderFactory ipf) {
         identityProviderFactory = ipf;        
     }
 
     @Transactional(readOnly=true)
-    public EntityHeader[] findAll(final Class<? extends Entity> entityClass) throws FindException {
+    public EntityHeaderSet<EntityHeader> findAll(final Class<? extends Entity> entityClass) throws FindException {
         final boolean names = NamedEntity.class.isAssignableFrom(entityClass);
         final EntityType type = EntityHeaderUtils.getEntityHeaderType(entityClass);
         try {
-            return (EntityHeader[])getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            return (EntityHeaderSet<EntityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     Criteria crit = session.createCriteria(entityClass);
                     ProjectionList pl = Projections.projectionList();
                     pl.add(Projections.property("oid"));
                     if (names) pl.add(Projections.property("name"));
                     crit.setProjection(pl);
-                    crit.setMaxResults(100);
+                    crit.setMaxResults(MAX_RESULTS);
                     List arrays = crit.list();
-                    List<EntityHeader> headers = new ArrayList<EntityHeader>();
+                    EntityHeaderSet<EntityHeader> headers = new EntityHeaderSet<EntityHeader>();
                     for (Iterator i = arrays.iterator(); i.hasNext();) {
                         Long oid;
                         String name;
@@ -61,9 +61,10 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                         }
                         headers.add(new EntityHeader(oid.toString(), type, name, null));
                     }
-                    if (arrays.size() >= 100)
-                        headers.add(new EntityHeader("-1", EntityType.MAXED_OUT_SEARCH_RESULT, "Too many results", null));
-                    return headers.toArray(new EntityHeader[0]);
+
+                    if (arrays.size() >= MAX_RESULTS) headers.setMaxExceeded(MAX_RESULTS);
+
+                    return headers;
                 }
             });
         } catch (DataAccessResourceFailureException e) {

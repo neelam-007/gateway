@@ -2,13 +2,13 @@ package com.l7tech.identity;
 
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.mapping.IdentityMapping;
+import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import java.security.cert.X509Certificate;
-import java.util.Collection;
 
 /**
  * @author alex
@@ -34,9 +34,9 @@ public interface IdentityProvider<UT extends User, GT extends Group, UMT extends
      * searches for users and groups whose name match the pattern described in searchString
      * pattern may include wildcard such as * character
      */
-    Collection<IdentityHeader> search(EntityType[] types, String searchString) throws FindException;
+    EntityHeaderSet<IdentityHeader> search(EntityType[] types, String searchString) throws FindException;
 
-    Collection<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException;
+    EntityHeaderSet<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException;
 
     String getAuthRealm();
 

@@ -67,5 +67,5 @@ public interface RbacAdmin {
 
     @Transactional(readOnly=true)
     @Secured(types=EntityType.ANY, stereotype=FIND_HEADERS)
-    EntityHeader[] findEntities(Class<? extends Entity> entityClass) throws FindException;
+    EntityHeaderSet<EntityHeader> findEntities(Class<? extends Entity> entityClass) throws FindException;
 }

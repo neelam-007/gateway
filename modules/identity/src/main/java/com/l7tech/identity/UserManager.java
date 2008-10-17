@@ -64,7 +64,7 @@ public interface UserManager<UT extends User> {
     /**
      * Finds users whose name or login matches the specified pattern.
      */
-    Collection<IdentityHeader> search(String searchString) throws FindException;
+    EntityHeaderSet<IdentityHeader> search(String searchString) throws FindException;
 
     /**
      * Creates an {@link IdentityHeader} pointing to the specified {@link User}.

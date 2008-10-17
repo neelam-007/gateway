@@ -100,13 +100,13 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      *          thrown if an SQL error is encountered
      * @see PersistentGroupManager
      */
-    public Collection<IdentityHeader> search(final String searchString) throws FindException {
+    public EntityHeaderSet<IdentityHeader> search(final String searchString) throws FindException {
         // replace wildcards to match stuff understood by mysql
         // replace * with % and ? with _
         // note. is this portable?
         try {
             //noinspection unchecked
-            return (Collection<IdentityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            return (EntityHeaderSet<IdentityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria search = session.createCriteria(getImpClass());
@@ -114,13 +114,13 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                     search.add(Restrictions.ilike(getNameFieldname(), s));
                     addFindAllCriteria(search);
                     List entities = search.list();
-                    List<IdentityHeader> headers = new ArrayList<IdentityHeader>();
+                    EntityHeaderSet<IdentityHeader> headers = new EntityHeaderSet<IdentityHeader>();
                     for (Object entity : entities) {
                         //noinspection unchecked
                         UT user = (UT) entity;
                         headers.add(userToHeader(user));
                     }
-                    return Collections.unmodifiableList(headers);
+                    return headers;
                 }
             });
         } catch (Exception e) {
