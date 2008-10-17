@@ -63,6 +63,8 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.util.*;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.GZIPInputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -79,7 +81,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        frame = new JFrame("GClient v0.7");
+        frame = new JFrame("GClient v0.8");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -146,6 +148,7 @@ public class GClient {
     private JLabel serverCertLabel;
     private JRadioButton textMessageRadioButton;
     private JRadioButton bytesMessageRadioButton;
+    private JCheckBox gzipCheckBox;
 
 
     //
@@ -786,6 +789,13 @@ public class GClient {
         }
     }
 
+    private byte[] compress( final byte[] data ) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        GZIPOutputStream gout = new GZIPOutputStream(baos);
+        gout.write(data);
+        gout.close();
+        return baos.toByteArray();
+    }
 
     /**
      * Send the message text to the selected uri (if it parses)
@@ -801,6 +811,7 @@ public class GClient {
         final String message = requestTextArea.getText();
         final String contentType = (String) contentTypeComboBox.getSelectedItem();
         final String cookies = cookiesTextField.getText();
+        final boolean gzip = gzipCheckBox.isSelected();
 
         try {
             boolean isFastInfoset = contentType.indexOf("fastinfoset") > 0;
@@ -824,6 +835,10 @@ public class GClient {
                 requestBytes = message.getBytes("UTF-8");
             }
 
+            if ( gzip ) {
+                requestBytes = compress( requestBytes );
+            }
+
             int threads = (Integer)threadSpinner.getValue();
             final int requests = (Integer)requestSpinner.getValue();
 
@@ -834,7 +849,7 @@ public class GClient {
                 final long startTime = System.currentTimeMillis();
                 for(int i=0; i<requests; i++) {
                     String[] responseData = !isJms ?
-                            doMessage(soapAction, targetUrl, cookies, requestBytes) :
+                            doMessage(soapAction, targetUrl, cookies, requestBytes, gzip) :
                             doJmsMessage(targetUrl, requestBytes);
                     if(responseData!=null) {
                         statusLabel.setText(responseData[0]);
@@ -869,7 +884,7 @@ public class GClient {
                     requestThreads[t] = new Thread(requestGroup, new Runnable(){
                         public void run() {
                             for(int i=0; i<requests; i++) {
-                                String[] responseData = doMessage(soapAction, targetUrl, null, requestData);
+                                String[] responseData = doMessage(soapAction, targetUrl, null, requestData, gzip);
                                 if(responseData==null) {
                                     System.out.println("Request thread exiting after error!");
                                     //noinspection unchecked
@@ -935,7 +950,7 @@ public class GClient {
         client = new CommonsHttpClient(mhcm);
     }*/
     ThreadLocal clientLocal = new ThreadLocal();
-    private String[] doMessage(String soapAction, String targetUrl, String cookies, final byte[] requestBytes) {
+    private String[] doMessage(String soapAction, String targetUrl, String cookies, final byte[] requestBytes, final boolean gzip) {
 
         GenericHttpClient client = (GenericHttpClient) clientLocal.get();
         if(client==null) {
@@ -979,6 +994,9 @@ public class GClient {
             if (soap11Checkbox.isSelected()) {
                 headers.add(new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction));
             }
+            if (gzip) {
+                headers.add(new GenericHttpHeader("Content-Encoding", "gzip"));
+            }
             if (!headers.isEmpty())
                 params.setExtraHeaders(headers.toArray(new GenericHttpHeader[0]));
 
@@ -1006,7 +1024,9 @@ public class GClient {
             ContentTypeHeader type = response.getContentType();
             if (type == null) type = ContentTypeHeader.TEXT_DEFAULT;
             responseIn = response.getInputStream();
-            String responseText = new String(IOUtils.slurpStream(responseIn), type.getEncoding());
+            String responseText = "gzip".equals(response.getHeaders().getFirstValue("Content-Encoding")) ?
+                    new String(IOUtils.slurpStream(new GZIPInputStream(responseIn)), type.getEncoding()) :
+                    new String(IOUtils.slurpStream(responseIn), type.getEncoding());
 
             return new String[]{response==null ? "" : Integer.toString(response.getStatus()),
                                 response==null || response.getContentLength()==null ? "" : response.getContentLength().toString(),

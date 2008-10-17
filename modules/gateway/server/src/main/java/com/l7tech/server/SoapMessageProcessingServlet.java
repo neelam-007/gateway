@@ -25,7 +25,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -39,7 +38,6 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.objectmodel.FindException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.xml.sax.SAXException;
@@ -90,10 +88,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private WebApplicationContext applicationContext;
+    private ServerConfig serverConfig;
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
-    private ClusterPropertyManager clusterPropertyManager;
     private ClusterPropertyCache clusterPropertyCache;
     private LicenseManager licenseManager;
     private StashManagerFactory stashManagerFactory;
@@ -106,10 +104,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
+        serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
         messageProcessor = (MessageProcessor)applicationContext.getBean("messageProcessor");
         auditContext = (AuditContext)applicationContext.getBean("auditContext");
         soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
-        clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
         clusterPropertyCache = (ClusterPropertyCache)applicationContext.getBean("clusterPropertyCache");
         licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
         stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
@@ -137,28 +135,24 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         boolean gzipEncodedTransaction = false;
         if (maybegzipencoding != null) { // case of value ?
             if (maybegzipencoding.contains("gzip")) {
-                try {
-                    if("false".equalsIgnoreCase(clusterPropertyManager.getProperty("request.compress.gzip.allow"))) {
-                        logger.log(Level.WARNING, "Rejecting GZIP compressed request.");
-                        String soapFault = GZIP_REQUESTS_FORBIDDEN_SOAP_FAULT.replace("http://soong:8080/xml/blub",
-                                hrequest.getScheme() + "://" + hrequest.getServerName() +
-                                (hrequest.getServerPort() == 80 ? "" : ":" + hrequest.getServerPort()) +
-                                hrequest.getRequestURI());
-                        OutputStream responseStream = null;
-                        try {
-                            responseStream = hresponse.getOutputStream();
-                            hresponse.setStatus(500);
-                            hresponse.setContentType(DEFAULT_CONTENT_TYPE);
-                            responseStream.write(soapFault.getBytes("UTF-8"));
-                        } finally {
-                            if(responseStream != null) responseStream.close();
-                        }
-                        return;
+                if( !serverConfig.getBooleanProperty("request.compress.gzip.allow", true) ) {
+                    logger.log(Level.WARNING, "Rejecting GZIP compressed request.");
+                    String soapFault = GZIP_REQUESTS_FORBIDDEN_SOAP_FAULT.replace("http://soong:8080/xml/blub",
+                            hrequest.getScheme() + "://" + hrequest.getServerName() +
+                            (hrequest.getServerPort() == 80 ? "" : ":" + hrequest.getServerPort()) +
+                            hrequest.getRequestURI());
+                    OutputStream responseStream = null;
+                    try {
+                        responseStream = hresponse.getOutputStream();
+                        hresponse.setStatus(500);
+                        hresponse.setContentType(DEFAULT_CONTENT_TYPE);
+                        responseStream.write(soapFault.getBytes("UTF-8"));
+                    } finally {
+                        if(responseStream != null) responseStream.close();
                     }
-                } catch(FindException e) {
-                    // Assume that GZipped requests are allowed
+                    return;
                 }
-                
+
                 gzipEncodedTransaction = true;
                 logger.fine("request with gzip content-encoding detected " + hrequest.getContentLength());
                 //logger.info("Compression #2");

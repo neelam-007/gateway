@@ -348,7 +348,7 @@
             </constraints>
             <properties>
               <continuousLayout value="false"/>
-              <dividerLocation value="143"/>
+              <dividerLocation value="141"/>
               <focusTraversalPolicyProvider value="false"/>
               <oneTouchExpandable value="true"/>
               <orientation value="0"/>
@@ -446,14 +446,6 @@
             </constraints>
             <properties>
               <text value="ContentType:"/>
-            </properties>
-          </component>
-          <component id="36817" class="javax.swing.JComboBox" binding="contentTypeComboBox">
-            <constraints>
-              <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <editable value="true"/>
             </properties>
           </component>
           <component id="e1d36" class="javax.swing.JLabel">
@@ -556,6 +548,32 @@
               <text value="JMS Message Type"/>
             </properties>
           </component>
+          <grid id="256e8" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="36817" class="javax.swing.JComboBox" binding="contentTypeComboBox">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <editable value="true"/>
+                </properties>
+              </component>
+              <component id="976c7" class="javax.swing.JCheckBox" binding="gzipCheckBox">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="GZIP"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
         </children>
       </grid>
     </children>
