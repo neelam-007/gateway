@@ -2,6 +2,7 @@ package com.l7tech.console.security;
 
 import com.l7tech.identity.UserBean;
 import com.l7tech.gateway.common.VersionException;
+import com.l7tech.objectmodel.InvalidPasswordException;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
@@ -17,8 +18,8 @@ public class SecurityProviderStub extends SecurityProvider {
     /**
      * Stub mode login. Set the new credenitals with what was passed
      */
-    public void login(PasswordAuthentication creds, String host, boolean validateHost)
-      throws LoginException, VersionException {
+    public void login(PasswordAuthentication creds, String host, boolean validateHost, String newPassword)
+      throws LoginException, VersionException, InvalidPasswordException {
         this.user = new UserBean(creds.getUserName());
     }
 

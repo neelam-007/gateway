@@ -58,7 +58,7 @@ public class SsgAdminSession {
         TopComponents.getInstance().registerComponent("mainWindow", new MainWindow(app));
 
         try {
-            credentialManager.getAuthenticationProvider().login(new PasswordAuthentication(this.adminLogin, this.adminPass.toCharArray()), this.ssgHost, false);
+            credentialManager.getAuthenticationProvider().login(new PasswordAuthentication(this.adminLogin, this.adminPass.toCharArray()), this.ssgHost, false, null);
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "version problem!", e);
         }
