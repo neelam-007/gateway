@@ -68,7 +68,7 @@ public class ReportOutputHandler extends AbstractHandler {
         }
         sb.append("</table>");
 
-        System.out.println(sb.toString());
+        //System.out.println(sb.toString());
         httpServletResponse.setContentType("text/html");
         httpServletResponse.getWriter().println(sb.toString());
         httpServletResponse.setStatus(HttpServletResponse.SC_OK);

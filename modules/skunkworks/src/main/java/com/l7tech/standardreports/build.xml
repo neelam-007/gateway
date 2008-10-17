@@ -4,6 +4,7 @@
 
 	<property name="class.name" value="com.l7tech.standardreports.ReportApp" />
     <property name="test_data_class.name" value="com.l7tech.standardreports.CreateTestData" />
+    <property name="demo_class.name" value="com.l7tech.standardreports.demo.RunJetty" />
     <property name="ems.classes.dir" value="../../../../../../../../modules/ems/build/classes" />
     <property name="lib" value="../../../../../../../../lib" />
     <property name="ems.dependency.dir" value="../../../../../../../../modules/ems/build/dependency" />
@@ -64,6 +65,12 @@
     <target name="test_data" description="Creates test data for the supplied services for the maximum default retention
     period for hourly and daily metric bins">
         <java classname="${test_data_class.name}" fork="true">
+            <classpath refid="classpath"/>
+        </java>
+    </target>
+
+    <target name="run_demo" description="Runs demo">
+        <java classname="${demo_class.name}" fork="true">
             <classpath refid="classpath"/>
         </java>
     </target>

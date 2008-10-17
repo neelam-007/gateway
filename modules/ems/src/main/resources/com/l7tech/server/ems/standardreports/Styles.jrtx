@@ -47,7 +47,7 @@
             <rightPen lineWidth="1.0"/>
         </box>
     </style>
-    <!--#0000ff-->
+    <!-- E8EDB4 #0000ff-->
     <style
             name="FrameTableTop"
             isDefault="false"

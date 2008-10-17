@@ -89,7 +89,7 @@ public class FillReportHandler extends AbstractHandler {
         base_request.setHandled(true);
 
         String summary = httpServletRequest.getParameter(IS_SUMMARY);
-        System.out.println("Summary: " + summary);
+//        System.out.println("Summary: " + summary);
 
         final boolean isSummary = (summary.equalsIgnoreCase("true"))? true: false;
         String relativeTimeUnit = httpServletRequest.getParameter(RELATIVE_TIME_UNIT);
@@ -136,7 +136,7 @@ public class FillReportHandler extends AbstractHandler {
         //if isDetail is true, then so must context mapping be.
         //if isDetail is false, context mapping can still be true on account of keys above
         if(isDetail) isContextMapping = true;
-        reportProps.put(IS_CONTEXT_MAPPING, isContextMapping);
+
 
         reportProps.put(IS_RELATIVE, true);
         reportProps.put(RELATIVE_TIME_UNIT, relativeTimeUnit);
@@ -165,10 +165,15 @@ public class FillReportHandler extends AbstractHandler {
             reportProps.put("OPERATIONS", operations);
         }
 
-        reportProps.put("USE_USER", false);
-
-        List<String> authUser = new ArrayList<String>();
-        reportProps.put("AUTHENTICATED_USERS", authUser);
+        List<String> authUsers = getListParameter("AUTHENTICATED_USER", httpServletRequest);
+        boolean useUser = !authUsers.isEmpty();
+        
+        //use is a mapping, so if true, use it
+        if(useUser) isContextMapping = true;
+        reportProps.put(IS_CONTEXT_MAPPING, isContextMapping);
+        
+        reportProps.put("USE_USER", useUser);
+        reportProps.put("AUTHENTICATED_USERS", authUsers);
 
         JasperPrint jp = null;
         try {
