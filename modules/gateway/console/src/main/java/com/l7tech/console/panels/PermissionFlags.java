@@ -6,7 +6,7 @@ package com.l7tech.console.panels;
 import java.util.Collection;
 import java.util.Collections;
 
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.security.SecurityProvider;

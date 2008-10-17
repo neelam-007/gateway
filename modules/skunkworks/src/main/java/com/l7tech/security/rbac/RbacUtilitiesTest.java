@@ -10,7 +10,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 
 import java.text.MessageFormat;
 

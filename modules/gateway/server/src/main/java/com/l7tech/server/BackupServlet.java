@@ -10,7 +10,7 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.ServiceMessages;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.BadCredentialsException;

@@ -102,7 +102,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
     public void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException, ConstraintViolationException {
         policyManager.delete(oid);
-        roleManager.deleteEntitySpecificRole( com.l7tech.gateway.common.security.rbac.EntityType.POLICY, oid);
+        roleManager.deleteEntitySpecificRole(EntityType.POLICY, oid);
     }
 
     public long savePolicy(Policy policy) throws SaveException {

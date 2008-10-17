@@ -5,7 +5,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import static com.l7tech.gateway.common.security.rbac.EntityType.USER;
+import static com.l7tech.objectmodel.EntityType.USER;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gui.MaxLengthDocument;

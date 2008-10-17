@@ -4,7 +4,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DeleteException;

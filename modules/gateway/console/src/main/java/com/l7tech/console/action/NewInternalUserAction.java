@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.NewInternalUserDialog;
 import com.l7tech.console.tree.IdentityProviderNode;

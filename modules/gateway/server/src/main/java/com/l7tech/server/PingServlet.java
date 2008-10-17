@@ -12,7 +12,7 @@ import com.l7tech.common.io.ProcUtils;
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.http.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.util.TextUtils;

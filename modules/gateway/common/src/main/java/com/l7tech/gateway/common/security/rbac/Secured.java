@@ -3,6 +3,8 @@
  */
 package com.l7tech.gateway.common.security.rbac;
 
+import com.l7tech.objectmodel.EntityType;
+
 import java.lang.annotation.Documented;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;

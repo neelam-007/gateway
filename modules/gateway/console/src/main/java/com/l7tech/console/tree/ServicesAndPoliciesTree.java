@@ -7,7 +7,7 @@ import com.l7tech.console.tree.servicesAndPolicies.ServicesAndPoliciesTreeTransf
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.ClipboardActions;

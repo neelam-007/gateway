@@ -19,6 +19,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.EntityType;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;

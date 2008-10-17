@@ -4,7 +4,7 @@
 
 package com.l7tech.gateway.common.audit;
 
-import static com.l7tech.gateway.common.security.rbac.EntityType.AUDIT_RECORD;
+import static com.l7tech.objectmodel.EntityType.AUDIT_RECORD;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.util.OpaqueId;

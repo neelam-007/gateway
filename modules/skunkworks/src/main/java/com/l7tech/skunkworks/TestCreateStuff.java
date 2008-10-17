@@ -5,7 +5,7 @@ package com.l7tech.skunkworks;
 
 import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttributePredicate;
 import com.l7tech.gateway.common.security.rbac.ScopePredicate;
 import com.l7tech.gateway.common.security.rbac.Permission;

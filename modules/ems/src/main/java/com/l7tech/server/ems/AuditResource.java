@@ -17,7 +17,7 @@ import java.util.Locale;
 import com.l7tech.server.audit.AuditDownloadManager;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 
 /**
  * Web resource for audit downloads. 

@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 
 /**
  * Web resource for log files. 

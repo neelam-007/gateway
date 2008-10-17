@@ -360,7 +360,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @Transactional(propagation=SUPPORTS)
     public EntityType getEntityType() {
-        return EntityType.UNDEFINED;
+        return EntityType.ANY;
     }
 
     @Transactional(readOnly=true)

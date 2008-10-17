@@ -6,7 +6,7 @@ package com.l7tech.console.action;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.console.panels.dashboard.DashboardWindow;
 
 import java.awt.*;

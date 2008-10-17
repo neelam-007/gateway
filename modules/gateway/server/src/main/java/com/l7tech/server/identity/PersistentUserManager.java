@@ -7,7 +7,7 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 
 /**
  * @author alex

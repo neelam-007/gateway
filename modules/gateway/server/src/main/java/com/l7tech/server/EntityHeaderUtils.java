@@ -37,7 +37,7 @@ public final class EntityHeaderUtils {
         if (SampleMessage.class.isAssignableFrom(entityClass)) return EntityType.SAMPLE_MESSAGE;
         if (Role.class.isAssignableFrom(entityClass)) return EntityType.RBAC_ROLE;
         if (Policy.class.isAssignableFrom(entityClass)) return EntityType.POLICY;
-        return EntityType.UNDEFINED;
+        return EntityType.ANY;
     }
 
     /**
@@ -88,7 +88,7 @@ public final class EntityHeaderUtils {
             return new AnonymousEntityReference(Folder.class, header.getOid(), header.getName());
         } else if (type == EntityType.MAXED_OUT_SEARCH_RESULT) {
             return null;
-        } else if (type == EntityType.UNDEFINED) {
+        } else if (type == EntityType.ANY) {
             throw new IllegalArgumentException("Can't get reference to " + header.toString());
         } else {
             throw new IllegalArgumentException("Can't get reference to " + header.toString());

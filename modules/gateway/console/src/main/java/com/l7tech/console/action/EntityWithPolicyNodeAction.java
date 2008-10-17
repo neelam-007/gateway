@@ -10,6 +10,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityType;
 
 /**
  * Abstract class providing common logic for any policy, service or alias

@@ -3,8 +3,8 @@
  */
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.gateway.common.security.rbac.EntityType;
-import static com.l7tech.gateway.common.security.rbac.EntityType.ANY;
+import com.l7tech.objectmodel.EntityType;
+import static com.l7tech.objectmodel.EntityType.ANY;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.identity.User;
@@ -123,7 +123,7 @@ public class RoleManagerImpl
             for (Permission perm : role.getPermissions()) {
                 if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
                 if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
-                com.l7tech.gateway.common.security.rbac.EntityType ptype = perm.getEntityType();
+                EntityType ptype = perm.getEntityType();
 
                 if (ptype == ANY) return true; // Permitted against all types
                 permittedTypes.put(ptype, true); // Permitted for this type
@@ -153,7 +153,7 @@ public class RoleManagerImpl
             for (Permission perm : role.getPermissions()) {
                 if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
                 if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
-                com.l7tech.gateway.common.security.rbac.EntityType ptype = perm.getEntityType();
+                EntityType ptype = perm.getEntityType();
                 if (ptype == ANY || ptype == requiredType) return true;
             }
         }

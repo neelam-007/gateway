@@ -4,11 +4,10 @@
 
 package com.l7tech.gateway.common.service;
 
-import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.admin.Administrative;
 
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
@@ -24,7 +23,7 @@ import java.net.MalformedURLException;
  *            be maintaned. Therefore, do not remove or modify existing
  *            method declarations.
  */
-@Secured(types=SERVICE)
+@Secured(types= EntityType.SERVICE)
 public interface ServiceAdminPublic {
     /**
      * Retrieve all available published services.
@@ -75,5 +74,5 @@ public interface ServiceAdminPublic {
      * @throws MalformedURLException thrown on malformed WSDL url
      */
     @Transactional(propagation=SUPPORTS)
-    String resolveWsdlTarget(String url) throws IOException, MalformedURLException;
+    String resolveWsdlTarget(String url) throws IOException;
 }

@@ -11,7 +11,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import javax.swing.*;
 
-import static com.l7tech.gateway.common.security.rbac.EntityType.TRUSTED_CERT;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.CertEvent;

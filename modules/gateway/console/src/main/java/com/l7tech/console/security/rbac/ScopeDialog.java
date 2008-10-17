@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import java.awt.*;

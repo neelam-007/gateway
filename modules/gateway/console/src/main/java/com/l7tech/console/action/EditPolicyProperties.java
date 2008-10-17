@@ -9,7 +9,7 @@ import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.util.Functions;
 import com.l7tech.console.panels.PolicyPropertiesPanel;

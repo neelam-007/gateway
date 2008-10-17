@@ -5,8 +5,8 @@
 
 package com.l7tech.server.upgrade;
 
-import static com.l7tech.gateway.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
-import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE;
+import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
+import static com.l7tech.objectmodel.EntityType.SERVICE;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;

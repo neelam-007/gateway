@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.util.Functions;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.EntityType;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;

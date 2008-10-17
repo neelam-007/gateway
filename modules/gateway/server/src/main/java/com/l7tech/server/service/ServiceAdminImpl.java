@@ -6,7 +6,7 @@ import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE;
+import static com.l7tech.objectmodel.EntityType.SERVICE;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyValidator;

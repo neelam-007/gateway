@@ -4,7 +4,7 @@
 package com.l7tech.server.upgrade;
 
 import com.l7tech.policy.Policy;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.ObjectModelException;

@@ -3,7 +3,7 @@ package com.l7tech.gateway.common.admin;
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.SAVE_OR_UPDATE;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_HEADERS;

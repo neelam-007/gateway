@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.admin;
 
-import static com.l7tech.gateway.common.security.rbac.EntityType.*;
+import static com.l7tech.objectmodel.EntityType.*;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;

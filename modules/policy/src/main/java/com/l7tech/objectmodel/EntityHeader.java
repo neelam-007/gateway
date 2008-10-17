@@ -34,7 +34,7 @@ public class EntityHeader implements Serializable, Comparable {
     }
 
     public EntityHeader() {
-        type = EntityType.UNDEFINED;
+        type = EntityType.ANY;
         description = "";
     }
 
@@ -131,10 +131,10 @@ public class EntityHeader implements Serializable, Comparable {
         if (o == null) throw new NullPointerException();
         EntityHeader other = (EntityHeader)o;
         // bugzilla 2786: if only one of the two is a MAXED_OUT_SEARCH_RESULT, then it should be on top
-        if (!(this.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal() && other.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal())) {
-            if (this.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal()) {
+        if (!(this.type == EntityType.MAXED_OUT_SEARCH_RESULT && other.type == EntityType.MAXED_OUT_SEARCH_RESULT)) {
+            if (this.type == EntityType.MAXED_OUT_SEARCH_RESULT) {
                 return -1;
-            } else if (other.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal()) {
+            } else if (other.type == EntityType.MAXED_OUT_SEARCH_RESULT) {
                 return 1;
             }
         }
@@ -142,7 +142,7 @@ public class EntityHeader implements Serializable, Comparable {
             if (strId.equals(other.strId)) return 0;
         }
         if ( name.equals(((EntityHeader)o).name) ) {
-            return Integer.valueOf(type.getVal()).compareTo(((EntityHeader)o).type.getVal());    
+            return type.compareTo(((EntityHeader)o).type);
         }
         return name.compareTo(((EntityHeader)o).name);
     }

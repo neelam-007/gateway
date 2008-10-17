@@ -7,7 +7,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.event.EventListenerList;
 import java.util.EventListener;

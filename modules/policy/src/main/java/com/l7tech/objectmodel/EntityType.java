@@ -1,224 +1,119 @@
+/**
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.objectmodel;
 
-import java.io.ObjectStreamException;
-import java.io.Serializable;
+import java.util.Comparator;
 
 /**
- * Type of entity represented by an EntityHeader.
- *
- * <br/><br/>
- * Layer 7 Technologies, inc.<br/>
- * User: flascelles<br/>
- * Date: May 26, 2003
- *
+ * Enum of all entity types known to the RBAC system.
  */
-public class EntityType implements Serializable {
-    public static final EntityType ID_PROVIDER_CONFIG = new EntityType(1, "Identity Provider");
-    public static final EntityType USER = new EntityType(2, "User");
-    public static final EntityType GROUP = new EntityType(3, "Group");
-    public static final EntityType SERVICE = new EntityType(4, "Published Service");
-    public static final EntityType JMS_CONNECTION = new EntityType(5, "JMS Connection");
-    public static final EntityType JMS_ENDPOINT = new EntityType(6, "JMS Endpoint");
-    public static final EntityType TRUSTED_CERT = new EntityType(7, "Trusted Certificate");
-    public static final EntityType ALERT_TRIGGER = new EntityType(8, "Alert Trigger");
-    public static final EntityType ALERT_ACTION = new EntityType(9, "Alert Action");
-    public static final EntityType SAMPLE_MESSAGE = new EntityType(10, "Sample Message");
-    public static final EntityType MAXED_OUT_SEARCH_RESULT = new EntityType(11, "Exceeded maximum search result size");
-    public static final EntityType RBAC_ROLE = new EntityType(12, "Role");
-    public static final EntityType ATTRIBUTE_CONFIG = new EntityType(13, "Attribute Config");
-    public static final EntityType SCHEMA_ENTRY = new EntityType(14, "Schema Entry");
-    public static final EntityType PRIVATE_KEY = new EntityType(15, "Private Key");
-    public static final EntityType REVOCATION_CHECK_POLICY = new EntityType(16, "Revocation Check Policy");
-    public static final EntityType CONNECTOR = new EntityType(17, "HTTP(S) Listen Port");
-    public static final EntityType POLICY = new EntityType(18, "Policy");
-    public static final EntityType POLICY_VERSION = new EntityType(19, "Policy Version");
-    public static final EntityType FOLDER = new EntityType(21, "Folder");
-    public static final EntityType SERVICE_ALIAS = new EntityType(22, "Published Service Alias");
-    public static final EntityType POLICY_ALIAS = new EntityType(23, "Policy Alias");
-    public static final EntityType EMAIL_LISTENER = new EntityType(20, "Email Listener");
-    public static final EntityType AUDIT_RECORD = new EntityType(24, "Audit Record");
-    public static final EntityType UNDEFINED = new EntityType(-1, "Undefined");
+public enum EntityType implements Comparable<EntityType> {
+    ANY("<any>", true),
 
-    private static final long serialVersionUID = -5485680679515491927L;
+    ID_PROVIDER_CONFIG("Identity Provider", true),
+    USER("User", true),
+    GROUP("Group", true),
+    SERVICE("Published Service", true),
+    SERVICE_ALIAS("Published Service Alias", true),
+    JMS_CONNECTION("JMS Connection", true),
+    JMS_ENDPOINT("JMS Endpoint", true),
+    TRUSTED_CERT("Trusted Certificate", true),
+    REVOCATION_CHECK_POLICY("Revocation Check Policy", true),
+    SSG_KEY_ENTRY("Private Key", true),
+    ALERT_TRIGGER("Alert Event", false),
+    ALERT_ACTION("Alert Notification", false),
+    SAMPLE_MESSAGE("Sample Message", true),
 
-    private int val;
-    private String name;
+    POLICY("Policy", true),
+    POLICY_ALIAS("Policy Alias", true),
+    POLICY_VERSION("Policy Version", true),
+    FOLDER("Folder", true),
 
-    public EntityType(int num, String name) {
-        this.val = num;
-        this.name = name;
-    }
+    MAP_ATTRIBUTE("Attribute Configuration", false),
+    MAP_IDENTITY("Identity Provider Attribute Mapping", false),
+    MAP_TOKEN("Security Token Attribute Mapping", false),
 
-    /**
-     * Returns a hash code value for the object.
-     * The method is implemented to satisfy general contract of <code>hashCode</code>
-     * and <code>equals</code>.
-     *
-     * @return  a hash code value for this object.
-     * @see     Object#equals(Object)
-     */
-    public int hashCode() {
-        return val;
-    }
+    CLUSTER_PROPERTY("Cluster Property", true),
+    CLUSTER_INFO("Cluster Node Information", true),
+    SERVICE_USAGE("Service Usage Record", true),
+    SCHEMA_ENTRY("Schema Entry", true),
+    METRICS_BIN("Service Metrics Bin", true),
 
+    RBAC_ROLE("Access Control Role", true),
 
-    /**
-     * Indicates whether some other object is "equal to" this one.
-     *
-     * @param   that   the reference object with which to compare.
-     * @return  <code>true</code> if this object is the same as the obj
-     *          argument; <code>false</code> otherwise.
-     * @see     #hashCode()
-     */
-    public boolean equals(java.lang.Object that) {
-        if (that == this) return true;
-        if (!(that instanceof EntityType)) return false;
+    AUDIT_MESSAGE("Audit Record (Message)", true),
+    AUDIT_ADMIN("Audit Record (Admin)", true),
+    AUDIT_SYSTEM("Audit Record (System)", true),
+    AUDIT_RECORD("Audit Record <any type>", true),
 
-        return this.hashCode() == that.hashCode();
-    }
+    LOG_RECORD("Log Record", true),
 
-    /**
-     * this constructor is provided to maintain serializablility use
-     * the static values instead
-     */
-    public EntityType() {
-        val = -1;
-    }
+    SSG_CONNECTOR("Listen Port", true),
 
-    /**
-     * this is exposed for facilitating the serialization of thi enum-type class
-     */
-    public int getVal() {
-        return val;
-    }
+    EMAIL_LISTENER("Email Listener", true),
 
-    /**
-     * this is exposed for facilitating the serialization of thi enum-type class
-     */
-    public void setVal(int val) {
-        this.val = val;
-    }
+    LOG_SINK("Log Sink", true),
+
+    SERVICE_TEMPLATE("Service Template", true),
+
+    TRUSTED_EMS("Trusted EMS", true),
+    TRUSTED_EMS_USER("Trusted EMS User", true),
+
+    @Deprecated
+    MAXED_OUT_SEARCH_RESULT("Exceeded maximum search result size", false),
+    ;
+
+    private final String name;
+    private final boolean displayedInGui;
 
     public String getName() {
         return name;
     }
 
-    /**
-     * this is exposed for facilitating the serialization of thi enum-type class
-     */
-    public void setName(String name) {
+    private EntityType(String name, boolean displayInGui) {
         this.name = name;
+        this.displayedInGui = displayInGui;
     }
 
+    public boolean isDisplayedInGui() {
+        return displayedInGui;
+    }
+
+    @Override
     public String toString() {
-        switch (val) {
-            case 1:
-                return "ID_PROVIDER_CONFIG";
-            case 2:
-                return "USER";
-            case 3:
-                return "GROUP";
-            case 4:
-                return "SERVICE";
-            case 5:
-                return "JMS_CONNECTION";
-            case 6:
-                return "JMS_ENDPOINT";
-            case 7:
-                return "TRUSTED_CERT";
-            case 8:
-                return "ALERT_TRIGGER";
-            case 9:
-                return "ALERT_ACTION";
-            case 10:
-                return "SAMPLE_MESSAGE";
-            case 11:
-                return "MAXED_OUT_SEARCH_RESULT";
-            case 12:
-                return "RBAC_ROLE";
-            case 13:
-                return "ATTRIBUTE_CONFIG";
-            case 14:
-                return "SCHEMA_ENTRY";
-            case 15:
-                return "PRIVATE_KEY";
-            case 16:
-                return "REVOCATION_CHECK_POLICY";
-            case 17:
-                return "CONNECTOR";
-            case 18:
- 	 	        return "POLICY";
-            case 20:
-                return "EMAIL_LISTENER";
-            case 21:
-                return "FOLDER";
-            case 22:
-                return "SERVICE_ALIAS";
-            case 23:
-                return "POLICY_ALIAS";
-            default:
-                return "?";
+        return name;
+    }
+
+    public static final NameComparator NAME_COMPARATOR = new NameComparator();
+
+    private static class NameComparator implements Comparator<EntityType> {
+        public int compare(EntityType o1, EntityType o2) {
+            return o1.getName().compareTo(o2.getName());
         }
     }
 
-    private Object readResolve() throws ObjectStreamException {
-        return fromValue(val);
+    public Class<? extends Entity> getEntityClass() {
+        return EntityTypeRegistry.getEntityClass(this);
     }
 
     /**
-     * necessary for use in web service where those are constructed from value
-     */ 
-    public static EntityType fromValue(int value) {
-        switch (value) {
-            case 1:
-                return ID_PROVIDER_CONFIG;
-            case 2:
-                return USER;
-            case 3:
-                return GROUP;
-            case 4:
-                return SERVICE;
-            case 5:
-                return JMS_CONNECTION;
-            case 6:
-                return JMS_ENDPOINT;
-            case 7:
-                return TRUSTED_CERT;
-            case 8:
-                return ALERT_TRIGGER;
-            case 9:
-                return ALERT_ACTION;
-            case 10:
-                return SAMPLE_MESSAGE;
-            case 11:
-                return MAXED_OUT_SEARCH_RESULT;
-            case 12:
-                return RBAC_ROLE;
-            case 13:
-                return ATTRIBUTE_CONFIG;
-            case 14:
-                return SCHEMA_ENTRY;
-            case 15:
-                return PRIVATE_KEY;
-            case 16:
-                return REVOCATION_CHECK_POLICY;
-            case 17:
-                return CONNECTOR;
-            case 18:
- 	 	        return POLICY;
-            case 19:
-                return POLICY_VERSION;
-            case 20:
-                return EMAIL_LISTENER;
-            case 21:
-                return FOLDER;
-            case 22:
-                return SERVICE_ALIAS;
-            case 23:
-                return POLICY_ALIAS;            
-            default:
-                return UNDEFINED;
+     * Retrieves the EntityType associated with class that implements (or interface that extends) the Entity interface.
+     *
+     * @param entityClass   Entity whoose type is sought. Must not be null.
+     * @return              The EntityType for the entityClass parameter.
+     *
+     * @see com.l7tech.objectmodel.EntityTypeRegistry
+     */
+    public static EntityType findTypeByEntity(Class<? extends Entity> entityClass) {
+        EntityType type = EntityType.ANY;
+        for ( EntityType et : EntityType.values() ) {
+            if ( et == EntityType.ANY || et.getEntityClass() == null ) continue;
+            if ( et.getEntityClass().isAssignableFrom( entityClass )) {
+                type = et;
+                break;
+            }
         }
+        return type;
     }
-
 }

@@ -9,7 +9,7 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import static com.l7tech.gateway.common.security.rbac.EntityType.SCHEMA_ENTRY;
+import static com.l7tech.objectmodel.EntityType.SCHEMA_ENTRY;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.DomUtils;

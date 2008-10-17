@@ -128,7 +128,7 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     }
 
     public EntityType getEntityType() {
-        return EntityType.UNDEFINED;
+        return EntityType.ANY;
     }
 
     public String getTableName() {

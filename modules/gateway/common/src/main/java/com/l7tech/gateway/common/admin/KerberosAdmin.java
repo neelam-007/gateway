@@ -3,7 +3,7 @@ package com.l7tech.gateway.common.admin;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.Keytab;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 
 import java.util.Map;

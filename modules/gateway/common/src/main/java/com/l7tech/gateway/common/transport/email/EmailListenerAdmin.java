@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.transport.email;
 
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import static com.l7tech.gateway.common.security.rbac.EntityType.EMAIL_LISTENER;
+import static com.l7tech.objectmodel.EntityType.EMAIL_LISTENER;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;

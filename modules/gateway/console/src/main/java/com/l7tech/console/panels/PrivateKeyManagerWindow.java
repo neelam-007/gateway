@@ -9,7 +9,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;

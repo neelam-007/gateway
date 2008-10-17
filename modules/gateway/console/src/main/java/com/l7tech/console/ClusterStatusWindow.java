@@ -10,7 +10,6 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.SheetHolder;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.console.action.BaseAction;
@@ -21,6 +20,7 @@ import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.util.*;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 
 import javax.swing.*;

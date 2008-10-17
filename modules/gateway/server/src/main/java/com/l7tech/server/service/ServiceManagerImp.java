@@ -6,7 +6,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
-import static com.l7tech.gateway.common.security.rbac.EntityType.*;
+import static com.l7tech.objectmodel.EntityType.*;
 import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;

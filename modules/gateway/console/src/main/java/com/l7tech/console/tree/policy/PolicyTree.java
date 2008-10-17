@@ -6,7 +6,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.policy.Policy;
 import com.l7tech.console.action.*;

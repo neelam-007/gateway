@@ -8,7 +8,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
-import static com.l7tech.gateway.common.security.rbac.EntityType.TRUSTED_CERT;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.security.SecurityProvider;

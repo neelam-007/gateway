@@ -15,7 +15,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlComposer;
 import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE;
+import static com.l7tech.objectmodel.EntityType.SERVICE;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;

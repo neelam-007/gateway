@@ -5,6 +5,8 @@
  */
 package com.l7tech.gateway.common.alert;
 
+import com.l7tech.objectmodel.EntityType;
+
 import java.io.Serializable;
 
 /**

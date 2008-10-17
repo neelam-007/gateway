@@ -8,6 +8,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;

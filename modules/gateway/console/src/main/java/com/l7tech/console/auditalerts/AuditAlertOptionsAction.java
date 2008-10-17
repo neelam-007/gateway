@@ -2,7 +2,7 @@ package com.l7tech.console.auditalerts;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;

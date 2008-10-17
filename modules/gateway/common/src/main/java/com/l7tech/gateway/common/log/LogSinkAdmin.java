@@ -6,7 +6,7 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITIES;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.SAVE_OR_UPDATE;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
-import static com.l7tech.gateway.common.security.rbac.EntityType.LOG_SINK;
+import static com.l7tech.objectmodel.EntityType.LOG_SINK;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;

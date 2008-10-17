@@ -5,7 +5,7 @@ package com.l7tech.console.logging;
 
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.util.TopComponents;

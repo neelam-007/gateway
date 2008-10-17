@@ -7,7 +7,7 @@ import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.action.*;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 
 import javax.swing.*;

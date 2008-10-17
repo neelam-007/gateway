@@ -1,6 +1,6 @@
 package com.l7tech.server.service;
 
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.identity.User;

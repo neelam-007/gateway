@@ -3,6 +3,8 @@
  */
 package com.l7tech.gateway.common.security.rbac;
 
+import com.l7tech.objectmodel.EntityType;
+
 /**
  * User is allowed to invoke the operation if s/he is permitted to read <em>any</em>
  * instance of the type.

@@ -6,7 +6,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import static com.l7tech.gateway.common.security.rbac.EntityType.JMS_ENDPOINT;
+import static com.l7tech.objectmodel.EntityType.JMS_ENDPOINT;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;

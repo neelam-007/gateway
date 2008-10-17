@@ -2,8 +2,8 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.emstrust.TrustedEms;
 import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
-import com.l7tech.gateway.common.security.rbac.EntityType;
-import static com.l7tech.gateway.common.security.rbac.EntityType.TRUSTED_EMS_USER;
+import com.l7tech.objectmodel.EntityType;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_EMS_USER;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import static com.l7tech.gateway.common.security.rbac.OperationType.CREATE;
 import static com.l7tech.gateway.common.security.rbac.OperationType.READ;

@@ -60,7 +60,7 @@ public class SsgConnectorManagerImpl
 
     @Override
     public EntityType getEntityType() {
-        return EntityType.CONNECTOR;
+        return EntityType.SSG_CONNECTOR;
     }
 
     /**

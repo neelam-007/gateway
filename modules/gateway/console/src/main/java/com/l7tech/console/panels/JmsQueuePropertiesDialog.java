@@ -9,7 +9,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.transport.jms.*;
 import static com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType.*;
@@ -158,7 +158,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate( com.l7tech.gateway.common.security.rbac.EntityType.JMS_ENDPOINT));
+        that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new AttemptedCreate(EntityType.JMS_ENDPOINT));
 
         that.connection = connection;
         that.endpoint = endpoint;

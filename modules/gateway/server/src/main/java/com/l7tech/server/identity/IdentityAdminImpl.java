@@ -2,7 +2,7 @@ package com.l7tech.server.identity;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import static com.l7tech.gateway.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
+import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
@@ -217,12 +217,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
       throws FindException {
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
-            if (types != null) {
-                // TODO is this necessary?   EntityType already has a readResolve()
-                for (int i = 0; i < types.length; i++) {
-                    types[i] = EntityType.fromValue(types[i].getVal());
-                }
-            }
             Collection<IdentityHeader> searchResults = provider.search(types, pattern);
             if (searchResults == null) return new IdentityHeader[0];
             return searchResults.toArray(new IdentityHeader[0]);

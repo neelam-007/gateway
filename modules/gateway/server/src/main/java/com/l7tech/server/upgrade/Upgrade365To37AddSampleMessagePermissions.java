@@ -4,10 +4,11 @@
 package com.l7tech.server.upgrade;
 
 import static com.l7tech.gateway.common.security.rbac.OperationType.*;
-import static com.l7tech.gateway.common.security.rbac.EntityType.SAMPLE_MESSAGE;
+import static com.l7tech.objectmodel.EntityType.SAMPLE_MESSAGE;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.gateway.common.service.PublishedService;

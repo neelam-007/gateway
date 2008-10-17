@@ -39,7 +39,7 @@ public class KeystoreFileManagerImpl
     }
 
     public EntityType getEntityType() {
-        return EntityType.PRIVATE_KEY;
+        return EntityType.SSG_KEY_ENTRY;
     }
 
     public KeystoreFile updateDataBytes(final long id, final Functions.Unary<byte[], byte[]> mutator) throws UpdateException {

@@ -2,9 +2,9 @@ package com.l7tech.server;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.emstrust.TrustedEms;
-import com.l7tech.gateway.common.security.rbac.EntityType;
-import static com.l7tech.gateway.common.security.rbac.EntityType.TRUSTED_CERT;
-import static com.l7tech.gateway.common.security.rbac.EntityType.TRUSTED_EMS;
+import com.l7tech.objectmodel.EntityType;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_EMS;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import com.l7tech.identity.User;

@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.gateway.common.admin.FolderAdmin;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.util.DialogDisplayer;
 

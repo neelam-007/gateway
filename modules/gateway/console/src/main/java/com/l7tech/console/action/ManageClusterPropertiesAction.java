@@ -11,7 +11,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 
 /**
  * Action to manager cluster properties from the ssm.

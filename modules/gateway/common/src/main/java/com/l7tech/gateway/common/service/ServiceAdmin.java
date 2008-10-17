@@ -7,9 +7,6 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.Policy;
-import static com.l7tech.gateway.common.security.rbac.EntityType.SAMPLE_MESSAGE;
-import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE;
-import static com.l7tech.gateway.common.security.rbac.EntityType.*;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.uddi.UDDIRegistryInfo;
@@ -46,7 +43,7 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      * @throws FindException if there was a problem accessing the requested information.
      */
     @Transactional(readOnly=true)
-    @Secured(types=SERVICE, stereotype=GET_PROPERTY_BY_ID)
+    @Secured(types=EntityType.SERVICE, stereotype=GET_PROPERTY_BY_ID)
     @Administrative(licensed=false)
     Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws FindException;
 
@@ -183,7 +180,7 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      * Finds the {@link SampleMessage} instance with the specified OID, or null if it does not exist.
      * @return the {@link SampleMessage} instance with the specified OID.  May be null if not present.
      */
-    @Secured(types=SAMPLE_MESSAGE, stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=FIND_BY_PRIMARY_KEY)
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
     SampleMessage findSampleMessageById(long oid) throws FindException;
@@ -196,14 +193,14 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      * @return an array of {@link EntityHeader}s. May be empty, but never null.
      */
     @Transactional(readOnly=true)
-    @Secured(types=SAMPLE_MESSAGE, stereotype=FIND_HEADERS)
+    @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=FIND_HEADERS)
     @Administrative(licensed=false)
     EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws FindException;
 
-    @Secured(types=SAMPLE_MESSAGE, stereotype=SAVE_OR_UPDATE)
+    @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=SAVE_OR_UPDATE)
     long saveSampleMessage(SampleMessage sm) throws SaveException;
 
-    @Secured(types=SAMPLE_MESSAGE, stereotype=DELETE_ENTITY)
+    @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=DELETE_ENTITY)
     void deleteSampleMessage(SampleMessage message) throws DeleteException;
 
     /**
@@ -232,6 +229,6 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
     public Collection<UDDIRegistryInfo> getUDDIRegistryInfo();
 
     @Transactional(readOnly=true)
-    @Secured(types=SERVICE_TEMPLATE, stereotype= MethodStereotype.FIND_ENTITIES)
+    @Secured(types=EntityType.SERVICE_TEMPLATE, stereotype= MethodStereotype.FIND_ENTITIES)
     Set<ServiceTemplate> findAllTemplates();
 }

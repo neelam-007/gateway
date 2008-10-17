@@ -1,7 +1,7 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.User;

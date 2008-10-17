@@ -162,11 +162,11 @@ public class RegistryStub extends Registry {
 
             public Collection<Permission> findCurrentUserPermissions() throws FindException {
                 return Arrays.asList(
-                        new Permission(role, OperationType.CREATE, com.l7tech.gateway.common.security.rbac.EntityType.ANY),
-                        new Permission(role, OperationType.READ, com.l7tech.gateway.common.security.rbac.EntityType.ANY),
-                        new Permission(role, OperationType.UPDATE, com.l7tech.gateway.common.security.rbac.EntityType.ANY),
-                        new Permission(role, OperationType.DELETE, com.l7tech.gateway.common.security.rbac.EntityType.ANY),
-                        new Permission(role, OperationType.OTHER, com.l7tech.gateway.common.security.rbac.EntityType.ANY)
+                        new Permission(role, OperationType.CREATE, EntityType.ANY),
+                        new Permission(role, OperationType.READ, EntityType.ANY),
+                        new Permission(role, OperationType.UPDATE, EntityType.ANY),
+                        new Permission(role, OperationType.DELETE, EntityType.ANY),
+                        new Permission(role, OperationType.OTHER, EntityType.ANY)
                 );
             }
 

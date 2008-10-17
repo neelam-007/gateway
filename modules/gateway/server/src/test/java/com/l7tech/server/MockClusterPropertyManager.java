@@ -43,7 +43,7 @@ public class MockClusterPropertyManager
     }
 
     public EntityType getEntityType() {
-        return EntityType.UNDEFINED;
+        return EntityType.ANY;
     }
 
     public String getTableName() {

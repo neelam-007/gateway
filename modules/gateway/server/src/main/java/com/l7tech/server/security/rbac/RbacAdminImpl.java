@@ -4,7 +4,7 @@
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;

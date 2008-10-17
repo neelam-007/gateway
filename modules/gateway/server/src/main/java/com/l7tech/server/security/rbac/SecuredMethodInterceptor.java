@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.*;
 import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import com.l7tech.server.util.JaasUtils;
@@ -373,7 +373,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
 
     private void checkIdentityFromId(Object[] args, CheckInfo check, OperationType operation) throws FindException {
         if (args[0] instanceof Long && args[1] instanceof String) {
-            IdentityHeader header = new IdentityHeader((Long)args[0], (String)args[1], check.types[0].getOldEntityType(), null, null);
+            IdentityHeader header = new IdentityHeader((Long)args[0], (String)args[1], check.types[0], null, null);
             Entity ent = entityFinder.find(header);
             check.setBefore(CheckBefore.ENTITY);
             check.operation = operation;

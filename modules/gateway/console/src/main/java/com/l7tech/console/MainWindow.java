@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gui.util.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.action.*;
 import com.l7tech.console.auditalerts.AuditAlertChecker;

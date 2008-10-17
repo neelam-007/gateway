@@ -21,8 +21,8 @@ import javax.swing.event.ListSelectionEvent;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
-import static com.l7tech.gateway.common.security.rbac.EntityType.CLUSTER_PROPERTY;
-import static com.l7tech.gateway.common.security.rbac.EntityType.REVOCATION_CHECK_POLICY;
+import static com.l7tech.objectmodel.EntityType.CLUSTER_PROPERTY;
+import static com.l7tech.objectmodel.EntityType.REVOCATION_CHECK_POLICY;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.util.ResolvingComparator;

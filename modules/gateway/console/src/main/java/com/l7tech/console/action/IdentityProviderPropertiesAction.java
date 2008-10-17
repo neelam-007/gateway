@@ -9,7 +9,7 @@ import javax.swing.tree.DefaultTreeModel;
 
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import static com.l7tech.gateway.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
+import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;

@@ -3,8 +3,8 @@
  */
 package com.l7tech.server.policy;
 
-import static com.l7tech.gateway.common.security.rbac.EntityType.POLICY;
-import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE_TEMPLATE;
+import static com.l7tech.objectmodel.EntityType.POLICY;
+import static com.l7tech.objectmodel.EntityType.SERVICE_TEMPLATE;
 import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;

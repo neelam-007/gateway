@@ -4,6 +4,7 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityType;
 
 /**
  * Reflects an attempt to create an entity *like* the one passed to the constructor

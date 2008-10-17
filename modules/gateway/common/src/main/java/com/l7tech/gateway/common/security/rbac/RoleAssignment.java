@@ -5,6 +5,7 @@ package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.persistence.Table;
 import javax.persistence.Entity;

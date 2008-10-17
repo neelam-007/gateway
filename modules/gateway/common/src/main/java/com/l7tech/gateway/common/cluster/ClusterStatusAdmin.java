@@ -3,7 +3,7 @@ package com.l7tech.gateway.common.cluster;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.util.CollectionUpdate;

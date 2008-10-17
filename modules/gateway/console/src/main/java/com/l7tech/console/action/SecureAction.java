@@ -2,7 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.PermissionRefreshListener;

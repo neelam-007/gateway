@@ -3,7 +3,7 @@
  */
 package com.l7tech.console.tree.policy.advice;
 
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import com.l7tech.console.security.rbac.FindEntityDialog;
 import com.l7tech.console.tree.policy.PolicyChange;

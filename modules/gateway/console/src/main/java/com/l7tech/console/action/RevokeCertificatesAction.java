@@ -3,7 +3,7 @@ package com.l7tech.console.action;
 import javax.swing.*;
 
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.util.TopComponents;

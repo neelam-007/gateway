@@ -1,6 +1,6 @@
 package com.l7tech.server.identity;
 
-import static com.l7tech.gateway.common.security.rbac.EntityType.*;
+import static com.l7tech.objectmodel.EntityType.*;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.server.util.JaasUtils;

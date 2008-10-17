@@ -5,7 +5,7 @@ import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
 import com.l7tech.util.Functions;
 

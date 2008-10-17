@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import static com.l7tech.gateway.common.security.rbac.EntityType.GROUP;
+import static com.l7tech.objectmodel.EntityType.GROUP;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.SecurityProvider;
