@@ -529,8 +529,6 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
      * @param restartTimer Specifying whether or not to restart the refresh timer.
      */
     public void refreshLogs(final LogPanel logPane, LogRequest logRequest, final boolean restartTimer) {
-        logPane.getSearchButton().setEnabled(false);//disable the search button while searching
-
         //if auto-refresh is enabled, we only want the latest logs, we dont want to re-load every record.
         if (restartTimer) {
             //...so must set the start message number

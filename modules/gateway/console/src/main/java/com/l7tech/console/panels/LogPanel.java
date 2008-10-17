@@ -367,11 +367,8 @@ public class LogPanel extends JPanel {
 
         controlPanel.autoRefreshCheckBox.addActionListener(new ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                if (!isAuditType) {
-                    // When used for displaying logs, checkbox change is effective immediately.
-                    durationAutoRefresh = controlPanel.autoRefreshCheckBox.isSelected();
-                    updateLogAutoRefresh();
-                } // else When used for displaying audit events, checkbox change is effective when Apply button is clicked.
+                durationAutoRefresh = controlPanel.autoRefreshCheckBox.isSelected();
+                updateLogAutoRefresh();
             }
         });
 
