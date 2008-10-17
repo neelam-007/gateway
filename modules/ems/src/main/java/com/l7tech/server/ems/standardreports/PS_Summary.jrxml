@@ -22,7 +22,8 @@
 	<import value="java.util.*" />
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
-	<template><![CDATA["Styles.jrtx"]]></template>
+	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
+
 
 	<parameter name="REPORT_TYPE" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA["NA"]]></defaultValueExpression>
@@ -60,6 +61,7 @@
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="STYLES_FROM_TEMPLATE" isForPrompting="false" class="java.util.Map"/>
+	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
@@ -577,8 +579,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					<textElement>
 						<font isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Value: " +
-com.l7tech.server.ems.standardreports.Utilities.getMappingValueDisplayString(
+				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getMappingValueDisplayString(
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 				</textField>
@@ -1511,7 +1512,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayStrin
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())?"Yes":"No"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue())?"Yes":"No"]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement

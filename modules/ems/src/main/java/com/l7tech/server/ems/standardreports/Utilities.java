@@ -641,7 +641,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         //----SECTION M----
         addMappingOrder(sb);
 
-//        System.out.println(sb.toString());
+        //System.out.println(sb.toString());
         return sb.toString();
     }
 
@@ -741,6 +741,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         }else{
             sb.append(" GROUP BY p.objectid ");
         }
+        //System.out.println("Sql: " + sb.toString());
         return sb.toString();
     }
 
@@ -1066,7 +1067,12 @@ Value is included in all or none, comment is just illustrative
             }
             sb.append(s+": " + keyValues[i1]);
         }
-        return sb.toString();
+        if(sb.toString().equals("")){
+            return "Detail Report";
+        }else{
+            sb.insert(0, "Mapping Value: ");
+            return sb.toString();
+        }
     }
 
     /**
@@ -1129,6 +1135,7 @@ Value is included in all or none, comment is just illustrative
                 if(value != null && !value.equals("")) sb.append(" (" + keyValueConstraints.get(i1) + ")");
             }
         }
+        if(sb.toString().equals("")) return "None";
         return sb.toString();
     }
 }

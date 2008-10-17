@@ -51,7 +51,8 @@
     <parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
         <defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
     </parameter>
-
+    <parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
+    
     <field name="INTERVAL_START" class="java.lang.Long"/>
 	<field name="INTERVAL_END" class="java.lang.Long"/>
 
@@ -173,7 +174,7 @@
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX" calculation="Highest"/>
 					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG" calculation="Average"/>
-					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport_subreport0.jasper"]]></subreportExpression>
+					<subreportExpression  class="java.lang.String"><![CDATA[$P{SUBREPORT_DIRECTORY}+"/PS_SubIntervalMasterReport_subreport0.jasper"]]></subreportExpression>
 				</subreport>
 			</band>
 		</detail>

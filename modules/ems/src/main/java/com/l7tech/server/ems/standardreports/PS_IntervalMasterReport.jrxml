@@ -22,7 +22,7 @@
 	<import value="java.util.*" />
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
-	<template><![CDATA["Styles.jrtx"]]></template>
+	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
 	<parameter name="REPORT_TYPE" isForPrompting="false" class="java.lang.String">
@@ -66,6 +66,8 @@
 	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
+	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
@@ -229,8 +231,7 @@ com.l7tech.server.ems.standardreports.Utilities.getNoMappingQuery(true, $P{start
 					<textElement>
 						<font isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Value: " +
-com.l7tech.server.ems.standardreports.Utilities.getMappingValueDisplayString(
+				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getMappingValueDisplayString(
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 				</textField>
@@ -709,21 +710,21 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						height="18"
 						key="frame-18"/>
 					<box></box>
-				</frame>				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
 						x="5"
 						y="0"
 						width="529"
 						height="17"
-						key="textField-110"/>
+						key="textField-154"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Operation: " + $F{SERVICE_OPERATION_VALUE}]]></textFieldExpression>
 				</textField>
-			</band>
+				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
 			<band height="18"  isSplitAllowed="true" >
@@ -1364,6 +1365,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayStrin
 					<subreportParameter  name="IS_CONTEXT_MAPPING">
 						<subreportParameterExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></subreportParameterExpression>
 					</subreportParameter>
+					<subreportParameter  name="SUBREPORT_DIRECTORY">
+						<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIRECTORY}]]></subreportParameterExpression>
+					</subreportParameter>
 					<dataSourceExpression><![CDATA[$V{TIME_PERIOD_DS}]]></dataSourceExpression>
 					<returnValue subreportVariable="THROUGHPUT_SUM" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
@@ -1397,7 +1401,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayStrin
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX_OPERATION" calculation="Highest"/>
 					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG_OPERATION" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG_OPERATION" calculation="Average"/>
-					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport.jasper"]]></subreportExpression>
+					<subreportExpression  class="java.lang.String"><![CDATA[$P{SUBREPORT_DIRECTORY}+"/PS_SubIntervalMasterReport.jasper"]]></subreportExpression>
 				</subreport>
 				</frame>			</band>
 		</detail>
@@ -1705,7 +1709,6 @@ com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayStrin
 		</pageFooter>
 		<summary>
 			<band height="18"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"

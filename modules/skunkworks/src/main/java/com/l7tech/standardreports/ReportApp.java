@@ -23,6 +23,7 @@ public class ReportApp
 	private static final String TASK_PDF = "pdf";
 	private static final String TASK_HTML = "html";
 	private static final String TASK_VIEW = "view";
+    private static final String TASK_RUN = "run";    
 
     //The following params must be supplied when filling the report
     private static final String REPORT_CONNECTION= "REPORT_CONNECTION";
@@ -31,6 +32,9 @@ public class ReportApp
     private static final String INTERVAL_TIME_UNIT = "INTERVAL_TIME_UNIT";
     private static final String INTERVAL_NUM_OF_TIME_UNITS = "INTERVAL_NUM_OF_TIME_UNITS";
     private static final String REPORT_RAN_BY = "REPORT_RAN_BY";
+
+    private static final String TEMPLATE_FILE_ABSOLUTE = "TEMPLATE_FILE_ABSOLUTE";
+    private static final String SUBREPORT_DIRECTORY = "SUBREPORT_DIRECTORY";
 
     private static final String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
     private static final String IS_DETAIL = "IS_DETAIL";
@@ -110,6 +114,9 @@ public class ReportApp
                 JasperViewer.viewReport(fileName+".jrprint", false);
                 System.err.println("View time : " + (System.currentTimeMillis() - start));
             }
+            else if (TASK_RUN.equals(taskName)){
+                
+            }
             else
 			{
 				usage();
@@ -163,13 +170,38 @@ public class ReportApp
         Map parameters = new HashMap();
         //Required
         parameters.put(REPORT_CONNECTION, getConnection(prop));
+        parameters.put(TEMPLATE_FILE_ABSOLUTE, "Styles.jrtx");
+        parameters.put(SUBREPORT_DIRECTORY, ".");
+
         //parameters.put(REPORT_TIME_ZONE, java.util.TimeZone??);
         parameters.put(REPORT_TYPE, prop.getProperty(REPORT_TYPE));
-        parameters.put(INTERVAL_TIME_UNIT, prop.getProperty(INTERVAL_TIME_UNIT));
-        Integer i = Integer.parseInt(prop.getProperty(INTERVAL_NUM_OF_TIME_UNITS).toString());
-        parameters.put(INTERVAL_NUM_OF_TIME_UNITS, i);
         parameters.put(REPORT_RAN_BY, prop.getProperty(REPORT_RAN_BY));
-        //Optional
+
+        Boolean b = Boolean.parseBoolean(prop.getProperty(IS_CONTEXT_MAPPING));
+        parameters.put(IS_CONTEXT_MAPPING, b);
+
+        b = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
+        parameters.put(IS_DETAIL, b);
+
+        //relative and absolute time
+        b = Boolean.parseBoolean(prop.getProperty(IS_RELATIVE));
+        parameters.put(IS_RELATIVE, b);
+        parameters.put(RELATIVE_TIME_UNIT, prop.getProperty(RELATIVE_TIME_UNIT));
+        Integer i = Integer.parseInt(prop.getProperty(RELATIVE_NUM_OF_TIME_UNITS).toString());
+        parameters.put(RELATIVE_NUM_OF_TIME_UNITS, i);
+
+        parameters.put(INTERVAL_TIME_UNIT, prop.getProperty(INTERVAL_TIME_UNIT));
+        i = Integer.parseInt(prop.getProperty(INTERVAL_NUM_OF_TIME_UNITS).toString());
+        parameters.put(INTERVAL_NUM_OF_TIME_UNITS, i);
+
+        b = Boolean.parseBoolean(prop.getProperty(IS_ABSOLUTE).toString());
+        parameters.put(IS_ABSOLUTE, b);
+        parameters.put(ABSOLUTE_START_TIME, prop.getProperty(ABSOLUTE_START_TIME));
+        parameters.put(ABSOLUTE_END_TIME, prop.getProperty(ABSOLUTE_END_TIME));
+
+        parameters.put(HOURLY_MAX_RETENTION_NUM_DAYS, new Integer(prop.getProperty(HOURLY_MAX_RETENTION_NUM_DAYS)));
+
+
         Map<String, String> nameToId = new HashMap<String,String>();
         String serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_1");
         String serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_1");
@@ -181,25 +213,7 @@ public class ReportApp
             index++;
         }
         if(!nameToId.isEmpty()) parameters.put(SERVICE_NAME_TO_ID_MAP, nameToId);
-
-        //relative and absolute time
-        Boolean b = Boolean.parseBoolean(prop.getProperty(IS_RELATIVE));
-        parameters.put(IS_RELATIVE, b);
-
-        b = Boolean.parseBoolean(prop.getProperty(IS_CONTEXT_MAPPING));
-        parameters.put(IS_CONTEXT_MAPPING, b);
-
-        parameters.put(RELATIVE_TIME_UNIT, prop.getProperty(RELATIVE_TIME_UNIT));
-        i = Integer.parseInt(prop.getProperty(RELATIVE_NUM_OF_TIME_UNITS).toString());
-        parameters.put(RELATIVE_NUM_OF_TIME_UNITS, i);
-
-        b = Boolean.parseBoolean(prop.getProperty(IS_ABSOLUTE).toString());
-        parameters.put(IS_ABSOLUTE, b);
-        parameters.put(ABSOLUTE_START_TIME, prop.getProperty(ABSOLUTE_START_TIME));
-        parameters.put(ABSOLUTE_END_TIME, prop.getProperty(ABSOLUTE_END_TIME));
-
-        parameters.put(HOURLY_MAX_RETENTION_NUM_DAYS, new Integer(prop.getProperty(HOURLY_MAX_RETENTION_NUM_DAYS)));
-
+        
         List<String > keys  = loadListFromProperties(MAPPING_KEY, prop);
         List<String> values = loadListFromProperties(MAPPING_VALUE, prop);
 
@@ -209,8 +223,6 @@ public class ReportApp
         parameters.put(MAPPING_VALUES, values);
         parameters.put(VALUE_EQUAL_OR_LIKE, useAnd);
 
-        b = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
-        parameters.put(IS_DETAIL, b);
         List<String> operations = loadListFromProperties(OPERATIONS, prop);
         parameters.put(OPERATIONS, operations);
 
@@ -218,7 +230,6 @@ public class ReportApp
         parameters.put(USE_USER, b);
         List<String> authUser = loadListFromProperties(AUTHENTICATED_USERS, prop);
         parameters.put(AUTHENTICATED_USERS, authUser);
-
 
         JasperPrint jp = JasperFillManager.fillReport("StyleGenerator.jasper", parameters);
         Map sMap = jp.getStylesMap();

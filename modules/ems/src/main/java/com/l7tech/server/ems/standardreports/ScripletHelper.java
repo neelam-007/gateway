@@ -71,6 +71,9 @@ public class ScripletHelper extends JRDefaultScriptlet {
         }
     }
 
-
-
+    public void afterReportInit() throws JRScriptletException {
+        JRFillParameter fp = (JRFillParameter) this.parametersMap.get("sqlQuery");
+        String sql = (String) fp.getValue();
+        System.out.println("After report init"); 
+    }
 }

@@ -1,0 +1,422 @@
+@charset
+"utf-8"
+;
+/* Universal Selectors */
+
+* {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Element Selectors */
+
+body, td, p, input, option, select, textarea, pre {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    background-color: #808080;
+    font-size: 75%; /* that's 12px */
+}
+
+a:link, a:active, a:visited {
+    color: #1144BB;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1 {
+    font-size: 1.5em;
+    margin: 0.5em 0;
+}
+
+h2 {
+    font-size: 1.33em;
+    margin: 0.5em 0;
+}
+
+h3 {
+    font-size: 1.17em;
+    margin: 0.5em 0;
+}
+
+h4 {
+    font-size: 1em;
+}
+
+input, select {
+    border: 1px #433e29 solid;
+}
+
+input[type="button"], input[type="submit"] {
+    background-color: #433e29;
+    border: 1px #ffffff solid;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    margin: 3px 8px 3px 8px;
+    padding: 1px 3px 1px 3px;
+}
+
+input[type="button"]:focus, input[type="submit"]:focus {
+    outline: 1px black solid;
+}
+
+input[type="text"], input[type="password"] {
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+input[type="checkbox"] {
+    border: none;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+/* Class, Attribute, and Pseudo Selectors */
+
+.top {
+    vertical-align: top !important;
+}
+
+.middle {
+    vertical-align: middle !important;
+}
+
+.bottom {
+    vertical-align: bottom !important;
+}
+
+.left {
+    text-align: left !important;
+}
+
+.center {
+    text-align: center !important;
+}
+
+table.center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.right {
+    text-align: right !important;
+}
+
+.indent {
+    margin-left: 10px;
+}
+
+.wrap {
+    white-space: normal !important;
+}
+
+.nowrap {
+    white-space: nowrap !important;
+}
+
+.clickable {
+    cursor: wait;
+}
+
+.hasTooltip {
+    cursor: url("../images/tooltip.cur"), url("images/tooltip.cur"), help;
+}
+
+.page {
+    width: 100%;
+}
+
+div.header {
+    background-color: #d6d6d6;
+    background-image: url( "../images/header.png" );
+    background-repeat: repeat-x;
+    padding: 0 10px 0 10px;
+}
+
+.headerNoImage {
+    background-color: #d6d6d6;
+    background-image: url( "../images/header.png" );
+    background-repeat: repeat-x;
+    padding: 0 10px 0 10px;
+    font-weight: bold;
+}
+
+.header2 {
+    white-space: normal;
+    font-size: medium;
+    background-color: #d6d6d6;
+    color: #433e29;
+}
+
+.titleBar {
+    background-color: #d6d6d6;
+    color: #433e29;
+    font-weight: bold;
+    padding: 4px 10px 4px 10px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.logo {
+    background-image: url( "../images/logoBack.png" );
+    background-repeat: repeat-x;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.logo img {
+    vertical-align: top;
+}
+
+.logoLeft {
+    vertical-align: top;
+}
+
+.logoRight {
+    padding: 0 10px 0 0;
+    vertical-align: top;
+}
+
+.divider {
+    background-image: url( "../images/divider.png" );
+    background-repeat: repeat-x;
+    height: 6px;
+    width: 100%;
+}
+
+.help {
+    font-weight: bold;
+}
+
+.tabCT {
+    background-image: url( "../images/tabCT.png" );
+    background-repeat: repeat-x;
+}
+
+.tabCTover {
+    background-image: url( "../images/tabCTover.png" );
+    background-repeat: repeat-x;
+}
+
+.tabLM {
+    background-image: url( "../images/tabLM.png" );
+    background-repeat: repeat-y;
+}
+
+.tabLMover {
+    background-image: url( "../images/tabLMover.png" );
+    background-repeat: repeat-y;
+}
+
+.tabCM, .tabCMon, .tabCMover {
+    font-weight: bold;
+    padding: 3px 5px 2px 5px;
+    white-space: nowrap;
+}
+
+.tabCM {
+    background-color: #565d37;
+    color: #ffffff;
+}
+
+.tabCMon {
+    background-color: #565d37;
+    color: #ffff21;
+
+}
+
+.tabCMover {
+    background-color: #2e321d;
+    color: #ffffff;
+}
+
+.tabRM {
+    background-image: url( "../images/tabRM.png" );
+    background-repeat: repeat-y;
+}
+
+.tabRMover {
+    background-image: url( "../images/tabRMover.png" );
+    background-repeat: repeat-y;
+}
+
+.tabCBon {
+    background-image: url( "../images/tabCBon.png" );
+    background-repeat: repeat-x;
+}
+
+.tabCBoff {
+    background-image: url( "../images/tabCBoff.png" );
+    background-repeat: repeat-x;
+}
+
+.tabCBover {
+    background-image: url( "../images/tabCBover.png" );
+    background-repeat: repeat-x;
+}
+
+.tabBarBottom {
+    background-color: #d6d6d6;
+    height: 5px;
+}
+
+.subtabBar {
+    background-color: #d6d6d6;
+    color: #433e29;
+    padding: 2px 10px 2px 10px;
+}
+
+.subtabOn, .subtabOff {
+    margin: 2px 10px 2px 10px;
+}
+
+.subtabOn {
+    font-size: 1.17em;
+    font-weight: bold;
+}
+
+.subtabOff a:link, .subtabOff a:active, .subtabOff a:visited  {
+    color: #433e29;
+    text-decoration: none;
+}
+
+.subtabOff a:hover {
+    color: #be9422;
+    text-decoration: none;
+}
+
+.content {
+    background-color: #ffffff;
+    padding: 10px;
+}
+
+.tablePanel {
+    border: 1px black dotted;
+    margin: 10px 0 10px 0;
+    padding: 0px 0px 0px 1px;
+}
+
+.tablePanelFirst {
+    border: 1px black dotted;
+    margin: 20px 0 10px 0;
+    padding: 0px 0px 0px 1px;
+}
+
+.panel {
+    border: 1px black solid;
+    margin: 10px 0px 10px 0px;
+    min-width: 700px;
+}
+
+.panelTitle {
+    background-color: #e8edb4;
+    color: #433e29;
+    font-weight: bold;
+    padding: 4px 10px 4px 10px;
+}
+
+.subTableTitle {
+    background-color: #e8edb4;
+    color: #433e29;
+    font-weight: bold;
+    padding: 4px 10px 4px 0px;
+}
+
+.headerText {
+    font-weight: bold;
+    font-size: medium;
+}
+
+.panelContent {
+    background-color: #f8f8f8;
+    padding: 10px
+}
+
+.subPanelContent {
+    background-color: #f8f8f8;
+    padding: 1px 10px 1px 10px;
+}
+
+
+table.spaced th, table.spaced td {
+    padding: 2px 5px 2px 5px;
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.enterpriseTable th, .enterpriseTable td {
+    padding: 2px 7px 2px 7px;
+    <!--white-space: nowrap;-->
+}
+
+.enterpriseTable th {
+    background-color: #dbd3b0;
+    border: 1px #bfb173 solid;
+}
+
+.enterpriseTable td {
+    background-color: #eeeeee;
+    border: 1px #cccccc solid;
+}
+
+.enterpriseTable td.name, .enterpriseTable th.name {
+    text-align: left;
+    border-right: none;
+}
+
+.enterpriseTable td.edit, .enterpriseTable th.edit {
+    padding-left: 2px;
+    padding-right: 2px;
+    text-align: right;
+}
+
+.enterpriseTable th.edit {
+    border-left: none;
+    border-right: none;
+}
+
+.enterpriseTable td.dashboard {
+    text-align: center;
+}
+
+.enterpriseTable td.details {
+    white-space: normal;
+}
+
+.enterpriseTable td.parentId, .enterpriseTable th.parentId {
+    display: none;
+}
+
+.enterpriseTable td.totals {
+    white-space: normal;
+    font-weight: bold;
+    background-color: #d6d6d6;
+}
+
+.enterpriseTable td img {
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.statusBar {
+    background-color: #d6d6d6;
+    padding: 4px 10px 4px 10px;
+}
+
+/* ID Selectors */
+
+#licenseAgreement {
+    border: 1px #000000 solid;
+    width: 100%;
+    height: 400px;
+}

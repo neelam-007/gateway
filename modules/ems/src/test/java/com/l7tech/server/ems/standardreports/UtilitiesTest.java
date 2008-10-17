@@ -714,7 +714,7 @@ public class UtilitiesTest extends TestCase {
 
         
         String val = Utilities.getMappingValueDisplayString("Donal", null, null);
-        assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": Donal"));
+        assertTrue(val.equals("Mapping Value: "+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal"));
 
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
@@ -725,10 +725,10 @@ public class UtilitiesTest extends TestCase {
         values.add("GOLD");
 
         val = Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, keys, values.toArray(new String[]{}));
-        assertTrue(val.equals(keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
+        assertTrue(val.equals("Mapping Value: "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
 
         val = Utilities.getMappingValueDisplayString("Donal", keys, values.toArray(new String[]{}));
-        assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": Donal, "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
+        assertTrue(val.equals("Mapping Value: "+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal, "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
         
         values.remove(1);
         exception = false;
