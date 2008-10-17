@@ -131,8 +131,8 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
                         checkPerms(authdUser);
                         logger.info("Authenticated on " + provider.getConfig().getName());
 
-                        //Ensure password not expired
-                        if (passwordEnforcerManager.isPasswordExpired(authdUser)) {
+                        //Ensure password not expired, ignore password expire checking if have certificate
+                        if (passwordEnforcerManager.isPasswordExpired(authdUser) && !hasClientCert(creds, provider)) {
                             throw new CredentialExpiredException("Password expired.");
                         }
 

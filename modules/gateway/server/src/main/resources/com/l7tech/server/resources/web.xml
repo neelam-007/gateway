@@ -217,6 +217,20 @@
     <servlet>
         <servlet-name>ssgLoginFormServlet</servlet-name>
         <servlet-class>com.l7tech.server.admin.SSGLoginFormServlet</servlet-class>
+        <init-param>
+            <param-name>loginPage</param-name>
+            <param-value>/com/l7tech/server/resources/ssglogin.html</param-value>
+        </init-param>
+    </servlet>
+
+    <!-- Servlet to serve changing the password and login in one pass -->
+    <servlet>
+        <servlet-name>ssgLoginAndPasswordUpdateFormServlet</servlet-name>
+        <servlet-class>com.l7tech.server.admin.SSGLoginFormServlet</servlet-class>
+        <init-param>
+            <param-name>loginPage</param-name>
+            <param-value>/com/l7tech/server/resources/ssglogin_passwordupdate.html</param-value>
+        </init-param>
     </servlet>
 
     <servlet>

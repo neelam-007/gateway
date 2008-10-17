@@ -41,6 +41,7 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.InvalidPasswordException;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -48,6 +49,7 @@ import org.w3c.dom.Document;
 
 import javax.security.auth.login.LoginException;
 import javax.security.auth.login.AccountLockedException;
+import javax.security.auth.login.CredentialExpiredException;
 import javax.servlet.*;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -66,10 +68,14 @@ public class ManagerAppletFilter implements Filter {
     private static final Logger logger = Logger.getLogger(ManagerAppletFilter.class.getName());
     public static final String RELOGIN = "Relogin due to incorrect username or password";
     public static final String INVALID_CERT = "Relogin due to incorrect certificate";
+    public static final String CREDS_EXPIRED = "Relogin due to expired credentials";
+    public static final String INVALID_PASSWORD = "Relogin due to invalid password.";
     public static final String PROP_CREDS = "ManagerApplet.authenticatedCredentials";
     public static final String PROP_USER = "ManagerApplet.authenticatedUser";
     public static final String SESSION_ID_COOKIE_NAME = "sessionId";
     public static final String DEFAULT_CODEBASE_PREFIX = "/ssg/webadmin/applet/";
+    public static final String USERNAME = "username";
+    public static final String INVALID_PASSWORD_MESSAGE = "invalidPasswordMessage";
 
     private enum AuthResult { OK, CHALLENGED, FAIL }
 
@@ -181,6 +187,9 @@ public class ManagerAppletFilter implements Filter {
                 if (isClasspathResourceRequest(hreq)) {
                     hresp.setStatus(403);
                     hresp.sendError(403);
+                } else if ((hreq.getAttribute(CREDS_EXPIRED) != null || hreq.getAttribute(INVALID_PASSWORD) != null) && hreq.getParameter("Cancel") == null) {
+                    //redirect to the login and password change page
+                    filterConfig.getServletContext().getNamedDispatcher("ssgLoginAndPasswordUpdateFormServlet").include(hreq, hresp);
                 } else {
                     filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
                 }
@@ -264,7 +273,7 @@ public class ManagerAppletFilter implements Filter {
         }
 
         // clear cookie and return to filter
-        if ( hreq.getParameter("logout") != null ) {
+        if ( hreq.getParameter("logout") != null || hreq.getParameter("Cancel") != null) {
             Cookie sessionCookie = new Cookie(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, "");
             sessionCookie.setSecure(true);
             sessionCookie.setMaxAge(0);
@@ -311,6 +320,8 @@ public class ManagerAppletFilter implements Filter {
 
         String username = hreq.getParameter("username");
         String password = hreq.getParameter("password");
+        String newPassword = hreq.getParameter("new_password");
+        String confirmPassword = hreq.getParameter("confirm_password");
         try {
             final AssertionStatus result = dogfoodPolicy.checkRequest(context);
             if (result == AssertionStatus.NONE) {
@@ -318,15 +329,26 @@ public class ManagerAppletFilter implements Filter {
                     if (isClasspathResourceRequest(hreq)) {
                         hresp.setStatus(403);
                         hresp.sendError(403);
+                    } else if (newPassword != null || confirmPassword != null ) {
+                        //redirect to the login and password change page
+                        filterConfig.getServletContext().getNamedDispatcher("ssgLoginAndPasswordUpdateFormServlet").include(hreq, hresp);
                     } else {
                         filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
                     }
                     return AuthResult.CHALLENGED;
                 }
 
+                //new password and confirm password don't match, do not allow them to proceed
+                if (username != null && (newPassword != null || confirmPassword != null) && !(newPassword.equals(confirmPassword)) ) {
+                    throw new InvalidPasswordException("New password does not match with confirm password.  Please retry.");
+                }
+
                 // Check authentication
                 AdminLoginResult loginResult;
-                if ( username != null || password != null ){
+                if ( newPassword != null || confirmPassword != null) {
+                    //perform change password and login
+                    loginResult = adminLogin.loginWithPasswordUpdate(username, password, newPassword);
+                } else if ( username != null || password != null ){
                     loginResult = adminLogin.login(username, password);
                 } else {
                     loginResult = adminLogin.login(context.getLastCredentials().getClientCert());
@@ -360,11 +382,30 @@ public class ManagerAppletFilter implements Filter {
             logger.log(Level.FINE, "Error authenticating administrator, " + ExceptionUtils.getMessage(e), e);
 
             // For the case - incorrect username and password
-            if (username != null || password != null){
-                hreq.setAttribute(RELOGIN, "YES");
+            if (username != null || password != null) {
+                if (ExceptionUtils.causedBy(e, CredentialExpiredException.class)) {
+                    //credentials expired so we'll need to redirect to proper page to change password and login
+                    hreq.setAttribute(CREDS_EXPIRED, "YES");
+                    hreq.setAttribute(USERNAME, username);
+                } else if (newPassword != null || confirmPassword != null) {
+                    //need to redirect back to the change password and login page
+                    hreq.setAttribute(INVALID_PASSWORD, "YES");
+                    hreq.setAttribute(USERNAME, username);
+                    hreq.setAttribute(INVALID_PASSWORD_MESSAGE, e.getMessage());
+                } else {
+                    hreq.setAttribute(RELOGIN, "YES");
+                }
             } else {
                 hreq.setAttribute(INVALID_CERT, "YES");
             }
+            return AuthResult.FAIL;
+        } catch (InvalidPasswordException ipe) {
+            //attempt to change password but was invalid (not compliant to standards), need to re-enter new password
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, ExceptionUtils.getMessage(ipe));
+            logger.log(Level.FINE, "Error changing password, " + ExceptionUtils.getMessage(ipe), ipe);
+            hreq.setAttribute(INVALID_PASSWORD, "YES");
+            hreq.setAttribute(USERNAME, username);
+            hreq.setAttribute(INVALID_PASSWORD_MESSAGE, ipe.getMessage());
             return AuthResult.FAIL;
         } catch (PolicyAssertionException e) {
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, ExceptionUtils.getMessage(e));

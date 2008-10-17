@@ -41,7 +41,7 @@
 
   .logintable {
       border: 1px solid black;
-      width: 420px;
+      width: 480px;
   }
 
   .spacer {
@@ -54,6 +54,6 @@
   }
 
   .logincontrols {
-      width:250px;
+      width:300px;
       text-align: right;
   }
