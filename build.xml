@@ -235,6 +235,9 @@
             <equals arg1="${database.type}" arg2="mysql"/>
         </condition>
 
+        <!-- modules excluded from a production build -->
+        <property name="project.module.excludes" value="skunkworks/build.xml"/>
+
         <!-- paths with dynamic components -->
         <path id="project.test.classpath">
             <path refid="project.classpath.fortest"/>
@@ -316,7 +319,7 @@
 
     <target name="build-module-list" unless="build-path.text" depends="init">
         <ivy:buildlist reference="module-build-path" onMissingDescriptor="skip">
-            <fileset dir="modules" includes="**/build.xml" excludes="skunkworks/build.xml"/>
+            <fileset dir="modules" includes="**/build.xml" excludes="${project.module.excludes}"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-path" pathid="build-path.text"/>
     </target>
@@ -437,8 +440,8 @@
         <modules target="publish"/>
     </target>
 
-    <target name="publish-all-modules" depends="prepare.base, build-module-list" unless="package.jars.notrequired">
-        <modules target="publish-all"/>
+    <target name="publish-all-modules" depends="prepare.base, build-module-list-all" unless="package.jars.notrequired">
+        <modules target="publish-all" buildpathref="module-build-all-path"/>
     </target>
 
     <target name="publish-all-modules-quick" depends="prepare.base, build-module-list-all">

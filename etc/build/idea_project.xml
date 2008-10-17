@@ -32,6 +32,7 @@
             <entry name="?*.pfx"/>
             <entry name="?*.index"/>
             <entry name="?*.sql"/>
+            <entry name="com.l7tech.*"/>
         </wildcardResourcePatterns>
     </component>
     <component name="JavacSettings">

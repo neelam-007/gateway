@@ -46,7 +46,7 @@ public class MockServletApiTest extends TestCase {
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
-                //servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/server/resources/testApplicationContext.xml");
+                servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/server/resources/testApplicationContext.xml");
             }
 
             protected void tearDown() throws Exception {
@@ -57,7 +57,7 @@ public class MockServletApiTest extends TestCase {
     }
 
     public void setUp() throws Exception {
-        ApplicationContext context = null;//  servletApi.getApplicationContext();
+        ApplicationContext context = servletApi.getApplicationContext();
         serviceAdmin = (ServiceAdmin)context.getBean("serviceAdmin");
         EntityHeader[] headers = serviceAdmin.findAllPublishedServices();
         assertTrue("no services have been returned could not execute test", headers.length > 0);

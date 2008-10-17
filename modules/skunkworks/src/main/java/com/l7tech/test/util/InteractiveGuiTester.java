@@ -18,10 +18,10 @@ import java.util.logging.Logger;
 /**
  * A container that makes it easy to interactively launch tiny GUI tests.
  */
-public class InteractiveGuiTester {
+public class InteractiveGuiTester implements GuiTestLauncher {
     private static final Logger logger = Logger.getLogger(InteractiveGuiTester.class.getName());
 
-    public static void startTest(final Object testHolder) throws GuiTestException {
+    public void startTest(final Object testHolder) throws GuiTestException {
         showTestWindow(testHolder, findTestMethods(testHolder));
     }
 
