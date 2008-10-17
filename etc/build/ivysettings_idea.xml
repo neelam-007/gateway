@@ -9,17 +9,15 @@
     <resolvers>
         <chain name="idea">
             <filesystem name="ideatemp" checksums="">
-                <artifact pattern="build/idearepo/[organisation]/[artifact]-[revision].[ext]"/>
-                <ivy pattern="build/idearepo/[organisation]/[module]-ivy-[revision].xml"/>
+                <artifact pattern="${src.root}/build/idearepo/[organisation]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="${src.root}/build/idearepo/[organisation]/[module]-ivy-[revision].xml"/>
             </filesystem>
             <filesystem name="localfile" checksums="">
-                <artifact pattern="lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
-                <ivy pattern="lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
+                <artifact pattern="${src.root}/lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="${src.root}/lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
             </filesystem>
         </chain>
     </resolvers>
     
-    <caches useOrigin="true" default="default" defaultCacheDir="build/ivycache">
-        <cache name="default" basedir="build/ivycache"/>
-    </caches>
+    <caches useOrigin="true" defaultCacheDir="${src.root}/build/ivy/cache"/>
 </ivysettings>

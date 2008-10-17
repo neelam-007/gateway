@@ -9,16 +9,16 @@
 
     <resolvers>
         <filesystem name="localfile" checksums="">
-            <artifact pattern="build/temp.nu/[organisation]/[artifact]-[revision].[ext]"/>
-            <ivy pattern="build/temp.nu/[organisation]/[module]-ivy-[revision].xml"/>
+            <artifact pattern="${src.root}/build/ivy/temp.repository/[organisation]/[artifact]-[revision].[ext]"/>
+            <ivy pattern="${src.root}/build/ivy/temp.repository/[organisation]/[module]-ivy-[revision].xml"/>
         </filesystem>
         <chain name="libraries">
             <!--
               Local file repository should be checked first (in case already installed)
             -->
             <filesystem name="local.repository" checksums="">
-                <artifact pattern="lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
-                <ivy pattern="lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
+                <artifact pattern="${src.root}/lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="${src.root}/lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
             </filesystem>
 
             <!-- 
@@ -26,8 +26,8 @@
               artifact that collects a set of dependencies (e.g. tomcat components)
             -->
             <filesystem name="temp.m2" checksums="">
-                <artifact pattern="build/temp.m2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
-                <ivy pattern="build/temp.m2/[organisation]/[module]/[revision]/[module]-ivy-[revision].xml"/>
+                <artifact pattern="${src.root}/build/ivy/temp.repository.m2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="${src.root}/build/ivy/temp.repository.m2/[organisation]/[module]/[revision]/[module]-ivy-[revision].xml"/>
             </filesystem>
 
             <!--
@@ -48,5 +48,5 @@
         </chain>
     </resolvers>
 
-    <caches defaultCacheDir="build/ivycache"/>
+    <caches defaultCacheDir="${src.root}/build/ivy/install.cache"/>
 </ivysettings>

@@ -5,7 +5,7 @@
           status="integration">
     </info>
     <configurations
-            defaultconfmapping="runtime->default(*),master(*); core->default(*),master(*); optional->default(*),master(*); test->default(*),master(*)">
+            defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default">
         <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
         <conf name="default" description="Runtime dependencies and master artifact can be used with this conf"
               extends="runtime,master"/>

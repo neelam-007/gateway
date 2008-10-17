@@ -32,7 +32,6 @@
         <dependency name="layer7-xmlvpnclient" rev="latest.integration" force="true" conf="core->default,test"/>
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core->default,test"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-xmlvpnclient" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-ems" rev="latest.integration" force="true" conf="core"/>
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" force="true" conf="optional->compile(*),master(*)"/>
         <dependency org="com.ibm.mq" name="mq6" rev="6.0.2.2" force="true" conf="optional->compile(*),master(*)"/>

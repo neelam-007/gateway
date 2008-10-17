@@ -13,8 +13,8 @@
                 <ivy pattern="${src.root}/lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
             </filesystem>
             <filesystem name="shared" checksums="">
-                <artifact pattern="${src.root}/build/repository/[artifact]-[revision].[ext]"/>
-                <ivy pattern="${src.root}/build/repository/[module]-ivy-[revision].xml"/>
+                <artifact pattern="${src.root}/build/ivy/repository/[artifact]-[revision].[ext]"/>
+                <ivy pattern="${src.root}/build/ivy/repository/[module]-ivy-[revision].xml"/>
             </filesystem>
         </chain>
     </resolvers>
@@ -22,5 +22,5 @@
     <!-- 
       Note that this can cause an NPE if used when installing dependencies
     -->
-    <caches useOrigin="true"/>
+    <caches useOrigin="true" defaultCacheDir="${src.root}/build/ivy/cache"/>
 </ivysettings>

@@ -315,14 +315,14 @@
     </macrodef>
 
     <target name="build-module-list" unless="build-path.text" depends="init">
-        <ivy:buildlist reference="module-build-path" skipbuildwithoutivy="true">
+        <ivy:buildlist reference="module-build-path" onMissingDescriptor="skip">
             <fileset dir="modules" includes="**/build.xml" excludes="skunkworks/build.xml"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-path" pathid="build-path.text"/>
     </target>
 
     <target name="build-module-list-all" unless="build-all-path.text" depends="init">
-        <ivy:buildlist reference="module-build-all-path" skipbuildwithoutivy="true">
+        <ivy:buildlist reference="module-build-all-path" onMissingDescriptor="skip">
             <fileset dir="modules" includes="**/build.xml"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-all-path" pathid="build-all-path.text"/>
@@ -402,225 +402,6 @@
             <present present="srconly" targetdir="lib/repository"/>      
           </fileset>
         </copy>
-    </target>
-
-    <target name="build-ivy-repository">
-
-        <!--
-        <ivy:install organisation="com.l7tech.lib" module="apache-cxf-lib" revision="2.1.1" from="libraries" to="temp.nu" transitive="true" haltonfailure="false"/>
-        <ivy:install organisation="org.mortbay.jetty" module="jetty-sslengine" revision="6.1.8" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
-        <ivy:install organisation="org.mortbay.jetty" module="jetty-ajp" revision="6.1.8" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
-        <ivy:install organisation="org.hibernate" module="hibernate-commons-annotations" revision="3.0.0.ga" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
-        <ivy:install organisation="org.hibernate" module="hibernate-annotations" revision="3.3.1.GA" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
-        <ivy:install organisation="org.apache.derby" module="derby" revision="10.4.1.3" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
-        <ivy:install organisation="javax.mail" module="mail" revision="1.4.1" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
-        <ivy:install organisation="commons-logging" module="commons-logging" revision="1.0.4" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
-        <ivy:install organisation="org.freemarker" module="freemarker" revision="2.3.13" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
-        <ivy:install organisation="commons-io" module="commons-io" revision="1.4" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
-        <ivy:install organisation="commons-fileupload" module="commons-fileupload" revision="1.2.1" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
-        <ivy:install organisation="org.springframework" module="spring-aop" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        <ivy:install organisation="org.springframework" module="spring-beans" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        <ivy:install organisation="org.springframework" module="spring-context" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        <ivy:install organisation="org.springframework" module="spring-context-support" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        <ivy:install organisation="org.springframework" module="spring-core" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        <ivy:install organisation="org.springframework" module="spring-jdbc" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        <ivy:install organisation="org.springframework" module="spring-orm" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        <ivy:install organisation="org.springframework" module="spring-test" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        <ivy:install organisation="org.springframework" module="spring-tx" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        <ivy:install organisation="org.springframework" module="spring-web" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        <ivy:install organisation="org.springframework" module="spring-webmvc" revision="2.5.4" from="libraries" to="localfile" transitive="true" haltonfailure="false" overwrite="true"/>
-        -->
-        <!--<ivy:install organisation="antlr" module="antlr" revision="2.7.7-l7p1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="apache-harmony" module="apache-harmony-asn1" revision="0.1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="bouncycastle" module="bcprov-jdk15" revision="135" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="c3p0" module="c3p0" revision="0.9.1.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm" module="are" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm" module="xml4j" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm" module="xss4j.00.patch" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm" module="xss4j" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm.mq" module="mq6" revision="6.0.2.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.incors.plaf" module="kunststoff" revision="2.0.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.intellij" module="forms_rt" revision="7.0.1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.japisoft" module="xmlpad" revision="3.7" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.japisoft" module="xmlpad-res" revision="3.7" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.jgoodies" module="looks" revision="1.1.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.jscape" module="sftp" revision="7.0.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.l7tech.lib" module="layer7-uddi-lib" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.l7tech.lib" module="xbean-saml-1.1" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.l7tech.lib" module="xbean-saml-2.0" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.l7tech.lib" module="xbean-xenc-xmldsig" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.sun.org.apache.xml.internal" module="resolver" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.sun.xml.bind" module="jaxb-impl" revision="2.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.sun.xml.messaging.saaj" module="saaj-impl" revision="1.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.sun.xml.stream" module="sjsxp" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.sun.xml.ws" module="jaxws-rt" revision="2.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.tarari" module="tarari-raxj" revision="4.4.2.21" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.tibco" module="jms" revision="1.5" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.toedter" module="jcalendar" revision="1.3.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.whirlycott" module="whirlycache" revision="1.0.1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="commons-codec" module="commons-codec" revision="1.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="commons-codec" module="commons-codec" revision="1.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="commons-collections" module="commons-collections" revision="3.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="commons-configuration" module="commons-configuration" revision="1.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="commons-httpclient" module="commons-httpclient" revision="3.0.1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="commons-lang" module="commons-lang" revision="2.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="commons-logging" module="commons-logging" revision="1.0.4" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="concurrent" module="concurrent" revision="1.3.4" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="edu.stanford.ejalbert" module="browser-launcher" revision="1.0rc4" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="javax.activation" module="activation" revision="1.1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="javax.jws" module="jsr181" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="javax.mail" module="mail" revision="1.4" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="javax.persistence" module="persistence-api" revision="3.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="javax.servlet" module="servlet-api" revision="2.5" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="javax.xml" module="jsr173" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="javax.xml.bind" module="jaxb-api" revision="2.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="javax.xml.soap" module="saaj-api" revision="1.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="javax.xml.ws" module="jaxws-api" revision="2.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jaxen" module="jaxen" revision="1.1-beta-10" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jboss" module="jboss-aop" revision="4.0.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jboss" module="jboss-cache" revision="4.0.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jboss" module="jboss-common" revision="4.0.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jboss" module="jboss-j2ee" revision="4.0.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jboss" module="jboss-jmx" revision="4.0.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jboss" module="jboss-minimal" revision="4.0.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jboss" module="jboss-serialization" revision="4.0.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jboss" module="jboss-system" revision="4.0.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jdom" module="jdom" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jfree" module="jfreechart" revision="1.0.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jfree" module="jcommon" revision="1.0.5" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="jgroups" module="jgroups" revision="2.2.9.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="log4j" module="log4j" revision="1.2.14" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="mysql" module="mysql-connector-java" revision="5.0.4" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="nekohtml" module="nekohtml" revision="0.9.5" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="net.sf.nachocalendar" module="nachocalendar" revision="0.23" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.ftpserver" module="ftpserver-parent" revision="1.0-543677-20070601" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.mina" module="mina-core" revision="1.1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.mina" module="mina-filter-compression" revision="1.1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.mina" module="mina-filter-ssl" revision="1.1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="tomcat" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.ws.commons.policy" module="policy" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.codehaus.xfire" module="xfire-aegis" revision="1.2.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.codehaus.xfire" module="xfire-core" revision="1.2.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.codehaus.xfire" module="xfire-spring" revision="1.2.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.hibernate" module="hibernate" revision="3.2.6.ga" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.mortbay.jetty" module="jetty" revision="6.1.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.mortbay.jetty" module="jetty-util" revision="6.1.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.slf4j" module="slf4j-api" revision="1.3.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.slf4j" module="slf4j-jdk14" revision="1.3.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-aop" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-beans" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-context" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-core" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-dao" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-hibernate" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-jdbc" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-remoting" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-support" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-web" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-webmvc" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="snoozesoft" module="systray4j" revision="2.3.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="trove" module="trove" revision="1.0.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="wsdl4j" module="wsdl4j" revision="1.6.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="xalan" module="xalan" revision="2.7.1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="xalan" module="xalan-serializer" revision="2.7.1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="xerces" module="xercesImpl" revision="2.9.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="xmlbeans" module="xbean" revision="2.2.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.sun.japex" module="japex" revision="1.1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.sun.japex.jdsl" module="jdsl" revision="1.1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.sun.xml.fastinfoset" module="FastInfoset" revision="1.0.1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="junit" module="junit" revision="4.4" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.springframework" module="spring-mock" revision="1.2.8" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-
-        <!--
-        Dependencies for modular assertions
-        -->
-        <!--<ivy:install organisation="axis" module="axis" revision="1.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="axis" module="axis-jaxrpc" revision="1.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ca.wsdm" module="ca_wsdm_core" revision="3.50" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ca.wsdm" module="ca_wsdm_handler_common" revision="3.50" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ca.wsdm" module="ca_wsdm_wsdm35mmi_axis_stubskel" revision="3.50" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.netegrity" module="tmxmltoolkit" revision="6.0-281-0003" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="commons-pool" module="commons-pool" revision="1.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.safehaus.jug" module="jug" revision="2.0.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="bsf" module="bsf" revision="2.4.0-l7p1" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="rhino" module="js" revision="1.6R7" from="maven2" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.jscape" module="sftp" revision="7.0.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.snmp4j" module="snmp4j" revision="1.0.4b" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-                <!---->
-        <!--
-        Expanded dependencies for ivy files.
-        -->
-        <!--<ivy:install organisation="com.chrysalisits.cryptox" module="luna-jcasp" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.chrysalisits.cryptox" module="luna-jcesp" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ncipher" module="jcetools" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ncipher" module="jutils" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ncipher" module="keysafe" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ncipher" module="kmcsp" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ncipher" module="kmjava" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ncipher" module="nfjava" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ncipher" module="rsaprivenc" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ncipher" module="spp" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.rsa" module="asn1" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.rsa" module="certj" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.rsa" module="certjWithNative" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.rsa" module="codebase" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.rsa" module="jsafe" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.rsa" module="jsafeJCE" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.rsa" module="jsafeWithNative" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.rsa" module="ldap" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.rsa" module="rsamisc" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-
-
-        <!--<ivy:install organisation="com.ibm.mq" module="connector" revision="6.0.2.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm.mq" module="com.ibm.mq.pcf" revision="6.0.3" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm.mq" module="dhbcore" revision="6.0.2.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm.mq" module="com.ibm.mqjms" revision="6.0.2.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm.mq" module="com.ibm.mq" revision="6.0.2.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm.mq" module="mqcontext" revision="6.0.2.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.ibm.mq" module="com.ibm.mq.jms.Nojndi" revision="6.0.2.2" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.tibco.jms" module="tibcrypt" revision="1.5" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.tibco.jms" module="tibjmsadmin" revision="1.5" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.tibco.jms" module="tibrvjms" revision="1.5" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.tibco.jms" module="tibjmsapps" revision="1.5" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.tibco.jms" module="tibjms" revision="1.5" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-
-        <!--<ivy:install organisation="org.apache.tomcat" module="annotations-api" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="catalina" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="catalina-ha" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="coyote" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="dbcp" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="el-api" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="jasper" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="jasper-el" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="jasper-jdt" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="jsp-api" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="juli" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.tomcat" module="tribes" revision="6.0.13" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.ftpserver" module="ftpserver-api" revision="1.0-543677-20070601" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="org.apache.ftpserver" module="ftpserver-core" revision="1.0-543677-20070601" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-
-        <!--<ivy:install organisation="com.systinet" module="systinet-builtin_serialization" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.systinet" module="systinet-core_services_client" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.systinet" module="systinet-jaxm" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.systinet" module="systinet-jaxrpc" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.systinet" module="systinet-saaj" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.systinet" module="systinet-uddiclient_api_v3" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.systinet" module="systinet-uddiclient_core" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.systinet" module="systinet-wasp" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.systinet" module="systinet-wsdl2uddi_client_v3" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-        <!--<ivy:install organisation="com.systinet" module="systinet-wsdl_api" revision="1.0" from="libraries" to="localfile" transitive="true" haltonfailure="false"/>-->
-
-        <!--
-          Ivy files
-        <ivyinstall file="lib/crypto/luna/ivy.xml"/>
-        <ivyinstall file="lib/crypto/ncipher/ivy.xml"/>
-        <ivyinstall file="lib/crypto/rsa/ivy.xml"/>
-        <ivyinstall file="lib/gateway/jms/mqseries6/ivy.xml"/>
-        <ivyinstall file="lib/gateway/jms/tibco/ivy.xml"/>
-        <ivyinstall file="lib/gateway/tomcat/ivy.xml"/>
-        <ivyinstall file="lib/gateway/ftp/ivy.xml"/>
-        <ivyinstall file="lib/uddi/systinet/ivy.xml"/>
-        -->
     </target>
 
     <presetdef name="modules">
@@ -847,7 +628,6 @@
         <echo>Use test-one -Dtest=x,y,z</echo>
     </target>
 
-
     <!-- TODO [steve] target to run one test? -->
     <target name="test-one" depends="prepare, summary" if="test">
         <echo>Not implemented</echo>
@@ -897,7 +677,7 @@
                 <fail message="Cannot assign web server root directory because OS family is unrecognized."/>
             </else>
         </if>
-        <fail message="Web server root directory does not exist: ${test.perf.www.dir}">
+        <fail message="Web server root directory does not exist [test.perf.www.dir]: ${test.perf.www.dir}">
             <condition>
                 <not>
                     <available file="${test.perf.www.dir}" type="dir"/>
@@ -924,7 +704,7 @@
         <echo level="info">Running performance test.</echo>
 
         <!-- Create build list for required 1.5 modules -->
-        <ivy:buildlist root="layer7-skunkworks" reference="module-build-path-skunk" skipbuildwithoutivy="true">
+        <ivy:buildlist root="layer7-skunkworks" reference="module-build-path-skunk" onMissingDescriptor="skip">
             <fileset dir="modules" includes="**/build.xml"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-path-skunk" pathid="build-path-skunk-text"/>
@@ -1456,6 +1236,21 @@
     <target name="configwizard" description="Build and package just the config wizards" depends="package.configwiz.all"/>
 
     <!--
+      Compile and package a single module and any modules that directly depend on it
+    -->
+    <target name="module" description="Build and package a single module (use with -Dmodule=...)" depends="prepare.base">
+        <fail unless="module">module is a required property (the module to package)</fail>
+
+        <!-- Create build list for required 1.5 modules -->
+        <ivy:buildlist leaf="${module}" reference="module-build-path-single" onMissingDescriptor="skip" onlydirectdep="true">
+            <fileset dir="modules" includes="**/build.xml"/>
+        </ivy:buildlist>
+
+        <ivy-echo-build-plan refid="module-build-path-single" pathid="module-build-path-single-text"/>
+        <modules target="publish-all-quick" buildpathref="module-build-path-single"/>
+    </target>
+
+    <!--
       Create a new modular assertion
     -->
     <target name="new-assertion" description="Generate a new modular assertion">
@@ -1780,7 +1575,7 @@
     <target name="package.report.jars" depends="package.client.jar,package.gateway,package.manager.jar"/>
 
     <target name="package.skunkworks" depends="prepare.base">
-        <ivy:buildlist reference="module-build-path-skunkworks" skipbuildwithoutivy="true" root="layer7-skunkworks">
+        <ivy:buildlist reference="module-build-path-skunkworks" onMissingDescriptor="skip" root="layer7-skunkworks">
             <fileset dir="modules" includes="**/build.xml"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-path-skunkworks" pathid="build-path.text"/>
@@ -1810,7 +1605,7 @@
     </target>
 
     <target name="package.internal" depends="prepare.base">
-        <ivy:buildlist reference="module-build-path-internal" skipbuildwithoutivy="true" root="layer7-internal">
+        <ivy:buildlist reference="module-build-path-internal" onMissingDescriptor="skip" root="layer7-internal">
             <fileset dir="modules" includes="**/build.xml"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-path-internal" pathid="build-path.text"/>
@@ -2524,7 +2319,7 @@
         <property name="module.compile.excludes" value="**/*JDK16*"/>
 
         <!-- Create build list for 1.5 modules (manager, xml vpn client) -->
-        <ivy:buildlist root="layer7-gateway-console,layer7-xmlvpnclient" reference="module-build-path-15" skipbuildwithoutivy="true">
+        <ivy:buildlist root="layer7-gateway-console,layer7-xmlvpnclient" reference="module-build-path-15" onMissingDescriptor="skip">
             <fileset dir="modules" includes="**/build.xml"/>
         </ivy:buildlist>
         <modules target="publish" buildpathref="module-build-path-15"/>
