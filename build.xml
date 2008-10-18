@@ -427,6 +427,7 @@
                 <propertyref name="build.vendor"/>
                 <propertyref name="build.vendor.id"/>
                 <propertyref name="ivy.settings.filepath"/>
+                <propertyref name="module.official.build"/>
             </propertyset>
         </subant>
     </presetdef>
@@ -2440,6 +2441,7 @@
         <property name="ssg.install.official" value="true"/>
         <property name="makerpm" value="true"/>
         <property name="module.obfuscate" value="true"/>
+        <property name="module.official.build" value="true"/>        
         <property name="pack200" value="true"/>
     </target>
 
