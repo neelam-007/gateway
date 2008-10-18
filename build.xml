@@ -16,7 +16,6 @@
     <property name="src.root" location="${basedir}"/>
 
     <!-- get the version -->
-    <property file="${src.root}/local.build.version"/>
     <property file="${src.root}/build.version"/>
 
     <!--
@@ -413,7 +412,7 @@
 
             <propertyset dynamic="false">
                 <propertyref name="build.junit.xmlformat"/>
-                <propertyref name="module.obfuscate"/>
+                <propertyref prefix="module.obfuscate"/>
                 <propertyref name="module.compile.excludes"/>
                 <propertyref name="module.sign"/>
                 <propertyref name="module.pack200"/>
@@ -1058,7 +1057,6 @@
       Remove any build artifacts
     -->
     <target name="clean" depends="init,clean.test,clean-modules" description="Delete all build output.">
-        <delete file="${build.dir}/please_obfuscate"/>
         <delete dir="${dist.dir}"/>
         <delete dir="${doc.root}"/>
         <delete dir="${build.dir}"/>
@@ -1179,9 +1177,12 @@
     <!--
       Generate a version string if not supplied
     -->
-    <target name="package.readversion" depends="package.readversion.securespan, package.readversion.em">
-        <echo level="info">Build is using SS version: "${build.version}" [${build.rpmversion}]</echo>
-        <echo level="info">Build is using EM version: "${build.em.version}" [${build.em.rpmversion}]</echo>
+    <target name="package.readversion" depends="package.readlocal,package.readversion.securespan, package.readversion.em" unless="skip.version.report">
+        <echo level="info">Build is using SS version: "${build.version}" [${build.rpmversion}-${build.version.revision}]</echo>
+        <echo level="info">Build is using EM version: "${build.em.version}" [${build.em.rpmversion}-${build.em.version.revision}]</echo>
+    </target>
+    <target name="package.readlocal">
+        <property file="${src.root}/local.build.version"/>        
     </target>
     <target name="package.readversion.securespan" unless="build.version" depends="package.defaultrpmversion">
         <!-- Set properties to keep IDEA happy -->
@@ -1189,10 +1190,13 @@
         <property name="build.version.minor" value=""/>
         <property name="build.version.subminor" value=""/>
         <property name="build.version.label" value=""/>
+        <property name="build.version.revision" value=""/>
 
-        <!-- Generate build.version from parts in build.version file, rpm version omits the label since '-' is not permitted in rpms -->
-        <property name="build.rpmversion" value="${build.version.major}.${build.version.minor}.${build.version.subminor}"/>
+        <condition property="build.version" value="${build.version.major}.${build.version.minor}${build.version.label}">
+            <equals arg1="0" arg2="${build.version.subminor}"/>
+        </condition>
         <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}${build.version.label}"/>
+        <property name="build.rpmversion" value="${build.version}"/>
     </target>
     <target name="package.readversion.em" unless="build.em.version" depends="package.defaultemrpmversion">
         <!-- Set properties to keep IDEA happy -->
@@ -1200,10 +1204,13 @@
         <property name="build.em.version.minor" value=""/>
         <property name="build.em.version.subminor" value=""/>
         <property name="build.em.version.label" value=""/>
+        <property name="build.em.version.revision" value=""/>
 
-        <!-- Generate build.em.version from parts in build.version file, rpm version omits the label since '-' is not permitted in rpms -->
-        <property name="build.em.rpmversion" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}"/>
+        <condition property="build.em.version" value="${build.em.version.major}.${build.em.version.minor}${build.em.version.label}">
+            <equals arg1="0" arg2="${build.em.version.subminor}"/>
+        </condition>
         <property name="build.em.version" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}${build.em.version.label}"/>
+        <property name="build.em.rpmversion" value="${build.em.version}"/>
     </target>
     <target name="package.defaultrpmversion" if="build.version" unless="build.rpmversion">
         <property name="build.rpmversion" value="${build.version}"/>        
@@ -1847,7 +1854,7 @@
             <filterchain>
                 <tokenfilter>
                     <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.rpmversion}" flags="m"/>
-                    <replaceregex pattern="(?&lt;=^Release: [0-9]{1,10})" replace="${build.release}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^Release: )[0-9]{1,10}" replace="${build.version.revision}${build.release}" flags="m"/>
                     <replaceregex pattern="(?&lt;=^[a-zA-Z &quot;]{0,80}Layer 7 SecureSpan\(tm\) Gateway v)[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
                 </tokenfilter>
             </filterchain>
@@ -1880,7 +1887,7 @@
             <filterchain>
                 <tokenfilter>
                     <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.rpmversion}" flags="m"/>
-                    <replaceregex pattern="(?&lt;=^Release: [0-9]{1,10})" replace="${build.release}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^Release: )[0-9]{1,10}" replace="${build.version.revision}${build.release}" flags="m"/>
                 </tokenfilter>
             </filterchain>
         </copy>
@@ -1914,7 +1921,7 @@
             <filterchain>
                 <tokenfilter>
                     <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.rpmversion}" flags="m"/>
-                    <replaceregex pattern="(?&lt;=^Release: )[0-9]{1,10}" replace="${build.release}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^Release: )[0-9]{1,10}" replace="${build.version.revision}${build.release}" flags="m"/>
                 </tokenfilter>
             </filterchain>
         </copy>
@@ -1946,7 +1953,7 @@
             <filterchain>
                 <tokenfilter>
                     <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.em.rpmversion}" flags="m"/>
-                    <replaceregex pattern="(?&lt;=^Release: [0-9]{1,10})" replace="${build.release}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^Release: )[0-9]{1,10}" replace="${build.em.version.revision}${build.release}" flags="m"/>
                 </tokenfilter>
             </filterchain>
         </copy>
@@ -2200,10 +2207,16 @@
         </zip>
     </target>
 
-    <target name="zip.api" depends="package.api,bridgeapi.javadoc,package.managerapi">
+    <target name="package.clientapi" depends="package.client.jar,bridgeapi.javadoc" description="Package the Client API for distribution.">
         <!-- package bridge api for distribution -->
         <zip destfile="${build.dir}/BridgeAPI-${build.version}.zip" basedir="${build.dir}/docs" includes="bridge-api/**" />
+    </target>
 
+    <target name="detect.custom.assertion.sample" depends="prepare">
+        <available property="custom.assertion.sample.present" file="${src.root}/CustomAssertionSample" type="dir"/>    
+    </target>
+
+    <target name="zip.api.customassertion" depends="package.api,detect.custom.assertion.sample" if="custom.assertion.sample.present">
         <!-- package layer7 api for distribution -->
         <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}"/>
         <copy todir="${build.dir}/CustomAssertionAPI-${build.version}">
@@ -2244,8 +2257,18 @@
         <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/lib"/>
         <copy file="${build.dir}/layer7-api.jar" tofile="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/lib/layer7-api.jar"/>
 
-        <zip destfile="${build.dir}/CustomAssertion_dev_kit-${build.version}.zip" basedir="${build.dir}" includes="CustomAssertionAPI-${build.version}/**" />
+        <zip destfile="${build.dir}/CustomAssertion_dev_kit-${build.version}.zip">
+            <zipfileset dir="${build.dir}" filemode="755">
+                <include name="CustomAssertionAPI-${build.version}/**/*.sh"/>
+            </zipfileset>
+            <zipfileset dir="${build.dir}">
+                <include name="CustomAssertionAPI-${build.version}/**/*"/>
+                <exclude name="CustomAssertionAPI-${build.version}/**/*.sh"/>
+            </zipfileset>
+        </zip>
     </target>
+
+    <target name="zip.api" depends="package.clientapi,package.managerapi,zip.api.customassertion"/>
 
     <macrodef name="checkdeps">
         <attribute name="libfilesetref"/>
@@ -2310,25 +2333,6 @@
     </target>
 
     <!--
-      1.5 compile target - use to check that the manager / xml vpn client still work with 1.5
-    -->
-    <target name="compile15" depends="clean, prepare">
-        <!-- Fail if not 1.5 jdk -->
-        <condition property="compile15.versionOk">
-          <equals arg1="1.5" arg2="${java.specification.version}"/>
-        </condition> 
-        <fail unless="compile15.versionOk">You must run this with a 1.5 JDK</fail>
-
-        <property name="module.compile.excludes" value="**/*JDK16*"/>
-
-        <!-- Create build list for 1.5 modules (manager, xml vpn client) -->
-        <ivy:buildlist root="layer7-gateway-console,layer7-xmlvpnclient" reference="module-build-path-15" onMissingDescriptor="skip">
-            <fileset dir="modules" includes="**/build.xml"/>
-        </ivy:buildlist>
-        <modules target="publish" buildpathref="module-build-path-15"/>
-    </target>
-
-    <!--
       Set database properties for configured DB
     -->
     <target name="db.properties"
@@ -2381,8 +2385,8 @@
       Official build
     -->
     <target name="ssg-install-full"
-            description="Offical build target [optionally use with obfuscate, makerpm and makensis]"
-            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,zip.api">
+            description="Offical build target [optionally use with skip-obfuscate, makerpm and makensis]"
+            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,zip.api,distribute">
     </target>
 
     <!--
@@ -2397,13 +2401,17 @@
     -->
     <target name="dist"
             description="Build distributable software packages [optionally use with obfuscate]"
-            depends="init-dist, makensis, makerpm, pack200, clean, package">
+            depends="init-dist, makensis, makerpm, pack200, clean, package, distribute">
+    </target>
+
+
+    <target name="distribute" depends="prepare">
         <echo level="info">Moving packaged software to distribution directory.</echo>
 
         <echo level="info">Creating: ${dist.dir}</echo>
         <mkdir dir="${dist.dir}"/>
 
-        <move todir="${dist.dir}" flatten="true">
+        <move todir="${dist.dir}" flatten="true" verbose="true">
             <fileset dir="${build.rpm}/RPMS">
                 <include name="*/*.rpm"/>
             </fileset>
@@ -2412,6 +2420,11 @@
                 <include name="Manager-*.tar.gz"/>
                 <include name="Client-*.tar.gz"/>
             </fileset>
+            <fileset dir="${build.dir}">
+                <include name="CustomAssertion_dev_kit-*.zip"/>
+                <include name="BridgeAPI-*.zip"/>
+                <include name="ManagerAPI-*.zip"/>
+            </fileset>
         </move>
     </target>
 
@@ -2419,26 +2432,35 @@
             description="Build TARs for use in Solaris/Tarari builds"
             depends="ssg-install-full-init,INTERNAL-ssg-install,package.solaris.tar,package.tarari.tar"/>
 
+    <!--
+      Set the standard options for an official build. 
+    -->
     <target name="ssg-install-full-init">
         <property name="ssg.install.enabled" value="true"/>
         <property name="ssg.install.official" value="true"/>
+        <property name="makerpm" value="true"/>
+        <property name="module.obfuscate" value="true"/>
+        <property name="pack200" value="true"/>
     </target>
 
     <!--
       Initialize full install (before anything is done, ie. packaging)
     -->
     <target name="INTERNAL-ssg-install-init-pre" if="ssg.install.enabled" depends="prepare.base">
+        <fail unless="makerpm.available">RPM packaging is not available, cannot perform official build.</fail>
+
         <property name="install.build.number" value="${build.number}"/>
         <echo level="info" message="Using build number ${install.build.number}"/>
-
-        <echo level="info" message="Enabling Pack200"/>
-        <property name="pack200" value="true"/>
     </target>
 
     <target name="obfuscate" description="Enable obfuscated build (when packaging)">
         <echo level="info">Enabling obfuscation for build.</echo>
-        <property name="obfuscate" value="true"/>
         <property name="module.obfuscate" value="true"/>
+    </target>
+
+    <target name="skip-obfuscate" description="Disable obfuscated build (when packaging)">
+        <echo level="info">Disabling obfuscation for build.</echo>
+        <property name="module.obfuscate.disabled" value="false"/>
     </target>
 
     <target name="pack200" description="Enable pack200 compression (when packaging)">
@@ -2786,12 +2808,11 @@
     <!--
       Initialization for the pre-official build (set versions, etc)
     -->
-    <target name="OFFICIAL-build.init" depends="init">
-        <condition property="rightdir">
-            <equals arg1="${user.dir}" arg2="${src.root}"/>
-        </condition>
-        <fail unless="rightdir" message="You must run this target from the ${src.root} directory!"/>
-
+    <target name="OFFICIAL-build.init.pre">
+        <property name="skip.version.report" value="true"/>
+        <delete file="local.build.version"/>
+    </target>
+    <target name="OFFICIAL-build.interactive" depends="init" unless="build.label">
         <input message="This will increment the OFFICIAL build count in CVS.  Are you sure you want to do this?"
                validargs="Y,y,N,n" addproperty="sure"/>
 
@@ -2807,6 +2828,12 @@
 
         <input message="Enter SecureSpan version number" addproperty="official.build.version"/>
         <input message="Enter EM version number" addproperty="official.build.em.version"/>
+    </target>
+    <target name="OFFICIAL-build.init" depends="OFFICIAL-build.init.pre,init,OFFICIAL-build.interactive">
+        <condition property="rightdir">
+            <equals arg1="${user.dir}" arg2="${src.root}"/>
+        </condition>
+        <fail unless="rightdir" message="You must run this target from the ${src.root} directory!"/>
 
         <echo level="info">Running svn switch for build.number (to trunk/HEAD)</echo>
         <svn>
@@ -2815,6 +2842,10 @@
 
         <buildnumber/>
 
+        <!-- Set using provided label, only does something if not in "interactive" mode -->
+        <property name="build.label" value=""/>
+        <property name="official.build.version" value="${build.version}${build.label}"/>
+        <property name="official.build.em.version" value="${build.em.version}${build.label}"/>
         <echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.em.version=${official.build.em.version}${line.separator}</echo>
     </target>
 

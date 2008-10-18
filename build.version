@@ -5,7 +5,9 @@
 build.version.major=4
 build.version.minor=7
 build.version.subminor=0
+build.version.revision=1
 
 build.em.version.major=1
 build.em.version.minor=0
 build.em.version.subminor=0
+build.em.version.revision=1
