@@ -1305,7 +1305,6 @@
             ${line.separator}node.db.pass = ${deploy.db.password}
             ${line.separator}node.cluster.pass = ${deploy.cluster.password}
         </echo>
-        <copy file="${src.root}/etc/tomcat/truststore.jks" todir="${deploy.dir}/etc/conf" preservelastmodified="true"/>
         <echo level="info">Copying web files</echo>
         <copy file="${src.root}/web/index.html" todir="${deploy.dir}/web/ssg" preservelastmodified="true"/>
 
