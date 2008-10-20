@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0">
-	<info organisation="com.l7tech"
-		module="layer7-uddi"
-		status="integration"
-	>
-	</info>
+    <info organisation="com.l7tech"
+          module="layer7-uddi"
+          status="integration"
+    >
+    </info>
     <configurations defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default">
         <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
         <conf name="default" description="Runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
@@ -14,25 +14,16 @@
         <conf name="test" description="The dependency required for building/running tests only." extends="runtime,compile"/>
         <conf name="optional" description="Contains all optional dependencies"/>
     </configurations>
-	<publications>
-		<artifact name="layer7-uddi" type="jar" ext="jar" conf="master"/>
-	</publications>
-	<dependencies>
-		<dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
-		<dependency org="com.l7tech.lib" name="layer7-uddi-lib" rev="1.0" force="true" conf="core"/>
-		<dependency org="javax.activation" name="activation" rev="1.1" force="true" conf="core"/>
-		<dependency org="javax.xml.soap" name="saaj-api" rev="1.3" force="true" conf="core"/>
-		<dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3" force="true" conf="core"/>
-
-        <!-- Optional dependencies if using Java 5, not required for Java 6 -->
-        <dependency org="com.sun.xml.ws" name="jaxws-rt" rev="2.0" force="true" conf="optional"/>
-        <dependency org="com.sun.xml.bind" name="jaxb-impl" rev="2.0" force="true" conf="optional"/>
-<!--        <dependency org="com.sun.xml.stream" name="sjsxp" rev="1.0" force="true" conf="optional"/> -->
-        <dependency org="com.sun.org.apache.xml.internal" name="resolver" rev="1.0" force="true" conf="optional"/>
-        <dependency org="javax.jws" name="jsr181" rev="1.0" force="true" conf="optional"/>
-        <dependency org="javax.xml.bind" name="jaxb-api" rev="2.0" force="true" conf="optional"/>
-        <dependency org="javax.xml.ws" name="jaxws-api" rev="2.0" force="true" conf="optional"/>
+    <publications>
+        <artifact name="layer7-uddi" type="jar" ext="jar" conf="master"/>
+    </publications>
+    <dependencies>
+        <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
+        <dependency org="com.l7tech.lib" name="layer7-uddi-lib" rev="1.0" force="true" conf="core"/>
+        <dependency org="javax.activation" name="activation" rev="1.1" force="true" conf="core"/>
+        <dependency org="javax.xml.soap" name="saaj-api" rev="1.3" force="true" conf="core"/>
+        <dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3" force="true" conf="core"/>
 
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
-	</dependencies>
+    </dependencies>
 </ivy-module>

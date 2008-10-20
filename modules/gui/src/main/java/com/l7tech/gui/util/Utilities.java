@@ -5,6 +5,7 @@ package com.l7tech.gui.util;
 
 import javax.swing.*;
 import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
@@ -20,6 +21,7 @@ import java.security.PrivilegedAction;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -1313,7 +1315,7 @@ public class Utilities {
      * @return The model row index
      */
     public static int convertRowIndexToModel( JTable table, int row ) {
-        return Utilties16Holder.utils.convertRowIndexToModel( table, row );
+        return table.convertRowIndexToModel( row );
     }
 
     /**
@@ -1343,8 +1345,35 @@ public class Utilities {
      */
     public static void setRowSorter( JTable table, TableModel model, int[] cols, boolean[] order,
                                      Comparator [] comparators ) throws IllegalArgumentException, NullPointerException{
-        Utilties16Holder.utils.setRowSorter( table, model, cols, order, comparators );
-    }
+        TableRowSorter sorter = new TableRowSorter(model);
+        if ( cols != null && order != null ) {
+            if( cols.length != order.length){
+                throw new IllegalArgumentException("Length of order array must match length of cols array.");
+            }
+
+            if(comparators != null){
+                if(cols.length != comparators.length){
+                    throw new IllegalArgumentException("Length of comparators array must match length of cols array.");
+                }
+            }
+
+            java.util.List <RowSorter.SortKey> sortKeys = new ArrayList<RowSorter.SortKey>();
+            for ( int i=0; i< cols.length; i++ ) {
+                sortKeys.add(new RowSorter.SortKey(cols[i], order[i]?SortOrder.ASCENDING:SortOrder.DESCENDING));
+            }
+            sorter.setSortKeys(sortKeys);
+
+            if( comparators != null){
+                for(int i = 0; i < comparators.length; i++){
+                    if(comparators[i] != null){
+                        sorter.setComparator(i, comparators[i]);
+                    }
+                }
+            }
+        }
+
+        table.setRowSorter(sorter);
+        sorter.sort();    }
 
     /**
      * Table string converter interface for use when sorting.
@@ -1356,30 +1385,5 @@ public class Utilities {
     private static class ThrowableHolder {
         private final Throwable t;
         private ThrowableHolder(Throwable t) { this.t = t; }
-    }
-
-    private static class Utilties16Holder {
-        private static Utils utils;
-        static {
-            try {
-                utils = (Utils) Class.forName("com.l7tech.gui.util.UtilitiesJDK16").newInstance();
-            } catch ( Exception e ) {
-                logger.info( "Using JDK 1.5 utilities." );
-                utils = new Utils15();
-            } catch ( NoClassDefFoundError e ) {
-                logger.info( "Using JDK 1.5 utilities." );
-                utils = new Utils15();
-            }
-        }
-    }
-
-    static abstract class Utils {
-        public abstract int convertRowIndexToModel( JTable table, int row );
-        public abstract void setRowSorter( JTable table, TableModel model, int[] cols, boolean[] order, Comparator [] comparators );
-    }
-
-    static class Utils15 extends Utils {
-        public int convertRowIndexToModel( JTable table, int row ){ return row; }
-        public void setRowSorter(JTable table, TableModel model, int[] cols, boolean[] order, Comparator [] comparators) { } // not supported in 1.5
     }
 }

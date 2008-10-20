@@ -31,11 +31,8 @@
         <dependency org="org.springframework" name="spring-aop" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-tx" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-orm" rev="2.5.4" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-web" rev="2.5.4" force="true" conf="optional"/>
         <!-- Required on server -->
-
-        <dependency org="javax.xml.bind" name="jaxb-api" rev="2.0" force="true" conf="compile"/>
-        <!-- For JAX-B annotations -->
+        <dependency org="org.springframework" name="spring-web" rev="2.5.4" force="true" conf="optional"/>
 
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
     </dependencies>

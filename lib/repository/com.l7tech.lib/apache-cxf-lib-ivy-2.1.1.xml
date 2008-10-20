@@ -29,24 +29,22 @@
 
         <dependency org="javax.xml.bind" name="jaxb-api" rev="2.1" force="true" conf="core"/>
 
-        <exclude org="avalon-framework" module="avalon-framework" artifact="*" type="source" ext="jar" matcher="exact" /> 
+        <exclude org="avalon-framework" module="avalon-framework" artifact="*" type="source" ext="jar" matcher="exact" />
         <exclude org="com.ibm.icu" module="icu4j" artifact="*" type="source" ext="jar" matcher="exact" /> 
-        <exclude org="com.sun.xml.bind" module="jaxb-xjc" artifact="*" type="source" ext="jar" matcher="exact" /> 
-        <!-- <exclude org="com.sun.xml.bind" module="jaxb-impl" artifact="*" type="source" ext="jar" matcher="exact" />  -->
-        <!-- <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="source" ext="jar" matcher="exact" />  -->
-        <exclude org="javax.xml.stream" module="stax-api" artifact="*" type="source" ext="jar" matcher="exact" /> 
-        <exclude org="log4j" module="log4j" artifact="*" type="source" ext="jar" matcher="exact" /> 
+        <exclude org="com.sun.xml.bind" module="jaxb-xjc" artifact="*" type="source" ext="jar" matcher="exact" />
+        <exclude org="javax.xml.stream" module="stax-api" artifact="*" type="source" ext="jar" matcher="exact" />
+        <exclude org="log4j" module="log4j" artifact="*" type="source" ext="jar" matcher="exact" />
         <exclude org="logkit" module="logkit" artifact="*" type="source" ext="jar" matcher="exact" /> 
         <exclude org="org.apache.ws.commons.axiom" module="*" artifact="*" type="source" ext="jar" matcher="exact" /> 
         <exclude org="org.codehaus.woodstox" module="wstx-asl" artifact="*" type="source" ext="jar" matcher="exact" /> 
         <exclude org="org.springframework" module="*" artifact="*" type="source" ext="jar" matcher="exact" /> 
-        <exclude org="stax" module="stax-api" artifact="*" type="source" ext="jar" matcher="exact" /> 
-        <exclude org="velocity" module="velocity" artifact="*" type="source" ext="jar" matcher="exact" /> 
+        <exclude org="stax" module="stax-api" artifact="*" type="source" ext="jar" matcher="exact" />
+        <exclude org="velocity" module="velocity" artifact="*" type="source" ext="jar" matcher="exact" />
         <exclude org="xalan" module="xalan" artifact="*" type="source" ext="jar" matcher="exact" /> 
         <exclude org="xerces" module="xercesImpl" artifact="*" type="source" ext="jar" matcher="exact" /> 
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="source" ext="jar" matcher="exact" /> 
-        <exclude org="xml-apis" module="xml-apis" artifact="*" type="source" ext="jar" matcher="exact" /> 
-        <exclude org="xom" module="xom" artifact="*" type="source" ext="jar" matcher="exact" /> 
+        <exclude org="xml-apis" module="xml-apis" artifact="*" type="source" ext="jar" matcher="exact" />
+        <exclude org="xom" module="xom" artifact="*" type="source" ext="jar" matcher="exact" />
     </dependencies>
 
 </ivy-module>
