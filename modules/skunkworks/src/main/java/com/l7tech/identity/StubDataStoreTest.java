@@ -11,6 +11,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.EntityHeaderSet;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -59,17 +60,15 @@ public class StubDataStoreTest extends TestCase {
         IdentityProviderConfig ipc = registry.getInternalProviderConfig();
         final long providerConfigOid = ipc.getOid();
 
-        IdentityHeader[] headers = admin.findAllUsers(providerConfigOid);
-        for ( int i = 0; i < headers.length; i++ ) {
-            EntityHeader header = headers[i];
+        EntityHeaderSet<IdentityHeader> headers = admin.findAllUsers(providerConfigOid);
+        for (EntityHeader header : headers) {
             User u = admin.findUserByID(providerConfigOid, header.getStrId());
             assertTrue("Expected provider " + providerConfigOid +
               " received " + u.getProviderId(), u.getProviderId() == providerConfigOid);
         }
 
         headers = admin.findAllGroups(providerConfigOid);
-        for ( int j = 0; j < headers.length; j++ ) {
-            EntityHeader header = headers[j];
+        for (EntityHeader header : headers) {
             Group g = admin.findGroupByID(providerConfigOid, header.getStrId());
             assertTrue("Expected provider " + providerConfigOid +
               " received " + g.getProviderId(), g.getProviderId() == providerConfigOid);
@@ -136,7 +135,7 @@ public class StubDataStoreTest extends TestCase {
 
         if (allGroupsSize == 0) return;
 
-        EntityHeader eh = (EntityHeader)admin.findAllGroups(provider)[0];
+        EntityHeader eh = admin.findAllGroups(provider).iterator().next();
         newGroupHeaders = new HashSet();
         newGroupHeaders.add(eh);
         admin.saveUser(provider, user, newGroupHeaders);

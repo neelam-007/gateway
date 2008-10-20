@@ -263,7 +263,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
-        public Collection<IdentityHeader> findAllHeaders() throws FindException {
+        public EntityHeaderSet<IdentityHeader> findAllHeaders() throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
@@ -328,7 +328,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
             return getClass();
         }
 
-        public Collection<IdentityHeader> findAllHeaders() throws FindException {
+        public EntityHeaderSet<IdentityHeader> findAllHeaders() throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
     }

@@ -62,25 +62,25 @@ public class IdentityAdminStub implements IdentityAdmin {
         //StubDataStore.defaultStore().getIdentityProviderConfigs().remove(new Long(oid));
     }
 
-    public IdentityHeader[] findAllUsers(long idProvCfgId) throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllUsers(long idProvCfgId) throws FindException {
         Map<String, PersistentUser> users = null;//StubDataStore.defaultStore().getUsers();
-        ArrayList<IdentityHeader> results = new ArrayList<IdentityHeader>();
+        EntityHeaderSet<IdentityHeader> results = new EntityHeaderSet<IdentityHeader>();
         for (String s : users.keySet()) {
             User u = users.get(s);
             results.add(fromUser(u));
         }
-        return results.toArray(new IdentityHeader[0]);
+        return results;
     }
 
-    public IdentityHeader[] searchIdentities(long idProvCfgId, EntityType[] types, String pattern) throws FindException {
-        ArrayList<IdentityHeader> results = new ArrayList<IdentityHeader>();
+    public EntityHeaderSet<IdentityHeader> searchIdentities(long idProvCfgId, EntityType[] types, String pattern) throws FindException {
+        EntityHeaderSet<IdentityHeader> results = new EntityHeaderSet<IdentityHeader>();
         for (EntityType type : types) {
             if (type == EntityType.USER)
-                results.addAll(Arrays.asList(findAllUsers(idProvCfgId)));
+                results.addAll(findAllUsers(idProvCfgId));
             else if (type == EntityType.GROUP)
-                results.addAll(Arrays.asList(findAllGroups(idProvCfgId)));
+                results.addAll(findAllGroups(idProvCfgId));
         }
-        return results.toArray(new IdentityHeader[0]);
+        return results;
     }
 
     public User findUserByID(long idProvCfgId, String userId) throws FindException {
@@ -126,15 +126,15 @@ public class IdentityAdminStub implements IdentityAdmin {
         return pu.getId();
     }
 
-    public IdentityHeader[] findAllGroups(long idProvCfgId) throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllGroups(long idProvCfgId) throws FindException {
 //        final StubDataStore store = StubDataStore.defaultStore();
         Map<String, PersistentGroup> groups = null;//store.getGroups();
-        List<IdentityHeader> results = new ArrayList<IdentityHeader>();
+        EntityHeaderSet<IdentityHeader> results = new EntityHeaderSet<IdentityHeader>();
         for (String gid : groups.keySet()) {
             Group g = groups.get(gid);
             results.add(fromGroup(g));
         }
-        return results.toArray(new IdentityHeader[0]);
+        return results;
     }
 
     public Group findGroupByID(long idProvCfgId, String groupId) throws FindException {

@@ -171,8 +171,9 @@ public class SchemaEntryManagerImpl
 
     @Transactional(readOnly=true)
     @Override
-    public Collection<EntityHeader> findAllHeaders() throws FindException {
-        ArrayList<EntityHeader> completeList = new ArrayList<EntityHeader>(super.findAllHeaders());
+    public EntityHeaderSet<EntityHeader> findAllHeaders() throws FindException {
+        EntityHeaderSet<EntityHeader> completeList = new EntityHeaderSet<EntityHeader>();
+        completeList.addAll(super.findAllHeaders());
         completeList.add(SOAP11_SCHEMA_HEADER);
         return completeList;
     }

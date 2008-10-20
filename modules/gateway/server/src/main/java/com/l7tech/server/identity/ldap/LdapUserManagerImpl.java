@@ -237,7 +237,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * practical equivalent to LdapIdentityProvider.search(new EntityType[] {EntityType.USER}, "*");
      */
-    public Collection<IdentityHeader> findAllHeaders() throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllHeaders() throws FindException {
         LdapIdentityProvider identityProvider = getIdentityProvider();
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }

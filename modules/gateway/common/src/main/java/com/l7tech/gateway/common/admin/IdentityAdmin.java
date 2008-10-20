@@ -108,14 +108,15 @@ public interface IdentityAdmin {
      * Retrieve all available {@link com.l7tech.identity.User}s for a given {@link IdentityProviderConfig}.
      *
      * @param idProvCfgId     the unique object ID of the {@link IdentityProviderConfig} whose users to load.
-     * @return array of {@link IdentityHeader}s for all {@link com.l7tech.identity.User}s within this {@link IdentityProviderConfig}.
+     * @return an {@link com.l7tech.objectmodel.EntityHeaderSet}s with the headers for all
+     *         {@link com.l7tech.identity.User}s within this {@link IdentityProviderConfig}.
      *         May be empty but never null.
      * @throws FindException if the specified object ID did not exist or was not an identity provider config
      * @throws FindException if there was a problem accessing the requested information
      */
     @Transactional(readOnly=true)
     @Secured(types=USER, stereotype=FIND_HEADERS)
-    IdentityHeader[] findAllUsers(long idProvCfgId) throws FindException;
+    EntityHeaderSet<IdentityHeader> findAllUsers(long idProvCfgId) throws FindException;
 
     /**
      * Search for {@link com.l7tech.identity.Identity}s matching a pattern within the specified {@link IdentityProviderConfig}.
@@ -131,12 +132,13 @@ public interface IdentityAdmin {
      *                                <li>pattern "ike*" will match "ike", "Ike" and "ike22" but not "mike";</li>
      *                                <li>pattern "i?e*" will match "ike", "Ike", "ice" and "ike22" but not "eke" or "ikke"</li></ul>
      *
-     * @return array of {@link IdentityHeader}s matching the specified requirements.
+     * @return an {@link com.l7tech.objectmodel.EntityHeaderSet}s with the  {@link com.l7tech.objectmodel.IdentityHeader}s
+     *         for all the {@link com.l7tech.identity.User}s matching the specified requirements.
      * @throws FindException   if there was a problem accessing the requested information.
      */
     @Transactional(readOnly=true)
     @Secured(types={USER, GROUP}, stereotype=FIND_HEADERS)
-    IdentityHeader[] searchIdentities(long idProvCfgId, EntityType[] types, String pattern)
+    EntityHeaderSet<IdentityHeader> searchIdentities(long idProvCfgId, EntityType[] types, String pattern)
       throws FindException;
 
     /**
@@ -208,14 +210,15 @@ public interface IdentityAdmin {
      * Retrieve all available {@link com.l7tech.identity.Group}s for a given {@link IdentityProviderConfig}.
      *
      * @param idProvCfgId     the unique object ID of the {@link IdentityProviderConfig} whose groups to load.
-     * @return array of {@link IdentityHeader}s for all {@link com.l7tech.identity.Group}s within this {@link IdentityProviderConfig}.
+     * @return an {@link com.l7tech.objectmodel.EntityHeaderSet} with the {@link IdentityHeader}s
+     *         for all {@link com.l7tech.identity.Group}s within this {@link IdentityProviderConfig}.
      *         May be empty but never null.
      * @throws FindException if the specified object ID did not exist or was not an identity provider config
      * @throws FindException if there was a problem accessing the requested information
      */
     @Transactional(readOnly=true)
     @Secured(types=GROUP, stereotype=FIND_HEADERS)
-    IdentityHeader[] findAllGroups(long idProvCfgId) throws FindException;
+    EntityHeaderSet<IdentityHeader> findAllGroups(long idProvCfgId) throws FindException;
 
     /**
      * Search for a {@link com.l7tech.identity.Group} by its user ID within an {@link IdentityProviderConfig}.

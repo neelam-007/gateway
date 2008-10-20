@@ -11,6 +11,8 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 
 import javax.security.auth.Subject;
@@ -46,37 +48,32 @@ public class ListEverything extends SsgAdminSession {
     protected Object doSomething() throws Exception {
         ServiceAdmin serviceAdmin = getAdminContext().getServiceAdmin();
         EntityHeader[] serviceHeaders = serviceAdmin.findAllPublishedServices();
-        for (int i = 0; i < serviceHeaders.length; i++) {
-            EntityHeader header = serviceHeaders[i];
-            System.out.println( header );
+        for (EntityHeader header : serviceHeaders) {
+            System.out.println(header);
         }
 
         IdentityProviderConfig internalProviderConfig = null;
         IdentityAdmin identityAdmin = getAdminContext().getIdentityAdmin();
         EntityHeader[] providerHeaders = identityAdmin.findAllIdentityProviderConfig();
-        for (int i = 0; i < providerHeaders.length; i++) {
-            EntityHeader header = providerHeaders[i];
-
-            if ( header.getType() == EntityType.ID_PROVIDER_CONFIG ) {
+        for (EntityHeader header : providerHeaders) {
+            if (header.getType() == EntityType.ID_PROVIDER_CONFIG) {
                 long oid = header.getOid();
-                if ( oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID ) {
+                if (oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) {
                     internalProviderConfig = identityAdmin.findIdentityProviderConfigByID(oid);
                 }
             }
-            System.out.println( header );
+            System.out.println(header);
         }
 
         if ( internalProviderConfig == null ) throw new IllegalStateException( "No internal provider!" );
 
-        EntityHeader[] userHeaders = identityAdmin.findAllUsers(internalProviderConfig.getOid());
-        for (int i = 0; i < userHeaders.length; i++) {
-            EntityHeader userHeader = userHeaders[i];
+        EntityHeaderSet<IdentityHeader> userHeaders = identityAdmin.findAllUsers(internalProviderConfig.getOid());
+        for(EntityHeader userHeader : userHeaders) {
             System.out.println(userHeader);
         }
 
-        EntityHeader[] groupHeaders = identityAdmin.findAllGroups(internalProviderConfig.getOid());
-        for (int i = 0; i < groupHeaders.length; i++) {
-            EntityHeader groupHeader = groupHeaders[i];
+        EntityHeaderSet<IdentityHeader> groupHeaders = identityAdmin.findAllGroups(internalProviderConfig.getOid());
+        for(EntityHeader groupHeader : groupHeaders) {
             System.out.println(groupHeader);
         }
         return null;

@@ -11,6 +11,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -272,7 +273,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
         
         try {
             IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
-            EntityHeader[] groupHeaders = idAdmin.findAllGroups(providerId);
+            EntityHeaderSet<IdentityHeader> groupHeaders = idAdmin.findAllGroups(providerId);
 
             Element groupsEl = referencesParentElement.getOwnerDocument().createElement(GROUPS_EL_NAME);
             for(EntityHeader groupHeader : groupHeaders) {
@@ -301,11 +302,11 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 groupsEl.appendChild(groupEl);
             }
 
-            if(groupHeaders.length > 0) {
+            if(groupHeaders.size() > 0) {
                 refEl.appendChild(groupsEl);
             }
 
-            EntityHeader[] userHeaders = idAdmin.findAllUsers(providerId);
+            EntityHeaderSet<IdentityHeader> userHeaders = idAdmin.findAllUsers(providerId);
 
             Element usersEl = referencesParentElement.getOwnerDocument().createElement(USERS_EL_NAME);
             for(EntityHeader userHeader : userHeaders) {
@@ -323,7 +324,7 @@ public class FederatedIdProviderReference extends IdProviderReference {
                 usersEl.appendChild(userEl);
             }
 
-            if(userHeaders.length > 0) {
+            if(userHeaders.size() > 0) {
                 refEl.appendChild(usersEl);
             }
         } catch(FindException e) {

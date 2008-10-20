@@ -364,17 +364,17 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     @Transactional(readOnly=true)
-    public Collection<HT> findAllHeaders() throws FindException {
+    public EntityHeaderSet<HT> findAllHeaders() throws FindException {
         Collection<ET> entities = findAll();
-        List<HT> headers = new ArrayList<HT>();
+        EntityHeaderSet<HT> headers = new EntityHeaderSet<HT>();
         for (ET entity : entities) {
             headers.add(newHeader(entity));
         }
-        return Collections.unmodifiableList(headers);
+        return headers;
     }
 
     @Transactional(readOnly=true)
-    public Collection<HT> findAllHeaders(final int offset, final int windowSize) {
+    public EntityHeaderSet<HT> findAllHeaders(final int offset, final int windowSize) {
         //noinspection unchecked
         List<ET> entities = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             @Override
@@ -386,7 +386,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             }
         });
 
-        List<HT> headers = new ArrayList<HT>(entities.size());
+        EntityHeaderSet<HT> headers = new EntityHeaderSet<HT>();
         for (ET entity : entities) {
             headers.add(newHeader(entity));
         }

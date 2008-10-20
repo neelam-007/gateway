@@ -735,7 +735,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     /**
      * practical equivalent to LdapIdentityProvider.search(new EntityType[] {EntityType.GROUP}, "*");
      */
-    public Collection<IdentityHeader> findAllHeaders() throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllHeaders() throws FindException {
         LdapIdentityProvider identityProvider = getIdentityProvider();
         return identityProvider.search(new EntityType[]{EntityType.GROUP}, "*");
     }

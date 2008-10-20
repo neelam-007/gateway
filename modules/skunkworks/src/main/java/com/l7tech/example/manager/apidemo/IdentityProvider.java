@@ -132,9 +132,8 @@ public class IdentityProvider {
 
     public void removeBulkUsers(String namePrefix) throws FindException, RemoteException, ObjectNotFoundException, DeleteException {
         IdentityAdmin identityAdmin = session.getIdentityAdmin();
-        EntityHeader[] res = identityAdmin.findAllUsers(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-        for (int i = 0; i < res.length; i++) {
-            EntityHeader header = res[i];
+        EntityHeaderSet<IdentityHeader> res = identityAdmin.findAllUsers(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        for (EntityHeader header : res) {
             if (header.getName().startsWith(namePrefix)) {
                 identityAdmin.deleteUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, header.getStrId());
             }
@@ -143,11 +142,11 @@ public class IdentityProvider {
 
     public String[] listUsers() throws RemoteException, FindException {
         IdentityAdmin  identityAdmin = session.getIdentityAdmin();
-        EntityHeader[] res = identityAdmin.findAllUsers(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-        String[] output = new String[res.length];
-        for (int i = 0; i < res.length; i++) {
-            EntityHeader header = res[i];
-            output[i] = "User " + header.getName() + " [" + header.getOid() + "]";
+        EntityHeaderSet<IdentityHeader> res = identityAdmin.findAllUsers(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        String[] output = new String[res.size()];
+        int i = 0;
+        for (EntityHeader header : res) {
+            output[i++] = "User " + header.getName() + " [" + header.getOid() + "]";
         }
         return output;
     }

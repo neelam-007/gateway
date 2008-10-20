@@ -2,7 +2,6 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -81,5 +80,5 @@ public interface UserManager<UT extends User> {
      */
     Class<? extends User> getImpClass();
 
-    Collection<IdentityHeader> findAllHeaders() throws FindException;
+    EntityHeaderSet<IdentityHeader> findAllHeaders() throws FindException;
 }

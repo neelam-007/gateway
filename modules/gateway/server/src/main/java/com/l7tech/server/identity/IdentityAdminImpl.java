@@ -207,19 +207,16 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         }
     }
 
-    public IdentityHeader[] findAllUsers(long identityProviderConfigId) throws FindException {
+    public EntityHeaderSet<IdentityHeader> findAllUsers(long identityProviderConfigId) throws FindException {
             UserManager userManager = retrieveUserManager(identityProviderConfigId);
-            Collection<IdentityHeader> res = userManager.findAllHeaders();
-            return res.toArray(new IdentityHeader[0]);
+            return userManager.findAllHeaders();
     }
 
-    public IdentityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
+    public EntityHeaderSet<IdentityHeader> searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
       throws FindException {
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
-            Collection<IdentityHeader> searchResults = provider.search(types, pattern);
-            if (searchResults == null) return new IdentityHeader[0];
-            return searchResults.toArray(new IdentityHeader[0]);
+            return provider.search(types, pattern);
     }
 
     public User findUserByID(long identityProviderConfigId, String userId)
@@ -315,9 +312,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
 
-    public IdentityHeader[] findAllGroups(long cfgid) throws FindException {
-            Collection<IdentityHeader> res = retrieveGroupManager(cfgid).findAllHeaders();
-            return res.toArray(new IdentityHeader[0]);
+    public EntityHeaderSet<IdentityHeader> findAllGroups(long cfgid) throws FindException {
+            return retrieveGroupManager(cfgid).findAllHeaders();
     }
 
     public Group findGroupByID(long cfgid, String groupId) throws FindException {

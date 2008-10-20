@@ -7,6 +7,7 @@ import com.l7tech.console.util.SortedListModel;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.EntityHeaderSet;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -197,7 +198,7 @@ public class NewGroupMemberDialog extends JDialog {
                     Set<IdentityHeader> set = parent.getCurrentUsers();
                     if (set !=null) currentUsers.addAll(set);
 
-                    Collection<IdentityHeader> nonMembers = Arrays.asList(Registry.getDefault().getIdentityAdmin().findAllUsers(ipc.getOid()));
+                    EntityHeaderSet<IdentityHeader> nonMembers = Registry.getDefault().getIdentityAdmin().findAllUsers(ipc.getOid());
 
                     for (IdentityHeader eh : nonMembers) {
                         if (!currentUsers.contains(eh)) sl.add(eh);

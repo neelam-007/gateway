@@ -8,6 +8,7 @@ import com.l7tech.console.util.Filter;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.EntityHeaderSet;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -211,7 +212,7 @@ public class NewGroupForUserDialog extends JDialog {
                     Set<IdentityHeader> set = parent.getCurrentGroups();
                     if (set != null) currentGroups.addAll(set);
 
-                    IdentityHeader[] headers = Registry.getDefault().getIdentityAdmin().findAllGroups(ipc.getOid());
+                    EntityHeaderSet<IdentityHeader> headers = Registry.getDefault().getIdentityAdmin().findAllGroups(ipc.getOid());
 
                     for (IdentityHeader header : headers) {
                         if (!currentGroups.contains(header)) sl.add(header);

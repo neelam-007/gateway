@@ -107,7 +107,7 @@ public interface GroupManager<UT extends User, GT extends Group> {
     void setUserHeaders(GT group, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
     void setUserHeaders(String groupId, Set<IdentityHeader> groupHeaders ) throws FindException, UpdateException;
 
-    Collection<IdentityHeader> findAllHeaders() throws FindException;
+    EntityHeaderSet<IdentityHeader> findAllHeaders() throws FindException;
 
     Collection findAll() throws FindException;
 

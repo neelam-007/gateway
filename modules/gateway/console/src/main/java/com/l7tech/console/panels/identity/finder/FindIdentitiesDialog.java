@@ -17,10 +17,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -549,9 +546,8 @@ public class FindIdentitiesDialog extends JDialog {
             searchName = "*";
         }
         try {
-            final EntityHeader[] headers =
-                    getIdentityAdmin().searchIdentities( searchInfo.getProviderConfig().getOid(),
-                                                         types, searchName);
+            final EntityHeaderSet<IdentityHeader> headers =
+                    getIdentityAdmin().searchIdentities( searchInfo.getProviderConfig().getOid(), types, searchName);
             setTableModel(Collections.enumeration(Arrays.asList(headers)));
         } catch (Exception e) {
             setTableModel(Collections.enumeration(Collections.emptyList()));
