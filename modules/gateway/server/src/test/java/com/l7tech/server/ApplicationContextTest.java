@@ -2,6 +2,9 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.EntityTypeRegistry;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Entity;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -16,13 +19,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Collections;
+import java.util.*;
 import java.lang.reflect.Method;
 
 /**
@@ -131,7 +128,6 @@ public class ApplicationContextTest  extends TestCase {
         }
 
         int testedcount = 0;
-        List<String> beans = new ArrayList<String>();
         for ( String beanId : dlbf.getBeanDefinitionNames() ) {
             if ( beanId.startsWith("/") && !NON_ADMIN_PROXY_BEANS.contains(beanId) ) {
                 BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
@@ -230,6 +226,17 @@ public class ApplicationContextTest  extends TestCase {
                     }
                 }
             }
+        }
+    }
+
+    public void testEntityTypesDeclarations() throws Exception {
+        EntityType typeAny = EntityType.findTypeByEntity( Entity.class );
+        assertEquals("Any entity", EntityType.ANY, typeAny);
+
+        for ( EntityType type : EntityType.values() ) {
+            Class<? extends Entity> clazz = type.getEntityClass();
+            EntityType foundType = EntityType.findTypeByEntity( clazz );
+            assertEquals(type, foundType);
         }
     }
 }

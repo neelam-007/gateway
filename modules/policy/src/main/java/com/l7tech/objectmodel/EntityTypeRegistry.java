@@ -1,48 +1,60 @@
 package com.l7tech.objectmodel;
 
-import java.util.Map;
-import java.util.HashMap;
+import com.l7tech.util.ExceptionUtils;
 
+import java.util.*;
+import java.net.URL;
+import java.io.IOException;
+
+/**
+ * Static access and initialization (from jar resources) of EntityType's implementation classes.
+ *
+ */
 public class EntityTypeRegistry {
 
-    private static class EntityTypeRegistryHolder {
-        private static final Map<EntityType,Class<? extends Entity>> REGISTRY = getInitValue();
-    }
+//    private static final String ENTITY_TYPES_PROPERTIES = "META-INF/com.l7tech.objectmodel.EntityTypes.properties";
+    private static final String ENTITY_TYPES_PROPERTIES = "com/l7tech/EntityTypes.properties";
+    private static final Map<EntityType, Class<? extends Entity>> REGISTRY = init();
 
-    // only initialization needs to be synchronized
-    private static final Object INIT_LOCK = new Object();
-    private static Map<EntityType,Class<? extends Entity>> tempRegistry;
+    private static Map<EntityType, Class<? extends Entity>> init() {
 
-    private static Map<EntityType,Class<? extends Entity>> getInitValue() {
-        synchronized (INIT_LOCK) {
-            if (tempRegistry == null)
-                throw new IllegalStateException("Initialization data not provided for the entity type registry.");
-            return tempRegistry;
-        }
-    }
+        HashMap<EntityType, Class<? extends Entity>> registry = new HashMap<EntityType,Class<? extends Entity>>();
 
-    public EntityTypeRegistry(Map<String,String> registry) throws ClassNotFoundException {
+        try {
+            Enumeration<URL> urls = EntityTypeRegistry.class.getClassLoader().getResources(ENTITY_TYPES_PROPERTIES);
+            while (urls.hasMoreElements()) {
+                Properties props = new Properties();
+                props.load(urls.nextElement().openStream());
+                Enumeration<String> propNames = (Enumeration<String>) props.propertyNames();
+                while (propNames.hasMoreElements()) {
+                    String name = propNames.nextElement();
+                    Class clazz;
+                    try {
+                        clazz = Class.forName(props.getProperty(name));
+                    } catch (ClassNotFoundException e) {
+                        throw new IllegalArgumentException("Implementation class not found for EntityType: " + name + " : " + ExceptionUtils.getMessage(e),
+                                                           ExceptionUtils.getDebugException(e));
+                    }
 
-        if (registry == null)
-            throw new IllegalArgumentException("Null registry map given to constructor.");
+                    if (registry.keySet().contains(EntityType.valueOf(name)))
+                        throw new IllegalStateException("Implementation class for entity type already initialized to: " + registry.get(EntityType.valueOf(name)));
 
-        synchronized (INIT_LOCK) {
-            tempRegistry = new HashMap<EntityType, Class<? extends Entity>>();
-            for (String type : registry.keySet()) {
-                Class clazz = Class.forName(registry.get(type));
-                if (Entity.class.isAssignableFrom(clazz)) {
-                    tempRegistry.put(EntityType.valueOf(type), clazz);
+                    if (! Entity.class.isAssignableFrom(clazz))
+                        throw new IllegalArgumentException("Implementation class is not an Entity: " + clazz);
+
+                    registry.put(EntityType.valueOf(name), clazz);
                 }
             }
-
-            // trigger holder instance initialization
-            if (EntityTypeRegistryHolder.REGISTRY != tempRegistry) {
-                throw new IllegalStateException("Entity type registry already initialized.");
-            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Error initializing the EntityTypeRegistry: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
+
+        return registry;
     }
 
+    private EntityTypeRegistry() {}
+
     public static Class<? extends Entity> getEntityClass(EntityType type) {
-        return EntityTypeRegistryHolder.REGISTRY.get(type);
+        return REGISTRY.get(type);
     }
 }

@@ -11,51 +11,6 @@
             The protocol used in the urls below is ignored, we always connect with https.
     -->
 
-    <bean id="entityTypeRegistry" class="com.l7tech.objectmodel.EntityTypeRegistry">
-      <constructor-arg>
-        <map>
-          <entry key="ANY" value="com.l7tech.objectmodel.Entity"/>
-          <entry key="ID_PROVIDER_CONFIG" value="com.l7tech.identity.IdentityProviderConfig"/>
-          <entry key="USER" value="com.l7tech.identity.User"/>
-          <entry key="GROUP" value="com.l7tech.identity.Group"/>
-          <entry key="SERVICE" value="com.l7tech.gateway.common.service.PublishedService"/>
-          <entry key="SERVICE_ALIAS" value="com.l7tech.gateway.common.service.PublishedServiceAlias"/>
-          <entry key="JMS_CONNECTION" value="com.l7tech.gateway.common.transport.jms.JmsConnection"/>
-          <entry key="JMS_ENDPOINT" value="com.l7tech.gateway.common.transport.jms.JmsEndpoint"/>
-          <entry key="TRUSTED_CERT" value="com.l7tech.security.cert.TrustedCert"/>
-          <entry key="REVOCATION_CHECK_POLICY" value="com.l7tech.gateway.common.security.RevocationCheckPolicy"/>
-          <entry key="SSG_KEY_ENTRY" value="com.l7tech.gateway.common.security.keystore.SsgKeyEntry"/>
-          <entry key="ALERT_TRIGGER" value="com.l7tech.gateway.common.alert.AlertEvent"/>
-          <entry key="ALERT_ACTION" value="com.l7tech.gateway.common.alert.Notification"/>
-          <entry key="SAMPLE_MESSAGE" value="com.l7tech.gateway.common.service.SampleMessage"/>
-          <entry key="POLICY" value="com.l7tech.policy.Policy"/>
-          <entry key="POLICY_ALIAS" value="com.l7tech.policy.PolicyAlias"/>
-          <entry key="POLICY_VERSION" value="com.l7tech.policy.PolicyVersion"/>
-          <entry key="FOLDER" value="com.l7tech.objectmodel.folder.Folder"/>
-          <entry key="MAP_ATTRIBUTE" value="com.l7tech.identity.mapping.AttributeConfig"/>
-          <entry key="MAP_IDENTITY" value="com.l7tech.identity.mapping.IdentityMapping"/>
-          <entry key="MAP_TOKEN" value="com.l7tech.identity.mapping.SecurityTokenMapping"/>
-          <entry key="CLUSTER_PROPERTY" value="com.l7tech.gateway.common.cluster.ClusterProperty"/>
-          <entry key="CLUSTER_INFO" value="com.l7tech.gateway.common.cluster.ClusterNodeInfo"/>
-          <entry key="SERVICE_USAGE" value="com.l7tech.gateway.common.cluster.ServiceUsage"/>
-          <entry key="SCHEMA_ENTRY" value="com.l7tech.gateway.common.schema.SchemaEntry"/>
-          <entry key="METRICS_BIN" value="com.l7tech.gateway.common.service.MetricsBin"/>
-          <entry key="RBAC_ROLE" value="com.l7tech.gateway.common.security.rbac.Role"/>
-          <entry key="AUDIT_MESSAGE" value="com.l7tech.gateway.common.audit.MessageSummaryAuditRecord"/>
-          <entry key="AUDIT_ADMIN" value="com.l7tech.gateway.common.audit.AdminAuditRecord"/>
-          <entry key="AUDIT_SYSTEM" value="com.l7tech.gateway.common.audit.SystemAuditRecord"/>
-          <entry key="AUDIT_RECORD" value="com.l7tech.gateway.common.audit.AuditRecord"/>
-          <entry key="LOG_RECORD" value="com.l7tech.gateway.common.logging.SSGLogRecord$LogEntity"/>
-          <entry key="SSG_CONNECTOR" value="com.l7tech.gateway.common.transport.SsgConnector"/>
-          <entry key="EMAIL_LISTENER" value="com.l7tech.gateway.common.transport.email.EmailListener"/>
-          <entry key="LOG_SINK" value="com.l7tech.gateway.common.log.SinkConfiguration"/>
-          <entry key="SERVICE_TEMPLATE" value="com.l7tech.gateway.common.service.ServiceTemplate"/>
-          <entry key="TRUSTED_EMS" value="com.l7tech.gateway.common.emstrust.TrustedEms"/>
-          <entry key="TRUSTED_EMS_USER" value="com.l7tech.gateway.common.emstrust.TrustedEmsUser"/>
-        </map>
-      </constructor-arg>
-    </bean>
-
     <!-- cluster context factory -->
     <bean id="adminContextFactory" class="com.l7tech.console.util.AdminContextFactory">
         <constructor-arg index="0">
