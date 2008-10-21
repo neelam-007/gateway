@@ -80,6 +80,39 @@ public class StylesheetCompilerTest {
         }
     }
 
+    @Test
+    public void testXalanExsltEvaluateExtensionFails() {
+        try {
+            Assert.assertTrue("Xalan XSLT present", isXalan());
+            doTransform( XALAN_EXSLT_EXTENSION_EVAL_XSL, XALAN_TEST_MSG );
+            Assert.fail("Expected compilation or transformation failure.");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testXalanRedirectExtensionFails() {
+        try {
+            Assert.assertTrue("Xalan XSLT present", isXalan());
+            doTransform( XALAN_EXTENSION_ERROR_XSL, XALAN_REDIRECT_MSG );
+            Assert.fail("Expected compilation or transformation failure.");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testXalanJavaExtensionFails() {
+        try {
+            Assert.assertTrue("Xalan XSLT present", isXalan());
+            doTransform( XALAN_SECURE_PROCESSING, "<test/>" );            
+            Assert.fail("Expected compilation or transformation failure.");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
     @SuppressWarnings({"ConstantIfStatement"})
     public static final class Failure {
         static {
@@ -132,7 +165,18 @@ public class StylesheetCompilerTest {
                     "      </urn:getQuote>\n" +
                     "   </soapenv:Body>\n" +
                     "</soapenv:Envelope>";
-    
+
+    private static final String XALAN_REDIRECT_MSG = 
+            "<doc>\n" +
+                    "  <foo file=\"foo.out\">\n" +
+                    "    Testing Redirect extension:\n" +
+                    "      <bar>A foo subelement text node</bar>\n" +
+                    "  </foo>\n" +
+                    "  <main>\n" +
+                    "    Everything else\n" +
+                    "  </main>  \n" +
+                    "</doc>";
+
     private static final String XALAN_TEST_XSL =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<xsl:stylesheet\n" +
@@ -164,6 +208,62 @@ public class StylesheetCompilerTest {
                     "  <xsl:template match=\"*\">\n" +
                     "      <tns:a>Xalan-Test-Transformation result</tns:a>\n" +
                     "  </xsl:template>\n" +
+                    "</xsl:stylesheet>";
+
+    private static final String XALAN_EXTENSION_ERROR_XSL = 
+            "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"\n" +
+                    "    version=\"1.0\"\n" +
+                    "    xmlns:redirect=\"http://xml.apache.org/xalan/redirect\"\n" +
+                    "    extension-element-prefixes=\"redirect\">\n" +
+                    "\n" +
+                    "  <xsl:template match=\"/\">\n" +
+                    "    <standard-out>\n" +
+                    "      Standard output:\n" +
+                    "      <xsl:apply-templates/>\n" +
+                    "    </standard-out>\n" +
+                    "  </xsl:template>\n" +
+                    "  \n" +
+                    "  <xsl:template match=\"main\">\n" +
+                    "    <main>\n" +
+                    "      <xsl:apply-templates/>\n" +
+                    "    </main>\n" +
+                    "  </xsl:template>\n" +
+                    "  \n" +
+                    "  <xsl:template match=\"/doc/foo\">\n" +
+                    "    <redirect:write select=\"@file\">\n" +
+                    "      <foo-out>\n" +
+                    "        <xsl:apply-templates/>\n" +
+                    "      </foo-out>\n" +
+                    "    </redirect:write>\n" +
+                    "  </xsl:template>\n" +
+                    "  \n" +
+                    "  <xsl:template match=\"bar\">\n" +
+                    "    <foobar-out>\n" +
+                    "      <xsl:apply-templates/>\n" +
+                    "    </foobar-out>\n" +
+                    "  </xsl:template>\n" +
+                    "  \n" +
+                    "</xsl:stylesheet>";
+
+    private static final String XALAN_EXSLT_EXTENSION_EVAL_XSL =
+            "<xsl:stylesheet \n" +
+                    "    version=\"1.0\"    \n" +
+                    "    xmlns:dyn=\"http://exslt.org/dynamic\"" +
+                    "    xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n" +
+                    "    <xsl:template match=\"/\">\n" +
+                    "        evaluate works?: <xsl:value-of select=\"dyn:evaluate(true)\"/>\n" +
+                    "    </xsl:template>\n" +
+                    "</xsl:stylesheet>";
+
+    private static final String XALAN_SECURE_PROCESSING = 
+            "<xsl:stylesheet \n" +
+                    "    exclude-result-prefixes=\"java_lang\" \n" +
+                    "    version=\"1.0\"    \n" +
+                    "    xmlns:java_lang=\"http://xml.apache.org/xalan/java/java.lang\"\n" +
+                    "    xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">\n" +
+                    "    <xsl:template match=\"/\">\n" +
+                    "        shutdown: <xsl:value-of select=\"java_lang:System.exit(0)\"/>\n" +
+                    "    </xsl:template>\n" +
                     "</xsl:stylesheet>";
 
     private static final String XALAN_TEST_RESULT = "<tns:a xmlns:tns=\"http://test.tns\">Xalan-Test-Transformation result</tns:a>";
