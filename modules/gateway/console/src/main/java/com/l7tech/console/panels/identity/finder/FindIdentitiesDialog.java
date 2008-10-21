@@ -546,9 +546,17 @@ public class FindIdentitiesDialog extends JDialog {
             searchName = "*";
         }
         try {
+            final Set<IdentityHeader> tableModelHeaders;
             final EntityHeaderSet<IdentityHeader> headers =
                     getIdentityAdmin().searchIdentities( searchInfo.getProviderConfig().getOid(), types, searchName);
-            setTableModel(Collections.enumeration(Arrays.asList(headers)));
+            if (headers.isMaxExceeded()) {
+                tableModelHeaders = new HashSet<IdentityHeader>();
+                tableModelHeaders.addAll(headers);
+                tableModelHeaders.add(new LimitExceededMarkerIdentityHeader());
+            } else {
+                tableModelHeaders = headers;
+            }
+            setTableModel(Collections.enumeration(tableModelHeaders));
         } catch (Exception e) {
             setTableModel(Collections.enumeration(Collections.emptyList()));
             if (e instanceof FindException && e.getCause()==null) {
@@ -975,7 +983,10 @@ public class FindIdentitiesDialog extends JDialog {
                   this.setForeground(table.getForeground());
               }
               //if (value instanceof EntityHeader) {
-              if(value instanceof IdentityHeader) {
+              if (value instanceof LimitExceededMarkerIdentityHeader) {
+                  setIcon(stopIcon);
+                  setText(((LimitExceededMarkerIdentityHeader)value).getName());
+              } else if (value instanceof IdentityHeader) {
                   //EntityHeader ih = (EntityHeader)value;
                   IdentityHeader ih = (IdentityHeader)value;
                   if (EntityType.USER.equals(ih.getType())){
@@ -988,9 +999,6 @@ public class FindIdentitiesDialog extends JDialog {
                       setText(cn);
                   } else if (EntityType.GROUP.equals(ih.getType())) {
                       setIcon(groupIcon);
-                      setText(ih.getName());
-                  } else if (EntityType.MAXED_OUT_SEARCH_RESULT.equals(ih.getType())) {
-                      setIcon(stopIcon);
                       setText(ih.getName());
                   }
               } else {

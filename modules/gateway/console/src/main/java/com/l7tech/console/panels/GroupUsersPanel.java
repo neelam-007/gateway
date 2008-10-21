@@ -7,8 +7,9 @@ import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.LimitExceededMarkerIdentityHeader;
+import com.l7tech.objectmodel.EntityHeaderSet;
 
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
@@ -84,7 +85,11 @@ class GroupUsersPanel extends JPanel {
      * package private method, allows adding users
      */
     void addUsers(Set<IdentityHeader> userHeaders) {
+        if (userHeaders == null) return;
         listInModel.addAll(userHeaders);
+        if (userHeaders instanceof EntityHeaderSet && ((EntityHeaderSet)userHeaders).isMaxExceeded()) {
+            listInModel.add(new LimitExceededMarkerIdentityHeader());
+        }
     }
 
     /**
@@ -205,7 +210,7 @@ class GroupUsersPanel extends JPanel {
                 Set<IdentityHeader> memberHeaders = groupPanel.getGroupMembers();
                 memberHeaders.clear();
                 for (int i = 0; i < listInModel.getSize(); i++) {
-                    IdentityHeader g = (IdentityHeader)listInModel.getElementAt(i);
+                    IdentityHeader g = listInModel.getElementAt(i);
                     memberHeaders.add(g);
                 }
             }
@@ -435,10 +440,7 @@ class GroupUsersPanel extends JPanel {
     private void loadGroupUsers() {
         try {
             isLoading = true;
-            Collection members = groupPanel.getGroupMembers();
-            if (members != null) {
-                listInModel.addAll(members);
-            }
+            addUsers(groupPanel.getGroupMembers());
         } finally {
             isLoading = false;
         }
@@ -460,7 +462,7 @@ class GroupUsersPanel extends JPanel {
             // Based on value type, determine cell contents
             EntityHeader eh = (EntityHeader)value;
             setText(eh.getName());
-            if (EntityType.MAXED_OUT_SEARCH_RESULT.equals(eh.getType())) {
+            if (eh instanceof LimitExceededMarkerIdentityHeader) {
                 setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Stop16.gif")));
             } else {
                 setIcon(new ImageIcon(ImageCache.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE)));

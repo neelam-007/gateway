@@ -33,6 +33,7 @@ public class FindEntityDialog extends JDialog {
     private JList list;
     private JLabel headerLabel;
     private JScrollPane scrollPane;
+    private JLabel resultSizeExceeded;
 
     private final EntityType entityType;
 
@@ -80,6 +81,7 @@ public class FindEntityDialog extends JDialog {
         } catch (Exception e) {
             throw new RuntimeException("Couldn't find " + entityType.getName(), e);
         }
+        resultSizeExceeded.setVisible(headers.isMaxExceeded());
         list.setModel(new DefaultComboBoxModel(headers.toArray(new EntityHeader[headers.size()])));
         list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {

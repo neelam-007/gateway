@@ -8,6 +8,8 @@ import com.l7tech.console.util.SortedSingleColumnTableModel;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
@@ -323,24 +325,22 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             modelOut.clearDataSet();
 
             IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
-            Iterator i = Arrays.asList(admin.findAllUsers(ipc.getOid())).iterator();
-            while (i.hasNext()) {
-                EntityHeader header = (EntityHeader)i.next();
-                if (EntityType.MAXED_OUT_SEARCH_RESULT.equals(header.getType())) {
-                    // indicate that the search is too wide
-                    JOptionPane.showMessageDialog(identitiesInTable, "Not all identities can be displayed " +
-                                                                     "because the search criterion is too wide");
-                } else {
-                    User u = admin.findUserByID(ipc.getOid(), header.getStrId());
-                    modelOut.addRow(u);
-                }
+            EntityHeaderSet<IdentityHeader> identities = admin.findAllUsers(ipc.getOid());
+
+            for(IdentityHeader header : identities) {
+                User u = admin.findUserByID(ipc.getOid(), header.getStrId());
+                modelOut.addRow(u);
             }
 
-            i = Arrays.asList(admin.findAllGroups(ipc.getOid())).iterator();
-            while (i.hasNext()) {
-                EntityHeader header = (EntityHeader)i.next();
+            EntityHeaderSet<IdentityHeader> groups = admin.findAllGroups(ipc.getOid());
+            for (IdentityHeader header : groups) {
                 Group g = admin.findGroupByID(ipc.getOid(), header.getStrId());
                 modelOut.addRow(g);
+            }
+
+            if (identities.isMaxExceeded() || groups.isMaxExceeded()) {
+                JOptionPane.showMessageDialog(identitiesInTable, "Not all identities can be displayed " +
+                                                                 "because the search criterion is too wide");
             }
 
             //SortedSingleColumnTableModel modelIn = getIdentitiesInTableModel();
