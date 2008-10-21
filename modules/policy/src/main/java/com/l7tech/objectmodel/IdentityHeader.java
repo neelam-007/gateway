@@ -12,7 +12,7 @@ public class IdentityHeader extends EntityHeader {
 
     public IdentityHeader(long providerOid, String identityId, EntityType type, String loginName, String description) {
         super(identityId, type, loginName, description);
-        if (type != EntityType.USER && type != EntityType.GROUP && type != EntityType.MAXED_OUT_SEARCH_RESULT)
+        if (type != EntityType.USER && type != EntityType.GROUP)
             throw new IllegalArgumentException("EntityType must be USER or GROUP");
         this.providerOid = providerOid;
         this.commonName = "";
@@ -21,7 +21,7 @@ public class IdentityHeader extends EntityHeader {
     //added for bug #5321
     public IdentityHeader(long providerOid, String identityId, EntityType type, String loginName, String description, String commonName) {
         super(identityId, type, loginName, description);
-        if (type != EntityType.USER && type != EntityType.GROUP && type != EntityType.MAXED_OUT_SEARCH_RESULT)
+        if (type != EntityType.USER && type != EntityType.GROUP)
             throw new IllegalArgumentException("EntityType must be USER or GROUP");
         this.providerOid = providerOid;
         this.commonName = commonName;

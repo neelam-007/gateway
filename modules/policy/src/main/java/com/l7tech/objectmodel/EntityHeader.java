@@ -131,10 +131,10 @@ public class EntityHeader implements Serializable, Comparable {
         if (o == null) throw new NullPointerException();
         EntityHeader other = (EntityHeader)o;
         // bugzilla 2786: if only one of the two is a MAXED_OUT_SEARCH_RESULT, then it should be on top
-        if (!(this.type == EntityType.MAXED_OUT_SEARCH_RESULT && other.type == EntityType.MAXED_OUT_SEARCH_RESULT)) {
-            if (this.type == EntityType.MAXED_OUT_SEARCH_RESULT) {
+        if (!(this instanceof LimitExceededMarkerIdentityHeader && other instanceof LimitExceededMarkerIdentityHeader)) {
+            if (this instanceof LimitExceededMarkerIdentityHeader) {
                 return -1;
-            } else if (other.type == EntityType.MAXED_OUT_SEARCH_RESULT) {
+            } else if (other instanceof LimitExceededMarkerIdentityHeader) {
                 return 1;
             }
         }

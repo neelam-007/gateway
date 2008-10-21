@@ -59,9 +59,6 @@ public enum EntityType implements Comparable<EntityType> {
 
     TRUSTED_EMS("Trusted EMS", true),
     TRUSTED_EMS_USER("Trusted EMS User", true),
-
-    @Deprecated
-    MAXED_OUT_SEARCH_RESULT("Exceeded maximum search result size", false),
     ;
 
     private final String name;
