@@ -1254,11 +1254,11 @@
 
         <!-- Create build list for required 1.5 modules -->
         <ivy:buildlist leaf="${module}" reference="module-build-path-single" onMissingDescriptor="skip" onlydirectdep="true">
-            <fileset dir="modules" includes="**/build.xml"/>
+            <fileset dir="modules" includes="**/build.xml" excludes="${project.module.excludes}"/>
         </ivy:buildlist>
 
         <ivy-echo-build-plan refid="module-build-path-single" pathid="module-build-path-single-text"/>
-        <modules target="publish-all-quick" buildpathref="module-build-path-single"/>
+        <modules target="publish" buildpathref="module-build-path-single"/>
     </target>
 
     <!--
