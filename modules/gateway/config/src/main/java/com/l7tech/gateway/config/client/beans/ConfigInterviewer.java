@@ -28,6 +28,7 @@ public class ConfigInterviewer {
         this.beans = beans;
     }
 
+    @SuppressWarnings({"unchecked"})
     public List<ConfigurationBean> doInterview() throws IOException {
         BufferedReader inReader = new BufferedReader(new InputStreamReader(System.in));
 
@@ -63,7 +64,6 @@ public class ConfigInterviewer {
             }
 
             boolean valueDone = false;
-            valueLoop:
             while (!valueDone) {
                 ConfigResult result;
                 if (selected instanceof EditableConfigurationBean) {
@@ -74,37 +74,42 @@ public class ConfigInterviewer {
 
                     System.out.println("Configuring " + cb.getConfigName());
                     System.out.println();
-                    System.out.println("   id: " + cb.getId());
-                    System.out.println(" name: " + cb.getConfigName());
-                    System.out.println("value: " + cb.getShortValueDescription());
+                    System.out.println("Name : " + cb.getConfigName());
+                    if ( cb.getShortValueDescription() != null ) {
+                        System.out.println("Value: " + cb.getShortValueDescription());
+                    }
                     System.out.println();
-                    System.out.print("Enter a new value: ");
-
-                    if (val != null) {
-                        System.out.print("[" + val + "] ");
+                    System.out.print("Enter new value");
+                    if ( val != null ) {
+                        System.out.print(" [" + val + "]");
                     }
+                    System.out.print(": ");
 
-                    final String cmd = inReader.readLine();
+                    final String cmd = inReader.readLine().trim();
+                    System.out.println();
 
-                    if ("<".equals(cmd.trim())) {
-                        System.err.println("Cancelling");
-                        break;
-                    }
-
-                    if (val != null && "".equals(cmd)) {
-                        if (dflt != null)
-                            System.err.println("Accepted default " + val);
-                        else
-                            System.err.println("Keeping existing value " + val);
-                        break;
+                    if ("<".equals(cmd)) {
+                        if ( currentContext.getBeans().size() <= 1 && currentContext.getParent() != null ) {
+                            currentContext = currentContext.getParent();
+                        }
+                        continue menuLoop;
                     }
 
                     try {
-                        val = cb.parse(cmd);
-                        cb.validate(val);
-                        cb.setConfigValue(val);
+                        if ( "".equals(cmd) ) {
+                            if ( val!=null && !val.equals(cb.getConfigValue()) ) {
+                                // set from default
+                                cb.setConfigValue(val);
+                            }
+                            if ( cb.getConfigValue() == null ) {
+                                break;
+                            }
+                        } else {
+                            val = cb.parse(cmd);
+                            cb.validate(val);
+                            cb.setConfigValue(val);
+                        }
                         result = cb.onConfiguration(val, currentContext);
-                        System.err.println("Got result " + result);
                     } catch (ConfigurationException e) {
                         System.out.println(ExceptionUtils.getMessage(e));
                         logger.log(Level.INFO, "Bad input for " + cb + ": " + ExceptionUtils.getMessage(e), e);
@@ -120,30 +125,27 @@ public class ConfigInterviewer {
                 switch (result.getType()) {
                     case PUSH:
                         if (newBeans.isEmpty()) throw new IllegalStateException("Can't push no beans");
-                        currentContext = new ConfigurationContext(currentContext, newBeans.toArray(new ConfigurationBean[0]));
-                        break valueLoop;
+                        currentContext = new ConfigurationContext(currentContext, newBeans.toArray(new ConfigurationBean[newBeans.size()]));
+                        continue menuLoop;
                     case POP:
                         if (!newBeans.isEmpty()) {
                             List<ConfigurationBean> allBeans = new ArrayList<ConfigurationBean>();
                             allBeans.addAll(parent.getBeans());
                             allBeans.addAll(newBeans);
-                            currentContext = new ConfigurationContext(parent.getParent(), allBeans.toArray(new ConfigurationBean[0]));
-                        } else if (parent == null) {
-                            System.err.println("Popped root context; quitting");
-                            System.out.println("Quitting");
-                        } else {
+                            currentContext = new ConfigurationContext(parent.getParent(), allBeans.toArray(new ConfigurationBean[allBeans.size()]));
+                        } else if (parent != null) {
                             currentContext = parent;
                         }
-                        break valueLoop;
+                        continue menuLoop;
                     case STAY:
                         List<ConfigurationBean> allBeans = new ArrayList<ConfigurationBean>();
                         allBeans.addAll(existingBeans);
                         allBeans.addAll(newBeans);
-                        currentContext = new ConfigurationContext(parent, allBeans.toArray(new ConfigurationBean[0]));
-                        break valueLoop;
+                        currentContext = new ConfigurationContext(parent, allBeans.toArray(new ConfigurationBean[allBeans.size()]));
+                        continue menuLoop;
                     case CHAIN:
-                        currentContext = new ConfigurationContext(parent, newBeans.toArray(new ConfigurationBean[0]));
-                        break valueLoop;
+                        currentContext = new ConfigurationContext(parent, newBeans.toArray(new ConfigurationBean[newBeans.size()]));
+                        continue menuLoop;
                 }
             }
         }
@@ -164,27 +166,23 @@ public class ConfigInterviewer {
         System.out.println();
 
         if (currentContext.getParent() == null) {
-            // TODO only allow apply if all beans are valid
-            // TODO only allow apply if all beans are valid
-            // TODO only allow apply if all beans are valid
-            System.out.println("  A: Quit, applying changes");
+            System.out.println("  S: Save changes and exit");
         }
 
-        System.out.println("  Q: Quit, discarding changes");
+        System.out.println("  X: Quit, discarding changes");
 
+        System.out.println();
         System.out.print("Select: ");
         String cmd = inReader.readLine();
-        if ("q".equalsIgnoreCase(cmd.trim().toLowerCase())) {
+        if ("x".equalsIgnoreCase(cmd.trim().toLowerCase())) {
             currentContext = currentContext.getParent();
             if (currentContext == null) {
-                System.err.println("Quitting");
                 return MENU_QUIT;
             } else {
                 return MENU_REPEAT;
             }
-        } else if ("a".equalsIgnoreCase(cmd.trim().toLowerCase())) {
+        } else if ("s".equalsIgnoreCase(cmd.trim().toLowerCase())) {
             if (currentContext.getParent() == null) {
-                System.err.println("Applying Configuration");
                 return new Pair<MenuResultType, ConfigurationBean>(MenuResultType.APPLY, null);
             } else {
                 throw new IllegalStateException("Can't apply from non-root context!");
@@ -210,6 +208,7 @@ public class ConfigInterviewer {
         return new Pair<MenuResultType, ConfigurationBean>(MenuResultType.SELECT, configurables.get(choice - 1).right);
     }
 
+    @SuppressWarnings({"unchecked"})
     private List<Pair<String, ConfigurationBean>> buildMenu(ConfigurationContext ctx) {
         int i = 0;
         final List<Pair<String, ConfigurationBean>> configurables = new ArrayList<Pair<String,ConfigurationBean>>();

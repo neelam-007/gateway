@@ -8,13 +8,17 @@ public class ConfirmDeletion extends BooleanConfigurableBean {
     private final ConfigurationBean victim;
 
     public ConfirmDeletion(ConfigurationBean victim) {
-        super("_delete." + victim.getId(), "Delete " + victim.getConfigName() + " " + victim.getShortValueDescription(), false);
+        super("_delete." + victim.getId(), "Confirm delete " + victim.getConfigName() + " " + victim.getShortValueDescription(), false);
         this.victim = victim;
     }
 
     @Override
     public ConfigResult onConfiguration(Boolean value, ConfigurationContext context) {
-        if (value) context.removeBean(victim);
-        return ConfigResult.stay();
+        if (value) {
+            context.removeBean(victim);
+            return ConfigResult.pop();
+        } else {
+            return ConfigResult.stay();
+        }
     }
 }

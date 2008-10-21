@@ -32,8 +32,15 @@ public abstract class UrlConfigurableBean extends EditableConfigurationBean<URL>
     public final URL parse(String userInput) throws ConfigurationException {
         try {
             URL url = new URL(userInput);
-            if (protocols.isEmpty() || protocols.contains(url.getProtocol())) return url;
-            throw new ConfigurationException("Unsupported protocol (accepts " + protocols.toString() + ")");
+            if (!protocols.isEmpty() && !protocols.contains(url.getProtocol())) {
+                throw new ConfigurationException("Unsupported protocol (accepts " + protocols.toString() + ")");
+            }
+
+            if ( url.getHost() == null || url.getHost().length()==0 ) {
+                throw new ConfigurationException("No hostname in URL");
+            }
+
+            return url;
         } catch (MalformedURLException e) {
             throw new ConfigurationException("Malformed URL: " + ExceptionUtils.getMessage(e), e);
         }

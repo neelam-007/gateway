@@ -22,7 +22,7 @@ public class TrustedCertUrl extends UrlConfigurableBean {
     private volatile X509Certificate cert;
 
     TrustedCertUrl() {
-        super("host.controller.remoteNodeManagement.tempTrustedCertUrl", "SSL URL", null, "https");
+        super("host.controller.remoteNodeManagement.tempTrustedCertUrl", "HTTPS URL", null, "https");
     }
 
     public void validate(URL value) throws ConfigurationException {

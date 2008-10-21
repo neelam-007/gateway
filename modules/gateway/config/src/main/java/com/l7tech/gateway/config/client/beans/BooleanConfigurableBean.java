@@ -4,16 +4,16 @@
 package com.l7tech.gateway.config.client.beans;
 
 import com.l7tech.gateway.config.client.ConfigurationException;
+import com.l7tech.gateway.config.client.options.OptionType;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.util.regex.Pattern;
+import java.text.ParseException;
 
 /** @author alex */
 public abstract class BooleanConfigurableBean extends EditableConfigurationBean<Boolean> {
-    private static final Set<String> YESSES = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList("yes", "y", "true")));
-    private static final Set<String> NOS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList("no", "n", "false")));
+    private static final Logger logger = Logger.getLogger(BooleanConfigurableBean.class.getName());
 
     public BooleanConfigurableBean(String id, String shortIntro, Boolean defaultValue) {
         super(id, shortIntro, defaultValue);
@@ -21,8 +21,15 @@ public abstract class BooleanConfigurableBean extends EditableConfigurationBean<
 
     @Override
     public Boolean parse(String userInput) throws ConfigurationException {
-        if (YESSES.contains(userInput.toLowerCase())) return true;
-        if (NOS.contains(userInput.toLowerCase())) return false;
-        throw new ConfigurationException("Valid inputs are (yes, y, no, n)");
+        Pattern booleanPattern = Pattern.compile(OptionType.BOOLEAN.getDefaultRegex());
+        if ( booleanPattern.matcher(userInput).matches() ) {
+            try {
+                return (Boolean) OptionType.BOOLEAN.getFormat().parseObject(userInput);
+            } catch ( ParseException pe ) {
+                logger.log(Level.WARNING, "Error parsing option.", pe);
+            }
+        }
+
+        throw new ConfigurationException("Valid inputs are (true/false)");
     }
 }

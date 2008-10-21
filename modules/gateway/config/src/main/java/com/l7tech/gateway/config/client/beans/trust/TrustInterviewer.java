@@ -66,9 +66,12 @@ public class TrustInterviewer {
             final MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(etcConfDirectory, "omp.dat") ) );
 
             List<ConfigurationBean> inBeans = new ArrayList<ConfigurationBean>();
+            inBeans.add(new RemoteNodeManagementEnabled(enabled));
+            inBeans.add(new NewTrustedCertFactory());
+
             Map<ConfiguredTrustedCert, String> inCertBeans = null;
             KeyStore trustStore = null;
-            if (enabled && tsFile.exists()) {
+            if ( tsFile.exists() ) {
                 String pass = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD);
                 if (pass == null) throw new ExitErrorException(2, "Node management truststore password was not found in " + hostPropsFile.getAbsolutePath());
                 trustStorePass = masterPasswordManager.decryptPasswordIfEncrypted(pass);
@@ -90,16 +93,12 @@ public class TrustInterviewer {
 
                 try {
                     inCertBeans = readCertsFromTruststore(trustStore);
-                    inBeans.add(new RemoteNodeManagementEnabled(enabled));
                     inBeans.addAll(inCertBeans.keySet());
                 } catch (GeneralSecurityException e) {
                     logger.log(Level.WARNING, "Couldn't read certs from trust store", e);
                     throw new ExitErrorException(2, "Couldn't read certs from trust store");
                 }
-            } else {
-                logger.info("Remote node management truststore " + tsFile.getAbsolutePath() + " does not exist; remote node management is disabled");
-                inBeans.add(new RemoteNodeManagementEnabled(false));
-            }
+            } 
 
             List<ConfigurationBean> outBeans;
             try {
@@ -111,20 +110,16 @@ public class TrustInterviewer {
 
             boolean writeProps = false;
             boolean writeTruststore = false;
+            boolean hasCert = false;
             Map<String, X509Certificate> deleteCerts = new HashMap<String, X509Certificate>();
             Map<String, X509Certificate> addCerts = new HashMap<String, X509Certificate>();
             for (ConfigurationBean bean : outBeans) {
-                if (bean instanceof RemoteNodeManagementEnabled) {
-                    final boolean newEnabled = ((RemoteNodeManagementEnabled)bean).getConfigValue();
-                    if (newEnabled != enabled) {
-                        hostProps.setProperty(HOSTPROPERTIES_NODEMANAGEMENT_ENABLED, newEnabled ? "true" : "false");
-                        writeProps = true;
-                    }
-                } else if (bean instanceof ConfiguredTrustedCert) {
+                if (bean instanceof ConfiguredTrustedCert) {
                     ConfiguredTrustedCert trustedCert = (ConfiguredTrustedCert)bean;
                     X509Certificate cert = trustedCert.getConfigValue();
                     if (inCertBeans == null || !inCertBeans.containsKey(trustedCert)) {
                         try {
+                            hasCert = true;
                             addCerts.put("trustedCert-" + CertUtils.getThumbprintSHA1(cert) + "-" + System.currentTimeMillis(), cert);
                         } catch (CertificateEncodingException e) {
                             logger.warning("Couldn't get thumbprint for " + cert.getSubjectDN().getName() + "; skipping");
@@ -132,7 +127,6 @@ public class TrustInterviewer {
                     }
                 }
             }
-
             if (inCertBeans != null) {
                 for (ConfiguredTrustedCert bean : inCertBeans.keySet()) {
                     String oldAlias = inCertBeans.get(bean);
@@ -140,10 +134,22 @@ public class TrustInterviewer {
                     for (ConfigurationBean configurationBean : outBeans) {
                         if (configurationBean instanceof ConfiguredTrustedCert) {
                             ConfiguredTrustedCert configuredTrustedCert = (ConfiguredTrustedCert)configurationBean;
-                            if (bean == configuredTrustedCert) found = true;
+                            if (bean == configuredTrustedCert) {
+                                hasCert = true;
+                                found = true;
+                            }
                         }
                     }
                     if (!found) deleteCerts.put(oldAlias, bean.getConfigValue());
+                }
+            }
+            for (ConfigurationBean bean : outBeans) {
+                if ( bean instanceof RemoteNodeManagementEnabled ) {
+                    final boolean newEnabled = ((RemoteNodeManagementEnabled)bean).getConfigValue() && hasCert;
+                    if (newEnabled != enabled) {
+                        hostProps.setProperty(HOSTPROPERTIES_NODEMANAGEMENT_ENABLED, newEnabled ? "true" : "false");
+                        writeProps = true;
+                    }
                 }
             }
 
