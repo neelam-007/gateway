@@ -225,6 +225,12 @@ ALTER TABLE logon_info ADD CONSTRAINT logon_info_provider FOREIGN KEY (provider_
 ALTER TABLE password_history MODIFY COLUMN order_id bigint(20) NOT NULL;
 
 --
+-- Fix DB XML due to altered packaging
+--
+UPDATE revocation_check_policy SET revocation_policy_xml =
+  REPLACE(revocation_policy_xml, '<object class=\"com.l7tech.common.security.RevocationCheckPolicyItem', '<object class=\"com.l7tech.gateway.common.security.RevocationCheckPolicyItem');
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

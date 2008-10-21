@@ -183,8 +183,6 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
 
         if ( xml != null && xml.length() > 0 ) {
             try {
-                //TODO [steve] Better handling of old class names from DB data (RevocationCheckPolicy)
-                xml = xml.replace( "<object class=\"com.l7tech.common.security.RevocationCheckPolicyItem", "<object class=\"com.l7tech.gateway.common.security.RevocationCheckPolicyItem" );
                 XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
                 //noinspection unchecked
                 this.revocationCheckItems = Collections.unmodifiableList(new ArrayList((List<RevocationCheckPolicyItem>)xd.readObject()));
