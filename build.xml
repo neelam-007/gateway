@@ -1505,10 +1505,15 @@
     </target>
 
     <target name="package.modules" depends="package.jars" unless="package.jars.notrequired">
+        <ivy:resolve file="modules/gateway/assertions/ivy-modular-assertions.xml" showprogress="false" transitive="false" conf="default,client,optional" log="quiet"/>
+
         <delete dir="${build.dir}/modules"/>
         <mkdir dir="${build.dir}/modules"/>
-        <ivy:resolve file="modules/gateway/assertions/ivy-modular-assertions.xml" showprogress="false" transitive="false" conf="default,client" log="quiet"/>
         <ivy:retrieve conf="default,client" pattern="${build.dir}/modules/[artifact]-[revision].[ext]"/>
+        
+        <delete dir="${build.dir}/modules-optional"/>
+        <mkdir dir="${build.dir}/modules-optional"/>
+        <ivy:retrieve conf="optional" pattern="${build.dir}/modules-optional/[artifact]-[revision].[ext]"/>
     </target>
 
     <!--
@@ -2424,6 +2429,10 @@
                 <include name="CustomAssertion_dev_kit-*.zip"/>
                 <include name="BridgeAPI-*.zip"/>
                 <include name="ManagerAPI-*.zip"/>
+                <include name="ssg-b*.tar.gz"/>
+            </fileset>
+            <fileset dir="${build.dir}/modules-optional">
+                <include name="*.aar"/>
             </fileset>
         </move>
     </target>
