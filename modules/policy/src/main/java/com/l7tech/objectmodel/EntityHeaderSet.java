@@ -4,6 +4,7 @@
 package com.l7tech.objectmodel;
 
 import java.util.*;
+import java.io.Serializable;
 
 /**
  * A Set&lt;EntityHeader&gt; that includes an optional {@link #exceededMax} property, used to indicate that this set
@@ -13,9 +14,11 @@ import java.util.*;
  *
  * @author alex
  */
-public class EntityHeaderSet<HT extends EntityHeader> implements Set<HT> {
+public class EntityHeaderSet<HT extends EntityHeader> implements Set<HT>, Serializable {
     private volatile Long exceededMax;
     private final Set<HT> delegate;
+
+    private static final long serialVersionUID = 1L;
 
     public static <HT_ extends EntityHeader> EntityHeaderSet<HT_> empty() {
         return new EntityHeaderSet<HT_>(Collections.<HT_>emptySet());
