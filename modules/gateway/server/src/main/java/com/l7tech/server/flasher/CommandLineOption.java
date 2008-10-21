@@ -9,7 +9,7 @@ package com.l7tech.server.flasher;
  * User: flascell<br/>
  * Date: Nov 8, 2006<br/>
  */
-public class CommandLineOption {
+class CommandLineOption {
     CommandLineOption(String name, String desc) {
         this.name = name;
         this.description = desc;

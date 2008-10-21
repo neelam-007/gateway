@@ -1,16 +1,22 @@
 package com.l7tech.server.flasher;
 
+import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.FileUtils;
-import com.l7tech.server.config.OSDetector;
-import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.sql.SQLException;
+
+import org.xml.sax.SAXException;
 
 /**
  * The utility that exports an SSG image file.
@@ -22,9 +28,9 @@ import java.util.zip.ZipOutputStream;
  * Date: Nov 8, 2006<br/>
  */
 public class Exporter {
-    //TODO [steve] fix flasher
 
     private static final Logger logger = Logger.getLogger(Exporter.class.getName());
+
     // exporter options
     public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image",
                                                                              "location of image file to export",
@@ -34,12 +40,10 @@ public class Exporter {
                                                                         "to include audit tables in resulting image",
                                                                         false,
                                                                         true);
-    public static final CommandLineOption PARTITION = new CommandLineOption("-p",
-                                                                            "name of partition to export");
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it",
                                                                                "path of the output mapping template file",
                                                                                true, false);
-    public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, PARTITION, MAPPING_PATH};
+    public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH};
     public static final String VERSIONFILENAME = "version";
     public static final String SRCPARTNMFILENAME = "sourcepartitionname";
 
@@ -94,143 +98,123 @@ public class Exporter {
             logger.info("no target image path specified");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i dont know where to output the image to.");
         }
-//        if (!testCanWrite(outputpathval)) {
-//            logger.warning("cannot write to the target image path specified: " + outputpathval);
-//            throw new IOException("cannot write to " + outputpathval);
-//        }
-//
-//        // check whether or not we are expected to include audit in export
-//        String auditval = arguments.get(AUDIT.name);
-//        if (auditval != null && !auditval.toLowerCase().equals("no") && !auditval.toLowerCase().equals("false")) {
-//            includeAudit = true;
-//        }
-//
-//        //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
-//        String partitionName = arguments.get(PARTITION.name);
-//
-//        // check if the system has more than one partition on it
-//
-//        // make sure user did not ask for a partition that did not exist
-//        if (StringUtils.isNotEmpty(partitionName)) {
-//            logger.info("there are no partition on this system, yet the user asked to export partition named: " + partitionName);
-//            throw new FlashUtilityLauncher.InvalidArgumentException("this system is not partitioned. cannot act on partition name " + partitionName);
-//        }
-//        }
-//
-//        tmpDirectory = createTmpDirectory();
-//
-//        try {
-//            logger.info("created temporary directory at " + tmpDirectory);
-//
-//            // Read database connection settings for the partition at hand
-//            OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
-//            PasswordPropertyCrypto passwordCrypto = osFunctions.getPasswordPropertyCrypto();
-//            Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[]{
-//                    DBInformation.PROP_DB_USERNAME,
-//                    DBInformation.PROP_DB_PASSWORD,
-//                    DBInformation.PROP_DB_URL,
-//            });
-//            String databaseURL = dbProps.get(DBInformation.PROP_DB_URL);
-//            String databaseUser = dbProps.get(DBInformation.PROP_DB_USERNAME);
-//            String databasePasswd = dbProps.get(DBInformation.PROP_DB_PASSWORD);
-//            databasePasswd = passwordCrypto.decryptIfEncrypted(databasePasswd);
-//
-//            logger.info("using database url " + databaseURL);
-//            logger.info("using database user " + databaseUser);
-//            logger.info("using database passwd " + databasePasswd);
-//
-//            // dump the database
-//            try {
-//                DBDumpUtil.dump(osFunctions, databaseURL, databaseUser, databasePasswd, includeAudit, tmpDirectory, stdout);
-//            } catch (SQLException e) {
-//                logger.log(Level.INFO, "exception dumping database", e);
-//                throw new IOException("cannot dump the database " + e.getMessage());
-//            }
-//
-//            // record version of this image
-//            FileOutputStream fos = new FileOutputStream(tmpDirectory + File.separator + VERSIONFILENAME);
-//            fos.write( BuildInfo.getProductVersion().getBytes());
-//            fos.close();
-//
-//            // record source partition
-//            fos = new FileOutputStream(tmpDirectory + File.separator + SRCPARTNMFILENAME);
-//            fos.write(partitionName.getBytes());
-//            fos.close();
-//
-//            // produce template mapping if necessary
-//            partitionName = FlashUtilityLauncher.getAbsolutePath(arguments.get(MAPPING_PATH.name));
-//            if (partitionName != null) {
-//                if (!testCanWrite(partitionName)) {
-//                    throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to the mapping template path provided: " + partitionName);
-//                }
-//                // read policy files from this dump, collect all potential mapping in order to produce mapping template file
-//                try {
-//                    MappingUtil.produceTemplateMappingFileFromDB(osFunctions, databaseURL, databaseUser, databasePasswd, partitionName);
-//                } catch (SQLException e) {
-//                    // should not happen
-//                    logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
-//                    throw new RuntimeException("problem producing template mapping file", e);
-//                } catch (SAXException e) {
-//                    // should not happen
-//                    logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
-//                    throw new RuntimeException("problem producing template mapping file", e);
-//                }
-//            }
-//
-//            // we dont support full image on windows (windows only supports staging use case)
-//            if (!OSDetector.isWindows()) {
-//                // copy all config files we want into this temp directory
-//                File hibprops = new File(osFunctions.getDatabaseConfig());
-//                File clusterprops = new File(osFunctions.getClusterHostFile());
-//                File ssglogprops = new File(osFunctions.getSsgLogPropertiesFile());
-//                File ksprops = new File(osFunctions.getKeyStorePropertiesFile());
-//                File tomcatprops = new File(osFunctions.getTomcatServerConfig());
-//                // temp patch to address the half done partition work
-//                if (!tomcatprops.exists()) {
-//                    tomcatprops = new File("/ssg/tomcat/conf/server.xml");
-//                }
-//                File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
-//                String ksdir = osFunctions.getKeystoreDir();
-//                if (!(new File(ksdir)).exists()) {
-//                    logger.warning("keystore directory not found where expected. this could be caused by an imcomplete partition migration");
-//                    ksdir = "/ssg/etc/keys";
-//                    if (!(new File(ksdir)).exists()) {
-//                        throw new IOException("keystore directory cannot be found anywhere");
-//                    }
-//                }
-//                File caCer = new File(ksdir + File.separator + "ca.cer");
-//                File sslCer = new File(ksdir + File.separator + "ssl.cer");
-//                File caKS = new File(ksdir + File.separator + "ca.ks");
-//                File sslKS = new File(ksdir + File.separator + "ssl.ks");
-//                FileUtils.copyFile(hibprops, new File(tmpDirectory + File.separator + hibprops.getName()));
-//                if (clusterprops.exists()) {
-//                    FileUtils.copyFile(clusterprops, new File(tmpDirectory + File.separator + clusterprops.getName()));
-//                }
-//                if (sysProps.exists()) {
-//                    FileUtils.copyFile(sysProps, new File(tmpDirectory + File.separator + sysProps.getName()));
-//                }
-//                FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
-//                FileUtils.copyFile(ksprops, new File(tmpDirectory + File.separator + ksprops.getName()));
-//                if (tomcatprops.exists()) {
-//                    // No more server.xml since 4.3.
-//                    FileUtils.copyFile(tomcatprops, new File(tmpDirectory + File.separator + tomcatprops.getName()));
-//                }
-//                FileUtils.copyFile(caCer, new File(tmpDirectory + File.separator + caCer.getName()));
-//                FileUtils.copyFile(sslCer, new File(tmpDirectory + File.separator + sslCer.getName()));
-//                FileUtils.copyFile(caKS, new File(tmpDirectory + File.separator + caKS.getName()));
-//                FileUtils.copyFile(sslKS, new File(tmpDirectory + File.separator + sslKS.getName()));
-//
-//                // copy system config files
-//                OSConfigManager.saveOSConfigFiles(tmpDirectory, flasherHome);
-//            }
-//            // zip the temp directory into the requested image file (outputpathval)
-//            logger.info("compressing image into " + outputpathval);
-//            zipDir(outputpathval, tmpDirectory);
-//        } finally {
-//            logger.info("cleaning up temp files at " + tmpDirectory);
-//            if (stdout != null) stdout.println("Cleaning temporary files at " + tmpDirectory);
-//            FileUtils.deleteDir(new File(tmpDirectory));
-//        }
+        if (!testCanWrite(outputpathval)) {
+            logger.warning("cannot write to the target image path specified: " + outputpathval);
+            throw new IOException("cannot write to " + outputpathval);
+        }
+
+        // check whether or not we are expected to include audit in export
+        String auditval = arguments.get(AUDIT.name);
+        if (auditval != null && !auditval.toLowerCase().equals("no") && !auditval.toLowerCase().equals("false")) {
+            includeAudit = true;
+        }
+
+        //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
+        String partName = arguments.get("-p");
+        if (!"default_".equals(partName)) {
+            throw new FlashUtilityLauncher.InvalidArgumentException("Cannot act on partition name " + partName);
+        }
+
+        File confDir = new File(flasherHome, "../../node/default/etc/conf");
+        tmpDirectory = createTmpDirectory();
+
+        try {
+            logger.info("created temporary directory at " + tmpDirectory);
+
+            // Read database connection settings for the partition at hand
+            File ompFile = new File(confDir, "omp.dat");
+            final MasterPasswordManager decryptor = ompFile.exists() ?
+                    new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) :
+                    null;
+
+            Properties props = new Properties();
+            File nodePropsFile = new File(confDir, "node.properties");
+            if ( nodePropsFile.exists() ) {
+                FileInputStream fis = null;
+                try {
+                    fis = new FileInputStream( nodePropsFile );
+                    props.load( fis );
+                } finally {
+                    ResourceUtils.closeQuietly(fis);
+                }
+
+                String databaseHost = props.getProperty("node.db.host");
+                String databasePort = props.getProperty("node.db.port");
+                String databaseName = props.getProperty("node.db.name");
+                String databaseUser = props.getProperty("node.db.user");
+                String databasePass = props.getProperty("node.db.pass");
+                databasePass = new String(decryptor.decryptPasswordIfEncrypted(databasePass));
+
+                logger.info("using database host " + databaseHost);
+                logger.info("using database port " + databasePort);
+                logger.info("using database name " + databaseName);
+                logger.info("using database user " + databaseUser);
+
+                // dump the database
+                try {
+                    DBDumpUtil.dump(databaseHost, Integer.parseInt(databasePort), databaseName, databaseUser, databasePass, includeAudit, tmpDirectory, stdout);
+                } catch (SQLException e) {
+                    logger.log(Level.INFO, "exception dumping database", e);
+                    throw new IOException("cannot dump the database " + e.getMessage());
+                }
+
+                // produce template mapping if necessary
+                String mappingFileName = FlashUtilityLauncher.getAbsolutePath(arguments.get(MAPPING_PATH.name));
+                if (mappingFileName != null) {
+                    if (!testCanWrite(mappingFileName)) {
+                        throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to the mapping template path provided: " + mappingFileName);
+                    }
+                    // read policy files from this dump, collect all potential mapping in order to produce mapping template file
+                    try {
+                        MappingUtil.produceTemplateMappingFileFromDB(databaseHost, Integer.parseInt(databasePort), databaseName, databaseUser, databasePass, mappingFileName);
+                    } catch (SQLException e) {
+                        // should not happen
+                        logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
+                        throw new RuntimeException("problem producing template mapping file", e);
+                    } catch (SAXException e) {
+                        // should not happen
+                        logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);
+                        throw new RuntimeException("problem producing template mapping file", e);
+                    }
+                }
+
+            }
+
+            // record version of this image
+            FileOutputStream fos = new FileOutputStream(tmpDirectory + File.separator + VERSIONFILENAME);
+            fos.write( BuildInfo.getProductVersion().getBytes());
+            fos.close();
+
+            // copy all config files we want into this temp directory
+            File ompDat = new File(confDir, "omp.dat");
+            File nodeProperties = new File(confDir, "node.properties");
+            File ssglogprops = new File(confDir, "ssglog.properties");
+            File sysProps = new File(confDir, "system.properties");
+
+            if ( ompDat.exists() ) {
+                FileUtils.copyFile(ompDat, new File(tmpDirectory + File.separator + ompDat.getName()));
+            }
+            if ( nodeProperties.exists() ) {
+                FileUtils.copyFile(nodeProperties, new File(tmpDirectory + File.separator + nodeProperties.getName()));
+            }
+            if ( nodeProperties.exists() ) {
+                    FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
+            }
+            if (sysProps.exists()) {
+                FileUtils.copyFile(sysProps, new File(tmpDirectory + File.separator + sysProps.getName()));
+            }
+
+            // copy system config files
+            OSConfigManager.saveOSConfigFiles(tmpDirectory, flasherHome);
+    
+            // zip the temp directory into the requested image file (outputpathval)
+            logger.info("compressing image into " + outputpathval);
+            zipDir(outputpathval, tmpDirectory);
+        } finally {
+            logger.info("cleaning up temp files at " + tmpDirectory);
+            if (stdout != null) stdout.println("Cleaning temporary files at " + tmpDirectory);
+            FileUtils.deleteDir(new File(tmpDirectory));
+        }
     }
 
     private boolean testCanWrite(String path) {

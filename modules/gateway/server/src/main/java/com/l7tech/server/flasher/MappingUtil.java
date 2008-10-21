@@ -3,7 +3,6 @@ package com.l7tech.server.flasher;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.server.config.OSSpecificFunctions;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -29,8 +28,7 @@ import java.util.regex.Pattern;
  * User: flascell<br/>
  * Date: Nov 8, 2006<br/>
  */
-public class MappingUtil {
-    //TODO [steve] fix flasher
+class MappingUtil {
 
     private static final Logger logger = Logger.getLogger(MappingUtil.class.getName());
     private static final Pattern ipaddresspattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
@@ -49,12 +47,11 @@ public class MappingUtil {
         public HashMap<String, String> varMapping = new HashMap<String, String>();
     }
 
-    public static void applyMappingChangesToDB(OSSpecificFunctions osFunctions, String dburl, String dbuser, String dbpasswd,
+    public static void applyMappingChangesToDB(String databaseHost, int databasePort, String databaseName, String dbuser, String dbpasswd,
                                                CorrespondanceMap mappingResults) throws SQLException {
-        Connection c = getConnection(osFunctions, dburl, dbuser, dbpasswd);
+        Connection c = DBDumpUtil.getConnection(databaseHost, databasePort, databaseName, dbuser, dbpasswd);
         try {
             System.out.println("Applying mappings");
-            Statement selStatement = c.createStatement();
 
             // iterate through policies
             applyRoutingIpMapping(c, "published_service", "policy_xml", mappingResults);    // column exists if upgraded from 4.2
@@ -133,21 +130,10 @@ public class MappingUtil {
         return output;
     }
 
-    private static Connection getConnection(OSSpecificFunctions osFunctions, String databaseURL, String databaseUser, String databasePasswd) throws SQLException {
-        Connection c;
-        c = null;//getDbActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
-        if (c == null) {
-            throw new SQLException("could not connect using url: " + databaseURL +
-                                   ". with username " + databaseUser +
-                                   ", and password: " + databasePasswd);
-        }
-        return c;
-    }
-
-    public static void produceTemplateMappingFileFromDB(OSSpecificFunctions osFunctions, String dburl, String dbuser,
+    public static void produceTemplateMappingFileFromDB(String databaseHost, int databasePort, String databaseName, String dbuser,
                                                         String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
 
-        Connection c = getConnection(osFunctions, dburl, dbuser, dbpasswd);
+        Connection c = DBDumpUtil.getConnection(databaseHost, databasePort, databaseName, dbuser, dbpasswd);
         Set<String> ipaddressesInRoutingAssertions = new HashSet<String>();
         HashMap<String, String> mapOfClusterProperties = new HashMap<String, String>();
         try {
@@ -206,17 +192,6 @@ public class MappingUtil {
         System.out.println(". Done");
         fos.close();
     }
-
-//    private static DBActions getDbActions(OSSpecificFunctions osFunctions) throws SQLException {
-//        if (dbActions == null) {
-//            try {
-//                dbActions = new DBActions(osFunctions);
-//            } catch (ClassNotFoundException e) {
-//                throw new SQLException(e.getMessage());
-//            }
-//        }
-//        return dbActions;
-//    }
 
     /**
      * Searches for routing IP addresses in policies stored in a table column.
@@ -419,7 +394,7 @@ public class MappingUtil {
         if (connection == null) throw new NullPointerException("connection must not be null");
         if (table == null) throw new NullPointerException("table must not be null");
 
-        String description = null;
+        String description;
         try {
             if (table.equalsIgnoreCase("published_service")) {
                 final String serviceName = getNameField(connection, "published_service", "objectid", objectid);

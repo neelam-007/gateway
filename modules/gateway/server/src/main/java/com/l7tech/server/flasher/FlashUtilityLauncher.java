@@ -1,12 +1,11 @@
 package com.l7tech.server.flasher;
 
-import com.l7tech.server.config.OSDetector;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -103,7 +102,6 @@ public class FlashUtilityLauncher {
         } else {
             String tmp = in[argparseri];
             while ((argparseri+1) < in.length) {
-                if (!OSDetector.isWindows() && tmp.endsWith("\\")) tmp = tmp.substring(0, tmp.length() - 1);
                 if (!isOption(in[argparseri+1])) {
                     tmp = tmp + " " + in[argparseri+1];
                     argparseri++;
@@ -140,11 +138,7 @@ public class FlashUtilityLauncher {
 
     private static void printusage() {
         StringBuffer output = new StringBuffer();
-        if (OSDetector.isWindows()) {
-            output.append("usage: ssgmigration.cmd [import | export] [OPTIONS]").append(EOL_CHAR);
-        } else {
-            output.append("usage: ssgmigration.sh [import | export] [OPTIONS]").append(EOL_CHAR);
-        }
+        output.append("usage: ssgmigration.sh [import | export] [OPTIONS]").append(EOL_CHAR);
         output.append("\tIMPORT OPTIONS:").append(EOL_CHAR);
         for (CommandLineOption option : Importer.ALLOPTIONS) {
             output.append("\t").append(option.name).append("\t\t").append(option.description).append(EOL_CHAR);
@@ -174,12 +168,8 @@ public class FlashUtilityLauncher {
     private static ArrayList<CommandLineOption> getOptions() {
         if (allRuntimeOptions == null) {
             allRuntimeOptions = new ArrayList<CommandLineOption>();
-            for (CommandLineOption aALLOPTIONS : Importer.ALLOPTIONS) {
-                allRuntimeOptions.add(aALLOPTIONS);
-            }
-            for (CommandLineOption aALLOPTIONS1 : Exporter.ALLOPTIONS) {
-                allRuntimeOptions.add(aALLOPTIONS1);
-            }
+            allRuntimeOptions.addAll(Arrays.asList(Importer.ALLOPTIONS));
+            allRuntimeOptions.addAll(Arrays.asList(Exporter.ALLOPTIONS));
         }
         return allRuntimeOptions;
     }

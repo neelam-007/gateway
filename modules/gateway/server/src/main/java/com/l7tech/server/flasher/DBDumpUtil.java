@@ -1,7 +1,7 @@
 package com.l7tech.server.flasher;
 
 import com.l7tech.util.HexUtils;
-import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.*;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Methods for dumping
@@ -19,39 +20,76 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Nov 8, 2006<br/>ma
  */
-public class DBDumpUtil {
-
-    //TODO [steve] fix flasher
+class DBDumpUtil {
 
     private static final Logger logger = Logger.getLogger(DBDumpUtil.class.getName());
     public static final String DBDUMPFILENAME_STAGING = "dbdump_migrate.sql";
     public static final String DBDUMPFILENAME_CLONE = "dbdump_restore.sql";
     public static final String LICENCEORIGINALID = "originallicenseobjectid.txt";
+    private static final String DEFAULT_DB_URL = "jdbc:mysql://{0}:{1}/{2}?autoReconnect=false&characterEncoding=UTF8&characterSetResults=UTF8&socketTimeout=120000&connectTimeout=10000";
     private static final String[] TABLE_NOT_IN_STAGING = {"client_cert", "shared_keys", "keystore_file"};
     private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "service_usage", "message_id", "service_metrics"};
+    private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
 
+    static {
+        try {
+            Class.forName(JDBC_DRIVER_NAME);
+        } catch( ClassNotFoundException cnfe ) {
+            logger.info("MySQL JDBC driver not available.");
+        }
+    }        
+
+    /**
+     * Retrieve a database connection to the given database. This connection will need to be closed by the caller to
+     * avoid resource leaks
+     *
+     * @param dburl a URL of the form jdbc:dbtype://host/dbname where dbtype is the name of the db driver/vendor
+     * (in our case it's mysql)
+     * @param dbuser the user to connect with
+     * @param dbpasswd the password for the db user. Not null, pass "" for no password
+     * @return an established connection to the DB specified in dburl. Caller is responsible for closing and
+     * maintinaining this connection
+     * @throws SQLException if there was an exception while connecting to the DB
+     */
+    public static Connection getConnection(String dburl, String dbuser, String dbpasswd) throws SQLException {
+        return DriverManager.getConnection(dburl, dbuser, dbpasswd);
+    }
+
+    /**
+     * Retrieve a database connection to the given database. This connection will need to be closed by the caller to
+     * avoid resource leaks
+     *
+     * @param hostname The database host
+     * @param hostname The database host
+     * @param hostname The database host
+     * @param dbuser the user to connect with
+     * @param dbpasswd the password for the db user. Not null, pass "" for no password
+     * @return an established connection to the DB specified in dburl. Caller is responsible for closing and
+     * maintinaining this connection
+     * @throws SQLException if there was an exception while connecting to the DB
+     */
+    public static Connection getConnection(String hostname, int port, String dbName, String dbuser, String dbpasswd) throws SQLException {
+        String urlPattern = SyspropUtil.getString("com.l7tech.migration.dburl", DEFAULT_DB_URL);
+        String databaseURL = MessageFormat.format( urlPattern, hostname, Integer.toString(port), dbName, dbuser, dbpasswd );
+        return getConnection(databaseURL, dbuser, dbpasswd);
+    }
 
     /**
      * outputs database dump files
-     * @param databaseURL database host
+     * @param databaseHost database host
+     * @param databasePort database port
+     * @param databaseName database host
      * @param databaseUser database user
      * @param databasePasswd database password
      * @param includeAudit whether or not audit tables should be included
      * @param outputDirectory the directory path where the dump files should go to
-     * @param osFunctions for the partition at hand
      * @param stdout    stream for verbose output; <code>null</code> for no verbose output
      * @throws java.sql.SQLException problem getting data out of db
      * @throws java.io.IOException problem with dump files
      */
-    public static void dump(OSSpecificFunctions osFunctions, String databaseURL, String databaseUser, String databasePasswd,
+    public static void dump(String databaseHost, int databasePort, String databaseName, String databaseUser, String databasePasswd,
                             boolean includeAudit, String outputDirectory, PrintStream stdout) throws SQLException, IOException {
-        Connection c = null;//getDBActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
-        if (c == null) {
-            logger.warning("cannot get connection");
-            throw new SQLException("could not connect using url: " + databaseURL +
-                                   ". with username " + databaseUser +
-                                   ", and password: " + databasePasswd);
-        }
+        Connection c = getConnection(databaseHost, databasePort, databaseName, databaseUser, databasePasswd);
         DatabaseMetaData metadata = c.getMetaData();
         String[] tableTypes = {
                 "TABLE"
@@ -183,14 +221,4 @@ public class DBDumpUtil {
         return false;
     }
 
-//    private static DBActions getDBActions(OSSpecificFunctions osFunctions) throws SQLException {
-//        if (dbActions == null) {
-//            try {
-//                dbActions = new DBActions(osFunctions);
-//            } catch (ClassNotFoundException e) {
-//                throw new SQLException(e.getMessage());
-//            }
-//        }
-//        return dbActions;
-//    }
 }
