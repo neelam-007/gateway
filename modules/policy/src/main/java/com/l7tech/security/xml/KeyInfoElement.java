@@ -5,9 +5,8 @@
 
 package com.l7tech.security.xml;
 
-import com.l7tech.security.token.ParsedElement;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.DomUtils;
+import com.l7tech.security.token.ParsedElement;
 import com.l7tech.util.*;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -17,6 +16,7 @@ import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -231,6 +231,33 @@ public class KeyInfoElement implements ParsedElement {
     }
 
     /**
+     * Attempt to decode an embedded certificate from a KeyInfo.
+     *
+     * @param keyInfo the KeyInfo element to examine.  Required.
+     * @return the X509Certificate that was embedded in this element, or null if none was found.
+     * @throws com.l7tech.util.InvalidDocumentFormatException if more than one X509Data or X509Certificate child element is present.
+     * @throws java.security.cert.CertificateException if a certificate is present but cannot be decoded.
+     */
+    public static X509Certificate decodeEmbeddedCert(Element keyInfo) throws InvalidDocumentFormatException, CertificateException {
+        // Check for X509Data
+        Element x509DataEle = DomUtils.findOnlyOneChildElementByName(keyInfo, SoapConstants.DIGSIG_URI, "X509Data");
+        if (x509DataEle == null)
+            return null;
+
+        Element x509CertEle = DomUtils.findOnlyOneChildElementByName(x509DataEle, SoapConstants.DIGSIG_URI, "X509Certificate");
+        if (x509CertEle == null) {
+            logger.log(Level.FINE, "Ignoring X509Data with no X509Certificate child element");
+            return null;
+        }
+
+        try {
+            return CertUtils.decodeCert(HexUtils.decodeBase64(DomUtils.getTextValue(x509CertEle)));
+        } catch (IOException e) {
+            throw new CertificateException("Invalid certificate in X509Data", e);
+        }
+    }
+
+    /**
      * Try to look up a SignerInfo (private key and cert chain) corresponding to the specified KeyInfo element.
      *
      * @param keyInfo    the KeyInfo element to check.  Must not be null.
@@ -247,7 +274,18 @@ public class KeyInfoElement implements ParsedElement {
         Element str = DomUtils.findOnlyOneChildElementByName(keyInfo,
                                                             SoapConstants.SECURITY_URIS_ARRAY,
                                                             SoapConstants.SECURITYTOKENREFERENCE_EL_NAME);
-        if (str == null) throw new UnsupportedKeyInfoFormatException("KeyInfo includes no SecurityTokenReference");
+        if (str == null) {
+            X509Certificate embedded = decodeEmbeddedCert(keyInfo);
+            if (embedded != null) {
+                SignerInfo found = securityTokenResolver.lookupPrivateKeyByCert(embedded);
+                if (found != null)
+                    return found;
+
+                logger.fine("Ignoring embedded certificate which was unrecognized");
+                // Fallthrough and look for other keyinfo.
+            }
+        }
+
         Element ki = DomUtils.findOnlyOneChildElementByName(str,
                                                            SoapConstants.SECURITY_URIS_ARRAY,
                                                            SoapConstants.KEYIDENTIFIER_EL_NAME);

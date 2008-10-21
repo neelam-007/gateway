@@ -34,10 +34,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.*;
@@ -699,7 +696,7 @@ public class WssProcessorImpl implements WssProcessor {
                         NamedNodeMap attributes = token.asElement().getAttributes();
                         for (int j = 0; j < attributes.getLength(); j++) {
                             Attr n = (Attr)attributes.item(j);
-                            if (n.getLocalName().equals("Id") &&
+                            if ("Id".equals(n.getLocalName()) &&
                                 n.getNamespaceURI() != null &&
                                 n.getNamespaceURI().length() > 0) {
                                 return n.getNamespaceURI();
@@ -1749,37 +1746,17 @@ public class WssProcessorImpl implements WssProcessor {
         if (signingCertToken != null) {
             signingCert = signingCertToken.getMessageSigningCertificate();
         }
-        // NOTE if we want to resolve embedded we need to set a signingCertToken as below
-        // if (signingCert == null) { //try to resolve it as embedded
-        //     signingCert = resolveEmbeddedCert(keyInfoElement);
-        // }
+        if (signingCert == null) { //try to resolve it as embedded
+             signingCert = KeyInfoElement.decodeEmbeddedCert(keyInfoElement);
+            if (signingCert != null) {
+                signingCertToken = createDummyBst(sigElement.getOwnerDocument(), signingCert);
+                securityTokens.add(signingCertToken);
+            }
+        }
         if (signingCert == null) { // last chance: see if we happen to recognize a SKI, perhaps because it is ours or theirs
             signingCert = resolveCertBySkiRef(keyInfoElement);
             if (signingCert != null) {
-                // This dummy BST matches the required format for signing via an STR-Transform
-                // for STR-Transform the prefix must match the one on the STR
-                String wsseNs = releventSecurityHeader.getNamespaceURI();
-                Element strEle = DomUtils.findOnlyOneChildElementByName(keyInfoElement,
-                                                                       SoapConstants.SECURITY_URIS_ARRAY,
-                                                                       SoapConstants.SECURITYTOKENREFERENCE_EL_NAME);
-                final String wssePrefix;
-                if (strEle == null) {
-                    wssePrefix = releventSecurityHeader.getPrefix();
-                } else {
-                    wssePrefix = strEle.getPrefix();
-                }
-                final Element bst;
-                if (wssePrefix == null) {
-                    bst = sigElement.getOwnerDocument().createElementNS(wsseNs, "BinarySecurityToken");
-                    bst.setAttribute("xmlns", wsseNs);
-                } else {
-                    bst = sigElement.getOwnerDocument().createElementNS(wsseNs, wssePrefix+":BinarySecurityToken");
-                    bst.setAttribute("xmlns:"+wssePrefix, wsseNs);
-                }
-                bst.setAttribute("ValueType", SoapConstants.VALUETYPE_X509);
-                DomUtils.setTextContent(bst, HexUtils.encodeBase64(signingCert.getEncoded(), true));
-
-                signingCertToken = new X509BinarySecurityTokenImpl(signingCert, bst);
+                signingCertToken = createDummyBst(sigElement.getOwnerDocument(), signingCert);
                 securityTokens.add(signingCertToken); // nasty, blah
             }
         }
@@ -1954,6 +1931,35 @@ public class WssProcessorImpl implements WssProcessor {
             }
             signingSecurityToken.onPossessionProved();
         }
+    }
+
+    /**
+     * Create a fake BinarySecurityToken to hold an X.509 token that arrived with the message by means
+     * other than a BinarySecurityToken (SKI reference, or embedded cert),
+     * where there is no other security token available to point at.
+     *
+     * @param domFactory  document for creating new DOM nodes.  Required.
+     * @param certificate  certificate this BST should contain.  Required.
+     * @return an X509SigningSecurityTokenImpl containing the specified certificate.  Never null.
+     */
+    private X509SigningSecurityTokenImpl createDummyBst(Document domFactory, X509Certificate certificate) throws TooManyChildElementsException, CertificateEncodingException {
+        X509SigningSecurityTokenImpl signingCertToken;
+        // This dummy BST matches the required format for signing via an STR-Transform
+        // for STR-Transform the prefix must match the one on the STR
+        String wsseNs = releventSecurityHeader.getNamespaceURI();
+        String wssePrefix = releventSecurityHeader.getPrefix();
+        final Element bst;
+        if (wssePrefix == null) {
+            bst = domFactory.createElementNS(wsseNs, "BinarySecurityToken");
+            bst.setAttribute("xmlns", wsseNs);
+        } else {
+            bst = domFactory.createElementNS(wsseNs, wssePrefix+":BinarySecurityToken");
+            bst.setAttribute("xmlns:"+wssePrefix, wsseNs);
+        }
+        bst.setAttribute("ValueType", SoapConstants.VALUETYPE_X509);
+        DomUtils.setTextContent(bst, HexUtils.encodeBase64(certificate.getEncoded(), true));
+        signingCertToken = new X509BinarySecurityTokenImpl(certificate, bst);
+        return signingCertToken;
     }
 
     private static class TimestampDate extends ParsedElementImpl implements WssTimestampDate {

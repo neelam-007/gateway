@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?><s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+  <s12:Header>
+  <wsse:Security xmlns:wsse="http://schemas.xmlsoap.org/ws/2003/06/secext">
+    <dsig:Signature xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" Id="Alice">
+      <dsig:SignedInfo>
+        <dsig:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+        <dsig:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+        <dsig:Reference URI="#Id-4097404592830210792-12246217089450">
+          <dsig:Transforms>
+            <dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+          </dsig:Transforms>
+          <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+          <dsig:DigestValue>5qPxjMhorcP8V08hCy/SAOWyNlo=</dsig:DigestValue>
+        </dsig:Reference>
+      </dsig:SignedInfo>
+      <dsig:SignatureValue>
+        PVcA9H5gpF/2C7xVSvFL1B7oCox8N8Z1BVlAvlJZ2z9arhWYB1pZ5nbdxMTHAbyklGOFN5CRZcs2
+        cyF6xM9vXpbdwe/U2J+Tk0vznMdHumnQBCiLKG4CIOZFs/BulJx8EjF+xeH0w7rtR+ZnLtgxymyT
+        TAdAm9jXyyMSaqMULVg=
+      </dsig:SignatureValue>
+      <dsig:KeyInfo>
+        <dsig:X509Data>
+          <dsig:X509SubjectName>CN=Alice,OU=OASIS Interop Test Cert,O=OASIS</dsig:X509SubjectName>
+          <dsig:X509Certificate>
+            MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQK
+            DAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoX
+            DTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3Ag
+            VGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi9
+            9By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsE
+            yvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8V
+            sZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8v
+            aW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK
+            4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkq
+            hkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJA
+            gUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK
+            /wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJ
+            xn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYz
+            QK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw==
+          </dsig:X509Certificate>
+        </dsig:X509Data>
+      </dsig:KeyInfo>
+    </dsig:Signature>
+  </wsse:Security>
+  </s12:Header>
+    <s12:Body xmlns:wsu="http://schemas.xmlsoap.org/ws/2003/06/utility" wsu:Id="Id-4097404592830210792-12246217089450">
+        <tns:EchoRequest xmlns:tns="http://example.com/ws/2008/09/securitypolicy">Layer 7 Tech - Test Ping 123</tns:EchoRequest>
+    </s12:Body>
+</s12:Envelope>

@@ -324,6 +324,22 @@ public class WssProcessorTest extends TestCase {
         doTest(result);
     }
 
+    @BugNumber(3754)
+    public void testBug3754PingReqVordelSigned() throws Exception {
+        doTest(makeBug3754PingReqVordelSignedTestDocument());
+    }
+    
+    public TestDocument makeBug3754PingReqVordelSignedTestDocument() throws Exception {
+        Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3754_PING_REQ_VORDEL_SIGNED);
+        return new TestDocument("Bug3754PingReqVordelSigned",
+                d,
+                null,
+                null,
+                null,
+                null,
+                null);
+    }
+
     // disabled because the cert that signed the test message has since expired
     // TODO recreate test messsage using another cert
     public void DISABLED_testSignedSvAssertionWithThumbprintSha1() throws Exception {
