@@ -108,6 +108,91 @@ public final class AuditSearchCriteria implements Serializable {
      */
     public final String requestId;
 
+    /**
+     * Grabs information about the search critiera.  Similiar to toString() method.
+     *
+     * @param moreDetails   Can give give full details if TRUE, FALSE will only give certain information.
+     * @return  Details of the search criteria
+     */
+    public String getAuditQueryDetails(boolean moreDetails) {
+        StringBuffer searchCriteria = new StringBuffer();
+
+        //construct time information
+        Date fromTime = this.fromTime;
+        Date toTime = this.toTime;
+        if (fromTime != null && toTime != null) {
+            searchCriteria.append("Time: " + fromTime.toString() + " to " + toTime.toString() + " ");
+        } else if (fromTime != null && toTime == null) {
+            searchCriteria.append("Start Time: " + fromTime.toString() + " ");
+        } else if (fromTime == null && toTime != null) {
+            searchCriteria.append("End Time: " + toTime.toString() + " ");
+        }
+
+        //construct level
+        if (moreDetails) {
+            Level fromLevel = this.fromLevel;
+            if (fromLevel == null) fromLevel = Level.FINEST;
+            Level toLevel = this.toLevel;
+            if (toLevel == null) toLevel = Level.SEVERE;
+
+            if (fromLevel.equals(toLevel)) {
+                searchCriteria.append("Level: " + fromLevel.getName() + " ");
+            } else {
+                searchCriteria.append("Level: " + fromLevel + " to " + toLevel + " ");
+            }
+        }
+
+        //construct message number range
+        if(moreDetails) {
+            if (this.startMessageNumber > 0 && this.endMessageNumber > 0) {
+                searchCriteria.append("Message number range: " + this.startMessageNumber + " to " + this.endMessageNumber + " ");
+            } else if (this.startMessageNumber > 0 && this.endMessageNumber <= 0) {
+                searchCriteria.append("Message number greater than: " + this.startMessageNumber + " ");
+            } else if (this.startMessageNumber <= 0 && this.endMessageNumber > 0) {
+                searchCriteria.append("Message number less than: " + this.endMessageNumber + " ");
+            }
+        }
+
+        //construct request ID
+        if (this.requestId != null && moreDetails) searchCriteria.append("Request ID: " + this.requestId + " ");
+
+        //construct service name
+        if (this.serviceName != null && moreDetails) searchCriteria.append("Service name: " + this.serviceName + " ");
+
+        //construct message
+        if (this.message != null && moreDetails) searchCriteria.append("Message contains: " + this.message + " ");
+
+        //construct node ID
+        if (this.nodeId != null && moreDetails) searchCriteria.append("Node ID: " + this.nodeId + " ");
+
+        return searchCriteria.toString();
+    }
+
+    /**
+     * Compares if the criteria is similar to this instance one.  It'll will only compare the following
+     * <ul>
+     *  <li>Level</li>
+     *  <li>Request ID</li>
+     *  <li>Service name</li>
+     *  <li>Message</li>
+     *  <li>Node ID</li>
+     * </ul>
+     * @param criteria
+     * @return
+     */
+    public boolean containsSimilarCritiera(final AuditSearchCriteria criteria) {
+        if (fromLevel != null && !fromLevel.equals(criteria.fromLevel)) return false;
+        if (toLevel != null && !toLevel.equals(criteria.toLevel)) return false;
+        if (requestId != null && !requestId.equals(criteria.requestId)) return false;
+        if (serviceName != null && !serviceName.equals(criteria.serviceName)) return false;
+        if (message != null && !message.equals(criteria.message)) return false;
+        if (nodeId != null && !nodeId.equals(criteria.nodeId)) return false;
+
+//        if (fromTime != null && !fromTime.equals(criteria.fromTime)) return false;
+//        if (toTime != null && !toTime.equals(criteria.toTime)) return false;
+        return true;
+    }
+
     public static class Builder {
         private Date fromTime = null;
         private Date toTime = null;

@@ -3,12 +3,14 @@ package com.l7tech.server.event;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.security.auth.Subject;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessController;
 import java.security.Principal;
-import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
@@ -103,14 +105,10 @@ public class AdminInfo {
         if (subject == null)
             return toWrap;
         return new Callable<OUT>() {
-            public OUT call() {
-                return Subject.doAs(subject, new PrivilegedAction<OUT>() {
-                    public OUT run() {
-                        try {
-                            return toWrap.call();
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
+            public OUT call() throws Exception {
+                return Subject.doAs(subject, new PrivilegedExceptionAction<OUT>() {
+                    public OUT run() throws Exception{
+                        return toWrap.call();
                     }
                 });
             }
@@ -126,4 +124,23 @@ public class AdminInfo {
             }
         };
     }
+
+    /**
+     * @return  Returns the identity header based on the admin information stored in this object
+     */
+    public IdentityHeader getIdentityHeader() {
+        return new IdentityHeader(identityProviderOid, id, EntityType.USER, login, "");
+    }
+
+    /**
+     * Invokes the callable method.
+     *
+     * @param toWrap    Callable method
+     * @return  The type specified from the callable method
+     * @throws Exception
+     */
+    public <OUT> OUT invokeCallable(final Callable<OUT> toWrap) throws Exception {
+        final Callable<OUT> wrap = wrapWithSubject(subject, wrapWithConnectionInfo(ip, toWrap));
+        return wrap.call();
+    }   
 }

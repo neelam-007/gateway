@@ -194,6 +194,7 @@
         <property name="serverConfig" ref="serverConfig"/>
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
         <property name="auditArchiver" ref="auditArchiver"/>
+        <property name="transactionManager" ref="transactionManager"/>
     </bean>
 
     <!-- service admin servant -->
