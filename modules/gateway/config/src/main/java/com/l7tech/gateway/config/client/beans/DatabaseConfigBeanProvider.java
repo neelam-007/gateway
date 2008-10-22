@@ -83,7 +83,7 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
                 NodeManagementApi.DatabaseConfigRow config = new NodeManagementApi.DatabaseConfigRow();
                 config.setType(DatabaseType.NODE_ALL);
                 config.setConfig(dbConfig);
-                managementService.createNode( "default", null, getPassword(configuration), new HashSet<NodeManagementApi.DatabaseConfigRow>( Collections.singleton( config ) ) );
+                managementService.createNode( "default", null, getPassword(configuration), new NodeManagementApi.DatabaseConfigRow[]{config} );
             }
         } catch ( ObjectModelException ome ) {
             throw new ConfigurationException( "Error storing node configuration", ome );

@@ -26,7 +26,6 @@ public class AttributeHeader extends NamedEntityImp implements Serializable {
      * Only classes in this package can declare whether a variable is built-in (any header created by "outsiders" 
      * is considered "custom.")
      */
-    //TODO [steve] Check that making this AttributeHeader enum public is OK
     public enum Builtin { BUILTIN, CUSTOM }
 
     private static final Map<String, AttributeHeader> nameCache = new HashMap<String, AttributeHeader>();
@@ -61,7 +60,6 @@ public class AttributeHeader extends NamedEntityImp implements Serializable {
         this(variableName, name, type, uog, CUSTOM);
     }
 
-    //TODO [steve] Check that making this AttributeHeader constructor public is OK
     public AttributeHeader(String variableName, String name, DataType type, UsersOrGroups uog, Builtin builtin) {
         if (nameCache.get(variableName) != null) throw new IllegalArgumentException(MessageFormat.format("the variable name {0} is already in use; variable names must be globally unique", variableName));
         this.variableName = variableName;

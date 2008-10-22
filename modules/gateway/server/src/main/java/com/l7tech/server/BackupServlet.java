@@ -5,12 +5,12 @@ package com.l7tech.server;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.ProcUtils;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.ServiceMessages;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.BadCredentialsException;
@@ -22,12 +22,12 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.event.system.BackupEvent;
-import com.l7tech.server.flasher.Exporter;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.HttpClientFactory;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -39,8 +39,6 @@ import java.io.*;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,7 +55,6 @@ import java.util.logging.Logger;
  */
 public class BackupServlet extends AuthenticatableHttpServlet {
     private static final Logger _logger = Logger.getLogger(BackupServlet.class.getName());
-    private static final Set<EntityType> ALL_ENTITY_TYPES = EnumSet.complementOf(EnumSet.of(EntityType.ANY));
 
     private WebApplicationContext _webApplicationContext;
     private ClusterInfoManager _clusterInfoManager;
@@ -102,7 +99,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             return;
         }
 
-        AuthenticationResult[] results = null;
+        AuthenticationResult[] results;
         try {
             results = authenticateRequestBasic(request);
         } catch (BadCredentialsException e) {
@@ -172,7 +169,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
      * @throws IOException if I/O error occurs
      */
     private void doMainPage(final HttpServletResponse response) throws IOException {
-        Collection<ClusterNodeInfo> nodeInfos = null;
+        Collection<ClusterNodeInfo> nodeInfos;
         try {
             nodeInfos = _clusterInfoManager.retrieveClusterStatus();
         } catch (FindException e) {
@@ -230,24 +227,23 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                           final String nodeName,
                           final User user)
             throws IOException {
-        File tmpFile = null;
+        File tmpFile  = File.createTempFile("backup", ".tmp");
+        final String ssgHome = System.getProperty("com.l7tech.server.home");
+        final File flasherHome = new File(ssgHome, "../../config/migration");
+
         try {
-            tmpFile = File.createTempFile("backup", ".tmp");
-            final String ssgHome = System.getProperty("com.l7tech.server.home");
-            final File flasherHome = new File(ssgHome, "migration");
-            final Exporter exporter = new Exporter(flasherHome, null, null);
-            exporter.doIt(false, null, tmpFile.getCanonicalPath());
-        } catch (Exception e) {
+            ProcUtils.exec(flasherHome, new File(flasherHome, "ssgmigration.sh"), new String[] { "export", "-image", tmpFile.getCanonicalPath() }, null, false);
+        } catch (IOException e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_CREATE_IMAGE, e, nodeName);
             respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
-            if (tmpFile != null) tmpFile.delete();
+            tmpFile.delete();
             return;
         }
 
         InputStream in = null;
         OutputStream out = null;
         try {
-            long size = -1;
+            long size;
             try {
                 size = tmpFile.length();
                 in = new BufferedInputStream(new FileInputStream(tmpFile));
@@ -274,7 +270,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         } finally {
             if (in != null) in.close();
             if (out != null) out.close();
-            if (tmpFile != null) tmpFile.delete();
+            tmpFile.delete();
         }
 
         logAndAudit(getOriginalClientAddr(request), user, "Backup downloaded", ServiceMessages.BACKUP_SUCCESS, null, nodeName, user.getName(), getOriginalClientHostAndAddr(request));
@@ -317,6 +313,8 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         }
 
         // Routes the request to the target node using its numeric IP address.
+        GenericHttpRequest routedRequest = null;
+        GenericHttpResponse routedResponse = null;
         try {
             if (_logger.isLoggable(Level.FINE)) _logger.fine("Routing backup request to " + nodeName + " at " + nodeAddress);
             final String requestPath = request.getRequestURI() + "?" + request.getQueryString();
@@ -327,10 +325,10 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             params.setPreemptiveAuthentication(true);
             params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HEADER_ORIGINAL_HOST, request.getRemoteHost()));
             params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HEADER_ORIGINAL_ADDR, request.getRemoteAddr()));
-            final GenericHttpRequest routedRequest = _httpClientFactory.createHttpClient().createRequest(GenericHttpClient.GET, params);
+            routedRequest = _httpClientFactory.createHttpClient().createRequest(GenericHttpClient.GET, params);
 
             // Copies over response headers.
-            final GenericHttpResponse routedResponse = routedRequest.getResponse();
+            routedResponse = routedRequest.getResponse();
             for (HttpHeader header : routedResponse.getHeaders().toArray()) {
                 response.addHeader(header.getName(), header.getFullValue());
                 if (_logger.isLoggable(Level.FINEST)) {
@@ -350,8 +348,8 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                     out.write(buf);
                 }
             } finally {
-                if (in != null) in.close();
-                if (out != null) out.close();
+                ResourceUtils.closeQuietly( in );
+                ResourceUtils.closeQuietly( out );
             }
 
             if (_logger.isLoggable(Level.FINE)) {
@@ -360,7 +358,9 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         } catch (IOException e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup request routing failed", ServiceMessages.BACKUP_ROUTING_IO_ERROR, e);
             respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Routing failed");
-            return;
+        } finally {
+            ResourceUtils.closeQuietly( routedRequest );
+            ResourceUtils.closeQuietly( routedResponse );
         }
     }
 

@@ -83,9 +83,6 @@
         <dependency org="org.apache.tomcat" name="tomcat" rev="6.0.13" force="true" conf="core">
             <exclude org="org.apache.tomcat" module="servlet-api" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
-<!--
-            <exclude org="org.apache.tomcat" module="annotations-api" name="*" type="*" ext="*" conf="" matcher="exact"/>
--->
         </dependency>
         <dependency org="com.ibm.mq" name="mq6" rev="6.0.2.2" force="true" conf="optional"/>
         <dependency org="com.tibco" name="jms" rev="1.5" force="true" conf="optional"/>
@@ -97,5 +94,7 @@
         
         <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
+        <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
+        <exclude org="org.apache.cxf" module="cxf-rt-transports-http-jetty" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
     </dependencies>
 </ivy-module>

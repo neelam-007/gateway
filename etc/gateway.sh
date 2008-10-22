@@ -42,7 +42,7 @@ done
 SSGUSER="gateway"
 SSGNODE="default"
 GATEWAY_PID="${SSG_HOME}/node/${SSGNODE}/var/ssg.pid"
-JAVA_OPTS="-Dcom.l7tech.server.home=${SSG_HOME}/node/${SSGNODE} -Djava.ext.dirs=${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext"
+JAVA_OPTS="-Dcom.l7tech.server.home=${SSG_HOME}/node/${SSGNODE} -Djava.ext.dirs=${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/runtime/lib/ext"
 if [ -n "${SSG_JAVA_OPTS}" ] ; then
   JAVA_OPTS="${JAVA_OPTS} ${SSG_JAVA_OPTS}"
 fi

@@ -1,4 +1,4 @@
-package com.l7tech.server.flasher;
+package com.l7tech.gateway.config.flasher;
 
 /**
  * A command line option passed to the flash utility

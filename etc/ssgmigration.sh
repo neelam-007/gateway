@@ -34,8 +34,8 @@ fi
 if [ $UID -eq 0 ]; then
     # invoke flasher as layer7
     su layer7 -c "${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_HOME} -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} -jar ${MIGRATION_HOME}/SSGMigration.jar $*"
-elif [ "$USER" == "layer7" ]; then
+elif [ "$USER" == "layer7" ] || [ "${1}" == "export"  ]; then
     ${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_HOME} -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} -jar ${MIGRATION_HOME}/SSGMigration.jar $*
 else
-	echo "Must be layer7 to invoke ssgmigration.sh"
+    echo "Must be layer7 to invoke ssgmigration.sh"
 fi

@@ -19,6 +19,7 @@ import javax.jws.WebService;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
+import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.Set;
 
@@ -48,12 +49,12 @@ public interface NodeManagementApi {
      * @return the newly created NodeConfig
      * @throws SaveException if the new node cannot be created
      */
-    NodeConfig createNode(String newNodeName, String version, String clusterPassphrase, Set<DatabaseConfigRow> databaseConfigs) throws SaveException;
+    NodeConfig createNode(String newNodeName, String version, String clusterPassphrase, DatabaseConfigRow[] databaseConfigs) throws SaveException;
 
     /**
      * This class only exists because JAXB can't handle a Map in any reasonable way
      */
-    public static class DatabaseConfigRow {
+    public static class DatabaseConfigRow implements Serializable {
         private DatabaseType type;
         private DatabaseConfig config;
 

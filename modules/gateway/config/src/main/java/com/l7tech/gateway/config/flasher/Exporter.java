@@ -1,4 +1,4 @@
-package com.l7tech.server.flasher;
+package com.l7tech.gateway.config.flasher;
 
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.DefaultMasterPasswordFinder;

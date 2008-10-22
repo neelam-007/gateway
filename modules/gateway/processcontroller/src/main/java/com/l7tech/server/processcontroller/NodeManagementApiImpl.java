@@ -28,9 +28,12 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.cxf.interceptor.InInterceptors;
+
 @WebService(name="NodeManagementAPI",
             targetNamespace="http://ns.l7tech.com/secureSpan/5.0/component/processController/nodeManagementApi",
             endpointInterface="com.l7tech.server.management.api.node.NodeManagementApi")
+@InInterceptors(interceptors = "org.apache.cxf.interceptor.LoggingInInterceptor")
 public class NodeManagementApiImpl implements NodeManagementApi {
     private static final Logger logger = Logger.getLogger(NodeManagementApiImpl.class.getName());
 
@@ -77,7 +80,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         logger.log(Level.FINE, "Accepted client certificate {0}", certificate.getSubjectDN().getName());
     }
 
-    public NodeConfig createNode(String newNodeName, String desiredVersion, String clusterPassphrase, Set<DatabaseConfigRow> databaseConfigs)
+    public NodeConfig createNode(String newNodeName, String desiredVersion, String clusterPassphrase, DatabaseConfigRow[] databaseConfigs)
             throws SaveException {
         checkRequest();
         final Map<String,NodeConfig> nodes = configService.getHost().getNodes();

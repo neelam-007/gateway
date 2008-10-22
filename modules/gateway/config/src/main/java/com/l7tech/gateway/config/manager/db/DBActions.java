@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.gateway.config.manager.LicenseChecker;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import org.apache.commons.lang.StringUtils;
@@ -25,9 +26,8 @@ import java.util.regex.Pattern;
  */
 public class DBActions {
     private static final Logger logger = Logger.getLogger(DBActions.class.getName());
-    private final static String MYSQL_CONNECTION_PREFIX = "jdbc:mysql://";
     private static final String EOL_CHAR = System.getProperty("line.separator");
-
+    private static final String DEFAULT_DB_URL = "jdbc:mysql://{0}:{1}/{2}?autoReconnect=false&characterEncoding=UTF8&characterSetResults=UTF8&socketTimeout=120000&connectTimeout=10000";
 
     public static final int DB_SUCCESS = 0;
     public static final int DB_ALREADY_EXISTS = 2;
@@ -865,9 +865,8 @@ public class DBActions {
     }
 
     private String makeConnectionString(String hostname, int port, String dbName) {
-        StringBuilder buffer = new StringBuilder();
-        buffer.append(MYSQL_CONNECTION_PREFIX).append(hostname).append(":").append(port).append("/").append(dbName);
-        return buffer.toString();
+        String urlPattern = SyspropUtil.getString("com.l7tech.migration.dburl", DEFAULT_DB_URL);
+        return MessageFormat.format( urlPattern, hostname, Integer.toString(port), dbName );
     }
 
     private Map<String, String[]> buildUpgradeMap(File parentDir) {

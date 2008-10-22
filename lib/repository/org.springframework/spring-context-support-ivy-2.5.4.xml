@@ -28,7 +28,6 @@
 		<dependency org="freemarker" name="freemarker" rev="2.3.12" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="groovy" name="groovy" rev="1.5.5" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="jasperreports" name="jasperreports" rev="2.0.5" force="true" conf="optional->compile(*),master(*)"/>
-		<dependency org="javax.activation" name="activation" rev="1.1" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
 		<dependency org="javax.mail" name="mail" rev="1.4" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
 		<dependency org="jruby" name="jruby-bin" rev="1.0.1" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="net.sf.ehcache" name="ehcache" rev="1.4.1" force="true" conf="optional->compile(*),master(*)"/>

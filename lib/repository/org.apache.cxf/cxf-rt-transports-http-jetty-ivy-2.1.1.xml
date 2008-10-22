@@ -107,7 +107,6 @@
 		<dependency org="org.easymock" name="easymockclassextension" rev="2.2.2" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-api" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-rt-core" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-<!--		<dependency org="org.springframework" name="spring-web" rev="2.0.8" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/> -->
 		<dependency org="org.apache.cxf" name="cxf-testutils" rev="2.1.1" force="true" conf="test->runtime(*),master(*)"/>
 	</dependencies>
 </ivy-module>

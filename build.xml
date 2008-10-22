@@ -365,17 +365,17 @@
 
         <!-- 
           install to temp repository, format is:
-            build/temp.m2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext] 
+           build/ivy/temp.repository/[organisation]/[artifact]-[revision].[ext] 
         -->
-        <property name="repository.artifact.directory" value="${build.dir}/temp.m2/${org}/${mod}/${rev}"/>
+        <property name="repository.artifact.directory" value="${build.dir}/ivy/temp.repository/${org}"/>
         <mkdir dir="${repository.artifact.directory}"/> <!-- Create temp source directory -->
         <copy file="${art}" tofile="${repository.artifact.directory}/${mod}-${rev}.jar"/>
         
         <echo level="info">Loading Ivy settings for remote repositories.</echo>
-        <ivy:settings id="ivy.remote" override="true" file="etc/build/ivysettings_remote.xml"/>    
+        <ivy:settings id="ivy.remote" file="etc/build/ivysettings_remote.xml"/>    
 
         <!-- install to our repository -->
-        <ivy:install settingsRef="ivy.remote" organisation="${org}" module="${mod}" revision="${rev}" from="libraries" to="local.repository" transitive="false"/>
+        <ivy:install settingsRef="ivy.remote" organisation="${org}" module="${mod}" revision="${rev}" from="localfile" to="local.repository" transitive="false"/>
     </target>
 
     <target name="repository-install-remote" description="Install an artifact to the build repository from a remote repository." depends="prepare.base">
@@ -389,7 +389,7 @@
         <mkdir dir="${build.repo}"/>
 
         <echo level="info">Loading Ivy settings for remote repositories.</echo>
-        <ivy:settings id="ivy.remote" override="true" file="etc/build/ivysettings_remote.xml"/>    
+        <ivy:settings id="ivy.remote" file="etc/build/ivysettings_remote.xml"/>    
 
         <!-- install to our temp repository under "build" -->
         <echo level="info">Downloading artifacts to cache.</echo>
@@ -629,11 +629,6 @@
         </pathconvert>
         <echo>${x}</echo>
         <echo>Use test-one -Dtest=x,y,z</echo>
-    </target>
-
-    <!-- TODO [steve] target to run one test? -->
-    <target name="test-one" depends="prepare, summary" if="test">
-        <echo>Not implemented</echo>
     </target>
 
     <!--
@@ -2013,12 +2008,16 @@
 
         <chmod file="${build.dir}/migration/ssgmigration.sh" perm="755"/>
 
+        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
+        <ivy:findrevision organisation="com.l7tech" module="layer7-utility" revision="latest.integration" property="module.utility.version"/>
+        <ivy:findrevision organisation="com.l7tech" module="layer7-gateway-config" revision="latest.integration" property="module.gateway.config.version"/>
+
         <jar jarfile="${build.dir}/migration/SSGMigration.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility-${build.version}.jar"/>
-                <attribute name="X-Layer7-Jar" value="../../runtime/Gateway.jar"/>
-                <attribute name="X-Layer7-Main-Class" value="com.l7tech.server.flasher.FlashUtilityLauncher"/>
+                <attribute name="Class-Path" value="../lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="../lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
+                <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.flasher.FlashUtilityLauncher"/>
             </manifest>
         </jar>
 
@@ -2040,12 +2039,6 @@
     <target name="package.configwiz" unless="ssg.only" depends="package.jars">
         <mkdir dir="${build.dir}/configwizard/lib"/>
 
-        <copy todir="${build.dir}/configwizard/lib">
-            <fileset dir="modules/utility/build">
-                <include name="layer7-utility*.jar"/>
-            </fileset>
-        </copy>
-
         <copy todir="${build.dir}/configwizard">
             <fileset dir="${src.root}/etc">
                 <include name="ssgconfig.cmd"/>
@@ -2054,11 +2047,16 @@
             </fileset>
         </copy>
 
+        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
+        <ivy:retrieve inline="true" organisation="com.l7tech" module="layer7-gateway-config" conf="default" pattern="${build.dir}/configwizard/lib/[artifact]-[revision].[ext]"/>
+        <ivy:findrevision organisation="com.l7tech" module="layer7-utility" revision="latest.integration" property="module.utility.version"/>
+        <ivy:findrevision organisation="com.l7tech" module="layer7-gateway-config" revision="latest.integration" property="module.gateway.config.version"/>
+
         <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
-                <attribute name="X-Layer7-Jar" value="../controller/lib/layer7-gateway-config-${build.version}-dev-b1.jar"/> <!-- TODO [steve] fix configuration jar naming -->
+                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.client.Main"/>
             </manifest>
         </jar>
@@ -2066,8 +2064,8 @@
         <jar jarfile="${build.dir}/configwizard/ConfigMasterPassphrase.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
-                <attribute name="X-Layer7-Jar" value="../controller/lib/layer7-gateway-config-${build.version}-dev-b1.jar"/> <!-- TODO [steve] fix configuration jar naming -->
+                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.manager.MasterPassphraseChanger"/>
             </manifest>
         </jar>
@@ -2075,8 +2073,8 @@
         <jar jarfile="${build.dir}/configwizard/ConfigProcessController.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
-                <attribute name="X-Layer7-Jar" value="../controller/lib/layer7-gateway-config-${build.version}-dev-b1.jar"/> <!-- TODO [steve] fix configuration jar naming -->
+                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/> 
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.client.beans.trust.TrustInterviewer"/>
             </manifest>
         </jar>
@@ -2429,7 +2427,6 @@
                 <include name="CustomAssertion_dev_kit-*.zip"/>
                 <include name="BridgeAPI-*.zip"/>
                 <include name="ManagerAPI-*.zip"/>
-                <include name="ssg-b*.tar.gz"/>
             </fileset>
             <fileset dir="${build.dir}/modules-optional">
                 <include name="*.aar"/>
@@ -2607,7 +2604,7 @@
 
         <!-- Copy JMS lib -->
         <copy todir="${install.src.ssg.libext}" flatten="true">
-            <fileset dir="${src.root}/lib" casesensitive="yes">
+            <fileset dir="${src.root}/lib/repository/javax.jms" casesensitive="yes">
                 <include name="jms-1.1.jar"/>
             </fileset>
         </copy>

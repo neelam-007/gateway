@@ -145,7 +145,7 @@
         <xsl:param name="name"/>
 
         <xsl:if test="$ivy-report/dependencies/module/revision[contains(@conf,'runtime') and not(contains(@conf,'default'))]">
-            <orderEntry type="module-library"> <!-- TODO [steve] Is this correct for unexported ?-->
+            <orderEntry type="module-library">
               <library name="{@organisation}.{@name}">
                 <CLASSES>
                     <xsl:for-each select="$ivy-report/dependencies/module[@organisation = $organisation and @name = $name]/revision/artifacts/artifact">
