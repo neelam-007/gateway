@@ -89,19 +89,19 @@ function getFormData() {
     }else{
         data = data + '&IS_SUMMARY=false';
     }
-    
+
     if(document.forms.uiForm.IS_DETAIL.checked){
         data = data + '&IS_DETAIL=true';
     }else{
         data = data + '&IS_DETAIL=false';
     }
-    
+
     data = data + '&RELATIVE_TIME_UNIT=' + document.forms.uiForm.RELATIVE_TIME_UNIT.value;
     data = data + '&RELATIVE_NUM_OF_TIME_UNITS=' + document.forms.uiForm.RELATIVE_NUM_OF_TIME_UNITS.value;
     data = data + '&INTERVAL_TIME_UNIT=' + document.forms.uiForm.INTERVAL_TIME_UNIT.value;
     data = data + '&INTERVAL_NUM_OF_TIME_UNITS=' + document.forms.uiForm.INTERVAL_NUM_OF_TIME_UNITS.value;
     data = data + '&REPORT_RAN_BY=' + document.forms.uiForm.REPORT_RAN_BY.value;
-    
+
     var i;
     var count = 1;
     for(i = 1; i < document.forms.uiForm.SERVICES_MAP.length; i++){
@@ -112,11 +112,13 @@ function getFormData() {
         }
     }
 
-    count = 1;
-    for(i = 1; i < document.forms.uiForm.SELECTED_MAPPING_KEYS.length; i++){
-        if(document.forms.uiForm.SELECTED_MAPPING_KEYS[i].selected){
-            data = data + '&MAPPING_KEY_'+count+'=' + document.forms.uiForm.SELECTED_MAPPING_KEYS[i].text;
-            count++;
+    for(var w = 0; w  < keysToValues.length; w++){
+        var aArr = keysToValues[w];
+        data = data + '&MAPPING_KEY_'+(w+1)+'=' + aArr[0];
+        if(aArr[1]){
+            data = data + '&MAPPING_VALUE_'+(w+1)+'=' + aArr[1];
+        }else{
+            data = data + '&MAPPING_VALUE_'+(w+1)+'=';
         }
     }
 
@@ -149,7 +151,35 @@ function enableDisableOperations() {
 
 
 function updateUI(){
-    document.forms.uiForm.OPERATIONS.disabled = true;    
+    document.forms.uiForm.OPERATIONS.disabled = true;
+}
+
+var keysToValues = new Array();
+
+function addMappingAndValue(){
+    var index = document.forms.uiForm.SELECTED_MAPPING_KEYS_1.selectedIndex;
+    if(index < 1) return;
+    var key = document.forms.uiForm.SELECTED_MAPPING_KEYS_1[index].value;
+    var value = document.forms.uiForm.KEY_VALUE.value;
+//    alert(key + " " + value);
+//    var html = document.getElementById('selectedKeys').innerHTML;
+//    html += "<p>"+key;
+//    if(value != '') html += " = " + value + "</p>";
+//    document.getElementById('selectedKeys').innerHTML = html;
+
+    var keyAndValue = new Array();
+    keyAndValue[0] = key;
+    keyAndValue[1] = value;
+    keysToValues.push(keyAndValue);
+
+    var html = "";
+    for(var z = 0; z  < keysToValues.length; z++){
+        var lArray = keysToValues[z];
+        html += "<p>"+lArray[0];
+        if(lArray[1]) html+= " = " + lArray[1]+"</p>";
+    }
+    document.getElementById('selectedKeys').innerHTML = html;
+    document.forms.uiForm.KEY_VALUE.value = "";
 }
 
 </script>
@@ -163,6 +193,7 @@ function updateUI(){
     Layer 7 Technologies | SecureSpan
     <SMALL><SUP>TM</SUP></SMALL>
     Enterprise Manager - Standard Reports
+
 </div>
 
 <div class="divider"><img src="images/spacer.png" alt=""/></div>
@@ -174,6 +205,7 @@ function updateUI(){
             <div>
                 <form name="uiForm">
                     <table class="enterpriseTable">
+
                         <tr>
                             <td class="name">Report Name:</td>
                             <td class="name"><input type="text" name="REPORT_NAME"></td>
@@ -182,6 +214,7 @@ function updateUI(){
                             <td class="name">Report ran by:</td>
                             <td class="name"><input type="text" name="REPORT_RAN_BY"></td>
                         </tr>
+
                         <tr>
                             <td class="name">Select relative time unit:</td>
                             <td class="name"><select name="RELATIVE_TIME_UNIT">
@@ -197,6 +230,7 @@ function updateUI(){
                             <td class="name">Number of relative time units:</td>
                             <td class="name"><input type="text" name="RELATIVE_NUM_OF_TIME_UNITS"></td>
                         </tr>
+
                         <tr>
                             <td class="name">Summary Report:</td>
                             <td class="name"><input type="checkbox" name="IS_SUMMARY"
@@ -213,6 +247,7 @@ function updateUI(){
                             </select>
                             </td>
                         </tr>
+
                         <tr>
                             <td class="name">Number of interval time units:</td>
                             <td class="name"><input type="text" name="INTERVAL_NUM_OF_TIME_UNITS"></td>
@@ -221,12 +256,14 @@ function updateUI(){
                             <td class="name">Services:</td>
                             <td class="name"><select name="SERVICES_MAP" multiple=6 >
                                 <option value="Empty">All</option>
+
                                 <option value="229376">Warehouse [W1]</option>
                                 <option value="229378">Warehouse [W2]</option>
                                 <option value="229380">Warehouse [W3]</option>
                                 <option value="229382">Warehouse [W4]</option>
                                 <option value="229384">Warehouse [W5]</option>
                             </select>
+
                             </td>
                         </tr>
                         <tr>
@@ -236,6 +273,7 @@ function updateUI(){
                         </tr>
                         <tr>
                             <td class="name">Operations:</td>
+
                             <td class="name"><select name="OPERATIONS" multiple=3>
                                 <option value="Empty">All</option>
                                 <option value="listProducts">listProducts</option>
@@ -243,16 +281,25 @@ function updateUI(){
                             </select>
                             </td>
                         </tr>
+
                         <tr>
-                            <td class="name">Mapping Keys:</td>
-                            <td class="name"><select name="SELECTED_MAPPING_KEYS" multiple=3>
+                            <td class="name">Mapping values:</td>
+                            <td class="name"><select name="SELECTED_MAPPING_KEYS_1">
                                 <option value="Empty">None</option>
                                 <option value="IP_ADDRESS">IP_ADDRESS</option>
                                 <option value="CUSTOMER">CUSTOMER</option>
                             </select>
+
+                                <input type="text" name="KEY_VALUE"/><br>
+                                <a onclick="addMappingAndValue()">Add</a>
+                                <div id="selectedKeys">
+
+                                </div>
                             </td>
                         </tr>
+
                         <!--<tr>-->
+
                             <!--<td class="name"></td>-->
                             <!--<td class="name"></td>-->
                         <!--</tr>-->
@@ -272,6 +319,7 @@ function updateUI(){
     </div>
 
     <div class="panel">
+
         <div class="panelTitle">Report Output - <a onclick="getReportOutput()" class="details">Update</a></div>
         <div id="outputDiv" class="panelContent">
         </div>
@@ -283,6 +331,7 @@ function updateUI(){
 
 <div class="statusBar">
     <table>
+
         <tr>
             <td width="100%">Time Zone: America/Vancouver (GMT-08:00/-07:00)</td>
             <td><a class="nowrap" href="http://www.layer7tech.com"
