@@ -13,6 +13,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -29,6 +30,7 @@ public class KeyInfoElement implements ParsedElement {
     private final X509Certificate cert;
 
     /** Exception throws if a certificate resolver is required to parse a KeyInfo, but none is available. */
+    @SuppressWarnings({"UnusedDeclaration"})
     public static class MissingResolverException extends Exception {
         private MissingResolverException() {}
         private MissingResolverException(String message) { super(message); }
@@ -38,8 +40,10 @@ public class KeyInfoElement implements ParsedElement {
 
     /**
      * Parse the specified KeyInfo element.
+     *
      * @param keyinfo the element to parse.  Must not be null.  Must be a ds:KeyInfo element in proper namespace.
      * @param securityTokenResolver resolver for X.509 sha1 thumbprints, or null to disable thumbprint support.
+     * @return the parsed KeyInfoElement.  Never null.
      * @throws NullPointerException if it's null
      * @throws IllegalArgumentException if it isn't a ds:KeyInfo element
      * @throws SAXException if the format of this KeyInfo is invalid or not supported
@@ -54,8 +58,11 @@ public class KeyInfoElement implements ParsedElement {
 
     /**
      * Parse the specified KeyInfo element.
+     *
      * @param keyinfo the element to parse.  Must not be null.  Must be a ds:KeyInfo element in proper namespace.
      * @param securityTokenResolver resolver for X.509 sha1 thumbprints, or null to disable thumbprint support.
+     * @param allowX509SKI if true, resolution of X.509 by SKI will be permitted.
+     * @return the parsed KeyInfoElement.  Never null.
      * @throws NullPointerException if it's null
      * @throws IllegalArgumentException if it isn't a ds:KeyInfo element
      * @throws SAXException if the format of this KeyInfo is invalid or not supported
@@ -162,7 +169,7 @@ public class KeyInfoElement implements ParsedElement {
     /**
      * Checks if the specified EncryptedType's KeyInfo is addressed to the specified recipient certificate.
      * @param encryptedType the EncryptedKey or EncryptedData element.  Must include a KeyInfo child.
-     * @param recipientCert
+     * @param recipientCert the expected recipient certificate.  Required.
      * @throws com.l7tech.util.InvalidDocumentFormatException  if there was a problem with the encryptedType, or the KeyInfo didn't match.
      * @throws com.l7tech.security.xml.UnexpectedKeyInfoException      if the keyinfo did not match the recipientCert
      * @throws java.security.GeneralSecurityException        if there was a problem with the recipient certificate or a certificate
@@ -180,7 +187,7 @@ public class KeyInfoElement implements ParsedElement {
      * Checks if the specified EncryptedType's KeyInfo is addressed to the specified recipient certificate.
      * An EncryptedType is an abstract type in the XML Encryption schema representing an element that can contain,
      * among other things, zero or more KeyInfo subelements identifying possible recipients able to decrypt
-     * the EncryptedType.  Concrete examples are EncryptedKey and EncryptedData. 
+     * the EncryptedType.  Concrete examples are EncryptedKey and EncryptedData.
      *
      * @param encryptedType the EncryptedKey or EncryptedData element.  Must include a KeyInfo child.
      * @param securityTokenResolver resolver for private keys
@@ -214,6 +221,20 @@ public class KeyInfoElement implements ParsedElement {
         throw new UnexpectedKeyInfoException("KeyInfo did not resolve to any local certificate with a known private key");
     }
 
+    private static final PrivateKey FAKE_KEY = new PrivateKey() {
+        public String getAlgorithm() {
+            return null;
+        }
+
+        public String getFormat() {
+            return null;
+        }
+
+        public byte[] getEncoded() {
+            return new byte[0];
+        }
+    };
+
     /**
      * Make sure that the specified KeyInfo in fact is referring to the specified certificate.
      *
@@ -226,7 +247,7 @@ public class KeyInfoElement implements ParsedElement {
     public static void assertKeyInfoMatchesCertificate(Element keyInfo, X509Certificate cert)
             throws InvalidDocumentFormatException, UnexpectedKeyInfoException, CertificateException
     {
-        if (null == getTargetPrivateKeyForKeyInfo(keyInfo, new SimpleSecurityTokenResolver(cert), null))
+        if (null == getTargetPrivateKeyForKeyInfo(keyInfo, new SimpleSecurityTokenResolver(cert, FAKE_KEY), null))
             throw new UnexpectedKeyInfoException("KeyInfo was not recognized referring to the expected certificate");
     }
 
