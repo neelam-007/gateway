@@ -1,9 +1,6 @@
 package com.l7tech.security.xml;
 
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.*;
 import org.w3c.dom.Element;
 
 import javax.crypto.Mac;
@@ -23,6 +20,16 @@ import java.security.NoSuchAlgorithmException;
  * Date: Aug 3, 2004<br/>
  */
 public class SecureConversationKeyDeriver {
+    public static final String URI_ALG_PSHA1 = "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512/dk/p_sha1";
+    public static final String URI_ALG_PHSA1_2 = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk/p_sha1";
+    private static final String DEFAULT_DEFAULT_LABEL = "WS-SecureConversationWS-SecureConversation";
+    private static final String DEFAULT_LABEL = nullAsNull(SyspropUtil.getString("com.l7tech.security.wssc.defaultLabel", DEFAULT_DEFAULT_LABEL));
+    private static final boolean IGNORE_ALGORITHM_URI = SyspropUtil.getBoolean("com.l7tech.security.wssc.ignoreAlgorithmUri", false);
+
+    private static String nullAsNull(String s) {
+        return "null".equals(s) ? null : s;
+    }
+
     /**
      * Derive the symmetric key using information provided in a DerivedKeyToken xml
      * element. This would be used when decrypting or verifying the signature of a
@@ -53,38 +60,38 @@ public class SecureConversationKeyDeriver {
                                                          derivedKeyToken.getNamespaceURI());
         }
 
-        // check that default algorithm is in effect
-        String algo = derivedKeyToken.getAttributeNS(namespaceURI, ALGO_ATTRNAME);
-        if(algo==null || algo.length()==0) algo = derivedKeyToken.getAttribute(ALGO_ATTRNAME);
-
-        if (algo == null || algo.length() < 1) {
-            throw new NoSuchAlgorithmException("Algorithm specified (" + algo + "). We only support default P_SHA-1");
+        if (!IGNORE_ALGORITHM_URI) {
+            // check that default algorithm is in effect
+            String algo = derivedKeyToken.getAttributeNS(namespaceURI, ALGO_ATTRNAME);
+            if (algo==null || algo.length()==0) algo = derivedKeyToken.getAttribute(ALGO_ATTRNAME);
+            if (algo != null && algo.length() > 0 && (!algo.equals(URI_ALG_PSHA1) && !algo.equals(URI_ALG_PHSA1_2)))
+                throw new NoSuchAlgorithmException("Unsupported DerivedKeyToken Algrithm: " + algo);
         }
 
         String lengthVal = null;
-        String label = null;
+        String label = DEFAULT_LABEL;
         final String nonce;
         int generation = 0;
         // get generation
-        Element genNode = (Element)((DomUtils.findChildElementsByName(derivedKeyToken, namespaceURI,  "Generation")).get(0));
+        Element genNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI,  "Generation");
         if (genNode != null) {
             String genVal = DomUtils.getTextValue(genNode);
-            if (genVal != null && genVal.length() > 0) {
+            if (genVal != null && genVal.trim().length() > 0) {
                 try {
-                    generation = Integer.parseInt(genVal);
+                    generation = Integer.parseInt(genVal.trim());
                 } catch (NumberFormatException e) {
                     throw new InvalidDocumentFormatException(e);
                 }
             }
         }
         // get length
-        Element lenNode = (Element)((DomUtils.findChildElementsByName(derivedKeyToken, namespaceURI,  "Length")).get(0));
+        Element lenNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI,  "Length");
         if (lenNode != null) {
             lengthVal = DomUtils.getTextValue(lenNode);
         }
 
         // get label
-        Element labelNode = (Element)((DomUtils.findChildElementsByName(derivedKeyToken, namespaceURI,  "Label")).get(0));
+        Element labelNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI,  "Label");
         if (labelNode != null) {
             label = DomUtils.getTextValue(labelNode);
         }
@@ -130,7 +137,7 @@ public class SecureConversationKeyDeriver {
     /**
      * Function used to generate derived key as per WS-Secure Conversation. This mechanism
      * is inspired by RFC 2246 (TLS).
-     *
+     * <pre>
      * P_hash(secret, seed) = HMAC_hash(secret, A(1) + seed) +
      *                        HMAC_hash(secret, A(2) + seed) +
      *                        HMAC_hash(secret, A(3) + seed) + ...
@@ -139,8 +146,16 @@ public class SecureConversationKeyDeriver {
      *  A(x) is defined as:
      *      A(0) = seed
      *      A(i) = HMAC_hash(secret, A(i-1))
+     * </pre>
+     *
+     * @param secret   secret key from which to derive new key.  required
+     * @param seed     seed value for hash.  Required.
+     * @param requiredlength number of bytes of key material to derive
+     * @return a byte array with length=requiredBytes.  Never null.
+     * @throws java.security.InvalidKeyException may occur if current crypto policy disallows HMac with long keys
+     * @throws java.security.NoSuchAlgorithmException if no HMacSHA1 service available from current security providers
      */
-       public byte[] pSHA1(byte[] secret, byte[] seed, int requiredlength) throws NoSuchAlgorithmException, InvalidKeyException {
+    public byte[] pSHA1(byte[] secret, byte[] seed, int requiredlength) throws NoSuchAlgorithmException, InvalidKeyException {
         // compute A(1)
         byte[] ai = getHMacSHA1(secret).doFinal(seed);
         // compute A(1) + seed
