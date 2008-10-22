@@ -102,7 +102,7 @@
 			<fileset dir="." includes="**/*.jasper" />
 			<fileset dir="." includes="**/*.jrprint" />
 			<fileset dir="." includes="**/*.jrpxml" />
-			<fileset dir="." includes="**/*.html" />
+			<fileset dir="." includes="*.html" />
 			<fileset dir="." includes="**/*.rtf" />
 			<fileset dir="." includes="**/*.pdf" />
             <fileset dir="." includes="**/*.sql" />

@@ -399,6 +399,63 @@ public class Utilities {
         return sb.toString();
     }
 
+    /**
+     * Get a distinct query, which for all the input params, will return sql to get the set of
+     * values represented by the inputs. This query never includes operation, although it is a mapping
+     * value, it has a special meaning and is never used in conjunction with the other mapping values
+     * @param startTimeInclusiveMilli
+     * @param endTimeInclusiveMilli
+     * @param serviceIds
+     * @param keys
+     * @param keyValueConstraints
+     * @param valueConstraintAndOrLike
+     * @param resolution
+     * @param isDetail
+     * @param operations
+     * @param useUser
+     * @param authenticatedUsers
+     * @return
+     */
+    public static String getUsageDistinctMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                            Collection<String> serviceIds, List<String> keys,
+                                            List<String> keyValueConstraints,
+                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
+                                            List<String> operations, boolean useUser, List<String> authenticatedUsers){
+
+        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
+
+        boolean keyValuesSupplied = checkMappingQueryParams(keys,
+                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
+
+        checkResolutionParameter(resolution);
+
+        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
+
+        StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
+
+        addUserToSelect(false, useUser, sb);
+        addCaseSQL(keys, sb);
+        sb.append(mappingJoin);
+        addResolutionConstraint(resolution, sb);
+        if(useTime){
+            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+        }
+        if(serviceIds != null && !serviceIds.isEmpty()){
+            addServiceIdConstraint(serviceIds, sb);
+        }
+        if(isDetail && operations != null && !operations.isEmpty()){
+            addOperationConstraint(operations, sb);
+        }
+        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
+            addUserConstraint(authenticatedUsers, sb);
+        }
+        if(keyValuesSupplied){
+            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
+        }
+
+        return sb.toString();
+    }
+
     public static String getUsageSummaryQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Collection<String> serviceIds, List<String> keys,
                                             List<String> keyValueConstraints,
@@ -418,7 +475,7 @@ public class Utilities {
         StringBuilder sb = new StringBuilder(usageAggregateSelect);
 
         //----SECTION B----
-        addUserToSelect(useUser, sb);
+        addUserToSelect(true, useUser, sb);
         //----SECTION C----
         addOperationToSelect(isDetail, sb);
         //----SECTION D's----
@@ -677,7 +734,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             sb = new StringBuilder(aggregateSelect);
         }
         //----SECTION B----
-        addUserToSelect(useUser, sb);
+        addUserToSelect(true, useUser, sb);
         //----SECTION C----
         addOperationToSelect(isDetail, sb);
         //----SECTION D's----
@@ -770,12 +827,13 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
                 valueConstraintAndOrLike, resolution, isDetail, operationList, useUser, authUsers);
     }
 
-    private static void addUserToSelect(boolean useUser, StringBuilder sb) {
+    private static void addUserToSelect(boolean addComma, boolean useUser, StringBuilder sb) {
+        if(addComma) sb.append(",");
         if(useUser){
-            sb.append(", mcmv.auth_user_id AS AUTHENTICATED_USER");
+            sb.append(" mcmv.auth_user_id AS AUTHENTICATED_USER");
         }else{
             //sb.append(",  1 AS SERVICE_OPERATION_VALUE");
-            sb.append(",  '" + SQL_PLACE_HOLDER + "' AS AUTHENTICATED_USER");
+            sb.append(" '" + SQL_PLACE_HOLDER + "' AS AUTHENTICATED_USER");
         }
     }
 

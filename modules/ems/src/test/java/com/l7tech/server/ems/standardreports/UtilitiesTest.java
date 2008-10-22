@@ -380,7 +380,21 @@ public class UtilitiesTest extends TestCase {
         assertTrue(index != -1);
     }
 
+    @Test
+    public void testgetUsageDistinctMappingQuery(){
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
 
+        List<String> values = new ArrayList<String>();
+        values.add(null);
+        values.add("GOLD");
+
+        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, null, null, 2, true, null, false, null);
+        System.out.println(sql);
+    }
+
+    @Test
     public void testGetUsageSummaryQuery(){
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
@@ -390,7 +404,7 @@ public class UtilitiesTest extends TestCase {
         values.add(null);
         values.add("GOLD");
 
-        String sql = Utilities.getUsageSummaryQuery(null, null, null, keys, values, null, 2, false, null, false, null);
+        String sql = Utilities.getUsageSummaryQuery(null, null, null, keys, null, null, 2, true, null, false, null);
         System.out.println(sql);
     }
 

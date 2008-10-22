@@ -86,6 +86,7 @@
             name="FrameTotalTableRow"
             isDefault="false"
             backcolor="#D6D6D6"
+            vAlign="Middle"
             >
         <box>
             <leftPen lineWidth="1.0"/>
@@ -95,6 +96,16 @@
 	<style
 		name="TotalCell"
 		backcolor="#D6D6D6"
-	>
+        vAlign="Middle"
+    >
+	</style>
+
+	<style
+		name="SubTableHeader"
+        vAlign="Middle"
+    >
+					<box>					<leftPen lineWidth="1.0" lineStyle="Solid"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid"/>
+</box>
 	</style>    
 </jasperTemplate>
