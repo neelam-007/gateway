@@ -798,12 +798,8 @@ public class WssProcessorImpl implements WssProcessor {
             throws InvalidDocumentFormatException, ProcessorException
     {
         // Get identifier
-        String id = SoapUtil.getElementWsuId(str);
-        boolean noId = false;
-        if (id == null || id.length() < 1) {
-            noId = true;
-            id = "<noid>";
-        }
+        final String id = SoapUtil.getElementWsuId(str);
+        final String logId = id == null ? "<noid>" : id;
 
         // Reference or KeyIdentifier values
         boolean isKeyIdentifier = false;
@@ -836,12 +832,12 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         if(!(isReference || isKeyIdentifier)) {
-            logger.warning("Ignoring SecurityTokenReference ID=" + id + " with no KeyIdentifier or Reference");
+            logger.warning("Ignoring SecurityTokenReference ID=" + logId + " with no KeyIdentifier or Reference");
             return;
         }
 
         if (value == null) {
-            String msg = "Rejecting SecurityTokenReference ID=" + id
+            String msg = "Rejecting SecurityTokenReference ID=" + logId
                          + " as the target Reference ID/KeyIdentifier is missing or could not be determined.";
             logger.warning(msg);
             throw new InvalidDocumentFormatException(msg);
@@ -849,35 +845,27 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Process KeyIdentifier or Reference
         if (SoapUtil.isValueTypeX509v3(valueType) && !isKeyIdentifier) {
-            if(noId) {
-                logger.warning("Ignoring SecurityTokenReference with no wsu:Id");
-                return;
-            }
             if (encodingType != null && encodingType.length() > 0) {
-                logger.warning("Ignoring SecurityTokenReference ID='" + id
+                logger.warning("Ignoring SecurityTokenReference ID='" + logId
                                + "' with non-empty KeyIdentifier/@EncodingType='" + encodingType + "'.");
                 return;
             }
             Element target = elementsByWsuId.get(value);
             if (target == null
-                || !target.getLocalName().equals("BinarySecurityToken")
+                || (!target.getLocalName().equals("BinarySecurityToken") && !target.getLocalName().equals("Assertion"))
                 || !ArrayUtils.contains( SoapConstants.SECURITY_URIS_ARRAY, target.getNamespaceURI())
                 || !SoapUtil.isValueTypeX509v3(target.getAttribute("ValueType"))) {
-                String msg = "Rejecting SecurityTokenReference ID='" + id + "' with ValueType of '" + valueType +
+                String msg = "Rejecting SecurityTokenReference ID='" + logId + "' with ValueType of '" + valueType +
                              "' because its target is either missing or not a BinarySecurityToken";
                 logger.warning(msg);
                 throw new InvalidDocumentFormatException(msg);
             }
             if(logger.isLoggable(Level.FINEST))
-                logger.finest("Remembering SecurityTokenReference ID=" + id + " pointing at X.509 BST " + value);
+                logger.finest("Remembering SecurityTokenReference ID=" + logId + " pointing at X.509 BST " + value);
             strToTarget.put(str, target);
         } else if (SoapUtil.isValueTypeSaml(valueType)) {
-            if(noId) {
-                logger.warning("Ignoring SecurityTokenReference with no wsu:Id");
-                return;
-            }
             if (encodingType != null && encodingType.length() > 0) {
-                logger.warning("Ignoring SecurityTokenReference ID='" + id
+                logger.warning("Ignoring SecurityTokenReference ID='" + logId
                                + "' with non-empty KeyIdentifier/@EncodingType='" + encodingType + "'.");
                 return;
             }
@@ -886,17 +874,17 @@ public class WssProcessorImpl implements WssProcessor {
                 || !target.getLocalName().equals("Assertion")
                 || (!target.getNamespaceURI().equals(SamlConstants.NS_SAML) &&
                     !target.getNamespaceURI().equals(SamlConstants.NS_SAML2))) {
-                String msg = "Rejecting SecurityTokenReference ID='" + id + "' with ValueType of '" + valueType +
+                String msg = "Rejecting SecurityTokenReference ID='" + logId + "' with ValueType of '" + valueType +
                              "' because its target is either missing or not a SAML assertion";
                 logger.warning(msg); // TODO remove redundant logging after debugging complete
                 throw new InvalidDocumentFormatException(msg);
             }
             if(logger.isLoggable(Level.FINEST))
-                logger.finest("Remembering SecurityTokenReference ID=" + id + " pointing at SAML assertion " + value);
+                logger.finest("Remembering SecurityTokenReference ID=" + logId + " pointing at SAML assertion " + value);
             strToTarget.put(str, target);
         } else if (SoapUtil.isValueTypeKerberos(valueType) && isKeyIdentifier) {
             if (encodingType == null || !encodingType.equals( SoapConstants.ENCODINGTYPE_BASE64BINARY)) {
-                logger.warning("Ignoring SecurityTokenReference ID=" + id +
+                logger.warning("Ignoring SecurityTokenReference ID=" + logId +
                                " with missing or invalid KeyIdentifier/@EncodingType=" + encodingType);
                 return;
             }
@@ -917,7 +905,7 @@ public class WssProcessorImpl implements WssProcessor {
                 logger.warning("Could not find referenced Kerberos security token '"+value+"'.");
             }
         } else {
-            logger.warning("Ignoring SecurityTokenReference ID=" + id + " with ValueType of " + valueType);
+            logger.warning("Ignoring SecurityTokenReference ID=" + logId + " with ValueType of " + valueType);
         }
     }
 
@@ -1474,10 +1462,9 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private X509IssuerSerialOutput handleX509IssuerSerial(final Element str,
-                                                    SecurityContextFinder securityContextFinder)
-                                                    throws InvalidDocumentFormatException, ProcessorException {
-
+    private X509IssuerSerialOutput handleX509IssuerSerial(final Element str)
+                                                    throws InvalidDocumentFormatException, ProcessorException
+    {
         final Element x509data = XmlUtil.findFirstChildElementByName(str, DsigUtil.DIGSIG_URI, "X509Data");
         if (x509data != null) {
             Element issuerSerial = XmlUtil.findFirstChildElementByName(x509data, DsigUtil.DIGSIG_URI, "X509IssuerSerial");
@@ -1766,7 +1753,7 @@ public class WssProcessorImpl implements WssProcessor {
         if (keyInfoStr != null) {
             processSecurityTokenReference(keyInfoStr, securityContextFinder);
 
-            X509IssuerSerialOutput tmp = handleX509IssuerSerial(keyInfoStr, securityContextFinder);
+            X509IssuerSerialOutput tmp = handleX509IssuerSerial(keyInfoStr);
             if (tmp != null) {
                 signingCert = tmp.signingCert;
                 signingToken = tmp.signingToken;
@@ -1941,8 +1928,9 @@ public class WssProcessorImpl implements WssProcessor {
      * @param domFactory  document for creating new DOM nodes.  Required.
      * @param certificate  certificate this BST should contain.  Required.
      * @return an X509SigningSecurityTokenImpl containing the specified certificate.  Never null.
+     * @throws java.security.cert.CertificateEncodingException if the certificate cannot be encoded.
      */
-    private X509SigningSecurityTokenImpl createDummyBst(Document domFactory, X509Certificate certificate) throws TooManyChildElementsException, CertificateEncodingException {
+    private X509SigningSecurityTokenImpl createDummyBst(Document domFactory, X509Certificate certificate) throws CertificateEncodingException {
         X509SigningSecurityTokenImpl signingCertToken;
         // This dummy BST matches the required format for signing via an STR-Transform
         // for STR-Transform the prefix must match the one on the STR
