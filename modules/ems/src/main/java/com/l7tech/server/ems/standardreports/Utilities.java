@@ -14,14 +14,14 @@ import java.util.*;
 
 public class Utilities {
 
-    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-    private static final SimpleDateFormat HOUR_DATE_FORMAT = new SimpleDateFormat("HH:mm");
-    private static final SimpleDateFormat DAY_HOUR_DATE_FORMAT = new SimpleDateFormat("MM/dd HH:mm");
-    private static final SimpleDateFormat DAY_DATE_FORMAT = new SimpleDateFormat("E MM/dd");
-    private static final SimpleDateFormat DAY_MONTH_DATE_FORMAT = new SimpleDateFormat("M E MM/dd");
-    private static final SimpleDateFormat WEEK_DATE_FORMAT = new SimpleDateFormat("MM/dd");
-    private static final SimpleDateFormat WEEK_YEAR_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd");
-    private static final SimpleDateFormat MONTH_DATE_FORMAT = new SimpleDateFormat("yyyy MMM");
+    public static final String DATE_STRING = "yyyy/MM/dd HH:mm";
+    private static final String HOUR_DATE_STRING = "HH:mm";
+    private static final String DAY_HOUR_DATE_STRING = "MM/dd HH:mm";
+    private static final String DAY_DATE_STRING = "E MM/dd";
+    private static final String DAY_MONTH_DATE_STRING = "M E MM/dd";
+    private static final String WEEK_DATE_STRING = "MM/dd";
+    private static final String WEEK_YEAR_DATE_STRING = "yyyy/MM/dd";
+    private static final String MONTH_DATE_STRING = "yyyy MMM";
 
     /**
      * The ';' character is used as a placeholder for sql column values, primiarly because no operation name of
@@ -69,6 +69,10 @@ public class Utilities {
             "SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA, " +
             "if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP'" +
             " ,'1' as CONSTANT_GROUP ";
+
+    private final static String usageAggregateSelect = "SELECT p.objectid as SERVICE_ID, " +
+            "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
+            "SUM(if(smd.completed, smd.completed,0)) as USAGE_SUM,'1' as CONSTANT_GROUP ";
 
     private final static String noMappingAggregateSelect = "SELECT '1' as CONSTANT_GROUP, count(*) as count, p.objectid as SERVICE_ID, " +
             "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
@@ -150,6 +154,7 @@ public class Utilities {
      * @return a date in the format yyyy/MM/dd HH:mm
      */
     public static String getMilliSecondAsStringDate(Long timeMilliSeconds){
+        SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_STRING);
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(timeMilliSeconds);
         return DATE_FORMAT.format(cal.getTime());
@@ -177,23 +182,31 @@ public class Utilities {
         Calendar calEnd = Calendar.getInstance();
         calEnd.setTimeInMillis(endIntervalMilliSeconds);
 
+        SimpleDateFormat WEEK_DATE_FORMAT = new SimpleDateFormat(WEEK_DATE_STRING);
+
         //todo [Donal] could validate that the end time is an hour, day..etc from the start time
         if(intervalUnitOfTime.equals(HOUR)){
+            SimpleDateFormat HOUR_DATE_FORMAT = new SimpleDateFormat(HOUR_DATE_STRING);
+            SimpleDateFormat DAY_HOUR_DATE_FORMAT = new SimpleDateFormat(DAY_HOUR_DATE_STRING);
             return DAY_HOUR_DATE_FORMAT.format(calStart.getTime()) + " - " +
                         HOUR_DATE_FORMAT.format(calEnd.getTime());
         }else if(intervalUnitOfTime.equals(DAY)){
             if(calStart.get(Calendar.MONTH) == Calendar.JANUARY){
+                SimpleDateFormat DAY_MONTH_DATE_FORMAT = new SimpleDateFormat(DAY_MONTH_DATE_STRING);
                 return DAY_MONTH_DATE_FORMAT.format(calStart.getTime());
             }
+            SimpleDateFormat DAY_DATE_FORMAT = new SimpleDateFormat(DAY_DATE_STRING);
             return DAY_DATE_FORMAT.format(calStart.getTime());
         }else if(intervalUnitOfTime.equals(WEEK)){
             if(calStart.get(Calendar.MONTH) == Calendar.JANUARY){
+                SimpleDateFormat WEEK_YEAR_DATE_FORMAT = new SimpleDateFormat(WEEK_YEAR_DATE_STRING);
                 return WEEK_YEAR_DATE_FORMAT.format(calStart.getTime())+ " - " +
                         WEEK_DATE_FORMAT.format(calEnd.getTime());
             }
             return WEEK_DATE_FORMAT.format(calStart.getTime())+ " - " +
                         WEEK_DATE_FORMAT.format(calEnd.getTime());
         }else if(intervalUnitOfTime.equals(MONTH)){
+            SimpleDateFormat MONTH_DATE_FORMAT = new SimpleDateFormat(MONTH_DATE_STRING);
             return MONTH_DATE_FORMAT.format(calStart.getTime());
         }
         return null;
@@ -272,6 +285,7 @@ public class Utilities {
      * @return The number of milliseconds since epoch represented by the supplied date
      */
     public static long getAbsoluteMilliSeconds(String date) throws ParseException {
+        SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_STRING);
         Date d = DATE_FORMAT.parse(date);
         return d.getTime();
     }
@@ -296,6 +310,7 @@ public class Utilities {
         if(timePeriodStartInclusive >= timePeriodEndExclusive){
             Calendar test = Calendar.getInstance();
             test.setTimeInMillis(timePeriodStartInclusive);
+            SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_STRING);
             String startDate =  DATE_FORMAT.format(test.getTime());
             test.setTimeInMillis(timePeriodEndExclusive);
             String endDate =  DATE_FORMAT.format(test.getTime());
@@ -383,6 +398,68 @@ public class Utilities {
         }
         return sb.toString();
     }
+
+    public static String getUsageSummaryQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                            Collection<String> serviceIds, List<String> keys,
+                                            List<String> keyValueConstraints,
+                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
+                                            List<String> operations, boolean useUser, List<String> authenticatedUsers){
+
+        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
+
+        boolean keyValuesSupplied = checkMappingQueryParams(keys,
+                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
+
+        checkResolutionParameter(resolution);
+
+        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
+
+        //----SECTION A----
+        StringBuilder sb = new StringBuilder(usageAggregateSelect);
+
+        //----SECTION B----
+        addUserToSelect(useUser, sb);
+        //----SECTION C----
+        addOperationToSelect(isDetail, sb);
+        //----SECTION D's----
+        addCaseSQL(keys, sb);
+        //----SECTION E----
+        sb.append(mappingJoin);
+        //----SECTION F----
+        addResolutionConstraint(resolution, sb);
+
+        //----SECTION G----
+        if(useTime){
+            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+        }
+        //----SECTION H----
+        if(serviceIds != null && !serviceIds.isEmpty()){
+            addServiceIdConstraint(serviceIds, sb);
+        }
+
+        //----SECTION I----
+        if(isDetail && operations != null && !operations.isEmpty()){
+            addOperationConstraint(operations, sb);
+        }
+        //----SECTION J----
+        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
+            addUserConstraint(authenticatedUsers, sb);
+        }
+
+        //----SECTION K----
+        if(keyValuesSupplied){
+            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
+        }
+
+        addGroupBy(sb);
+
+        //----SECTION M----
+        addUsageMappingOrder(sb);
+
+        System.out.println(sb.toString());
+        return sb.toString();
+    }
+
 
     /**
      * Create the sql required to get performance statistics for a specific period of time, for a possible specifc set of
@@ -888,6 +965,15 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         sb.append(" ,p.objectid, SERVICE_OPERATION_VALUE ");
     }
 
+    private static void addUsageMappingOrder(StringBuilder sb) {
+        sb.append(" ORDER BY p.objectid, SERVICE_OPERATION_VALUE ");
+        sb.append(" ,AUTHENTICATED_USER, ");
+        for(int i = 0; i < NUM_MAPPING_KEYS; i++){
+            if(i != 0) sb.append(", ");
+            sb.append("MAPPING_VALUE_" + (i+1));
+        }
+    }
+
     private static void addMappingConstraint(List<String> keys, List<String> keyValueConstraints, List<String> valueConstraintAndOrLike, StringBuilder sb) {
         for(int i = 0; i < keys.size(); i++){
             boolean useAnd = true;
@@ -1137,5 +1223,30 @@ Value is included in all or none, comment is just illustrative
         }
         if(sb.toString().equals("")) return "None";
         return sb.toString();
+    }
+//
+//    public static String getUsageColumnHeader(String authUser, List<String> keys, String [] values) {
+//        if(values.length < keys.size()) throw new IllegalArgumentException("values must be greater or equal to the size of keys");
+//
+//        StringBuilder sb = new StringBuilder();
+//        if(authUser != null && !authUser.equals(SQL_PLACE_HOLDER)){
+//            sb.append("User: ").append(authUser).append(" ");
+//        }
+//        for (int i = 0; i < keys.size(); i++) {
+//            String key = keys.get(i);
+//            sb.append(key);
+//
+//            if(values[i] == null || values[i].equals(SQL_PLACE_HOLDER)){
+//                throw new IllegalArgumentException("A value for each key must be supplied");
+//            }
+//            sb.append(": ").append(values[i]).append(" ");
+//        }
+//
+//        return sb.toString();
+//    }
+
+    public static String getUsageColumnHeader(String mappingValue){
+        if(mappingValue == null) throw new NullPointerException("Parameter mappingValue cannot be null");
+        return mappingValue.replaceAll(";","").trim();
     }
 }

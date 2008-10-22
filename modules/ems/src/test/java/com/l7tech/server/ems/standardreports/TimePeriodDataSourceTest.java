@@ -14,12 +14,14 @@ import net.sf.jasperreports.engine.JRPropertiesMap;
 import java.util.Date;
 import java.util.Calendar;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import junit.framework.TestCase;
 import org.junit.Test;
 
 public class TimePeriodDataSourceTest extends TestCase {
 
+    private SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(Utilities.DATE_STRING);
     /**
      * Checks that the data source contains the correct number of rows for the inputs supplied.
      * Checks the number of rows over 24 hours for an interval of 1, 2, 3 and 5 hours
@@ -30,9 +32,9 @@ public class TimePeriodDataSourceTest extends TestCase {
     public void testTimeSource_Hour() throws ParseException, JRException {
         String startDate = "2008/10/12 00:00";
         String endDate = "2008/10/13 00:00";
-        Date d = Utilities.DATE_FORMAT.parse(startDate);
+        Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -83,9 +85,9 @@ public class TimePeriodDataSourceTest extends TestCase {
     public void testTimeSource_Day() throws ParseException, JRException {
         String startDate = "2008/09/01 00:00";
         String endDate = "2008/10/01 00:00";
-        Date d = Utilities.DATE_FORMAT.parse(startDate);
+        Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -139,9 +141,9 @@ public class TimePeriodDataSourceTest extends TestCase {
     public void testTimeSource_Week() throws ParseException, JRException {
         String startDate = "2008/08/01 00:00";
         String endDate = "2008/10/01 00:00";
-        Date d = Utilities.DATE_FORMAT.parse(startDate);
+        Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -197,9 +199,9 @@ public class TimePeriodDataSourceTest extends TestCase {
     public void testTimeSource_Month() throws ParseException, JRException {
         String startDate = "2007/10/01 00:00";
         String endDate = "2008/10/01 00:00";
-        Date d = Utilities.DATE_FORMAT.parse(startDate);
+        Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -256,9 +258,9 @@ public class TimePeriodDataSourceTest extends TestCase {
     public void testTimeSourceFields_Hour() throws ParseException, JRException {
         String startDate = "2008/10/12 00:00";
         String endDate = "2008/10/13 00:00";
-        Date d = Utilities.DATE_FORMAT.parse(startDate);
+        Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -330,9 +332,9 @@ public class TimePeriodDataSourceTest extends TestCase {
     public void testTimeSourceFields_Day() throws ParseException, JRException {
         String startDate = "2008/09/01 00:00";
         String endDate = "2008/10/01 00:00";
-        Date d = Utilities.DATE_FORMAT.parse(startDate);
+        Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -407,9 +409,9 @@ public class TimePeriodDataSourceTest extends TestCase {
     public void testTimeSourceFields_Week() throws ParseException, JRException {
         String startDate = "2008/08/01 00:00";
         String endDate = "2008/10/03 00:00";
-        Date d = Utilities.DATE_FORMAT.parse(startDate);
+        Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -491,9 +493,9 @@ public class TimePeriodDataSourceTest extends TestCase {
     public void testTimeSourceFields_Month() throws ParseException, JRException {
         String startDate = "2007/10/01 00:00";
         String endDate = "2008/10/01 00:00";
-        Date d = Utilities.DATE_FORMAT.parse(startDate);
+        Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,

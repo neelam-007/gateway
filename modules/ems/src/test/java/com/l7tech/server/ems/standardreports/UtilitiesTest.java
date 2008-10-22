@@ -8,13 +8,20 @@ package com.l7tech.server.ems.standardreports;
 
 import junit.framework.TestCase;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.*;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.io.StringReader;
 
 import org.junit.Test;
+import org.w3c.dom.Document;
+
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.stream.StreamSource;
+
+import com.l7tech.common.io.XmlUtil;
 
 /**
  * Test coverage for class Utilities
@@ -23,6 +30,7 @@ import org.junit.Test;
  */
 public class UtilitiesTest extends TestCase {
 
+    private SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(Utilities.DATE_STRING);
     /**
      * Tests the minimum requirement for a mapping query - one key supplied.
      * Checks that only 1 case statement exists in the returned sql
@@ -372,6 +380,33 @@ public class UtilitiesTest extends TestCase {
         assertTrue(index != -1);
     }
 
+
+    public void testGetUsageSummaryQuery(){
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
+
+        List<String> values = new ArrayList<String>();
+        values.add(null);
+        values.add("GOLD");
+
+        String sql = Utilities.getUsageSummaryQuery(null, null, null, keys, values, null, 2, false, null, false, null);
+        System.out.println(sql);
+    }
+
+    public void testGetUsageColumnHeader(){
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
+
+        List<String> values = new ArrayList<String>();
+        values.add("127.0.0.1");
+        values.add("GOLD");
+
+        String authUser = "Donal"; 
+//        String header = Utilities.getUsageColumnHeader(authUser, keys, values.toArray(new String[]{}));
+//        System.out.println(header);
+    }
     /**
      * Checks that the gruop by order has all columns required present, and in the correct order.
      */
@@ -474,7 +509,7 @@ public class UtilitiesTest extends TestCase {
     @Test
     public void testGetAbsoluteMilliSeconds() throws Exception{
         String date = "2008/10/13 14:12";
-        Date d = Utilities.DATE_FORMAT.parse(date);
+        Date d = DATE_FORMAT.parse(date);
         long controlTime = d.getTime();
 
         long testTime = Utilities.getAbsoluteMilliSeconds(date);
@@ -526,9 +561,9 @@ public class UtilitiesTest extends TestCase {
     public void testGetIntervalDisplayDate() throws Exception{
         String startDate = "2008/08/01 14:12";
         String endDate = "2008/10/13 15:12";
-        Date d = Utilities.DATE_FORMAT.parse(startDate);
+        Date d = DATE_FORMAT.parse(startDate);
         long startTime = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         long endTime = d.getTime();
 
         String timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.HOUR);
@@ -556,9 +591,9 @@ public class UtilitiesTest extends TestCase {
     public void testGetIntervalsForTimePeriod() throws Exception{
         String startDate = "2008/10/12 00:00";
         String endDate = "2008/10/13 00:00";
-        Date d = Utilities.DATE_FORMAT.parse(startDate);
+        Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         //Hour
@@ -576,9 +611,9 @@ public class UtilitiesTest extends TestCase {
         //Day
         startDate = "2008/10/01 00:00";
         endDate = "2008/10/13 00:00";
-        d = Utilities.DATE_FORMAT.parse(startDate);
+        d = DATE_FORMAT.parse(startDate);
         timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         timePeriodEndExclusive = d.getTime();
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -594,9 +629,9 @@ public class UtilitiesTest extends TestCase {
         //Week
         startDate = "2008/09/01 00:00";
         endDate = "2008/10/13 00:00";
-        d = Utilities.DATE_FORMAT.parse(startDate);
+        d = DATE_FORMAT.parse(startDate);
         timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         timePeriodEndExclusive = d.getTime();
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -610,9 +645,9 @@ public class UtilitiesTest extends TestCase {
         //Month
         startDate = "2008/01/01 00:00";
         endDate = "2008/10/01 00:00";
-        d = Utilities.DATE_FORMAT.parse(startDate);
+        d = DATE_FORMAT.parse(startDate);
         timePeriodStartInclusive = d.getTime();
-        d = Utilities.DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse(endDate);
         timePeriodEndExclusive = d.getTime();
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -743,7 +778,7 @@ public class UtilitiesTest extends TestCase {
     @Test
     public void testGetMilliSecondAsStringDate() throws Exception{
         String date = "2008/10/13 16:38";
-        Date d = Utilities.DATE_FORMAT.parse(date);
+        Date d = DATE_FORMAT.parse(date);
         long timeMili = d.getTime();
 
         String milliAsDate = Utilities.getMilliSecondAsStringDate(timeMili);
@@ -780,9 +815,9 @@ public class UtilitiesTest extends TestCase {
         assertTrue(exception);
 
         String startDate = "2008/10/01 00:00";
-        long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
+        long startTime = DATE_FORMAT.parse(startDate).getTime();
         String endDate = "2008/10/13 00:00";
-        long endTime = Utilities.DATE_FORMAT.parse(endDate).getTime();
+        long endTime = DATE_FORMAT.parse(endDate).getTime();
 
         exception = false;
         try{
@@ -798,9 +833,9 @@ public class UtilitiesTest extends TestCase {
     public void testGetNoMappingQuery_SelectFields() throws ParseException {
 
         String startDate = "2008/10/01 00:00";
-        long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
+        long startTime = DATE_FORMAT.parse(startDate).getTime();
         String endDate = "2008/10/13 00:00";
-        long endTime = Utilities.DATE_FORMAT.parse(endDate).getTime();
+        long endTime = DATE_FORMAT.parse(endDate).getTime();
 
         String sql = Utilities.getNoMappingQuery(false, startTime, endTime, null,1);
 
@@ -878,9 +913,9 @@ public class UtilitiesTest extends TestCase {
     @Test
     public void testGetNoMappingQuery_Resolution() throws ParseException {
         String startDate = "2008/10/01 00:00";
-        long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
+        long startTime = DATE_FORMAT.parse(startDate).getTime();
         String endDate = "2008/10/13 00:00";
-        long endTime = Utilities.DATE_FORMAT.parse(endDate).getTime();
+        long endTime = DATE_FORMAT.parse(endDate).getTime();
 
         String sql = Utilities.getNoMappingQuery(false, startTime, endTime,  null,1);
 
@@ -908,9 +943,9 @@ public class UtilitiesTest extends TestCase {
     @Test
     public void testGetNoMappingQuery_ServiceIds() throws ParseException {
         String startDate = "2008/10/01 00:00";
-        long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
+        long startTime = DATE_FORMAT.parse(startDate).getTime();
         String endDate = "2008/10/13 00:00";
-        long endTime = Utilities.DATE_FORMAT.parse(endDate).getTime();
+        long endTime = DATE_FORMAT.parse(endDate).getTime();
 
         List<String> serviceIds = new ArrayList<String>();
         serviceIds.add("12345");
@@ -942,9 +977,9 @@ public class UtilitiesTest extends TestCase {
     @Test
     public void testGetNoMappingQuery_GroupBy() throws ParseException {
         String startDate = "2008/10/01 00:00";
-        long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
+        long startTime = DATE_FORMAT.parse(startDate).getTime();
         String endDate = "2008/10/13 00:00";
-        long endTime = Utilities.DATE_FORMAT.parse(endDate).getTime();
+        long endTime = DATE_FORMAT.parse(endDate).getTime();
 
         String sql = Utilities.getNoMappingQuery(false, startTime, endTime, null, 1);
         int index = sql.indexOf("GROUP BY p.objectid");
@@ -955,9 +990,9 @@ public class UtilitiesTest extends TestCase {
     public void testGetNoMappingQuery_SelectDistinctFields() throws ParseException {
 
         String startDate = "2008/10/01 00:00";
-        long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
+        long startTime = DATE_FORMAT.parse(startDate).getTime();
         String endDate = "2008/10/13 00:00";
-        long endTime = Utilities.DATE_FORMAT.parse(endDate).getTime();
+        long endTime = DATE_FORMAT.parse(endDate).getTime();
 
         String sql = Utilities.getNoMappingQuery(true, startTime, endTime, null,1);
         
@@ -990,9 +1025,9 @@ public class UtilitiesTest extends TestCase {
     @Test
     public void testGetNoMappingQuery_OrderBy() throws ParseException {
         String startDate = "2008/10/01 00:00";
-        long startTime = Utilities.DATE_FORMAT.parse(startDate).getTime();
+        long startTime = DATE_FORMAT.parse(startDate).getTime();
         String endDate = "2008/10/13 00:00";
-        long endTime = Utilities.DATE_FORMAT.parse(endDate).getTime();
+        long endTime = DATE_FORMAT.parse(endDate).getTime();
 
         String sql = Utilities.getNoMappingQuery(true, startTime, endTime, null, 1);
         int index = sql.indexOf("ORDER BY p.objectid");
@@ -1105,4 +1140,19 @@ public class UtilitiesTest extends TestCase {
         String val = Utilities.SQL_PLACE_HOLDER;
         assertTrue(Utilities.isPlaceHolderValue(val));
     }
+
+    private Document transform(String xslt, String src) throws Exception {
+        TransformerFactory transfoctory = TransformerFactory.newInstance();
+        StreamSource xsltsource = new StreamSource(new StringReader(xslt));
+        Transformer transformer = transfoctory.newTemplates(xsltsource).newTransformer();
+        Document srcdoc = XmlUtil.stringToDocument(src);
+        DOMResult result = new DOMResult();
+        XmlUtil.softXSLTransform(srcdoc, result, transformer, Collections.EMPTY_MAP);
+        return (Document) result.getNode();
+    }
+    @Test
+    public void testUsageTransformation(){
+        
+    }
+
 }
