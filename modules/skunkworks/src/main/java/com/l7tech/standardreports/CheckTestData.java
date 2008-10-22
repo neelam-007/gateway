@@ -96,6 +96,7 @@ public class CheckTestData extends TestCase {
 
     private int getNumDistinctMetricDetailRows() throws Exception{
         List<String > keys  = ReportApp.loadListFromProperties(ReportApp.MAPPING_KEY, prop);
+        assertTrue("2 mapping keys should be specified in report.properties", keys.size() == 2);
         String s = Utilities.createMappingQuery(true, null, null, new ArrayList<String>(),
                 keys, null, null, 2, true, null, true, null);
 
@@ -106,6 +107,7 @@ public class CheckTestData extends TestCase {
 
         ResultSet rs = stmt.executeQuery(sql.toString());
         assertTrue(rs.first());
+        System.out.println("Value sql: "+ sql.toString());
         return rs.getInt("total");
     }
 
@@ -122,6 +124,10 @@ public class CheckTestData extends TestCase {
     public void testMasterMappingQuery_Master() throws Exception{
         int totalMasterRowsFound = getNumDistinctMetricDetailRows();
         int numValueRows = getNumValueRows();
+
+//        System.out.println("total master rows: "+totalMasterRowsFound);
+//        System.out.println("numValueRows: "+numValueRows);
+//        System.out.println("numServices: "+numServices);
 
         assertTrue(totalMasterRowsFound == (numValueRows * numServices));
     }

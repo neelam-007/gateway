@@ -15,6 +15,7 @@ import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.util.JRLoader;
 import net.sf.jasperreports.view.JasperViewer;
 import com.l7tech.server.ems.standardreports.ScripletHelper;
+import com.l7tech.server.ems.standardreports.UsageReportHelper;
 
 
 public class ReportApp
@@ -239,11 +240,30 @@ public class ReportApp
 
         //Only required because jasper reports for some reason ignores the value of scriptletClass from the
         //jasperreport element attribute, so specifying it as a parameter explicitly fixes this issue
-        ScripletHelper sh = new ScripletHelper();
-        parameters.put("REPORT_SCRIPTLET", sh);
+        String reportScriplet = prop.getProperty("REPORT_SCRIPTLET");
+        Class c = Class.forName(reportScriplet);
+        Object scriplet = c.newInstance();
+        if(reportScriplet.endsWith("UsageReportHelper")){
+            UsageReportHelper helper = (UsageReportHelper) scriplet;
+            LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
+            keyToColumnName.put("127.0.0.1Bronze;;;;", "COLUMN_1");
+            keyToColumnName.put("127.0.0.1Gold;;;;", "COLUMN_2");
+            keyToColumnName.put("127.0.0.1Silver;;;;", "COLUMN_3");
+            keyToColumnName.put("127.0.0.2Bronze;;;;", "COLUMN_4");
+            keyToColumnName.put("127.0.0.2Gold;;;;", "COLUMN_5");
+            keyToColumnName.put("127.0.0.2Silver;;;;", "COLUMN_6");
+            helper.setKeyToColumnMap(keyToColumnName);
+        }
+        
+        parameters.put("REPORT_SCRIPTLET", scriplet);
 
         //JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
-        JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
+        Connection connection = getConnection(prop);
+        try{
+            JasperFillManager.fillReportToFile(fileName+".jasper", parameters, connection);
+        }finally{
+            connection.close();
+        }
 
         System.err.println("Filling time : " + (System.currentTimeMillis() - start));
     }

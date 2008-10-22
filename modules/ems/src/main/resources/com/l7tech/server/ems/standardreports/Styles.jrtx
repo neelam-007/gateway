@@ -92,4 +92,9 @@
             <rightPen lineWidth="1.0"/>
         </box>
     </style>
+	<style
+		name="TotalCell"
+		backcolor="#D6D6D6"
+	>
+	</style>    
 </jasperTemplate>
