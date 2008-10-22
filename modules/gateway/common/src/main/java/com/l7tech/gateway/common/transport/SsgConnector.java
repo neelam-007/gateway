@@ -5,14 +5,11 @@ import com.l7tech.common.io.PortRange;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
-import javax.persistence.Entity;
-import javax.persistence.Transient;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.OneToMany;
-import javax.persistence.CascadeType;
-import javax.persistence.FetchType;
+import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import java.lang.reflect.InvocationTargetException;
@@ -22,10 +19,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 
 /**
  * Describes a port on which the Gateway will listen for incoming requests.

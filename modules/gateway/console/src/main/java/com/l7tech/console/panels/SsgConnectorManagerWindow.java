@@ -146,7 +146,21 @@ public class SsgConnectorManagerWindow extends JDialog {
     }
 
     private void doCreate() {
-        editAndSave(new SsgConnector());
+        final SsgConnector connector = new SsgConnector();
+        String[] known = Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames();
+
+        StringBuilder cipherlist = new StringBuilder();
+        boolean first = true;
+        for (String cipher : known) {
+            if (SsgConnectorPropertiesDialog.cipherSuiteShouldBeCheckedByDefault(cipher)) {
+                if (!first) cipherlist.append(',');
+                cipherlist.append(cipher);
+                first = false;
+            }
+        }
+        connector.putProperty(SsgConnector.PROP_CIPHERLIST, cipherlist.toString());
+
+        editAndSave(connector);
     }
 
     private void doProperties() {

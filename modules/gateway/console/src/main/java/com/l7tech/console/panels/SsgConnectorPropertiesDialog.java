@@ -568,16 +568,38 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         List<String> ret = new ArrayList<String>();
         for (String name : unfiltered) {
-            if (name.indexOf("_WITH_NULL_") > 0) {
-                // Skip it -- it doesn't encrypt
-            } else if (name.indexOf("_anon_") > 0) {
-                // Skip it -- it doesn't authenticate
-            } else if (name.indexOf("_RSA_") > 0) {
-                // Include it -- it'll work with our RSA server cert
+            if (cipherSuiteShouldBeVisible(name))
                 ret.add(name);
-            }
         }
         return ret.toArray(new String[ret.size()]);
+    }
+
+    /**
+     * Check if the specified cipher suite should be shown or hidden in the UI.
+     * <P/>
+     * Currently a cipher suite is shown if is RSA based, as long as it is neither _WITH_NULL_ (which
+     * does no encryption) or _anon_ (which does no authentication).
+     *
+     * @param cipherSuiteName the name of an SSL cipher suite to check, ie "TLS_RSA_WITH_AES_128_CBC_SHA".  Required.
+     * @return true if this cipher suite should be shown in the UI (regardless of whether it should be checked by default
+     *         in new connectors).  False if this cipher suite should be hidden in the UI.
+     */
+    public static boolean cipherSuiteShouldBeVisible(String cipherSuiteName) {
+        return !contains(cipherSuiteName, "_WITH_NULL_") && !contains(cipherSuiteName, "_anon_") && contains(cipherSuiteName, "_RSA_");
+    }
+
+    /**
+     * Check if the specified cipher suite should be checked by default in newly created listen ports.
+     *
+     * @param cipherSuiteName the name of an SSL cipher suite to check, ie "TLS_RSA_WITH_AES_128_CBC_SHA".  Required.
+     * @return true if this cipher suite should be checked by default in the UI.
+     */
+    public static boolean cipherSuiteShouldBeCheckedByDefault(String cipherSuiteName) {
+        return cipherSuiteShouldBeVisible(cipherSuiteName) && !contains(cipherSuiteName, "_EXPORT_");
+    }
+
+    private static boolean contains(String string, String substr) {
+        return string.indexOf(substr) > 0;
     }
 
     private void initializeCipherSuiteControls() {
