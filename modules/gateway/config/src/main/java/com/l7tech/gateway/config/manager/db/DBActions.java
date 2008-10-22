@@ -6,6 +6,7 @@ import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.CausedIOException;
 import com.l7tech.gateway.config.manager.LicenseChecker;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import org.apache.commons.lang.StringUtils;
@@ -33,6 +34,7 @@ public class DBActions {
     public static final int DB_ALREADY_EXISTS = 2;
     public static final int DB_CREATEFILE_MISSING = 3;
     public static final int DB_INCORRECT_VERSION = 4;
+    public static final int DB_ERROR = 5;
 
     public static final int DB_AUTHORIZATION_FAILURE = 28000;
     public static final int DB_UNKNOWNDB_FAILURE = 42000;
@@ -710,6 +712,10 @@ public class DBActions {
      * Create DB and do grants, DB will be empty 
      */
     private void createDatabaseWithGrants(Connection connection, DatabaseConfig databaseConfig) throws SQLException, IOException {
+        if ( "".equals(databaseConfig.getNodePassword()) ) {
+            throw new CausedIOException("Cannot create database with empty password for user '"+databaseConfig.getNodeUsername()+"'.");            
+        }
+
         connection.setAutoCommit(false); //start transaction
         String newDbName = databaseConfig.getName();
 
@@ -1261,7 +1267,7 @@ public class DBActions {
     }
 
     public static class DBActionsResult {
-        private int status = 0;
+        private int status = DB_ERROR;
         private String errorMessage = null;
 
         public DBActionsResult() {

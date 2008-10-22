@@ -2,6 +2,10 @@ package com.l7tech.gateway.config.flasher;
 
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.server.management.config.node.DatabaseConfig;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -45,6 +49,12 @@ class Importer {
 
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER, OS_OVERWRITE};
 
+    private static final String CONFIG_PATH = "../../node/default/etc/conf/";
+    private static final String[] CONFIG_FILES = new String[]{
+        "ssglog.properties",
+        "system.properties",
+    };
+
     private String tempDirectory;
     private MappingUtil.CorrespondanceMap mapping = null;
     private String licenseValueBeforeImport = null;
@@ -71,7 +81,7 @@ class Importer {
         try {
             System.out.println("Reading SecureSpan image file " + inputpathval);
             unzipToDir(inputpathval, tempDirectory);
-            if (!(new File(tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_STAGING)).exists()) {
+            if (!(new File(tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_CLONE)).exists()) {
                 logger.info("Error, the image provided does not contain an expected file and is therefore suspicious");
                 throw new IOException("the file " + inputpathval + " does not appear to be a valid SSG flash image");
             }
@@ -93,8 +103,8 @@ class Importer {
 
             //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
             String partName = arguments.get("-p");
-            if (!"default_".equals(partName)) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("Cannot act on partition name " + partName);
+            if ( partName!=null && !"default_".equals(partName) ) {
+                throw new FlashUtilityLauncher.InvalidArgumentException("Partitions are no longer supported.");
             }
 
             rootDBUsername = arguments.get(DB_USER.name);
@@ -117,23 +127,36 @@ class Importer {
             }
 
             dbName = arguments.get(DB_NAME.name);
-            if (dbHost == null) {
+            if (dbName == null) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_NAME.name);
             }
 
-            File nodePropsFile = new File(new File(tempDirectory), "node.properties");
-            if ( nodePropsFile.exists() ) {
-                try {
-                    final PropertiesConfiguration dbConfig = new PropertiesConfiguration(nodePropsFile);
+            MasterPasswordManager mpm = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(new File(CONFIG_PATH), "omp.dat") ) );
+            String databaseUser = "gateway";
+            String databasePass = rootDBPasswd;
+            File nodePropsFile = new File(new File(CONFIG_PATH), "node.properties");
+            try {
+                final PropertiesConfiguration dbConfig = new PropertiesConfiguration();
+                dbConfig.setAutoSave(false);
+                dbConfig.setListDelimiter((char)0);
 
-                    dbConfig.setProperty("node.db.host", dbHost);
-                    dbConfig.setProperty("node.db.port", dbPort);
-                    dbConfig.setProperty("node.db.name", dbName);
-
-                    dbConfig.save(nodePropsFile);
-                } catch (ConfigurationException e) {
-                    throw new IOException("Cannot replace database settings in \"" + nodePropsFile.getAbsolutePath() + "\".", e);
+                if ( nodePropsFile.exists() ) {
+                    dbConfig.load(nodePropsFile);
+                    databaseUser = dbConfig.getString("node.db.user")==null ? databaseUser : dbConfig.getString("node.db.user");
+                    databasePass = dbConfig.getString("node.db.pass")==null ? databasePass : dbConfig.getString("node.db.pass");
+                    databasePass = new String(mpm.decryptPasswordIfEncrypted(databasePass));
+                } else {
+                    dbConfig.setProperty("node.db.user", databaseUser);
+                    dbConfig.setProperty("node.db.pass", mpm.encryptPassword(databasePass.toCharArray()));
                 }
+
+                dbConfig.setProperty("node.db.host", dbHost);
+                dbConfig.setProperty("node.db.port", dbPort);
+                dbConfig.setProperty("node.db.name", dbName);
+
+                dbConfig.save(nodePropsFile);                
+            } catch (ConfigurationException e) {
+                throw new IOException("Cannot replace database settings in \"" + nodePropsFile.getAbsolutePath() + "\".", e);
             }
 
             if (dbHost.equalsIgnoreCase(InetAddress.getLocalHost().getCanonicalHostName()) ||
@@ -176,19 +199,16 @@ class Importer {
             } else {
                 logger.info("database need to be created");
                 System.out.print("The target database does not exist. Creating it now ...");
-//                try {
-//                    DBActions.DBActionsResult res = getDBActions(osFunctions).createDb(rootDBUsername, rootDBPasswd,
-//                                                                            dbHost, dbName, databaseUser,
-//                                                                            databasePasswd, null, false, true);
-//                    if (res.getStatus() != DBActions.DB_SUCCESS) {
-//                        throw new IOException("cannot create database " + res.getErrorMessage());
-//                    }
-//                    newDatabaseCreated = true;
-//                    System.out.println(" DONE");
-//                } catch (SQLException e) {
-//                    System.out.println(" Error " + e.getMessage());
-//                    throw new IOException("cannot create new database " + e.getMessage());
-//                }
+                DBActions dba = new DBActions();
+                DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, databaseUser, databasePass);
+                config.setDatabaseAdminUsername( rootDBUsername );
+                config.setDatabaseAdminPassword( rootDBPasswd );
+                DBActions.DBActionsResult res = dba.createDb( config, "../etc/sql/ssg.sql", false );
+                if ( res.getStatus() != DBActions.DB_SUCCESS ) {
+                    throw new IOException("cannot create database " + res.getErrorMessage());
+                }
+                newDatabaseCreated = true;
+                System.out.println(" DONE");
             }
 
             // check that target db is not currently used by an SSG
@@ -343,9 +363,17 @@ class Importer {
 
         // create temporary database copy to test the import
         System.out.print("Creating copy of target database for testing import ..");
-//        DBInformation dbi = new DBInformation(dbHost, dbName, databaseUser, databasePasswd, rootDBUsername, rootDBPasswd);
         String testdbname = "TstDB_" + System.currentTimeMillis();
-//        getDBActions(osFunctions).copyDatabase(dbi, testdbname, true, null);
+
+        DatabaseConfig sourceConfig = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, rootDBUsername, rootDBPasswd);
+        sourceConfig.setDatabaseAdminUsername( rootDBUsername );
+        sourceConfig.setDatabaseAdminPassword( rootDBPasswd );
+
+        DatabaseConfig targetConfig = new DatabaseConfig(sourceConfig);
+        targetConfig.setName(testdbname);
+
+        DBActions dba = new DBActions();
+        dba.copyDatabase( sourceConfig, targetConfig, true, null);
         System.out.println(" DONE");
 
         try {
@@ -387,10 +415,9 @@ class Importer {
     private void copySystemConfigFiles() throws IOException {
         System.out.print("Cloning SecureSpan Gateway settings ..");
 
-        restoreConfigFile("omp.dat");
-        restoreConfigFile("node.properties");
-        restoreConfigFile("ssglog.properties");
-        restoreConfigFile("system.properties");
+        for ( String file : CONFIG_FILES ) {
+            restoreConfigFile(CONFIG_PATH + file);
+        }
 
         System.out.println(". DONE");
     }
@@ -399,7 +426,7 @@ class Importer {
         File toFile = new File(destination);
         File fromFile = new File(tempDirectory + File.separator + toFile.getName());
         if (fromFile.exists()) {
-            if (!toFile.getParentFile().exists()) {
+            if (toFile.getParentFile()==null || !toFile.getParentFile().exists() ) {
                 logger.warning("the parent directory for the target file " + toFile.getPath() + " does not " +
                                "exist on this target system. perhaps this system is not configured properly. " +
                                "trying to create directory");

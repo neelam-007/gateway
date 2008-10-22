@@ -23,12 +23,10 @@ import java.text.MessageFormat;
 class DBDumpUtil {
 
     private static final Logger logger = Logger.getLogger(DBDumpUtil.class.getName());
-    public static final String DBDUMPFILENAME_STAGING = "dbdump_migrate.sql";
     public static final String DBDUMPFILENAME_CLONE = "dbdump_restore.sql";
     public static final String LICENCEORIGINALID = "originallicenseobjectid.txt";
     private static final String DEFAULT_DB_URL = "jdbc:mysql://{0}:{1}/{2}?autoReconnect=false&characterEncoding=UTF8&characterSetResults=UTF8&socketTimeout=120000&connectTimeout=10000";
-    private static final String[] TABLE_NOT_IN_STAGING = {"client_cert", "shared_keys", "keystore_file"};
-    private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "service_usage", "message_id", "service_metrics"};
+    private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "message_id", "service_metrics", "service_metrics_details", "service_usage"};
     private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
 
     static {
@@ -96,15 +94,12 @@ class DBDumpUtil {
         };
         ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
         FileOutputStream cloneoutput = new FileOutputStream(outputDirectory + File.separator + DBDUMPFILENAME_CLONE);
-        FileOutputStream stageoutput = new FileOutputStream(outputDirectory + File.separator + DBDUMPFILENAME_STAGING);
         if (stdout != null) stdout.print("Dumping database to " + outputDirectory + " ..");
         cloneoutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
-        stageoutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
         while (tableNames.next()) {
             String tableName = tableNames.getString("TABLE_NAME");
             // drop and recreate table
             cloneoutput.write(("DROP TABLE IF EXISTS " + tableName + ";\n").getBytes());
-            stageoutput.write(("DROP TABLE IF EXISTS " + tableName + ";\n").getBytes());
             Statement getCreateTablesStmt = c.createStatement();
             ResultSet createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
             while (createTables.next()) {
@@ -113,7 +108,6 @@ class DBDumpUtil {
                 s = s.replace("\n", " ");
                 s = s.replace("`", "");
                 cloneoutput.write((s + ";\n").getBytes());
-                stageoutput.write((s + ";\n").getBytes());
             }
             if (tableInList(tableName, TABLE_NEVER_EXPORT)) continue;
             if (!includeAudit) {
@@ -192,17 +186,12 @@ class DBDumpUtil {
                 }
                 insertStatementToRecord.append(");\n");
                 cloneoutput.write(insertStatementToRecord.toString().getBytes());
-                if (!tableInList(tableName, TABLE_NOT_IN_STAGING)) {
-                    stageoutput.write(insertStatementToRecord.toString().getBytes());
-                }
             }
             tdataList.close();
         }
         c.close();
         cloneoutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
-        stageoutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
         cloneoutput.close();
-        stageoutput.close();
         if (stdout != null) stdout.println(". Done");
     }
 

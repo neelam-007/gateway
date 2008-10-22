@@ -47,6 +47,11 @@ public class Exporter {
     public static final String VERSIONFILENAME = "version";
     public static final String SRCPARTNMFILENAME = "sourcepartitionname";
 
+    private static final String[] CONFIG_FILES = new String[]{
+        "ssglog.properties",
+        "system.properties",
+    };
+
     private boolean includeAudit = false;
     private String tmpDirectory;
 
@@ -111,8 +116,8 @@ public class Exporter {
 
         //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
         String partName = arguments.get("-p");
-        if (!"default_".equals(partName)) {
-            throw new FlashUtilityLauncher.InvalidArgumentException("Cannot act on partition name " + partName);
+        if ( partName!=null && !"default_".equals(partName) ) {
+            throw new FlashUtilityLauncher.InvalidArgumentException("Partitions are no longer supported.");
         }
 
         File confDir = new File(flasherHome, "../../node/default/etc/conf");
@@ -186,22 +191,11 @@ public class Exporter {
             fos.close();
 
             // copy all config files we want into this temp directory
-            File ompDat = new File(confDir, "omp.dat");
-            File nodeProperties = new File(confDir, "node.properties");
-            File ssglogprops = new File(confDir, "ssglog.properties");
-            File sysProps = new File(confDir, "system.properties");
-
-            if ( ompDat.exists() ) {
-                FileUtils.copyFile(ompDat, new File(tmpDirectory + File.separator + ompDat.getName()));
-            }
-            if ( nodeProperties.exists() ) {
-                FileUtils.copyFile(nodeProperties, new File(tmpDirectory + File.separator + nodeProperties.getName()));
-            }
-            if ( nodeProperties.exists() ) {
-                    FileUtils.copyFile(ssglogprops, new File(tmpDirectory + File.separator + ssglogprops.getName()));
-            }
-            if (sysProps.exists()) {
-                FileUtils.copyFile(sysProps, new File(tmpDirectory + File.separator + sysProps.getName()));
+            for ( String filename : CONFIG_FILES ) {
+                File file = new File(confDir, filename);
+                if ( file.exists() ) {
+                    FileUtils.copyFile(file, new File(tmpDirectory + File.separator + file.getName()));
+                }
             }
 
             // copy system config files
