@@ -4,25 +4,27 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.util.ConstructorInvocation;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.TarariLoader;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.policy.assertion.ServerAcceleratedOversizedTextAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.util.ConstructorInvocation;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.TarariLoader;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.text.MessageFormat;
+import java.util.logging.Logger;
 
 /**
  * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
@@ -150,14 +152,26 @@ public class ServerPolicyFactory implements ApplicationContextAware {
                                                 genericAssertion.getOrdinal(),
                                                 genericAssertion.ownerPolicyOid()));
 
-            Constructor ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, new Class[] {genericAssertionClass, ApplicationContext.class});
-            if (ctor != null)
-                return (ServerAssertion)ctor.newInstance(genericAssertion, applicationContext);
+            Class[][] patterns = new Class[][] {
+                    new Class[] { genericAssertionClass, ApplicationContext.class },
+                    new Class[] { genericAssertionClass, BeanFactory.class },
+                    new Class[] { genericAssertionClass, ApplicationEventPublisher.class },
+                    new Class[] { genericAssertionClass, BeanFactory.class, ApplicationEventPublisher.class },
+                    new Class[] { genericAssertionClass },
+            };
+            for (Class[] pattern : patterns) {
+                Constructor ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, pattern);
+                if (ctor != null) {
+                    Object[] params = new Object[pattern.length];
+                    if (params.length > 0)
+                        params[0] = genericAssertion;
+                    for (int i = 1; i < params.length; ++i)
+                        params[i] = applicationContext;
+                    return (ServerAssertion)ctor.newInstance(params);
+                }
+            }
 
-            ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, new Class[] { genericAssertionClass });
-            if (ctor == null)
-                throw new ServerPolicyException(genericAssertion, productClassname + " does not have at least a public constructor-from-" + genericAssertionClass);
-            return (ServerAssertion)ctor.newInstance(genericAssertion);
+            throw new ServerPolicyException(genericAssertion, productClassname + " does not have at least a public constructor-from-" + genericAssertionClass);
         } catch (LicenseException le) {
             throw le;
         } catch (InvocationTargetException ite) {

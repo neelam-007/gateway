@@ -7,9 +7,12 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyListener;
-import com.l7tech.util.TimeUnit;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TimeUnit;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedResource;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -18,20 +21,12 @@ import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.jmx.export.annotation.ManagedResource;
-import org.springframework.jmx.export.annotation.ManagedOperation;
-import org.springframework.jmx.export.annotation.ManagedAttribute;
 
 /**
  * Provides cached access to Gateway global configuration items, including (once the
@@ -188,6 +183,9 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public static final String PARAM_LDAPCERTINDEX_REBUILD_INTERVAL="ldapCertIndexInterval";
     public static final String PARAM_LDAPCERT_CACHE_LIFETIME="ldapCertCacheLifetime";
+
+    public static final String PARAM_TIMESTAMP_CREATED_FUTURE_GRACE = "timestampCreatedFutureGrace";
+    public static final String PARAM_TIMESTAMP_EXPIRES_PAST_GRACE = "timestampExpiresPastGrace";
 
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
     public static final String PROPS_RESOURCE_PROPERTY = "com.l7tech.server.serverConfigPropertiesResource";
@@ -827,7 +825,7 @@ public class ServerConfig implements ClusterPropertyListener {
     private String _hostname;
     private InitialContext _icontext;
 
-    ServerConfig() {
+    protected ServerConfig() {
         _properties = new Properties();
 
         InputStream propStream = null;

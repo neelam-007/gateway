@@ -5,19 +5,22 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.WssTimestamp;
-import com.l7tech.security.xml.processor.WssTimestampDate;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.WssTimestamp;
+import com.l7tech.security.xml.processor.WssTimestampDate;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.ExceptionUtils;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -29,22 +32,22 @@ import java.util.logging.Logger;
  */
 public class ServerRequestWssTimestamp extends AbstractServerAssertion<RequestWssTimestamp> {
     private static final Logger logger = Logger.getLogger(ServerRequestWssTimestamp.class.getName());
+    private static final long DEFAULT_GRACE = 60000;
+    private static final int PROP_CACHE_AGE = 151013;
+
     private final RequestWssTimestamp assertion;
     private final Auditor auditor;
-    private static final int DEFAULT_CREATED_FUTURE_FUZZ = (60 * 1000);
-    private static final int DEFAULT_EXPIRES_PAST_FUZZ = (60 * 1000);
-
-    private final int createdFutureFuzz = Integer.getInteger(this.getClass().getName() + ".createdFutureGrace", DEFAULT_CREATED_FUTURE_FUZZ).intValue();
-    private final int expiresPastFuzz = Integer.getInteger(this.getClass().getName() + ".expiresPastGrace", DEFAULT_EXPIRES_PAST_FUZZ).intValue();
     private final SecurityTokenResolver securityTokenResolver;
+    private final ServerConfig serverConfig;
 
-    public ServerRequestWssTimestamp(RequestWssTimestamp assertion, ApplicationContext spring) {
+    public ServerRequestWssTimestamp(RequestWssTimestamp assertion, BeanFactory spring) {
         super(assertion);
         this.assertion = assertion;
-        this.auditor = new Auditor(this, spring, logger);
+        this.auditor = spring instanceof ApplicationContext
+                ? new Auditor(this, (ApplicationContext) spring, logger)
+                : new LogOnlyAuditor(logger);
         this.securityTokenResolver = (SecurityTokenResolver)spring.getBean("securityTokenResolver");
-        logger.info("Created future grace period: " + createdFutureFuzz);
-        logger.info("Expires past grace period: " + expiresPastFuzz);
+        this.serverConfig = (ServerConfig)spring.getBean("serverConfig", ServerConfig.class);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -88,6 +91,7 @@ public class ServerRequestWssTimestamp extends AbstractServerAssertion<RequestWs
             return AssertionStatus.BAD_REQUEST;
         }
 
+        long createdFutureFuzz = serverConfig.getLongPropertyCached(ServerConfig.PARAM_TIMESTAMP_CREATED_FUTURE_GRACE, DEFAULT_GRACE, PROP_CACHE_AGE);
         final long created = createdEl.asTime();
         if (created - createdFutureFuzz > now) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_CREATED_FUTURE, what);
@@ -111,6 +115,7 @@ public class ServerRequestWssTimestamp extends AbstractServerAssertion<RequestWs
             expires = created + assertion.getMaxExpiryMilliseconds();
         }
 
+        long expiresPastFuzz = serverConfig.getLongPropertyCached(ServerConfig.PARAM_TIMESTAMP_EXPIRES_PAST_GRACE, DEFAULT_GRACE, PROP_CACHE_AGE);
         if (expires + expiresPastFuzz < now) {
             if (constrain && (!(originalExpires + expiresPastFuzz < now))) {
                 // then this only expired because we constrained the expiry time so audit that
