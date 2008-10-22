@@ -1,26 +1,23 @@
 package com.l7tech.security.saml;
 
-import com.l7tech.common.io.InetAddressUtil;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.TestDocuments;
-import com.l7tech.security.xml.SecurityActor;
-import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.util.DomUtils;
-import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.util.DomUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import java.io.FileOutputStream;
 import java.security.PrivateKey;
@@ -110,7 +107,6 @@ public class SignedSamlTest extends TestCase {
                 getUnsignedHolderOfKeyAssertion(assertionId, useThumbprintForSubject, samlVersion);
 
         String s2 = XmlUtil.nodeToFormattedString(assertionDoc);
-        System.out.println("Before signing: " + s2);
         final SamlAssertionGenerator.Options opts = new SamlAssertionGenerator.Options();
         opts.setId(assertionId);
         opts.setSignAssertion(true);
@@ -164,44 +160,31 @@ public class SignedSamlTest extends TestCase {
     }
 
     public Document getSignedRequestWithSenderVouchesToken() throws Exception {
+        // Make a SAML assertion
+        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+        samlOptions.setExpiryMinutes(5);
+        samlOptions.setProofOfPosessionRequired(false);
+        samlOptions.setId("TestAssertionId-001");
+        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass());
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
+        SamlAssertionGenerator generator = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
+        Document samlsvAssertion = generator.createAssertion(subjectStatement, samlOptions);
+
+        // Decorate a message with it
         Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         assertNotNull(request);
         Element body = DomUtils.findOnlyOneChildElementByName(request.getDocumentElement(),
-                                                             request.getDocumentElement().getNamespaceURI(),
-                                                             "Body");
+                         request.getDocumentElement().getNamespaceURI(),
+                         "Body");
         assertNotNull(body);
         // in this case, the request is actually signed by the issuer
         DecorationRequirements req = new DecorationRequirements();
         req.setSignTimestamp();
         req.getElementsToSign().add(body);
-        req.setSenderMessageSigningCertificate(caCertChain[0]);
+        req.setSenderSamlToken(samlsvAssertion.getDocumentElement(), true);
         req.setSenderMessageSigningPrivateKey(caPrivateKey);
         new WssDecoratorImpl().decorateMessage(new Message(request), req);
 
-        // hack message so original signature refers to the saml token instead of the BST
-        Element security = SoapUtil.getSecurityElement(request, SecurityActor.L7ACTOR.getValue());
-        if (security == null) {
-            security = SoapUtil.getSecurityElement(request);
-        }
-        assertNotNull(security);
-        Element bst = DomUtils.findOnlyOneChildElementByName(security, security.getNamespaceURI(), "BinarySecurityToken");
-        assertNotNull(bst);
-        String bstId = bst.getAttributeNS(SoapUtil.WSU_NAMESPACE, "Id");
-        assertNotNull(bstId);
-        assertTrue(bstId.length() > 0);
-
-        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-        samlOptions.setExpiryMinutes(5);
-        samlOptions.setProofOfPosessionRequired(false);
-        samlOptions.setId(bstId);
-        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass());
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
-        SamlAssertionGenerator generator = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
-        samlOptions.setId(bstId);
-        Document samlsvAssertion = generator.createAssertion(subjectStatement, samlOptions);
-
-        Node importedNode = request.importNode(samlsvAssertion.getDocumentElement(), true);
-        security.replaceChild(importedNode, bst);
         return request;
     }
 
@@ -213,33 +196,18 @@ public class SignedSamlTest extends TestCase {
                                                              "Body");
         assertNotNull(body);
 
-        DecorationRequirements req = new DecorationRequirements();
-        req.setSignTimestamp();
-        req.getElementsToSign().add(body);
-        req.setSenderMessageSigningCertificate(clientCertChain[0]);
-        req.setSenderMessageSigningPrivateKey(clientPrivateKey);
-        new WssDecoratorImpl().decorateMessage(new Message(request), req);
-
-        // Hand-hack the decorated message, replacing the BST with the saml:assertion
-        Element security = SoapUtil.getSecurityElement(request, SecurityActor.L7ACTOR.getValue());
-        if (security == null) {
-            security = SoapUtil.getSecurityElement(request);
-        }
-        assertNotNull(security);
-        Element bst = DomUtils.findOnlyOneChildElementByName(security, security.getNamespaceURI(), "BinarySecurityToken");
-        assertNotNull(bst);
-        String bstId = bst.getAttributeNS(SoapUtil.WSU_NAMESPACE, "Id");
-        assertNotNull(bstId);
-        assertTrue(bstId.length() > 0);
-
         // Create saml assertion using the same ID
-        Document assertionDoc = getSignedHolderOfKey(bstId, useThumbprintForSignature, useThumbprintForSubject, useTwoStatements, samlVersion);
+        Document assertionDoc = getSignedHolderOfKey("TestAssertionId-001", useThumbprintForSignature, useThumbprintForSubject, useTwoStatements, samlVersion);
         assertNotNull(assertionDoc);
         Element samlAssertion = assertionDoc.getDocumentElement();
         assertNotNull(samlAssertion);
 
-        Node importedNode = request.importNode(samlAssertion, true);
-        security.replaceChild(importedNode, bst);
+        DecorationRequirements req = new DecorationRequirements();
+        req.setSignTimestamp();
+        req.getElementsToSign().add(body);
+        req.setSenderSamlToken(samlAssertion, true);
+        req.setSenderMessageSigningPrivateKey(clientPrivateKey);
+        new WssDecoratorImpl().decorateMessage(new Message(request), req);
 
         return request;
     }
