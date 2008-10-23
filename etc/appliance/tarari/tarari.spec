@@ -1,7 +1,7 @@
 Summary: Tarari Support for SecureSpan Gateway
 Name: ssg-tarari
 Version: 5.1.1.52s
-Release: 3
+Release: 4
 Group: Applications/Internet
 License: Copyright Layer 7 Technologies. Portions copyright Tarari 2003-2008
 URL: http://www.layer7tech.com
@@ -9,7 +9,7 @@ Packager: Layer 7 Technologies, <support@layer7tech.com>
 Source0: /tmp/tarari.tar.gz
 Source1: /tmp/tarari-kernel-drivers.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
-requires: ssg >= 4.3
+requires: ssg >= 4.7
 requires: kernel-smp-x86_64 >= 2.6.9-67.0.1.EL
 provides: ssg-tarari
 
@@ -32,13 +32,13 @@ rm -fr %{buildroot}
 
 %build
 mkdir -p %{buildroot}/etc/init.d/
-mkdir -p %{buildroot}/ssg/etc/profile.d/
+mkdir -p %{buildroot}/opt/SecureSpan/Gateway/runtime/etc/profile.d/
 
 mv %{buildroot}/etc/appliance/tarari/tarari-initd %{buildroot}/etc/init.d/tarari
-mv %{buildroot}/etc/appliance/tarari/tarariopts.sh %{buildroot}/ssg/etc/profile.d/tarariopts.sh
+mv %{buildroot}/etc/appliance/tarari/tarariopts.sh %{buildroot}/opt/SecureSpan/Gateway/runtime/etc/profile.d/tarariopts.sh
 
-mkdir -p %{buildroot}/ssg/lib/ext
-cp %{buildroot}/usr/local/Tarari/lib/tarari_raxj.jar %{buildroot}/ssg/lib/ext
+mkdir -p %{buildroot}/opt/SecureSpan/Gateway/runtime/lib/ext
+cp %{buildroot}/usr/local/Tarari/lib/tarari_raxj.jar %{buildroot}/opt/SecureSpan/Gateway/runtime/lib/ext
 
 rm -rf %{buildroot}/usr/local/Tarari/test/
 rm -rf %{buildroot}/usr/local/Tarari/src
@@ -51,9 +51,11 @@ rm -rf %{buildroot}/usr/local/Tarari/docs
 /usr/local/Tarari/
 /usr/local/Tarari/*
 
-%defattr(-,gateway,gateway)
-/ssg/lib/ext/tarari_raxj.jar
-/ssg/etc/profile.d/tarariopts.sh
+%attr(0444,layer7,layer7)
+/opt/SecureSpan/Gateway/runtime/lib/ext/tarari_raxj.jar
+
+%attr(0444,layer7,layer7)
+/opt/SecureSpan/Gateway/runtime/etc/profile.d/tarariopts.sh
 
 %pre
 

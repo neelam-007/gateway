@@ -22,6 +22,9 @@ if [ -e /etc/profile.d/ssgruntimedefs.sh ]; then
 elif [ -e /ssg/etc/profile.d/tarariopts.sh ]; then
 	# this is 4.3 or higher with the /ssg/etc/profile structure
 	. /ssg/etc/profile
+elif [ -e /opt/SecureSpan/Gateway/runtime/etc/profile ]; then
+	# this is 4.7 or higher with the /opt/SecureSpan/Gateway/runtime/etc/profile structure
+	. /opt/SecureSpan/Gateway/runtime/etc/profile
 else
 	echo "This is not a Layer 7 Appliance"
 	exit
