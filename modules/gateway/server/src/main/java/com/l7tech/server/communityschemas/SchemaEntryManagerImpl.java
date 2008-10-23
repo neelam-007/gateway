@@ -95,17 +95,38 @@ public class SchemaEntryManagerImpl
         Collection<SchemaEntry> output = super.findAll();
 
         // make sure the soapenv schema is always there
-        output = addSoapEnv(output);
+        output = addSoapEnv(output, null, null);
 
         return output;
     }
 
-    private Collection<SchemaEntry> addSoapEnv(Collection<SchemaEntry> collection) {
+    private Collection<SchemaEntry> addSoapEnv( final Collection<SchemaEntry> collection, final String name, final String tns ) {
         ArrayList<SchemaEntry> completeList = new ArrayList<SchemaEntry>(collection);
-        completeList.add(XMLNS_SCHEMA_ENTRY);
-        completeList.add(SOAP11_SCHEMA_ENTRY);
-        completeList.add(SOAP12_SCHEMA_ENTRY);
+
+        if ( schemaMatch( XMLNS_SCHEMA_NAME, XMLNS_SCHEMA_TNS, name, tns ) ) {
+            completeList.add(XMLNS_SCHEMA_ENTRY);
+        }
+
+        if ( schemaMatch( SOAP11_SCHEMA_NAME, SOAP11_SCHEMA_TNS, name, tns ) ) {
+            completeList.add(SOAP11_SCHEMA_ENTRY);
+        }
+
+        if ( schemaMatch( SOAP12_SCHEMA_NAME, SOAP12_SCHEMA_TNS, name, tns ) ) {
+            completeList.add(SOAP12_SCHEMA_ENTRY);
+        }
+
         return completeList;
+    }
+
+    private boolean schemaMatch( final String targetName, final String targetTns, final String name, final String tns ) {
+        boolean match = false;
+
+        if ( (name==null || name.equals(targetName)) &&
+            ((tns==null || tns.equals(targetTns))) ) {
+            match = true;
+        }
+
+        return match;
     }
 
     /**
@@ -124,10 +145,7 @@ public class SchemaEntryManagerImpl
                 return q.list();
             }});
 
-        //TODO [steve] fix this, add individually
-        if (SOAP11_SCHEMA_NAME.equals(schemaName) || SOAP12_SCHEMA_NAME.equals(schemaName) || XMLNS_SCHEMA_NAME.equals(schemaName)) {
-            output = addSoapEnv(output);
-        }
+        output = addSoapEnv(output, schemaName, null);
 
         return output;
     }
@@ -148,9 +166,7 @@ public class SchemaEntryManagerImpl
                 return q.list();
             }});
 
-        if (SOAP11_SCHEMA_TNS.equals(tns) || SOAP12_SCHEMA_TNS.equals(tns) || XMLNS_SCHEMA_TNS.equals(tns)) {
-            output = addSoapEnv(output);
-        }
+        output = addSoapEnv(output, null, tns);
 
         return output;
     }
