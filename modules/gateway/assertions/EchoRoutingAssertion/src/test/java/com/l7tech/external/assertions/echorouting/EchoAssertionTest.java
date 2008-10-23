@@ -152,11 +152,7 @@ public class EchoAssertionTest extends TestCase {
     }
 
     private static Assertion getPolicy() {
-        Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
-                    new EchoRoutingAssertion(),
-                  }));
-
-        return policy;
+        return new AllAssertion(Arrays.asList(new EchoRoutingAssertion()));
     }
 
     /**
@@ -167,14 +163,12 @@ public class EchoAssertionTest extends TestCase {
      */
     public void testInstantiateEchoAssertion() throws Exception {
         ApplicationContext testApplicationContext = ApplicationContexts.getTestApplicationContext();
-        AllAssertion echo = new AllAssertion(Arrays.asList(new Assertion[]{
-            new EchoRoutingAssertion()
-        }));
+        AllAssertion echo = new AllAssertion(Arrays.asList(new EchoRoutingAssertion()));
         PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message());
         pp.setAuditContext(new AuditContextStub());
         ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
         ServerAssertion serverAll = pfac.compilePolicy(echo, true);
-        assertTrue(((ServerCompositeAssertion)serverAll).getChildren()[0] instanceof ServerEchoRoutingAssertion);
+        assertTrue(((ServerCompositeAssertion)serverAll).getChildren().get(0) instanceof ServerEchoRoutingAssertion);
     }
 
 }

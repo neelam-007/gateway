@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -16,40 +13,35 @@ import com.l7tech.gateway.common.LicenseException;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.util.List;
 
-/**
- * @author alex
- * @version $Revision$
- */
-public class ServerExactlyOneAssertion extends ServerCompositeAssertion implements ServerAssertion {
+public final class ServerExactlyOneAssertion extends ServerCompositeAssertion<ExactlyOneAssertion> implements ServerAssertion {
     public ServerExactlyOneAssertion( ExactlyOneAssertion data, ApplicationContext applicationContext ) throws PolicyAssertionException, LicenseException {
         super( data, applicationContext );
-        this.data = data;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        mustHaveChildren(data);
-        ServerAssertion[] kids = getChildren();
-        ServerAssertion child;
-        AssertionStatus result = null;
+        final List<ServerAssertion> kids = getChildren();
+        AssertionStatus result;
         int numSucceeded = 0;
         for (ServerAssertion kid : kids) {
-            child = kid;
             try {
-                result = child.checkRequest(context);
+                result = kid.checkRequest(context);
             } catch (AssertionStatusException e) {
                 result = e.getAssertionStatus();
             }
-            context.assertionFinished(child, result);
+
+            context.assertionFinished(kid, result);
+
             if (result == AssertionStatus.NONE)
                 ++numSucceeded;
         }
 
-        result =  numSucceeded == 1 ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+        result = numSucceeded == 1 ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+
         if (result != AssertionStatus.NONE)
             rollbackDeferredAssertions(context);
+
         return result;
     }
-
-    protected ExactlyOneAssertion data;
 }

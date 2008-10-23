@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -16,43 +13,38 @@ import com.l7tech.gateway.common.LicenseException;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.util.List;
 
-/**
- * @author alex
- * @version $Revision$
- */
-public class ServerOneOrMoreAssertion extends ServerCompositeAssertion implements ServerAssertion {
+public final class ServerOneOrMoreAssertion extends ServerCompositeAssertion<OneOrMoreAssertion> implements ServerAssertion {
     public ServerOneOrMoreAssertion( OneOrMoreAssertion data, ApplicationContext applicationContext) throws PolicyAssertionException, LicenseException {
         super(data, applicationContext);
-        this.data = data;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        mustHaveChildren(data);
-        ServerAssertion[] kids = getChildren();
-        ServerAssertion child;
+        final List<ServerAssertion> kids = getChildren();
         AssertionStatus result = AssertionStatus.FALSIFIED;
         for (ServerAssertion kid : kids) {
             // If the assertion is disabled, then ignore it and continue to check the next assertion.
-            if (! kid.getAssertion().isEnabled()) {
+            if (!kid.getAssertion().isEnabled())
                 continue;
-            }
-            child = kid;
+
             try {
-                result = child.checkRequest(context);
+                result = kid.checkRequest(context);
             } catch (AssertionStatusException e) {
                 result = e.getAssertionStatus();
             }
-            context.assertionFinished(child, result);
-            if (result == AssertionStatus.NONE) return result;
-            else {
-                seenAssertionStatus(context, result);
-            }
+
+            context.assertionFinished(kid, result);
+
+            if (result == AssertionStatus.NONE)
+                return result;
+
+            seenAssertionStatus(context, result);
         }
+
         if (result != AssertionStatus.NONE)
             rollbackDeferredAssertions(context);
+
         return result;
     }
-
-    protected OneOrMoreAssertion data;
 }
