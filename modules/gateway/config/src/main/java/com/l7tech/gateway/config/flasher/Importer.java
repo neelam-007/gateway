@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 import java.io.*;
 import java.sql.*;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -146,6 +147,7 @@ class Importer {
                     databasePass = dbConfig.getString("node.db.pass")==null ? databasePass : dbConfig.getString("node.db.pass");
                     databasePass = new String(mpm.decryptPasswordIfEncrypted(databasePass));
                 } else {
+                    dbConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-",""));
                     dbConfig.setProperty("node.db.user", databaseUser);
                     dbConfig.setProperty("node.db.pass", mpm.encryptPassword(databasePass.toCharArray()));
                 }
@@ -203,7 +205,7 @@ class Importer {
                 DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, databaseUser, databasePass);
                 config.setDatabaseAdminUsername( rootDBUsername );
                 config.setDatabaseAdminPassword( rootDBPasswd );
-                DBActions.DBActionsResult res = dba.createDb( config, "../etc/sql/ssg.sql", false );
+                DBActions.DBActionsResult res = dba.createDb( config, null, "../etc/sql/ssg.sql", false );
                 if ( res.getStatus() != DBActions.DB_SUCCESS ) {
                     throw new IOException("cannot create database " + res.getErrorMessage());
                 }

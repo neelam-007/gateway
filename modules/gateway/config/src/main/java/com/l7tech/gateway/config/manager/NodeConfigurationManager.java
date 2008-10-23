@@ -10,12 +10,17 @@ import com.l7tech.gateway.config.manager.db.DBActions;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Set;
+import java.util.HashSet;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.text.MessageFormat;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.UnknownHostException;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -28,12 +33,6 @@ public class NodeConfigurationManager {
     private static final Logger logger = Logger.getLogger(NodeConfigurationManager.class.getName());
     private static final String configPath = "../node/{0}/etc/conf";
     private static final String sqlPath = "../config/etc/sql/ssg.sql";
-
-    //only these files will be copied. Anything else left in SSG_ROOT/etc/conf is likley custom, like a custom assertion
-//    private static String[] configFileWhitelist = new String[] {
-//        "ssglog.properties",
-//        "system.properties",
-//    };
 
     /**
      * Configure a gateway node properties and create database if required..
@@ -52,7 +51,8 @@ public class NodeConfigurationManager {
                                              final Boolean enabled,
                                              final String defaultClusterHostname,
                                              final String clusterPassword,
-                                             final DatabaseConfig databaseConfig ) throws IOException {
+                                             final DatabaseConfig databaseConfig,
+                                             final DatabaseConfig database2ndConfig ) throws IOException {
         String nodeName = name;
         if ( nodeName == null ) {
             nodeName = "default";    
@@ -74,9 +74,27 @@ public class NodeConfigurationManager {
                 throw new CausedIOException("Database version mismatch '"+dbVersion+"'.");
             }
             if ( dbVersion == null ) { // then create the DB
+                DatabaseConfig localConfig = new DatabaseConfig(databaseConfig);
+                try {
+                    // If the host is localhost then use that when connecting
+                    if ( NetworkInterface.getByInetAddress(InetAddress.getByName(databaseConfig.getHost())) != null ) {
+                        localConfig.setHost("localhost");
+                    }
+                } catch ( UnknownHostException uhe ) {
+                    throw new CausedIOException("Could not resolve host '"+databaseConfig.getHost()+"'.");                
+                }
+
                 String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
                 File sqlScriptFile = new File( pathToSqlScript ).getCanonicalFile();
-                dbActions.createDb( databaseConfig, sqlScriptFile.getAbsolutePath(), false );
+                Set<String> hosts = new HashSet<String>();
+                hosts.add( databaseConfig.getHost() );
+                if ( database2ndConfig != null ) {
+                    hosts.add( database2ndConfig.getHost() );                    
+                }
+                DBActions.DBActionsResult res = dbActions.createDb( localConfig, hosts, sqlScriptFile.getAbsolutePath(), false );
+                if ( res.getStatus() != DBActions.DB_SUCCESS ) {                    
+                    throw new CausedIOException("Cannot create database '" + res.getErrorMessage() + "'");
+                }
             }
         }
 
@@ -124,6 +142,16 @@ public class NodeConfigurationManager {
             setPropertyIfNotNull( props, "node.db.name", databaseConfig.getName() );
             setPropertyIfNotNull( props, "node.db.user", databaseConfig.getNodeUsername() );
             setPropertyIfNotNull( props, "node.db.pass", encDatabasePassword );
+
+            if ( database2ndConfig != null ) {
+                setPropertyIfNotNull( props, "node.db.failover", "true" );
+                setPropertyIfNotNull( props, "node.db.failover.host", database2ndConfig.getHost() );
+                setPropertyIfNotNull( props, "node.db.failover.port", Integer.toString(database2ndConfig.getPort()) );
+            } else {
+                props.clearProperty("node.db.failover");
+                props.clearProperty("node.db.failover.host");
+                props.clearProperty("node.db.failover.port");
+            }
         }
 
         FileOutputStream origFos = null;

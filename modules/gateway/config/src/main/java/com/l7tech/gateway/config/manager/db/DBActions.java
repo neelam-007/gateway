@@ -18,6 +18,9 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.net.PasswordAuthentication;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * Various DB manipulaton and checking methods used by the configuration wizard. Can probably be made more generic to be
@@ -48,8 +51,6 @@ public class DBActions {
     public static final String GENERIC_DBCREATE_ERROR_MSG = "There was an error while attempting to create the database. Please try again";
     public static final String CONNECTION_SUCCESSFUL_MSG = "Connection to the database was a success";
     public static final String CONNECTION_UNSUCCESSFUL_MSG = "Connection to the database was unsuccessful - see warning/errors for details";
-    public static final String USERNAME_KEY = "Username";
-    public static final String PASSWORD_KEY = "Password";
 
     private static final String ERROR_CODE_AUTH_FAILURE = "28000";
     private static final String ERROR_CODE_UNKNOWNDB = "42000";
@@ -122,7 +123,7 @@ public class DBActions {
         return DriverManager.getConnection(dburl, dbuser, dbpasswd);
     }
 
-    public DBActionsResult createDb(DatabaseConfig config, String dbCreateScript, boolean overwriteDb) throws IOException {
+    public DBActionsResult createDb(DatabaseConfig config, Set<String> hosts, String dbCreateScript, boolean overwriteDb) throws IOException {
         DBActionsResult result = new DBActionsResult();
 
         Connection conn = null;
@@ -135,12 +136,12 @@ public class DBActions {
                 else {
                     //we should overwrite the db
                     dropDatabase( conn, config.getName(), false );
-                    createDatabaseWithGrants( conn, config );
+                    createDatabaseWithGrants( conn, config, hosts );
                     createTables( config, dbCreateScript );
                     result.setStatus(DB_SUCCESS);
                 }
             } else {
-                createDatabaseWithGrants( conn, config );
+                createDatabaseWithGrants( conn, config, hosts );
                 createTables( config, dbCreateScript );
                 result.setStatus(DB_SUCCESS);
             }
@@ -230,7 +231,7 @@ public class DBActions {
         return result;
     }
 
-    public boolean doCreateDb(DatabaseConfig config, String schemaFilePath, boolean overwriteDb, DBActionsListener ui) {
+    public boolean doCreateDb(DatabaseConfig config, Set<String> hosts, String schemaFilePath, boolean overwriteDb, DBActionsListener ui) {
         DatabaseConfig databaseConfig = new DatabaseConfig( config );
         String pUsername = databaseConfig.getDatabaseAdminUsername();
         String pPassword = databaseConfig.getDatabaseAdminPassword();
@@ -239,17 +240,17 @@ public class DBActions {
         while (StringUtils.isEmpty(pUsername) || pPassword == null) {
             if (ui != null) {
                 String defaultUserName = StringUtils.isEmpty(pUsername)?"root":pUsername;
-                Map<String, String> creds = ui.getPrivelegedCredentials(
+                PasswordAuthentication passwordCreds = ui.getPrivelegedCredentials(
                     "Please enter the credentials for the root database user (needed to create a database)",
                     "Please enter the username for the root database user (needed to create a database): [" + defaultUserName + "] ",
                     "Please enter the password for the root database user: ",
                     defaultUserName);
 
-                if (creds == null) {
+                if (passwordCreds == null) {
                     return false;
                 } else {
-                    pUsername = creds.get(USERNAME_KEY);
-                    pPassword = creds.get(PASSWORD_KEY);
+                    pUsername = passwordCreds.getUserName();
+                    pPassword = new String(passwordCreds.getPassword());
                 }
             }
         }
@@ -265,8 +266,9 @@ public class DBActions {
             logger.info("Attempting to create a new database (" + databaseConfig.getHost() + "/" + databaseConfig.getName() + ") using privileged user \"" + pUsername + "\"");
 
             result = createDb(databaseConfig,
-                    schemaFilePath,
-                    overwriteDb);
+                              hosts,
+                              schemaFilePath,
+                              overwriteDb);
 
             int status = result.getStatus();
             if ( status == DBActions.DB_SUCCESS) {
@@ -296,7 +298,7 @@ public class DBActions {
                             if (ui.getOverwriteConfirmationFromUser(databaseConfig.getName())) {
                                 logger.info("creating new database (overwriting existing one)");
                                 logger.warning("The database will be overwritten");
-                                isOk = doCreateDb(databaseConfig, schemaFilePath, true, ui);
+                                isOk = doCreateDb(databaseConfig, hosts, schemaFilePath, true, ui);
                             }
                         } else {
                             isOk = false;
@@ -374,7 +376,7 @@ public class DBActions {
                     }
                     if (shouldUpgrade) {
                         try {
-                            Map<String, String> creds = null;
+                            PasswordAuthentication creds = null;
                             if (StringUtils.isEmpty(privUsername) || StringUtils.isEmpty(privPassword)) {
                                 creds = ui.getPrivelegedCredentials(
                                         "Please enter the credentials for the root database user (needed to upgrade the database)",
@@ -382,10 +384,11 @@ public class DBActions {
                                         "Please enter the password for root database user (needed to upgrade the database): ", "root");
                             }
                             if (creds == null) return false;
-                            privUsername = creds.get(DBActions.USERNAME_KEY);
+
+                            privUsername = creds.getUserName();
                             config.setDatabaseAdminUsername(privUsername);
 
-                            privPassword = creds.get(DBActions.PASSWORD_KEY);
+                            privPassword = new String(creds.getPassword());
                             config.setDatabaseAdminPassword(privPassword);
 
                             isOk = doDbUpgrade(config, schemaFilePath, currentVersion, dbVersion, ui);
@@ -489,23 +492,23 @@ public class DBActions {
         return DriverManager.getConnection(makeConnectionString(hostname, port, dbName), username, password);
     }
 
-    public boolean dropDatabase( DatabaseConfig databaseConfig, boolean isInfo, boolean doRevoke, DBActionsListener ui ) {
+    public boolean dropDatabase( DatabaseConfig databaseConfig, Set<String> hosts, boolean isInfo, boolean doRevoke, DBActionsListener ui ) {
         String pUsername = databaseConfig.getDatabaseAdminUsername();
         String pPassword = databaseConfig.getDatabaseAdminPassword();
         if (StringUtils.isEmpty(pUsername) || pPassword == null) {
             if (ui != null) {
                 String defaultUserName = StringUtils.isEmpty(pUsername)?"root":pUsername;
-                Map<String, String> creds = ui.getPrivelegedCredentials(
+                PasswordAuthentication passwordCreds = ui.getPrivelegedCredentials(
                     "Please enter the credentials for the root database user (needed to drop the database)",
                     "Please enter the username for the root database user: [" + defaultUserName + "] ",
                     "Please enter the password for the root database user: ",
                     defaultUserName);
 
-                if (creds == null) {
+                if (passwordCreds == null) {
                     return false;
                 } else {
-                    pUsername = creds.get(USERNAME_KEY);
-                    pPassword = creds.get(PASSWORD_KEY);
+                    pUsername = passwordCreds.getUserName();
+                    pPassword = new String(passwordCreds.getPassword());
                 }
             }
         }
@@ -530,7 +533,7 @@ public class DBActions {
             if (allIsWell) {
                 if (doRevoke) {
                     stmt = conn.createStatement();
-                    String [] revokeStatements = getRevokeStatements(adminConfig);
+                    String [] revokeStatements = getRevokeStatements(adminConfig, hosts);
                     for (String revokeStatement : revokeStatements) {
                         try {
                             stmt.executeUpdate(revokeStatement);
@@ -711,7 +714,7 @@ public class DBActions {
     /**
      * Create DB and do grants, DB will be empty 
      */
-    private void createDatabaseWithGrants(Connection connection, DatabaseConfig databaseConfig) throws SQLException, IOException {
+    private void createDatabaseWithGrants(Connection connection, DatabaseConfig databaseConfig, Set<String> hosts) throws SQLException, IOException {
         if ( "".equals(databaseConfig.getNodePassword()) ) {
             throw new CausedIOException("Cannot create database with empty password for user '"+databaseConfig.getNodeUsername()+"'.");            
         }
@@ -723,7 +726,7 @@ public class DBActions {
 
         createDatabase( connection, newDbName);
 
-        String[] grantSql = getGrantStatements(databaseConfig);
+        String[] grantSql = getGrantStatements(databaseConfig, hosts);
         if ( grantSql != null ) {
             logger.info( "Creating user \"" + databaseConfig.getNodeUsername() + "\" and performing grants on " + newDbName + " database" );
             executeUpdates( connection, grantSql );
@@ -775,12 +778,12 @@ public class DBActions {
         }
     }
 
-    public String[] getGrantStatements(DatabaseConfig databaseConfig) {
-        return getPermissionChangeStatements(databaseConfig, true);
+    public String[] getGrantStatements(DatabaseConfig databaseConfig, Set<String> hosts) {
+        return getPermissionChangeStatements(databaseConfig, hosts, true);
     }
 
-    private String[] getRevokeStatements(DatabaseConfig databaseConfig) {
-        return getPermissionChangeStatements(databaseConfig, false);
+    private String[] getRevokeStatements(DatabaseConfig databaseConfig, Set<String> hosts) {
+        return getPermissionChangeStatements(databaseConfig, hosts, false);
     }
 
     private void executeUpdates( Connection connection, String[] sqlStatements) throws SQLException {
@@ -799,8 +802,8 @@ public class DBActions {
         }
     }
 
-    private String[] getPermissionChangeStatements(DatabaseConfig databaseConfig, boolean doGrants) {
-        return new DBPermission(databaseConfig, doGrants).getStatements();
+    private String[] getPermissionChangeStatements(DatabaseConfig databaseConfig, Set<String> hosts,  boolean doGrants) {
+        return new DBPermission(databaseConfig, hosts, doGrants).getStatements();
     }
 
     private String[] getCreateDbStatementsFromFile(String dbCreateScript) throws IOException {
@@ -968,7 +971,7 @@ public class DBActions {
             result.setErrorMessage(ExceptionUtils.getMessage(e));
         } finally {
             //get rid of the temp database
-            dropDatabase(testDatabaseConfig, true, false, null);
+            dropDatabase(testDatabaseConfig, null, true, false, null);
         }
 
         return result;
@@ -1290,17 +1293,21 @@ public class DBActions {
         }
     }
 
-    private class DBPermission {
-        private DatabaseConfig databaseConfig;
-        private boolean isGrant;
+    private static final class DBPermission {
+        private final DatabaseConfig databaseConfig;
+        private final Set<String> hosts;
+        private final boolean isGrant;
 
         /**
          * Create a new DBPermission
+         *
          * @param databaseConfig the DBInformation object that contains the information for the permission to be generated
+         * @param hosts the database hosts for the cluster
          * @param isGrant true if this is a grant, false if this is a revocation
          */
-        DBPermission(DatabaseConfig databaseConfig, boolean isGrant) {
+        DBPermission(DatabaseConfig databaseConfig, Set<String> hosts, boolean isGrant) {
             this.databaseConfig = databaseConfig;
+            this.hosts = hosts;
             this.isGrant = isGrant;
         }
 
@@ -1316,34 +1323,45 @@ public class DBActions {
                     "' identified by '" + databaseConfig.getNodePassword() + "'";
         }
 
+        /**
+         * Due to MySQL having grants with empty username for the db host, we need to
+         * ensure we add a specific grant for the db user for each db host (since the
+         * host is used to check the grants before the user is compared)
+         */
         private String[] getStatements() {
             List<String> list = new ArrayList<String>();
             list.add(getPermissionStatement("%"));
 
-//            String dbHostnameString = databaseConfig.getHost();
-//TODO [steve] this seems wrong, surely should be granting for all nodes
-            //if there are more than one hostname, grant each one separately
-//            if (dbHostnameString.contains(",")) {
-//                String[] hosts = dbHostnameString.split(",");
-//                for (String host : hosts) {
-//                    host = host.trim();
-//                    if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") )
-//                        usesLocalhost = true;
-//
-//                    //grant the ACTUAL hostname, not the localhost one
-//                    list.add(getPermissionStatement(DBActions.getNonLocalHostame(host)));
-//                }
-//            } else {
-//                dbHostnameString = dbHostnameString.trim();
-//                if (dbHostnameString.equalsIgnoreCase("localhost") || dbHostnameString.equalsIgnoreCase("127.0.0.1") )
-//                    usesLocalhost = true;
-//
-//                list.add(getPermissionStatement(DBActions.getNonLocalHostame(dbHostnameString)));
-//            }
+
+            Set<String> allhosts = new HashSet<String>();
+            allhosts.add( databaseConfig.getHost() );
+            if ( hosts != null ) {
+                allhosts.addAll( hosts );
+            }
+
+            for ( String host : allhosts ) {
+                host = host.trim();
+
+                //grant the ACTUAL hostname, not the localhost one
+                try {
+                    if ( !host.equals("localhost") &&
+                         !host.equals("127.0.0.1") &&
+                         !host.equals("localhost.localdomain")) {
+                        // add pre-canonicalized
+                        list.add(getPermissionStatement(host));
+
+                        // add canonical
+                        list.add(getPermissionStatement(InetAddress.getByName(host).getCanonicalHostName()));
+                    }
+                } catch ( UnknownHostException uhe ) {
+                    logger.warning("Could not resolve canonical hostname for '"+host+"'.");
+                }
+            }
 
             list.add(getPermissionStatement("localhost"));
             list.add(getPermissionStatement("localhost.localdomain"));
             list.add("FLUSH PRIVILEGES");
+            
             return list.toArray(new String[list.size()]);
         }
     }

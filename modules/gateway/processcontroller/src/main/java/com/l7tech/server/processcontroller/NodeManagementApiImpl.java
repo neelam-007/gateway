@@ -107,10 +107,23 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         node.setHost(configService.getHost());
 
         DatabaseConfig databaseConfig = null;
-        for ( DatabaseConfigRow config : databaseConfigs ) {
-            if ( config.getType() == DatabaseType.NODE_ALL ) {
-                databaseConfig = config.getConfig();
-                break;
+        DatabaseConfig failoverDatabaseConfig = null;
+        for ( DatabaseConfigRow configRow : databaseConfigs ) {
+            if ( configRow.getType() == DatabaseType.NODE_ALL ) {
+                DatabaseConfig config = configRow.getConfig();
+                if ( config != null && config.getClusterType() != null ) {
+                    switch ( config.getClusterType() ) {
+                        case REPL_MASTER:
+                        case STANDALONE:
+                            if ( databaseConfig != null ) throw new IllegalArgumentException("Invalid database configuration (primary db conflict).");
+                            databaseConfig = config;
+                            break;
+                        case REPL_SLAVE:
+                            if ( failoverDatabaseConfig != null ) throw new IllegalArgumentException("Invalid database configuration (failover db conflict).");
+                            failoverDatabaseConfig = config;
+                            break;
+                    }
+                }
             }
         }
 
@@ -120,7 +133,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         node.getDatabases().add(databaseConfig);
 
         try {
-            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), true, null, clusterPassphrase, databaseConfig );
+            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), true, null, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
@@ -160,7 +173,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         currentNodeConfig.setEnabled( node.isEnabled() );
 
         try {
-            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), null, null, null );
+            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), null, null, null, null );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");

@@ -1,6 +1,7 @@
 package com.l7tech.gateway.config.manager.db;
 
 import java.util.Map;
+import java.net.PasswordAuthentication;
 
 /**
  * User: megery
@@ -18,9 +19,5 @@ public interface DBActionsListener {
 
     boolean getGenericUserConfirmation(String msg);
 
-    char[] getPrivilegedPassword();
-
-    String getPrivilegedUsername(String defaultUsername);
-
-    Map<String, String> getPrivelegedCredentials(String message, String usernamePrompt, String passwordPrompt, String defaultUsername);
+    PasswordAuthentication getPrivelegedCredentials(String message, String usernamePrompt, String passwordPrompt, String defaultUsername);
 }

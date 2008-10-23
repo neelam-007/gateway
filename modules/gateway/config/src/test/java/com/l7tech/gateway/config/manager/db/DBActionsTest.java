@@ -137,6 +137,7 @@ public class DBActionsTest {
         DBActions.DBActionsResult result = null;
         for (String realVersion : versions) {
             result = dbActions.createDb(getDatabaseConfig(dbName),
+                    null,
                     "ssg" + realVersion + ".sql", true);
             if (result.getStatus() != DBActions.DB_SUCCESS) {
                 System.out.println("Could not create database realVersion: " + realVersion +

@@ -88,7 +88,8 @@ doConfiguration() {
             case $choice in
                     1)
                         clear;
-                        confirmedMessage "DB Upgrade not yet implemented."
+                        (${CONFWIZARD} -databaseUgrade);
+                        confirmedMessage ""
                         clear;;
                     2)
                         clear;

@@ -171,6 +171,7 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
 
     private void fromBeans( final DatabaseConfig databaseConfig, final Collection<ConfigurationBean> beans ) throws ConfigurationException {
         databaseConfig.setType( DatabaseType.NODE_ALL );
+        databaseConfig.setClusterType(NodeConfig.ClusterType.STANDALONE);
 
         for ( ConfigurationBean bean : beans ) {
             if ( "database.host".equals(bean.getConfigName()) ) {

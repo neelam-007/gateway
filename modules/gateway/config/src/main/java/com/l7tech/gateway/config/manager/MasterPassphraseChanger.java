@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -27,12 +26,12 @@ public class MasterPassphraseChanger {
     private static final String DEFAULT_MASTER_PASSPHRASE = "7layer";
     private static final int MIN_LENGTH = 6;
     private static final int MAX_LENGTH = 128;
+    private static final String CONFIG_PATH = "../node/default/etc/conf";
 
     public static void main(String[] args) {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
         try {
-            LogManager.getLogManager().getLogger("").setLevel(Level.SEVERE);
-            new MasterPassphraseChanger().run("../node/default/etc/conf", new String[]{ "node.cluster.pass", "node.db.pass" });
+            new MasterPassphraseChanger().run(CONFIG_PATH, new String[]{ "node.cluster.pass", "node.db.pass" });
         } catch (Throwable e) {
             String msg = "Unable to change master passphrase: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, e);
