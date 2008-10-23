@@ -4,14 +4,13 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.io.XmlUtil;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
+import org.junit.Test;
+import org.junit.Ignore;
 
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -22,27 +21,13 @@ import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class JdkSchemaValidationTest extends TestCase {
+public class JdkSchemaValidationTest  {
     private static final Logger logger = Logger.getLogger(JdkSchemaValidationTest.class.getName());
     private final String REUTERS_SCHEMA_URL = "http://locutus/reuters/schemas1/ReutersResearchAPI.xsd";
     private final String REUTERS_REQUEST_URL = "http://locutus/reuters/request1.xml";
 
-    public JdkSchemaValidationTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(JdkSchemaValidationTest.class);
-    }
-
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(JdkSchemaValidationTest.suite());
-        System.out.println("Test complete: " + JdkSchemaValidationTest.class);
-    }
-
-    protected void setUp() throws Exception {
-    }
-
+    @Test
+    @Ignore("Developer only test")
     public void testReutersUrlSchemaJaxp() throws Exception {
         SchemaFactory sfac = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
         sfac.setResourceResolver(new LSResourceResolver() {

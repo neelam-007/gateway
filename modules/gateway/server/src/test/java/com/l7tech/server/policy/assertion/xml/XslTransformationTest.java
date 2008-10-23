@@ -2,7 +2,7 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.IOUtils;
-import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
@@ -11,13 +11,19 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.util.HttpClientFactory;
+import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.TestStashManagerFactory;
+import com.l7tech.server.url.HttpObjectCache;
+import com.l7tech.server.url.UrlResolver;
+import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.spring.util.SimpleSingletonBeanFactory;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.l7tech.xml.xslt.CompiledStylesheet;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.Ignore;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -26,10 +32,12 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.logging.Logger;
+import java.text.ParseException;
 
 /**
  * Tests ServerXslTransformation and XslTransformation classes.
@@ -41,9 +49,10 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class XslTransformationTest extends TestCase {
+public class XslTransformationTest {
     private static Logger logger = Logger.getLogger(XslTransformationTest.class.getName());
-    private static final String EXPECTED = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+    private static final String EXPECTED =
+            "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
             "\n" +
             "    <soap:Header xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/04/secext\">\n" +
             "        <!--a wsse:Security element was stripped out-->\n" +
@@ -58,40 +67,6 @@ public class XslTransformationTest extends TestCase {
     "VARIABLE CONTENT routingStatus=None" +
     "</soap:Envelope>";
 
-    private HttpClientFactory httpClientFactory;
-    private GenericHttpClient mockClient;
-
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(suite());
-        System.out.println("Test complete: " + XslTransformationTest.class);
-    }
-
-    public static Test suite() {
-        TestSuite suite = new TestSuite(XslTransformationTest.class);
-        return suite;
-    }
-
-    protected void setUp() throws Exception {
-        // Make sure the static HTTP object cache inside the ServerXslTransformation class gets initialized
-        // with our TestingHttpClientFactory instead of finding a real one
-        XslTransformation assertion = new XslTransformation();
-        assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
-        AssertionResourceInfo ri = new SingleUrlResourceInfo("http://bogus.example.com/blah.xsd");
-        assertion.setResourceInfo(ri);
-        httpClientFactory = null;//new TestingHttpClientFactory();
-        byte[] xslBytes = null;//ECF_MDE_ID_XSL.getBytes();
-        mockClient = null;//new MockGenericHttpClient(200,
-//                                               new GenericHttpHeaders(new HttpHeader[0]),
-//                                               ContentTypeHeader.XML_DEFAULT,
-//                                               (long)xslBytes.length,
-//                                               xslBytes);
-        //httpClientFactory.setMockHttpClient(mockClient);
-        BeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
-            put("httpClientFactory", httpClientFactory);
-        }});
-        new ServerXslTransformation(assertion, beanFactory);
-    }
-
     private Document transform(String xslt, String src) throws Exception {
         TransformerFactory transfoctory = TransformerFactory.newInstance();
         StreamSource xsltsource = new StreamSource(new StringReader(xslt));
@@ -102,47 +77,55 @@ public class XslTransformationTest extends TestCase {
         return (Document) result.getNode();
     }
 
+    @Test
     public void testServerAssertion() throws Exception {
         XslTransformation ass = new XslTransformation();
         ass.setDirection(XslTransformation.APPLY_TO_REQUEST);
         ass.setWhichMimePart(0);
         ass.setResourceInfo(new StaticResourceInfo(getResAsString(XSL_MASK_WSSE)));
 
-        ServerXslTransformation serverAss = null;//new ServerXslTransformation(ass, ApplicationContexts.getTestApplicationContext());
+        ServerXslTransformation serverAss = new ServerXslTransformation(ass, null){
+            @Override
+            protected UrlResolver<CompiledStylesheet> getCache(HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory, BeanFactory spring) {
+                return null;
+            }
+        };
 
-        Message req =null;// new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
+        Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
         Message res = new Message();
         PolicyEnforcementContext context = new PolicyEnforcementContext(req, res);
 
         serverAss.checkRequest(context);
         String after = XmlUtil.nodeToString(req.getXmlKnob().getDocumentReadOnly());
-        assertEquals(after, EXPECTED);
+        Assert.assertEquals(after, EXPECTED);
     }
 
+    @Test
+    @Ignore("Developer benchmark")
     public void testBenchmark() throws Exception {
         XslTransformation ass = new XslTransformation();
         ass.setResourceInfo(new StaticResourceInfo(getResAsString(XSL_MASK_WSSE)));
         ass.setDirection(XslTransformation.APPLY_TO_REQUEST);
         ass.setWhichMimePart(0);
 
-        ServerXslTransformation serverAss =null;// new ServerXslTransformation(ass, ApplicationContexts.getTestApplicationContext());
+        ServerXslTransformation serverAss = new ServerXslTransformation(ass, ApplicationContexts.getTestApplicationContext());
 
         long before = System.currentTimeMillis();
         int num = 5000;
         for (int i = 0; i < num; i++) {
-            Message req =null;// new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
+            Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
             Message res = new Message();
             PolicyEnforcementContext context = new PolicyEnforcementContext(req, res);
 
             serverAss.checkRequest(context);
             String after = XmlUtil.nodeToString(req.getXmlKnob().getDocumentReadOnly());
-            assertEquals(after, EXPECTED);
+            Assert.assertEquals(after, EXPECTED);
         }
         long after = System.currentTimeMillis();
         System.out.println(num + " messages in " + (after - before) + "ms (" + num / ((after - before)/1000d) + "/s)" );
     }
 
-
+    @Test
     public void testMaskWsse() throws Exception {
         String xslStr = getResAsString(XSL_MASK_WSSE);
         String xmlStr = getResAsString(SOAPMSG_WITH_WSSE);
@@ -152,9 +135,10 @@ public class XslTransformationTest extends TestCase {
         } else {
             logger.fine("transformation ok");
         }
-        assertTrue(EXPECTED.equals(res));
+        Assert.assertTrue(EXPECTED.equals(res));
     }
 
+    @Test
     public void testSsgComment() throws Exception {
         String xslStr = getResAsString(XSL_SSGCOMMENT);
         String xmlStr = getResAsString(SOAPMSG_WITH_WSSE);
@@ -180,9 +164,10 @@ public class XslTransformationTest extends TestCase {
         } else {
             logger.fine("transformation ok");
         }
-        assertTrue(expected.equals(res));
+        Assert.assertTrue(expected.equals(res));
     }
 
+    @Test
     public void testSubstitution() throws Exception {
         String xslStr = getResAsString(XSL_BODYSUBST);
         String xmlStr = getResAsString(SOAPMSG_WITH_WSSE);
@@ -209,19 +194,20 @@ public class XslTransformationTest extends TestCase {
         } else {
             logger.fine("transformation ok");
         }
-        assertTrue(expected.equals(res));
+        Assert.assertTrue(expected.equals(res));
     }
 
+    @Test
     public void testContextVariablesStatic() throws Exception {
         StaticResourceInfo ri = new StaticResourceInfo();
-        //ri.setDocument(ECF_MDE_ID_XSL);
+        ri.setDocument(ECF_MDE_ID_XSL);
 
         XslTransformation assertion = new XslTransformation();
         assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
         assertion.setResourceInfo(ri);
-        BeanFactory beanFactory =null;// new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
-            //put("httpClientFactory", new TestingHttpClientFactory());
-        //}});
+        BeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
+            put("httpClientFactory", new TestingHttpClientFactory());
+        }});
         ServerAssertion sa = new ServerXslTransformation(assertion, beanFactory);
 
         Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
@@ -232,21 +218,30 @@ public class XslTransformationTest extends TestCase {
 
         String res = new String( IOUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(false)));
 
-        assertEquals(res, EXPECTED_VAR_RESULT);
+        Assert.assertEquals(res, EXPECTED_VAR_RESULT);
     }
 
+    @Test
     public void testContextVariablesRemote() throws Exception {
-
-        byte[] xslBytes = ECF_MDE_ID_XSL.getBytes();
-
         XslTransformation assertion = new XslTransformation();
         assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
         AssertionResourceInfo ri = new SingleUrlResourceInfo("http://bogus.example.com/blah.xsd");
         assertion.setResourceInfo(ri);
-        BeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
-            put("httpClientFactory", httpClientFactory);
-        }});
-        ServerAssertion sa = new ServerXslTransformation(assertion, beanFactory);
+        ServerAssertion sa = new ServerXslTransformation(assertion, null){
+            @Override
+            protected UrlResolver<CompiledStylesheet> getCache( final HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory,
+                                                                final BeanFactory spring) {
+                return new UrlResolver<CompiledStylesheet>(){
+                    public CompiledStylesheet resolveUrl(String url) throws IOException, ParseException {
+                        return cacheObjectFactory.createUserObject(url, new AbstractUrlObjectCache.UserObjectSource(){
+                            public ContentTypeHeader getContentType() {return ContentTypeHeader.TEXT_DEFAULT;}
+                            public String getString(boolean isXml) throws IOException {return ECF_MDE_ID_XSL;}
+                            public byte[] getBytes() throws IOException {return ECF_MDE_ID_XSL.getBytes();}
+                        });
+                    }
+                };
+            }
+        };
 
         Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
         Message response = new Message();
@@ -256,10 +251,12 @@ public class XslTransformationTest extends TestCase {
 
         String res = new String(IOUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(false)));
 
-        assertEquals(res, EXPECTED_VAR_RESULT);
+        Assert.assertEquals(res, EXPECTED_VAR_RESULT);
     }
 
-    public void DISABLED_testReutersUseCase2() throws Exception {
+    @Test
+    @Ignore("Developer only test")
+    public void testReutersUseCase2() throws Exception {
         String responseUrl = "http://locutus/reuters/response2.xml";
         String xslUrl = "http://locutus/reuters/stylesheet2.xsl";
 
@@ -267,21 +264,12 @@ public class XslTransformationTest extends TestCase {
         xsl.setResourceInfo(new SingleUrlResourceInfo(xslUrl));
         xsl.setDirection(XslTransformation.APPLY_TO_REQUEST);
 
-        Message request = null;//new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new URL(responseUrl).openStream());
+        Message request = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new URL(responseUrl).openStream());
         PolicyEnforcementContext pec = new PolicyEnforcementContext(request, new Message());
 
-        ServerXslTransformation sxsl = null;//new ServerXslTransformation(xsl, ApplicationContexts.getTestApplicationContext());
+        ServerXslTransformation sxsl = new ServerXslTransformation(xsl, ApplicationContexts.getTestApplicationContext());
         AssertionStatus status = sxsl.checkRequest(pec);
-        assertEquals(AssertionStatus.NONE, status);
-    }
-
-    public void testStuff() throws Exception {
-        byte[] bytes = IOUtils.slurpStream(new URL("http://locutus/reuters/response5.xml").openStream());
-        char[] chars = new String(bytes, "UTF-8").toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            if (c > 127) System.out.print(c);
-        }
+        Assert.assertEquals(AssertionStatus.NONE, status);
     }
 
     private String getResAsString(String path) throws IOException {

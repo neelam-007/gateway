@@ -5,12 +5,13 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContextImpl;
+import com.l7tech.server.ApplicationContexts;
 import com.tarari.xml.rax.schema.SchemaLoader;
 import com.tarari.xml.rax.schema.SchemaResolver;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
+import org.junit.Ignore;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -26,34 +27,20 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class TarariSchemaValidationTest extends TestCase {
-    private static final Logger logger = Logger.getLogger(TarariSchemaValidationTest.class.getName());
+@Ignore("Developer only tests")
+public class TarariSchemaValidationTest {
     private final String REUTERS_SCHEMA_URL = "http://locutus/reuters/schemas1/ReutersResearchAPI.xsd";
-    private final String REUTERS_REQUEST_URL = "http://locutus/reuters/request1.xml";
-    private ApplicationContext testApplicationContext;
 
-    public TarariSchemaValidationTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(TarariSchemaValidationTest.class);
-    }
-
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(TarariSchemaValidationTest.suite());
-        System.out.println("Test complete: " + TarariSchemaValidationTest.class);
-    }
-
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         System.setProperty("com.l7tech.common.xml.tarari.enable", "true");
         GlobalTarariContextImpl context = (GlobalTarariContextImpl) TarariLoader.getGlobalContext();
         if (context != null) {
             context.compileAllXpaths();
         }
-        testApplicationContext = null;//ApplicationContexts.getTestApplicationContext();
     }
 
+    @Test
     public void testFuckingTarari() throws Exception {
         SchemaResolver resolver = new SchemaResolver() {
             public byte[] resolveSchema(String string, String string1, String string2) {

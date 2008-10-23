@@ -6,6 +6,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.TestDocuments;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContextImpl;
@@ -16,11 +17,10 @@ import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.TestStashManagerFactory;
 import com.tarari.xml.rax.schema.SchemaLoader;
 import com.tarari.xml.rax.schema.SchemaResolver;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -29,6 +29,10 @@ import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+import org.junit.Before;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.Ignore;
 
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -50,50 +54,40 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class SchemaValidationTest extends TestCase {
+public class SchemaValidationTest {
     private static final Logger logger = Logger.getLogger(SchemaValidationTest.class.getName());
     private final String REUTERS_SCHEMA_URL = "http://locutus/reuters/schemas1/ReutersResearchAPI.xsd";
     private final String REUTERS_REQUEST_URL = "http://locutus/reuters/request1.xml";
     private ApplicationContext testApplicationContext;
 
-    public SchemaValidationTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(SchemaValidationTest.class);
-    }
-
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(suite());
-        System.out.println("Test complete: " + SchemaValidationTest.class);
-    }
-
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         System.setProperty("com.l7tech.common.xml.tarari.enable", "true");
         GlobalTarariContextImpl context = (GlobalTarariContextImpl) TarariLoader.getGlobalContext();
         if (context != null) {
             context.compileAllXpaths();
         }
-        testApplicationContext = null;//ApplicationContexts.getTestApplicationContext();
+        testApplicationContext = ApplicationContexts.getTestApplicationContext();
     }
 
+    @Test
     public void testEcho() throws Exception {
         SchemaValidation assertion = new SchemaValidation();
-        InputStream is = null;//TestDocuments.getInputStream(ECHO3_XSD);
+        InputStream is = TestDocuments.getInputStream(ECHO3_XSD);
         String xsd = new String( IOUtils.slurpStream(is, 10000));
         assertion.setResourceInfo(new StaticResourceInfo(xsd));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, testApplicationContext);
         AssertionStatus res = serverAssertion.checkRequest(getResAsContext(ECHO_REQ));
-        System.out.println("result is " + res);
+        Assert.assertTrue(res == AssertionStatus.NONE);
     }
 
+    @Test
     public void testCaseWith2BodyChildren() throws Exception {
         // create assertion based on the wsdl
         SchemaValidation assertion = new SchemaValidation();
-        WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(null);//TestDocuments.getTestDocument(DOCLIT_WSDL_WITH2BODYCHILDREN));
+        WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(TestDocuments.getTestDocument(DOCLIT_WSDL_WITH2BODYCHILDREN));
         Element[] schemas = wsn.getFullSchemas();
-        assertTrue(schemas.length == 1); // no multiple schema support
+        Assert.assertTrue(schemas.length == 1); // no multiple schema support
         assertion.setResourceInfo(new StaticResourceInfo( XmlUtil.elementToXml(schemas[0])));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, testApplicationContext);
 
@@ -105,17 +99,18 @@ public class SchemaValidationTest extends TestCase {
             //System.out.println("DOCUMENT " + resources[i] +
             //                    (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
             if (expectedResults[i]) {
-                assertTrue(res == AssertionStatus.NONE);
+                Assert.assertTrue(res == AssertionStatus.NONE);
             } else {
-                assertFalse(res == AssertionStatus.NONE);
+                Assert.assertFalse(res == AssertionStatus.NONE);
             }
         }
     }
 
+    @Test
     public void testWarehouseValidations() throws Exception {
         // create assertion based on the wsdl
         SchemaValidation assertion = new SchemaValidation();
-        WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(null);//TestDocuments.getTestDocument(WAREHOUSE_WSDL_PATH));
+        WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(TestDocuments.getTestDocument(WAREHOUSE_WSDL_PATH));
         Element[] schemas = wsn.getFullSchemas();
         assertion.setResourceInfo(new StaticResourceInfo(XmlUtil.elementToXml(schemas[0])));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, testApplicationContext);
@@ -128,14 +123,16 @@ public class SchemaValidationTest extends TestCase {
             System.out.println("DOCUMENT " + resources[i] +
                                 (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
             if (expectedResults[i]) {
-                assertTrue(res == AssertionStatus.NONE);
+                Assert.assertTrue(res == AssertionStatus.NONE);
             } else {
-                assertFalse(res == AssertionStatus.NONE);
+                Assert.assertFalse(res == AssertionStatus.NONE);
             }
         }
     }
 
-    public void DISABLED_testTarariSchemaImportsWithInlineNamespaceDecl() throws Exception {
+    @Test
+    @Ignore("Tarari only test")
+    public void testTarariSchemaImportsWithInlineNamespaceDecl() throws Exception {
         SchemaResolver resolver = new SchemaResolver() {
             public byte[] resolveSchema(String string, String string1, String string2) {
                 throw new RuntimeException("Screw you!");
@@ -150,6 +147,8 @@ public class SchemaValidationTest extends TestCase {
         SchemaLoader.loadSchema(schemaDoc);
     }
 
+    @Test
+    @Ignore("Developer only test")
     public void testReutersUrlSchemaHttpObjectCache() throws Exception {
         SchemaManager sm = (SchemaManager)testApplicationContext.getBean("schemaManager");
         SchemaHandle handle = sm.getSchemaByUrl(REUTERS_SCHEMA_URL);
@@ -159,6 +158,8 @@ public class SchemaValidationTest extends TestCase {
         handle.validateMessage(request, new SchemaValidationErrorHandler());
     }
 
+    @Test
+    @Ignore("Developer only test")
     public void testReutersUrlSchemaJaxp() throws Exception {
         SchemaFactory sfac = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
         sfac.setResourceResolver(new LSResourceResolver() {
@@ -222,7 +223,7 @@ public class SchemaValidationTest extends TestCase {
         Message requestMsg = new Message(XmlUtil.stringToDocument(request));
         PolicyEnforcementContext context = new PolicyEnforcementContext(requestMsg, new Message());
         AssertionStatus res = serverAssertion.validateMessage(requestMsg, context);
-        assertTrue(res == AssertionStatus.NONE);
+        Assert.assertTrue(res == AssertionStatus.NONE);
     }
 
     /* emil, i commented this as it seems to generate messages that are not relevent. see other impl instead
@@ -268,9 +269,9 @@ public class SchemaValidationTest extends TestCase {
 
     private PolicyEnforcementContext getResAsContext(String path) throws IOException, NoSuchPartException {
         return new PolicyEnforcementContext(
-                new Message(null,/*(TestStashManagerFactory.getInstance().createStashManager(),*/
+                new Message((TestStashManagerFactory.getInstance().createStashManager()),
                             ContentTypeHeader.XML_DEFAULT,
-                            null),//TestDocuments.getInputStream(path)),
+                            TestDocuments.getInputStream(path)),
                 new Message());
     }
 

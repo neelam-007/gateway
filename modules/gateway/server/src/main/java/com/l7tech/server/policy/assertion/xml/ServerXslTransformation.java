@@ -13,6 +13,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
+import com.l7tech.server.url.UrlResolver;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -101,7 +102,7 @@ public class ServerXslTransformation
                 };
 
     /** A cache for remotely loaded stylesheets. */
-    private static HttpObjectCache<CompiledStylesheet> httpObjectCache = null;
+    private static UrlResolver<CompiledStylesheet> httpObjectCache = null;
 
     private final Auditor auditor;
     private final ResourceGetter<CompiledStylesheet> resourceGetter;
@@ -164,22 +165,25 @@ public class ServerXslTransformation
         allowMessagesWithNoProcessingInstruction = muri != null && muri.isAllowMessagesWithoutUrl();
 
         this.resourceGetter = ResourceGetter.createResourceGetter(
-                assertion, ri, resourceObjectfactory, urlFinder, getCache(beanFactory), auditor);
+                assertion, ri, resourceObjectfactory, urlFinder, getCache(cacheObjectFactory, beanFactory), auditor);
     }
 
-    private static synchronized HttpObjectCache<CompiledStylesheet> getCache(BeanFactory spring) {
-        if (httpObjectCache != null)
+    protected UrlResolver<CompiledStylesheet> getCache( final HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory,
+                                                        final BeanFactory spring ) {
+        synchronized(ServerXslTransformation.class) {
+            if (httpObjectCache != null)
+                return httpObjectCache;
+
+            GenericHttpClientFactory clientFactory = (GenericHttpClientFactory)spring.getBean("httpClientFactory");
+            if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
+
+            httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
+                        ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
+                        ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
+                        clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL);
+
             return httpObjectCache;
-
-        GenericHttpClientFactory clientFactory = (GenericHttpClientFactory)spring.getBean("httpClientFactory");
-        if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
-
-        httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
-                    ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
-                    ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
-                    clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL);
-
-        return httpObjectCache;
+        }
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
