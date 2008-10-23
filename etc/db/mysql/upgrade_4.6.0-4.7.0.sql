@@ -231,6 +231,11 @@ UPDATE revocation_check_policy SET revocation_policy_xml =
   REPLACE(revocation_policy_xml, '<object class=\"com.l7tech.common.security.RevocationCheckPolicyItem', '<object class=\"com.l7tech.gateway.common.security.RevocationCheckPolicyItem');
 
 --
+-- Drop configuration data table that is no longer used
+--
+DROP TABLE IF EXISTS config_data;
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;
