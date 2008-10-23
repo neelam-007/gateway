@@ -31,6 +31,11 @@ public final class Functions {
         R call(P1 p1);
     }
 
+    /** A function that takes one argument, returns a value, and may throw one type of exception. */
+    public interface UnaryThrows<R, P1, E extends Throwable> {
+        R call(P1 p1) throws E;
+    }
+
     /** A function that takes one argument and returns void. */
     public interface UnaryVoid<P1> {
         void call(P1 p1);

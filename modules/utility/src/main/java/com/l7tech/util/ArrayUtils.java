@@ -96,8 +96,7 @@ public class ArrayUtils {
 
     /** @return true if the target Object is contained in the list. */
     public static boolean contains(Object[] list, Object target) {
-        for (int i = 0; i < list.length; i++) {
-            Object s = list[i];
+        for (Object s : list) {
             if (s == null) {
                 if (target == null)
                     return true;
@@ -122,8 +121,7 @@ public class ArrayUtils {
     /** @return true if any of the target Objects are contained in the list. */
     public static boolean containsAny(Object[] list, Object[] targets) {
         if (list != null && targets != null) {
-            for (int i = 0; i < targets.length; i++) {
-                Object t = targets[i];
+            for (Object t : targets) {
                 if (contains(list, t))
                     return true;
             }
@@ -133,8 +131,7 @@ public class ArrayUtils {
 
     /** @return true if target string is contained in the list, disregarding case during comparisons. */
     public static boolean containsIgnoreCase(String[] list, String target) {
-        for (int i = 0; i < list.length; i++) {
-            String s = list[i];
+        for (String s : list) {
             if (s == null) {
                 if (target == null)
                     return true;
@@ -272,11 +269,11 @@ public class ArrayUtils {
      * @param data the array to copy
      * @return The copy or null if data is null
      */
-    public static Object[] copy(final Object[] data) {
-        Object[] copy = null;
+    public static <T> T[] copy(final T[] data) {
+        T[] copy = null;
 
         if (data != null) {
-            copy = (Object[]) Array.newInstance(data.getClass().getComponentType(), data.length);
+            copy = (T[]) Array.newInstance(data.getClass().getComponentType(), data.length);
             System.arraycopy(data, 0, copy, 0, data.length);
         }
 
@@ -292,10 +289,8 @@ public class ArrayUtils {
      * @param data2 the array to copy (must not be null)
      * @return The copy or null if data is null
      */
-    public static Object[] copy(final Object[] data1, final Object[] data2) {
-        Object[] copy = null;
-
-        copy = (Object[]) Array.newInstance(data1.getClass().getComponentType(), data1.length + data2.length);
+    public static <T> T[] copy(final T[] data1, final T[] data2) {
+        T[] copy = (T[]) Array.newInstance(data1.getClass().getComponentType(), data1.length + data2.length);
         System.arraycopy(data1, 0, copy, 0, data1.length);
         System.arraycopy(data2, 0, copy, data1.length, data2.length);
 
