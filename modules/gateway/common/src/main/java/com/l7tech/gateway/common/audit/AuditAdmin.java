@@ -67,6 +67,16 @@ public interface AuditAdmin extends GenericLogAdmin {
     Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
 
     /**
+     * Checks if there are any audits found given the date and level to search for.
+     * @param date  Starting date consider to be new audits
+     * @param level The auditing level to be queried for
+     * @return  TRUE if new audit exists based on the provided starting date.  
+     */
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    boolean hasNewAudits(Date date, Level level);
+
+    /**
      * Get the level below which the server will not record audit events of type {@link MessageSummaryAuditRecord}.
      * @return the level currently applicable. Never null.
      */

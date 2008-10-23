@@ -96,4 +96,8 @@ public class AuditAdminStub implements AuditAdmin {
 
     public void auditViewGatewayAuditsAction() {
     }
+
+    public boolean hasNewAudits(Date date, Level level) {
+        return false;  
+    }
 }

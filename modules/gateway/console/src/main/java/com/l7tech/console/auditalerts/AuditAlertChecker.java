@@ -55,19 +55,23 @@ public class AuditAlertChecker {
                 }
             }
 
-            AuditSearchCriteria crit = getAuditSearchCriteria(lastAcknowledged);
-            Collection<AuditRecord> coll = admin.find(crit);
             long alertTime = 0;
-            if (coll != null) {
-                Iterator<AuditRecord> arIter = coll.iterator();
-                if (arIter.hasNext()) {
-                    AuditRecord auditRecord = arIter.next();
-                    if (auditRecord != null) alertTime = auditRecord.getMillis();
+            //check if there are new audits to grab
+            if (admin.hasNewAudits(lastAcknowledged, configBean.getAuditAlertLevel())) {
+                AuditSearchCriteria crit = getAuditSearchCriteria(lastAcknowledged);
+                Collection<AuditRecord> coll = admin.find(crit);
+                if (coll != null) {
+                    Iterator<AuditRecord> arIter = coll.iterator();
+                    if (arIter.hasNext()) {
+                        AuditRecord auditRecord = arIter.next();
+                        if (auditRecord != null) alertTime = auditRecord.getMillis();
+                    }
+                }
+                for (AuditWatcher auditWatcher : auditWatchers) {
+                    auditWatcher.alertsAvailable(alertTime!=0, alertTime);
                 }
             }
-            for (AuditWatcher auditWatcher : auditWatchers) {
-                auditWatcher.alertsAvailable(alertTime!=0, alertTime);
-            }
+            
             if (alertTime!=0) {
                 stopTimer();
             } else {

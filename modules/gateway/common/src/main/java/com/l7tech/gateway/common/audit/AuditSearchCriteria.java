@@ -187,9 +187,6 @@ public final class AuditSearchCriteria implements Serializable {
         if (serviceName != null && !serviceName.equals(criteria.serviceName)) return false;
         if (message != null && !message.equals(criteria.message)) return false;
         if (nodeId != null && !nodeId.equals(criteria.nodeId)) return false;
-
-//        if (fromTime != null && !fromTime.equals(criteria.fromTime)) return false;
-//        if (toTime != null && !toTime.equals(criteria.toTime)) return false;
         return true;
     }
 

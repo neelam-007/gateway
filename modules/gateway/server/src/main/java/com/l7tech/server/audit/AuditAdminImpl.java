@@ -16,6 +16,7 @@ import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.admin.AuditViewGatewayAuditsData;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.OpaqueId;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.IOException;
 import java.util.*;
@@ -33,6 +34,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.apache.commons.collections.map.LRUMap;
 
 /**
  * Implementation of AuditAdmin in SSG.
@@ -113,6 +115,20 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     public Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException{
         addToAudit(criteria);
         return auditRecordManager.findHeaders(criteria);
+    }
+
+    public boolean hasNewAudits(Date date, Level level) {
+        AuditSearchCriteria criteria = new AuditSearchCriteria.Builder().fromTime(date).fromLevel(level).maxRecords(1).build();
+        boolean hasNewAudits = false;
+        try {
+            Collection<AuditRecordHeader> newAudits = auditRecordManager.findHeaders(criteria);
+            if (newAudits != null && newAudits.size() > 0) {
+                hasNewAudits = true;
+            }
+        } catch (FindException fe) {
+            logger.fine("Failed to find new audits for date " + date.toString() + " with level " + level.toString());
+        }
+        return hasNewAudits;
     }
 
     public void deleteOldAuditRecords() throws DeleteException {
@@ -340,11 +356,12 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
      * A daemon thread which will persist audit view events.
      */
     private class AuditViewerTask extends Thread {
-        private Map<IdentityHeader, AuditViewData> auditedData;
-        private static final long TIME_INTERVAL = 5 * 60 * 1000;  //5mins
+        private LRUMap auditedData;
+        private static final int DEFAULT_MAX_AUDIT_DATA_SIZE = 100;
+        private static final String MAX_AUDIT_DATA_CACHE_SIZE = "com.l7tech.server.audit.maxAuditDataCacheSize";
 
         public AuditViewerTask() {
-            auditedData = new HashMap<IdentityHeader, AuditViewData>();
+            auditedData = new LRUMap(SyspropUtil.getInteger(MAX_AUDIT_DATA_CACHE_SIZE, DEFAULT_MAX_AUDIT_DATA_SIZE));
             setDaemon(true);
         }
 
@@ -366,15 +383,19 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                 return true;
             } else {
                 //find out when was the it's a new audit view query or just from refresh rate
-                AuditViewData lastData = auditedData.get(admin.getIdentityHeader());
+                AuditViewData lastData = (AuditViewData) auditedData.get(admin.getIdentityHeader());
                 AuditSearchCriteria lastCriteria = lastData.getCriteria();
 
                 //if the criteria content are already different then we'll need to audit them
                  long now = System.currentTimeMillis();
-                if (!lastCriteria.containsSimilarCritiera(criteria)
-                        || (now - lastData.getLastTimeChecked()) > TIME_INTERVAL) {
+                if (!lastCriteria.containsSimilarCritiera(criteria)) {
                     auditedData.put(admin.getIdentityHeader(), data);
                     return true;
+                } else {
+                    //update last checked time on this particular audit view data
+                    AuditViewData temp = (AuditViewData) auditedData.get(admin.getIdentityHeader());
+                    temp.setLastTimeChecked(now);
+                    auditedData.put(admin.getIdentityHeader(), temp);
                 }
             }
             return false;
@@ -386,10 +407,9 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
          */
         private void cleanUp() {
             //loop through the set and delete any data that has expired already
-            long now = System.currentTimeMillis();
             final Set<IdentityHeader> keys = auditedData.keySet();
             for (IdentityHeader headers : keys) {
-                AuditViewData data = auditedData.get(headers);
+                AuditViewData data = (AuditViewData) auditedData.get(headers);
                 if (data.isStale()) auditedData.remove(headers);
             }
         }
