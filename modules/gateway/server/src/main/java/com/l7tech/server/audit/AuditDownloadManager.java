@@ -41,18 +41,17 @@ public class AuditDownloadManager implements ApplicationContextAware  {
     public OpaqueId createDownloadContext( final long fromTime,
                                            final long toTime,
                                            final long[] serviceOids ) throws IOException {
-        X509Certificate signingCert = null;
-        PrivateKey signingKey = null;
+        X509Certificate signingCert;
+        PrivateKey signingKey;
 
         SignerInfo sslKey = defaultKey==null ?  null : defaultKey.getSslInfo();
         if (sslKey != null) {
             signingCert = sslKey.getCertificateChain()[0];
             signingKey = sslKey.getPrivate();
+        } else {
+            throw new RuntimeException("Unable to sign exported audits: no default SSL key is currently designated");
         }
             
-        // TODO [steve] thrown on unsigned audit download
-        // throw new RuntimeException("Unable to sign exported audits: no default SSL key is currently designated");
-
         final AuditExporter exporter = (AuditExporter) applicationContext.getBean("auditExporter", AuditExporter.class);
         final DownloadContext downloadContext = new DownloadContext(fromTime, toTime, serviceOids, 0, exporter , signingCert, signingKey);
         downloadContext.checkForException();

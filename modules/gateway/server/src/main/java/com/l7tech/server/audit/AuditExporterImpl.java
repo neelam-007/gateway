@@ -607,10 +607,9 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             } else if (exportedInfo == null) {
                 logger.warning("Cannot add signature; null export data.");
                 return;
-// TODO [steve] enable this null check when EMS has signed audit downloads
-//            } else if (signingCert == null) {
-//                logger.warning("Cannot add signature; null signing cert.");
-//                return;
+            } else if (signingCert == null) {
+                logger.warning("Cannot add signature; null signing cert.");
+                return;
             } else if (signingKey == null) {
                 logger.warning("Cannot add signature; null signing key.");
                 return;
@@ -654,13 +653,10 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             addElement(ead, i2, ns, p, "md5Digest", HexUtils.hexDump(zip.getDigest(MD5_ALG)));
             ead.appendChild(DomUtils.createTextNode(ead, i1));
 
-            // TODO [steve] remove this null check when EMS has signed audit downloads
-            if ( signingCert!= null && signingKey!=null ) {
-                Element signature = DsigUtil.createEnvelopedSignature(auditMetadata,
-                                                             signingCert,
-                                                             signingKey, null, null);
-                auditMetadata.appendChild(signature);
-            }
+            Element signature = DsigUtil.createEnvelopedSignature(auditMetadata,
+                                                         signingCert,
+                                                         signingKey, null, null);
+            auditMetadata.appendChild(signature);
 
             zip.putNextEntry(new ZipEntry(SIG_FILENAME));
             byte[] xmlBytes = XmlUtil.nodeToString(d).getBytes("UTF-8");
