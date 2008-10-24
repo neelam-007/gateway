@@ -247,7 +247,8 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
             } else if ( ExceptionUtils.causedBy( e, SSLHandshakeException.class ) ) {
                 auditor.logAndAudit(AssertionMessages.EMAILALERT_SSL_FAIL, null, ExceptionUtils.getDebugException(e) );
             } else {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Unable to send email: " + e.getMessage()}, e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[] {"Unable to send email: " + e.getMessage()}, ExceptionUtils.getDebugException(e));
             }
             return AssertionStatus.FAILED;
         }
