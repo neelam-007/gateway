@@ -4,21 +4,11 @@
 package com.l7tech.server;
 
 import com.l7tech.identity.*;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.SampleMessage;
-import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.alert.AlertEvent;
-import com.l7tech.gateway.common.alert.Notification;
-import com.l7tech.policy.Policy;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.folder.Folder;
 
 /**
  * @author alex
@@ -65,30 +55,13 @@ public final class EntityHeaderUtils {
             } else {
                 throw new IllegalStateException(); // Covered by outer if
             }
-        } else if (type == EntityType.SERVICE) {
-            return new AnonymousEntityReference(PublishedService.class, header.getOid(), header.getName());
-        } else if (type == EntityType.JMS_CONNECTION) {
-            return new AnonymousEntityReference(JmsConnection.class, header.getOid(), header.getName());
-        } else if (type == EntityType.JMS_ENDPOINT) {
-            return new AnonymousEntityReference(JmsEndpoint.class, header.getOid(), header.getName());
-        } else if (type == EntityType.TRUSTED_CERT) {
-            return new AnonymousEntityReference(TrustedCert.class, header.getOid(), header.getName());
-        } else if (type == EntityType.ALERT_TRIGGER) {
-            return new AnonymousEntityReference(AlertEvent.class, header.getOid(), header.getName());
-        } else if (type == EntityType.ALERT_ACTION) {
-            return new AnonymousEntityReference(Notification.class, header.getOid(), header.getName());
-        } else if (type == EntityType.SAMPLE_MESSAGE) {
-            return new AnonymousEntityReference(SampleMessage.class, header.getOid(), header.getName());
-        } else if (type == EntityType.RBAC_ROLE) {
-            return new AnonymousEntityReference(Role.class, header.getOid(), header.getName());
-        } else if (type == EntityType.POLICY) {
-            return new AnonymousEntityReference( Policy.class, header.getOid(), header.getName());
-        } else if (type == EntityType.FOLDER) {
-            return new AnonymousEntityReference(Folder.class, header.getOid(), header.getName());
-        } else if (type == EntityType.ANY) {
-            throw new IllegalArgumentException("Can't get reference to " + header.toString());
         } else {
-            throw new IllegalArgumentException("Can't get reference to " + header.toString());
+            Class<? extends Entity> entityClass = EntityTypeRegistry.getEntityClass(type);
+            if (EntityType.ANY == type || entityClass == null)
+                throw new IllegalArgumentException("Can't get reference to " + header.toString());
+            else
+                return new AnonymousEntityReference(entityClass, header.getOid(), header.getName());
+
         }
     }
 
