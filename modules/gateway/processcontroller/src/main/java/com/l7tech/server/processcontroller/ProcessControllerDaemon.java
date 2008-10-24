@@ -72,7 +72,7 @@ public final class ProcessControllerDaemon {
         // configure logging if the logs directory is found, else leave console output
         final File logsDir = new File("var/logs");
         if ( logsDir.exists() && logsDir.canWrite() ) {
-            JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller", "com/l7tech/server/processcontroller/resources/logging.properties");
+            JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller", "com/l7tech/server/processcontroller/resources/logging.properties", "etc/conf/logging.properties", false, true);
         }
     }
 
