@@ -356,7 +356,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
      * A daemon thread which will persist audit view events.
      */
     private class AuditViewerTask extends Thread {
-        private LRUMap auditedData;
+        private final LRUMap auditedData;
         private static final int DEFAULT_MAX_AUDIT_DATA_SIZE = 100;
         private static final String MAX_AUDIT_DATA_CACHE_SIZE = "com.l7tech.server.audit.maxAuditDataCacheSize";
 
@@ -407,10 +407,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
          */
         private void cleanUp() {
             //loop through the set and delete any data that has expired already
-            final Set<IdentityHeader> keys = auditedData.keySet();
-            for (IdentityHeader headers : keys) {
-                AuditViewData data = (AuditViewData) auditedData.get(headers);
-                if (data.isStale()) auditedData.remove(headers);
+            for (Iterator i = auditedData.entrySet().iterator(); i.hasNext();) {
+                Map.Entry<IdentityHeader, AuditViewData> entry = (Map.Entry<IdentityHeader, AuditViewData>) i.next();
+                AuditViewData data = entry.getValue();
+                if (data.isStale()) i.remove();
             }
         }
 
@@ -420,21 +420,17 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                 try {
                     final AuditViewData auditData = queue.take();   //block until more data
                     if (shouldPersistAudit(auditData)) {
-                    auditData.getAdminInfo().invokeCallable(new Callable<Object>() {
-                        public Object call() throws Exception {
-                            new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
-                                protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
-                                    applicationContext.publishEvent(auditData.getAudit());
-                                }
-                            });
-                            return null;
-                        }
-                    });
+                        auditData.getAdminInfo().invokeCallable(new Callable<Object>() {
+                            public Object call() throws Exception {
+                                new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+                                    protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                                        applicationContext.publishEvent(auditData.getAudit());
+                                    }
+                                });
+                                return null;
+                            }
+                        });
                     }
-
-                    //cleanup any expired ones
-                    cleanUp();
-
                 } catch (InterruptedException ie) {
                     if (queue.remainingCapacity() > 0) {
                         logger.warning("Some view audit data were not recorded.");
@@ -442,6 +438,9 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                 } catch (Exception e) {
                     //shouldn't happen
                     logger.warning("Failed to publish audit view event: " + e.getMessage());
+                } finally {
+                    //cleanup any expired ones
+                    cleanUp();
                 }
             }
         }

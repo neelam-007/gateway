@@ -181,12 +181,26 @@ public final class AuditSearchCriteria implements Serializable {
      * @return
      */
     public boolean containsSimilarCritiera(final AuditSearchCriteria criteria) {
-        if (fromLevel != null && !fromLevel.equals(criteria.fromLevel)) return false;
-        if (toLevel != null && !toLevel.equals(criteria.toLevel)) return false;
-        if (requestId != null && !requestId.equals(criteria.requestId)) return false;
-        if (serviceName != null && !serviceName.equals(criteria.serviceName)) return false;
-        if (message != null && !message.equals(criteria.message)) return false;
-        if (nodeId != null && !nodeId.equals(criteria.nodeId)) return false;
+        if ((fromLevel == null && criteria.fromLevel != null)
+                || (fromLevel != null && !fromLevel.equals(criteria.fromLevel))) return false;
+
+        if ((toLevel == null && criteria.toLevel != null)
+                || (toLevel != null && !toLevel.equals(criteria.toLevel))) return false;
+
+        if ((requestId == null && criteria.requestId != null)
+                || (requestId != null && !requestId.equals(criteria.requestId))) return false;
+
+        if ((serviceName == null && criteria.serviceName != null)
+                || (serviceName != null && !serviceName.equals(criteria.serviceName))) return false;
+
+        if ((message == null && criteria.message != null)
+                || (message != null && !message.equals(criteria.message))) return false;
+        
+        if ((nodeId == null && criteria.nodeId != null)
+                || (nodeId != null && !nodeId.equals(criteria.nodeId))) return false;
+
+        if ((recordClass == null && criteria.recordClass != null)
+                || (recordClass != null && !recordClass.equals(criteria.recordClass))) return false;
         return true;
     }
 
