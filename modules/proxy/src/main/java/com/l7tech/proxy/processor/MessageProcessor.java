@@ -792,7 +792,8 @@ public class MessageProcessor {
                     } catch(SAXException e) {
                         throw e;
                     } catch(Exception e) {
-                        throw new ProcessorException("Unable to undecorate response: " + ExceptionUtils.getMessage(e), e);
+                        throw new ProcessorException("Unable to undecorate response: " + ExceptionUtils.getMessage(e),
+                                ExceptionUtils.getDebugException(e));
                     }
                 }
             });
