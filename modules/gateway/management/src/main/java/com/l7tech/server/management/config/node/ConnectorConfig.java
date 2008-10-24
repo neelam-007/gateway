@@ -6,20 +6,13 @@ package com.l7tech.server.management.config.node;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.SsgConnectorProperty;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
 import java.util.HashSet;
 import java.util.Set;
 
 /** @author alex */
-@Entity
-@Table(name="pc_connector")
 public class ConnectorConfig extends SsgConnector {
     private NodeConfig node;
 
-    @ManyToOne(optional=false, cascade=CascadeType.ALL)
     public NodeConfig getNode() {
         return node;
     }

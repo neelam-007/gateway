@@ -7,12 +7,10 @@ import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
-import org.apache.cxf.binding.soap.SoapFault;
 
 import javax.xml.ws.soap.SOAPFaultException;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * ConfigurationBeanProvider for process controller / node configuration.
@@ -57,33 +55,21 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
         NodeManagementApi managementService = getManagementService();
         try {
             if ( config != null ) {
-                boolean updated = false;
-                List<DatabaseConfig> newConfig = new ArrayList<DatabaseConfig>();
-                if ( config.getDatabases() != null ) {
-                    for ( DatabaseConfig dbConfig : config.getDatabases() ) {
-                        if ( dbConfig.getType() != DatabaseType.NODE_ALL ) {
-                            newConfig.add( dbConfig );
-                        } else {
-                            fromBeans( dbConfig, configuration );
-                            updated = true;
-                        }
-                    }
-                }
-                if ( !updated ) {
-                    DatabaseConfig dbConfig = new DatabaseConfig();
-                    fromBeans( dbConfig, configuration );
-                    newConfig.add( dbConfig );
-                }
-                config.setDatabases( newConfig );
+                fromBeans( config, configuration );
                 managementService.updateNode( config );
             } else {
                 // String newNodeName, String version, Map<DatabaseType, DatabaseConfig> databaseConfigMap
-                DatabaseConfig dbConfig = new DatabaseConfig();
-                fromBeans( dbConfig, configuration );
-                NodeManagementApi.DatabaseConfigRow config = new NodeManagementApi.DatabaseConfigRow();
-                config.setType(DatabaseType.NODE_ALL);
-                config.setConfig(dbConfig);
-                managementService.createNode( "default", null, getPassword(configuration), new NodeManagementApi.DatabaseConfigRow[]{config} );
+                NodeConfig config = new NodeConfig();
+                config.setName("default");
+                config.setClusterHostname((String)getOption("cluster.host", configuration));
+                config.setEnabled((Boolean)getOption("node.enable", configuration));
+                fromBeans( config, configuration );
+                managementService.createNode(
+                        config,
+                        (String)getOption("admin.user", configuration),
+                        (String)getOption("admin.pass", configuration),
+                        (String)getOption("cluster.pass", configuration)
+                );
             }
         } catch ( ObjectModelException ome ) {
             throw new ConfigurationException( "Error storing node configuration", ome );
@@ -94,6 +80,7 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     private Collection<ConfigurationBean> toBeans( final NodeConfig config ) {
         List<ConfigurationBean> configuration = new ArrayList<ConfigurationBean>();
 
@@ -156,20 +143,34 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
         return configuration;
     }
 
-    private String getPassword( final Collection<ConfigurationBean> beans ) {
-        String passphrase = null;
+    @SuppressWarnings({"unchecked"})
+    private <T> T getOption( final String id, final Collection<ConfigurationBean> beans ) {
+        T value = null;
 
         for ( ConfigurationBean bean : beans ) {
-            if ( "cluster.pass".equals(bean.getConfigName()) ) {
-                passphrase = bean.getConfigValue().toString();
+            if ( id.equals(bean.getConfigName()) ) {
+                value = (T) bean.getConfigValue();
                 break;
             }
         }
 
-        return passphrase;
+        return value;
     }
 
-    private void fromBeans( final DatabaseConfig databaseConfig, final Collection<ConfigurationBean> beans ) throws ConfigurationException {
+    private void fromBeans( final NodeConfig config, final Collection<ConfigurationBean> beans ) throws ConfigurationException {
+        boolean addFailoverConfig = false;
+        DatabaseConfig databaseConfig = config.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
+        DatabaseConfig failoverConfig = config.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.REPL_SLAVE );
+        config.setDatabases(new ArrayList<DatabaseConfig>());
+
+        if ( databaseConfig == null ) {
+            databaseConfig = new DatabaseConfig();
+        }
+
+        if ( failoverConfig == null ) {
+            failoverConfig = new DatabaseConfig();
+        }
+
         databaseConfig.setType( DatabaseType.NODE_ALL );
         databaseConfig.setClusterType(NodeConfig.ClusterType.STANDALONE);
 
@@ -192,7 +193,28 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
                 databaseConfig.setDatabaseAdminUsername( bean.getConfigValue().toString() );
             } else if ( "database.admin.pass".equals(bean.getConfigName()) ) {
                 databaseConfig.setDatabaseAdminPassword( bean.getConfigValue().toString() );
+            } else if ( "database.failover.host".equals(bean.getConfigName()) ) {
+                if ( bean.getConfigValue() != null ) {
+                    failoverConfig.setHost( bean.getConfigValue().toString() );
+                    addFailoverConfig = true;
+                }
+            } else if ( "database.failover.port".equals(bean.getConfigName()) ) {
+                if ( bean.getConfigValue() != null ) {
+                    try {
+                        failoverConfig.setPort( Integer.parseInt(bean.getConfigValue().toString()) );
+                        addFailoverConfig = true;
+                    } catch (NumberFormatException nfe) {
+                        throw new ConfigurationException( "Invalid failover database port '"+bean.getConfigValue()+"'." );
+                    }
+                }
             }
+        }
+
+        config.getDatabases().add( databaseConfig );
+        if ( addFailoverConfig ) {
+            databaseConfig.setClusterType(NodeConfig.ClusterType.REPL_MASTER);
+            failoverConfig.setClusterType(NodeConfig.ClusterType.REPL_SLAVE);
+            config.getDatabases().add( failoverConfig );
         }
     }
 

@@ -36,44 +36,23 @@ public interface NodeManagementApi {
      *
      * TODO consider adding enough parameters to this method such that the resulting node is minimally specified
      *
-     * @param newNodeName the name of the new node; must be unique within this host
-     * @param version     the software version that the Node should be initialized for, or null to use the most recent
-     *                    version available.
-     * @param databaseConfigs   the database configuration to use for the new node.  If null is passed, the PC will
-     *                          attempt to create new, standalone database(s) with the default {@link DatabaseType type(s)}
-     *                          and {@link DatabaseConfig.Vendor vendor(s)}
-     *                          on the default database server(s) with the default username(s) and randomly generated
-     *                          password(s).  If the PC is unable to create the databases (e.g. because it doesn't have
-     *                          sufficient credentials to do so) a {@link SaveException} will be thrown.
+     * @param nodeConfig The name of the new node must be set; must be unique within this host
+     *                   The the software version that the Node should be initialized for, or
+     *                   null to use the most recent version available.
+     *                   The database configuration to use for the new node.  If null is passed, the PC will
+     *                   attempt to create new, standalone database(s) with the default {@link DatabaseType type(s)}
+     *                   and {@link DatabaseConfig.Vendor vendor(s)}
+     *                   on the default database server(s) with the default username(s) and randomly generated
+     *                   password(s).  If the PC is unable to create the databases (e.g. because it doesn't have
+     *                   sufficient credentials to do so) a {@link SaveException} will be thrown.
+     * @param adminLogin The admin account to create for cluster administration.
+     * @param adminPassphrase The admin account passphrase
+     * @param clusterPassphrase The cluster passphrase to use
      *
      * @return the newly created NodeConfig
      * @throws SaveException if the new node cannot be created
      */
-    NodeConfig createNode(String newNodeName, String version, String clusterPassphrase, DatabaseConfigRow[] databaseConfigs) throws SaveException;
-
-    /**
-     * This class only exists because JAXB can't handle a Map in any reasonable way
-     */
-    public static class DatabaseConfigRow implements Serializable {
-        private DatabaseType type;
-        private DatabaseConfig config;
-
-        public DatabaseType getType() {
-            return type;
-        }
-
-        public void setType(DatabaseType type) {
-            this.type = type;
-        }
-
-        public DatabaseConfig getConfig() {
-            return config;
-        }
-
-        public void setConfig(DatabaseConfig config) {
-            this.config = config;
-        }
-    }
+    NodeConfig createNode(NodeConfig nodeConfig, String adminLogin, String adminPassphrase, String clusterPassphrase) throws SaveException;
 
     /**
      * Retrieves the {@link com.l7tech.server.management.config.node.NodeConfig} with the provided name, or null if no such node exists on this host.

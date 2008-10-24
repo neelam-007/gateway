@@ -3,28 +3,24 @@
  */
 package com.l7tech.server.management.config.node;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-
-import javax.persistence.*;
-
 /**
- * Inherited {@link #_name} is the database name.
+ * DatabaseConfiguration properties bean.
+ *
  * @author alex
  */
-@Entity
-@Table(name="pc_db")
-public class DatabaseConfig extends NamedEntityImp {
+public class DatabaseConfig {
     private NodeConfig node;
+    private DatabaseConfig parent;
     private DatabaseType type = DatabaseType.NODE_ALL;
     private Vendor vendor = Vendor.MYSQL;
     private NodeConfig.ClusterType clusterType = NodeConfig.ClusterType.STANDALONE;
+    private String name;
     private String host;
     private int port;
     private String databaseAdminUsername;
     private String databaseAdminPassword;
     private String nodeUsername;
     private String nodePassword;
-    private int ordinal;
 
     public DatabaseConfig() {
     }
@@ -58,13 +54,20 @@ public class DatabaseConfig extends NamedEntityImp {
         setNodePassword( nodePassword );
     }
 
-    @ManyToOne(optional=false)
     public NodeConfig getNode() {
         return node;
     }
 
     public void setNode(NodeConfig node) {
         this.node = node;
+    }
+
+    public DatabaseConfig getParent() {
+        return parent;
+    }
+
+    public void setParent(DatabaseConfig parent) {
+        this.parent = parent;
     }
 
     public String getHost() {
@@ -76,15 +79,35 @@ public class DatabaseConfig extends NamedEntityImp {
     }
 
     public int getPort() {
-        return port;
+        if ( port != 0 || parent == null ) {
+            return port;
+        } else {
+            return parent.getPort();
+        }
     }
 
     public void setPort(int port) {
         this.port = port;
     }
 
+    public String getName() {
+        if ( name != null || parent == null ) {
+            return name;
+        } else {
+            return parent.getName();
+        }
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getNodePassword() {
-        return nodePassword;
+        if ( nodePassword != null || parent == null ) {
+            return nodePassword;
+        } else {
+            return parent.getNodePassword();
+        }
     }
 
     public void setNodePassword(String nodePassword) {
@@ -92,61 +115,71 @@ public class DatabaseConfig extends NamedEntityImp {
     }
 
     public String getNodeUsername() {
-        return nodeUsername;
+        if ( nodeUsername != null || parent == null ) {
+            return nodeUsername;
+        } else {
+            return parent.getNodeUsername();
+        }
     }
 
     public void setNodeUsername(String nodeUsername) {
         this.nodeUsername = nodeUsername;
     }
 
-    @Enumerated(EnumType.STRING)
     public Vendor getVendor() {
-        return vendor;
+        if ( vendor != null || parent == null ) {
+            return vendor;
+        } else {
+            return parent.getVendor();
+        }
     }
 
     public void setVendor(Vendor vendor) {
         this.vendor = vendor;
     }
 
-    @Enumerated(EnumType.STRING)
     public DatabaseType getType() {
-        return type;
+        if ( type != null || parent == null ) {
+            return type;
+        } else {
+            return parent.getType();
+        }
     }
 
     public void setType(DatabaseType type) {
         this.type = type;
     }
 
-    @Enumerated(EnumType.STRING)
     public NodeConfig.ClusterType getClusterType() {
-        return clusterType;
+        if ( clusterType != null || parent == null ) {
+            return clusterType;
+        } else {
+            return parent.getClusterType();
+        }
     }
 
     public void setClusterType(NodeConfig.ClusterType clusterType) {
         this.clusterType = clusterType;
     }
 
-    @Column(updatable = false)
-    public int getOrdinal() {
-        return ordinal;
-    }
-
-    public void setOrdinal(int ordinal) {
-        this.ordinal = ordinal;
-    }
-
-    @Transient
     public String getDatabaseAdminPassword() {
-        return databaseAdminPassword;
+        if ( databaseAdminPassword != null || parent == null ) {
+            return databaseAdminPassword;
+        } else {
+            return parent.getDatabaseAdminPassword();
+        }
     }
 
     public void setDatabaseAdminPassword(String databaseAdminPassword) {
         this.databaseAdminPassword = databaseAdminPassword;
     }
 
-    @Transient
     public String getDatabaseAdminUsername() {
-        return databaseAdminUsername;
+        if ( databaseAdminUsername != null || parent == null ) {
+            return databaseAdminUsername;
+        } else {
+            return parent.getDatabaseAdminUsername();
+        }
     }
 
     public void setDatabaseAdminUsername(String databaseAdminUsername) {
@@ -185,35 +218,42 @@ public class DatabaseConfig extends NamedEntityImp {
         }
     }
 
-
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
 
-        DatabaseConfig that = (DatabaseConfig)o;
+        DatabaseConfig that = (DatabaseConfig) o;
 
         if (port != that.port) return false;
         if (clusterType != that.clusterType) return false;
+        if (databaseAdminPassword != null ? !databaseAdminPassword.equals(that.databaseAdminPassword) : that.databaseAdminPassword != null)
+            return false;
+        if (databaseAdminUsername != null ? !databaseAdminUsername.equals(that.databaseAdminUsername) : that.databaseAdminUsername != null)
+            return false;
         if (host != null ? !host.equals(that.host) : that.host != null) return false;
-        if (node != null ? !node.equals(that.node) : that.node != null) return false;
+        if (name != null ? !name.equals(that.name) : that.name != null) return false;
         if (nodePassword != null ? !nodePassword.equals(that.nodePassword) : that.nodePassword != null) return false;
-        if (type != that.type) return false;
         if (nodeUsername != null ? !nodeUsername.equals(that.nodeUsername) : that.nodeUsername != null) return false;
+        if (parent != null ? !parent.equals(that.parent) : that.parent != null) return false;
+        if (type != that.type) return false;
         if (vendor != that.vendor) return false;
 
         return true;
     }
 
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (node != null ? node.hashCode() : 0);
+        int result;
+        result = (node != null ? node.hashCode() : 0);
+        result = 31 * result + (parent != null ? parent.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (vendor != null ? vendor.hashCode() : 0);
         result = 31 * result + (clusterType != null ? clusterType.hashCode() : 0);
+        result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (host != null ? host.hashCode() : 0);
         result = 31 * result + port;
+        result = 31 * result + (databaseAdminUsername != null ? databaseAdminUsername.hashCode() : 0);
+        result = 31 * result + (databaseAdminPassword != null ? databaseAdminPassword.hashCode() : 0);
         result = 31 * result + (nodeUsername != null ? nodeUsername.hashCode() : 0);
         result = 31 * result + (nodePassword != null ? nodePassword.hashCode() : 0);
         return result;
@@ -222,13 +262,11 @@ public class DatabaseConfig extends NamedEntityImp {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("<database ");
-        sb.append("id=\"").append(_oid).append("\" ");
-        sb.append("ordinal=\"").append(ordinal).append("\" ");
-        sb.append("name=\"").append(_name).append("\" ");
         sb.append("host=\"").append(host).append("\" ");
         if (port != 0) sb.append("port=\"").append(port).append("\" ");
         sb.append("vendor=\"").append(vendor).append("\" ");
         sb.append("type=\"").append(type).append("\" ");
+        sb.append("name=\"").append(name).append("\" ");
         sb.append("clusterType=\"").append(clusterType).append("\" ");
         sb.append("/>");
         return sb.toString();

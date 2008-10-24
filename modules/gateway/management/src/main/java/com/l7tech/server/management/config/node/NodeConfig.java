@@ -7,14 +7,17 @@ import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.config.HasFeatures;
 import com.l7tech.server.management.config.PCEntity;
 import com.l7tech.server.management.config.host.HostConfig;
-import org.hibernate.annotations.IndexColumn;
 
-import javax.persistence.*;
 import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlElement;
 import java.util.*;
 
-/** @author alex */
-@Entity
+/**
+ * Node configuration common subset.
+ *
+ * @author alex
+ */
 public class NodeConfig extends PCEntity implements HasFeatures<NodeFeature> {
     protected HostConfig host;
     protected SoftwareVersion softwareVersion;
@@ -26,8 +29,12 @@ public class NodeConfig extends PCEntity implements HasFeatures<NodeFeature> {
      */
     protected transient Set<ConnectorConfig> connectors = new HashSet<ConnectorConfig>();
 
+    /**
+     * The hostname of the load balancer in front of this partition's nodes
+     */
+    protected String clusterHostname;
+
     @XmlTransient
-    @ManyToOne(cascade= CascadeType.ALL, optional=false)
     public HostConfig getHost() {
         return host;
     }
@@ -36,7 +43,8 @@ public class NodeConfig extends PCEntity implements HasFeatures<NodeFeature> {
         this.host = host;
     }
 
-    @OneToMany(cascade=CascadeType.ALL, mappedBy = "node", fetch = FetchType.EAGER)
+    @XmlElement(name="connector")
+    @XmlElementWrapper(name="connectors")
     public Set<ConnectorConfig> getConnectors() {
         return connectors;
     }
@@ -45,22 +53,47 @@ public class NodeConfig extends PCEntity implements HasFeatures<NodeFeature> {
         this.connectors = connectors;
     }
 
-    @OneToMany(cascade=CascadeType.ALL, mappedBy = "node", fetch=FetchType.EAGER)
-    @IndexColumn(name="ordinal", nullable=false)
+    @XmlElement(name="database")
+    @XmlElementWrapper(name="databases")
     public List<DatabaseConfig> getDatabases() {
         return databases;
+    }
+
+    /**
+     * Find the DatabaseConfig that is one of the given types.
+     *
+     * @param databaseType The desired db type
+     * @param clusterTypes The acceptable types in preference order.
+     * @return The config or null if not found.
+     */
+    public DatabaseConfig getDatabase( final DatabaseType databaseType,
+                                       final ClusterType... clusterTypes ) {
+        DatabaseConfig config = null;
+
+        List<DatabaseConfig> configs = databases;
+        if ( configs != null ) {
+            out: for ( ClusterType clusterType : clusterTypes ) {
+                for ( DatabaseConfig dbConfig : configs ) {
+                    if ( dbConfig.getType() == databaseType && dbConfig.getClusterType() == clusterType ) {
+                        config = dbConfig;
+                        break out;
+                    }
+                }
+            }
+        }
+
+        return config;
     }
 
     public void setDatabases(List<DatabaseConfig> databases) {
         this.databases = databases;
     }
 
-    @Transient
+    @XmlTransient
     public Set<NodeFeature> getFeatures() {
         return Collections.emptySet();
     }
 
-    @Transient
     @XmlTransient
     public SoftwareVersion getSoftwareVersion() {
         return softwareVersion;
@@ -84,6 +117,14 @@ public class NodeConfig extends PCEntity implements HasFeatures<NodeFeature> {
 
     public void setSoftwareVersion(SoftwareVersion softwareVersion) {
         this.softwareVersion = softwareVersion;
+    }
+
+    public String getClusterHostname() {
+        return clusterHostname;
+    }
+
+    public void setClusterHostname(String clusterHostname) {
+        this.clusterHostname = clusterHostname;
     }
 
     /** @author alex */

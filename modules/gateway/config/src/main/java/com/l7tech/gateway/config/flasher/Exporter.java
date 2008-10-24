@@ -3,13 +3,16 @@ package com.l7tech.gateway.config.flasher;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.BuildInfo;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.zip.ZipEntry;
@@ -132,32 +135,24 @@ public class Exporter {
                     new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) :
                     null;
 
-            Properties props = new Properties();
             File nodePropsFile = new File(confDir, "node.properties");
             if ( nodePropsFile.exists() ) {
-                FileInputStream fis = null;
-                try {
-                    fis = new FileInputStream( nodePropsFile );
-                    props.load( fis );
-                } finally {
-                    ResourceUtils.closeQuietly(fis);
+                NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
+                DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
+                if ( config == null ) {
+                    throw new CausedIOException("Database configuration not found.");
                 }
 
-                String databaseHost = props.getProperty("node.db.host");
-                String databasePort = props.getProperty("node.db.port");
-                String databaseName = props.getProperty("node.db.name");
-                String databaseUser = props.getProperty("node.db.user");
-                String databasePass = props.getProperty("node.db.pass");
-                databasePass = new String(decryptor.decryptPasswordIfEncrypted(databasePass));
+                config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
 
-                logger.info("using database host " + databaseHost);
-                logger.info("using database port " + databasePort);
-                logger.info("using database name " + databaseName);
-                logger.info("using database user " + databaseUser);
+                logger.info("Using database host '" + config.getHost() + "'.");
+                logger.info("Using database port '" + config.getPort() + "'.");
+                logger.info("Using database name '" + config.getName() + "'.");
+                logger.info("Using database user '" + config.getNodeUsername() + "'.");
 
                 // dump the database
                 try {
-                    DBDumpUtil.dump(databaseHost, Integer.parseInt(databasePort), databaseName, databaseUser, databasePass, includeAudit, tmpDirectory, stdout);
+                    DBDumpUtil.dump(config, includeAudit, tmpDirectory, stdout);
                 } catch (SQLException e) {
                     logger.log(Level.INFO, "exception dumping database", e);
                     throw new IOException("cannot dump the database " + e.getMessage());
@@ -171,7 +166,7 @@ public class Exporter {
                     }
                     // read policy files from this dump, collect all potential mapping in order to produce mapping template file
                     try {
-                        MappingUtil.produceTemplateMappingFileFromDB(databaseHost, Integer.parseInt(databasePort), databaseName, databaseUser, databasePass, mappingFileName);
+                        MappingUtil.produceTemplateMappingFileFromDB(config, mappingFileName);
                     } catch (SQLException e) {
                         // should not happen
                         logger.log(Level.WARNING, "unexpected problem producing template mapping file ", e);

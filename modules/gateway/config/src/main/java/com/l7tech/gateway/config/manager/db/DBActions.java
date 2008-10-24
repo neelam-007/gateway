@@ -874,7 +874,7 @@ public class DBActions {
     }
 
     private String makeConnectionString(String hostname, int port, String dbName) {
-        String urlPattern = SyspropUtil.getString("com.l7tech.migration.dburl", DEFAULT_DB_URL);
+        String urlPattern = SyspropUtil.getString("com.l7tech.config.dburl", DEFAULT_DB_URL);
         return MessageFormat.format( urlPattern, hostname, Integer.toString(port), dbName );
     }
 

@@ -26,7 +26,7 @@ import java.text.ParseException;
 /**
  * Main class for configuration wizard.
  *
- * //TODO [steve] complete implementation for configuration (navigation "<" / "quit", input validation)
+ * //TODO [steve] complete implementation for configuration (navigation "<", input validation, optional settings, etc)
  *
  * @author steve
  */
@@ -226,6 +226,12 @@ public class Main {
         return summary.toString();
     }
 
+    private static void exitOnQuit( final String perhapsQuit ) {
+        if ( "quit".equals(perhapsQuit) ) {
+            System.exit(1);
+        }
+    }
+
     private static String fallbackReadLine( final Console console, final BufferedReader reader ) throws IOException {
         String line;
 
@@ -234,6 +240,8 @@ public class Main {
         } else {
             line = reader.readLine();
         }
+
+        exitOnQuit( line );
 
         return line;
     }
@@ -246,6 +254,8 @@ public class Main {
         } else {
             line = reader.readLine();
         }
+
+        exitOnQuit( line );
 
         return line;
     }

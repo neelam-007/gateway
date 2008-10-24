@@ -1,6 +1,7 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
+import com.l7tech.gateway.config.manager.AccountReset;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -80,48 +81,36 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         logger.log(Level.FINE, "Accepted client certificate {0}", certificate.getSubjectDN().getName());
     }
 
-    public NodeConfig createNode(String newNodeName, String desiredVersion, String clusterPassphrase, DatabaseConfigRow[] databaseConfigs)
+    public NodeConfig createNode(NodeConfig nodeConfig, String adminLogin, String adminPassphrase, String clusterPassphrase)
             throws SaveException {
         checkRequest();
+
+        String newNodeName = nodeConfig.getName();
+
         final Map<String,NodeConfig> nodes = configService.getHost().getNodes();
         PCNodeConfig temp = (PCNodeConfig)nodes.get(newNodeName);
         if (temp != null) throw new IllegalArgumentException(newNodeName + " already exists");
 
-        SoftwareVersion nodeVersion = null;
         final List<SoftwareVersion> versions = processController.getAvailableNodeVersions();
-        if (desiredVersion == null) {
-            nodeVersion = versions.get(0);
-        } else for (SoftwareVersion aversion : versions) {
-            if (aversion.toString().equals(desiredVersion)) {
-                nodeVersion = aversion;
-                break;
-            }
-        }
-
-        if (nodeVersion == null) throw new IllegalArgumentException("Node version " + desiredVersion + " is not available on this host");
-        final PCNodeConfig node = new PCNodeConfig();
-        node.setEnabled(true);
-        node.setName(newNodeName);
-        node.setSoftwareVersion(nodeVersion);
-        node.setGuid(UUID.randomUUID().toString().replace("-",""));
-        node.setHost(configService.getHost());
+        SoftwareVersion nodeVersion = versions.get(0);
 
         DatabaseConfig databaseConfig = null;
         DatabaseConfig failoverDatabaseConfig = null;
-        for ( DatabaseConfigRow configRow : databaseConfigs ) {
-            if ( configRow.getType() == DatabaseType.NODE_ALL ) {
-                DatabaseConfig config = configRow.getConfig();
-                if ( config != null && config.getClusterType() != null ) {
-                    switch ( config.getClusterType() ) {
-                        case REPL_MASTER:
-                        case STANDALONE:
-                            if ( databaseConfig != null ) throw new IllegalArgumentException("Invalid database configuration (primary db conflict).");
-                            databaseConfig = config;
-                            break;
-                        case REPL_SLAVE:
-                            if ( failoverDatabaseConfig != null ) throw new IllegalArgumentException("Invalid database configuration (failover db conflict).");
-                            failoverDatabaseConfig = config;
-                            break;
+        if ( nodeConfig.getDatabases() != null ) {
+            for ( DatabaseConfig config : nodeConfig.getDatabases() ) {
+                if ( config !=null && config.getType() == DatabaseType.NODE_ALL ) {
+                    if ( config.getClusterType() != null ) {
+                        switch ( config.getClusterType() ) {
+                            case REPL_MASTER:
+                            case STANDALONE:
+                                if ( databaseConfig != null ) throw new SaveException("Invalid database configuration (primary db conflict).");
+                                databaseConfig = config;
+                                break;
+                            case REPL_SLAVE:
+                                if ( failoverDatabaseConfig != null ) throw new SaveException("Invalid database configuration (failover db conflict).");
+                                failoverDatabaseConfig = config;
+                                break;
+                        }
                     }
                 }
             }
@@ -130,10 +119,18 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         if ( databaseConfig == null ) {
             throw new SaveException( "Database configuration is required." );
         }
+
+        final PCNodeConfig node = new PCNodeConfig();
+        node.setEnabled(true);
+        node.setName(newNodeName);
+        node.setSoftwareVersion(nodeVersion);
+        node.setGuid(UUID.randomUUID().toString().replace("-",""));
+        node.setHost(configService.getHost());
         node.getDatabases().add(databaseConfig);
 
         try {
             NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), true, null, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
+            AccountReset.resetAccount( databaseConfig, adminLogin, adminPassphrase );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");

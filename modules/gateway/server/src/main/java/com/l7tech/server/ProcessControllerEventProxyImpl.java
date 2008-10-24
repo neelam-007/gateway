@@ -10,28 +10,33 @@ import com.l7tech.server.management.api.node.ProcessControllerApi;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.DisposableBean;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.util.TimerTask;
+import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.cert.X509Certificate;
 import java.net.ConnectException;
 
 /** @author alex */
-public class ProcessControllerEventProxyImpl implements ProcessControllerEventProxy {
+public class ProcessControllerEventProxyImpl implements ProcessControllerEventProxy, InitializingBean, DisposableBean {
     private static final Logger logger = Logger.getLogger(ProcessControllerEventProxyImpl.class.getName());
+    private static final String DEFAULT_SSL_CIPHERS = "TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_DSS_WITH_AES_128_CBC_SHA,TLS_DHE_DSS_WITH_AES_256_CBC_SHA";
+    private static final String PROP_SSL_CIPHERS = "com.l7tech.server.pc.sslciphers";
 
     @Resource
     private SsgConnectorManager ssgConnectorManager;
@@ -48,18 +53,27 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
         }
     };
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    @PostConstruct
+    public void afterPropertiesSet() throws Exception {
+        start();
+    }
+
+    public void destroy() throws Exception {
+        stop();
+    }
+
     private void start() {
-        if (isProcessControllerPresent())
-            getProcessControllerApi(true); // Ping on startup to log as early as possible if PC is down
+        try {
+            if (isProcessControllerPresent())
+                getProcessControllerApi(true); // Ping on startup to log as early as possible if PC is down
+        } catch ( Exception e ) {
+            // CXF throws RuntimeException
+            logger.log( Level.WARNING, "Error pinging process controller.", e);
+        }
 
         // Note that timer task is spawned unconditionally so that if the PC becomes enabled at runtime we'll know
         Background.scheduleRepeated(new Background.SafeTimerTask(task), 15634, 5339);
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    @PreDestroy
     private void stop() {
         task.cancel();
     }
@@ -105,6 +119,11 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
         final Client c = pfb.getClientFactoryBean().create();
         final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
         httpConduit.setTlsClientParameters(new TLSClientParameters() {
+            @Override
+            public List<String> getCipherSuites() {
+                return Arrays.asList(SyspropUtil.getString(PROP_SSL_CIPHERS,DEFAULT_SSL_CIPHERS).split(","));
+            }
+
             public boolean isDisableCNCheck() {
                 return true;
             }

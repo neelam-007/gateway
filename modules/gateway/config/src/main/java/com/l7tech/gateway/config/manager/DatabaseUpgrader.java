@@ -3,22 +3,24 @@ package com.l7tech.gateway.config.manager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.BuildInfo;
+import com.l7tech.util.CausedIOException;
 import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.db.DBActionsListener;
 import com.l7tech.gateway.config.client.options.OptionType;
-import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.FileInputStream;
+import java.io.Console;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.Properties;
 import java.net.PasswordAuthentication;
 
 /**
@@ -40,13 +42,47 @@ public class DatabaseUpgrader {
         }
     }
 
-    private void exitOnQuit( final String perhapsQuit ) {
+    private static void exitOnQuit( final String perhapsQuit ) {
         if ( "quit".equals(perhapsQuit) ) {
             System.exit(1);
         }
     }
 
-    private void run() throws IOException, SAXException {
+    private static String fallbackReadLine( final Console console, final BufferedReader reader, final String defaultValue ) throws IOException {
+        String line;
+
+        if ( console != null ) {
+            line = console.readLine();
+        } else {
+            line = reader.readLine();
+        }
+
+        exitOnQuit( line );
+
+        if ( line == null || line.trim().isEmpty() ) {
+            line = defaultValue;
+        }
+
+        return line;
+    }
+
+    private static String fallbackReadPassword( final Console console, final BufferedReader reader ) throws IOException {
+        String line;
+
+        if ( console != null ) {
+            line = new String(console.readPassword());
+        } else {
+            line = reader.readLine();
+        }
+
+        exitOnQuit( line );
+
+        return line;
+    }
+
+    private void run() throws IOException {
+        Console console = System.console();
+        BufferedReader reader = new BufferedReader( new InputStreamReader( System.in ) );
         String configurationDirPath = CONFIG_PATH;
         File confDir = new File(configurationDirPath);
 
@@ -55,33 +91,40 @@ public class DatabaseUpgrader {
         System.out.println();
 
         DatabaseConfig config;
-        Properties props = new Properties();
         File ompFile = new File(confDir, "omp.dat");
         File nodePropsFile = new File(confDir, "node.properties");
         if ( nodePropsFile.exists() && ompFile.exists() ) {
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream( nodePropsFile );
-                props.load( fis );
-            } finally {
-                ResourceUtils.closeQuietly(fis);
+            NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", true);
+            config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
+            if ( config == null ) {
+                throw new CausedIOException("Database configuration not found.");
             }
 
-            String databaseHost = props.getProperty("node.db.host");
-            String databasePort = props.getProperty("node.db.port");
-            String databaseName = props.getProperty("node.db.name");
-            String databaseUser = props.getProperty("node.db.user");
-            String databasePass = props.getProperty("node.db.pass");
-
             MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
-            databasePass = new String(decryptor.decryptPasswordIfEncrypted(databasePass));
-
-            config = new DatabaseConfig( databaseHost, Integer.parseInt(databasePort), databaseName, databaseUser, databasePass );
+            config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
         } else {
-            System.out.println("Configuration files not found, cannot perform upgrade.");
-            System.exit(3);
-            return;
+            config = new DatabaseConfig();
+
+            System.out.print("Enter database host [localhost]: ");
+            config.setHost( fallbackReadLine( console, reader, "localhost" ) );
+
+            System.out.print("Enter database port [3306]: ");
+            config.setPort( Integer.parseInt(fallbackReadLine( console, reader, "3306" )) );
+
+            System.out.print("Enter database name [ssg]: ");
+            config.setName( fallbackReadLine( console, reader, "ssg" ) );
+
+            System.out.print("Enter database username [gateway]: ");
+            config.setNodeUsername( fallbackReadLine( console, reader, "gateway" ) );
+
+            System.out.print("Enter database password: ");
+            config.setNodePassword( fallbackReadPassword( console, reader ) );
         }
+
+        logger.info("Using database host '" + config.getHost() + "'.");
+        logger.info("Using database port '" + config.getPort() + "'.");
+        logger.info("Using database name '" + config.getName() + "'.");
+        logger.info("Using database user '" + config.getNodeUsername() + "'.");
 
         DBActions dba = new DBActions();
         String swVersion = BuildInfo.getFormalProductVersion();

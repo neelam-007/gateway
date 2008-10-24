@@ -5,9 +5,7 @@ package com.l7tech.server.management.config.node;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import org.hibernate.annotations.CollectionOfElements;
 
-import javax.persistence.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -22,16 +20,7 @@ import java.util.Set;
  * TODO someday configure a subset of the configuration available in this database (e.g. a folder)
  * @author alex
  */
-@Entity
-@Table(name = "pc_node")
 public class PCNodeConfig extends NodeConfig {
-
-    /**
-     * The hostname of the load balancer in front of this partition's nodes
-     * <p/>
-     * TODO is it useful/relevant to know about the ports on the LB?  
-     */
-    private String clusterHostname;
 
     /** Is this node intended to be the sole user of the Tarari card on this Node? */
     private boolean tarariOwner;
@@ -73,10 +62,6 @@ public class PCNodeConfig extends NodeConfig {
         this.scaOwner = scaOwner;
     }
 
-    @SuppressWarnings({ "JpaModelErrorInspection" })
-    @CollectionOfElements(fetch=FetchType.EAGER)
-    @JoinTable(name="pc_node_dburls", joinColumns = @JoinColumn(name="node_id"))
-    @Column(name="url")
     public Map<DatabaseType, String> getDatabaseUrlTemplate() {
         return databaseUrlTemplate;
     }
@@ -85,21 +70,12 @@ public class PCNodeConfig extends NodeConfig {
         this.databaseUrlTemplate = databaseUrlTemplate;
     }
 
-    @Transient
     public Set<SsgKeyEntry> getKeystores() {
         return keystores;
     }
 
     public void setKeystores(Set<SsgKeyEntry> keystores) {
         this.keystores = keystores;
-    }
-
-    public String getClusterHostname() {
-        return clusterHostname;
-    }
-
-    public void setClusterHostname(String clusterHostname) {
-        this.clusterHostname = clusterHostname;
     }
 
     public int getRmiPort() {
@@ -111,7 +87,6 @@ public class PCNodeConfig extends NodeConfig {
     }
 
     @Override
-    @Transient
     public Set<NodeFeature> getFeatures() {
         final Set<NodeFeature> features = new HashSet<NodeFeature>();
         features.add(new RmiPortFeature(this, getRmiPort()));
@@ -129,6 +104,7 @@ public class PCNodeConfig extends NodeConfig {
         this.processControllerApiUrl = processControllerApiUrl;
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

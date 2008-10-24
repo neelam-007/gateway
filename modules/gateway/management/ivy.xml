@@ -25,12 +25,6 @@
         <dependency name="layer7-common" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
 
-        <dependency org="org.hibernate" name="hibernate-annotations" rev="3.3.1.GA" force="true" conf="core">
-            <exclude org="org.hibernate" module="hibernate" name="*" type="*" ext="*" conf="" matcher="exact"/>            
-        </dependency>
-        <dependency org="javax.ejb" name="ejb-api" rev="3.0" force="true" conf="core"/>
-        <dependency org="javax.persistence" name="persistence-api" rev="3.0" force="true" conf="core"/>
-
         <dependency org="org.springframework" name="spring-jdbc" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-orm" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-context-support" rev="2.5.4" force="true" conf="core"/>

@@ -33,9 +33,6 @@
         <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.1.1" force="true" conf="core"/>
     	<dependency org="com.sun.xml.fastinfoset" name="FastInfoset" rev="1.0.1" force="true" conf="core"/>
 
-        <dependency org="javax.ejb" name="ejb-api" rev="3.0" force="true" conf="core"/>
-        <dependency org="javax.persistence" name="persistence-api" rev="3.0" force="true" conf="core"/>
-
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.8" force="true" conf="core"/>
     	<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.8" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.8" force="true" conf="core"/>

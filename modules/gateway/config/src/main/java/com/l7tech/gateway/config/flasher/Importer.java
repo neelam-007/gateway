@@ -143,18 +143,18 @@ class Importer {
 
                 if ( nodePropsFile.exists() ) {
                     dbConfig.load(nodePropsFile);
-                    databaseUser = dbConfig.getString("node.db.user")==null ? databaseUser : dbConfig.getString("node.db.user");
-                    databasePass = dbConfig.getString("node.db.pass")==null ? databasePass : dbConfig.getString("node.db.pass");
+                    databaseUser = dbConfig.getString("node.db.config.main.user")==null ? databaseUser : dbConfig.getString("node.db.config.main.user");
+                    databasePass = dbConfig.getString("node.db.config.main.pass")==null ? databasePass : dbConfig.getString("node.db.config.main.pass");
                     databasePass = new String(mpm.decryptPasswordIfEncrypted(databasePass));
                 } else {
                     dbConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-",""));
-                    dbConfig.setProperty("node.db.user", databaseUser);
-                    dbConfig.setProperty("node.db.pass", mpm.encryptPassword(databasePass.toCharArray()));
+                    dbConfig.setProperty("node.db.config.main.user", databaseUser);
+                    dbConfig.setProperty("node.db.config.main.pass", mpm.encryptPassword(databasePass.toCharArray()));
                 }
 
-                dbConfig.setProperty("node.db.host", dbHost);
-                dbConfig.setProperty("node.db.port", dbPort);
-                dbConfig.setProperty("node.db.name", dbName);
+                dbConfig.setProperty("node.db.config.main.host", dbHost);
+                dbConfig.setProperty("node.db.config.main.port", dbPort);
+                dbConfig.setProperty("node.db.config.main.name", dbName);
 
                 dbConfig.save(nodePropsFile);                
             } catch (ConfigurationException e) {
@@ -278,7 +278,8 @@ class Importer {
             if (mapping != null) {
                 logger.info("applying mappings requested");
                 try {
-                    MappingUtil.applyMappingChangesToDB(dbHost, Integer.parseInt(dbPort), dbName, rootDBUsername, rootDBPasswd, mapping);
+                    DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, rootDBUsername, rootDBPasswd);
+                    MappingUtil.applyMappingChangesToDB(config, mapping);
                 } catch (SQLException e) {
                     logger.log(Level.WARNING, "error mapping target", e);
                     throw new IOException("error mapping staging values " + e.getMessage());
@@ -381,7 +382,7 @@ class Importer {
         try {
             // load that image on the temp database
             String msg = "Loading image on temporary database";
-            Connection c = DBDumpUtil.getConnection(dbHost, Integer.parseInt(dbPort), testdbname, rootDBUsername, rootDBPasswd);
+            Connection c = dba.getConnection(targetConfig, true);
             try {
                 doLoadDump(c, dumpFilePath, msg);
             } finally {
@@ -390,7 +391,7 @@ class Importer {
         } finally {
             // delete the temporary database
             System.out.print("Deleting temporary database .. ");
-            Connection c = DBDumpUtil.getConnection(dbHost, Integer.parseInt(dbPort), "", rootDBUsername, rootDBPasswd);
+            Connection c = dba.getConnection(targetConfig, true);
             try {
                 Statement stmt = c.createStatement();
                 try {
@@ -447,7 +448,7 @@ class Importer {
     }
 
     private Connection getConnection() throws SQLException {
-        return DBDumpUtil.getConnection(dbHost, Integer.parseInt(dbPort), dbName, rootDBUsername, rootDBPasswd);
+        return new DBActions().getConnection(new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, rootDBUsername, rootDBPasswd), false);
     }
 
     private void saveExistingLicense() throws SQLException {

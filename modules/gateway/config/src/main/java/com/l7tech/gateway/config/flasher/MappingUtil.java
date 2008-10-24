@@ -3,6 +3,8 @@ package com.l7tech.gateway.config.flasher;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.gateway.config.manager.db.DBActions;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -47,9 +49,8 @@ class MappingUtil {
         public HashMap<String, String> varMapping = new HashMap<String, String>();
     }
 
-    public static void applyMappingChangesToDB(String databaseHost, int databasePort, String databaseName, String dbuser, String dbpasswd,
-                                               CorrespondanceMap mappingResults) throws SQLException {
-        Connection c = DBDumpUtil.getConnection(databaseHost, databasePort, databaseName, dbuser, dbpasswd);
+    public static void applyMappingChangesToDB(DatabaseConfig config, CorrespondanceMap mappingResults) throws SQLException {
+        Connection c = new DBActions().getConnection(config, false);
         try {
             System.out.println("Applying mappings");
 
@@ -130,10 +131,8 @@ class MappingUtil {
         return output;
     }
 
-    public static void produceTemplateMappingFileFromDB(String databaseHost, int databasePort, String databaseName, String dbuser,
-                                                        String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
-
-        Connection c = DBDumpUtil.getConnection(databaseHost, databasePort, databaseName, dbuser, dbpasswd);
+    public static void produceTemplateMappingFileFromDB(DatabaseConfig config, String outputTemplatePath) throws SQLException, SAXException, IOException {
+        Connection c = new DBActions().getConnection(config, false);
         Set<String> ipaddressesInRoutingAssertions = new HashSet<String>();
         HashMap<String, String> mapOfClusterProperties = new HashMap<String, String>();
         try {

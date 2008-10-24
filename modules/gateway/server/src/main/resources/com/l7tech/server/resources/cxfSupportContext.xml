@@ -14,7 +14,6 @@
     <import resource="classpath:META-INF/cxf/cxf-extension-soap.xml"/>
     <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
     <import resource="classpath:META-INF/cxf/cxf-extension-http.xml"/>
-    <!--<import resource="classpath:META-INF/cxf/cxf-extension-http-jetty.xml"/>-->
 
     <!-- Public Admin API -->
     <simple:server id="serviceAdminWS"
@@ -34,6 +33,6 @@
 
     <!-- Process Controller -->
     <jaxws:endpoint id="processControllerNodeApiEndpoint" implementor="#processControllerNodeApiImpl"
-                    address="/processControllerNodeApi"/>
+                    address="/processControllerNodeApi" depends-on="processControllerNodeApiImpl"/>
 </beans>
 

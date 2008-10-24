@@ -204,7 +204,7 @@
         <property name="passwordProperties">
             <list>
                 <value>node.cluster.pass</value>
-                <value>node.db.pass</value>
+                <value>node.db.config.main.pass</value>
             </list>
         </property>
     </bean>
@@ -1109,7 +1109,7 @@
 
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
 
-    <bean id="processControllerEventProxy" class="com.l7tech.server.ProcessControllerEventProxyImpl"/>
+    <bean id="processControllerEventProxy" class="com.l7tech.server.ProcessControllerEventProxyImpl" depends-on="cxf"/>
 
     <bean id="systemClassLoader" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetClass" value="java.lang.ClassLoader"/>

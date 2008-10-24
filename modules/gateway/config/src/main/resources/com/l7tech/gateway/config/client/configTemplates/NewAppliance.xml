@@ -24,6 +24,29 @@ Press "&lt;" to go to the previous step.
 
 This step lets you create or set up a connection to the SSG database.</prompt>
     </optionGroup>
+    <optionGroup id="db-fail">
+        <description>Database Failover Connection</description>
+        <prompt>
+--------------------------------
+Set Up the SSG Failover Database
+--------------------------------
+At any time type "quit" to quit.
+Press "&lt;" to go to the previous step.
+
+This step lets you create or set up a connection to the SSG failover
+database.</prompt>
+    </optionGroup>
+    <optionGroup id="admin">
+        <description>Administrative Account</description>
+        <prompt>
+----------------------------
+Set Up the SSG Administrator
+----------------------------
+At any time type "quit" to quit.
+Press "&lt;" to go to the previous step.
+
+This step lets you create the administrative user account.</prompt>
+    </optionGroup>
     <optionGroup id="cluster">
         <description>Cluster Configuration</description>
         <prompt>
@@ -34,6 +57,17 @@ At any time type "quit" to quit.
 Press "&lt;" to go to the previous step.
 
 This step lets you set up the SSG cluster.</prompt>
+    </optionGroup>
+    <optionGroup id="node">
+        <description>Node Configuration</description>
+        <prompt>
+-------------------
+Set Up the SSG Node
+-------------------
+At any time type "quit" to quit.
+Press "&lt;" to go to the previous step.
+
+This step lets you set up the SSG node.</prompt>
     </optionGroup>
 
     <!--
@@ -81,14 +115,59 @@ This step lets you set up the SSG cluster.</prompt>
         <prompt>Enter the administrative database password.</prompt>
     </option>
 
+    <!--
+      Options for Database failover configuration
+    -->
+    <!--
+    <option id="db-fail-host" group="db-fail" type="HOSTNAME" order="120" name="Database Failover Host">
+        <configName>database.failover.host</configName>
+        <description>Database Failover Hostname</description>
+        <prompt>Enter the database failover hostname.</prompt>
+    </option>
+    <option id="db-fail-port" group="db-fail" type="PORT" order="121" name="Database Failover Port">
+        <configName>database.failover.port</configName>
+        <configValue>3306</configValue>
+        <description>Database Failover Port</description>
+        <prompt>Enter the database failover port.</prompt>
+    </option>
+    -->
+
+    <!--
+      Options for Administrative user account configuration
+    -->
+    <option id="admin-user" group="admin" type="USERNAME" order="200" name="Administrative Username">
+        <configName>admin.user</configName>
+        <description>Administrative Username</description>
+        <prompt>Enter the administrative user.</prompt>
+    </option>
+    <option id="admin-pass" group="admin" type="PASSWORD" order="201" name="Administrative Password">
+        <configName>admin.pass</configName>
+        <description>Administrative Password</description>
+        <prompt>Enter the administrative password.</prompt>
+    </option>
 
     <!--
       Options for Cluster configuration
     -->
-    <option id="cluster-pass" group="cluster" type="PASSWORD" order="200" name="Cluster Password">
+    <option id="cluster-host" group="cluster" type="HOSTNAME" order="300" name="Cluster Host">
+        <configName>cluster.host</configName>
+        <description>Cluster Hostname</description>
+        <prompt>Enter the cluster hostname.</prompt>
+    </option>
+    <option id="cluster-pass" group="cluster" type="PASSWORD" order="301" name="Cluster Password">
         <configName>cluster.pass</configName>
         <description>Cluster Password</description>
         <prompt>Enter the cluster password.</prompt>
+    </option>
+
+    <!--
+      Options for node
+    -->
+    <option id="node-enable" group="node" type="BOOLEAN" order="400" name="Enabled">
+        <configName>node.enable</configName>
+        <configValue>true</configValue>
+        <description>Node Enabled State</description>
+        <prompt>Enable or disable the node.</prompt>
     </option>
 
 </optionSet>

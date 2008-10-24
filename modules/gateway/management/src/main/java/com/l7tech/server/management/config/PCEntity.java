@@ -4,23 +4,18 @@
 package com.l7tech.server.management.config;
 
 import com.l7tech.objectmodel.NamedEntity;
-import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.*;
 import java.util.Calendar;
 
 /**
  * Entities in the Process Controller all have a GUID and timestamp (for optimistic locking); most have a name as well.
  * @author alex 
  */
-@MappedSuperclass
 public abstract class PCEntity implements NamedEntity {
     protected String guid;
     protected String name;
     protected Calendar timestamp;
 
-    @Id @GeneratedValue(generator="system-uuid")
-    @GenericGenerator(name="system-uuid", strategy="uuid")
     public String getGuid() {
         return guid;
     }
@@ -29,8 +24,6 @@ public abstract class PCEntity implements NamedEntity {
         return name;
     }
 
-    @javax.persistence.Version
-    @Temporal(TemporalType.TIMESTAMP)
     public Calendar getTimestamp() {
         return timestamp;
     }
@@ -47,11 +40,11 @@ public abstract class PCEntity implements NamedEntity {
         this.name = name;
     }
 
-    @Transient
     public String getId() {
         return guid;
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

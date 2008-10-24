@@ -5,25 +5,19 @@ package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.server.config.OSDetector;
-import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.host.IpAddressConfig;
 import com.l7tech.server.management.config.host.PCHostConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
-import com.l7tech.server.management.config.node.PCNodeConfig;
-import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.BuildInfo;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 
-import javax.ejb.TransactionAttribute;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -42,14 +36,8 @@ import java.util.logging.Logger;
  * Top-level (possibly only) DAO for management of Process Controller configuration entities
  * @author alex
  */
-@TransactionAttribute
 public class ConfigServiceImpl implements ConfigService {
     private static final Logger logger = Logger.getLogger(ConfigServiceImpl.class.getName());
-
-    private final String NODEPROPERTIES_DB_HOST = "node.db.host";
-    private final String NODEPROPERTIES_DB_PORT = "node.db.port";
-    private final String NODEPROPERTIES_DB_NAME = "node.db.name";
-    private final String NODEPROPERTIES_DB_USER = "node.db.user";
 
     private final File processControllerHomeDirectory;
     private final File nodeBaseDirectory;
@@ -292,42 +280,10 @@ public class ConfigServiceImpl implements ConfigService {
 
     private void reverseEngineerNodes(PCHostConfig g) {
         try {
-            for (File nodeDirectory : nodeBaseDirectory.listFiles()) {
-                File nodeConfigFile = new File(nodeDirectory, "etc/conf/node.properties");
-                if (!nodeConfigFile.isFile()) continue;
-
-                Properties nodeProperties = new Properties();
-                InputStream in = null;
-                try {
-                    nodeProperties.load(in = new FileInputStream(nodeConfigFile));
-                } finally {
-                    ResourceUtils.closeQuietly(in);
-                }
-
-                if (!nodeProperties.containsKey(NODEPROPERTIES_ID)) {
-                    logger.log(Level.WARNING, "Ignoring node ''{0}'' due to invalid properties.", nodeDirectory.getName());
-                    continue;
-                }
-
-                final PCNodeConfig node = new PCNodeConfig();
-                node.setHost(g);
-                node.setName(nodeDirectory.getName());
-                node.setSoftwareVersion(SoftwareVersion.fromString(BuildInfo.getProductVersion())); //TODO get version for node
-                node.setEnabled(Boolean.valueOf(nodeProperties.getProperty(NODEPROPERTIES_ENABLED, "true")));
-                node.setGuid(nodeProperties.getProperty(NODEPROPERTIES_ID));
-
-                if ( nodeProperties.keySet().containsAll( Arrays.asList( NODEPROPERTIES_DB_HOST, NODEPROPERTIES_DB_PORT, NODEPROPERTIES_DB_NAME, NODEPROPERTIES_DB_USER ) ) ) {
-                    final DatabaseConfig db = new DatabaseConfig();
-                    db.setType(DatabaseType.NODE_ALL);
-                    db.setHost( nodeProperties.getProperty(NODEPROPERTIES_DB_HOST) );
-                    db.setPort( Integer.parseInt(nodeProperties.getProperty(NODEPROPERTIES_DB_PORT)) );
-                    db.setName( nodeProperties.getProperty(NODEPROPERTIES_DB_NAME) );
-                    db.setNodeUsername( nodeProperties.getProperty(NODEPROPERTIES_DB_USER) );
-                    node.getDatabases().add(db);
-                }
-
-                logger.log(Level.INFO, "Detected node ''{0}''.", nodeDirectory.getName());
-                g.getNodes().put(node.getName(), node);
+            for (NodeConfig nodeConfig : NodeConfigurationManager.loadNodeConfigs(false)) {
+                logger.log(Level.INFO, "Detected node ''{0}''.", nodeConfig.getName());
+                nodeConfig.setHost(g);
+                g.getNodes().put(nodeConfig.getName(), nodeConfig);
             }
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Error when detecting nodes.", ioe);
