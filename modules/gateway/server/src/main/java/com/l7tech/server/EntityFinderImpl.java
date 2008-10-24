@@ -36,7 +36,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
     @Transactional(readOnly=true)
     public EntityHeaderSet<EntityHeader> findAll(final Class<? extends Entity> entityClass) throws FindException {
         final boolean names = NamedEntity.class.isAssignableFrom(entityClass);
-        final EntityType type = EntityHeaderUtils.getEntityHeaderType(entityClass);
+        final EntityType type = EntityType.findTypeByEntity(entityClass);
         try {
             return (EntityHeaderSet<EntityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {

@@ -14,22 +14,6 @@ import com.l7tech.objectmodel.IdentityHeader;
  * @author alex
  */
 public final class EntityHeaderUtils {
-    public static EntityType getEntityHeaderType(Class<? extends Entity> entityClass) {
-        if (IdentityProviderConfig.class.isAssignableFrom(entityClass)) return EntityType.ID_PROVIDER_CONFIG;
-        if (User.class.isAssignableFrom(entityClass)) return EntityType.USER;
-        if (Group.class.isAssignableFrom(entityClass)) return EntityType.GROUP;
-        if (PublishedService.class.isAssignableFrom(entityClass)) return EntityType.SERVICE;
-        if (JmsConnection.class.isAssignableFrom(entityClass)) return EntityType.JMS_CONNECTION;
-        if (JmsEndpoint.class.isAssignableFrom(entityClass)) return EntityType.JMS_ENDPOINT;
-        if (TrustedCert.class.isAssignableFrom(entityClass)) return EntityType.TRUSTED_CERT;
-        if (AlertEvent.class.isAssignableFrom(entityClass)) return EntityType.ALERT_TRIGGER;
-        if (Notification.class.isAssignableFrom(entityClass)) return EntityType.ALERT_ACTION;
-        if (SampleMessage.class.isAssignableFrom(entityClass)) return EntityType.SAMPLE_MESSAGE;
-        if (Role.class.isAssignableFrom(entityClass)) return EntityType.RBAC_ROLE;
-        if (Policy.class.isAssignableFrom(entityClass)) return EntityType.POLICY;
-        return EntityType.ANY;
-    }
-
     /**
      * Creates and returns an {@link com.l7tech.objectmodel.AnonymousEntityReference} that's as close a reflection of the given
      * {@link com.l7tech.objectmodel.EntityHeader} as possible.  This method will create either an
