@@ -54,7 +54,7 @@ rm -rf %{buildroot}/usr/local/Tarari/docs
 %attr(0444,layer7,layer7)
 /opt/SecureSpan/Gateway/runtime/lib/ext/tarari_raxj.jar
 
-%attr(0444,layer7,layer7)
+%attr(0555,layer7,layer7)
 /opt/SecureSpan/Gateway/runtime/etc/profile.d/tarariopts.sh
 
 %pre

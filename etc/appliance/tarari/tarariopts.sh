@@ -1,6 +1,6 @@
 if [ -e  /usr/local/Tarari ]; then
 	TARARIROOT=/usr/local/Tarari
-	export TARARIROOT
+	SSGTARARI=true
 
     if ! echo $PATH | /bin/egrep -q "(^|:)$TARARIROOT/bin($|:)" ; then
         PATH=$TARARIROOT/bin:$PATH
@@ -12,6 +12,8 @@ if [ -e  /usr/local/Tarari ]; then
         LD_LIBRARY_PATH=$TARARIROOT/lib:$LD_LIBRARY_PATH
     fi                                 
 
+	export TARARIROOT
+    export SSGTARARI
     export LD_LIBRARY_PATH
     export PATH
     export XCX_JOB_MODE=sqb,1000
