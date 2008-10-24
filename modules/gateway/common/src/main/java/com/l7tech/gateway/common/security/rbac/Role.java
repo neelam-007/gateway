@@ -22,6 +22,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Transient;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Iterator;
 import java.util.regex.Matcher;
 
 import org.hibernate.annotations.Fetch;
@@ -118,13 +119,14 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * @param user  The user that will be used to remove the user's assignment roles.
      */
     public void removeAssignedUser(User user) {
-        final Set<RoleAssignment> tmpRoleAssignments = roleAssignments;
-        for (RoleAssignment roleAssignment : tmpRoleAssignments) {
-            if (roleAssignment.getIdentityId().equals(user.getId()) && roleAssignment.getProviderId() == user.getProviderId()) {
-                roleAssignments.remove(roleAssignments);
+        synchronized (roleAssignments) {
+            for(Iterator<RoleAssignment> i = roleAssignments.iterator(); i.hasNext(); ){
+                RoleAssignment roleAssignment = i.next();
+                if (roleAssignment.getIdentityId().equals(user.getId()) && roleAssignment.getProviderId() == user.getProviderId()) {
+                    i.remove();
+                }
             }
         }
-
     }
 
     public String toString() {
