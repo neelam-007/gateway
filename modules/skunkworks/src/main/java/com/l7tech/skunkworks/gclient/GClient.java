@@ -7,6 +7,7 @@ import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.PermissiveX509TrustManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gui.util.GuiCertUtil;
 import com.l7tech.gui.util.GuiPasswordCallbackHandler;
@@ -718,7 +719,7 @@ public class GClient {
     private SSLSocketFactory getSSLSocketFactory() throws Exception {
         if (sslSocketFactory == null) {
             SSLContext sslContext = SSLContext.getInstance("SSL");
-            X509TrustManager trustManager =null;// new PermissiveX509TrustManager();
+            X509TrustManager trustManager = new PermissiveX509TrustManager();
             KeyManager[] keyManagers = null;
             if (clientPrivateKey != null) {
                 keyManagers = new KeyManager[] {
