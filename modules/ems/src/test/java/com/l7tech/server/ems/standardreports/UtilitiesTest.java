@@ -11,17 +11,9 @@ import junit.framework.TestCase;
 import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.io.StringReader;
+import java.io.*;
 
 import org.junit.Test;
-import org.w3c.dom.Document;
-
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.stream.StreamSource;
-
-import com.l7tech.common.io.XmlUtil;
 
 /**
  * Test coverage for class Utilities
@@ -1154,19 +1146,4 @@ public class UtilitiesTest extends TestCase {
         String val = Utilities.SQL_PLACE_HOLDER;
         assertTrue(Utilities.isPlaceHolderValue(val));
     }
-
-    private Document transform(String xslt, String src) throws Exception {
-        TransformerFactory transfoctory = TransformerFactory.newInstance();
-        StreamSource xsltsource = new StreamSource(new StringReader(xslt));
-        Transformer transformer = transfoctory.newTemplates(xsltsource).newTransformer();
-        Document srcdoc = XmlUtil.stringToDocument(src);
-        DOMResult result = new DOMResult();
-        XmlUtil.softXSLTransform(srcdoc, result, transformer, Collections.EMPTY_MAP);
-        return (Document) result.getNode();
-    }
-    @Test
-    public void testUsageTransformation(){
-        
-    }
-
 }

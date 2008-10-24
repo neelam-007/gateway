@@ -54,7 +54,7 @@ public class UsageReportHelper extends JRDefaultScriptlet {
         String colVarName = keyToColumnMap.get(sb.toString());
 
         if(varName.equals(colVarName)){
-            System.out.println(colVarName+" is " + field.getValue());
+            //System.out.println(colVarName+" is " + field.getValue());
             return (Long) field.getValue();
         }
 
