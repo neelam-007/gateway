@@ -128,7 +128,7 @@ ALTER TABLE audit_message ADD CONSTRAINT message_context_mapping FOREIGN KEY (ma
 --
 -- Folder changes
 --
---INSERT INTO folder (objectid, name, parent_folder_oid) VALUES (-5002, 'Root Node', NULL);
+INSERT INTO folder (objectid, name, parent_folder_oid) VALUES (-5002, 'Root Node', NULL);
 UPDATE folder SET parent_folder_oid = -5002 WHERE objectid = -5001;
 UPDATE folder SET parent_folder_oid = -5002 WHERE objectid = -5000;
 
@@ -234,6 +234,18 @@ UPDATE revocation_check_policy SET revocation_policy_xml =
 -- Drop configuration data table that is no longer used
 --
 DROP TABLE IF EXISTS config_data;
+
+
+--
+-- Delete the existing keystores since we don't yet upgrade the cluster shared key.
+--
+-- TODO REMOVE THIS WHEN UPGRADE IS IMPLEMENTED
+-- TODO REMOVE THIS WHEN UPGRADE IS IMPLEMENTED
+-- TODO REMOVE THIS WHEN UPGRADE IS IMPLEMENTED
+-- TODO REMOVE THIS WHEN UPGRADE IS IMPLEMENTED
+-- TODO REMOVE THIS WHEN UPGRADE IS IMPLEMENTED
+--
+delete from keystore_file;
 
 --
 -- Reenable FK at very end of script
