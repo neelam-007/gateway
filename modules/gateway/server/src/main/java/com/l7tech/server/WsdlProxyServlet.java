@@ -1,15 +1,15 @@
 package com.l7tech.server;
 
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.MissingCredentialsException;
 import com.l7tech.identity.User;
-import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -24,21 +24,21 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
-import com.l7tech.server.service.resolution.*;
 import com.l7tech.server.service.ServiceDocumentManager;
+import com.l7tech.server.service.resolution.*;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.DocumentReferenceProcessor;
-
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -47,8 +47,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.URL;
 import java.net.URI;
+import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -645,7 +645,11 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     private ListResults listAllServices() throws FindException {
-        final Collection<PublishedService> allServices = serviceManager.findAll();
+        final Collection<PublishedService> allServices = Functions.grep(serviceManager.findAll(), new Functions.Unary<Boolean, PublishedService>() {
+            public Boolean call(PublishedService publishedService) {
+                return !publishedService.isDisabled();
+            }
+        });
         return new ListResults() {
             public Collection<PublishedService> allowed() {
                 return allServices;
