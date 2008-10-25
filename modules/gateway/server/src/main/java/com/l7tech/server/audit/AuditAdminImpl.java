@@ -10,13 +10,18 @@ import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.JaasUtils;
+import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.admin.AuditViewGatewayAuditsData;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TimeUnit;
+import com.l7tech.identity.User;
 
 import java.io.IOException;
 import java.util.*;
@@ -45,6 +50,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     private AuditDownloadManager auditDownloadManager;
     private AuditRecordManager auditRecordManager;
+    private SecurityFilter filter;
     private LogRecordManager logRecordManager;
     private ServerConfig serverConfig;
     private ClusterPropertyManager clusterPropertyManager;
@@ -60,6 +66,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     public void setAuditRecordManager(AuditRecordManager auditRecordManager) {
         this.auditRecordManager = auditRecordManager;
+    }
+
+    public void setSecurityFilter(SecurityFilter filter) {
+        this.filter = filter;
     }
 
     public void setLogRecordManager(LogRecordManager logRecordManager) {
@@ -117,16 +127,22 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         return auditRecordManager.findHeaders(criteria);
     }
 
-    public boolean hasNewAudits(Date date, Level level) {
+    public boolean hasNewAudits( final Date date, final Level level) {
         AuditSearchCriteria criteria = new AuditSearchCriteria.Builder().fromTime(date).fromLevel(level).maxRecords(1).build();
         boolean hasNewAudits = false;
-        try {
-            Collection<AuditRecordHeader> newAudits = auditRecordManager.findHeaders(criteria);
-            if (newAudits != null && newAudits.size() > 0) {
-                hasNewAudits = true;
+        User user = JaasUtils.getCurrentUser();
+        if ( user != null ) {
+            try {
+                Collection<AuditRecordHeader> newAudits = auditRecordManager.findHeaders(criteria);
+                newAudits = filter.filter(newAudits, user, OperationType.READ, null );
+                if ( newAudits.size() > 0 ) {
+                    hasNewAudits = true;
+                }
+            } catch (FindException fe) {
+                logger.fine("Failed to find new audits for date " + date.toString() + " with level " + level.toString());
             }
-        } catch (FindException fe) {
-            logger.fine("Failed to find new audits for date " + date.toString() + " with level " + level.toString());
+        } else {
+            logger.fine("User not found when checking for new audits.");
         }
         return hasNewAudits;
     }
@@ -405,6 +421,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
          * Clean up any expired audited data that has lived passed it's time to live time frame.  This is needed
          * so that the thread doesn't keep on accumulating when there are unnecessary data.
          */
+        @SuppressWarnings({"unchecked"})
         private void cleanUp() {
             //loop through the set and delete any data that has expired already
             for (Iterator i = auditedData.entrySet().iterator(); i.hasNext();) {
@@ -435,6 +452,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                     if (queue.remainingCapacity() > 0) {
                         logger.warning("Some view audit data were not recorded.");
                     }
+                    break;
                 } catch (Exception e) {
                     //shouldn't happen
                     logger.warning("Failed to publish audit view event: " + e.getMessage());
@@ -452,12 +470,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
      * view event.
      */
     private class AuditViewData {
-        private AuditViewGatewayAuditsData audit;
-        private AdminInfo adminInfo;
-        private AuditSearchCriteria criteria;
-        private long lastTimeChecked;
-
-        private static final long ONE_HOUR = 60 * 60 * 1000;
+        private final AuditViewGatewayAuditsData audit;
+        private final AdminInfo adminInfo;
+        private final AuditSearchCriteria criteria;
+        private volatile long lastTimeChecked;
 
         public AuditViewData(AuditViewGatewayAuditsData audit, AdminInfo adminInfo, AuditSearchCriteria criteria) {
             this.audit = audit;
@@ -479,8 +495,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         }
 
         public boolean isStale() {
-            if ((System.currentTimeMillis() - lastTimeChecked) > ONE_HOUR) return true;
-            return false;
+            return (System.currentTimeMillis() - lastTimeChecked) > TimeUnit.HOURS.toMillis(1);
         }
 
         public long getLastTimeChecked() {

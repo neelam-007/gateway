@@ -190,6 +190,12 @@
     <bean id="auditAdmin" class="com.l7tech.server.audit.AuditAdminImpl">
         <property name="auditDownloadManager" ref="auditDownloadManager"/>
         <property name="auditRecordManager" ref="auditRecordManager"/>
+        <property name="securityFilter">
+            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                <property name="targetObject" ref="rbacAdvice"/>
+                <property name="targetMethod" value="getSecurityFilter"/>
+            </bean>            
+        </property>
         <property name="logRecordManager" ref="logRecordManager"/>
         <property name="serverConfig" ref="serverConfig"/>
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>

@@ -15,7 +15,6 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.policy.PolicyHeader;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.apache.commons.collections.iterators.ArrayIterator;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -24,8 +23,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,10 +46,17 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         this.policyManager = policyManager;
     }
 
-    private List<Object> filter(Iterator iter, User user, CheckInfo check) throws FindException {
-        List<Object> newlist = new ArrayList<Object>();
-        while (iter.hasNext()) {
-            Object element = iter.next();
+    public SecurityFilter getSecurityFilter() {
+        return new SecurityFilter() {
+            public <T> List<T> filter(Collection<T> entityCollection, User user, OperationType type, String operationName) throws FindException {
+                return SecuredMethodInterceptor.this.filter( entityCollection, user, type, operationName, "internalFilter" );
+            }
+        };
+    }
+
+    private <T> List<T> filter(Iterable<T> iter, User user, OperationType type, String operationName, String methodName) throws FindException {
+        List<T> newlist = new ArrayList<T>();
+        for (T element : iter) {
             Entity testEntity;
             if (element instanceof Entity) {
                 testEntity = (Entity)element;
@@ -69,7 +75,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 throw new IllegalArgumentException("Element of collection was neither Entity nor EntityHeader");
             }
 
-            if (testEntity == null || roleManager.isPermittedForEntity(user, testEntity, check.operation, check.otherOperationName)) {
+            if (testEntity == null || roleManager.isPermittedForEntity(user, testEntity, type, operationName)) {
                 newlist.add(element);
             } else {
                 if (logger.isLoggable(Level.FINEST)) {
@@ -78,7 +84,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                             new Object[] {
                                 testEntity.getClass().getSimpleName(),
                                 testEntity.getId(),
-                                check.methodName}
+                                methodName}
                             );
                 }
             }
@@ -95,6 +101,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     public Object invoke(MethodInvocation methodInvocation) throws Throwable {
         Object target = methodInvocation.getThis();
         Object[] args = methodInvocation.getArguments();
@@ -322,18 +329,18 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                     return rv;
                 } else if (rv instanceof EntityHeader[]) {
                     EntityHeader[] array = (EntityHeader[]) rv;
-                    List<Object> headers = filter(new ArrayIterator(array), user, check);
+                    List<EntityHeader> headers = filter(Arrays.asList(array), user, check.operation, check.otherOperationName, check.methodName);
                     Object[] a0 = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);
                     return headers.toArray(a0);
                 } else if (rv instanceof Entity[]) {
                     Entity[] array = (Entity[]) rv;
-                    List<Object> entities = filter(new ArrayIterator(array), user, check);
+                    List<Entity> entities = filter(Arrays.asList(array), user, check.operation, check.otherOperationName, check.methodName);
                     Object[] a0 = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);
                     return entities.toArray(a0);
                 } else if (rv instanceof Collection) {
                     // TODO check generic type?
                     Collection coll = (Collection) rv;
-                    return filter(coll.iterator(), user, check);
+                    return filter(coll, user, check.operation, check.otherOperationName, check.methodName);
                 } else {
                     throw new IllegalStateException("Return value of " + mname + " was not Entity[] or Collection<Entity>");
                 }
