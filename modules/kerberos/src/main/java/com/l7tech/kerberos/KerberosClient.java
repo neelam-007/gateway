@@ -606,7 +606,7 @@ public class KerberosClient {
     private static String acceptPrincipal;
 
     static {
-        KerberosConfig.checkConfig( null, null );
+        KerberosConfig.checkConfig( null, null, true );
         ticketCache = KerberosTicketRepository.getInstance();
         ticketCache.setKerberosTicketLifetime(KERBEROS_LIFETIME * 1000L);
     }

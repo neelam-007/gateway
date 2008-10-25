@@ -112,13 +112,17 @@ public class KerberosConfig implements KerberosConfigConstants {
      * On the SSG these files go in the conf directory, on the SSB in the ".l7tech"
      * directory.
      */
-    static void checkConfig( final String kdc, final String realm ) {
-        if (System.getProperty(SYSPROP_SSG_HOME) != null) {
-            configSsg( kdc, realm );
-        }
-        else if (System.getProperty(SYSPROP_LOGINCFG_PATH) != null &&
-                 System.getProperty(SYSPROP_KRB5CFG_PATH) == null) {
-            configSsb();
+    static void checkConfig( final String kdc, final String realm, final boolean isInit ) {
+        if (!isInit || !initialized) {
+            initialized = true;
+
+            if (System.getProperty(SYSPROP_SSG_HOME) != null) {
+                configSsg( kdc, realm );
+            }
+            else if (System.getProperty(SYSPROP_LOGINCFG_PATH) != null &&
+                     System.getProperty(SYSPROP_KRB5CFG_PATH) == null) {
+                configSsb();
+            }
         }
     }
 
@@ -142,7 +146,7 @@ public class KerberosConfig implements KerberosConfigConstants {
             }
         }
 
-        checkConfig( kdc, realm );
+        checkConfig( kdc, realm, false );
     }
 
     //- PRIVATE
@@ -150,6 +154,7 @@ public class KerberosConfig implements KerberosConfigConstants {
     private static final Logger logger = Logger.getLogger(KerberosConfig.class.getName());
 
     protected static KerberosConfigFiles kerberosFiles;
+    private static volatile boolean initialized = false;
 
     private static File getKeytabFile() {
         return new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_KEYTAB);
