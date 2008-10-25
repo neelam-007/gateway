@@ -92,7 +92,7 @@ public class ServicePropertiesDialog extends JDialog {
         setContentPane(mainPanel);
         setTitle("Published Service Properties");
 
-        nameField.setDocument(new FilterDocument(254, new FilterDocument.Filter() {
+        nameField.setDocument(new FilterDocument(255, new FilterDocument.Filter() {
                                                              public boolean accept(String str) {
                                                                  return str != null;
                                                              }
