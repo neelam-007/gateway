@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.io.*;
 
 import org.junit.Test;
+import org.junit.Assert;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
@@ -22,7 +23,7 @@ import org.w3c.dom.NodeList;
  * Various tests test the method createMappingQuery. Each test is testing a specific characteristic of the sql
  * returned based on the parameter list supplied.
  */
-public class UtilitiesTest extends TestCase {
+public class UtilitiesTest{
 
     private SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(Utilities.DATE_STRING);
     /**
@@ -39,10 +40,10 @@ public class UtilitiesTest extends TestCase {
 
         //There should only be 1 CASE statement in SQL
         int index = sql.indexOf("CASE", 0);
-        assertTrue(index != 0);
+        Assert.assertTrue(index != 0);
 
         index = sql.indexOf("CASE", index + 1);
-        assertTrue(index == -1);
+        Assert.assertTrue(index == -1);
 
         //CASE  WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
         // WHEN mcmk.mapping2_key = 'IP_ADDRESS' THEN mcmv.mapping2_value
@@ -53,14 +54,14 @@ public class UtilitiesTest extends TestCase {
         //test case has correct number of WHEN, THEN via mappingx_key
         for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
             index = sql.indexOf("mcmk.mapping"+(i+1)+"_key");
-            assertTrue(index != -1);
+            Assert.assertTrue(index != -1);
         }
 
         //';' AS MAPPING_VALUE_2, ';' AS MAPPING_VALUE_3, ';' AS MAPPING_VALUE_4, ';' AS MAPPING_VALUE_5
         //check that all other keys were selected as the placeholder
         for(int i = 1; i < Utilities.NUM_MAPPING_KEYS; i++){
             index = sql.indexOf("AS MAPPING_VALUE_"+(i+1));
-            assertTrue(index != -1);
+            Assert.assertTrue(index != -1);
         }
         //System.out.println("OneKey: "+sql);
     }
@@ -105,9 +106,9 @@ public class UtilitiesTest extends TestCase {
             String v = values.get(i);
             for(int z = 1; z <= Utilities.NUM_MAPPING_KEYS; z++){
                 int index = sql.indexOf("mcmk.mapping"+z+"_key = '"+s+"'");
-                assertTrue(index != -1);
+                Assert.assertTrue(index != -1);
                 index = sql.indexOf("mcmv.mapping"+z+"_value = '"+v+"'");
-                assertTrue(index != -1);
+                Assert.assertTrue(index != -1);
             }
         }
     }
@@ -158,7 +159,7 @@ public class UtilitiesTest extends TestCase {
                 boolean useAnd = (filters.get(i) == null || filters.get(i).equalsIgnoreCase("AND"));
                 String fValue = (useAnd)?"=":"LIKE";
                 int index = sql.indexOf("mcmk.mapping"+z+"_key = '"+s+"' AND mcmv.mapping"+z+"_value "+fValue+" '"+v+"'");
-                assertTrue(index != -1);
+                Assert.assertTrue(index != -1);
             }
         }
 
@@ -175,7 +176,7 @@ public class UtilitiesTest extends TestCase {
                 Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null ,null,1,true ,null ,false ,null);
 
         int index = sql.indexOf("mcmv.service_operation AS SERVICE_OPERATION_VALUE");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         //System.out.println("OnlyDetail: "+sql);
     }
 
@@ -195,15 +196,15 @@ public class UtilitiesTest extends TestCase {
                 Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null ,null,1,true ,null ,true , users);
 
         int index = sql.indexOf("mcmv.auth_user_id AS AUTHENTICATED_USER");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
 
         //mcmv.auth_user_id IN ('Donal','Ldap User 1')
         index = sql.indexOf("mcmv.auth_user_id IN");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
 
         for(String s: users){
             index = sql.indexOf(s);
-            assertTrue(index != -1);
+            Assert.assertTrue(index != -1);
         }
         //System.out.println("OnlyDetail: "+sql);
     }
@@ -219,11 +220,11 @@ public class UtilitiesTest extends TestCase {
                 Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null ,null,1,true ,null ,false , null);
 
         int index = sql.indexOf("sm.resolution = 1");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
 
         sql = Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null ,null,2,true ,null ,false , null);
         index = sql.indexOf("sm.resolution = 2");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         //System.out.println("Resolution: "+sql);
 
         boolean exception = false;
@@ -232,7 +233,7 @@ public class UtilitiesTest extends TestCase {
         }catch(IllegalArgumentException iae){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
     }
 
     /**
@@ -250,10 +251,10 @@ public class UtilitiesTest extends TestCase {
                 null ,false , null);
 
         int index = sql.indexOf("sm.period_start >="+startTime);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
 
         index = sql.indexOf("sm.period_start <"+endTime);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         
         boolean exception = false;
         try{
@@ -261,7 +262,7 @@ public class UtilitiesTest extends TestCase {
         }catch(IllegalArgumentException iae){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
         //System.out.println("Time: "+sql);
     }
 
@@ -283,18 +284,18 @@ public class UtilitiesTest extends TestCase {
 
         //p.objectid IN (12345, 67890)
         int index = sql.indexOf("p.objectid IN");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
 
         for(String s: serviceIds){
             index = sql.indexOf(s);
-            assertTrue(index != -1);
+            Assert.assertTrue(index != -1);
         }
 
         //check no constraint when no ids supplied
         sql = Utilities.createMappingQuery(false, null, null, new ArrayList<String>(), null, null, null, 1, true,
                 null , false, null);
         index = sql.indexOf("p.objectid IN");
-        assertTrue(index == -1);
+        Assert.assertTrue(index == -1);
     }
 
     @Test
@@ -311,18 +312,18 @@ public class UtilitiesTest extends TestCase {
 
             //AND mcmv.service_operation IN ('listProducts','orderProduct')
         int index = sql.indexOf("mcmv.service_operation IN");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
 
         for(String s: operations){
             index = sql.indexOf(s);
-            assertTrue(index != -1);
+            Assert.assertTrue(index != -1);
         }
 
         //check no constraint when no ids supplied
         sql = Utilities.createMappingQuery(false, null, null, new ArrayList<String>(), null, null, null, 1, true,
                 null , false, null);
         index = sql.indexOf("mcmv.service_operation IN");
-        assertTrue(index == -1);
+        Assert.assertTrue(index == -1);
     }
 
     /**
@@ -337,41 +338,41 @@ public class UtilitiesTest extends TestCase {
         //System.out.println("Select Fields: "+sql);
 
         int index = sql.indexOf(Utilities.SERVICE_ID);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.SERVICE_NAME);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.ROUTING_URI);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.THROUGHPUT);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.FRTM);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.FRTMX);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.FRTA);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.BRTM);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.BRTMX);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.AP);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.CONSTANT_GROUP);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.AUTHENTICATED_USER);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.SERVICE_OPERATION_VALUE);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_1);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_2);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_3);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_4);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_5);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
     }
 
     @Test
@@ -425,7 +426,7 @@ public class UtilitiesTest extends TestCase {
         //System.out.println("Group by: "+sql);
         int index = sql.indexOf("GROUP BY p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER , MAPPING_VALUE_1, " +
                 "MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
     }
 
     /**
@@ -438,7 +439,7 @@ public class UtilitiesTest extends TestCase {
 //        System.out.println("Order by: "+sql);
         int index = sql.indexOf("ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, " +
                 "MAPPING_VALUE_4, MAPPING_VALUE_5 ,p.objectid, SERVICE_OPERATION_VALUE");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
     }
 
     /**
@@ -453,25 +454,25 @@ public class UtilitiesTest extends TestCase {
         //System.out.println("Select Distinct Fields: "+sql);
 
         int index = sql.indexOf(Utilities.SERVICE_ID);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.SERVICE_NAME);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.ROUTING_URI);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.AUTHENTICATED_USER);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.SERVICE_OPERATION_VALUE);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_1);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_2);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_3);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_4);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_5);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
     }
 
     /**
@@ -492,7 +493,7 @@ public class UtilitiesTest extends TestCase {
         values.add(Utilities.SQL_PLACE_HOLDER);
 
         List<String> valueList = Utilities.createValueList(keys, values.toArray(new String[]{}));
-        assertTrue(valueList.size() == 2);
+        Assert.assertTrue(valueList.size() == 2);
 
         values.clear();
         values.add("127.0.0.1");
@@ -506,7 +507,7 @@ public class UtilitiesTest extends TestCase {
         }catch(IllegalArgumentException iae){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
     }
 
 
@@ -521,7 +522,7 @@ public class UtilitiesTest extends TestCase {
         long controlTime = d.getTime();
 
         long testTime = Utilities.getAbsoluteMilliSeconds(date);
-        assertTrue(controlTime == testTime);
+        Assert.assertTrue(controlTime == testTime);
     }
 
     /**
@@ -536,21 +537,21 @@ public class UtilitiesTest extends TestCase {
         control.set(Calendar.MILLISECOND, 0);
 
         Calendar cal = Utilities.getCalendarForTimeUnit(Utilities.HOUR);
-        assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
+        Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
         cal = Utilities.getCalendarForTimeUnit(Utilities.DAY);
         control = Calendar.getInstance();
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
         control.set(Calendar.MILLISECOND, 0);
-        assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
+        Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
         cal = Utilities.getCalendarForTimeUnit(Utilities.WEEK);
         control = Calendar.getInstance();
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
         control.set(Calendar.MILLISECOND, 0);
-        assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
+        Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
         cal = Utilities.getCalendarForTimeUnit(Utilities.MONTH);
         control = Calendar.getInstance();
@@ -558,7 +559,7 @@ public class UtilitiesTest extends TestCase {
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
         control.set(Calendar.MILLISECOND, 0);
-        assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
+        Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
     }
 
     /**
@@ -575,16 +576,16 @@ public class UtilitiesTest extends TestCase {
         long endTime = d.getTime();
 
         String timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.HOUR);
-        assertTrue(timeDisplay.equals("08/01 14:12 - 15:12"));
+        Assert.assertTrue(timeDisplay.equals("08/01 14:12 - 15:12"));
 
         timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.DAY);
-        assertTrue(timeDisplay.equals("Fri 08/01"));
+        Assert.assertTrue(timeDisplay.equals("Fri 08/01"));
         
         timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.WEEK);
-        assertTrue(timeDisplay.equals("08/01 - 10/13"));
+        Assert.assertTrue(timeDisplay.equals("08/01 - 10/13"));
 
         timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.MONTH);
-        assertTrue(timeDisplay.equals("2008 Aug"));
+        Assert.assertTrue(timeDisplay.equals("2008 Aug"));
 
         //System.out.println("timeDisplay: "+ timeDisplay);
     }
@@ -609,12 +610,12 @@ public class UtilitiesTest extends TestCase {
                 1, Utilities.HOUR);
 
         //00:00 - 00:00, 24 hours but 25 is the interval size as it is 0 based and end time is exclusive.
-        assertTrue(intervals.size() == 25);
+        Assert.assertTrue(intervals.size() == 25);
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
                 2, Utilities.HOUR);
 
-        assertTrue(intervals.size() == 13);
+        Assert.assertTrue(intervals.size() == 13);
 
         //Day
         startDate = "2008/10/01 00:00";
@@ -627,12 +628,12 @@ public class UtilitiesTest extends TestCase {
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
                 1, Utilities.DAY);
 
-        assertTrue(intervals.size() == 13);
+        Assert.assertTrue(intervals.size() == 13);
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
                 3, Utilities.DAY);
 
-        assertTrue(intervals.size() == 5);
+        Assert.assertTrue(intervals.size() == 5);
 
         //Week
         startDate = "2008/09/01 00:00";
@@ -644,11 +645,11 @@ public class UtilitiesTest extends TestCase {
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
                 1, Utilities.WEEK);
-        assertTrue(intervals.size() == 7);
+        Assert.assertTrue(intervals.size() == 7);
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
                 2, Utilities.WEEK);
-        assertTrue(intervals.size() == 4);
+        Assert.assertTrue(intervals.size() == 4);
 
         //Month
         startDate = "2008/01/01 00:00";
@@ -661,11 +662,11 @@ public class UtilitiesTest extends TestCase {
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
                 1, Utilities.MONTH);
 
-        assertTrue(intervals.size() == 10);
+        Assert.assertTrue(intervals.size() == 10);
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
                 3, Utilities.MONTH);
 
-        assertTrue(intervals.size() == 4);
+        Assert.assertTrue(intervals.size() == 4);
     }
 
     /**
@@ -675,23 +676,23 @@ public class UtilitiesTest extends TestCase {
     @Test
     public void testGetMappingReportInfoDisplayString(){
         String val = Utilities.getMappingReportInfoDisplayString(null, null, null, true, false);
-        assertTrue(val.equals(Utilities.onlyIsDetailDisplayText));
+        Assert.assertTrue(val.equals(Utilities.onlyIsDetailDisplayText));
 
         val = Utilities.getMappingReportInfoDisplayString(null,null, null, false, true);
-        assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY));
+        Assert.assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY));
 
         List<String> authUsers = new ArrayList<String>();
         authUsers.add("Donal");
         val = Utilities.getMappingReportInfoDisplayString(authUsers, null, null, false, true);
-        assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authUsers.get(0)+")"));
+        Assert.assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authUsers.get(0)+")"));
 
         authUsers.add("Ldap User 1");
         val = Utilities.getMappingReportInfoDisplayString(authUsers, null, null, false, true);
-        assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authUsers.get(0)+", "+authUsers.get(1)+")"));
+        Assert.assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authUsers.get(0)+", "+authUsers.get(1)+")"));
         
         //if auth users supplied, not printed if useUser is false
         val = Utilities.getMappingReportInfoDisplayString(authUsers, null, null, true, false);
-        assertTrue(val.equals(Utilities.onlyIsDetailDisplayText));
+        Assert.assertTrue(val.equals(Utilities.onlyIsDetailDisplayText));
 
         //exception, when all params are null or false
         boolean exception = false;
@@ -700,7 +701,7 @@ public class UtilitiesTest extends TestCase {
         }catch (IllegalArgumentException e){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
 
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
@@ -711,10 +712,10 @@ public class UtilitiesTest extends TestCase {
         values.add("GOLD");
 
         val = Utilities.getMappingReportInfoDisplayString(authUsers, keys, null, false, false);
-        assertTrue(val.equals(keys.get(0) + ", "+keys.get(1)));
+        Assert.assertTrue(val.equals(keys.get(0) + ", "+keys.get(1)));
 
         val = Utilities.getMappingReportInfoDisplayString(authUsers, keys, values, false, false);
-        assertTrue(val.equals(keys.get(0) + " ("+values.get(0)+"), "+keys.get(1)+" ("+values.get(1)+")"));
+        Assert.assertTrue(val.equals(keys.get(0) + " ("+values.get(0)+"), "+keys.get(1)+" ("+values.get(1)+")"));
 
         //exception when too many values
         values.add("GOLD");
@@ -724,11 +725,11 @@ public class UtilitiesTest extends TestCase {
         }catch (IllegalArgumentException e){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
         values.remove(2);
 
         val = Utilities.getMappingReportInfoDisplayString(authUsers, keys, values, false, true);
-        assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authUsers.get(0)+", "+authUsers.get(1)+"), "
+        Assert.assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authUsers.get(0)+", "+authUsers.get(1)+"), "
                 +keys.get(0) + " ("+values.get(0)+"), "+keys.get(1)+" ("+values.get(1)+")"));
 
     }
@@ -745,7 +746,7 @@ public class UtilitiesTest extends TestCase {
         }catch (NullPointerException e){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
 
         exception = false;
         try{
@@ -753,11 +754,11 @@ public class UtilitiesTest extends TestCase {
         }catch (IllegalArgumentException e){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
 
         
         String val = Utilities.getMappingValueDisplayString("Donal", null, null);
-        assertTrue(val.equals("Mapping Value: "+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal"));
+        Assert.assertTrue(val.equals("Mapping Value: "+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal"));
 
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
@@ -768,10 +769,10 @@ public class UtilitiesTest extends TestCase {
         values.add("GOLD");
 
         val = Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, keys, values.toArray(new String[]{}));
-        assertTrue(val.equals("Mapping Value: "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
+        Assert.assertTrue(val.equals("Mapping Value: "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
 
         val = Utilities.getMappingValueDisplayString("Donal", keys, values.toArray(new String[]{}));
-        assertTrue(val.equals("Mapping Value: "+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal, "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
+        Assert.assertTrue(val.equals("Mapping Value: "+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal, "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
         
         values.remove(1);
         exception = false;
@@ -780,7 +781,7 @@ public class UtilitiesTest extends TestCase {
         }catch (IllegalArgumentException e){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
     }
 
     @Test
@@ -790,7 +791,7 @@ public class UtilitiesTest extends TestCase {
         long timeMili = d.getTime();
 
         String milliAsDate = Utilities.getMilliSecondAsStringDate(timeMili);
-        assertTrue(date.equals(milliAsDate));
+        Assert.assertTrue(date.equals(milliAsDate));
     }
 
     @Test
@@ -799,17 +800,17 @@ public class UtilitiesTest extends TestCase {
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         long endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.HOUR);
-        assertTrue(calendar.getTimeInMillis() == endTimeMilli);
+        Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
 
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.DAY);
-        assertTrue(calendar.getTimeInMillis() == endTimeMilli);
+        Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
         endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.WEEK);
-        assertTrue(calendar.getTimeInMillis() == endTimeMilli);
+        Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
 
         calendar.set(Calendar.DAY_OF_MONTH, 1);
         endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.MONTH);
-        assertTrue(calendar.getTimeInMillis() == endTimeMilli);
+        Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
     }
 
     @Test
@@ -820,7 +821,7 @@ public class UtilitiesTest extends TestCase {
         }catch (IllegalArgumentException e){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
 
         String startDate = "2008/10/01 00:00";
         long startTime = DATE_FORMAT.parse(startDate).getTime();
@@ -833,7 +834,7 @@ public class UtilitiesTest extends TestCase {
         }catch (IllegalArgumentException e){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
         
     }
 
@@ -848,41 +849,41 @@ public class UtilitiesTest extends TestCase {
         String sql = Utilities.getNoMappingQuery(false, startTime, endTime, null,1);
 
         int index = sql.indexOf(Utilities.SERVICE_ID);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.SERVICE_NAME);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.ROUTING_URI);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.THROUGHPUT);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.FRTM);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.FRTMX);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.FRTA);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.BRTM);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.BRTMX);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.AP);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.CONSTANT_GROUP);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.AUTHENTICATED_USER);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.SERVICE_OPERATION_VALUE);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_1);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_2);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_3);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_4);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_5);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         
     }
 
@@ -900,10 +901,10 @@ public class UtilitiesTest extends TestCase {
         String sql = Utilities.getNoMappingQuery(false, startTime, endTime, null,1);
 
         int index = sql.indexOf("sm.period_start >="+startTime);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
 
         index = sql.indexOf("sm.period_start <"+endTime);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
 
         boolean exception = false;
         try{
@@ -911,7 +912,7 @@ public class UtilitiesTest extends TestCase {
         }catch(IllegalArgumentException iae){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
     }
 
     /**
@@ -928,11 +929,11 @@ public class UtilitiesTest extends TestCase {
         String sql = Utilities.getNoMappingQuery(false, startTime, endTime,  null,1);
 
         int index = sql.indexOf("sm.resolution = 1");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
 
         sql = Utilities.getNoMappingQuery(false, startTime, endTime, null,2);
         index = sql.indexOf("sm.resolution = 2");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         //System.out.println("Resolution: "+sql);
 
         boolean exception = false;
@@ -941,7 +942,7 @@ public class UtilitiesTest extends TestCase {
         }catch(IllegalArgumentException iae){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
     }
 
     /**
@@ -965,18 +966,18 @@ public class UtilitiesTest extends TestCase {
 
         //p.objectid IN (12345, 67890)
         int index = sql.indexOf("p.objectid IN");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
 
         for(String s: serviceIds){
             index = sql.indexOf(s);
-            assertTrue(index != -1);
+            Assert.assertTrue(index != -1);
         }
 
         //check no constraint when no ids supplied
         sql = Utilities.getNoMappingQuery(false, startTime, endTime, null, 1);
         
         index = sql.indexOf("p.objectid IN");
-        assertTrue(index == -1);
+        Assert.assertTrue(index == -1);
     }
 
     /**
@@ -991,7 +992,7 @@ public class UtilitiesTest extends TestCase {
 
         String sql = Utilities.getNoMappingQuery(false, startTime, endTime, null, 1);
         int index = sql.indexOf("GROUP BY p.objectid");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
     }
 
     @Test
@@ -1005,25 +1006,25 @@ public class UtilitiesTest extends TestCase {
         String sql = Utilities.getNoMappingQuery(true, startTime, endTime, null,1);
         
         int index = sql.indexOf(Utilities.SERVICE_ID);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.SERVICE_NAME);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.ROUTING_URI);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.AUTHENTICATED_USER);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.SERVICE_OPERATION_VALUE);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_1);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_2);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_3);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_4);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_5);
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
     }
 
     /**
@@ -1039,7 +1040,7 @@ public class UtilitiesTest extends TestCase {
 
         String sql = Utilities.getNoMappingQuery(true, startTime, endTime, null, 1);
         int index = sql.indexOf("ORDER BY p.objectid");
-        assertTrue(index != -1);
+        Assert.assertTrue(index != -1);
     }
 
     /**
@@ -1060,11 +1061,11 @@ public class UtilitiesTest extends TestCase {
 
         calendar.add(Calendar.HOUR_OF_DAY, -1);
         long timeInPast = Utilities.getRelativeMilliSecondsInPast(1, Utilities.HOUR);
-        assertTrue(calendar.getTimeInMillis() == timeInPast);
+        Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         calendar.add(Calendar.HOUR_OF_DAY, -1);
         timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.HOUR);
-        assertTrue(calendar.getTimeInMillis() == timeInPast);
+        Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         //day
         calendar = Calendar.getInstance();
@@ -1074,7 +1075,7 @@ public class UtilitiesTest extends TestCase {
 
         calendar.add(Calendar.DAY_OF_MONTH, -2);
         timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.DAY);
-        assertTrue(calendar.getTimeInMillis() == timeInPast);
+        Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         //week
         calendar = Calendar.getInstance();
@@ -1084,7 +1085,7 @@ public class UtilitiesTest extends TestCase {
 
         calendar.add(Calendar.WEEK_OF_YEAR, -2);
         timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.WEEK);
-        assertTrue(calendar.getTimeInMillis() == timeInPast);
+        Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         //month
         calendar = Calendar.getInstance();
@@ -1095,7 +1096,7 @@ public class UtilitiesTest extends TestCase {
 
         calendar.add(Calendar.MONTH, -2);
         timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.MONTH);
-        assertTrue(calendar.getTimeInMillis() == timeInPast);
+        Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
     }
 
     /**
@@ -1108,12 +1109,12 @@ public class UtilitiesTest extends TestCase {
         cal.add(Calendar.HOUR_OF_DAY, 6);
         long endTime = cal.getTimeInMillis();
         int resolution = Utilities.getResolutionFromTimePeriod(24, startTime, endTime);
-        assertTrue(resolution == 1);
+        Assert.assertTrue(resolution == 1);
 
         cal.add(Calendar.DAY_OF_MONTH, -40);
         startTime = cal.getTimeInMillis();
         resolution = Utilities.getResolutionFromTimePeriod(24, startTime, endTime);
-        assertTrue(resolution == 2);
+        Assert.assertTrue(resolution == 2);
 
         boolean exception = false;
         try{
@@ -1121,7 +1122,7 @@ public class UtilitiesTest extends TestCase {
         }catch(IllegalArgumentException iae){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
     }
 
     /**
@@ -1134,19 +1135,19 @@ public class UtilitiesTest extends TestCase {
         strings.add("two");
 
         String val = Utilities.getStringNamesFromCollection(strings);
-        assertTrue(val.split(",").length == 2);
+        Assert.assertTrue(val.split(",").length == 2);
 
         strings.remove(1);
         val = Utilities.getStringNamesFromCollection(strings);
         int index = val.indexOf(",");
-        assertTrue(index == -1);
+        Assert.assertTrue(index == -1);
         
     }
 
     @Test
     public void testIsPlaceHolderValue(){
         String val = Utilities.SQL_PLACE_HOLDER;
-        assertTrue(Utilities.isPlaceHolderValue(val));
+        Assert.assertTrue(Utilities.isPlaceHolderValue(val));
     }
 
     @Test
@@ -1157,7 +1158,7 @@ public class UtilitiesTest extends TestCase {
         }catch(IllegalArgumentException iae){
             exception = true;
         }
-        assertTrue(exception);
+        Assert.assertTrue(exception);
     }
 
     @Test
@@ -1166,7 +1167,7 @@ public class UtilitiesTest extends TestCase {
         LinkedHashSet<String> mappingValues = getTestMappingValues();
 
         Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
-        assertNotNull(doc);
+        Assert.assertNotNull(doc);
     }
 
     /**
@@ -1200,31 +1201,31 @@ public class UtilitiesTest extends TestCase {
         Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
-        assertTrue(list.getLength() == 1);
+        Assert.assertTrue(list.getLength() == 1);
 
         list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
-        assertTrue(list.getLength() == 1);
+        Assert.assertTrue(list.getLength() == 1);
 
         list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
-        assertTrue(list.getLength() == 1);
+        Assert.assertTrue(list.getLength() == 1);
 
         list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
-        assertTrue(list.getLength() == 1);
+        Assert.assertTrue(list.getLength() == 1);
 
         list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
-        assertTrue(list.getLength() == 1);
+        Assert.assertTrue(list.getLength() == 1);
         
         list = doc.getElementsByTagName(Utilities.WIDTH_ELEMENT);
-                assertTrue(list.getLength() == 1);
+                Assert.assertTrue(list.getLength() == 1);
 
         list = doc.getElementsByTagName(Utilities.FRAME_WIDTH);
-                assertTrue(list.getLength() == 1);
+                Assert.assertTrue(list.getLength() == 1);
 
         list = doc.getElementsByTagName(Utilities.LEFT_MARGIN);
-                assertTrue(list.getLength() == 1);
+                Assert.assertTrue(list.getLength() == 1);
 
         list = doc.getElementsByTagName(Utilities.RIGHT_MARGIN);
-                assertTrue(list.getLength() == 1);
+                Assert.assertTrue(list.getLength() == 1);
     }
 
     @Test
@@ -1236,7 +1237,7 @@ public class UtilitiesTest extends TestCase {
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
         //3 sets of variables X 4 value sets from getTestMappingValues()
-        assertTrue(list.getLength() == 12);
+        Assert.assertTrue(list.getLength() == 12);
     }
 
     @Test
@@ -1244,7 +1245,7 @@ public class UtilitiesTest extends TestCase {
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
         Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
-        //assertTrue(false);
+        //Assert.assertTrue(false);
         //todo [Donal] logic here to validate the names created for variables
     }
 
@@ -1257,7 +1258,7 @@ public class UtilitiesTest extends TestCase {
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
         //2 text fields which are hardcoded, and 4 value sets from getTestMappingValues() 
-        assertTrue(list.getLength() == 6);
+        Assert.assertTrue(list.getLength() == 6);
     }
 
     @Test
@@ -1269,7 +1270,7 @@ public class UtilitiesTest extends TestCase {
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
         //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
-        assertTrue(list.getLength() == 5);
+        Assert.assertTrue(list.getLength() == 5);
     }
 
     @Test
@@ -1281,7 +1282,7 @@ public class UtilitiesTest extends TestCase {
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
         list = list.item(0).getChildNodes();
         //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
-        assertTrue(list.getLength() == 5);
+        Assert.assertTrue(list.getLength() == 5);
     }
 
     @Test
@@ -1293,7 +1294,7 @@ public class UtilitiesTest extends TestCase {
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         list = list.item(0).getChildNodes();
         //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
-        assertTrue(list.getLength() == 5);
+        Assert.assertTrue(list.getLength() == 5);
     }
     
 }

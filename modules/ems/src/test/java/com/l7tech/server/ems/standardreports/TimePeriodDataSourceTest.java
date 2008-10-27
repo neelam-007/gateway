@@ -16,10 +16,10 @@ import java.util.Calendar;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import junit.framework.TestCase;
+import org.junit.Assert;
 import org.junit.Test;
 
-public class TimePeriodDataSourceTest extends TestCase {
+public class TimePeriodDataSourceTest {
 
     private SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(Utilities.DATE_STRING);
     /**
@@ -45,7 +45,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 24);
+        Assert.assertTrue(counter == 24);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 2, Utilities.HOUR);
@@ -54,7 +54,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 12);
+        Assert.assertTrue(counter == 12);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 3, Utilities.HOUR);
@@ -63,7 +63,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 8);
+        Assert.assertTrue(counter == 8);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 5, Utilities.HOUR);
@@ -72,7 +72,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 5);
+        Assert.assertTrue(counter == 5);
     }
 
     /**
@@ -98,7 +98,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 30);
+        Assert.assertTrue(counter == 30);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 2, Utilities.DAY);
@@ -108,7 +108,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 15);
+        Assert.assertTrue(counter == 15);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 3, Utilities.DAY);
@@ -118,7 +118,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 10);
+        Assert.assertTrue(counter == 10);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 7, Utilities.DAY);
@@ -128,7 +128,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 5);
+        Assert.assertTrue(counter == 5);
     }
 
     /**
@@ -154,7 +154,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 9);
+        Assert.assertTrue(counter == 9);
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -165,7 +165,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 5);
+        Assert.assertTrue(counter == 5);
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -176,7 +176,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 3);
+        Assert.assertTrue(counter == 3);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 5, Utilities.WEEK);
@@ -186,7 +186,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 2);
+        Assert.assertTrue(counter == 2);
     }
 
     /**
@@ -212,7 +212,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 12);
+        Assert.assertTrue(counter == 12);
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -223,7 +223,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 6);
+        Assert.assertTrue(counter == 6);
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -234,7 +234,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 4);
+        Assert.assertTrue(counter == 4);
         
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -245,7 +245,7 @@ public class TimePeriodDataSourceTest extends TestCase {
             counter++;
         }
 
-        assertTrue(counter == 3);
+        Assert.assertTrue(counter == 3);
     }
 
     /**
@@ -271,10 +271,10 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + hourInMilli;
-            assertTrue(intervalEndtime == end);
+            Assert.assertTrue(intervalEndtime == end);
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -284,10 +284,10 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + (hourInMilli * 2);
-            assertTrue(intervalEndtime == end);
+            Assert.assertTrue(intervalEndtime == end);
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -297,10 +297,10 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + (hourInMilli * 3);
-            assertTrue(intervalEndtime == end);
+            Assert.assertTrue(intervalEndtime == end);
         }
 
         //5 doesn't go into 24, so the last interval is a remainder
@@ -311,13 +311,13 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + (hourInMilli * 5);
 
             //the last interval has only 4 days 24/5 = 4 and 4 days over.
-            if(counter < 4) assertTrue(intervalEndtime == end);
-            else assertTrue((start + (hourInMilli * 4)) == end);
+            if(counter < 4) Assert.assertTrue(intervalEndtime == end);
+            else Assert.assertTrue((start + (hourInMilli * 4)) == end);
             counter++;
         }
     }
@@ -345,10 +345,10 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + dayInMilli;
-            assertTrue(intervalEndtime == end);
+            Assert.assertTrue(intervalEndtime == end);
         }
 
 
@@ -359,10 +359,10 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + (dayInMilli * 2);
-            assertTrue(intervalEndtime == end);
+            Assert.assertTrue(intervalEndtime == end);
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -372,10 +372,10 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + (dayInMilli * 3);
-            assertTrue(intervalEndtime == end);
+            Assert.assertTrue(intervalEndtime == end);
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -386,13 +386,13 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + (dayInMilli * 7);
 
             //the last interval has only 2 30/7=4 and 2 days over
-            if(counter < 4) assertTrue(intervalEndtime == end);
-            else assertTrue((start + (dayInMilli * 2)) == end);
+            if(counter < 4) Assert.assertTrue(intervalEndtime == end);
+            else Assert.assertTrue((start + (dayInMilli * 2)) == end);
 
             counter++;
         }
@@ -422,10 +422,10 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + weekInMilli;
-            assertTrue(intervalEndtime == end);
+            Assert.assertTrue(intervalEndtime == end);
         }
 
 
@@ -437,11 +437,11 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + (weekInMilli * 2);
-            if(counter < 4) assertTrue(intervalEndtime == end);
-            else assertTrue((start + weekInMilli) == end); 
+            if(counter < 4) Assert.assertTrue(intervalEndtime == end);
+            else Assert.assertTrue((start + weekInMilli) == end);
             counter++;
         }
         
@@ -453,10 +453,10 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + (weekInMilli * 3);
-            assertTrue(intervalEndtime == end);
+            Assert.assertTrue(intervalEndtime == end);
         }
 
 
@@ -468,16 +468,16 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             long intervalEndtime = start + (weekInMilli * 5);
 
             //the first interval has 35 days and the last has 28
 
-            if(counter < 1) assertTrue(intervalEndtime == end);
+            if(counter < 1) Assert.assertTrue(intervalEndtime == end);
             else{
                 long dayInMilli = 86400000L;
-                assertTrue((start + (dayInMilli * 28)) == end);
+                Assert.assertTrue((start + (dayInMilli * 28)) == end);
             }
             counter++;
         }
@@ -507,12 +507,12 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             cal.setTimeInMillis(start);
             cal.add(Calendar.MONTH,1);
 
-            assertTrue(cal.getTimeInMillis() == end);
+            Assert.assertTrue(cal.getTimeInMillis() == end);
         }
 
 
@@ -523,12 +523,12 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             cal.setTimeInMillis(start);
             cal.add(Calendar.MONTH,2);
 
-            assertTrue(cal.getTimeInMillis() == end);
+            Assert.assertTrue(cal.getTimeInMillis() == end);
         }
 
 
@@ -539,12 +539,12 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             cal.setTimeInMillis(start);
             cal.add(Calendar.MONTH,3);
 
-            assertTrue(cal.getTimeInMillis() == end);
+            Assert.assertTrue(cal.getTimeInMillis() == end);
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
@@ -555,18 +555,18 @@ public class TimePeriodDataSourceTest extends TestCase {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
-            assertTrue(start < end);
+            Assert.assertTrue(start < end);
 
             cal.setTimeInMillis(start);
 
 
             if(counter < 2){
                 cal.add(Calendar.MONTH,5);
-                assertTrue(cal.getTimeInMillis() == end);
+                Assert.assertTrue(cal.getTimeInMillis() == end);
             }
             else{
                 cal.add(Calendar.MONTH,2);
-                assertTrue(cal.getTimeInMillis() == end);
+                Assert.assertTrue(cal.getTimeInMillis() == end);
             }
             counter++;
         }
