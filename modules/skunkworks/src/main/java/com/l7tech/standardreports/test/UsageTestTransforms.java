@@ -14,13 +14,11 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.ems.standardreports.Utilities;
 import org.w3c.dom.Document;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.junit.Assert;
 import org.xml.sax.InputSource;
 
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.parsers.DocumentBuilderFactory;

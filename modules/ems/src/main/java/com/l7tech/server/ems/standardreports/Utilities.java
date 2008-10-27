@@ -1396,13 +1396,11 @@ Value is included in all or none, comment is just illustrative
 
         //add a text field for each column
         for(int i = 0; i < numMappingValues; i++){
-            //todo [Donal] display string here needs to be improved, currently it has placeholders in it and is not formatted
             addTextFieldToElement(doc, constantHeader, xPos, yPos, variableColumnWidth, textFieldHeight,
                     "textField-constantHeader-"+(i+1), "java.lang.String", listMappingValues.get(i));
             xPos += variableColumnWidth;
         }
         //move x pos along for width of a column
-//        xPos += variableColumnWidth;
 
         int serviceTotalWidth = 80;
         addTextFieldToElement(doc, constantHeader, xPos, yPos, serviceTotalWidth, textFieldHeight,
@@ -1470,6 +1468,19 @@ Value is included in all or none, comment is just illustrative
         rightMarginElement.setTextContent(String.valueOf(30));
         rootNode.appendChild(rightMarginElement);
         return doc;
+    }
+
+
+    public static String getMappingValueString(String authUser, String [] mappingValues){
+        StringBuilder sb = new StringBuilder();
+
+        if(!authUser.equals(Utilities.SQL_PLACE_HOLDER)) sb.append(authUser);
+
+        for(String s: mappingValues){
+            if(!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append(s).append("<br>");
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -1581,4 +1592,6 @@ Value is included in all or none, comment is just illustrative
         variables.appendChild(newVariable);
 
     }
+
 }
+

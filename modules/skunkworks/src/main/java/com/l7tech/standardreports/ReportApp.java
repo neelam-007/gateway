@@ -14,9 +14,7 @@ import java.sql.Statement;
 import java.util.*;
 
 import net.sf.jasperreports.engine.*;
-import net.sf.jasperreports.engine.util.JRLoader;
 import net.sf.jasperreports.view.JasperViewer;
-import com.l7tech.server.ems.standardreports.ScripletHelper;
 import com.l7tech.server.ems.standardreports.UsageReportHelper;
 import com.l7tech.server.ems.standardreports.Utilities;
 import com.l7tech.common.io.XmlUtil;
@@ -38,7 +36,7 @@ public class ReportApp
 	private static final String TASK_PDF = "pdf";
 	private static final String TASK_HTML = "html";
 	private static final String TASK_VIEW = "view";
-    private static final String TASK_RUN = "run";    
+    private static final String TASK_CANNED_USAGE = "usage";    
 
     //The following params must be supplied when filling the report
     private static final String REPORT_CONNECTION= "REPORT_CONNECTION";
@@ -88,6 +86,7 @@ public class ReportApp
     private static final String REPORT_FILE_NAME_NO_ENDING = "REPORT_FILE_NAME_NO_ENDING";
     private static final Properties prop = new Properties();
     private static final String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
+    private static final String REPORT_SCRIPTLET = "REPORT_SCRIPTLET";
 
     public ReportApp() {
     }
@@ -135,8 +134,30 @@ public class ReportApp
                 JasperViewer.viewReport(fileName+".jrprint", false);
                 System.err.println("View time : " + (System.currentTimeMillis() - start));
             }
-            else if (TASK_RUN.equals(taskName)){
-                
+            else if (TASK_CANNED_USAGE.equals(taskName)){
+                LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
+                keyToColumnName.put("127.0.0.1<br>Gold<br>", "COLUMN_1");
+                keyToColumnName.put("127.0.0.2<br>Gold<br>", "COLUMN_2");
+                keyToColumnName.put("127.0.0.1<br>Silver<br>", "COLUMN_3");
+                keyToColumnName.put("127.0.0.2<br>Silver<br>", "COLUMN_4");
+                keyToColumnName.put("127.0.0.1<br>Bronze<br>", "COLUMN_5");
+                keyToColumnName.put("127.0.0.2<br>Bronze<br>", "COLUMN_6");
+
+                Map<String, Object> parameters = getParameters();
+                Object scriplet = parameters.get(REPORT_SCRIPTLET);
+                UsageReportHelper helper = (UsageReportHelper) scriplet;
+                helper.setKeyToColumnMap(keyToColumnName);
+
+                Connection connection = getConnection(prop);
+                JasperPrint jrPrint = null;
+                try{
+                    jrPrint = JasperFillManager.fillReport("Canned_Usage_Report.jasper", parameters, connection);
+                }finally{
+                    connection.close();
+                }
+
+                System.out.println("Viewing...");
+                JasperViewer.viewReport(jrPrint, false);
             }
             else
 			{
@@ -152,6 +173,35 @@ public class ReportApp
 			e.printStackTrace();
 		}
 	}
+
+    private void fill(String fileName, long start) throws Exception{
+        Map<String, Object> parameters = getParameters();
+        String type = parameters.get(REPORT_TYPE).toString();
+        
+        if(type.equals("Usage")){
+            int numRelativeTimeUnits = Integer.valueOf(parameters.get(RELATIVE_NUM_OF_TIME_UNITS).toString());
+            long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, prop.getProperty(RELATIVE_TIME_UNIT));
+            long endTimeInPast = Utilities.getMillisForEndTimePeriod(prop.getProperty(RELATIVE_TIME_UNIT));
+            //todo [Donal] complete this method call with all possible inputs
+            List<String> keys = (List<String>) parameters.get(MAPPING_KEYS);
+            List<String> values = (List<String>) parameters.get(MAPPING_VALUES);
+            List<String> useAnd = (List<String>) parameters.get(VALUE_EQUAL_OR_LIKE);
+            boolean isDetail = Boolean.valueOf(parameters.get(IS_DETAIL).toString());
+            Object scriplet = parameters.get(REPORT_SCRIPTLET);
+
+            String sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, null, keys, values, useAnd, 2, isDetail, null, false, null);
+            runUsageReport(fileName, prop, parameters, scriplet, sql, keys);
+        }else{
+            //JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
+            Connection connection = getConnection(prop);
+            try{
+                JasperFillManager.fillReportToFile(fileName+".jasper", parameters, connection);
+            }finally{
+                connection.close();
+            }
+        }
+        System.err.println("Filling time : " + (System.currentTimeMillis() - start));
+    }
 
     public static LinkedHashMap<String, String> loadMapFromProperties(String key1, String key2, Properties prop){
 
@@ -184,116 +234,15 @@ public class ReportApp
 
         return returnList;
     }
-
-    private void fill(String fileName, long start) throws Exception{
-
-        //Preparing parameters
-        Map parameters = new HashMap();
-        //Required
-        parameters.put(REPORT_CONNECTION, getConnection(prop));
-        parameters.put(TEMPLATE_FILE_ABSOLUTE, "Styles.jrtx");
-        parameters.put(SUBREPORT_DIRECTORY, ".");
-
-        //parameters.put(REPORT_TIME_ZONE, java.util.TimeZone??);
-        parameters.put(REPORT_TYPE, prop.getProperty(REPORT_TYPE));
-        parameters.put(REPORT_RAN_BY, prop.getProperty(REPORT_RAN_BY));
-
-        Boolean b = Boolean.parseBoolean(prop.getProperty(IS_CONTEXT_MAPPING));
-        parameters.put(IS_CONTEXT_MAPPING, b);
-
-        Boolean isDetail = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
-        parameters.put(IS_DETAIL, isDetail);
-
-        //relative and absolute time
-        b = Boolean.parseBoolean(prop.getProperty(IS_RELATIVE));
-        parameters.put(IS_RELATIVE, b);
-        parameters.put(RELATIVE_TIME_UNIT, prop.getProperty(RELATIVE_TIME_UNIT));
-        Integer numRelativeTimeUnits = Integer.parseInt(prop.getProperty(RELATIVE_NUM_OF_TIME_UNITS).toString());
-        parameters.put(RELATIVE_NUM_OF_TIME_UNITS, numRelativeTimeUnits);
-
-        parameters.put(INTERVAL_TIME_UNIT, prop.getProperty(INTERVAL_TIME_UNIT));
-        Integer i = Integer.parseInt(prop.getProperty(INTERVAL_NUM_OF_TIME_UNITS).toString());
-        parameters.put(INTERVAL_NUM_OF_TIME_UNITS, i);
-
-        b = Boolean.parseBoolean(prop.getProperty(IS_ABSOLUTE).toString());
-        parameters.put(IS_ABSOLUTE, b);
-        parameters.put(ABSOLUTE_START_TIME, prop.getProperty(ABSOLUTE_START_TIME));
-        parameters.put(ABSOLUTE_END_TIME, prop.getProperty(ABSOLUTE_END_TIME));
-
-        parameters.put(HOURLY_MAX_RETENTION_NUM_DAYS, new Integer(prop.getProperty(HOURLY_MAX_RETENTION_NUM_DAYS)));
-
-
-        Map<String, String> nameToId = new HashMap<String,String>();
-        String serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_1");
-        String serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_1");
-        int index = 2;
-        while(serviceName != null && serviceOid != null){
-            nameToId.put(serviceName, serviceOid);
-            serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_"+index);
-            serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_"+index);
-            index++;
-        }
-        if(!nameToId.isEmpty()) parameters.put(SERVICE_NAME_TO_ID_MAP, nameToId);
-        
-        List<String > keys  = loadListFromProperties(MAPPING_KEY, prop);
-        List<String> values = loadListFromProperties(MAPPING_VALUE, prop);
-        List<String> useAnd = loadListFromProperties(VALUE_EQUAL_OR_LIKE, prop);
-
-        parameters.put(MAPPING_KEYS, keys);
-        parameters.put(MAPPING_VALUES, values);
-        parameters.put(VALUE_EQUAL_OR_LIKE, useAnd);
-
-        List<String> operations = loadListFromProperties(OPERATIONS, prop);
-        parameters.put(OPERATIONS, operations);
-
-        b = Boolean.parseBoolean(prop.getProperty(USE_USER).toString());
-        parameters.put(USE_USER, b);
-        List<String> authUser = loadListFromProperties(AUTHENTICATED_USERS, prop);
-        parameters.put(AUTHENTICATED_USERS, authUser);
-
-        JasperPrint jp = JasperFillManager.fillReport("StyleGenerator.jasper", parameters);
-        Map sMap = jp.getStylesMap();
-        if(sMap == null) throw new NullPointerException("sMap is null");
-        
-        parameters.put(STYLES_FROM_TEMPLATE, sMap);
-
-        //Only required because jasper reports for some reason ignores the value of scriptletClass from the
-        //jasperreport element attribute, so specifying it as a parameter explicitly fixes this issue
-        String reportScriplet = prop.getProperty("REPORT_SCRIPTLET");
-        Class c = Class.forName(reportScriplet);
-        Object scriplet = c.newInstance();
-        if(reportScriplet.endsWith("UsageReportHelper")){
-            long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, prop.getProperty(RELATIVE_TIME_UNIT));
-            long endTimeInPast = Utilities.getMillisForEndTimePeriod(prop.getProperty(RELATIVE_TIME_UNIT));
-            String sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, null, keys, values, useAnd, 2, isDetail, null, false, null);
-
-            runUsageReport(fileName, prop, parameters, scriplet, sql, keys);
-            return;
-        }
-        
-        parameters.put("REPORT_SCRIPTLET", scriplet);
-
-        //JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
-        Connection connection = getConnection(prop);
-        try{
-            JasperFillManager.fillReportToFile(fileName+".jasper", parameters, connection);
-        }finally{
-            connection.close();
-        }
-
-        System.err.println("Filling time : " + (System.currentTimeMillis() - start));
-    }
-
+    
     private void runUsageReport(String fileName, Properties prop, Map parameters, Object scriplet, String sql,
                                        List<String> keys)
                                                                     throws Exception{
         UsageReportHelper helper = (UsageReportHelper) scriplet;
-        parameters.put("REPORT_SCRIPTLET", scriplet);
-        Statement stmt = null;
-        LinkedHashSet<String> mappingValues = null;
+        LinkedHashSet<String> mappingValues;
         Connection connection = getConnection(prop);
         try{
-            stmt = connection.createStatement();
+            Statement stmt = connection.createStatement();
             mappingValues = getMappingValueSet(stmt, sql);
         }catch(Exception ex){
             if(connection != null) connection.close();
@@ -315,7 +264,7 @@ public class ReportApp
 
         //get xsl and xml
         String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
-        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/Usage_Summary_XSLT_Template.jrxml");
+        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         //Document doc = transform(xslStr, xmlStr, params);
@@ -362,13 +311,13 @@ public class ReportApp
         ResultSet rs = stmt.executeQuery(sql);
 
         while(rs.next()){
-            StringBuilder sb = new StringBuilder();
+            List<String> mappingStrings = new ArrayList<String>();
             String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
-            sb.append(authUser);
             for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
-                sb.append(rs.getString("MAPPING_VALUE_"+(i+1)));
+                mappingStrings.add(rs.getString("MAPPING_VALUE_"+(i+1)));
             }
-            set.add(sb.toString());
+            String mappingValue = Utilities.getMappingValueString(authUser, mappingStrings.toArray(new String[]{}));
+            set.add(mappingValue);
         }
         return set;
     }
@@ -379,7 +328,7 @@ public class ReportApp
 	{
 		System.out.println( "ReportApp usage:" );
 		System.out.println( "\tjava SubreportApp task file" );
-		System.out.println( "\tTasks : fill | print | pdf | html" );
+		System.out.println( "\tTasks : fill | print | pdf | html | usage" );
 	}
 
 
@@ -420,4 +369,86 @@ public class ReportApp
         Document returnDoc = builder.parse(new InputSource(reader));
         return returnDoc;
     }
+
+    private Map<String, Object> getParameters() throws Exception{
+        //Preparing parameters
+        Map<String, Object> parameters = new HashMap<String, Object>();
+        //Required
+        parameters.put(REPORT_CONNECTION, getConnection(prop));
+        parameters.put(TEMPLATE_FILE_ABSOLUTE, "Styles.jrtx");
+        parameters.put(SUBREPORT_DIRECTORY, ".");
+
+        //parameters.put(REPORT_TIME_ZONE, java.util.TimeZone??);
+        parameters.put(REPORT_TYPE, prop.getProperty(REPORT_TYPE));
+        parameters.put(REPORT_RAN_BY, prop.getProperty(REPORT_RAN_BY));
+
+        Boolean b = Boolean.parseBoolean(prop.getProperty(IS_CONTEXT_MAPPING));
+        parameters.put(IS_CONTEXT_MAPPING, b);
+
+        Boolean isDetail = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
+        parameters.put(IS_DETAIL, isDetail);
+
+        //relative and absolute time
+        b = Boolean.parseBoolean(prop.getProperty(IS_RELATIVE));
+        parameters.put(IS_RELATIVE, b);
+        parameters.put(RELATIVE_TIME_UNIT, prop.getProperty(RELATIVE_TIME_UNIT));
+        Integer numRelativeTimeUnits = Integer.parseInt(prop.getProperty(RELATIVE_NUM_OF_TIME_UNITS).toString());
+        parameters.put(RELATIVE_NUM_OF_TIME_UNITS, numRelativeTimeUnits);
+
+        parameters.put(INTERVAL_TIME_UNIT, prop.getProperty(INTERVAL_TIME_UNIT));
+        Integer i = Integer.parseInt(prop.getProperty(INTERVAL_NUM_OF_TIME_UNITS).toString());
+        parameters.put(INTERVAL_NUM_OF_TIME_UNITS, i);
+
+        b = Boolean.parseBoolean(prop.getProperty(IS_ABSOLUTE).toString());
+        parameters.put(IS_ABSOLUTE, b);
+        parameters.put(ABSOLUTE_START_TIME, prop.getProperty(ABSOLUTE_START_TIME));
+        parameters.put(ABSOLUTE_END_TIME, prop.getProperty(ABSOLUTE_END_TIME));
+
+        parameters.put(HOURLY_MAX_RETENTION_NUM_DAYS, new Integer(prop.getProperty(HOURLY_MAX_RETENTION_NUM_DAYS)));
+
+
+        Map<String, String> nameToId = new HashMap<String,String>();
+        String serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_1");
+        String serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_1");
+        int index = 2;
+        while(serviceName != null && serviceOid != null){
+            nameToId.put(serviceName, serviceOid);
+            serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_"+index);
+            serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_"+index);
+            index++;
+        }
+        if(!nameToId.isEmpty()) parameters.put(SERVICE_NAME_TO_ID_MAP, nameToId);
+
+        List<String> keys  = loadListFromProperties(MAPPING_KEY, prop);
+        List<String> values = loadListFromProperties(MAPPING_VALUE, prop);
+        List<String> useAnd = loadListFromProperties(VALUE_EQUAL_OR_LIKE, prop);
+
+        parameters.put(MAPPING_KEYS, keys);
+        parameters.put(MAPPING_VALUES, values);
+        parameters.put(VALUE_EQUAL_OR_LIKE, useAnd);
+
+        List<String> operations = loadListFromProperties(OPERATIONS, prop);
+        parameters.put(OPERATIONS, operations);
+
+        b = Boolean.parseBoolean(prop.getProperty(USE_USER).toString());
+        parameters.put(USE_USER, b);
+        List<String> authUser = loadListFromProperties(AUTHENTICATED_USERS, prop);
+        parameters.put(AUTHENTICATED_USERS, authUser);
+
+        JasperPrint jp = JasperFillManager.fillReport("StyleGenerator.jasper", parameters);
+        Map sMap = jp.getStylesMap();
+        if(sMap == null) throw new NullPointerException("sMap is null");
+
+        parameters.put(STYLES_FROM_TEMPLATE, sMap);
+
+        String reportScriplet = prop.getProperty(REPORT_SCRIPTLET);
+        Class c = Class.forName(reportScriplet);
+        Object scriplet = c.newInstance();
+        //Only required because jasper reports for some reason ignores the value of scriptletClass from the
+        //jasperreport element attribute, so specifying it as a parameter explicitly fixes this issue
+        parameters.put(REPORT_SCRIPTLET, scriplet);
+
+        return parameters;
+    }
+    
 }

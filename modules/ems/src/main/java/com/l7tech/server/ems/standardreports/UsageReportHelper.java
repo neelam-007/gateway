@@ -20,18 +20,12 @@ public class UsageReportHelper extends JRDefaultScriptlet {
     }
 
     public Long getColumnValue(String varName, String authUser, String [] mappingValues){
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(authUser);
-
-        for(String s: mappingValues){
-            sb.append(s);
-        }
+        String mappingValue = Utilities.getMappingValueString(authUser, mappingValues);
 
         JRFillField field = (JRFillField) this.fieldsMap.get("USAGE_SUM");
-        String colVarName = keyToColumnMap.get(sb.toString());
+        String colVarName = keyToColumnMap.get(mappingValue);
 
-        System.out.println("Looking up: " + sb.toString());
+        System.out.println("Looking up: " + mappingValue);
 
         if(varName.equals(colVarName)){
             System.out.println(colVarName+" is " + field.getValue());
@@ -44,18 +38,12 @@ public class UsageReportHelper extends JRDefaultScriptlet {
     }
 
     public Long getVariableValue(String varName, String authUser, String [] mappingValues){
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(authUser);
-        
-        for(String s: mappingValues){
-            sb.append(s);
-        }
+        String mappingValue = Utilities.getMappingValueString(authUser, mappingValues);
 
         JRFillField field = (JRFillField) this.fieldsMap.get("USAGE_SUM");
-        String colVarName = keyToColumnMap.get(sb.toString());
+        String colVarName = keyToColumnMap.get(mappingValue);
 
-        System.out.println("Looking up: " + sb.toString());
+        System.out.println("Looking up: " + mappingValue);
         if(varName.equals(colVarName)){
             System.out.println(colVarName+" is " + field.getValue());
             return (Long) field.getValue();
@@ -64,4 +52,5 @@ public class UsageReportHelper extends JRDefaultScriptlet {
         //return 0 so that sum functions are unaffected by this function being called for every detail row
         return 0L;
     }
+
 }
