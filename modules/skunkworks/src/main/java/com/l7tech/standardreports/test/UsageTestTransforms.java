@@ -4,7 +4,7 @@
  * Date: Oct 23, 2008
  * Time: 12:14:10 PM
  */
-package com.l7tech.standardreports;
+package com.l7tech.standardreports.test;
 
 import java.io.*;
 import java.util.*;
@@ -29,7 +29,6 @@ import javax.xml.parsers.DocumentBuilder;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperReport;
 
-@Ignore(value = "Requires non classpath files ,developer only")
 public class UsageTestTransforms{
 
     private String getResAsString(String path) throws IOException {
@@ -116,11 +115,11 @@ public class UsageTestTransforms{
         //Document doc = transform(xslStr, xmlStr, params);
         Document transformDoc = transform(xslStr, xmlFileName, params);
 
-        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
+        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeJasper.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
         try{
-            XmlUtil.nodeToFormattedOutputStream(doc, fos);
+            XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
         }finally{
             fos.close();
         }

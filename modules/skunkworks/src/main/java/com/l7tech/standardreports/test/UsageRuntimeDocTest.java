@@ -4,7 +4,7 @@
  * Date: Oct 23, 2008
  * Time: 6:51:47 PM
  */
-package com.l7tech.standardreports;
+package com.l7tech.standardreports.test;
 
 import org.junit.*;
 import org.w3c.dom.Document;
@@ -19,8 +19,8 @@ import java.io.FileOutputStream;
 
 import com.l7tech.server.ems.standardreports.Utilities;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.standardreports.ReportApp;
 
-@Ignore(value = "Required db ,developer only")
 public class UsageRuntimeDocTest {
 
     private Connection conn = null;

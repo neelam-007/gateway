@@ -4,7 +4,7 @@
  * Date: Oct 14, 2008
  * Time: 12:37:43 PM
  */
-package com.l7tech.standardreports;
+package com.l7tech.standardreports.test;
 
 import org.junit.*;
 
@@ -15,8 +15,8 @@ import java.util.ArrayList;
 import java.sql.*;
 
 import com.l7tech.server.ems.standardreports.Utilities;
+import com.l7tech.standardreports.ReportApp;
 
-@Ignore(value = "Required db ,developer only")
 public class CheckTestData{
 
     private static final Properties prop = new Properties();
