@@ -19,7 +19,6 @@ import javax.jws.WebService;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
-import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.Set;
 
@@ -47,12 +46,11 @@ public interface NodeManagementApi {
      *                   sufficient credentials to do so) a {@link SaveException} will be thrown.
      * @param adminLogin The admin account to create for cluster administration.
      * @param adminPassphrase The admin account passphrase
-     * @param clusterPassphrase The cluster passphrase to use
      *
      * @return the newly created NodeConfig
      * @throws SaveException if the new node cannot be created
      */
-    NodeConfig createNode(NodeConfig nodeConfig, String adminLogin, String adminPassphrase, String clusterPassphrase) throws SaveException;
+    NodeConfig createNode(NodeConfig nodeConfig, String adminLogin, String adminPassphrase) throws SaveException;
 
     /**
      * Retrieves the {@link com.l7tech.server.management.config.node.NodeConfig} with the provided name, or null if no such node exists on this host.

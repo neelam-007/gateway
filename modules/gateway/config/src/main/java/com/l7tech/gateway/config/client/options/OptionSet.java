@@ -67,11 +67,11 @@ public class OptionSet {
         this.prompt = prompt;
     }
 
-    public Set<Option> getOptions(String optionSet) {
+    public Set<Option> getOptions(String optionId) {
         Option option = null;
         
         for ( Option currentOption : options ) {
-            if ( optionSet.equals(currentOption.getId()) ) {
+            if ( optionId.equals(currentOption.getId()) ) {
                 option = currentOption;
                 break;
             }
@@ -84,6 +84,19 @@ public class OptionSet {
         }
     }
 
+
+    public Set<Option> getOptionsForGroup(String groupId) {
+        Set<Option> optionSet = new TreeSet<Option>();
+        
+        for ( Option option : options ) {
+            if ( groupId.equals( option.getGroup() ) ) {
+                optionSet.add(option);
+            }
+        }
+        
+        return optionSet;
+    }
+    
     @XmlElement(name="optionGroup")
     public Set<OptionGroup> getOptionGroups() {
         return groups;

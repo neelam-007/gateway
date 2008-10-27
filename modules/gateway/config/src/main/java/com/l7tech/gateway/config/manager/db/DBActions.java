@@ -1,13 +1,11 @@
 package com.l7tech.gateway.config.manager.db;
 
 import com.l7tech.util.BuildInfo;
-import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.CausedIOException;
-import com.l7tech.gateway.config.manager.LicenseChecker;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import org.apache.commons.lang.StringUtils;
 
@@ -95,7 +93,6 @@ public class DBActions {
     };
 
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
-    private LicenseChecker licChecker;
 
     //
     // CONSTRUCTOR
@@ -349,9 +346,6 @@ public class DBActions {
         if (status.getStatus() == DBActions.DB_SUCCESS) {
             logger.info(CONNECTION_SUCCESSFUL_MSG);
 
-            if (licChecker != null && !checkLicense(ui, currentVersion, databaseConfig))
-                return false;
-
             logger.info("Now Checking database version.");
             String dbVersion = checkDbVersion(databaseConfig);
             if (dbVersion == null) {
@@ -443,35 +437,6 @@ public class DBActions {
             }
         }
         return isOk;
-    }
-
-    private boolean checkLicense(DBActionsListener ui, String currentVersion, DatabaseConfig databaseConfig) {
-        logger.info("Now Checking SSG License validity");
-        Connection conn = null;
-        try {
-            try {
-                conn = getConnection(databaseConfig, false);
-            } catch (SQLException e) {
-                logger.info("Cannot check the license. Could not get a connection to the database");
-                return false;
-            }
-            try {
-                licChecker.checkLicense(conn, currentVersion, BuildInfo.getProductName(), BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor());
-                logger.info("The License is valid and will work with this version (" + currentVersion + ").");
-            } catch ( InvalidLicenseException e) {
-                String message = ExceptionUtils.getMessage(e);
-                logger.warning(message);
-                if (ui != null) {
-                    if (!ui.getGenericUserConfirmation(message + "\nDo you wish to continue?")) {
-                        ui.showErrorMessage(message);
-                        return false;
-                    }
-                }
-            }
-        } finally {
-            ResourceUtils.closeQuietly(conn);
-        }
-        return true;
     }
 
     /**
@@ -1231,10 +1196,6 @@ public class DBActions {
         } finally {
             ResourceUtils.closeQuietly(stmt);
         }
-    }
-
-    public void setLicenseChecker(LicenseChecker licenseChecker) {
-        licChecker = licenseChecker;
     }
 
     public class WrongDbVersionException extends Exception {

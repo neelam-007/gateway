@@ -13,8 +13,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.cxf.binding.soap.SoapFault;
-
 /**
  * ConfigurationBeanProvider for process controller / node enabled state.
  *
@@ -47,9 +45,7 @@ public class StateConfigurationBeanProvider extends ProcessControllerConfigurati
             }
         } catch ( FindException fe ) {
             throw new ConfigurationException( "Error loading node configuration.", fe );
-        } catch ( SoapFault sf ) {
-            throw new ConfigurationException( "Error loading node configuration", sf );
-        }
+        } 
 
         return toBeans( config );
     }
@@ -67,8 +63,6 @@ public class StateConfigurationBeanProvider extends ProcessControllerConfigurati
             }
         } catch ( ObjectModelException ome ) {
             throw new ConfigurationException( "Error storing node configuration", ome );
-        } catch ( SoapFault sf ) {
-            throw new ConfigurationException( "Error storing node configuration", sf );
         } catch ( NodeManagementApi.RestartRequiredException rre ) {
             logger.log( Level.WARNING, "Restart required to apply configuration." );
         }

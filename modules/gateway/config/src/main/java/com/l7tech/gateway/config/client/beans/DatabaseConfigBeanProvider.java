@@ -8,6 +8,7 @@ import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 
+import com.l7tech.server.management.config.node.NodeConfig.ClusterType;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.util.*;
 import java.util.logging.Level;
@@ -55,26 +56,30 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
         NodeManagementApi managementService = getManagementService();
         try {
             if ( config != null ) {
+                config.setEnabled((Boolean)getOption("node.enable", configuration));
+                config.setClusterPassphrase((String)getOption("cluster.pass", configuration));
                 fromBeans( config, configuration );
                 managementService.updateNode( config );
             } else {
                 // String newNodeName, String version, Map<DatabaseType, DatabaseConfig> databaseConfigMap
                 NodeConfig config = new NodeConfig();
                 config.setName("default");
-                config.setClusterHostname((String)getOption("cluster.host", configuration));
                 config.setEnabled((Boolean)getOption("node.enable", configuration));
+                config.setClusterHostname((String)getOption("cluster.host", configuration));
+                config.setClusterPassphrase((String)getOption("cluster.pass", configuration));
                 fromBeans( config, configuration );
                 managementService.createNode(
                         config,
                         (String)getOption("admin.user", configuration),
-                        (String)getOption("admin.pass", configuration),
-                        (String)getOption("cluster.pass", configuration)
+                        (String)getOption("admin.pass", configuration)                        
                 );
             }
         } catch ( ObjectModelException ome ) {
-            throw new ConfigurationException( "Error storing node configuration", ome );
+            throw new ConfigurationException( "Error saving configuration '"+ome.getMessage()+"'" );
         } catch ( SOAPFaultException sf ) {
-            throw new ConfigurationException( "Error storing node configuration", sf );
+            String message = "Unexpected error saving configuration '"+sf.getMessage()+"'";
+            logger.log( Level.WARNING, message, sf);
+            throw new ConfigurationException( message );            
         } catch ( NodeManagementApi.RestartRequiredException rre ) {
             logger.log( Level.WARNING, "Restart required to apply configuration." );
         }
@@ -96,44 +101,63 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
                         continue;
                     }
 
-                    // host
-                    if ( dbConfig.getHost() != null ) {
-                        ConfigurationBean configBean = new ConfigurationBean();
-                        configBean.setConfigName( "database.host" );
-                        configBean.setConfigValue( dbConfig.getHost() );
-                        configuration.add(configBean);
-                    }
+                    if ( dbConfig.getClusterType() == ClusterType.STANDALONE ||
+                         dbConfig.getClusterType() == ClusterType.REPL_MASTER ) {
+                        // host
+                        if ( dbConfig.getHost() != null ) {
+                            ConfigurationBean configBean = new ConfigurationBean();
+                            configBean.setConfigName( "database.host" );
+                            configBean.setConfigValue( dbConfig.getHost() );
+                            configuration.add(configBean);
+                        }
 
-                    // port
-                    if ( dbConfig.getPort() > 0l ) {
-                        ConfigurationBean configBean = new ConfigurationBean();
-                        configBean.setConfigName( "database.port" );
-                        configBean.setConfigValue( Integer.toString(dbConfig.getPort()) );
-                        configuration.add(configBean);
-                    }
+                        // port
+                        if ( dbConfig.getPort() > 0l ) {
+                            ConfigurationBean configBean = new ConfigurationBean();
+                            configBean.setConfigName( "database.port" );
+                            configBean.setConfigValue( Integer.toString(dbConfig.getPort()) );
+                            configuration.add(configBean);
+                        }
 
-                    // name
-                    if ( dbConfig.getName() != null ) {
-                        ConfigurationBean configBean = new ConfigurationBean();
-                        configBean.setConfigName( "database.name" );
-                        configBean.setConfigValue( dbConfig.getName() );
-                        configuration.add(configBean);
-                    }
+                        // name
+                        if ( dbConfig.getName() != null ) {
+                            ConfigurationBean configBean = new ConfigurationBean();
+                            configBean.setConfigName( "database.name" );
+                            configBean.setConfigValue( dbConfig.getName() );
+                            configuration.add(configBean);
+                        }
 
-                    // username
-                    if ( dbConfig.getNodeUsername() != null ) {
-                        ConfigurationBean configBean = new ConfigurationBean();
-                        configBean.setConfigName( "database.user" );
-                        configBean.setConfigValue( dbConfig.getNodeUsername() );
-                        configuration.add(configBean);
-                    }
+                        // username
+                        if ( dbConfig.getNodeUsername() != null ) {
+                            ConfigurationBean configBean = new ConfigurationBean();
+                            configBean.setConfigName( "database.user" );
+                            configBean.setConfigValue( dbConfig.getNodeUsername() );
+                            configuration.add(configBean);
+                        }
 
-                    // admin username
-                    if ( dbConfig.getDatabaseAdminUsername() != null ) {
-                        ConfigurationBean configBean = new ConfigurationBean();
-                        configBean.setConfigName( "database.admin.user" );
-                        configBean.setConfigValue( dbConfig.getDatabaseAdminUsername() );
-                        configuration.add(configBean);
+                        // admin username
+                        if ( dbConfig.getDatabaseAdminUsername() != null ) {
+                            ConfigurationBean configBean = new ConfigurationBean();
+                            configBean.setConfigName( "database.admin.user" );
+                            configBean.setConfigValue( dbConfig.getDatabaseAdminUsername() );
+                            configuration.add(configBean);
+                        }
+                    } else if ( dbConfig.getClusterType() == ClusterType.REPL_SLAVE ) {
+                        // failover host
+                        if ( dbConfig.getHost() != null ) {
+                            ConfigurationBean configBean = new ConfigurationBean();
+                            configBean.setConfigName( "database.failover.host" );
+                            configBean.setConfigValue( dbConfig.getHost() );
+                            configuration.add(configBean);
+                        }
+
+                        // failover port
+                        if ( dbConfig.getPort() > 0l ) {
+                            ConfigurationBean configBean = new ConfigurationBean();
+                            configBean.setConfigName( "database.failover.port" );
+                            configBean.setConfigValue( Integer.toString(dbConfig.getPort()) );
+                            configuration.add(configBean);
+                        }                        
                     }
                 }
             }

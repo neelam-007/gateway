@@ -81,11 +81,13 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         logger.log(Level.FINE, "Accepted client certificate {0}", certificate.getSubjectDN().getName());
     }
 
-    public NodeConfig createNode(NodeConfig nodeConfig, String adminLogin, String adminPassphrase, String clusterPassphrase)
+    @Override
+    public NodeConfig createNode(NodeConfig nodeConfig, String adminLogin, String adminPassphrase)
             throws SaveException {
         checkRequest();
 
         String newNodeName = nodeConfig.getName();
+        String clusterPassphrase = nodeConfig.getClusterPassphrase();
 
         final Map<String,NodeConfig> nodes = configService.getHost().getNodes();
         PCNodeConfig temp = (PCNodeConfig)nodes.get(newNodeName);
@@ -94,27 +96,9 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         final List<SoftwareVersion> versions = processController.getAvailableNodeVersions();
         SoftwareVersion nodeVersion = versions.get(0);
 
-        DatabaseConfig databaseConfig = null;
-        DatabaseConfig failoverDatabaseConfig = null;
-        if ( nodeConfig.getDatabases() != null ) {
-            for ( DatabaseConfig config : nodeConfig.getDatabases() ) {
-                if ( config !=null && config.getType() == DatabaseType.NODE_ALL ) {
-                    if ( config.getClusterType() != null ) {
-                        switch ( config.getClusterType() ) {
-                            case REPL_MASTER:
-                            case STANDALONE:
-                                if ( databaseConfig != null ) throw new SaveException("Invalid database configuration (primary db conflict).");
-                                databaseConfig = config;
-                                break;
-                            case REPL_SLAVE:
-                                if ( failoverDatabaseConfig != null ) throw new SaveException("Invalid database configuration (failover db conflict).");
-                                failoverDatabaseConfig = config;
-                                break;
-                        }
-                    }
-                }
-            }
-        }
+        DatabaseConfig[] configs = getDatabaseConfigurations( nodeConfig );
+        DatabaseConfig databaseConfig = configs[0];
+        DatabaseConfig failoverDatabaseConfig = configs[1];
 
         if ( databaseConfig == null ) {
             throw new SaveException( "Database configuration is required." );
@@ -127,6 +111,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         node.setGuid(UUID.randomUUID().toString().replace("-",""));
         node.setHost(configService.getHost());
         node.getDatabases().add(databaseConfig);
+        node.getDatabases().add(failoverDatabaseConfig);
 
         try {
             NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), true, null, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
@@ -140,11 +125,13 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         return node;
     }
 
+    @Override
     public NodeConfig getNode(String nodeName) throws FindException {
         checkRequest();
         return configService.getHost().getNodes().get(nodeName);
     }
 
+    @Override
     public Set<NodeHeader> listNodes() throws FindException {
         checkRequest();
         final Set<NodeHeader> nodes = new HashSet<NodeHeader>();
@@ -157,25 +144,61 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     /**
-     * TODO support updates other than enable/disable 
+     * Update configuration for a node.
+     * 
+     * <p>This allows for update of the following node configuration</p>
+     * 
+     * <ul>
+     *   <li>Database Configuration : The primary DB configuration</li>
+     *   <li>Failover Database Configuration : The secondary DB configuration</li>
+     *   <li>Enabled : The node enabled/disabled state</li>
+     *   <li>Cluster Passphrase : The node passphrase</li>
+     * </ul>
+     * 
+     * @node The updated node configuration.
      */
+    @Override
     public void updateNode(NodeConfig node) throws UpdateException, RestartRequiredException {
         checkRequest();
 
+        // validate and persist configuration
         final String nodeName = node.getName();
         final Map<String,NodeConfig> nodes = configService.getHost().getNodes();
         PCNodeConfig currentNodeConfig = (PCNodeConfig)nodes.get(nodeName);
         if (currentNodeConfig == null) throw new UpdateException("Node '" + nodeName + "' not found.");
 
-        currentNodeConfig.setEnabled( node.isEnabled() );
-
+        String clusterPassphrase = node.getClusterPassphrase();
+        DatabaseConfig[] configs;
         try {
-            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), null, null, null, null );
+            configs = getDatabaseConfigurations( node );
+        } catch (SaveException se) {
+            throw new UpdateException( se.getMessage() );
+        }
+        DatabaseConfig databaseConfig = configs[0];
+        DatabaseConfig failoverDatabaseConfig = configs[1];
+        
+        try {
+            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), null, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
         }
 
+        // update internal configuration
+        currentNodeConfig.setEnabled( node.isEnabled() );
+        if ( clusterPassphrase != null )  {
+            currentNodeConfig.setClusterPassphrase( clusterPassphrase );
+        }
+        if ( databaseConfig != null ) {
+            currentNodeConfig.getDatabases().clear();
+            currentNodeConfig.getDatabases().add(databaseConfig);
+            if ( failoverDatabaseConfig != null ) {
+                failoverDatabaseConfig.setParent(databaseConfig);
+                currentNodeConfig.getDatabases().add(failoverDatabaseConfig);
+            }
+        }
+
+        // apply state change if required
         NodeStateType currentState = processController.getNodeState(nodeName);
         if ( node.isEnabled() && NodeStateType.RUNNING != currentState ) {
             try {
@@ -190,21 +213,25 @@ public class NodeManagementApiImpl implements NodeManagementApi {
 
     }
 
+    @Override
     public void deleteNode(String nodeName, int shutdownTimeout) throws DeleteException, ForcedShutdownException {
         checkRequest();
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
+    @Override
     public String uploadNodeSoftware(DataHandler softwareData) throws IOException, UpdateException {
         checkRequest();
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
+    @Override
     public void upgradeNode(String nodeName, String targetVersion) throws UpdateException, RestartRequiredException {
         checkRequest();
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
+    @Override
     public NodeStateType startNode(String nodeName) throws FindException, StartupException {
         checkRequest();
         NodeStateType tempState = processController.getNodeState(nodeName);
@@ -237,8 +264,36 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         }
     }
 
+    @Override
     public void stopNode(String nodeName, int timeout) throws FindException, ForcedShutdownException {
         checkRequest();
         processController.stopNode(nodeName, timeout);
+    }
+    
+    private DatabaseConfig[] getDatabaseConfigurations( final NodeConfig nodeConfig ) throws SaveException {
+        DatabaseConfig databaseConfig = null;
+        DatabaseConfig failoverDatabaseConfig = null;
+        
+        if ( nodeConfig.getDatabases() != null ) {
+            for ( DatabaseConfig config : nodeConfig.getDatabases() ) {
+                if ( config !=null && config.getType() == DatabaseType.NODE_ALL ) {
+                    if ( config.getClusterType() != null ) {
+                        switch ( config.getClusterType() ) {
+                            case REPL_MASTER:
+                            case STANDALONE:
+                                if ( databaseConfig != null ) throw new SaveException("Invalid database configuration (primary db conflict).");
+                                databaseConfig = config;
+                                break;
+                            case REPL_SLAVE:
+                                if ( failoverDatabaseConfig != null ) throw new SaveException("Invalid database configuration (failover db conflict).");
+                                failoverDatabaseConfig = config;
+                                break;
+                        }
+                    }
+                }
+            }
+        }      
+        
+        return new DatabaseConfig[]{ databaseConfig, failoverDatabaseConfig };
     }
 }

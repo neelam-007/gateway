@@ -440,6 +440,10 @@ public class ProcessController {
                             "-J-Dcom.l7tech.server.log.console=true"
                         )
                     );
+                    
+                    if ( node.getClusterHostname() != null ) {
+                        cmds.add("-J-Dcom.l7tech.server.defaultClusterHostname=\"" + node.getClusterHostname() + "\"");
+                    }
 
                     for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter
                         collectArgs(cmds, hf);

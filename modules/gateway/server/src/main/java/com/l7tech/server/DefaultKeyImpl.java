@@ -129,7 +129,10 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     }
 
     private X500Principal findDefaultSslKeyDn() {
-        String hostname = serverConfig.getHostname();
+        String hostname = serverConfig.getProperty( "clusterHost" );
+        if ( hostname == null ) {
+            hostname = serverConfig.getHostname();
+        }
         return new X500Principal("cn=" + hostname);
     }
 

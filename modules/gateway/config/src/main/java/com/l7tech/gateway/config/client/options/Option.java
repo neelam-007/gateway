@@ -19,6 +19,8 @@ public class Option implements Comparable {
     private String prompt; // wizard step prompt
     private String description; // property description
     private String regex; // property validation if not default for type
+    private boolean updatable = true; // is this property editable
+    private boolean confirmed; // does this property require confirmation
     
     @XmlElement
     public String getRegex() {
@@ -109,6 +111,24 @@ public class Option implements Comparable {
     public void setConfigValue(String configValue) {
         this.configValue = configValue;
     }
+
+    @XmlAttribute
+    public boolean isUpdatable() {
+        return updatable;
+    }
+
+    public void setUpdatable(boolean updatable) {
+        this.updatable = updatable;
+    }
+
+    @XmlAttribute
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+
+    public void setConfirmed(boolean confirmed) {
+        this.confirmed = confirmed;
+    }        
     
     public int compareTo(Object o) {
         int value = Integer.valueOf(order).compareTo( ((Option) o).order );
@@ -129,6 +149,10 @@ public class Option implements Comparable {
         builder.append(name);
         builder.append("; description=");
         builder.append(description);
+        builder.append("; confirmed=");
+        builder.append(confirmed);
+        builder.append("; updatable=");
+        builder.append(updatable);
         builder.append(";]");
         return builder.toString();
     }

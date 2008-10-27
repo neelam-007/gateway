@@ -1,7 +1,8 @@
 package com.l7tech.gateway.config.client;
 
 /**
- *
+ * Exception class for configuration exceptions.
+ * 
  * @author steve
  */
 public class ConfigurationException extends Exception {

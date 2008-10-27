@@ -2,10 +2,10 @@ package com.l7tech.gateway.config.client.beans;
 
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.objectmodel.FindException;
-import org.apache.cxf.configuration.jsse.TLSClientParameters;
-import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.transport.http.HTTPConduit;
-import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
+//import org.apache.cxf.configuration.jsse.TLSClientParameters;
+//import org.apache.cxf.endpoint.Client;
+//import org.apache.cxf.transport.http.HTTPConduit;
+//import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -37,19 +37,20 @@ public abstract class ProcessControllerConfigurationBeanProvider implements Conf
     }
 
     public boolean isValid() {
-        boolean valid = false;
-
-        NodeManagementApi managementService = getManagementService();
-        try {
-            managementService.listNodes();
-            valid = true;
-        } catch ( FindException fe ) {
-            logger.log(Level.WARNING, "Error listing nodes", fe );
-        } catch ( SOAPFaultException sf ) {
-            logger.log(Level.WARNING, "Error listing nodes", sf );
-        }
-
-        return valid;
+//        boolean valid = false;
+//
+//        NodeManagementApi managementService = getManagementService();
+//        try {
+//            managementService.listNodes();
+//            valid = true;
+//        } catch ( FindException fe ) {
+//            logger.log(Level.WARNING, "Error listing nodes", fe );
+//        } catch ( SOAPFaultException sf ) {
+//            logger.log(Level.WARNING, "Error listing nodes", sf );
+//        }
+//
+//        return valid;
+        return true;
     }
 
     //- PROTECTED
@@ -57,34 +58,35 @@ public abstract class ProcessControllerConfigurationBeanProvider implements Conf
     protected final Logger logger = Logger.getLogger( getClass().getName() );
 
     protected NodeManagementApi getManagementService() {
-        NodeManagementApi managementService = this.managementService;
-
-        if ( managementService == null ) {
-            JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
-            factory.setServiceClass(NodeManagementApi.class);
-            factory.setAddress(nodeManagementUrl.toString());
-            Client c = factory.getClientFactoryBean().create();
-            HTTPConduit hc = (HTTPConduit)c.getConduit();
-            hc.setTlsClientParameters(new TLSClientParameters() {
-                @Override
-                public TrustManager[] getTrustManagers() {
-                    return new TrustManager[] { new X509TrustManager() {
-                        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
-                        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
-                        public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
-                    }};
-                }
-
-                @Override
-                public boolean isDisableCNCheck() {
-                    return true;
-                }
-            });
-            managementService = (NodeManagementApi) factory.create();
-            this.managementService = managementService;
-         }
-
-        return managementService;
+//        NodeManagementApi managementService = this.managementService;
+//
+//        if ( managementService == null ) {
+//            JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
+//            factory.setServiceClass(NodeManagementApi.class);
+//            factory.setAddress(nodeManagementUrl.toString());
+//            Client c = factory.getClientFactoryBean().create();
+//            HTTPConduit hc = (HTTPConduit)c.getConduit();
+//            hc.setTlsClientParameters(new TLSClientParameters() {
+//                @Override
+//                public TrustManager[] getTrustManagers() {
+//                    return new TrustManager[] { new X509TrustManager() {
+//                        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+//                        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+//                        public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
+//                    }};
+//                }
+//
+//                @Override
+//                public boolean isDisableCNCheck() {
+//                    return true;
+//                }
+//            });
+//            managementService = (NodeManagementApi) factory.create();
+//            this.managementService = managementService;
+//         }
+//
+//        return managementService;
+        return null;
     }    
 
     //- PRIVATE

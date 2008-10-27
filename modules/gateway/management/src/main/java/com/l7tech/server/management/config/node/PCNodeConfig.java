@@ -3,9 +3,6 @@
  */
 package com.l7tech.server.management.config.node;
 
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.gateway.common.transport.SsgConnector;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -41,11 +38,6 @@ public class PCNodeConfig extends NodeConfig {
      */
     private Map<DatabaseType, String> databaseUrlTemplate = new HashMap<DatabaseType, String>();
 
-    /**
-     * Locally cached copy of keystores configured for this partition
-     */
-    private transient Set<SsgKeyEntry> keystores = new HashSet<SsgKeyEntry>();
-
     public boolean isTarariOwner() {
         return tarariOwner;
     }
@@ -68,14 +60,6 @@ public class PCNodeConfig extends NodeConfig {
 
     public void setDatabaseUrlTemplate(Map<DatabaseType, String> databaseUrlTemplate) {
         this.databaseUrlTemplate = databaseUrlTemplate;
-    }
-
-    public Set<SsgKeyEntry> getKeystores() {
-        return keystores;
-    }
-
-    public void setKeystores(Set<SsgKeyEntry> keystores) {
-        this.keystores = keystores;
     }
 
     public int getRmiPort() {
@@ -137,13 +121,6 @@ public class PCNodeConfig extends NodeConfig {
         sb.append("name=\"").append(name).append("\" ");
         sb.append("disabled=\"").append(!enabled).append("\" ");
         sb.append(">\n");
-        if (!connectors.isEmpty()) {
-            sb.append("    <connectors>\n");
-            for (SsgConnector conn : connectors) {
-                sb.append("      ").append(conn).append("\n");
-            }
-            sb.append("    </connectors>\n");
-        }
         if (!databaseUrlTemplate.isEmpty()) {
             sb.append("    <urls>\n");
             for (DatabaseType databaseType : databaseUrlTemplate.keySet()) {

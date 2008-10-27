@@ -25,15 +25,15 @@ public class NodeConfig extends PCEntity implements HasFeatures<NodeFeature> {
     protected boolean enabled = true;
 
     /**
-     * Map of SSG Connector to node-local IP address
-     */
-    protected transient Set<ConnectorConfig> connectors = new HashSet<ConnectorConfig>();
-
-    /**
      * The hostname of the load balancer in front of this partition's nodes
      */
     protected String clusterHostname;
 
+    /**
+     * The passphrase for this clusters protected data
+     */
+    protected String clusterPassphrase;    
+    
     @XmlTransient
     public HostConfig getHost() {
         return host;
@@ -41,16 +41,6 @@ public class NodeConfig extends PCEntity implements HasFeatures<NodeFeature> {
 
     public void setHost(HostConfig host) {
         this.host = host;
-    }
-
-    @XmlElement(name="connector")
-    @XmlElementWrapper(name="connectors")
-    public Set<ConnectorConfig> getConnectors() {
-        return connectors;
-    }
-
-    public void setConnectors(Set<ConnectorConfig> connectors) {
-        this.connectors = connectors;
     }
 
     @XmlElement(name="database")
@@ -127,6 +117,14 @@ public class NodeConfig extends PCEntity implements HasFeatures<NodeFeature> {
         this.clusterHostname = clusterHostname;
     }
 
+    public String getClusterPassphrase() {
+        return clusterPassphrase;
+    }
+
+    public void setClusterPassphrase(String clusterPassphrase) {
+        this.clusterPassphrase = clusterPassphrase;
+    }
+    
     /** @author alex */
     public static enum ClusterType {
         /** The database is on this Host and is not replicated */

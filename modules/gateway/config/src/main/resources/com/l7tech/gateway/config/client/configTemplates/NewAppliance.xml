@@ -24,7 +24,7 @@ Press "&lt;" to go to the previous step.
 
 This step lets you create or set up a connection to the SSG database.</prompt>
     </optionGroup>
-    <optionGroup id="db-fail">
+    <optionGroup id="db-fail" required="false">
         <description>Database Failover Connection</description>
         <prompt>
 --------------------------------
@@ -98,18 +98,18 @@ This step lets you set up the SSG node.</prompt>
         <description>Database Username</description>
         <prompt>Enter the database user.</prompt>
     </option>
-    <option id="db-pass" group="db" type="PASSWORD" order="104" name="Database Password">
+    <option id="db-pass" group="db" type="PASSWORD" order="104" confirmed="true" name="Database Password">
         <configName>database.pass</configName>
         <description>Database Password</description>
         <prompt>Enter the database password.</prompt>
     </option>
-    <option id="db-admin-user" group="db" type="USERNAME" order="105" name="Administrative Database Username">
+    <option id="db-admin-user" group="db" type="USERNAME" updatable="false" order="105" name="Administrative Database Username">
         <configName>database.admin.user</configName>
         <configValue>root</configValue>
         <description>Administrative Database Username</description>
         <prompt>Enter the administrative database user.</prompt>
     </option>
-    <option id="db-admin-pass" group="db" type="PASSWORD" order="106" name="Administrative Database Password">
+    <option id="db-admin-pass" group="db" type="PASSWORD" updatable="false" order="106" name="Administrative Database Password">
         <configName>database.admin.pass</configName>
         <description>Administrative Database Password</description>
         <prompt>Enter the administrative database password.</prompt>
@@ -118,7 +118,6 @@ This step lets you set up the SSG node.</prompt>
     <!--
       Options for Database failover configuration
     -->
-    <!--
     <option id="db-fail-host" group="db-fail" type="HOSTNAME" order="120" name="Database Failover Host">
         <configName>database.failover.host</configName>
         <description>Database Failover Hostname</description>
@@ -130,17 +129,16 @@ This step lets you set up the SSG node.</prompt>
         <description>Database Failover Port</description>
         <prompt>Enter the database failover port.</prompt>
     </option>
-    -->
 
     <!--
       Options for Administrative user account configuration
     -->
-    <option id="admin-user" group="admin" type="USERNAME" order="200" name="Administrative Username">
+    <option id="admin-user" group="admin" type="USERNAME" order="200" updatable="false" name="Administrative Username">
         <configName>admin.user</configName>
         <description>Administrative Username</description>
         <prompt>Enter the administrative user.</prompt>
     </option>
-    <option id="admin-pass" group="admin" type="PASSWORD" order="201" name="Administrative Password">
+    <option id="admin-pass" group="admin" type="PASSWORD" order="201" updatable="false" confirmed="true" name="Administrative Password">
         <configName>admin.pass</configName>
         <description>Administrative Password</description>
         <prompt>Enter the administrative password.</prompt>
@@ -149,12 +147,12 @@ This step lets you set up the SSG node.</prompt>
     <!--
       Options for Cluster configuration
     -->
-    <option id="cluster-host" group="cluster" type="HOSTNAME" order="300" name="Cluster Host">
+    <option id="cluster-host" group="cluster" type="HOSTNAME" order="300" updatable="false" name="Cluster Host">
         <configName>cluster.host</configName>
         <description>Cluster Hostname</description>
         <prompt>Enter the cluster hostname.</prompt>
     </option>
-    <option id="cluster-pass" group="cluster" type="PASSWORD" order="301" name="Cluster Password">
+    <option id="cluster-pass" group="cluster" type="PASSWORD" order="301" confirmed="true" name="Cluster Password">
         <configName>cluster.pass</configName>
         <description>Cluster Password</description>
         <prompt>Enter the cluster password.</prompt>

@@ -10,6 +10,7 @@ import javax.xml.bind.annotation.XmlAttribute;
  */
 public class OptionGroup {
     private String id; // unique id
+    private boolean required = true; // is this group required
     private String prompt; // wizard step prompt
     private String description; // property description
 
@@ -22,6 +23,15 @@ public class OptionGroup {
         this.id = id;
     }
 
+    @XmlAttribute
+    public boolean isRequired() {
+        return required;
+    }
+
+    public void setRequired(boolean required) {
+        this.required = required;
+    }    
+           
     @XmlElement
     public String getPrompt() {
         return prompt;

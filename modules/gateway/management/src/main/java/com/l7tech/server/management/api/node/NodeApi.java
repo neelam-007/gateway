@@ -3,7 +3,6 @@
  */
 package com.l7tech.server.management.api.node;
 
-import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -31,14 +30,6 @@ public interface NodeApi {
 
     /** Called periodically by the PC to ensure that the SN is still alive */
     void ping();
-
-    /**
-     * Gets the SN's current list of connectors
-     *
-     * @return the SN's current list of connectors
-     */
-    @WebResult(name="connectors")
-    Set<SsgConnector> getConnectors() throws FindException;
 
     /**
      * Gets the SN's current health status
