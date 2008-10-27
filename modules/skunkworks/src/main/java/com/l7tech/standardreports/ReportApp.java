@@ -6,9 +6,11 @@
  * ReportApp is a CLI program to test jasper reports. Depends on report.properties being in the same directory
  */
 package com.l7tech.standardreports;
-import java.io.FileInputStream;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.*;
 
 import net.sf.jasperreports.engine.*;
@@ -16,6 +18,18 @@ import net.sf.jasperreports.engine.util.JRLoader;
 import net.sf.jasperreports.view.JasperViewer;
 import com.l7tech.server.ems.standardreports.ScripletHelper;
 import com.l7tech.server.ems.standardreports.UsageReportHelper;
+import com.l7tech.server.ems.standardreports.Utilities;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.IOUtils;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
 
 
 public class ReportApp
@@ -38,7 +52,7 @@ public class ReportApp
     private static final String SUBREPORT_DIRECTORY = "SUBREPORT_DIRECTORY";
 
     private static final String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
-    private static final String IS_DETAIL = "IS_DETAIL";
+    public static final String IS_DETAIL = "IS_DETAIL";
     //Optional
     private static final String SERVICE_NAME_TO_ID_MAP = "SERVICE_NAME_TO_ID_MAP";
     public static final String SERVICE_ID_TO_NAME = "SERVICE_ID_TO_NAME";
@@ -53,8 +67,8 @@ public class ReportApp
     private static final String ABSOLUTE_START_TIME = "ABSOLUTE_START_TIME";
     private static final String ABSOLUTE_END_TIME = "ABSOLUTE_END_TIME";
 
-    private static final String MAPPING_KEYS = "MAPPING_KEYS";
-    private static final String MAPPING_VALUES = "MAPPING_VALUES";
+    public static final String MAPPING_KEYS = "MAPPING_KEYS";
+    public static final String MAPPING_VALUES = "MAPPING_VALUES";
     public static final String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
     public static final String MAPPING_KEY = "MAPPING_KEY";
     public static final String MAPPING_VALUE = "MAPPING_VALUE";
@@ -75,20 +89,26 @@ public class ReportApp
     private static final Properties prop = new Properties();
     private static final String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
 
+    public ReportApp() {
+    }
 
     /**
 	 *
 	 */
-	public static void main(String[] args) throws Exception
+    public static void main(String[] args) throws Exception{
+        if(args.length == 0)
+        {
+            usage();
+            return;
+        }
+        String taskName = args[0];
+        ReportApp reportApp = new ReportApp();
+        reportApp.run(taskName);
+
+    }
+
+    public void run(String taskName) throws Exception
 	{
-		if(args.length == 0)
-		{
-			usage();
-			return;
-		}
-
-		String taskName = args[0];
-
         FileInputStream fileInputStream = new FileInputStream("report.properties");
         prop.load(fileInputStream);
         String fileName = prop.getProperty(REPORT_FILE_NAME_NO_ENDING);
@@ -165,7 +185,7 @@ public class ReportApp
         return returnList;
     }
 
-    private static void fill(String fileName, long start) throws Exception{
+    private void fill(String fileName, long start) throws Exception{
 
         //Preparing parameters
         Map parameters = new HashMap();
@@ -181,18 +201,18 @@ public class ReportApp
         Boolean b = Boolean.parseBoolean(prop.getProperty(IS_CONTEXT_MAPPING));
         parameters.put(IS_CONTEXT_MAPPING, b);
 
-        b = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
-        parameters.put(IS_DETAIL, b);
+        Boolean isDetail = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
+        parameters.put(IS_DETAIL, isDetail);
 
         //relative and absolute time
         b = Boolean.parseBoolean(prop.getProperty(IS_RELATIVE));
         parameters.put(IS_RELATIVE, b);
         parameters.put(RELATIVE_TIME_UNIT, prop.getProperty(RELATIVE_TIME_UNIT));
-        Integer i = Integer.parseInt(prop.getProperty(RELATIVE_NUM_OF_TIME_UNITS).toString());
-        parameters.put(RELATIVE_NUM_OF_TIME_UNITS, i);
+        Integer numRelativeTimeUnits = Integer.parseInt(prop.getProperty(RELATIVE_NUM_OF_TIME_UNITS).toString());
+        parameters.put(RELATIVE_NUM_OF_TIME_UNITS, numRelativeTimeUnits);
 
         parameters.put(INTERVAL_TIME_UNIT, prop.getProperty(INTERVAL_TIME_UNIT));
-        i = Integer.parseInt(prop.getProperty(INTERVAL_NUM_OF_TIME_UNITS).toString());
+        Integer i = Integer.parseInt(prop.getProperty(INTERVAL_NUM_OF_TIME_UNITS).toString());
         parameters.put(INTERVAL_NUM_OF_TIME_UNITS, i);
 
         b = Boolean.parseBoolean(prop.getProperty(IS_ABSOLUTE).toString());
@@ -217,7 +237,6 @@ public class ReportApp
         
         List<String > keys  = loadListFromProperties(MAPPING_KEY, prop);
         List<String> values = loadListFromProperties(MAPPING_VALUE, prop);
-
         List<String> useAnd = loadListFromProperties(VALUE_EQUAL_OR_LIKE, prop);
 
         parameters.put(MAPPING_KEYS, keys);
@@ -244,15 +263,12 @@ public class ReportApp
         Class c = Class.forName(reportScriplet);
         Object scriplet = c.newInstance();
         if(reportScriplet.endsWith("UsageReportHelper")){
-            UsageReportHelper helper = (UsageReportHelper) scriplet;
-            LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
-            keyToColumnName.put("127.0.0.1Bronze;;;;", "COLUMN_1");
-            keyToColumnName.put("127.0.0.1Gold;;;;", "COLUMN_2");
-            keyToColumnName.put("127.0.0.1Silver;;;;", "COLUMN_3");
-            keyToColumnName.put("127.0.0.2Bronze;;;;", "COLUMN_4");
-            keyToColumnName.put("127.0.0.2Gold;;;;", "COLUMN_5");
-            keyToColumnName.put("127.0.0.2Silver;;;;", "COLUMN_6");
-            helper.setKeyToColumnMap(keyToColumnName);
+            long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, prop.getProperty(RELATIVE_TIME_UNIT));
+            long endTimeInPast = Utilities.getMillisForEndTimePeriod(prop.getProperty(RELATIVE_TIME_UNIT));
+            String sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, null, keys, values, useAnd, 2, isDetail, null, false, null);
+
+            runUsageReport(fileName, prop, parameters, scriplet, sql, keys);
+            return;
         }
         
         parameters.put("REPORT_SCRIPTLET", scriplet);
@@ -268,6 +284,94 @@ public class ReportApp
         System.err.println("Filling time : " + (System.currentTimeMillis() - start));
     }
 
+    private void runUsageReport(String fileName, Properties prop, Map parameters, Object scriplet, String sql,
+                                       List<String> keys)
+                                                                    throws Exception{
+        UsageReportHelper helper = (UsageReportHelper) scriplet;
+        parameters.put("REPORT_SCRIPTLET", scriplet);
+        Statement stmt = null;
+        LinkedHashSet<String> mappingValues = null;
+        Connection connection = getConnection(prop);
+        try{
+            stmt = connection.createStatement();
+            mappingValues = getMappingValueSet(stmt, sql);
+        }catch(Exception ex){
+            if(connection != null) connection.close();
+            throw(ex);
+        }
+
+        LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
+        int count = 1;
+        System.out.println("Key to column map");
+        for (String s : mappingValues) {
+            keyToColumnName.put(s, "COLUMN_"+count);
+            System.out.println(s+" " + "COLUMN_"+count);
+            count++;
+        }
+        helper.setKeyToColumnMap(keyToColumnName);
+
+        //now generate the report to be compiled
+        Document transformDoc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+
+        //get xsl and xml
+        String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
+        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/Usage_Summary_XSLT_Template.jrxml");
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", transformDoc);
+        //Document doc = transform(xslStr, xmlStr, params);
+        Document jasperDoc = transform(xslStr, xmlFileName, params);
+
+        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
+        }finally{
+            fos.close();
+        }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(jasperDoc, baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+        JasperReport report = JasperCompileManager.compileReport(bais);
+        System.out.println("Report compiled");
+        try{
+            System.out.println("Filling report");
+            JasperFillManager.fillReportToFile(report, fileName+".jrprint", parameters, connection);
+            System.out.println("Report filled");
+        }finally{
+            connection.close();
+        }
+    }
+
+    private String getResAsString(String path) throws IOException {
+        File f = new File(path);
+        InputStream is = new FileInputStream(f);
+        try{
+            byte[] resbytes = IOUtils.slurpStream(is, 100000);
+            return new String(resbytes);
+        }finally{
+            is.close();
+        }
+    }
+    
+    private LinkedHashSet<String> getMappingValueSet(Statement stmt, String sql) throws Exception{
+
+        LinkedHashSet<String> set = new LinkedHashSet<String>();
+        ResultSet rs = stmt.executeQuery(sql);
+
+        while(rs.next()){
+            StringBuilder sb = new StringBuilder();
+            String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
+            sb.append(authUser);
+            for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
+                sb.append(rs.getString("MAPPING_VALUE_"+(i+1)));
+            }
+            set.add(sb.toString());
+        }
+        return set;
+    }
     /**
 	 *
 	 */
@@ -295,5 +399,25 @@ public class ReportApp
         return conn;
     }
 
+    private Document transform(String xslt, String xmlSrc, Map<String, Object> map ) throws Exception {
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        StreamSource xsltsource = new StreamSource(new StringReader(xslt));
+        Transformer transformer = transformerFactory.newTemplates(xsltsource).newTransformer();
 
+        DocumentBuilderFactory builderF = DocumentBuilderFactory.newInstance();
+        //all jasper reports must have a dtd, were not going to handle it, just ignore
+        //builderF.setValidating(false);
+        DocumentBuilder builder = builderF.newDocumentBuilder();
+
+        InputSource is = new InputSource(new StringReader(xmlSrc));
+        Document doc = builder.parse(is);
+
+        StringWriter sw = new StringWriter();
+        StreamResult result = new StreamResult(sw);
+        XmlUtil.softXSLTransform(doc, result, transformer, map);
+//        System.out.println(sw.toString());
+        StringReader reader = new StringReader(sw.toString());
+        Document returnDoc = builder.parse(new InputSource(reader));
+        return returnDoc;
+    }
 }

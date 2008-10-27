@@ -48,7 +48,11 @@
 				<fileset dir="${jasper.jrxml_files}">
 					<include name="*.jrxml"/>
 				</fileset>
-			</src>
+                <fileset dir=".">
+                    <include name="*.jrxml"/>
+                </fileset>
+
+            </src>
 			<classpath refid="classpath"/>
 		</jrc>
 	</target>

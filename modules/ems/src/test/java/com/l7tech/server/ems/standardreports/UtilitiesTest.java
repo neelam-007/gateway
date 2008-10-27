@@ -14,6 +14,8 @@ import java.text.SimpleDateFormat;
 import java.io.*;
 
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 /**
  * Test coverage for class Utilities
@@ -1146,4 +1148,152 @@ public class UtilitiesTest extends TestCase {
         String val = Utilities.SQL_PLACE_HOLDER;
         assertTrue(Utilities.isPlaceHolderValue(val));
     }
+
+    @Test
+    public void testGetUsageRuntimeDoc_NullParams(){
+        boolean exception = false;
+        try{
+            Utilities.getUsageRuntimeDoc(null, null);
+        }catch(IllegalArgumentException iae){
+            exception = true;
+        }
+        assertTrue(exception);
+    }
+
+    @Test
+    public void testGetGetUsageRuntimeDoc_NotNull(){
+        List<String> keys = getTestKeys();
+        LinkedHashSet<String> mappingValues = getTestMappingValues();
+
+        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        assertNotNull(doc);
+    }
+
+    /**
+     * Don't change the number of elements, as you will break the tests which use this as convenience
+     * @return
+     */
+    private List<String> getTestKeys(){
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
+        return keys;        
+    }
+
+    /**
+     * Don't change the number of elements, as you will break the tests which use this as convenience
+     * @return
+     */
+    private LinkedHashSet<String> getTestMappingValues(){
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+        mappingValues.add("notimportant1");
+        mappingValues.add("notimportant2");
+        mappingValues.add("notimportant3");
+        mappingValues.add("notimportant4");
+        return mappingValues;
+    }
+    
+    @Test
+    public void testGetGetUsageRuntimeDoc_FirstLevelElements(){
+        List<String> keys = getTestKeys();
+        LinkedHashSet<String> mappingValues = getTestMappingValues();
+        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        //Ensure all the first level elements exist
+        NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
+        assertTrue(list.getLength() == 1);
+
+        list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
+        assertTrue(list.getLength() == 1);
+
+        list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
+        assertTrue(list.getLength() == 1);
+
+        list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
+        assertTrue(list.getLength() == 1);
+
+        list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
+        assertTrue(list.getLength() == 1);
+        
+        list = doc.getElementsByTagName(Utilities.WIDTH_ELEMENT);
+                assertTrue(list.getLength() == 1);
+
+        list = doc.getElementsByTagName(Utilities.FRAME_WIDTH);
+                assertTrue(list.getLength() == 1);
+
+        list = doc.getElementsByTagName(Utilities.LEFT_MARGIN);
+                assertTrue(list.getLength() == 1);
+
+        list = doc.getElementsByTagName(Utilities.RIGHT_MARGIN);
+                assertTrue(list.getLength() == 1);
+    }
+
+    @Test
+    public void testGetGetUsageRuntimeDoc_Variables(){
+        List<String> keys = getTestKeys();
+        LinkedHashSet<String> mappingValues = getTestMappingValues();
+        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        //Ensure all the first level elements exist
+        NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
+        list = list.item(0).getChildNodes();
+        //3 sets of variables X 4 value sets from getTestMappingValues()
+        assertTrue(list.getLength() == 12);
+    }
+
+    @Test
+    public void testGetGetUsageRuntimeDoc_VariablesNames(){
+        List<String> keys = getTestKeys();
+        LinkedHashSet<String> mappingValues = getTestMappingValues();
+        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        //assertTrue(false);
+        //todo [Donal] logic here to validate the names created for variables
+    }
+
+    @Test
+    public void testGetGetUsageRuntimeDoc_ConstantHeader(){
+        List<String> keys = getTestKeys();
+        LinkedHashSet<String> mappingValues = getTestMappingValues();
+        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        //Ensure all the first level elements exist
+        NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
+        list = list.item(0).getChildNodes();
+        //2 text fields which are hardcoded, and 4 value sets from getTestMappingValues() 
+        assertTrue(list.getLength() == 6);
+    }
+
+    @Test
+    public void testGetGetUsageRuntimeDoc_ServiceOperationFooter(){
+        List<String> keys = getTestKeys();
+        LinkedHashSet<String> mappingValues = getTestMappingValues();
+        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        //Ensure all the first level elements exist
+        NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
+        list = list.item(0).getChildNodes();
+        //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
+        assertTrue(list.getLength() == 5);
+    }
+
+    @Test
+    public void testGetGetUsageRuntimeDoc_SerivceIdFooter(){
+        List<String> keys = getTestKeys();
+        LinkedHashSet<String> mappingValues = getTestMappingValues();
+        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        //Ensure all the first level elements exist
+        NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
+        list = list.item(0).getChildNodes();
+        //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
+        assertTrue(list.getLength() == 5);
+    }
+
+    @Test
+    public void testGetGetUsageRuntimeDoc_ConstantFooter(){
+        List<String> keys = getTestKeys();
+        LinkedHashSet<String> mappingValues = getTestMappingValues();
+        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        //Ensure all the first level elements exist
+        NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
+        list = list.item(0).getChildNodes();
+        //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
+        assertTrue(list.getLength() == 5);
+    }
+    
 }

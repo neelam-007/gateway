@@ -2,7 +2,7 @@
 <!-- Created with iReport - A designer for JasperReports -->
 <!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="Usage_Summary_XSLT_Template"
+		 name="Usage_Summary_Template"
 		 columnCount="1"
 		 printOrder="Vertical"
 		 orientation="Portrait"
@@ -130,11 +130,119 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 	<field name="AUTHENTICATED_USER" class="java.lang.String"/>
 	<field name="CONSTANT_GROUP" class="java.lang.String"/>
 
+	<variable name="COLUMN_1" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_AND_OPERATION" calculation="Nothing">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getColumnValue("COLUMN_1", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_2" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_AND_OPERATION" calculation="Nothing">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getColumnValue("COLUMN_2", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_3" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_AND_OPERATION" calculation="Nothing">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getColumnValue("COLUMN_3", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_4" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_AND_OPERATION" calculation="Nothing">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getColumnValue("COLUMN_4", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_5" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_AND_OPERATION" calculation="Nothing">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getColumnValue("COLUMN_5", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_6" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_AND_OPERATION" calculation="Nothing">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getColumnValue("COLUMN_6", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COUNT_1_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_1", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COUNT_2_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_2", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COUNT_3_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_3", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COUNT_4_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_4", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COUNT_5_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_5", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COUNT_6_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_6", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
 	<variable name="SERVICE_AND_OR_OPERATION_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_AND_OPERATION" calculation="Sum">
 		<variableExpression><![CDATA[$F{USAGE_SUM}]]></variableExpression>
 	</variable>
 	<variable name="GRAND_TOTAL" class="java.lang.Long" resetType="Report" calculation="Sum">
 		<variableExpression><![CDATA[$F{USAGE_SUM}]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_1_SERVICE_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_1", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_2_SERVICE_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_2", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_3_SERVICE_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_3", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_4_SERVICE_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_4", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_5_SERVICE_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_5", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+	</variable>
+	<variable name="COLUMN_6_SERVICE_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID" calculation="Sum">
+		<variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
+.getVariableValue("COLUMN_6", $F{AUTHENTICATED_USER},
+new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
+$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
 	</variable>
 	<variable name="SERVICE_ONLY_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID" calculation="Sum">
 		<variableExpression><![CDATA[$F{USAGE_SUM}]]></variableExpression>
@@ -174,7 +282,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						y="18"
 						width="534"
 						height="36"
-						key="frame-constantHeader"
+						key="frame-35"
 						stretchType="RelativeToTallestObject"/>
 					<box>					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
 </box>
@@ -191,6 +299,110 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Service"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="118"
+						y="0"
+						width="50"
+						height="36"
+						key="textField-166"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["127.0.0.1<br>Bronze"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="50"
+						y="0"
+						width="68"
+						height="36"
+						key="textField-167"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["IP_ADDRESS<br>CUSTOMER"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="416"
+						y="0"
+						width="83"
+						height="36"
+						key="textField-177"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Service Totals"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="168"
+						y="0"
+						width="50"
+						height="36"
+						key="textField-180"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["127.0.0.1<br>Gold"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="268"
+						y="0"
+						width="50"
+						height="36"
+						key="textField-182"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["127.0.0.2<br>Bronze"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="318"
+						y="0"
+						width="50"
+						height="36"
+						key="textField-183"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["127.0.0.2<br>Silver"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="366"
+						y="0"
+						width="50"
+						height="36"
+						key="textField-184"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["127.0.0.2<br>Gold"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="218"
+						y="0"
+						width="50"
+						height="36"
+						key="textField-185"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["127.0.0.1<br>Silver"]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -211,21 +423,6 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					<reportElement
 						style="TotalCell"
 						mode="Opaque"
-						x="0"
-						y="0"
-						width="6"
-						height="18"
-						key="textField-186"/>
-					<box></box>
-					<textElement markup="html">
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[""]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TotalCell"
-						mode="Opaque"
 						x="5"
 						y="0"
 						width="113"
@@ -236,6 +433,126 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Totals"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="118"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-169"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COUNT_1_MAPPING_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="168"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-170"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COUNT_2_MAPPING_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="216"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-171"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COUNT_3_MAPPING_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="266"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-172"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COUNT_4_MAPPING_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="316"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-173"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COUNT_5_MAPPING_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="366"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-174"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COUNT_6_MAPPING_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="416"
+						y="0"
+						width="83"
+						height="18"
+						key="textField-179"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{GRAND_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="6"
+						height="18"
+						key="textField-186"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[""]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupFooter>
@@ -288,21 +605,6 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					<reportElement
 						style="TotalCell"
 						mode="Opaque"
-						x="0"
-						y="0"
-						width="6"
-						height="18"
-						key="textField-196"/>
-					<box></box>
-					<textElement markup="html">
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[""]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TotalCell"
-						mode="Opaque"
 						x="5"
 						y="0"
 						width="113"
@@ -313,6 +615,126 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Service Totals"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="118"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-189"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_1_SERVICE_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="166"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-190"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_2_SERVICE_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="216"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-191"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_3_SERVICE_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="266"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-192"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_4_SERVICE_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="316"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-193"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_5_SERVICE_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="366"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-194"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_6_SERVICE_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						mode="Opaque"
+						x="416"
+						y="0"
+						width="83"
+						height="18"
+						backcolor="#D6D6D6"
+						key="textField-195"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{SERVICE_ONLY_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="6"
+						height="18"
+						key="textField-196"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[""]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupFooter>
@@ -349,6 +771,105 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?$F{SERVICE_OPERATION_VALUE}:
 $F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="118"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-160"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="166"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-161"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="216"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-162"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_3}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="266"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-163"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_4}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="316"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-164"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_5}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="366"
+						y="0"
+						width="50"
+						height="18"
+						key="textField-165"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{COLUMN_6}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						mode="Opaque"
+						x="416"
+						y="0"
+						width="83"
+						height="18"
+						backcolor="#D6D6D6"
+						key="textField-178"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{SERVICE_AND_OR_OPERATION_TOTAL}]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupFooter>

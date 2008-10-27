@@ -54,7 +54,6 @@
 
     </xsl:template>
 
-
     <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[2]">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
@@ -70,6 +69,15 @@
         </xsl:copy>
     </xsl:template>
 
+    <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[2]/reportElement">
+        <xsl:element name="reportElement">
+            <xsl:attribute name="width">
+                <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
+            </xsl:attribute>
+            <xsl:apply-templates select="node()|@*[local-name()!='width']" />
+        </xsl:element>
+    </xsl:template>
+    
     <xsl:template match="/jasperReport/group[@name='SERVICE_AND_OPERATION']/groupFooter/band/frame">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>

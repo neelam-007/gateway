@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"  ?>
 <JasperRuntimeTransformation>
     <width>595</width>
-    <leftMargin>595</leftMargin>
-    <rightMargin>595</rightMargin>
+    <leftMargin>30</leftMargin>
+    <rightMargin>30</rightMargin>
+    <frameWidth>534</frameWidth>
     <variables>
         <variable name="COLUMN_1" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_AND_OPERATION"
                   calculation="Nothing">
@@ -46,42 +47,42 @@
     new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
     $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
         </variable>
-        <variable name="COUNT_1_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
+        <variable name="COLUMN_1_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
                   calculation="Sum">
             <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
     .getVariableValue("COLUMN_1", $F{AUTHENTICATED_USER},
     new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
     $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
         </variable>
-        <variable name="COUNT_2_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
+        <variable name="COLUMN_2_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
                   calculation="Sum">
             <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
     .getVariableValue("COLUMN_2", $F{AUTHENTICATED_USER},
     new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
     $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
         </variable>
-        <variable name="COUNT_3_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
+        <variable name="COLUMN_3_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
                   calculation="Sum">
             <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
     .getVariableValue("COLUMN_3", $F{AUTHENTICATED_USER},
     new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
     $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
         </variable>
-        <variable name="COUNT_4_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
+        <variable name="COLUMN_4_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
                   calculation="Sum">
             <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
     .getVariableValue("COLUMN_4", $F{AUTHENTICATED_USER},
     new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
     $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
         </variable>
-        <variable name="COUNT_5_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
+        <variable name="COLUMN_5_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
                   calculation="Sum">
             <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
     .getVariableValue("COLUMN_5", $F{AUTHENTICATED_USER},
     new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
     $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
         </variable>
-        <variable name="COUNT_6_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
+        <variable name="COLUMN_6_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
                   calculation="Sum">
             <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
     .getVariableValue("COLUMN_6", $F{AUTHENTICATED_USER},
@@ -148,20 +149,6 @@
             <textFieldExpression class="java.lang.String">
                 <![CDATA["IP_ADDRESS<br>CUSTOMER"]]></textFieldExpression>
         </textField>
-        <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
-                   hyperlinkType="None" hyperlinkTarget="Self">
-            <reportElement
-                    x="416"
-                    y="0"
-                    width="83"
-                    height="36"
-                    key="textField-177"/>
-            <box></box>
-            <textElement markup="html">
-                <font/>
-            </textElement>
-            <textFieldExpression class="java.lang.String"><![CDATA["Service Totals"]]></textFieldExpression>
-        </textField>
         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
                    hyperlinkTarget="Self">
             <reportElement
@@ -189,6 +176,20 @@
                 <font/>
             </textElement>
             <textFieldExpression class="java.lang.String"><![CDATA["127.0.0.1<br>Gold"]]></textFieldExpression>
+        </textField>
+        <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
+                   hyperlinkTarget="Self">
+            <reportElement
+                    x="218"
+                    y="0"
+                    width="50"
+                    height="36"
+                    key="textField-185"/>
+            <box></box>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["127.0.0.1<br>Silver"]]></textFieldExpression>
         </textField>
         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
                    hyperlinkTarget="Self">
@@ -221,7 +222,7 @@
         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
                    hyperlinkTarget="Self">
             <reportElement
-                    x="366"
+                    x="368"
                     y="0"
                     width="50"
                     height="36"
@@ -232,19 +233,19 @@
             </textElement>
             <textFieldExpression class="java.lang.String"><![CDATA["127.0.0.2<br>Gold"]]></textFieldExpression>
         </textField>
-        <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
-                   hyperlinkTarget="Self">
+        <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
+                   hyperlinkType="None" hyperlinkTarget="Self">
             <reportElement
-                    x="218"
+                    x="418"
                     y="0"
-                    width="50"
+                    width="83"
                     height="36"
-                    key="textField-185"/>
+                    key="textField-177"/>
             <box></box>
             <textElement markup="html">
                 <font/>
             </textElement>
-            <textFieldExpression class="java.lang.String"><![CDATA["127.0.0.1<br>Silver"]]></textFieldExpression>
+            <textFieldExpression class="java.lang.String"><![CDATA["Service Totals"]]></textFieldExpression>
         </textField>
     </constantHeader>
     <serviceAndOperationFooter>
@@ -493,7 +494,7 @@
                 <font/>
             </textElement>
             <textFieldExpression class="java.lang.Long">
-                <![CDATA[$V{COUNT_1_MAPPING_TOTAL}]]></textFieldExpression>
+                <![CDATA[$V{COLUMN_1_MAPPING_TOTAL}]]></textFieldExpression>
         </textField>
         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                    hyperlinkType="None" hyperlinkTarget="Self">
@@ -510,7 +511,7 @@
                 <font/>
             </textElement>
             <textFieldExpression class="java.lang.Long">
-                <![CDATA[$V{COUNT_2_MAPPING_TOTAL}]]></textFieldExpression>
+                <![CDATA[$V{COLUMN_2_MAPPING_TOTAL}]]></textFieldExpression>
         </textField>
         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                    hyperlinkType="None" hyperlinkTarget="Self">
@@ -527,7 +528,7 @@
                 <font/>
             </textElement>
             <textFieldExpression class="java.lang.Long">
-                <![CDATA[$V{COUNT_3_MAPPING_TOTAL}]]></textFieldExpression>
+                <![CDATA[$V{COLUMN_3_MAPPING_TOTAL}]]></textFieldExpression>
         </textField>
         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                    hyperlinkType="None" hyperlinkTarget="Self">
@@ -544,7 +545,7 @@
                 <font/>
             </textElement>
             <textFieldExpression class="java.lang.Long">
-                <![CDATA[$V{COUNT_4_MAPPING_TOTAL}]]></textFieldExpression>
+                <![CDATA[$V{COLUMN_4_MAPPING_TOTAL}]]></textFieldExpression>
         </textField>
         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                    hyperlinkType="None" hyperlinkTarget="Self">
@@ -561,7 +562,7 @@
                 <font/>
             </textElement>
             <textFieldExpression class="java.lang.Long">
-                <![CDATA[$V{COUNT_5_MAPPING_TOTAL}]]></textFieldExpression>
+                <![CDATA[$V{COLUMN_5_MAPPING_TOTAL}]]></textFieldExpression>
         </textField>
         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                    hyperlinkType="None" hyperlinkTarget="Self">
@@ -578,7 +579,7 @@
                 <font/>
             </textElement>
             <textFieldExpression class="java.lang.Long">
-                <![CDATA[$V{COUNT_6_MAPPING_TOTAL}]]></textFieldExpression>
+                <![CDATA[$V{COLUMN_6_MAPPING_TOTAL}]]></textFieldExpression>
         </textField>
         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                    hyperlinkType="None" hyperlinkTarget="Self">
