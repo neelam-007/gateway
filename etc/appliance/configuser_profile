@@ -77,8 +77,6 @@ doConfiguration() {
             echo " 1) Upgrade the SecureSpan Gateway database on this appliance"
             echo " 2) Configure the SecureSpan Gateway application on this appliance"
             echo " 3) Display the current SecureSpan Gateway configuration"
-            echo " 4) Enable or disable the SecureSpan Gateway application"
-            echo " 5) Display the current SecureSpan Gateway enabled/disabled state"
             echo " X) Exit menu"
 
             echo ""
@@ -106,30 +104,6 @@ doConfiguration() {
                     3)
                         clear;
                         (${CONFWIZARD} show);
-                        STATUS=$?
-                        if [ $STATUS -eq 2 ] ; then
-                          confirmedMessage "Node is not yet configured."
-                        elif [ $STATUS -eq 3 ] ; then
-                          confirmedMessage "Configuration service not available (please reboot)"
-                        elif [ $STATUS -eq 5 ] ; then
-                          confirmedMessage "Unexpected error in configuration service."
-                        fi
-                        clear;;
-                    4)
-                        clear;
-                        (${CONFWIZARD} edit status);
-                        STATUS=$?
-                        if [ $STATUS -eq 2 ] ; then
-                          confirmedMessage "Node is not yet configured."
-                        elif [ $STATUS -eq 3 ] ; then
-                          confirmedMessage "Configuration service not available (please reboot)"
-                        elif [ $STATUS -eq 5 ] ; then
-                          confirmedMessage "Unexpected error in configuration service."
-                        fi
-                        clear;;
-                    5)
-                        clear;
-                        (${CONFWIZARD} show status);
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
                           confirmedMessage "Node is not yet configured."
