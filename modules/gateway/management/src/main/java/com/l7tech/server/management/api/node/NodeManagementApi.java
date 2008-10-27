@@ -20,7 +20,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Set;
+import java.util.Collection;
 
 /**
  * Part of the API invoked on the Process Controller by Enterprise Manager Servers.
@@ -71,7 +71,7 @@ public interface NodeManagementApi {
      * @throws FindException if the list of Nodes cannot be retrieved
      */
     @WebResult(name="node")
-    Set<NodeHeader> listNodes() throws FindException;
+    Collection<NodeHeader> listNodes() throws FindException;
 
     /**
      * This class only exists because JAXB can't handle a Set&lt;Triple&lt;String, String, Boolean&gt;&gt; in any reasonable way

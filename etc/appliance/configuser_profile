@@ -99,6 +99,8 @@ doConfiguration() {
                           confirmedMessage "Configuration service not available (please reboot)"
                         elif [ $STATUS -eq 5 ] ; then
                           confirmedMessage "Unexpected error in configuration service."
+                        elif [ $STATUS -ne 0 ] ; then
+                          confirmedMessage ""
                         fi
                         clear;;
                     3)
@@ -111,6 +113,8 @@ doConfiguration() {
                           confirmedMessage "Configuration service not available (please reboot)"
                         elif [ $STATUS -eq 5 ] ; then
                           confirmedMessage "Unexpected error in configuration service."
+                        elif [ $STATUS -ne 0 ] ; then
+                          confirmedMessage ""
                         fi
                         clear;;
                     *)

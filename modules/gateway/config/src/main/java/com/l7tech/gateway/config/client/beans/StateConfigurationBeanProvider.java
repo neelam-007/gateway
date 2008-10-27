@@ -9,7 +9,6 @@ import com.l7tech.objectmodel.ObjectModelException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +28,7 @@ public class StateConfigurationBeanProvider extends ProcessControllerConfigurati
     public Collection<ConfigurationBean> loadConfiguration() throws ConfigurationException {
         NodeManagementApi managementService = getManagementService();
         try {
-            Set<NodeManagementApi.NodeHeader> nodeHeaders = managementService.listNodes();
+            Collection<NodeManagementApi.NodeHeader> nodeHeaders = managementService.listNodes();
             if ( nodeHeaders != null && nodeHeaders.size() > 0) {
                 for (NodeManagementApi.NodeHeader node : nodeHeaders ) {
                     if ( config != null ) {

@@ -132,9 +132,9 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     @Override
-    public Set<NodeHeader> listNodes() throws FindException {
+    public Collection<NodeHeader> listNodes() throws FindException {
         checkRequest();
-        final Set<NodeHeader> nodes = new HashSet<NodeHeader>();
+        final List<NodeHeader> nodes = new ArrayList<NodeHeader>();
         for (NodeConfig config : configService.getHost().getNodes().values()) {
             final PCNodeConfig pcNodeConfig = (PCNodeConfig)config;
             final NodeStateType state = processController.getNodeState(pcNodeConfig.getName());

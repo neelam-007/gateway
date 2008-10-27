@@ -29,7 +29,7 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
     public Collection<ConfigurationBean> loadConfiguration() throws ConfigurationException {
         NodeManagementApi managementService = getManagementService();
         try {
-            Set<NodeManagementApi.NodeHeader> nodeHeaders = managementService.listNodes();
+            Collection<NodeManagementApi.NodeHeader> nodeHeaders = managementService.listNodes();
             if ( nodeHeaders != null && nodeHeaders.size() > 0) {
                 for (NodeManagementApi.NodeHeader node : nodeHeaders ) {
                     if ( config != null ) {
@@ -56,7 +56,9 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
         NodeManagementApi managementService = getManagementService();
         try {
             if ( config != null ) {
-                config.setEnabled((Boolean)getOption("node.enable", configuration));
+                if ( getOption("node.enable", configuration) != null ) { 
+                    config.setEnabled((Boolean)getOption("node.enable", configuration));
+                }
                 config.setClusterPassphrase((String)getOption("cluster.pass", configuration));
                 fromBeans( config, configuration );
                 managementService.updateNode( config );
@@ -91,6 +93,13 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
 
         if ( config != null ) {
             logger.info("Processing configuration.");
+
+            {
+                ConfigurationBean<Boolean> configBean = new ConfigurationBean<Boolean>();
+                configBean.setConfigName( "node.enable" );
+                configBean.setConfigValue( config.isEnabled() );
+                configuration.add(configBean);
+            }
 
             if ( config.getDatabases() != null ) {
                 logger.info("Processing "+config.getDatabases().size()+" databases.");

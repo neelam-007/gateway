@@ -82,7 +82,7 @@ public class EditInteraction extends ConfigurationInteraction {
             println();
             println( "S) Save and exit." );
             println( "X) Exit without saving." );
-            println( "\nSelect: " );
+            print( "\nSelect: " );
 
             try {
                 String selected = fallbackReadLine( console, reader );
