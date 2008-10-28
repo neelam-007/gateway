@@ -6,12 +6,9 @@
  */
 package com.l7tech.server.ems.standardreports;
 
-import junit.framework.TestCase;
-
 import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.io.*;
 
 import org.junit.Test;
 import org.junit.Assert;
@@ -1154,7 +1151,7 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_NullParams(){
         boolean exception = false;
         try{
-            Utilities.getUsageRuntimeDoc(null, null);
+            Utilities.getUsageRuntimeDoc(false, null, null);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
@@ -1166,7 +1163,7 @@ public class UtilitiesTest{
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
         Assert.assertNotNull(doc);
     }
 
@@ -1198,7 +1195,7 @@ public class UtilitiesTest{
     public void testGetGetUsageRuntimeDoc_FirstLevelElements(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         Assert.assertTrue(list.getLength() == 1);
@@ -1215,7 +1212,7 @@ public class UtilitiesTest{
         list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         Assert.assertTrue(list.getLength() == 1);
         
-        list = doc.getElementsByTagName(Utilities.WIDTH_ELEMENT);
+        list = doc.getElementsByTagName(Utilities.COLUMN_WIDTH);
                 Assert.assertTrue(list.getLength() == 1);
 
         list = doc.getElementsByTagName(Utilities.FRAME_WIDTH);
@@ -1232,7 +1229,7 @@ public class UtilitiesTest{
     public void testGetGetUsageRuntimeDoc_Variables(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
@@ -1244,7 +1241,7 @@ public class UtilitiesTest{
     public void testGetGetUsageRuntimeDoc_VariablesNames(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
         //Assert.assertTrue(false);
         //todo [Donal] logic here to validate the names created for variables
     }
@@ -1253,7 +1250,7 @@ public class UtilitiesTest{
     public void testGetGetUsageRuntimeDoc_ConstantHeader(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
@@ -1265,7 +1262,7 @@ public class UtilitiesTest{
     public void testGetGetUsageRuntimeDoc_ServiceOperationFooter(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
@@ -1277,7 +1274,7 @@ public class UtilitiesTest{
     public void testGetGetUsageRuntimeDoc_SerivceIdFooter(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
         list = list.item(0).getChildNodes();
@@ -1289,7 +1286,7 @@ public class UtilitiesTest{
     public void testGetGetUsageRuntimeDoc_ConstantFooter(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         list = list.item(0).getChildNodes();

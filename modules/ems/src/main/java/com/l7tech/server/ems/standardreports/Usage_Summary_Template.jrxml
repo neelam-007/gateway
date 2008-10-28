@@ -360,6 +360,28 @@ $F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
 		<title>
 			<band height="243"  isSplitAllowed="true" >
 				<frame>					<reportElement
+						style="FrameTableTop"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="534"
+						height="18"
+						key="frame-6"/>
+					<box></box>
+				<staticText>
+					<reportElement
+						x="3"
+						y="0"
+						width="105"
+						height="17"
+						key="staticText-32"/>
+					<box></box>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+				<text><![CDATA[Report Information]]></text>
+				</staticText>
+				</frame>				<frame>					<reportElement
 						style="FrameTableBottom"
 						mode="Opaque"
 						x="0"
@@ -392,7 +414,7 @@ $F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
 					</textElement>
 				<text><![CDATA[Report Type:]]></text>
 				</staticText>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="121"
 						y="0"
@@ -427,7 +449,7 @@ $F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
 					</textElement>
 				<text><![CDATA[Timezone:]]></text>
 				</staticText>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="121"
 						y="0"
@@ -449,7 +471,7 @@ $F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
 						key="frame-22"
 						positionType="Float"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="121"
 						y="0"
@@ -489,7 +511,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						key="frame-23"
 						positionType="Float"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="121"
 						y="0"
@@ -599,7 +621,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						key="frame-26"
 						positionType="Float"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" pattern="yyyy/MM/dd hh:mm" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" pattern="yyyy/MM/dd hh:mm" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="121"
 						y="0"
@@ -636,7 +658,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						key="frame-27"
 						positionType="Float"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="121"
 						y="0"
@@ -673,7 +695,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						key="frame-28"
 						positionType="Float"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="121"
 						y="0"
@@ -737,29 +759,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					</textElement>
 				<text><![CDATA[Operations:]]></text>
 				</staticText>
-				</frame>				</frame>				<frame>					<reportElement
-						style="FrameTableTop"
-						mode="Opaque"
-						x="0"
-						y="0"
-						width="534"
-						height="18"
-						key="frame-6"/>
-					<box></box>
-				<staticText>
-					<reportElement
-						x="3"
-						y="0"
-						width="105"
-						height="17"
-						key="staticText-32"/>
-					<box></box>
-					<textElement>
-						<font isBold="true"/>
-					</textElement>
-				<text><![CDATA[Report Information]]></text>
-				</staticText>
-				</frame>			</band>
+				</frame>				</frame>			</band>
 		</title>
 		<pageHeader>
 			<band height="0"  isSplitAllowed="true" >

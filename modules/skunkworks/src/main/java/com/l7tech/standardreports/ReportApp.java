@@ -186,11 +186,19 @@ public class ReportApp
             List<String> keys = (List<String>) parameters.get(MAPPING_KEYS);
             List<String> values = (List<String>) parameters.get(MAPPING_VALUES);
             List<String> useAnd = (List<String>) parameters.get(VALUE_EQUAL_OR_LIKE);
+            Collection<String> serviceIds = (Collection<String>) ((Map<String, String>) parameters.get(SERVICE_NAME_TO_ID_MAP)).values();
+            List<String> operations = (List<String>) parameters.get(OPERATIONS);
+
+            boolean useUser = Boolean.valueOf(parameters.get(USE_USER).toString());
+            List<String> authUsers = (List<String>) parameters.get(AUTHENTICATED_USERS);
+
+
             boolean isDetail = Boolean.valueOf(parameters.get(IS_DETAIL).toString());
             Object scriplet = parameters.get(REPORT_SCRIPTLET);
 
-            String sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, null, keys, values, useAnd, 2, isDetail, null, false, null);
-            runUsageReport(fileName, prop, parameters, scriplet, sql, keys);
+            String sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serviceIds, keys, values, useAnd, 2, isDetail, operations, useUser, authUsers);
+            System.out.println("Distinct sql: " + sql);
+            runUsageReport(fileName, prop, parameters, scriplet, sql, keys, useUser);
         }else{
             //JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
             Connection connection = getConnection(prop);
@@ -236,7 +244,7 @@ public class ReportApp
     }
     
     private void runUsageReport(String fileName, Properties prop, Map parameters, Object scriplet, String sql,
-                                       List<String> keys)
+                                       List<String> keys, boolean useUser)
                                                                     throws Exception{
         UsageReportHelper helper = (UsageReportHelper) scriplet;
         LinkedHashSet<String> mappingValues;
@@ -260,19 +268,29 @@ public class ReportApp
         helper.setKeyToColumnMap(keyToColumnName);
 
         //now generate the report to be compiled
-        Document transformDoc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document transformDoc = Utilities.getUsageRuntimeDoc(useUser, keys, mappingValues);
+        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
+        }finally{
+            fos.close();
+        }
 
         //get xsl and xml
         String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
         String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
+        params.put("FrameMinWidth", 535);
+        params.put("ReportInfoStaticTextSize", 128);
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperDoc = transform(xslStr, xmlFileName, params);
 
-        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
+        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/JasperRuntimeDoc.xml");
         f.createNewFile();
-        FileOutputStream fos = new FileOutputStream(f);
+        fos = new FileOutputStream(f);
         try{
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
         }finally{

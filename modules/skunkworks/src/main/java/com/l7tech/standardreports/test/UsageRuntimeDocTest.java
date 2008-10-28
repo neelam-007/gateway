@@ -75,7 +75,7 @@ public class UsageRuntimeDocTest {
             set.add(sb.toString());
         }
 
-        Document doc = Utilities.getUsageRuntimeDoc(keys, set);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, set);
         Assert.assertTrue(doc != null);
         XmlUtil.format(doc, true);
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");

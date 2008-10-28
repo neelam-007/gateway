@@ -105,9 +105,9 @@ public class UsageTestTransforms{
         mappingValues.add("127.0.0.1Gold");
         mappingValues.add("127.0.0.1Silver");
 
-        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
         String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
-        String xmlFileName = getResAsStringClasspath("Usage_Summary_XSLT_Template.jrxml");
+        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", doc);
         //Document doc = transform(xslStr, xmlStr, params);
@@ -134,7 +134,7 @@ public class UsageTestTransforms{
         mappingValues.add("127.0.0.1Gold");
         mappingValues.add("127.0.0.1Silver");
 
-        Document doc = Utilities.getUsageRuntimeDoc(keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
         String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
         String xmlFileName = getResAsStringClasspath("Usage_Summary_XSLT_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
