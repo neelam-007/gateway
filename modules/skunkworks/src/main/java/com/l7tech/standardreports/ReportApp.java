@@ -136,12 +136,12 @@ public class ReportApp
             }
             else if (TASK_CANNED_USAGE.equals(taskName)){
                 LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
-                keyToColumnName.put("127.0.0.1<br>Gold<br>", "COLUMN_1");
-                keyToColumnName.put("127.0.0.2<br>Gold<br>", "COLUMN_2");
+                keyToColumnName.put("127.0.0.1<br>Bronze<br>", "COLUMN_1");
+                keyToColumnName.put("127.0.0.1<br>Gold<br>", "COLUMN_2");
                 keyToColumnName.put("127.0.0.1<br>Silver<br>", "COLUMN_3");
-                keyToColumnName.put("127.0.0.2<br>Silver<br>", "COLUMN_4");
-                keyToColumnName.put("127.0.0.1<br>Bronze<br>", "COLUMN_5");
-                keyToColumnName.put("127.0.0.2<br>Bronze<br>", "COLUMN_6");
+                keyToColumnName.put("127.0.0.2<br>Bronze<br>", "COLUMN_4");
+                keyToColumnName.put("127.0.0.2<br>Gold<br>", "COLUMN_5");
+                keyToColumnName.put("127.0.0.2<br>Silver<br>", "COLUMN_6");
 
                 Map<String, Object> parameters = getParameters();
                 Object scriplet = parameters.get(REPORT_SCRIPTLET);

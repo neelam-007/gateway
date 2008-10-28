@@ -481,7 +481,8 @@ public class Utilities {
         if(keyValuesSupplied){
             addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
         }
-
+        addUsageDistinctMappingOrder(sb);
+        
         return sb.toString();
     }
 
@@ -1054,6 +1055,14 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
     private static void addUsageMappingOrder(StringBuilder sb) {
         sb.append(" ORDER BY p.objectid, SERVICE_OPERATION_VALUE ");
         sb.append(" ,AUTHENTICATED_USER, ");
+        for(int i = 0; i < NUM_MAPPING_KEYS; i++){
+            if(i != 0) sb.append(", ");
+            sb.append("MAPPING_VALUE_" + (i+1));
+        }
+    }
+
+    private static void addUsageDistinctMappingOrder(StringBuilder sb) {
+        sb.append(" ORDER BY AUTHENTICATED_USER, ");
         for(int i = 0; i < NUM_MAPPING_KEYS; i++){
             if(i != 0) sb.append(", ");
             sb.append("MAPPING_VALUE_" + (i+1));

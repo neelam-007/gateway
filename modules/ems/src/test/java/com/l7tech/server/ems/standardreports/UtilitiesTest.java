@@ -63,6 +63,23 @@ public class UtilitiesTest{
         //System.out.println("OneKey: "+sql);
     }
 
+    @Test
+    public void testCreateMasterMappingQuery_KeyValues(){
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
+
+        List<String> values = new ArrayList<String>();
+//        values.add("127.0.0.1");
+//        values.add("GOLD");
+
+        String sql = Utilities.createMappingQuery(true, null,null,new ArrayList<String>(),keys ,values ,null ,1 ,false ,null
+                ,false ,null);
+
+        System.out.println(sql);
+
+    }
+
     /**
      * Checks that all values supplied as constraints on keys are used correctly in the generated sql
      */
@@ -396,7 +413,7 @@ public class UtilitiesTest{
         values.add(null);
         values.add("GOLD");
 
-        String sql = Utilities.getUsageSummaryQuery(null, null, null, keys, null, null, 2, true, null, false, null);
+        String sql = Utilities.getUsageSummaryQuery(null, null, null, keys, null, null, 2, false, null, false, null);
         System.out.println(sql);
     }
 
@@ -448,7 +465,7 @@ public class UtilitiesTest{
         String sql = Utilities.createMappingQuery(true, null, null, new ArrayList<String>(), null, null, null, 1, true,
                 null , false, null);
 
-        //System.out.println("Select Distinct Fields: "+sql);
+        System.out.println("Select Distinct Fields: "+sql);
 
         int index = sql.indexOf(Utilities.SERVICE_ID);
         Assert.assertTrue(index != -1);
@@ -1159,7 +1176,7 @@ public class UtilitiesTest{
     }
 
     @Test
-    public void testGetGetUsageRuntimeDoc_NotNull(){
+    public void testGetUsageRuntimeDoc_NotNull(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
 
@@ -1192,7 +1209,7 @@ public class UtilitiesTest{
     }
     
     @Test
-    public void testGetGetUsageRuntimeDoc_FirstLevelElements(){
+    public void testGetUsageRuntimeDoc_FirstLevelElements(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
@@ -1226,7 +1243,7 @@ public class UtilitiesTest{
     }
 
     @Test
-    public void testGetGetUsageRuntimeDoc_Variables(){
+    public void testGetUsageRuntimeDoc_Variables(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
@@ -1238,7 +1255,7 @@ public class UtilitiesTest{
     }
 
     @Test
-    public void testGetGetUsageRuntimeDoc_VariablesNames(){
+    public void testGetUsageRuntimeDoc_VariablesNames(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
@@ -1247,7 +1264,7 @@ public class UtilitiesTest{
     }
 
     @Test
-    public void testGetGetUsageRuntimeDoc_ConstantHeader(){
+    public void testGetUsageRuntimeDoc_ConstantHeader(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
@@ -1259,7 +1276,7 @@ public class UtilitiesTest{
     }
 
     @Test
-    public void testGetGetUsageRuntimeDoc_ServiceOperationFooter(){
+    public void testGetUsageRuntimeDoc_ServiceOperationFooter(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
@@ -1271,7 +1288,7 @@ public class UtilitiesTest{
     }
 
     @Test
-    public void testGetGetUsageRuntimeDoc_SerivceIdFooter(){
+    public void testGetUsageRuntimeDoc_SerivceIdFooter(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
@@ -1283,7 +1300,7 @@ public class UtilitiesTest{
     }
 
     @Test
-    public void testGetGetUsageRuntimeDoc_ConstantFooter(){
+    public void testGetUsageRuntimeDoc_ConstantFooter(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
