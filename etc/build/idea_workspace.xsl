@@ -8,10 +8,10 @@
     <xsl:param name="idea.teamcity.user"></xsl:param>
     <xsl:param name="idea.teamcity.password"></xsl:param>
     <xsl:param name="idea.teamcity.remember">true</xsl:param>
-    <xsl:param name="idea.client.vmOptions">-Dcom.l7tech.util.buildVersion=4</xsl:param>
-    <xsl:param name="idea.gateway.vmOptions">-Dcom.l7tech.server.home="/ssg" -Dcom.l7tech.util.buildVersion=4</xsl:param>
-    <xsl:param name="idea.manager.vmOptions">-Dcom.l7tech.util.buildVersion=4</xsl:param>
-    <xsl:param name="idea.ems.vmOptions">-Dcom.l7tech.util.buildVersion=1</xsl:param>
+    <xsl:param name="idea.client.vmOptions">-Dcom.l7tech.util.buildVersion=5.0</xsl:param>
+    <xsl:param name="idea.gateway.vmOptions">-Dcom.l7tech.server.home="/ssg" -Dcom.l7tech.util.buildVersion=5.0</xsl:param>
+    <xsl:param name="idea.manager.vmOptions">-Dcom.l7tech.util.buildVersion=5.0</xsl:param>
+    <xsl:param name="idea.ems.vmOptions">-Dcom.l7tech.util.buildVersion=1.0</xsl:param>
 
     <!-- Global options -->
     <xsl:output method="xml" encoding="utf-8" indent="yes"/>

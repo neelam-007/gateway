@@ -132,6 +132,9 @@ public class DatabaseUpgrader {
         if ( dbVersion == null ) {
             System.out.println("Unable to determine database version, cannot upgrade.");
             System.exit(4);
+        } else if ( "unknown".equalsIgnoreCase(dbVersion) ) {
+            System.out.println("Unable to determine database version (incorrect credentials?), cannot upgrade.");
+            System.exit(4);
         } else if ( !dbVersion.equals(swVersion) ) {
             System.out.println("Database upgrade is required.");
             System.out.println();
@@ -142,7 +145,7 @@ public class DatabaseUpgrader {
             boolean upgrade = false;
             boolean confirmed = false;
             while( !confirmed ) {
-                System.out.print("Perform upgrade? [false]: ");
+                System.out.print("Perform upgrade? [No]: ");
 
                 String response = System.console().readLine().trim();
                 exitOnQuit(response);
@@ -155,7 +158,7 @@ public class DatabaseUpgrader {
                     break;
                 } else {
                     System.out.println();
-                    System.out.println("Invalid choice '"+response+"', options are true/false.");
+                    System.out.println("Invalid choice '"+response+"', options are Yes/No.");
                     System.out.println();
                 }
             }

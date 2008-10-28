@@ -14,6 +14,7 @@ import java.sql.*;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.net.PasswordAuthentication;
@@ -76,7 +77,7 @@ public class DBActions {
     private CheckSSGDatabase ssgDbChecker;
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
-        new DbVersion47Checker(),
+        new DbVersion50Checker(),
         new DbVersion46Checker(),
         new DbVersion45Checker(),
         new DbVersion44Checker(),
@@ -217,6 +218,7 @@ public class DBActions {
         } catch (SQLException e) {
             result.setStatus(determineErrorStatus(e.getSQLState()));
             result.setErrorMessage(ExceptionUtils.getMessage(e));
+            logger.log( Level.WARNING, "Error during upgrade.", e );
         } finally {
             ResourceUtils.closeQuietly(stmt);
             ResourceUtils.closeQuietly(conn);
@@ -445,10 +447,21 @@ public class DBActions {
      * WARNING: admin connections do not connect to the database named in the config! 
      */
     public Connection getConnection( final DatabaseConfig databaseConfig, boolean admin ) throws SQLException {
+        return getConnection( databaseConfig, admin, admin );
+    }
+
+    /**
+     * Get a regular or admin connection.
+     *
+     * @param databaseConfig The database configuration to use
+     * @param admin True to connect using admin credentials
+     * @param adminDb True to connect to the administration DB
+     */
+    public Connection getConnection( final DatabaseConfig databaseConfig, boolean admin, boolean adminDb ) throws SQLException {
         return getConnection(
                 databaseConfig.getHost(),
                 databaseConfig.getPort(),
-                admin ? ADMIN_DB_NAME : databaseConfig.getName(),
+                adminDb ? ADMIN_DB_NAME : databaseConfig.getName(),
                 admin ? databaseConfig.getDatabaseAdminUsername() : databaseConfig.getNodeUsername(),
                 admin ? databaseConfig.getDatabaseAdminPassword() : databaseConfig.getNodePassword());
     }
@@ -627,7 +640,20 @@ public class DBActions {
             conn = getConnection(databaseConfig, false);
             dbVersion = checkDbVersion(conn);
         } catch (SQLException e) {
-            logger.warning("Error while checking the database version: " + ExceptionUtils.getMessage(e));
+            if ( e.getSQLState().equals("28000") && databaseConfig.getDatabaseAdminUsername() != null ) {
+                // try again with admin credentials
+                ResourceUtils.closeQuietly(conn);
+                conn = null;
+
+                try {
+                    conn = getConnection(databaseConfig, true, false);
+                    dbVersion = checkDbVersion(conn);
+                } catch (SQLException sqle) {
+                    logger.warning("Error while checking the database version: " + ExceptionUtils.getMessage(sqle));
+                }
+            } else {
+                logger.warning("Error while checking the database version: " + ExceptionUtils.getMessage(e));
+            }
         } finally {
             ResourceUtils.closeQuietly(conn);
         }

@@ -9,7 +9,7 @@ Packager: Layer 7 Technologies, <support@layer7tech.com>
 Source0: /tmp/tarari.tar.gz
 Source1: /tmp/tarari-kernel-drivers.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
-requires: ssg >= 4.7
+requires: ssg >= 5.0
 requires: kernel-smp-x86_64 >= 2.6.9-67.0.1.EL
 provides: ssg-tarari
 

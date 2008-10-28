@@ -382,7 +382,7 @@ class Importer {
         try {
             // load that image on the temp database
             String msg = "Loading image on temporary database";
-            Connection c = dba.getConnection(targetConfig, true);
+            Connection c = dba.getConnection(targetConfig, true, false);
             try {
                 doLoadDump(c, dumpFilePath, msg);
             } finally {

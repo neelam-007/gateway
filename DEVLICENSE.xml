@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<license Id="3770430608623227209" xmlns="http://l7tech.com/license">
+<license Id="4896914940500091731" xmlns="http://l7tech.com/license">
     <description>Layer 7 Development - NCES license</description>
-    <valid>2008-02-07T16:54:47.731Z</valid>
-    <expires>2019-02-07T16:54:47.834Z</expires>
+    <licenseAttributes/>
+    <valid>2008-05-06T19:20:40.447Z</valid>
+    <expires>2019-05-06T19:20:42.583Z</expires>
     <host name="*"/>
     <ip address="*"/>
     <product name="Layer 7 SecureSpan Suite">
-        <version major="4" minor="*"/>
+        <version major="5" minor="*"/>
         <featureset name="set:Profile:US"/>
     </product>
-    <licensee name="Layer 7 Technologies"/>
+    <featureLabel>SecureSpan Gateway</featureLabel>
+    <licensee name="Layer 7 Development - NCES license"/>
 
     <eulatext>H4sIAAAAAAAAALVc23LjRpJ9ZwT/AdERGyNFwNrp8c54PH5iS+xuzuo2JOWe3jeQACW4QYCDi2TN
         1+85mVmFAi+y92EjHG6KBOqSlZV58mRWXSevWR39EE3LNHpo8PE6X2dlk0WTxzrLtlnZjkfLp7x5
@@ -177,16 +179,16 @@
         <ds:SignedInfo>
             <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
             <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
-            <ds:Reference URI="#3770430608623227209">
+            <ds:Reference URI="#4896914940500091731">
                 <ds:Transforms>
                     <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
                     <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
                 </ds:Transforms>
                 <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-                <ds:DigestValue>gkQsaOwNH+uZi7Ntgja7jN+gNuE=</ds:DigestValue>
+                <ds:DigestValue>DOqxHOxtiUaICQZbPcJGZhJl4I4=</ds:DigestValue>
             </ds:Reference>
         </ds:SignedInfo>
-        <ds:SignatureValue>LoFpah336qk5CcpcbnYzW1fVLA/GZVfx7NoYQ+1Ysst7pvjz95A6TTZ1XUL8LtyeWf5BYgIs7oHw1Iz6zw1Gvw3hOkZKDunuHoQGkibUWW1WBbC1eLfj8j3VJ/SqJgfK56Uzv3LvSynfwfL6ga24rDYwNjOnrla5idSMgkOVtOXxlJ3bYEjXfY9lytU84xfeosuUvGxqnXWu8htsoElnO+ZQoxpI//dEz9Oco1ZIJYwNxu8sQL3sFE5XtPZvz2Z2eDtXzgMsBq4c+RuFTXAH/0AU4zouFqVDGEYc3mJ10eVZTBifWTX4Pav7YNpI0+lo0LAbV8fQt5qQdSfIjrLVWg==</ds:SignatureValue>
+        <ds:SignatureValue>BCElyVbCPudnIeLn5xO9S5H6mqB5UOeqMnhQpDlcPtESLqH9xyBLUGzHEjnVy+6QjTV3Sz91tGJ91h72DWsIwFQGGWgI9HTfut+Y1dwZPG+EcBowHJBdtEgNt9a2msuXW08rw20U0Yxklu3KXVNRnuFEgGc1M0QNELWAjX1K6kyfgMkgRQb2CgKA82uJd8E2xJ7VEtffvAfirbajhFepTrJXwonDqtGw9SoF4iOFniYAoZOc+5Z5ICJNQavfp+dSOMInMjEz8+P/TaFVCyE2V2t+pzHlCiNCfUkRRqWNmo5j5us2Bx7Hw2CtZJWR6tw/k61qjNh/5ROk2feAN9HgSg==</ds:SignatureValue>
         <ds:KeyInfo>
             <ds:KeyName>CN=License Officer, O=Layer 7 Technologies</ds:KeyName>
         </ds:KeyInfo>

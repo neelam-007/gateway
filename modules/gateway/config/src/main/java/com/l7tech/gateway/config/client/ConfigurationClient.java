@@ -69,14 +69,14 @@ public class ConfigurationClient extends Interaction {
                 try {
                     provider.storeConfiguration( configBeans.values() );    
                     System.out.println( bundle.getString("message.results.success") );
+                    success = true;
                 } catch ( ConfigurationException ce ) {
                     System.out.println( bundle.getString("message.results.failure") );
                     System.out.println(ce.getMessage());
                 }                                  
+            } else {
+                success = true;
             }
-
-            success = true;
-
         } catch ( WizardNavigationException wne ) {
             logger.log(Level.WARNING, "Navigation error during configuration", wne );
         }

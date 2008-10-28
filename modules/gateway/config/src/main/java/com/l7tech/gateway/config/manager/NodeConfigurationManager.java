@@ -68,7 +68,6 @@ public class NodeConfigurationManager {
      * @param name The name of the node to configure ("default")
      * @param nodeid The unique identifier to use for the node.
      * @param enabled Is the node enabled?
-     * @param defaultClusterHostname The cluster hostname to use by default (may be null).
      * @param clusterPassword The cluster password
      * @param databaseConfig The database configuration to use.
      * @throws IOException If an error occurs
@@ -77,7 +76,6 @@ public class NodeConfigurationManager {
     public static void configureGatewayNode( final String name,
                                              final String nodeid,
                                              final Boolean enabled,
-                                             final String defaultClusterHostname,
                                              final String clusterPassword,
                                              final DatabaseConfig databaseConfig,
                                              final DatabaseConfig database2ndConfig ) throws IOException {

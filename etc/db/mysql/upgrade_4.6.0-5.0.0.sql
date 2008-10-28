@@ -9,8 +9,6 @@
 --
 SET FOREIGN_KEY_CHECKS=0;
 
-ALTER TABLE rbac_assignment ADD CONSTRAINT rbac_assignment_provider FOREIGN KEY (`provider_oid`) REFERENCES `identity_provider` (`objectid`) ON DELETE CASCADE;
-
 --
 -- Rename audit detail column to avoid reserved word
 --
@@ -25,11 +23,12 @@ UPDATE rbac_role set description='Users assigned to the {0} role have the abilit
 --
 -- Update rbac_assignments with new entity_type columns and user_id renamed to identity_id
 --
+ALTER TABLE rbac_assignment DROP KEY unique_assignment;
 ALTER TABLE rbac_assignment ADD COLUMN entity_type varchar(50) NOT NULL;
 UPDATE rbac_assignment SET entity_type = 'User';
 ALTER TABLE rbac_assignment CHANGE user_id identity_id varchar(255) NOT NULL;
-ALTER TABLE rbac_assignment DROP KEY unique_assignment;
 ALTER TABLE rbac_assignment ADD CONSTRAINT UNIQUE KEY unique_assignment (provider_oid,role_oid,identity_id, entity_type);
+ALTER TABLE rbac_assignment ADD CONSTRAINT rbac_assignment_provider FOREIGN KEY (`provider_oid`) REFERENCES `identity_provider` (`objectid`) ON DELETE CASCADE;
 
 --
 -- Constraint changes for trusted_cert:

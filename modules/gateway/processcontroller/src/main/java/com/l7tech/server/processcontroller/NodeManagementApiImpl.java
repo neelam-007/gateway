@@ -87,7 +87,9 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         checkRequest();
 
         String newNodeName = nodeConfig.getName();
+        boolean enabled = nodeConfig.isEnabled();
         String clusterPassphrase = nodeConfig.getClusterPassphrase();
+        String clusterHostname = nodeConfig.getClusterHostname();
 
         final Map<String,NodeConfig> nodes = configService.getHost().getNodes();
         PCNodeConfig temp = (PCNodeConfig)nodes.get(newNodeName);
@@ -105,16 +107,17 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         }
 
         final PCNodeConfig node = new PCNodeConfig();
-        node.setEnabled(true);
+        node.setEnabled(enabled);
         node.setName(newNodeName);
         node.setSoftwareVersion(nodeVersion);
         node.setGuid(UUID.randomUUID().toString().replace("-",""));
         node.setHost(configService.getHost());
+        node.setClusterHostname(clusterHostname);
         node.getDatabases().add(databaseConfig);
         node.getDatabases().add(failoverDatabaseConfig);
 
         try {
-            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), true, null, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
+            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), enabled, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
             AccountReset.resetAccount( databaseConfig, adminLogin, adminPassphrase );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
@@ -178,7 +181,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         DatabaseConfig failoverDatabaseConfig = configs[1];
         
         try {
-            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), null, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
+            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), clusterPassphrase, databaseConfig, failoverDatabaseConfig );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");

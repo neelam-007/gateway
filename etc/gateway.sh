@@ -52,7 +52,13 @@ fi
 if [ -n "${NODE_OPTS}" ] ; then
   JAVA_OPTS="${JAVA_OPTS} ${NODE_OPTS}"
 fi
-JAVA_OPTS="${JAVA_OPTS} ${SSGOPTS[@]}"
+for OPT in "${SSGOPTS[@]}"; do
+    if [[ "${JAVA_OPTS}" =~ "${OPT%%=*}=[a-zA-Z0-9_\.-]{1,245}" ]] ; then
+        JAVA_OPTS=${JAVA_OPTS/${BASH_REMATCH}/${OPT}}
+    else
+        JAVA_OPTS="${JAVA_OPTS} ${OPT}"
+    fi
+done
 
 # Sanity checks
 if [ -z "${SSG_JAVA_HOME}" ] ; then

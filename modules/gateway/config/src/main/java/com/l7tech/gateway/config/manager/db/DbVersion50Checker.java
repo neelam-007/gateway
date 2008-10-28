@@ -4,9 +4,9 @@ import java.util.Set;
 import java.util.Map;
 
 /**
- * Version checker for 4.7
+ * Version checker for 5.0
  */
-public class DbVersion47Checker extends DbVersionChecker {
+public class DbVersion50Checker extends DbVersionChecker {
     
     public static final String PUBLISHED_SERVICE_ALIAS_TABLE = "published_service_alias";
 
@@ -21,6 +21,6 @@ public class DbVersion47Checker extends DbVersionChecker {
     }
 
     public String getVersion() {
-        return "4.7";
+        return "5.0.0";
     }
 }
