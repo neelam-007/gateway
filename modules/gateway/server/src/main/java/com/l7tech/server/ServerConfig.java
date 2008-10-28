@@ -169,6 +169,8 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public static final String PARAM_EMAIL_LISTENER_THREAD_LIMIT = "emailListenerThreadLimit";
     public static final String PARAM_EMAIL_LISTENER_THREAD_DISTRIBUTION = "emailListenerThreadDistribution";
+    public static final String PARAM_EMAIL_LISTENER_CONNECTION_TIMEOUT = "ioMailInConnectTimeout";
+    public static final String PARAM_EMAIL_LISTENER_TIMEOUT = "ioMailInTimeout";
 
     public static final String PARAM_LOG_DIRECTORY = "logDirectory";
 

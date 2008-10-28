@@ -66,15 +66,18 @@
         </property>
     </bean>
 
+    <!-- Email boot process -->
     <bean id="emailListenerBootProcess" class="com.l7tech.server.transport.email.EmailListenerBootProcess">
         <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig"/>
         <constructor-arg type="com.l7tech.gateway.common.LicenseManager" ref="licenseManager"/>
         <constructor-arg type="com.l7tech.server.transport.email.EmailListenerManager" ref="emailListenerManager"/>
         <constructor-arg ref="clusterNodeId"/>
         <constructor-arg type="java.util.Timer"><null/></constructor-arg>
-        <property name="pollingEmailListenerFactory">
-            <bean class="com.l7tech.server.transport.email.asynch.PooledPollingEmailListenerFactory"/>
-        </property>
+        <property name="pollingEmailListenerFactory" ref="pollingEmailListenerFactory"/>
+    </bean>
+
+    <bean id="pollingEmailListenerFactory" class="com.l7tech.server.transport.email.asynch.PooledPollingEmailListenerFactory">
+        <constructor-arg index="0" ref="serverConfig"/>
     </bean>
 
     <!-- Abstract "parent" of any bean that needs access to sessionFactory and transactionManager -->
@@ -168,6 +171,12 @@
                                 <value>krb5Keytab</value>
                                 <value>krb5Realm</value>
                                 <value>krb5KDC</value>
+                            </list>
+                        </entry>
+                        <entry key="pollingEmailListenerFactory">
+                            <list>
+                                <value>ioMailInConnectTimeout</value>
+                                <value>ioMailInTimeout</value>
                             </list>
                         </entry>
                     </map>

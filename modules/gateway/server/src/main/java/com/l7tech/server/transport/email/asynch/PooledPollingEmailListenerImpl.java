@@ -67,15 +67,18 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
      *
      * @param emailListenerCfg attributes for the email listener configuration
      * @param emailListenerManager the manager object for EmailLister's
+     * @param connectionTimeout Socket connection timeout value in milliseconds.
+     * @param timeout Socket I/O timeout value in milliseconds.
      */
-    public PooledPollingEmailListenerImpl(final EmailListenerConfig emailListenerCfg, EmailListenerManager emailListenerManager) {
+    public PooledPollingEmailListenerImpl(final EmailListenerConfig emailListenerCfg, EmailListenerManager emailListenerManager,
+                                          long connectionTimeout, long timeout) {
         this.emailListenerCfg = emailListenerCfg;
         this.emailListenerManager = emailListenerManager;
 
         if(emailListenerCfg.getEmailListener().getServerType() == EmailServerType.POP3) {
             Properties props = new Properties();
-            props.setProperty("mail.pop3.connectiontimeout", "30000");
-            props.setProperty("mail.pop3.timeout", "30000");
+            props.setProperty("mail.pop3.connectiontimeout", Long.toString(connectionTimeout));
+            props.setProperty("mail.pop3.timeout", Long.toString(timeout));
             if(emailListenerCfg.getEmailListener().isUseSsl()) {
                 props.setProperty("mail.pop3s.socketFactory.fallback", "false");
                 props.setProperty("mail.pop3s.socketFactory.class", SOCKET_FACTORY_CLASSNAME);
@@ -83,8 +86,8 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
             emailSession = Session.getInstance(props);
         } else if(emailListenerCfg.getEmailListener().getServerType() == EmailServerType.IMAP) {
             Properties props = new Properties();
-            props.setProperty("mail.imap.connectiontimeout", "30000");
-            props.setProperty("mail.imap.timeout", "30000");
+            props.setProperty("mail.imap.connectiontimeout", Long.toString(connectionTimeout));
+            props.setProperty("mail.imap.timeout", Long.toString(timeout));
             if(emailListenerCfg.getEmailListener().isUseSsl()) {
                 props.setProperty("mail.imaps.socketFactory.fallback", "false");
                 props.setProperty("mail.imaps.socketFactory.class", SOCKET_FACTORY_CLASSNAME);
