@@ -28,6 +28,7 @@
         <dependency name="layer7-uddi" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-test" rev="latest.integration" force="true" conf="test"/>
         <dependency org="log4j" name="log4j" rev="1.2.14" force="true" conf="core"/>
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" force="true" conf="core"/>
         <dependency org="org.hibernate" name="hibernate" rev="3.2.6.ga" force="true" conf="core">
