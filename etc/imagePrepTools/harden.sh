@@ -246,6 +246,13 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
 	# change root and ssgconfig password to 'password'
 #	usermod -p $1$c.vxuRpE$uNvTtWmyjg/UzmVXGOJaT. root
 #	usermod -p $1$c.vxuRpE$uNvTtWmyjg/UzmVXGOJaT. ssgconfig
+
+	# remove hwaddr in eth configs
+	sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth0
+	sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth1
+	sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth2
+	sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth3
+
 }
 
 soften() {

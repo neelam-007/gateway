@@ -1,0 +1,344 @@
+#!/bin/sh
+#
+# Layer 7 Technologies Inc.
+#
+# SSG Pre/Seal Script
+#
+
+case "$1" in
+
+preseal)
+
+##########
+# Ensure required services are enabled on boot.
+#
+for f in mysqld ssg ssgsysconfig ssg-dbstatus tarari tcp_tune; do chkconfig $f on; chkconfig --list $f;done
+echo ""
+
+chkconfig kudzu off
+chkconfig cpuspeed off
+
+# fixme: this won't actually do anything as we've already added the latest packages to the install media.
+# Update the system with the lastest packages.
+#yum -y update
+#echo ""
+;;
+
+test)
+
+ERROR=0
+# Confirm SSL card is loaded and works
+MCA=`dmesg | grep mca | grep Firmware`
+if [ "$MCA" ] ; then
+	echo ""
+	echo "SSL Card loaded:"
+	echo $MCA
+	echo "" 
+	MCA_DRIVER_VERSION="`echo $MCA | cut -d ' ' -f 6`"
+	echo "Driver version is $MCA_DRIVER_VERSION"
+	MCA_DRIVER_MINOR_VERSION="`echo $MCA_DRIVER_VERSION | cut -f 3 -d '.'`"
+	if [ ! $MCA_DRIVER_MINOR_VERSION -ge 8 ] ; then
+		echo "ERROR - SSL Card has old firmware on it, update by running $0 scaupgrade"
+	fi
+else 
+	echo ""
+	echo "SSL Card NOT loaded."
+	echo ""
+fi
+
+# Confirm Tarari firmware loads.
+#
+echo "Loading Tarari XML card drivers:"
+service tarari stop ; service tarari start
+echo ""
+
+# Ensure the drivers load
+CPP=`cat /proc/driver/cpp | grep Driver`
+if [ "$CPP" ] ; then
+	[ -e /ssg/etc/profile.d/tarariopts.sh ] && source /ssg/etc/profile.d/tarariopts.sh
+	echo ""
+	echo "Tarari XML Card driver loaded:"
+	echo $CPP
+	echo ""
+	
+	# Run through Tarari tests.
+	echo "Running Tarari XML card tests (may take a few minutes):"
+	TESTS=`/usr/local/Tarari/bin/cpp_manager_static -v -t all`
+	if [ "`echo $TESTS | grep PASSED`" ] ; then
+		echo "Passed"
+		echo ""
+	else 
+		echo "Failed!"
+		echo "Some Tarari XML card tests didn't pass, re-running in verbose mode:"
+		/usr/local/Tarari/bin/cpp_manager_static -v -t all
+		ERROR=1
+		echo ""
+	fi
+else 
+	echo ""
+	echo "Tarari XML Card driver NOT loaded"
+	echo ""
+fi
+
+
+
+##########
+# SSG Version
+#
+echo "SSG Version = $(rpm -q ssg)"
+echo ""
+
+##########
+# Tarari Serial Number
+#
+if [ -e "/usr/local/Tarari/bin/cpp_manager" ] ; then
+  echo "Tarari Card Serial Number =$(cat /proc/driver/cpp0 | grep "Serial Number"|cut -d = -f 2|cut -d ':' -f 2)"
+else
+  echo "ERROR cpp_manager not found. ERROR"
+  ERROR=1
+fi
+echo ""
+
+##########
+# Memory List
+#
+TOTAL_MEM="$[$(cat /proc/meminfo |grep MemTotal|cut -d : -f 2|cut -d k -f 1)/1024]"
+echo "Memory Total = $TOTAL_MEM Megs"
+if [ $TOTAL_MEM -le 7500 ] ; then
+	echo "WARN: Memory is less than 8 gigabytes: $TOTAL_MEM"
+	echo ""
+	ERROR=1
+fi
+echo ""
+
+##########
+# Raid Array Status
+#
+# md0
+echo "Checking RAID status:"
+if [ "$(cat /proc/mdstat |grep md0|grep "\[0\]")" = "" ]; then
+  echo "ERROR md0 device 0 ERROR"
+  md00=error
+  ERROR=1
+else
+  echo "PASS md0 device 0"
+fi
+if [ "$(cat /proc/mdstat |grep md0|grep "\[1\]")" = "" ]; then
+  echo "ERROR md0 device 1 ERROR"
+  md01=error
+  ERROR=1
+else
+  echo "PASS md0 device 1"
+fi
+echo ""
+
+# md1
+if [ "$(cat /proc/mdstat |grep md1|grep "\[0\]")" = "" ]; then
+  echo "ERROR md1 device 0 ERROR"
+  md10=error
+  ERROR=1
+else
+  echo "PASS md1 device 0"
+fi
+if [ "$(cat /proc/mdstat |grep md1|grep "\[1\]")" = "" ]; then
+  echo "ERROR md1 device 1 ERROR"
+  md11=error
+  ERROR=1
+else
+  echo "PASS md1 device 1"
+fi
+# Check if a raid set is in recovery mode.
+if [ "$(cat /proc/mdstat |grep recovery)" != "" ]; then
+  echo "ERROR Failed Raid Device Rebuilding ERROR"
+  recovery=error
+  ERROR=1
+fi
+# Exit if there are any error with the raid sets.
+if [ "$md00" = "error" ] || [ "$md01" = "error" ] || [ "$md10" = "error" ] || [ "$md11" = "error" ] || [ "$recovery" = "error" ]; then
+  echo ""
+  echo "###################"
+  echo "# RAID SET ERRORS #"
+  echo "###################"
+  exit 1
+fi
+echo ""
+
+if [ $ERROR -eq 1 ] ; then
+	echo ""
+	echo "* * * * * * * WARNING * * * * * * * * * "
+	echo "There was an error detected somewhere in the test process, please"
+	echo "scroll up and check to see if this was in fact a fatal error or not."
+	echo "* * * * * * * WARNING * * * * * * * * * "
+	echo ""
+fi 
+
+;;
+
+seal)
+  # Stop writing to ~/.bash_history
+  export HISTSIZE=0
+
+  # remove ~/.bash_history
+  rm -f ~/.bash_history
+
+  # Delete all log files.
+  rm -f /var/log/*/*
+  rm -f /var/log/*
+  touch /var/log/btmp
+  rm -f ~/ks-post.chroot
+  rm -f ~/ks-post.nochroot
+
+  #ensure that the correct USB module is used by the master_key_manage script
+  echo "EHCI" > /etc/usbdrive_pp
+
+  # Remove any left over traces if we happened to ssh anywhere
+  rm -rf ~/.ssh
+
+  # Remove Layer7 rpms.
+  rm -rf /root/rpms
+
+  ifdown eth0
+
+  # Clear the /etc/resolv.conf file
+  echo "" > /etc/resolv.conf
+
+  # Clear the /etc/security/opasswd file
+  echo "" > /etc/security/opasswd
+
+
+  sed -i -e 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
+  
+  # Force the expiry of the root password 60 days after it has been changed (STIG requirement).
+  chage -M 60 root
+
+  #reset ssgconfig password to "7layer"
+  echo "7layer" | passwd ssgconfig --stdin >/dev/null
+
+  # Force the expiry of the ssgconfig password 60 days after it has been changed (STIG requirement).
+  chage -M 60 ssgconfig
+
+  # Force root to change her password the next time she logs in.
+  chage -d 0 root
+  chage -d 0 ssgconfig
+
+  #reset pam_tally
+  pam_tally --reset --user root
+  pam_tally --reset --user ssgconfig
+
+# fixme: shouldn't we enable the firstboot service and touch
+# /etc/reconfigSys to have the client go through base
+# install settings? I.e. date,country,keyboard etc.
+  # chkconfig firstboot on
+  # touch /etc/reconfigSys
+
+# fixme: kuduz redetect everything? Is there a way to force kudzu to use some sort of defaults upon detection?
+
+  # fixme: this should probably only be done pre image creation.
+  # Zero out all empty blocks on the hard drive.
+  #dd if=/dev/zero of=/tmp/0bits bs=20971520 # bs=20m
+  #rm -f /tmp/0bits
+
+  # Delete the ssh keys to ensure they are created new
+  rm -f /etc/ssh/ssh_host_*
+
+  # Delete this script.
+  rm -f /root/sealsys
+
+  # poweroff the system and do not write the wtmp entry.
+  poweroff -d
+
+;;
+
+customize)
+
+  FOO=`lspci`
+  if [ ! $? -eq 0 ] ; then
+      echo ""
+      echo "ERROR: can't run lspci - are you running as root?"
+      echo ""
+      exit 1;
+  fi
+
+  #looking for an installed SCA (Class 1000: 108e:5ca0)
+  SCA_CARD_INSTALLED=`lspci -n | grep "108e:5ca0"`
+  if [ -n "${SCA_CARD_INSTALLED}" ] ; then
+        echo "SCA card seems to be installed - Nothing to do"
+        exit 0;
+  else
+        echo "WARNING: The SCA card does not appear to be installed"
+  fi
+
+
+  SCADIAG="/opt/sun/sca6000/sbin/scadiag"
+  if [ -s ${SCADIAG} ] ; then
+        echo "SCA support software appears to be installed"
+  else
+        echo "ERROR: SCA support software does not appear to be installed"
+        exit 1;
+  fi
+
+  SCA_SSG_SOFTWARE="/ssg/appliance/libexec/masterkey-manage.pl"
+  if [ -s ${SCA_SSG_SOFTWARE} ] ; then
+        echo "The SSG SCA support software appears to be installed"
+  else
+        echo "ERROR: The SSG SCA support software does not appear to be installed"
+        exit 1;
+  fi
+
+
+  echo ""
+  echo "**********************"
+  echo "Disabling SCA startup"
+  echo "**********************"
+  echo ""
+  echo "Disabling SCA startup scripts"
+  rm -f /etc/rc3.d/S*sca.driver
+  rm -f /etc/rc3.d/S*sca.daemon
+  echo ""
+  echo "Renaming the SCA software directory"
+  mv /opt/sun/sca6000 /opt/sun/sca6000.disabled
+  echo ""
+  echo "The SCA is now disabled"
+
+;;
+
+update)
+
+echo ""
+echo "updating sealsys with latest version from trunk"
+echo ""
+wget -nv "http://sarek.l7tech.com:9090/browse/~raw,r=trunk/UneasyRooster/trunk/etc/imagePrepTools/sealsys.x4150" -O sealsys.new
+if [ -s sealsys.new ] ; then
+	mv -f sealsys.new sealsys
+	chmod +x ./sealsys
+else 
+	echo "Error updating sealsys.  Is the network up?"
+fi
+
+
+;;
+
+scaupgrade)
+echo "Updating SCA6000 to latest firmware"
+FIRMWARE_PATH="/opt/sun/sca6000/firmware/sca6000fw"
+RET=0
+if [ ! -d "$FIRMWARE_PATH" ] ; then
+	echo "ERROR - firmware update not present"
+	RET=1
+else
+	service sca start
+	# you can ignore errors here about '1 file already exists', this means that the service is already running
+	/opt/sun/sca6000/sbin/scadiag -z mca0
+	/opt/sun/sca6000/sbin/scadiag -u /opt/sun/sca6000/firmware/sca6000fw mca0
+	/opt/sun/sca6000/sbin/scadiag -r mca0
+	# TODO - check return codes - return ERROR
+fi
+
+;;
+
+*)
+  echo $"Usage: $0 (preseal|test|seal|customize|update|scaupgrade)"
+
+esac
+
+exit 1

@@ -28,6 +28,9 @@ rm -f /etc/resolv.conf.*
 echo "" > /etc/resolv.conf
 echo "" > /etc/security/opasswd
 
+sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth0
+sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth1
+
 # Remove ssh keys so they are generated on first start
 echo "Removing ssh keys..."
 rm -f /etc/ssh/ssh_host_*
