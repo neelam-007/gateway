@@ -2870,9 +2870,9 @@
         <fail unless="rightdir" message="You must run this target from the ${src.root} directory!"/>
 
         <echo level="info">Running svn switch for build.number (to trunk/HEAD)</echo>
-        <!--<svn>
+        <svn>
             <switch path="build.number" recurse="false" url="svn+ssh://sarek/home/svnuser/UneasyRooster/trunk/build.number"/>
-        </svn>-->
+        </svn>
 
         <buildnumber/>
         <property file="build.number" prefix="install"/>
@@ -2899,9 +2899,9 @@
             description="Set the official buildnumber and product version."
             depends="OFFICIAL-build.init, clean">
         <echo level="info">commit -m '[OFFICIAL-build] Incremented build number to ${install.build.number}' build.number</echo>
-        <!-- <svn>
+        <svn>
             <commit file="build.number" recurse="false" message="[OFFICIAL-build] Incremented build number to ${build.number}"/>
-        </svn> -->
+        </svn>
     </target>
 
     <!--
