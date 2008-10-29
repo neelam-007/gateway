@@ -4,9 +4,6 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.server.management.api.node.NodeManagementApi;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.interceptor.LoggingInInterceptor;
@@ -15,6 +12,7 @@ import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.junit.Ignore;
+import org.junit.Test;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -22,21 +20,10 @@ import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /** @author alex */
-public class NodeManagementApiTest extends TestCase {
+public class NodeManagementApiTest {
     private static final Logger log = Logger.getLogger(NodeManagementApiTest.class.getName());
-
-    public NodeManagementApiTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(NodeManagementApiTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    
+    @Test
     @Ignore("destructive and unlikely to work on your computer anyway")
     public void testDeleteNode() throws Exception {
         JaxWsProxyFactoryBean pfb = makeSslStub("https://localhost:8765/services/nodeManagementApi", NodeManagementApi.class);
