@@ -14,22 +14,36 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
 
 import com.l7tech.server.ems.standardreports.Utilities;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.standardreports.ReportApp;
 
 public class UsageRuntimeDocTest {
 
     private Connection conn = null;
     private Statement stmt = null;
+    private Properties prop;
+
+    private String getResAsString(String path) throws IOException {
+        File f = new File(path);
+        InputStream is = new FileInputStream(f);
+        try{
+            byte[] resbytes = IOUtils.slurpStream(is, 100000);
+            return new String(resbytes);
+        }finally{
+            is.close();
+        }
+    }
 
     @Before
     public void setUp() throws Exception {
-        Properties prop = new Properties();
-        prop.load(getClass().getResourceAsStream("report.properties"));
+        prop = new Properties();
+        String propData = getResAsString("modules/skunkworks/src/main/java/com/l7tech/standardreports/report.properties");
+        StringReader sr = new StringReader(propData);
+        prop.load(sr);
         conn = ReportApp.getConnection(prop);
         stmt = conn.createStatement();
     }
@@ -49,11 +63,8 @@ public class UsageRuntimeDocTest {
 
     @Test
     public void testRuntimeDocCreation() throws Exception{
-        Properties prop = new Properties();
-        prop.load(getClass().getResourceAsStream("report.properties"));
-//        System.out.println(s);
 
-        boolean isDetail = Boolean.parseBoolean(prop.getProperty(ReportApp.IS_DETAIL).toString());
+        boolean isDetail = Boolean.parseBoolean(prop.getProperty(ReportApp.IS_DETAIL));
 
         List<String > keys  = ReportApp.loadListFromProperties(ReportApp.MAPPING_KEY, prop);
         List<String> values = ReportApp.loadListFromProperties(ReportApp.MAPPING_VALUE, prop);
@@ -78,7 +89,7 @@ public class UsageRuntimeDocTest {
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, set);
         Assert.assertTrue(doc != null);
         XmlUtil.format(doc, true);
-        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
         try{
@@ -88,7 +99,30 @@ public class UsageRuntimeDocTest {
         }
     }
 
+    @Test
+    public void testGetUsageIntervalMasterRuntimeDoc() throws Exception{
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
 
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+        mappingValues.add("127.0.0.1Bronze");
+        mappingValues.add("127.0.0.1Gold");
+        mappingValues.add("127.0.0.1Silver");
+        
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        Assert.assertTrue(doc != null);
 
+        XmlUtil.format(doc, true);
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageIntervalMasterRuntimeDoc.xml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(doc, fos);
+        }finally{
+            fos.close();
+        }
+        
+    }
 
 }

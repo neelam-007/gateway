@@ -3,14 +3,26 @@
 	Layer 7 technology
 	darmstrong 22/10/2008
 	Transform a template JRXML usage report into a specific jrxml file for the supplied parameters.
-	This involves creating a set of variables and textfields for the mapping values supplied as parameters
+	This involves creating a set of variables and textfields for the mapping values supplied as parameters, and setting
+	width parameters which are determined at runtime.
 -->
 <xsl:transform version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
     <xsl:param name="RuntimeDoc"/>
-    <xsl:param name="FrameMinWidth"/>
     <xsl:param name="ReportInfoStaticTextSize"/>
+    <xsl:param name="FrameMinWidth"/>
+    <xsl:param name="PageMinWidth"/>
 
+    <xsl:variable name="useDynamicWidths">
+        <xsl:choose>
+            <xsl:when test="$RuntimeDoc/JasperRuntimeTransformation/pageWidth &gt; $PageMinWidth ">
+                <xsl:value-of select="1" />
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="0" />
+            </xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
 
     <xsl:output method="xml" indent="yes" version="1.0" encoding="UTF-8" omit-xml-declaration="no"
                 doctype-public="//JasperReports//DTD Report Design//EN"
@@ -20,20 +32,27 @@
     <xsl:template match="jasperReport">
 
         <xsl:element name="jasperReport">
-            <xsl:attribute name="columnWidth">
-                <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/columnWidth"/>
-            </xsl:attribute>
-            <xsl:attribute name="pageWidth">
-                <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/pageWidth"/>
-            </xsl:attribute>
-            <xsl:attribute name="leftMargin">
-                <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/leftMargin"/>
-            </xsl:attribute>
-            <xsl:attribute name="rightMargin">
-                <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/rightMargin"/>
-            </xsl:attribute>
+            <xsl:choose>
+                <xsl:when test="$useDynamicWidths = 1" >
+                    <xsl:attribute name="columnWidth">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/columnWidth"/>
+                    </xsl:attribute>
+                    <xsl:attribute name="pageWidth">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/pageWidth"/>
+                    </xsl:attribute>
+                    <xsl:attribute name="leftMargin">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/leftMargin"/>
+                    </xsl:attribute>
+                    <xsl:attribute name="rightMargin">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/rightMargin"/>
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='columnWidth' and local-name()!='pageWidth' and local-name()!='leftMargin' and local-name()!='rightMargin']"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="node()|@*" />
+                </xsl:otherwise>
+            </xsl:choose>
 
-            <xsl:apply-templates select="node()|@*[local-name()!='columnWidth' and local-name()!='pageWidth' and local-name()!='leftMargin' and local-name()!='rightMargin']"/>
         </xsl:element>
 
     </xsl:template>
@@ -50,7 +69,7 @@
         <xsl:for-each select="reportElement">
             <xsl:element name="reportElement">
                 <xsl:choose>
-                    <xsl:when test="@width &lt; $FrameMinWidth" >
+                    <xsl:when test="$useDynamicWidths = 1" >
                         <xsl:attribute name="width">
                             <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
                         </xsl:attribute>
@@ -71,7 +90,8 @@
         <xsl:for-each select="reportElement">
             <xsl:element name="reportElement">
                 <xsl:choose>
-                    <xsl:when test="@width &lt; ($FrameMinWidth - 7)" >
+                    <!--//todo [Donal] remove magic numbers-->
+                    <xsl:when test="$useDynamicWidths = 1" >
                         <xsl:attribute name="width">
                             <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth - 7" />
                         </xsl:attribute>
@@ -90,7 +110,7 @@
     <xsl:template match="/jasperReport/title/band/frame[2]/frame/textField/reportElement">
         <xsl:copy>
             <xsl:choose>
-                <xsl:when test="($RuntimeDoc/JasperRuntimeTransformation/frameWidth - $ReportInfoStaticTextSize) &gt; @width" >
+                <xsl:when test="$useDynamicWidths = 1" >
                     <xsl:attribute name="width">
                         <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth - $ReportInfoStaticTextSize" />
                     </xsl:attribute>
@@ -140,7 +160,7 @@
     <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[*]/reportElement">
         <xsl:element name="reportElement">
             <xsl:choose>
-                <xsl:when test="@width &lt; $FrameMinWidth" >
+                <xsl:when test="$useDynamicWidths = 1" >
                     <xsl:attribute name="width">
                         <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
                     </xsl:attribute>
@@ -156,7 +176,7 @@
     <xsl:template match="/jasperReport/group[@name='SERVICE_ID']/groupHeader/band/frame/reportElement">
         <xsl:element name="reportElement">
             <xsl:choose>
-                <xsl:when test="@width &lt; $FrameMinWidth" >
+                <xsl:when test="$useDynamicWidths = 1" >
                     <xsl:attribute name="width">
                         <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
                     </xsl:attribute>
@@ -187,7 +207,7 @@
     <xsl:template match="/jasperReport/group[@name='SERVICE_AND_OPERATION']/groupFooter/band/frame/reportElement">
         <xsl:element name="reportElement">
             <xsl:choose>
-                <xsl:when test="@width &lt; $FrameMinWidth" >
+                <xsl:when test="$useDynamicWidths = 1" >
                     <xsl:attribute name="width">
                         <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
                     </xsl:attribute>
@@ -218,7 +238,7 @@
     <xsl:template match="/jasperReport/group[@name='SERVICE_ID']/groupFooter/band/frame/reportElement">
         <xsl:element name="reportElement">
             <xsl:choose>
-                <xsl:when test="@width &lt; $FrameMinWidth" >
+                <xsl:when test="$useDynamicWidths = 1" >
                     <xsl:attribute name="width">
                         <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
                     </xsl:attribute>
@@ -249,7 +269,7 @@
     <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupFooter/band/frame/reportElement">
         <xsl:element name="reportElement">
             <xsl:choose>
-                <xsl:when test="@width &lt; $FrameMinWidth" >
+                <xsl:when test="$useDynamicWidths = 1" >
                     <xsl:attribute name="width">
                         <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
                     </xsl:attribute>

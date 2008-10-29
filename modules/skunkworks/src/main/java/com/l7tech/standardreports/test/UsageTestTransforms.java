@@ -80,11 +80,11 @@ public class UsageTestTransforms{
 
     @Test
     public void testUsageTransformation_HardCodedTranslationDoc() throws Exception{
-        String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
+        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
         //String xslStr = getResAsStringClasspath("UsageReportTransform.xsl");
         //String xmlFileName = "/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/Usage_Summary_XSLT_Template.jrxml";
         String xmlFileName = getResAsStringClasspath("Usage_Summary_XSLT_Template.jrxml");
-        String runtimeXmlStr =  getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeUsageXsltXml.xml");
+        String runtimeXmlStr =  getResAsString("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeUsageXsltXml.xml");
         Document runtimeDoc = XmlUtil.stringToDocument(runtimeXmlStr);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", runtimeDoc);
@@ -106,14 +106,14 @@ public class UsageTestTransforms{
         mappingValues.add("127.0.0.1Silver");
 
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
-        String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
-        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
+        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
+        String xmlFileName = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", doc);
         //Document doc = transform(xslStr, xmlStr, params);
         Document transformDoc = transform(xslStr, xmlFileName, params);
 
-        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeJasper.jrxml");
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeJasper.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
         try{
@@ -127,6 +127,61 @@ public class UsageTestTransforms{
     public void testUsageTransformation_DynamicToJasperCompile() throws Exception {
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
+//        keys.add("CUSTOMER");
+
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+        mappingValues.add("127.0.0.1");
+        mappingValues.add("127.0.0.2");
+//        mappingValues.add("127.0.0.1Bronze");
+//        mappingValues.add("127.0.0.1Gold");
+//        mappingValues.add("127.0.0.1Silver");
+//        mappingValues.add("127.0.0.2Bronze");
+//        mappingValues.add("127.0.0.2Gold");
+//        mappingValues.add("127.0.0.2Silver");
+
+        Document transformDoc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
+        String xmlFileName = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", transformDoc);
+        params.put("FrameMinWidth", 535);
+        params.put("PageMinWidth", 595);
+        params.put("ReportInfoStaticTextSize", 128);
+
+        //Document transformDoc = transform(xslStr, xmlStr, params);
+        Document jasperDoc = transform(xslStr, xmlFileName, params);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(jasperDoc, baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+        XmlUtil.format(jasperDoc, true);
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestCreatedJasperDoc.jrxml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
+        }finally{
+            fos.close();
+        }
+        XmlUtil.format(transformDoc, true);
+        f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestCreatedTransformDoc.jrxml");
+        f.createNewFile();
+        fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
+        }finally{
+            fos.close();
+        }
+
+        JasperReport report = JasperCompileManager.compileReport(bais);
+        Assert.assertTrue(report != null);
+    }
+
+    @Test
+    public void testUsageIntervalTransform_Master() throws Exception {
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
         keys.add("CUSTOMER");
 
         LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
@@ -134,23 +189,25 @@ public class UsageTestTransforms{
         mappingValues.add("127.0.0.1Gold");
         mappingValues.add("127.0.0.1Silver");
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
-        String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
-        String xmlFileName = getResAsStringClasspath("Usage_Summary_XSLT_Template.jrxml");
+        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
+        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
+
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", doc);
-        //Document doc = transform(xslStr, xmlStr, params);
-        Document jasperDoc = transform(xslStr, xmlFileName, params);
+        params.put("FrameMinWidth", 535);
+        params.put("PageMinWidth", 595);
+        params.put("ReportInfoStaticTextSize", 128);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        XmlUtil.nodeToOutputStream(jasperDoc, baos);
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        Document jasperDoc = transform(xslStr, xmlSrc, params);
 
-        JasperReport report = JasperCompileManager.compileReport(bais);
-        Assert.assertTrue(report != null);
-
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/MasterTransform.jrxml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
+        }finally{
+            fos.close();
+        }
     }
-
-    
-
 }

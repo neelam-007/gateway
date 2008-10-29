@@ -173,20 +173,6 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Interval"]]></textFieldExpression>
 				</textField>
-                <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-                    <reportElement
-                        style="TableCell"
-                        x="50"
-                        y="0"
-                        width="68"
-                        height="36"
-                        key="textField-166"/>
-                    <box></box>
-                    <textElement markup="html">
-                        <font/>
-                    </textElement>
-                <textFieldExpression   class="java.lang.String"><![CDATA["IP_ADDRESS<br>CUSTOMER"]]></textFieldExpression>
-                </textField>
 				</frame>				</frame>				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
