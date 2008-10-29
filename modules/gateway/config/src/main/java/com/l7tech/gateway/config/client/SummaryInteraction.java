@@ -92,7 +92,7 @@ public class SummaryInteraction extends ConfigurationInteraction {
             if ( option.getGroup() != null && !option.getGroup().equals(group) ) {
                 group = option.getGroup();
                 
-                OptionGroup optionGroup = getOptionGroup( option.getGroup()  );
+                OptionGroup optionGroup = optionSet.getOptionGroup( option.getGroup()  );
                 if ( optionGroup != null ) {
                     if ( !optionGroup.isRequired() && !isOptionGroupValid( optionGroup.getId() )) {
                         skipGroupId = group;

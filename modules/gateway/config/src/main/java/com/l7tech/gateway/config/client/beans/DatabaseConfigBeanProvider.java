@@ -16,7 +16,7 @@ import java.util.logging.Level;
 /**
  * ConfigurationBeanProvider for process controller / node configuration.
  *
- * @since 4.7
+ * @since 5.0
  */
 public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBeanProvider implements ConfigurationBeanProvider {
 
@@ -31,13 +31,14 @@ public class DatabaseConfigBeanProvider extends ProcessControllerConfigurationBe
         try {
             Collection<NodeManagementApi.NodeHeader> nodeHeaders = managementService.listNodes();
             if ( nodeHeaders != null && nodeHeaders.size() > 0) {
+                config = managementService.getNode(DEFAULT_NODE_NAME);
+                if ( config == null ) {
+                    logger.warning("Could not get configuration for node '"+DEFAULT_NODE_NAME+"'.");
+                }
+
                 for (NodeManagementApi.NodeHeader node : nodeHeaders ) {
-                    if ( config != null ) {
-                        throw new ConfigurationException("Multiple nodes found, only single node is supported.");
-                    }
-                    config = managementService.getNode(node.getName());
-                    if ( config == null ) {
-                        logger.warning("Could not get configuration for node '"+node.getName()+"'.");
+                    if ( !DEFAULT_NODE_NAME.equals(node.getName()) ) {
+                        logger.warning("Will not report status for unsupported node '"+DEFAULT_NODE_NAME+"'.");
                     }
                 }
             } else {

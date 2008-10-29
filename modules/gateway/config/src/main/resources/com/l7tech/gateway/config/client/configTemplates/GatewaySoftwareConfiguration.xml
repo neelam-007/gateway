@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<optionSet id="software" parentName="GatewayBaseConfiguration.xml">
+    <description>
+----------------------------------------------------------------------
+SecureSpan Gateway Configuration
+----------------------------------------------------------------------</description>
+    <prompt>
+----------------------------------------------------------------------
+Configure SecureSpan Gateway
+----------------------------------------------------------------------
+At any time type "quit" to quit.</prompt>
+
+    <!--
+      Option Groups
+    -->
+    <optionGroup id="java">
+        <description>Java VM</description>
+        <prompt>
+----------------------
+Set Up the SSG Java VM
+----------------------
+At any time type "quit" to quit.
+Press "&lt;" to go to the previous step.
+
+This step lets you create or set up a connection to the SSG database.</prompt>
+    </optionGroup>
+    <optionGroup id="admin-listener" required="false">
+        <description>Administrative HTTPS Listener</description>
+        <prompt>
+--------------------------------------------
+Set Up the SSG Administrative HTTPS Listener
+--------------------------------------------
+At any time type "quit" to quit.
+Press "&lt;" to go to the previous step.
+
+This step lets you create the administrative listener.</prompt>
+    </optionGroup>
+
+    <!--
+      Options for Java VM configuration
+    -->
+    <option id="" group="java" type="PATH" order="70" name="Java VM Path">
+        <configName>java.path</configName>
+        <configValue>root</configValue>
+        <description>Java Virtual Machine Path</description>
+        <prompt>Enter the path to the Java Virtual Machine.</prompt>
+    </option>
+    <option id="" group="java" type="TEXT" order="71" name="Java VM Options">
+        <configName>java.opts</configName>
+        <description>Java VM Options</description>
+        <prompt>Enter options for the Java VM.</prompt>
+    </option>
+
+    <!--
+      Additional options for Database configuration
+    -->
+    <option id="db-admin-user" group="db" type="USERNAME" updatable="false" order="105" name="Administrative Database Username">
+        <configName>database.admin.user</configName>
+        <description>Administrative Database Username</description>
+        <prompt>Enter the administrative database user.</prompt>
+    </option>
+
+    <!--
+      Options for Administrative user account configuration
+    -->
+    <option id="admin-listener-ip" group="admin-listener" type="IP_ADDRESS" order="202" updatable="false" name="Administrative IP Address">
+        <configName>admin.listenaddr</configName>
+        <configValue>*</configValue>
+        <description>Administrative Listener IP Address</description>
+        <prompt>Enter the IP address for the administrative listener.</prompt>
+    </option>
+    <option id="admin-listener-port" group="admin-listener" type="PORT" order="203" updatable="false" name="Administrative Port">
+        <configName>admin.listenport</configName>
+        <configValue>8443</configValue>
+        <description>Administrative Listener Port</description>
+        <prompt>Enter the port for the administrative listener.</prompt>
+    </option>
+
+</optionSet>

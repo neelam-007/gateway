@@ -1,20 +1,22 @@
 package com.l7tech.gateway.config.client.options;
 
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlType;
 
 /**
  * Group of configuration options.
  *
  * <p>A group of configuration options, e.g. database options</p>
  */
+@XmlType(propOrder={"description","prompt"})
 public class OptionGroup {
     private String id; // unique id
-    private boolean required = true; // is this group required
+    private Boolean required = true; // is this group required
     private String prompt; // wizard step prompt
     private String description; // property description
 
-    @XmlAttribute
+    @XmlAttribute(required=true)
     public String getId() {
         return id;
     }
@@ -24,15 +26,16 @@ public class OptionGroup {
     }
 
     @XmlAttribute
-    public boolean isRequired() {
+    public Boolean isRequired() {
         return required;
     }
 
-    public void setRequired(boolean required) {
+    public void setRequired(Boolean required) {
+        if ( required == null ) throw new NullPointerException(); 
         this.required = required;
     }    
            
-    @XmlElement
+    @XmlElement(required=true)
     public String getPrompt() {
         return prompt;
     }
@@ -41,7 +44,7 @@ public class OptionGroup {
         this.prompt = prompt;
     }
 
-    @XmlElement
+    @XmlElement(required=true)
     public String getDescription() {
         return description;
     }

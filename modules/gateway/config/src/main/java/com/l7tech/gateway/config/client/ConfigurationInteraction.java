@@ -2,8 +2,7 @@ package com.l7tech.gateway.config.client;
 
 import com.l7tech.gateway.config.client.beans.ConfigurationBean;
 import com.l7tech.gateway.config.client.options.Option;
-import com.l7tech.gateway.config.client.options.OptionGroup;
-import com.l7tech.gateway.config.client.options.OptionSet;
+import com.l7tech.gateway.config.client.options.OptionSet; 
 import java.io.Console;
 import java.io.IOException;
 import java.io.Reader;
@@ -170,22 +169,7 @@ public abstract class ConfigurationInteraction extends Interaction {
 
         return value;
     }
-    
-    protected OptionGroup getOptionGroup(String groupId) {
-        OptionGroup optionGroup = null;
-        
-        if ( groupId != null ) {
-            for (OptionGroup oGroup : optionSet.getOptionGroups()) {
-                if (groupId.equals(oGroup.getId())) {
-                    optionGroup = oGroup;
-                    break;
-                }
-            }
-        }
 
-        return optionGroup;
-    }
-    
     protected boolean isOptionGroupValid( String groupId ) {
         boolean valid = true;
         

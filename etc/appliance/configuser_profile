@@ -75,8 +75,10 @@ doConfiguration() {
             echo "What would you like to do?"
             echo ""
             echo " 1) Upgrade the SecureSpan Gateway database on this appliance"
-            echo " 2) Configure the SecureSpan Gateway application on this appliance"
-            echo " 3) Display the current SecureSpan Gateway configuration"
+            echo " 2) Create a new SecureSpan Gateway database on this appliance"
+            echo " 3) Configure the SecureSpan Gateway application on this appliance"
+            echo " 4) Display the current SecureSpan Gateway configuration"
+            echo " 5) Display the current SecureSpan Gateway status"
             echo " X) Exit menu"
 
             echo ""
@@ -91,7 +93,7 @@ doConfiguration() {
                         clear;;
                     2)
                         clear;
-                        (${CONFWIZARD});
+                        (${CONFWIZARD} wizard appliance-full);
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
                           confirmedMessage "Node is already configured."
@@ -105,6 +107,20 @@ doConfiguration() {
                         clear;;
                     3)
                         clear;
+                        (${CONFWIZARD});
+                        STATUS=$?
+                        if [ $STATUS -eq 2 ] ; then
+                          confirmedMessage "Node is already configured."
+                        elif [ $STATUS -eq 3 ] ; then
+                          confirmedMessage "Configuration service not available (please reboot)"
+                        elif [ $STATUS -eq 5 ] ; then
+                          confirmedMessage "Unexpected error in configuration service."
+                        elif [ $STATUS -ne 0 ] ; then
+                          confirmedMessage ""
+                        fi
+                        clear;;
+                    4)
+                        clear;
                         (${CONFWIZARD} show);
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
@@ -115,6 +131,18 @@ doConfiguration() {
                           confirmedMessage "Unexpected error in configuration service."
                         elif [ $STATUS -ne 0 ] ; then
                           confirmedMessage ""
+                        fi
+                        clear;;
+                    5)
+                        clear;
+                        (${CONFWIZARD} show status);
+                        STATUS=$?
+                        if [ $STATUS -eq 2 ] ; then
+                          confirmedMessage "Node is not yet configured."
+                        elif [ $STATUS -eq 3 ] ; then
+                          confirmedMessage "Configuration service not available (please reboot)"
+                        elif [ $STATUS -eq 5 ] ; then
+                          confirmedMessage "Unexpected error in status service."
                         fi
                         clear;;
                     *)

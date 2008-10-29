@@ -2,12 +2,14 @@ package com.l7tech.gateway.config.client.options;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlType;
 
 /**
  * An option is a single configuration item.
  *
  * @author steve
  */
+@XmlType(propOrder={"configName", "configValue", "regex", "description", "prompt"})
 public class Option implements Comparable {
     private String id; // unique id
     private OptionType type; // datatype
@@ -19,8 +21,8 @@ public class Option implements Comparable {
     private String prompt; // wizard step prompt
     private String description; // property description
     private String regex; // property validation if not default for type
-    private boolean updatable = true; // is this property editable
-    private boolean confirmed; // does this property require confirmation
+    private Boolean updatable = true; // is this property editable
+    private Boolean confirmed = false; // does this property require confirmation
     
     @XmlElement
     public String getRegex() {
@@ -31,7 +33,7 @@ public class Option implements Comparable {
         this.regex = regex;
     }
 
-    @XmlElement
+    @XmlElement(required=true)
     public String getDescription() {
         return description;
     }
@@ -40,7 +42,7 @@ public class Option implements Comparable {
         this.description = description;
     }
 
-    @XmlAttribute
+    @XmlAttribute(required=true)
     public String getId() {
         return id;
     }
@@ -49,7 +51,7 @@ public class Option implements Comparable {
         this.id = id;
     }
 
-    @XmlAttribute
+    @XmlAttribute(required=true)
     public String getName() {
         return name;
     }
@@ -67,7 +69,7 @@ public class Option implements Comparable {
         this.group = group;
     }
 
-    @XmlAttribute
+    @XmlAttribute(required=true)
     public int getOrder() {
         return order;
     }
@@ -76,7 +78,7 @@ public class Option implements Comparable {
         this.order = order;
     }
 
-    @XmlAttribute
+    @XmlAttribute(required=true)
     public OptionType getType() {
         return type;
     }
@@ -85,7 +87,7 @@ public class Option implements Comparable {
         this.type = type;
     }
 
-    @XmlElement
+    @XmlElement(required=true)
     public String getConfigName() {
         return configName;
     }
@@ -113,20 +115,22 @@ public class Option implements Comparable {
     }
 
     @XmlAttribute
-    public boolean isUpdatable() {
+    public Boolean isUpdatable() {
         return updatable;
     }
 
-    public void setUpdatable(boolean updatable) {
+    public void setUpdatable(Boolean updatable) {
+        if ( updatable == null ) throw new NullPointerException();
         this.updatable = updatable;
     }
 
     @XmlAttribute
-    public boolean isConfirmed() {
+    public Boolean isConfirmed() {
         return confirmed;
     }
 
-    public void setConfirmed(boolean confirmed) {
+    public void setConfirmed(Boolean confirmed) {
+        if ( confirmed == null ) throw new NullPointerException(); 
         this.confirmed = confirmed;
     }        
     
@@ -157,7 +161,7 @@ public class Option implements Comparable {
         return builder.toString();
     }
 
-    @SuppressWarnings({"RedundantIfStatement"})
+    @SuppressWarnings({"RedundantIfStatement", "StringEquality"})
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {

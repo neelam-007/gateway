@@ -4,14 +4,14 @@ import com.l7tech.gateway.config.client.beans.ConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.DatabaseConfigBeanProvider;
 import com.l7tech.gateway.config.client.beans.StateConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.options.OptionSet;
+import com.l7tech.gateway.config.client.options.Option;
 import com.l7tech.util.JdkLoggerConfigurator;
 
 import java.io.IOException;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Main class for configuration wizard.
@@ -57,9 +57,16 @@ public class Main {
                 }
                 
                 try {
-                    JAXBContext context = JAXBContext.newInstance("com.l7tech.gateway.config.client.options");
-                    Unmarshaller unmarshaller = context.createUnmarshaller();
-                    OptionSet os = (OptionSet) unmarshaller.unmarshal( Main.class.getResourceAsStream( type.getResource() ) );
+                    OptionSet os = ConfigurationFactory.newConfiguration( type.getResource() );
+                    if ( !type.isIncludeCreateOnlyOptions() ) {
+                        Set<Option> options = os.getOptions();
+                        for (Iterator<Option> optionIter = options.iterator(); optionIter.hasNext(); ) {
+                            Option option = optionIter.next();
+                            if ( !option.isUpdatable() ) {
+                                optionIter.remove();                                
+                            }
+                        }
+                    }
 
                     ConfigurationClient client = new ConfigurationClient( provider, os, command );
                     if ( client.doInteraction() ) {
@@ -73,8 +80,6 @@ public class Main {
                     System.exit(2);
                 } catch ( ConfigurationException ce ) {
                     logger.log(Level.WARNING, "Error during configuration", ce );
-                } catch ( JAXBException je ) {
-                    logger.log(Level.WARNING, "Error during configuration", je );
                 } catch ( IOException ioe ) {
                     logger.log(Level.WARNING, "Error during configuration", ioe );
                 }                    
@@ -110,12 +115,22 @@ public class Main {
     }
 
     private static final ConfigurationType[] configurationTypes = {
-        new ConfigurationType( "appliance", "configTemplates/NewAppliance.xml" ){
+        new ConfigurationType( "appliance-full", "configTemplates/GatewayApplianceConfiguration.xml", true ){
             public ConfigurationBeanProvider getProvider() {
                 return new DatabaseConfigBeanProvider(pcUrl);
             }
         },
-        new ConfigurationType( "status", "configTemplates/NodeStatus.xml" ){
+        new ConfigurationType( "appliance", "configTemplates/GatewayApplianceConfiguration.xml", false ){
+            public ConfigurationBeanProvider getProvider() {
+                return new DatabaseConfigBeanProvider(pcUrl);
+            }
+        },
+        new ConfigurationType( "software", "configTemplates/GatewaySoftwareConfiguration.xml", true ){
+            public ConfigurationBeanProvider getProvider() {
+                return new StateConfigurationBeanProvider(pcUrl);
+            }
+        },
+        new ConfigurationType( "status", "configTemplates/NodeStatus.xml", true ){
             public ConfigurationBeanProvider getProvider() {
                 return new StateConfigurationBeanProvider(pcUrl);
             }
@@ -128,11 +143,14 @@ public class Main {
     private static abstract class ConfigurationType {
         private final String name;
         private final String resource;
+        private final boolean includeCreateOnlyOptions;
 
         ConfigurationType( final String name,
-                           final String resource) {
+                           final String resource,
+                           final boolean includeCreateOnlyOptions ) {
             this.name = name;
             this.resource = resource;
+            this.includeCreateOnlyOptions = includeCreateOnlyOptions;
         }
 
         public String getName() {
@@ -141,6 +159,10 @@ public class Main {
 
         public String getResource() {
             return resource;
+        }
+
+        public boolean isIncludeCreateOnlyOptions() {
+            return includeCreateOnlyOptions;
         }
 
         public abstract ConfigurationBeanProvider getProvider();

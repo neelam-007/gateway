@@ -60,7 +60,8 @@ public class NodeConfigurationManager {
                                              final Boolean enabled,
                                              final String clusterPassword,
                                              final DatabaseConfig databaseConfig,
-                                             final DatabaseConfig database2ndConfig ) throws IOException {
+                                             final DatabaseConfig database2ndConfig,
+                                             final boolean createdb ) throws IOException {
         String nodeName = name;
         if ( nodeName == null ) {
             nodeName = "default";    
@@ -87,6 +88,11 @@ public class NodeConfigurationManager {
             }
 
             if ( dbVersion == null ) {
+                // check that we have sufficient
+                if ( !createdb ) {
+                    throw new CausedIOException("Cannot connect to database.");
+                }
+
                 // then create the DB, we may need a localhost connection for admin access.
                 String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
 
@@ -270,15 +276,14 @@ public class NodeConfigurationManager {
         String[] dbConfigurations = nodeProperties.getProperty(NODEPROPERTIES_DB_CONFIGS, "main").split("[\\s]{0,128},[\\s]{0,128}");
         Map<String,DatabaseConfig> configs = new LinkedHashMap<String,DatabaseConfig>();
         for ( String dbConfigName : dbConfigurations ) {
-            loadNodeDatabaseConfig( node, nodeProperties, dbConfigName, loadSecrets, configs, true );
+            loadNodeDatabaseConfig( nodeProperties, dbConfigName, loadSecrets, configs, true );
         }
         node.getDatabases().addAll( configs.values() );
 
         return node;
     }
 
-    private static DatabaseConfig loadNodeDatabaseConfig( final NodeConfig nodeConfig,
-                                                          final Properties nodeProperties,
+    private static DatabaseConfig loadNodeDatabaseConfig( final Properties nodeProperties,
                                                           final String configName,
                                                           final boolean loadSecrets,
                                                           final Map<String,DatabaseConfig> configs,
@@ -301,7 +306,7 @@ public class NodeConfigurationManager {
             boolean needsParent = nodeProperties.containsKey(inheProp);
             DatabaseConfig parentConfig = null;
             if ( needsParent && allowParent ) {
-                parentConfig = loadNodeDatabaseConfig( nodeConfig, nodeProperties, nodeProperties.getProperty(inheProp), loadSecrets, configs, false );
+                parentConfig = loadNodeDatabaseConfig( nodeProperties, nodeProperties.getProperty(inheProp), loadSecrets, configs, false );
             }
 
             if ( !needsParent || parentConfig!=null ) {

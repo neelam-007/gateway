@@ -7,6 +7,7 @@ import java.util.HashSet;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 /**
  * An OptionSet represents all options a configuration.
@@ -18,6 +19,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @author steve
  */
 @XmlRootElement
+@XmlType(propOrder={"description","prompt","optionGroups","options"})
 public class OptionSet {
     private String id;
     private String parentName;
@@ -31,7 +33,7 @@ public class OptionSet {
         options = new TreeSet<Option>();
     }
 
-    @XmlAttribute
+    @XmlAttribute(required=true)
     public String getId() {
         return id;
     }
@@ -84,6 +86,20 @@ public class OptionSet {
         }
     }
 
+    public OptionGroup getOptionGroup(String groupId) {
+        OptionGroup optionGroup = null;
+
+        if ( groupId != null ) {
+            for (OptionGroup oGroup : getOptionGroups()) {
+                if (groupId.equals(oGroup.getId())) {
+                    optionGroup = oGroup;
+                    break;
+                }
+            }
+        }
+
+        return optionGroup;
+    }
 
     public Set<Option> getOptionsForGroup(String groupId) {
         Set<Option> optionSet = new TreeSet<Option>();

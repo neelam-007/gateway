@@ -57,6 +57,8 @@ public abstract class ProcessControllerConfigurationBeanProvider implements Conf
 
     protected final Logger logger = Logger.getLogger( getClass().getName() );
 
+    protected final static String DEFAULT_NODE_NAME = "default";
+
     protected NodeManagementApi getManagementService() {
         NodeManagementApi managementService = this.managementService;
 

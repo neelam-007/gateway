@@ -116,8 +116,17 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         node.getDatabases().add(failoverDatabaseConfig);
 
         try {
-            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), enabled, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
-            AccountReset.resetAccount( databaseConfig, adminLogin, adminPassphrase );
+            boolean createdb =
+                    node.getClusterHostname() != null &&
+                    node.getClusterHostname().trim().length() > 0 &&
+                    databaseConfig.getDatabaseAdminUsername()!=null &&
+                    adminLogin != null &&
+                    adminLogin.trim().length() > 0 &&
+                    adminPassphrase != null &&
+                    adminPassphrase.trim().length() > 0;
+            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), enabled, clusterPassphrase, databaseConfig, failoverDatabaseConfig, createdb );
+            if ( createdb )
+                AccountReset.resetAccount( databaseConfig, adminLogin, adminPassphrase );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
@@ -180,7 +189,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         DatabaseConfig failoverDatabaseConfig = configs[1];
 
         try {
-            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), clusterPassphrase, databaseConfig, failoverDatabaseConfig );
+            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), clusterPassphrase, databaseConfig, failoverDatabaseConfig, false );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");

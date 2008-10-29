@@ -56,7 +56,7 @@ public class EditInteraction extends ConfigurationInteraction {
                 
                 // process group for option
                 if ( option.getGroup() != null && !option.getGroup().equals(group) ) {
-                    optionGroup = getOptionGroup( option.getGroup()  );                    
+                    optionGroup = optionSet.getOptionGroup( option.getGroup()  );
                 } else {
                     // we've already processed this group so skip it
                     continue;
@@ -99,7 +99,7 @@ public class EditInteraction extends ConfigurationInteraction {
                     Set<Option> optionSelection = optionSet.getOptions(selectedOption);
                     OptionGroup optionGroup = null;
                     if ( optionSelection.isEmpty() ) {
-                        optionGroup = getOptionGroup(selectedOption);
+                        optionGroup = optionSet.getOptionGroup(selectedOption);
                         optionSelection = optionSet.getOptionsForGroup(selectedOption);
                     }
 

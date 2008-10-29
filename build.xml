@@ -2885,7 +2885,7 @@
             <equals arg1="0" arg2="${file.build.version.subminor}"/>
         </condition>
         <property name="official.build.version" value="${file.build.version.major}.${file.build.version.minor}.${file.build.version.subminor}${build.label}"/>
-        <condition property="build.em.version" value="${file.build.em.version.major}.${file.build.em.version.minor}${build.label}">
+        <condition property="official.build.em.version" value="${file.build.em.version.major}.${file.build.em.version.minor}${build.label}">
             <equals arg1="0" arg2="${file.build.em.version.subminor}"/>
         </condition>
         <property name="official.build.em.version" value="${file.build.em.version.major}.${file.build.em.version.minor}.${file.build.em.version.subminor}${build.label}"/>

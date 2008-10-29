@@ -60,7 +60,7 @@ public class WizardInteraction extends ConfigurationInteraction {
                 // process group for option
                 if ( option.getGroup() != null && !option.getGroup().equals(group) ) {
                     group = option.getGroup();
-                    OptionGroup optionGroup = getOptionGroup( option.getGroup()  );
+                    OptionGroup optionGroup = optionSet.getOptionGroup( option.getGroup()  );
                     if ( optionGroup != null ) {
                         if ( optionGroup.getPrompt() != null ) {
                             println( optionGroup.getPrompt() );

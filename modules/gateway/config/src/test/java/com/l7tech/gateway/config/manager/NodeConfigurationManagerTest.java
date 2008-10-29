@@ -20,6 +20,18 @@ public class NodeConfigurationManagerTest {
     }
 
     @Test
+    public void testLoadBasicConfiguration() throws Exception {
+        Properties properties = new Properties();
+        properties.load(new StringReader(basicConfigurationProperties));
+
+        NodeConfig config = NodeConfigurationManager.loadNodeConfig( "test", properties, true );
+
+        Assert.assertNotNull("Missing database config", config.getDatabases());
+        Assert.assertEquals("Should be one database config", 1, config.getDatabases().size());
+        Assert.assertNull(config.getDatabases().iterator().next().getParent());
+    }
+
+    @Test
     public void testLoadConfigurationWithSecret() throws Exception {
         Properties properties = new Properties();
         properties.load(new StringReader(configurationProperties));
@@ -85,6 +97,16 @@ public class NodeConfigurationManagerTest {
             }
         }
     }
+
+    private static final String basicConfigurationProperties =
+        "node.id = d912338b16334b3eadb017705d569e14\n" +
+        "node.enabled = true\n" +
+        "node.cluster.pass = $L7C$PnYora7RKi9ToQQjDd5i1g==$HsABcaR7rub4yOHlfgtufw==\n" +
+        "node.db.config.main.host = localhost\n" +
+        "node.db.config.main.port = 3306\n" +
+        "node.db.config.main.name = ssg\n" +
+        "node.db.config.main.user = gateway\n" +
+        "node.db.config.main.pass = $L7C$q\\/gW7oW59ddG3jzochGrnQ==$GaIHOAruHhv0CbheE\\/YeIQ==";
 
     private static final String configurationProperties =
         "node.id = d21d57cbf8fd45c183ba9131d05a883f\n" +
