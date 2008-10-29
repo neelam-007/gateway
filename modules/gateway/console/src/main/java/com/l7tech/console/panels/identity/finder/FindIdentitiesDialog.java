@@ -11,6 +11,7 @@ import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.LimitExceededMarkerIdentityHeader;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gui.util.Utilities;
@@ -550,9 +551,9 @@ public class FindIdentitiesDialog extends JDialog {
             final EntityHeaderSet<IdentityHeader> headers =
                     getIdentityAdmin().searchIdentities( searchInfo.getProviderConfig().getOid(), types, searchName);
             if (headers.isMaxExceeded()) {
-                tableModelHeaders = new HashSet<IdentityHeader>();
-                tableModelHeaders.addAll(headers);
+                tableModelHeaders = new LinkedHashSet<IdentityHeader>();
                 tableModelHeaders.add(new LimitExceededMarkerIdentityHeader());
+                tableModelHeaders.addAll(headers);
             } else {
                 tableModelHeaders = headers;
             }

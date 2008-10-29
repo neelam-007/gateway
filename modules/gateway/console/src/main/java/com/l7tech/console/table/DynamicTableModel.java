@@ -201,7 +201,7 @@ public class DynamicTableModel extends AbstractTableModel {
                   int firstRow = tableRows.size();
                   tableRows.addAll(list);
                   int lastRow = tableRows.size();
-                  fireTableRowsInserted(firstRow, lastRow);
+                  fireTableRowsInserted(firstRow, lastRow - 1);
               }
           });
     }

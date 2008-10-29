@@ -5,10 +5,10 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.LimitExceededMarkerIdentityHeader;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.LimitExceededMarkerIdentityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 
 import javax.swing.*;
