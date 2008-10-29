@@ -33,6 +33,7 @@ import org.springframework.remoting.RemoteAccessException;
 import javax.security.auth.login.LoginException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
+import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -209,7 +210,7 @@ public class SecurityProviderImpl extends SecurityProvider
 
         this.sessionCookie = sessionCookie;
         this.sessionHost = remoteHost;
-        TopComponents.getInstance().setSsgURL("https://" + remoteHost );
+        TopComponents.getInstance().setSsgURL(URI.create("http://" + remoteHost));
 
         AdminContextFactory factory = (AdminContextFactory) applicationContext.getBean("adminContextFactory", AdminContextFactory.class);
         AdminContext ac = factory.buildAdminContext( getHost(remoteHost), getPort(remoteHost), sessionCookie );

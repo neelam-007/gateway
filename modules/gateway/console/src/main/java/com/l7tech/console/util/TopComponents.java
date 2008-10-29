@@ -21,6 +21,7 @@ import java.lang.ref.WeakReference;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+import java.net.URI;
 
 /**
  * The class is Central UI component registry in the SSM.
@@ -33,7 +34,7 @@ import java.util.Map;
 public class TopComponents {
     private static final TopComponents instance = new TopComponents();
     private boolean connectionLost = false;
-    private String ssgURL;
+    private URI ssgURL;
 
     public void showHelpTopics() {
         getMainWindow().showHelpTopicsRoot();
@@ -59,11 +60,11 @@ public class TopComponents {
         this.connectionLost = connectionLost;
     }
 
-    public String ssgURL() {
+    public URI ssgURL() {
         return ssgURL;
     }
 
-    public void setSsgURL(String url) {
+    public void setSsgURL(URI url) {
         ssgURL = url;
     }
 
@@ -175,10 +176,9 @@ public class TopComponents {
         if (c instanceof MainWindow) return (MainWindow)c;
 
         Frame[] frames = JFrame.getFrames();
-        for (int i = 0; i < frames.length; i++) {
-            Frame frame = frames[i];
+        for (Frame frame : frames) {
             if (frame instanceof MainWindow) {
-                return (MainWindow)frame;
+                return (MainWindow) frame;
             }
         }
         return null;
@@ -231,8 +231,7 @@ public class TopComponents {
         if (c instanceof MainWindow) return true;
 
         Frame[] frames = JFrame.getFrames();
-        for (int i = 0; i < frames.length; i++) {
-            Frame frame = frames[i];
+        for (Frame frame : frames) {
             if (frame instanceof MainWindow) {
                 return true;
             }

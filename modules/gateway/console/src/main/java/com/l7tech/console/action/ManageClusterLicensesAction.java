@@ -34,8 +34,8 @@ public class ManageClusterLicensesAction extends SecureAction {
 
     protected void performAction() {
         final Frame mainWindow = TopComponents.getInstance().getTopParent();
-        final String ssgUrl = TopComponents.getInstance().ssgURL();
-        LicenseDialog dlg = new LicenseDialog(mainWindow, ssgUrl);
+        String ssghostname = TopComponents.getInstance().ssgURL().getHost();
+        LicenseDialog dlg = new LicenseDialog(mainWindow, ssghostname);
 
         dlg.pack();
         Utilities.centerOnScreen(dlg);

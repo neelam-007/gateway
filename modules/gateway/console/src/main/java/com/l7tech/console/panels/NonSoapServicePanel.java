@@ -39,16 +39,9 @@ public class NonSoapServicePanel extends WizardStepPanel {
         setLayout(new BorderLayout());
         add(mainPanel);
         // set the prefix based on what host we are connected to
-        String ssgUrl = TopComponents.getInstance().ssgURL();
-        if (!ssgUrl.startsWith("http://")) {
-            ssgUrl = "http://" + ssgUrl;
-        }
-        int pos = ssgUrl.lastIndexOf(':');
-        if (pos > 4) {
-            ssgUrl = ssgUrl.substring(0, pos);
-            ssgUrl = ssgUrl + ":8080";
-        }
-        prefixURL.setText(ssgUrl + "/");
+        String hostname = TopComponents.getInstance().ssgURL().getHost();
+        String ssgUrl = "http://" + hostname + ":8080/";
+        prefixURL.setText(ssgUrl);
     }
 
     private void bark(Component control, String msg) {

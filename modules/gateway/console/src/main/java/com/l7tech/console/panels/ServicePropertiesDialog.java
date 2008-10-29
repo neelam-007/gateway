@@ -107,22 +107,11 @@ public class ServicePropertiesDialog extends JDialog {
         } else {
             enableRadio.setSelected(true);
         }
-        ssgURL = TopComponents.getInstance().ssgURL();
-        if (!ssgURL.startsWith("http://")) {
-            ssgURL = "http://" + ssgURL;
-        }
-        int pos = ssgURL.lastIndexOf(':');
-        if (pos > 4) {
-            ssgURL = ssgURL.substring(0, pos);
 
-            ssgURL = ssgURL + STD_PORT;
-        } else {
-            if (ssgURL.endsWith("/") || ssgURL.endsWith("\\")) {
-                ssgURL = ssgURL.substring(0, ssgURL.length()-1) + STD_PORT;
-            } else {
-                ssgURL = ssgURL + STD_PORT;
-            }
-        }
+        String hostname = TopComponents.getInstance().ssgURL().getHost();
+        // todo, we need to be able to query gateway to get port instead of assuming default
+        ssgURL = "http://" + hostname + STD_PORT;        
+
         String existinguri = subject.getRoutingUri();
         if (subject.isInternal()) {
             noURIRadio.setEnabled(false);
