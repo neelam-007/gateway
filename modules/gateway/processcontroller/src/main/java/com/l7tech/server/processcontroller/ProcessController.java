@@ -98,11 +98,21 @@ public class ProcessController {
         return builder.start();
     }
 
-    public synchronized NodeStateType getNodeState(String nodeName) {
+    /**
+     * @return a Pair containing the node's state, and the time at which the state was last observed. Never null.
+     */
+    public synchronized Pair<NodeStateType, Date> getNodeState(String nodeName) {
         final NodeState state = nodeStates.get(nodeName);
-        return state == null ? UNKNOWN : state.type;
+        final NodeStateType type = state == null ? UNKNOWN : state.type;
+        final Date when = state == null ? new Date() : new Date(state.sinceWhen);
+        return new Pair<NodeStateType, Date>(type, when);
     }
 
+    /**
+     * @param node the node that should be started.
+     * @param sync true if this API should wait until the node has been started before returning.
+     * @throws IOException
+     */
     public synchronized void startNode(PCNodeConfig node, boolean sync) throws IOException {
         nodeStates.put(node.getName(), new StartingNodeState(this, node));
         if (!sync) return;
@@ -125,6 +135,51 @@ public class ProcessController {
 
     public void setDaemon(boolean daemon) {
         this.daemon = daemon;
+    }
+
+    /**
+     * Note that this method must not be synchronized because it relies on the PC's main loop coming along and changing
+     * node states asynchronously.
+     *
+     * @param nodeName
+     * @param shutdownTimeout
+     */
+    public void deleteNode(String nodeName, int shutdownTimeout) {
+        NodeState state;
+        synchronized (this) {
+            state = nodeStates.get(nodeName);
+            if (!EnumSet.of(STOPPED, STOPPING, CRASHED, UNKNOWN).contains(state.type)) {
+                stopNode(nodeName, shutdownTimeout);
+            }
+            notifyAll();
+        }
+
+        waiting: while (true) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            state = nodeStates.get(nodeName);
+            if (state == null) throw new IllegalStateException("No known state for " + nodeName);
+
+            switch (state.type) {
+                case STOPPING:
+                case RUNNING:
+                    logger.info("Waiting for shutdown...");
+                    continue waiting;
+                case STOPPED:
+                    logger.info("Node is shutdown");
+                    break waiting;
+                case CRASHED:
+                case UNKNOWN:
+                case WONT_START:
+                case STARTING:
+                    throw new IllegalStateException("Unexpected state for " + nodeName + " after shutdown: " + state.type);
+            }
+        }
+        nodeStates.remove(nodeName);
     }
 
     private static abstract class NodeState {

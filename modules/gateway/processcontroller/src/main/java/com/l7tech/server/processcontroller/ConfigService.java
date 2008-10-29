@@ -3,11 +3,13 @@
  */
 package com.l7tech.server.processcontroller;
 
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.Pair;
 
 import java.io.File;
+import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Set;
@@ -48,4 +50,6 @@ public interface ConfigService {
 
     /** The $JAVA_HOME/bin/java launcher */
     File getJavaBinary();
+
+    void deleteNode(String nodeName) throws DeleteException, IOException;
 }

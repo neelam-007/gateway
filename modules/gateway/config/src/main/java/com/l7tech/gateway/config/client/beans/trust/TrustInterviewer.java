@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 
 /** @author alex */
 public class TrustInterviewer {
-    private static final Logger logger = Logger.getLogger(RemoteManagementTrustConfigurationBeanProvider.class.getName());
+    private static final Logger logger = Logger.getLogger(TrustInterviewer.class.getName());
     private static final String FS = System.getProperty("file.separator");
 
     // TODO find some place to put these where we can share them with ConfigService

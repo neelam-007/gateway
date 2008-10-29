@@ -18,7 +18,6 @@ import java.util.Set;
  * @author alex
  */
 public class PCNodeConfig extends NodeConfig {
-
     /** Is this node intended to be the sole user of the Tarari card on this Node? */
     private boolean tarariOwner;
 

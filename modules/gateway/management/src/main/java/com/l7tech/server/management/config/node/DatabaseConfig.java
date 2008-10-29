@@ -9,7 +9,6 @@ package com.l7tech.server.management.config.node;
  * @author alex
  */
 public class DatabaseConfig {
-    private NodeConfig node;
     private DatabaseConfig parent;
     private DatabaseType type = DatabaseType.NODE_ALL;
     private Vendor vendor = Vendor.MYSQL;
@@ -54,19 +53,12 @@ public class DatabaseConfig {
         setNodePassword( nodePassword );
     }
 
-    public NodeConfig getNode() {
-        return node;
-    }
-
-    public void setNode(NodeConfig node) {
-        this.node = node;
-    }
-
     public DatabaseConfig getParent() {
         return parent;
     }
 
     public void setParent(DatabaseConfig parent) {
+        if (parent == this) throw new IllegalArgumentException();
         this.parent = parent;
     }
 
@@ -244,8 +236,7 @@ public class DatabaseConfig {
 
     public int hashCode() {
         int result;
-        result = (node != null ? node.hashCode() : 0);
-        result = 31 * result + (parent != null ? parent.hashCode() : 0);
+        result = (parent != null ? parent.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (vendor != null ? vendor.hashCode() : 0);
         result = 31 * result + (clusterType != null ? clusterType.hashCode() : 0);

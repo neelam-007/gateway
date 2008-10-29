@@ -76,9 +76,6 @@ public final class ProcessControllerDaemon {
         }
     }
 
-    /**
-     * @return true if the PC should start in daemon mode; false otherwise
-     */
     private void start() throws IOException {
         logger.info("Starting Process Controller...");
 

@@ -25,14 +25,14 @@ public class VersionTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    public void testOtherStuff() throws Exception {
+    public void testRoundTrip() throws Exception {
         assertEquals(SoftwareVersion.fromString("5.0").toString(), "5.0");
         assertEquals(SoftwareVersion.fromString("5.1").toString(), "5.1");
         assertEquals(SoftwareVersion.fromString("5.1b1").toString(), "5.1b1");
         assertEquals(SoftwareVersion.fromString("5.2b3-b1").toString(), "5.2b3-b1");
     }
 
-    public void testStuff() throws Exception {
+    public void testValidation() throws Exception {
         die("5");
         die("asdf");
         die("5asadf");

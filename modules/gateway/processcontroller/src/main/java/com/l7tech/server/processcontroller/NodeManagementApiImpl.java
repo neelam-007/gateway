@@ -1,7 +1,7 @@
 package com.l7tech.server.processcontroller;
 
-import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.gateway.config.manager.AccountReset;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -14,6 +14,8 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
+import org.apache.cxf.interceptor.InInterceptors;
 
 import javax.activation.DataHandler;
 import javax.annotation.Resource;
@@ -28,9 +30,6 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.cxf.interceptor.InInterceptors;
-
 @WebService(name="NodeManagementAPI",
             targetNamespace="http://ns.l7tech.com/secureSpan/5.0/component/processController/nodeManagementApi",
             endpointInterface="com.l7tech.server.management.api.node.NodeManagementApi")
@@ -140,24 +139,24 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         final List<NodeHeader> nodes = new ArrayList<NodeHeader>();
         for (NodeConfig config : configService.getHost().getNodes().values()) {
             final PCNodeConfig pcNodeConfig = (PCNodeConfig)config;
-            final NodeStateType state = processController.getNodeState(pcNodeConfig.getName());
-            nodes.add(new NodeHeader(pcNodeConfig.getId(), pcNodeConfig.getName(), pcNodeConfig.getSoftwareVersion(), pcNodeConfig.isEnabled(), state));
+            final Pair<NodeStateType,Date> state = processController.getNodeState(pcNodeConfig.getName());
+            nodes.add(new NodeHeader(pcNodeConfig.getId(), pcNodeConfig.getName(), pcNodeConfig.getSoftwareVersion(), pcNodeConfig.isEnabled(), state.left, state.right));
         }
         return nodes;
     }
 
     /**
      * Update configuration for a node.
-     * 
+     *
      * <p>This allows for update of the following node configuration</p>
-     * 
+     *
      * <ul>
      *   <li>Database Configuration : The primary DB configuration</li>
      *   <li>Failover Database Configuration : The secondary DB configuration</li>
      *   <li>Enabled : The node enabled/disabled state</li>
      *   <li>Cluster Passphrase : The node passphrase</li>
      * </ul>
-     * 
+     *
      * @node The updated node configuration.
      */
     @Override
@@ -179,7 +178,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         }
         DatabaseConfig databaseConfig = configs[0];
         DatabaseConfig failoverDatabaseConfig = configs[1];
-        
+
         try {
             NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), clusterPassphrase, databaseConfig, failoverDatabaseConfig );
         } catch ( IOException ioe ) {
@@ -202,7 +201,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         }
 
         // apply state change if required
-        NodeStateType currentState = processController.getNodeState(nodeName);
+        NodeStateType currentState = processController.getNodeState(nodeName).left;
         if ( node.isEnabled() && NodeStateType.RUNNING != currentState ) {
             try {
                 processController.startNode( currentNodeConfig, false );
@@ -219,7 +218,12 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     @Override
     public void deleteNode(String nodeName, int shutdownTimeout) throws DeleteException, ForcedShutdownException {
         checkRequest();
-        throw new UnsupportedOperationException("Not yet implemented");
+        try {
+            processController.deleteNode(nodeName, shutdownTimeout);
+            configService.deleteNode(nodeName);
+        } catch (Exception e) {
+            throw new DeleteException("Couldn't delete node", e);
+        }
     }
 
     @Override
@@ -237,7 +241,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     @Override
     public NodeStateType startNode(String nodeName) throws FindException, StartupException {
         checkRequest();
-        NodeStateType tempState = processController.getNodeState(nodeName);
+        NodeStateType tempState = processController.getNodeState(nodeName).left;
         if (tempState == null) tempState = NodeStateType.UNKNOWN;
         switch(tempState) {
             case RUNNING:
@@ -272,11 +276,16 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         checkRequest();
         processController.stopNode(nodeName, timeout);
     }
-    
+
+    @Override
+    public DatabaseConfig createDatabase(DatabaseConfig dbconfig) throws DatabaseCreationException {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
     private DatabaseConfig[] getDatabaseConfigurations( final NodeConfig nodeConfig ) throws SaveException {
         DatabaseConfig databaseConfig = null;
         DatabaseConfig failoverDatabaseConfig = null;
-        
+
         if ( nodeConfig.getDatabases() != null ) {
             for ( DatabaseConfig config : nodeConfig.getDatabases() ) {
                 if ( config !=null && config.getType() == DatabaseType.NODE_ALL ) {
@@ -295,8 +304,8 @@ public class NodeManagementApiImpl implements NodeManagementApi {
                     }
                 }
             }
-        }      
-        
+        }
+
         return new DatabaseConfig[]{ databaseConfig, failoverDatabaseConfig };
     }
 }

@@ -14,12 +14,15 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 
 import javax.activation.DataHandler;
+import javax.jws.WebParam;
 import javax.jws.WebResult;
 import javax.jws.WebService;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Date;
+import java.util.Set;
 import java.util.Collection;
 
 /**
@@ -83,11 +86,13 @@ public interface NodeManagementApi {
         private String version;
         private boolean enabled;
         private NodeStateType state;
+        private Date sinceWhen;
 
-        public NodeHeader(String id, String name, SoftwareVersion softwareVersion, boolean enabled, NodeStateType state) {
+        public NodeHeader(String id, String name, SoftwareVersion softwareVersion, boolean enabled, NodeStateType state, Date sinceWhen) {
             this.id = id;
             this.name = name;
             this.state = state;
+            this.sinceWhen = sinceWhen;
             this.version = softwareVersion == null ? null : softwareVersion.toString();
             this.enabled = enabled;
         }
@@ -112,6 +117,11 @@ public interface NodeManagementApi {
         @XmlAttribute
         public String getVersion() {
             return version;
+        }
+
+        @XmlAttribute
+        public Date getSinceWhen() {
+            return sinceWhen;
         }
 
         public void setId(String id) {
@@ -162,7 +172,11 @@ public interface NodeManagementApi {
      * @throws DeleteException if the node cannot be deleted
      * @throws ForcedShutdownException if the node's process could not be shutdown cleanly and needed to be killed
      */
-    void deleteNode(String nodeName, int shutdownTimeout) throws DeleteException, ForcedShutdownException;
+    void deleteNode(@WebParam(name="nodeName")
+                    String nodeName,
+                    @WebParam(name="shutdownTimeout")
+                    int shutdownTimeout)
+        throws DeleteException, ForcedShutdownException;
 
     /**
      * Uploads a new Node software bundle.  Note that uploading software bundles does not affect any existing
@@ -210,6 +224,21 @@ public interface NodeManagementApi {
      * @param timeout the period, in milliseconds, to wait for a clean shutdown to complete before killing the node process. Values <= 0 indicate that the PC should wait indefinitely.
      */
     void stopNode(String nodeName, int timeout) throws FindException, ForcedShutdownException;
+
+    /**
+     * Attempt to create the database described by the provided configuration.
+     */
+    DatabaseConfig createDatabase(DatabaseConfig dbconfig) throws DatabaseCreationException;
+
+    public class DatabaseCreationException extends Exception {
+        public DatabaseCreationException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public DatabaseCreationException(String message) {
+            super(message);
+        }
+    }
 
     /**
      * Thrown if a desired node action cannot be taken while the node is running

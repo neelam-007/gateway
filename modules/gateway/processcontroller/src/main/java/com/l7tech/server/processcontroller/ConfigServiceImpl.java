@@ -4,16 +4,18 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.host.IpAddressConfig;
 import com.l7tech.server.management.config.host.PCHostConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,6 +31,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,6 +41,7 @@ import java.util.logging.Logger;
  */
 public class ConfigServiceImpl implements ConfigService {
     private static final Logger logger = Logger.getLogger(ConfigServiceImpl.class.getName());
+    private static final String SLASH = System.getProperty("file.separator");
 
     private final File processControllerHomeDirectory;
     private final File nodeBaseDirectory;
@@ -48,7 +52,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final int sslPort;
     private final File configDirectory;
     private final File javaBinary;
-    private static final String SLASH = System.getProperty("file.separator");
+    private final Map<String, NodeInfo> nodeInfos;
 
     public ConfigServiceImpl() throws IOException, GeneralSecurityException {
         // TODO maybe just pass the host.properties path instead, and put the nodeBaseDirectory in there
@@ -61,8 +65,8 @@ public class ConfigServiceImpl implements ConfigService {
             nodeBaseDirectory = new File(s);
         }
 
-        File configDirectory = new File(processControllerHomeDirectory, "/etc/conf");
-        if (!configDirectory.exists() || !configDirectory.isDirectory()) 
+        File configDirectory = new File(processControllerHomeDirectory, SLASH + "etc" + SLASH + "conf");
+        if (!configDirectory.exists() || !configDirectory.isDirectory())
             throw new IllegalStateException("Configuration directory " + configDirectory.getAbsolutePath() + " does not exist");
         this.configDirectory = configDirectory;
         this.masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
@@ -81,16 +85,16 @@ public class ConfigServiceImpl implements ConfigService {
             throw new RuntimeException("Couldn't load " + hostPropsFile.getAbsolutePath(), e);
         }
 
-        PCHostConfig config = new PCHostConfig();
-        config.setGuid(getRequiredProperty(hostProps, HOSTPROPERTIES_ID));
-        config.setLocalHostname(getLocalHostname(hostProps));
-        config.setHostType(getHostType(hostProps));
+        PCHostConfig hostConfig = new PCHostConfig();
+        hostConfig.setGuid(getRequiredProperty(hostProps, HOSTPROPERTIES_ID));
+        hostConfig.setLocalHostname(getLocalHostname(hostProps));
+        hostConfig.setHostType(getHostType(hostProps));
         if (OSDetector.isLinux()) {
-            config.setOsType(HostConfig.OSType.RHEL);
+            hostConfig.setOsType(HostConfig.OSType.RHEL);
         } else if (OSDetector.isSolaris()) {
-            config.setOsType(HostConfig.OSType.SOLARIS);
+            hostConfig.setOsType(HostConfig.OSType.SOLARIS);
         } else if (OSDetector.isWindows()) {
-            config.setOsType(HostConfig.OSType.WINDOWS);
+            hostConfig.setOsType(HostConfig.OSType.WINDOWS);
         } else {
             throw new IllegalStateException("Unsupported operating system"); // TODO muddle through?
         }
@@ -106,9 +110,25 @@ public class ConfigServiceImpl implements ConfigService {
         this.sslKeypair = readSslKeypair(hostProps);
         this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts(hostProps);
 
-        reverseEngineerIps(config);
-        reverseEngineerNodes(config);
-        this.host = config;
+        reverseEngineerIps(hostConfig);
+
+        Map<String, NodeInfo> infos = new HashMap<String, NodeInfo>();
+        try {
+            for (Pair<NodeConfig, File> pair : NodeConfigurationManager.loadNodeConfigs(false)) {
+                NodeConfig config = pair.left;
+                logger.log(Level.INFO, "Detected node ''{0}''.", config.getName());
+                config.setHost(hostConfig);
+                infos.put(config.getName(), new NodeInfo((PCNodeConfig)config, pair.right));
+                hostConfig.getNodes().put(config.getName(), config);
+            }
+        } catch (IOException ioe) {
+            logger.log(Level.WARNING, "Error when detecting nodes.", ioe);
+        } catch (NumberFormatException nfe) {
+            logger.log(Level.WARNING, "Error when detecting nodes.", nfe);
+        }
+
+        this.nodeInfos = new ConcurrentHashMap<String, NodeInfo>(infos);
+        this.host = hostConfig;
     }
 
     static File getHomeDirectory() {
@@ -278,17 +298,15 @@ public class ConfigServiceImpl implements ConfigService {
         return hostname;
     }
 
-    private void reverseEngineerNodes(PCHostConfig g) {
-        try {
-            for (NodeConfig nodeConfig : NodeConfigurationManager.loadNodeConfigs(false)) {
-                logger.log(Level.INFO, "Detected node ''{0}''.", nodeConfig.getName());
-                nodeConfig.setHost(g);
-                g.getNodes().put(nodeConfig.getName(), nodeConfig);
-            }
-        } catch (IOException ioe) {
-            logger.log(Level.WARNING, "Error when detecting nodes.", ioe);
-        } catch (NumberFormatException nfe) {
-            logger.log(Level.WARNING, "Error when detecting nodes.", nfe);
+
+
+    private static class NodeInfo {
+        private final PCNodeConfig config;
+        private final File nodeConfigFile;
+
+        private NodeInfo(PCNodeConfig config, File nodeConfigFile) {
+            this.config = config;
+            this.nodeConfigFile = nodeConfigFile;
         }
     }
 
@@ -347,5 +365,15 @@ public class ConfigServiceImpl implements ConfigService {
 
     public File getJavaBinary() {
         return javaBinary;
+    }
+
+    @Override
+    public synchronized void deleteNode(final String nodeName) throws DeleteException, IOException {
+        NodeInfo info = nodeInfos.get(nodeName);
+        if (info == null) return;
+        final String propfile = info.nodeConfigFile.getAbsolutePath();
+        if (!info.nodeConfigFile.renameTo(new File(propfile + "-deleted"))) throw new DeleteException("Unable to rename " + propfile);
+        nodeInfos.remove(nodeName);
+        host.getNodes().remove(nodeName);
     }
 }

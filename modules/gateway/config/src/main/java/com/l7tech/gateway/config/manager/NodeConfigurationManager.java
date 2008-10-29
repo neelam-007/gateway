@@ -1,41 +1,23 @@
 package com.l7tech.gateway.config.manager;
 
+import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
-import com.l7tech.server.management.config.node.DatabaseType;
-import com.l7tech.server.management.SoftwareVersion;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.util.*;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collection;
-import java.util.Properties;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.LinkedHashMap;
-import java.io.File;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.text.MessageFormat;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
-
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
+import java.text.MessageFormat;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Manages configuration for a node.
@@ -103,29 +85,16 @@ public class NodeConfigurationManager {
             if ( dbVersion != null && !dbVersion.equals(BuildInfo.getFormalProductVersion()) ) {
                 throw new CausedIOException("Database version mismatch '"+dbVersion+"'.");
             }
+
             if ( dbVersion == null ) {
                 // then create the DB, we may need a localhost connection for admin access.
-                DatabaseConfig localConfig = new DatabaseConfig(databaseConfig);
-                try {
-                    // If the host is localhost then use that when connecting
-                    if ( NetworkInterface.getByInetAddress(InetAddress.getByName(databaseConfig.getHost())) != null ) {
-                        localConfig.setHost("localhost");
-                    }
-                } catch ( UnknownHostException uhe ) {
-                    throw new CausedIOException("Could not resolve host '"+databaseConfig.getHost()+"'.");
-                }
-
                 String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
-                File sqlScriptFile = new File( pathToSqlScript ).getCanonicalFile();
-                Set<String> hosts = new HashSet<String>();
-                hosts.add( databaseConfig.getHost() );
-                if ( database2ndConfig != null ) {
-                    hosts.add( database2ndConfig.getHost() );                    
-                }
-                DBActions.DBActionsResult res = dbActions.createDb( localConfig, hosts, sqlScriptFile.getAbsolutePath(), false );
-                if ( res.getStatus() != DBActions.DB_SUCCESS ) {                    
-                    throw new CausedIOException("Cannot create database '" + res.getErrorMessage() + "'");
-                }
+
+                // TODO split this out into its own API
+                createDatabase(databaseConfig,
+                               database2ndConfig == null ? Collections.<String>emptyList() : Arrays.asList(database2ndConfig.getHost()),
+                               dbActions, new File( pathToSqlScript ).getCanonicalFile()
+                );
             }
         }
 
@@ -206,17 +175,51 @@ public class NodeConfigurationManager {
         }
     }
 
+    /**
+     * @param databaseConfig the configuration for the database to be created.
+     * @param extraGrantHosts additional hostnames from which access to the database should be granted
+     */
+    private static void createDatabase(final DatabaseConfig databaseConfig,
+                                       final List<String> extraGrantHosts,
+                                       final DBActions dbActions,
+                                       final File sqlScriptFile)
+        throws IOException
+    {
+        final DatabaseConfig localConfig;
+        try {
+            // If the host is localhost then use that when connecting
+            if ( NetworkInterface.getByInetAddress(InetAddress.getByName(databaseConfig.getHost())) != null ) {
+                localConfig = new DatabaseConfig(databaseConfig);
+                localConfig.setHost("localhost");
+            } else {
+                localConfig = databaseConfig;
+            }
+        } catch ( UnknownHostException uhe ) {
+            throw new CausedIOException("Could not resolve host '"+databaseConfig.getHost()+"'.");
+        }
+
+        Set<String> hosts = new HashSet<String>();
+        hosts.add( databaseConfig.getHost() );
+        if (extraGrantHosts != null) hosts.addAll(extraGrantHosts);
+
+        DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, sqlScriptFile.getAbsolutePath(), false);
+        if ( res.getStatus() != DBActions.DB_SUCCESS ) {
+            throw new CausedIOException("Cannot create database '" + res.getErrorMessage() + "'");
+        }
+    }
+
     public static NodeConfig loadNodeConfig( final String name, final boolean loadSecrets ) throws IOException {
         return loadNodeConfig( name, new File(getConfigurationDirectory(name), NODE_PROPS_FILE), loadSecrets );
     }
 
-    public static Collection<NodeConfig> loadNodeConfigs( final boolean throwOnError ) throws IOException {
-        Collection<NodeConfig> nodeConfigs = new ArrayList<NodeConfig>();
+    public static Collection<Pair<NodeConfig, File>> loadNodeConfigs( final boolean throwOnError ) throws IOException {
+        Collection<Pair<NodeConfig, File>> nodeConfigs = new ArrayList<Pair<NodeConfig, File>>();
 
         File nodeBaseDirectory = new File(nodesPath);
         for ( String nodeConfigName : nodeBaseDirectory.list() ) {
             try {
-                nodeConfigs.add(loadNodeConfig( nodeConfigName, new File(getConfigurationDirectory(nodeConfigName), NODE_PROPS_FILE), false));
+                final File nodePropsFile = new File(getConfigurationDirectory(nodeConfigName), NODE_PROPS_FILE);
+                nodeConfigs.add(new Pair<NodeConfig, File>(loadNodeConfig( nodeConfigName, nodePropsFile, false), nodePropsFile));
             } catch ( IOException ioe ) {
                 if ( throwOnError ) {
                     throw ioe;
@@ -307,7 +310,6 @@ public class NodeConfigurationManager {
                     try {
                         final DatabaseConfig db = new DatabaseConfig();
                         db.setParent( parentConfig );
-                        db.setNode( nodeConfig );
                         db.setType( DatabaseType.NODE_ALL );
                         db.setHost( nodeProperties.getProperty(hostProp) );
 
