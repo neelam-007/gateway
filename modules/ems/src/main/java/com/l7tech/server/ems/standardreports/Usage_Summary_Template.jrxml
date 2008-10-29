@@ -104,17 +104,11 @@
 		<defaultValueExpression ><![CDATA[" sm.period_start >= "+$P{startTimeMilli} + " AND sm.period_start < " + $P{endTimeMilli}]]></defaultValueExpression>
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[Utilities.getUsageSummaryQuery($P{startTimeMilli},
+		<defaultValueExpression ><![CDATA[Utilities.getUsageQuery($P{startTimeMilli},
 $P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
 $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
 ]]></defaultValueExpression>
 	</parameter>
-	<parameter name="COLUMN_1" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="COLUMN_2" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="COLUMN_3" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="COLUMN_4" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="COLUMN_5" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="COLUMN_6" isForPrompting="false" class="java.lang.Long"/>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
 	<field name="SERVICE_ID" class="java.lang.Long"/>

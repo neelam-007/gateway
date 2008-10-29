@@ -486,7 +486,80 @@ public class Utilities {
         return sb.toString();
     }
 
-    public static String getUsageSummaryQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+    /**
+     * Usage interval reports are driven by the set of service ids and operations which match the search criteria.
+     * Mapping values are not needed in the output of this query as they do not mean anything at the master report
+     * level. All parameters will supplied will be used as constraints on the query. The order of this query is simply
+     * service id followed by operation, which may be a place holder
+     * @return
+     */
+    public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                            Collection<String> serviceIds, List<String> keys,
+                                            List<String> keyValueConstraints,
+                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
+                                            List<String> operations, boolean useUser, List<String> authenticatedUsers){
+
+        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
+
+        boolean keyValuesSupplied = checkMappingQueryParams(keys,
+                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
+
+        checkResolutionParameter(resolution);
+
+        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
+
+        StringBuilder sb = new StringBuilder(distinctFrom);
+
+        addOperationToSelect(isDetail, sb);
+
+        sb.append(mappingJoin);
+
+        addResolutionConstraint(resolution, sb);
+
+        if(useTime){
+            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+        }
+
+        if(serviceIds != null && !serviceIds.isEmpty()){
+            addServiceIdConstraint(serviceIds, sb);
+        }
+
+        if(isDetail && operations != null && !operations.isEmpty()){
+            addOperationConstraint(operations, sb);
+        }
+
+        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
+            addUserConstraint(authenticatedUsers, sb);
+        }
+
+        if(keyValuesSupplied){
+            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
+        }
+
+        sb.append(" ORDER BY SERVICE_ID, SERVICE_OPERATION_VALUE");
+
+        return sb.toString();
+    }
+
+    /**
+     * Usage query is only interested in one value - the sum of requests - constrained by all inputs
+     * This query is used by both the summary and interval usage reports. When it's used by the base sub report
+     * in an interval query the serviceIds and operations list have only 1 value each, as at that level we are
+     * querying for a particular service and possibly an operation, for those queries
+     * @param startTimeInclusiveMilli
+     * @param endTimeInclusiveMilli
+     * @param serviceIds
+     * @param keys
+     * @param keyValueConstraints
+     * @param valueConstraintAndOrLike
+     * @param resolution
+     * @param isDetail
+     * @param operations
+     * @param useUser
+     * @param authenticatedUsers
+     * @return
+     */
+    public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Collection<String> serviceIds, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
@@ -547,6 +620,25 @@ public class Utilities {
         return sb.toString();
     }
 
+    public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                            Long serviceId, List<String> keys,
+                                            List<String> keyValueConstraints,
+                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
+                                            String operation, boolean useUser, List<String> authenticatedUsers){
+        if(serviceId == null) throw new NullPointerException("serviceId cannot be null");
+        if(operation == null || operation.equals("")){
+            throw new IllegalArgumentException("operation can be null or empty");
+        }
+        
+        List<String> serviceIds = new ArrayList<String>();
+        serviceIds.add(String.valueOf(serviceId));
+        List<String> operations = new ArrayList<String>();
+        if(!operation.equals(Utilities.SQL_PLACE_HOLDER)) operations.add(operation);
+        
+        return getUsageQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIds, keys, keyValueConstraints,
+                valueConstraintAndOrLike, resolution, isDetail, operations, useUser, authenticatedUsers);
+
+    }
 
     /**
      * Create the sql required to get performance statistics for a specific period of time, for a possible specifc set of

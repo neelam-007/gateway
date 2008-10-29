@@ -396,24 +396,24 @@ public class UtilitiesTest{
         keys.add("CUSTOMER");
 
         List<String> values = new ArrayList<String>();
-        values.add(null);
-        values.add("GOLD");
+//        values.add(null);
+//        values.add("GOLD");
 
         String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, null, null, 2, true, null, false, null);
         System.out.println(sql);
     }
 
     @Test
-    public void testGetUsageSummaryQuery(){
+    public void testGetUsageQuery(){
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
         keys.add("CUSTOMER");
 
         List<String> values = new ArrayList<String>();
-        values.add(null);
-        values.add("GOLD");
+//        values.add(null);
+//        values.add("GOLD");
 
-        String sql = Utilities.getUsageSummaryQuery(null, null, null, keys, null, null, 2, false, null, false, null);
+        String sql = Utilities.getUsageQuery(null, null, new ArrayList<String>(), keys, null, null, 2, false, null, false, null);
         System.out.println(sql);
     }
 
@@ -454,6 +454,19 @@ public class UtilitiesTest{
         int index = sql.indexOf("ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, " +
                 "MAPPING_VALUE_4, MAPPING_VALUE_5 ,p.objectid, SERVICE_OPERATION_VALUE");
         Assert.assertTrue(index != -1);
+    }
+
+    @Test
+    public void testGetUsageMasterIntervalQuery(){
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
+
+        String sql = Utilities.getUsageMasterIntervalQuery(null, null, null, keys, null, null, 2, true, null, false, null);
+        System.out.println(sql);
+
+        sql = Utilities.getUsageMasterIntervalQuery(null, null, null, keys, null, null, 2, false, null, false, null);
+        System.out.println(sql);
     }
 
     /**

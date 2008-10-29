@@ -11,6 +11,9 @@
 
     <property name="jasper.jrxml_files" value="../../../../../../../../modules/ems/src/main/java/com/l7tech/server/ems/standardreports" />
     <property name="canned_usage.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Canned_Usage_Report.jrxml" />
+    <property name="canned_usage_interval_master.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_IntervalMasterReport.jrxml" />
+    <property name="canned_usage_interval_subreport_1.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_SubIntervalMasterReport.jrxml" />
+    <property name="canned_usage_interval_subreport_2.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_SubIntervalMasterReport_subreport0.jrxml" />
 
     <path id="jrc.classpath">
         <file file="${lib}/repository/jasperreports/jasperreports-3.0.0.jar"/>
@@ -53,6 +56,9 @@
                     <include name="*.jrxml"/>
                 </fileset>
                 <fileset file="${canned_usage.jrxml_file}" />
+                <fileset file="${canned_usage_interval_master.jrxml_file}" />
+                <fileset file="${canned_usage_interval_subreport_1.jrxml_file}" />
+                <fileset file="${canned_usage_interval_subreport_2.jrxml_file}" />
             </src>
 			<classpath refid="classpath"/>
 		</jrc>
@@ -74,6 +80,13 @@
         </java>
     </target>
 
+    <target name="u_interval" description="Compiles and fills the canned usage interval report and produces the .jrprint file.">
+        <copy file="../../../../../../../ems/src/main/resources/com/l7tech/server/ems/standardreports/Styles.jrtx" todir="."/>
+        <java classname="${class.name}" fork="true">
+            <arg value="u_interval"/>
+            <classpath refid="classpath"/>
+        </java>
+    </target>
 
     <target name="test_data" description="Creates test data for the supplied services for the maximum default retention
     period for hourly and daily metric bins">

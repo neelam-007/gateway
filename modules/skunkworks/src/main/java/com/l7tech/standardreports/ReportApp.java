@@ -36,7 +36,8 @@ public class ReportApp
 	private static final String TASK_PDF = "pdf";
 	private static final String TASK_HTML = "html";
 	private static final String TASK_VIEW = "view";
-    private static final String TASK_CANNED_USAGE = "usage";    
+    private static final String TASK_CANNED_USAGE = "usage";
+    private static final String TASK_CANNED_INTERVAL_USAGE = "u_interval";
 
     //The following params must be supplied when filling the report
     private static final String REPORT_CONNECTION= "REPORT_CONNECTION";
@@ -135,6 +136,7 @@ public class ReportApp
                 System.err.println("View time : " + (System.currentTimeMillis() - start));
             }
             else if (TASK_CANNED_USAGE.equals(taskName)){
+                //to run this canned report, only ip address and customers should be supplied and values should be empty
                 LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
                 keyToColumnName.put("127.0.0.1<br>Bronze<br>", "COLUMN_1");
                 keyToColumnName.put("127.0.0.1<br>Gold<br>", "COLUMN_2");
@@ -152,6 +154,31 @@ public class ReportApp
                 JasperPrint jrPrint = null;
                 try{
                     jrPrint = JasperFillManager.fillReport("Canned_Usage_Report.jasper", parameters, connection);
+                }finally{
+                    connection.close();
+                }
+
+                System.out.println("Viewing...");
+                JasperViewer.viewReport(jrPrint, false);
+            }
+            else if(TASK_CANNED_INTERVAL_USAGE.equals(taskName)){
+                LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
+                keyToColumnName.put("127.0.0.1<br>Bronze<br>", "COLUMN_1");
+                keyToColumnName.put("127.0.0.1<br>Gold<br>", "COLUMN_2");
+                keyToColumnName.put("127.0.0.1<br>Silver<br>", "COLUMN_3");
+                keyToColumnName.put("127.0.0.2<br>Bronze<br>", "COLUMN_4");
+                keyToColumnName.put("127.0.0.2<br>Gold<br>", "COLUMN_5");
+                keyToColumnName.put("127.0.0.2<br>Silver<br>", "COLUMN_6");
+
+                Map<String, Object> parameters = getParameters();
+                Object scriplet = parameters.get(REPORT_SCRIPTLET);
+                UsageReportHelper helper = (UsageReportHelper) scriplet;
+                helper.setKeyToColumnMap(keyToColumnName);
+
+                Connection connection = getConnection(prop);
+                JasperPrint jrPrint = null;
+                try{
+                    jrPrint = JasperFillManager.fillReport("Usage_IntervalMasterReport.jasper", parameters, connection);
                 }finally{
                     connection.close();
                 }

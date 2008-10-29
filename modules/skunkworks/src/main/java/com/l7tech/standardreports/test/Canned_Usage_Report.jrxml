@@ -2,7 +2,7 @@
 <!-- Created with iReport - A designer for JasperReports -->
 <!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="Caned_Usage_Report"
+		 name="Canned_Usage_Report"
 		 columnCount="1"
 		 printOrder="Vertical"
 		 orientation="Portrait"
@@ -104,17 +104,11 @@
 		<defaultValueExpression ><![CDATA[" sm.period_start >= "+$P{startTimeMilli} + " AND sm.period_start < " + $P{endTimeMilli}]]></defaultValueExpression>
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[Utilities.getUsageSummaryQuery($P{startTimeMilli},
+		<defaultValueExpression ><![CDATA[Utilities.getUsageQuery($P{startTimeMilli},
 $P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
 $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
 ]]></defaultValueExpression>
 	</parameter>
-	<parameter name="COLUMN_1" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="COLUMN_2" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="COLUMN_3" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="COLUMN_4" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="COLUMN_5" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="COLUMN_6" isForPrompting="false" class="java.lang.Long"/>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
 	<field name="SERVICE_ID" class="java.lang.Long"/>
@@ -376,7 +370,7 @@ $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
 					<textElement markup="html">
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["127.0.0.2<br>Silver"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["127.0.0.2<br>Gold"]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -389,7 +383,7 @@ $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
 					<textElement markup="html">
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["127.0.0.2<br>Gold"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["127.0.0.2<br>Silver"]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement

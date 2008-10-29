@@ -24,7 +24,7 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
-	<style
+	<style 
 		name="DefaultText"
 		isDefault="true"
 	>
@@ -48,12 +48,12 @@
 	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
-    <parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
-        <defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
-    </parameter>
-    <parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
-    
-    <field name="INTERVAL_START" class="java.lang.Long"/>
+	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
+		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
+
+	<field name="INTERVAL_START" class="java.lang.Long"/>
 	<field name="INTERVAL_END" class="java.lang.Long"/>
 
 	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
@@ -162,10 +162,10 @@
 					<subreportParameter  name="RESOLUTION">
 						<subreportParameterExpression><![CDATA[$P{RESOLUTION}]]></subreportParameterExpression>
 					</subreportParameter>
-                    <subreportParameter  name="IS_CONTEXT_MAPPING">
-                        <subreportParameterExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></subreportParameterExpression>
-                    </subreportParameter>
-                    <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					<subreportParameter  name="IS_CONTEXT_MAPPING">
+						<subreportParameterExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></subreportParameterExpression>
+					</subreportParameter>
+					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 					<returnValue subreportVariable="THROUGHPUT" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
 					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX" calculation="Highest"/>
