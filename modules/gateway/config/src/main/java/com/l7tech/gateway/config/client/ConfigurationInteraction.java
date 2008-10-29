@@ -141,11 +141,12 @@ public abstract class ConfigurationInteraction extends Interaction {
         ConfigurationBean configBean = configBeans.get(option.getId());
         if ( configBean != null ) {
             Object valueObj = configBean.getConfigValue();
-            
+
             if ( valueObj instanceof String ) {
                 value = (String) valueObj;
             } else if ( valueObj != null ) {
-                Format format = option.getType().getFormat();
+                Format format = configBean.getFormatter();
+                if ( format == null ) format = option.getType().getFormat(); // fallback to option format
                 if ( format != null ) {
                     value = format.format( valueObj );
                 } else {
@@ -157,7 +158,7 @@ public abstract class ConfigurationInteraction extends Interaction {
         if ( value == null ) {
             value = option.getConfigValue();
             Format format = option.getType().getFormat();
-            if ( format != null ) {
+            if ( format != null && value != null ) {
                 // round trip to normalize format
                 try {
                     value = format.format( format.parseObject(value) );

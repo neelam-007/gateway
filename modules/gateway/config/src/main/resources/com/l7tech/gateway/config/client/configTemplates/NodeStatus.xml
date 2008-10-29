@@ -13,5 +13,10 @@ SecureSpan Gateway Status
         <description>Node Status</description>
         <prompt>Node Status.</prompt>
     </option>
+    <option id="status-time" type="TIMESTAMP" order="101" name="Node Status Timestamp">
+        <configName>status.time</configName>
+        <description>Node Status Timestamp</description>
+        <prompt>Node Status Timestamp.</prompt>
+    </option>
 
 </optionSet>

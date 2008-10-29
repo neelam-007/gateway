@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Date;
 import java.util.logging.Logger;
 
 /**
@@ -66,14 +67,26 @@ public class StateConfigurationBeanProvider extends ProcessControllerConfigurati
     private Collection<ConfigurationBean> toBeans( final NodeManagementApi.NodeHeader config ) {
         List<ConfigurationBean> configuration = new ArrayList<ConfigurationBean>();
 
-        ConfigurationBean<String> configBean = new ConfigurationBean<String>();
-        configBean.setConfigName( "status" );
+        ConfigurationBean<String> statusConfigBean = new ConfigurationBean<String>();
+        statusConfigBean.setConfigName( "status" );
+        ConfigurationBean<Date> statusTimestampConfigBean = new ConfigurationBean<Date>();
+        statusTimestampConfigBean.setConfigName( "status.time" );
+
         if ( config != null ) {
-            configBean.setConfigValue( config.getState().toString() );
+            statusConfigBean.setConfigValue( config.getState().toString() );
+            if ( config.getSinceWhen() != null ) {
+                statusTimestampConfigBean.setConfigValue( config.getSinceWhen() );
+            } else {
+                logger.warning("Received empty status timestamp.");
+                statusTimestampConfigBean.setConfigValue( new Date() );
+            }
         } else {
-            configBean.setConfigValue( "Node Not Configured" );
+            statusConfigBean.setConfigValue( "Node Not Configured" );
+            statusTimestampConfigBean.setConfigValue( new Date() );
         }
-        configuration.add(configBean);
+
+        configuration.add(statusConfigBean);
+        configuration.add(statusTimestampConfigBean);
 
         return configuration;
     }

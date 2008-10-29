@@ -3,6 +3,7 @@ package com.l7tech.gateway.config.client.options;
 import java.text.Format;
 import java.text.FieldPosition;
 import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 
 /**
  * Type for a configuration option.
@@ -53,7 +54,12 @@ public enum OptionType {
     /**
      * A true / false value
      */
-    BOOLEAN("^(?:[YyNn]|[Yy][Ee][Ss]|[Nn][Oo]|[TtFf]|[Tt][Rr][Uu][Ee]|[Ff][Aa][Ll][Ss][Ee])$", false, new BooleanFormat());
+    BOOLEAN("^(?:[YyNn]|[Yy][Ee][Ss]|[Nn][Oo]|[TtFf]|[Tt][Rr][Uu][Ee]|[Ff][Aa][Ll][Ss][Ee])$", false, new BooleanFormat()),
+
+    /**
+     * A date / time value (the regex could do with some tightening up)
+     */
+    TIMESTAMP("^[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9]$", false, new DateTimeFormat());
 
     /**
      * The default validation regex for this option type.
@@ -84,6 +90,8 @@ public enum OptionType {
     
     //- PRIVATE
         
+    private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     private String defaultPattern;
     private Format format;
     private boolean hidden;
@@ -115,6 +123,12 @@ public enum OptionType {
             }
 
             return result;
+        }
+    }
+
+    private static final class DateTimeFormat extends SimpleDateFormat {
+        public DateTimeFormat() {
+            super(DATE_FORMAT);
         }
     }
 }
