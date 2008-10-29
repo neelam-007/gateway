@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"  ?>
+<!-- Created with iReport - A designer for JasperReports -->
+<!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
+<jasperReport
+		 name="Usage_SubIntervalMasterReport"
+		 columnCount="1"
+		 printOrder="Vertical"
+		 orientation="Portrait"
+		 pageWidth="535"
+		 pageHeight="802"
+		 columnWidth="535"
+		 columnSpacing="0"
+		 leftMargin="0"
+		 rightMargin="0"
+		 topMargin="0"
+		 bottomMargin="0"
+		 whenNoDataType="AllSectionsNoDetail"
+		 isTitleNewPage="false"
+		 isSummaryNewPage="false"
+		 whenResourceMissingType="Error">
+	<property name="ireport.scriptlethandling" value="0" />
+	<property name="ireport.encoding" value="UTF-8" />
+	<import value="java.util.*" />
+	<import value="net.sf.jasperreports.engine.*" />
+	<import value="net.sf.jasperreports.engine.data.*" />
+	<import value="com.l7tech.server.ems.standardreports.*" />
+
+	<style 
+		name="DefaultText"
+		isDefault="true"
+	>
+	</style>
+
+	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
+	<parameter name="SERVICE_NAME" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="ROUTING_URI" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
+	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
+		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List"/>
+	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
+	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
+	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
+		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="AUTHENTICATED_USERS" isForPrompting="false" class="java.util.List"/>
+	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
+	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
+	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
+
+	<field name="INTERVAL_START" class="java.lang.Long"/>
+	<field name="INTERVAL_END" class="java.lang.Long"/>
+
+	<variable name="TOTAL" class="java.lang.Long" resetType="Report" calculation="Sum">
+	</variable>
+		<background>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</background>
+		<title>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</title>
+		<pageHeader>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</pageHeader>
+		<columnHeader>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</columnHeader>
+		<detail>
+			<band height="19"  isSplitAllowed="true" >
+				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultText"
+						x="5"
+						y="0"
+						width="113"
+						height="18"
+						key="textField"
+						isPrintWhenDetailOverflows="true"/>
+					<box leftPadding="2" rightPadding="2">					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+</box>
+					<textElement>
+						<font fontName="Times-Roman" size="10"/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME})]]></textFieldExpression>
+				</textField>
+				<subreport  isUsingCache="false">
+					<reportElement
+						style="DefaultText"
+						x="118"
+						y="1"
+						width="417"
+						height="18"
+						key="subreport-1"/>
+					<subreportParameter  name="INTERVAL_START">
+						<subreportParameterExpression><![CDATA[$F{INTERVAL_START}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="INTERVAL_END">
+						<subreportParameterExpression><![CDATA[$F{INTERVAL_END}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="SERVICE_ID">
+						<subreportParameterExpression><![CDATA[$P{SERVICE_ID}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="INTERVAL_UNIT_OF_TIME">
+						<subreportParameterExpression><![CDATA[$P{INTERVAL_UNIT_OF_TIME}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="SERVICE_OPERATION_VALUE">
+						<subreportParameterExpression><![CDATA[$P{SERVICE_OPERATION_VALUE}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="MAPPING_KEYS">
+						<subreportParameterExpression><![CDATA[$P{MAPPING_KEYS}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="IS_DETAIL">
+						<subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="USE_USER">
+						<subreportParameterExpression><![CDATA[$P{USE_USER}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="RESOLUTION">
+						<subreportParameterExpression><![CDATA[$P{RESOLUTION}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="AUTHENTICATED_USERS">
+						<subreportParameterExpression><![CDATA[$P{AUTHENTICATED_USERS}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="MAPPING_VALUES">
+						<subreportParameterExpression><![CDATA[$P{MAPPING_VALUES}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="VALUE_EQUAL_OR_LIKE">
+						<subreportParameterExpression><![CDATA[$P{VALUE_EQUAL_OR_LIKE}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="REPORT_SCRIPTLET">
+						<subreportParameterExpression><![CDATA[$P{REPORT_SCRIPTLET}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="TEMPLATE_FILE_ABSOLUTE">
+						<subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>
+					</subreportParameter>
+					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					<returnValue subreportVariable="TOTAL" toVariable="TOTAL" calculation="Sum"/>
+					<subreportExpression  class="java.lang.String"><![CDATA[$P{SUBREPORT_DIRECTORY}+"/Usage_SubIntervalMasterReport_subreport0.jasper"]]></subreportExpression>
+				</subreport>
+			</band>
+		</detail>
+		<columnFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</columnFooter>
+		<pageFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</pageFooter>
+		<summary>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</summary>
+</jasperReport>
