@@ -51,9 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.logging.Level;
 import java.security.cert.CertificateException;
 
@@ -262,6 +260,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         String username = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_USERNAME);
         String nonce = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_NONCE);
         String fullDoc = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_FULLDOC);
+        String inline = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_INLINE);
 
         // See if it's actually a certificate download request
         if (getCert != null) {
@@ -298,21 +297,32 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             if (isFullDoc)
                 logger.finest("Will passthrough and return full policy document");
         }
+
+        //check for inline setting
+        boolean isInline = false;
+        if (inline != null && inline.length() > 0) {
+            isInline = "yes".equalsIgnoreCase(fullDoc) || Boolean.parseBoolean(fullDoc);
+            logger.finest("Passed value for " + SecureSpanConstants.HttpQueryParameters.PARAM_INLINE + " was " + inline);
+            if (isInline)
+                logger.finest("Will passthrough and return inlined policy document");
+        }
+
         // if user asking for full doc, make sure it's allowed
         if (isFullDoc) {
             isFullDoc = systemAllowsAnonymousDownloads(req);
         }
 
+        boolean isFullDocAndInlined = isFullDoc && isInline;
         // pass over to the service
         PolicyService service = getPolicyService();
         Document response;
         try {
             switch (results.length) {
                 case 0:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(!isFullDoc), isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(isFullDocAndInlined), isFullDoc);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, results[0].getUser(), this.normalPolicyGetter(!isFullDoc), isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, results[0].getUser(), this.normalPolicyGetter(isFullDocAndInlined), isFullDoc);
                     break;
                 default:
                     // todo use the best response (?)

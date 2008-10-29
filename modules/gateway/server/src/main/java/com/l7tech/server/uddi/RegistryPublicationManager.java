@@ -38,22 +38,8 @@ public class RegistryPublicationManager {
         this.defaultKey = keystore;
     }
 
-    private String getMyHostName() {
-        // caching this. no reason this should change without a reboot anyway
-        if (myhostname == null) {
-            // most reliable hostname referencable from the outside is probably the subject of
-            // the ssl cert for this server
-            try {
-                myhostname = defaultKey.getSslInfo().getCertificate().getSubjectDN().getName();
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "cannot get hostname from ssl cert", e);
-                myhostname = serverConfig.getHostname();
-            }
-            if (myhostname.startsWith("CN=") || myhostname.startsWith("cn=")) myhostname = myhostname.substring(3);
-            myhostname = myhostname.trim();
-        }
-        assert(myhostname != null);
-        return myhostname;
+    private String getMyHostName() {        
+        return serverConfig.getPropertyCached("clusterHost");
     }
 
     private String getExternalSSGWSDLURLForPublishedService(String serviceoid) {
@@ -66,7 +52,8 @@ public class RegistryPublicationManager {
     public String getExternalSSGPolicyURL(String serviceoid) {
         String port = serverConfig.getPropertyCached("clusterhttpport");
         String uri = SecureSpanConstants.POLICY_SERVICE_FILE;
-        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceoid + "&fulldoc=yes";
+        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceoid + "&fulldoc=yes" + "&" +
+                SecureSpanConstants.HttpQueryParameters.PARAM_INLINE + "=no";
         return "http://" + getMyHostName() + ":" + port + uri + "?" + query;
     }
 

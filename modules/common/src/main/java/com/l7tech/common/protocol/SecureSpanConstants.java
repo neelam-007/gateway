@@ -264,6 +264,17 @@ public class SecureSpanConstants {
          * policy document to a Systinet (or other UDDI implementation) registry. Usage is &fulldoc=yes
          */
         public static final String PARAM_FULLDOC = "fulldoc";
+
+        /**
+         * Parameter alongside a policy download URL that is meant to indicate that the requestor wants to get back
+         * the policy document as inlined or not inlined.  This will be used when publishing service description
+         * and associated policy document to a Systinet (or other UDDI implementation) registry.
+         *
+         * Usages: &inline
+         * Possible values: yes or no
+         * Eg. &inline=no
+         */
+        public static final String PARAM_INLINE = "inline";
     }
 
     /**
