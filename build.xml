@@ -206,7 +206,9 @@
     <!--
       Initialize build properties
     -->
-    <target name="init" depends="package.readversion">
+    <target name="init" depends="init-full"/>
+    <target name="init-full" depends="package.readversion,init-core"/>
+    <target name="init-core">
         <echo level="info">
         java.specification.name=${java.specification.name}
         java.specification.vendor=${java.specification.vendor}
@@ -278,6 +280,19 @@
         <property name="deploy.db.name" value="ssg"/>
         <property name="deploy.db.host" value="localhost"/>
         <property name="deploy.db.port" value="3306"/>
+       
+        <condition property="echo.makerpm.enabled">
+            <isset property="makerpm.enabled"/>
+        </condition>
+        <condition property="echo.makensis.enabled">
+            <isset property="makensis.enabled"/>
+        </condition>
+        <property name="echo.makerpm.enabled" value="false" />
+        <property name="echo.makensis.enabled" value="false" />
+	<echo level="info">
+        RPM Build Enabled               = ${echo.makerpm.enabled}
+        Windows Installer Build Enabled = ${echo.makensis.enabled}
+        </echo>
 
     </target>
 
@@ -291,7 +306,7 @@
     -->
     <target name="init-dev">
         <property name="dev.build" value="true"/>
-        <property file="build.number"/>
+        <property file="build.number" prefix="install"/>
     </target>
 
     <!--
@@ -316,14 +331,14 @@
         </sequential>
     </macrodef>
 
-    <target name="build-module-list" unless="build-path.text" depends="init">
+    <target name="build-module-list" unless="build-path.text" depends="init-core">
         <ivy:buildlist reference="module-build-path" onMissingDescriptor="skip">
             <fileset dir="modules" includes="**/build.xml" excludes="${project.module.excludes}"/>
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-path" pathid="build-path.text"/>
     </target>
 
-    <target name="build-module-list-all" unless="build-all-path.text" depends="init">
+    <target name="build-module-list-all" unless="build-all-path.text" depends="init-core">
         <ivy:buildlist reference="module-build-all-path" onMissingDescriptor="skip">
             <fileset dir="modules" includes="**/build.xml"/>
         </ivy:buildlist>
@@ -420,7 +435,7 @@
                 <propertyref prefix="build.version"/>
                 <propertyref prefix="build.em.version"/>
                 <propertyref name="build.timestamp"/>
-                <propertyref name="build.number"/>
+                <propertyref name="install.build.number"/>
                 <propertyref name="build.host"/>
                 <propertyref name="build.user" />
                 <propertyref name="build.product"/>
@@ -1036,7 +1051,7 @@
     <!--
       Clean data from running tests.
     -->
-    <target name="clean.test" depends="init">
+    <target name="clean.test" depends="init-core">
         <delete>
             <fileset dir="${src.root}/modules">
                 <include name="**/build/reports/tests/*"/>
@@ -1052,7 +1067,7 @@
     <!--
       Remove any build artifacts
     -->
-    <target name="clean" depends="init,clean.test,clean-modules" description="Delete all build output.">
+    <target name="clean" depends="init-core,clean.test,clean-modules" description="Delete all build output.">
         <delete dir="${dist.dir}"/>
         <delete dir="${doc.root}"/>
         <delete dir="${build.dir}"/>
@@ -1077,7 +1092,6 @@
                 <include name="stubdata*"/>
             </fileset>
         </delete>
-        <delete file="${src.root}/src/com/l7tech/util/Version.java"/>
         <delete file="${src.root}/tools/com/l7tech/tools/JarChecker.class"/>
         <property name="buildinfo.update" value="true"/>
     </target>
@@ -1173,7 +1187,7 @@
     <!--
       Generate a version string if not supplied
     -->
-    <target name="package.readversion" depends="package.readlocal,package.readversion.securespan, package.readversion.em" unless="skip.version.report">
+    <target name="package.readversion" depends="package.readlocal,package.readversion.securespan, package.readversion.em">
         <echo level="info">Build is using SS version: "${build.version}" [${build.rpmversion}-${build.version.revision}]</echo>
         <echo level="info">Build is using EM version: "${build.em.version}" [${build.em.rpmversion}-${build.em.version.revision}]</echo>
     </target>
@@ -1266,7 +1280,7 @@
     <!--
       Clean development deploy of SSG
     -->
-    <target name="cleandeploy" description="Delete deployed libraries/modules" depends="init">
+    <target name="cleandeploy" description="Delete deployed libraries/modules" depends="init-core">
         <echo level="info">Deleting web libraries</echo>
         <delete dir="${deploy.dir}/web/ssg/webadmin/applet"/>
 
@@ -2331,13 +2345,14 @@
         <mkdir dir="${javadoc.home}"/>
 
         <!-- set up build properties -->
-        <property file="build.number"/>
+        <property file="build.number" prefix="install"/>
         <property name="build.host" value="${hostname}"/>
         <property name="build.user" value="${user.name}"/>
         <property name="build.product" value="Layer 7 SecureSpan Suite"/>
         <property name="build.vendor" value="Layer 7 Technologies"/>
         <property name="build.vendor.id" value="com.l7tech"/>
         <echoproperties destfile="${build.etc}/filter.properties" prefix="build"/>
+        <echoproperties destfile="${build.etc}/filter.properties" prefix="install"/>
     </target>
 
     <!--
@@ -2458,6 +2473,7 @@
         <property name="ssg.install.enabled" value="true"/>
         <property name="ssg.install.official" value="true"/>
         <property name="makerpm" value="true"/>
+        <property name="makensis" value="true"/>
         <property name="module.obfuscate" value="true"/>
         <property name="module.official.build" value="true"/>        
         <property name="pack200" value="true"/>
@@ -2469,7 +2485,6 @@
     <target name="INTERNAL-ssg-install-init-pre" if="ssg.install.enabled" depends="prepare.base">
         <fail unless="makerpm.available">RPM packaging is not available, cannot perform official build.</fail>
 
-        <property name="install.build.number" value="${build.number}"/>
         <echo level="info" message="Using build number ${install.build.number}"/>
     </target>
 
@@ -2828,11 +2843,10 @@
     <!--
       Initialization for the pre-official build (set versions, etc)
     -->
-    <target name="OFFICIAL-build.init.pre">
-        <property name="skip.version.report" value="true"/>
+    <target name="OFFICIAL-build.init.pre" depends="ssg-install-full-init">
         <delete file="local.build.version"/>
     </target>
-    <target name="OFFICIAL-build.interactive" depends="init" unless="build.label">
+    <target name="OFFICIAL-build.interactive" depends="init-core" unless="build.label">
         <input message="This will increment the OFFICIAL build count in CVS.  Are you sure you want to do this?"
                validargs="Y,y,N,n" addproperty="sure"/>
 
@@ -2849,23 +2863,32 @@
         <input message="Enter SecureSpan version number" addproperty="official.build.version"/>
         <input message="Enter EM version number" addproperty="official.build.em.version"/>
     </target>
-    <target name="OFFICIAL-build.init" depends="OFFICIAL-build.init.pre,init,OFFICIAL-build.interactive">
+    <target name="OFFICIAL-build.init" depends="OFFICIAL-build.init.pre,init-core,OFFICIAL-build.interactive">
         <condition property="rightdir">
             <equals arg1="${user.dir}" arg2="${src.root}"/>
         </condition>
         <fail unless="rightdir" message="You must run this target from the ${src.root} directory!"/>
 
         <echo level="info">Running svn switch for build.number (to trunk/HEAD)</echo>
-        <svn>
+        <!--<svn>
             <switch path="build.number" recurse="false" url="svn+ssh://sarek/home/svnuser/UneasyRooster/trunk/build.number"/>
-        </svn>
+        </svn>-->
 
         <buildnumber/>
+        <property file="build.number" prefix="install"/>
 
         <!-- Set using provided label, only does something if not in "interactive" mode -->
+        <property file="build.version" prefix="file"/>
         <property name="build.label" value=""/>
-        <property name="official.build.version" value="${build.version}${build.label}"/>
-        <property name="official.build.em.version" value="${build.em.version}${build.label}"/>
+
+        <condition property="official.build.version" value="${file.build.version.major}.${file.build.version.minor}${build.label}">
+            <equals arg1="0" arg2="${file.build.version.subminor}"/>
+        </condition>
+        <property name="official.build.version" value="${file.build.version.major}.${file.build.version.minor}.${file.build.version.subminor}${build.label}"/>
+        <condition property="build.em.version" value="${file.build.em.version.major}.${file.build.em.version.minor}${build.label}">
+            <equals arg1="0" arg2="${file.build.em.version.subminor}"/>
+        </condition>
+        <property name="official.build.em.version" value="${file.build.em.version.major}.${file.build.em.version.minor}.${file.build.em.version.subminor}${build.label}"/>
         <echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.em.version=${official.build.em.version}${line.separator}</echo>
     </target>
 
@@ -2875,10 +2898,10 @@
     <target name="OFFICIAL-build"
             description="Set the official buildnumber and product version."
             depends="OFFICIAL-build.init, clean">
-        <echo level="info">commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number</echo>
-        <svn>
+        <echo level="info">commit -m '[OFFICIAL-build] Incremented build number to ${install.build.number}' build.number</echo>
+        <!-- <svn>
             <commit file="build.number" recurse="false" message="[OFFICIAL-build] Incremented build number to ${build.number}"/>
-        </svn>
+        </svn> -->
     </target>
 
     <!--
