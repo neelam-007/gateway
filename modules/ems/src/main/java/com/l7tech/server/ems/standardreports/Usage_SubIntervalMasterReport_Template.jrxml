@@ -2,7 +2,7 @@
 <!-- Created with iReport - A designer for JasperReports -->
 <!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="Usage_SubIntervalMasterReport"
+		 name="Usage_SubIntervalMasterReport_Template"
 		 columnCount="1"
 		 printOrder="Vertical"
 		 orientation="Portrait"
@@ -51,6 +51,7 @@
 	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
 	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
 
 	<field name="INTERVAL_START" class="java.lang.Long"/>
 	<field name="INTERVAL_END" class="java.lang.Long"/>
@@ -74,13 +75,13 @@
 			</band>
 		</columnHeader>
 		<detail>
-			<band height="19"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="true" >
 				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="DefaultText"
 						x="5"
 						y="0"
-						width="113"
+						width="112"
 						height="18"
 						key="textField"
 						isPrintWhenDetailOverflows="true"/>
@@ -97,8 +98,8 @@
 				<subreport  isUsingCache="false">
 					<reportElement
 						style="DefaultText"
-						x="118"
-						y="1"
+						x="117"
+						y="0"
 						width="417"
 						height="18"
 						key="subreport-1"/>
@@ -146,7 +147,7 @@
 					</subreportParameter>
 					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 					<returnValue subreportVariable="TOTAL" toVariable="TOTAL" calculation="Sum"/>
-					<subreportExpression  class="java.lang.String"><![CDATA[$P{SUBREPORT_DIRECTORY}+"/Usage_SubIntervalMasterReport_subreport0.jasper"]]></subreportExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{SUB_REPORT}]]></subreportExpression>
 				</subreport>
 			</band>
 		</detail>

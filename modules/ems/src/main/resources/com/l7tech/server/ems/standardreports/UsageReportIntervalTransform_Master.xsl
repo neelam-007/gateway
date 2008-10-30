@@ -76,12 +76,27 @@
         </xsl:for-each>
     </xsl:template>
 
-    <xsl:template match="/jasperReport/group[@name='SERVICE']/groupHeader/band/frame">
+    <xsl:template match="/jasperReport/group[@name='SERVICE']/groupHeader/band/frame[2]">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             <xsl:text>
             </xsl:text>
             <xsl:for-each select="$RuntimeDoc/JasperRuntimeTransformation/serviceHeader/textField">
+                <xsl:element name="textField">
+                    <xsl:apply-templates select="node()|@*"/>
+                </xsl:element>
+                <xsl:text>
+                </xsl:text>
+            </xsl:for-each>
+        </xsl:copy>
+    </xsl:template>
+
+    <xsl:template match="/jasperReport/group[@name='SERVICE']/groupFooter/band/frame">
+        <xsl:copy>
+            <xsl:apply-templates select="node()|@*"/>
+            <xsl:text>
+            </xsl:text>
+            <xsl:for-each select="$RuntimeDoc/JasperRuntimeTransformation/serviceIdFooter/textField">
                 <xsl:element name="textField">
                     <xsl:apply-templates select="node()|@*"/>
                 </xsl:element>

@@ -66,7 +66,7 @@
 
 	<target name="fill" description="Fills the compiled report design with data and produces the .jrprint file.">
         <copy file="../../../../../../../ems/src/main/resources/com/l7tech/server/ems/standardreports/Styles.jrtx" todir="."/>
-        <java classname="${class.name}">
+        <java classname="${class.name}" fork="true">
 			<arg value="fill"/>
 			<classpath refid="classpath"/>
 		</java>

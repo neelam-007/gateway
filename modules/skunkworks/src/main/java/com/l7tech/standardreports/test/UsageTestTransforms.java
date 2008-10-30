@@ -274,4 +274,186 @@ public class UsageTestTransforms{
 
     }
 
+    @Test
+    public void testUsageSubIntervalTransform_Master() throws Exception {
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
+
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+//        mappingValues.add("127.0.0.1");
+//        mappingValues.add("127.0.0.2");
+        mappingValues.add("127.0.0.1Bronze");
+        mappingValues.add("127.0.0.1Gold");
+        mappingValues.add("127.0.0.1Silver");
+        mappingValues.add("127.0.0.2Bronze");
+        mappingValues.add("127.0.0.2Gold");
+        mappingValues.add("127.0.0.2Silver");
+        mappingValues.add("127.0.0.1Bronze1");
+        mappingValues.add("127.0.0.1Gold1");
+        mappingValues.add("127.0.0.1Silver1");
+        mappingValues.add("127.0.0.2Bronze1");
+        mappingValues.add("127.0.0.2Gold1");
+        mappingValues.add("127.0.0.2Silver1");
+
+        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportSubIntervalTransform_Master.xsl");
+        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
+
+        Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", transformDoc);
+        params.put("PageMinWidth", 535);
+
+        Document jasperDoc = transform(xslStr, xmlSrc, params);
+
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/SubMasterTransformJasper.jrxml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
+        }finally{
+            fos.close();
+        }
+
+        XmlUtil.format(transformDoc, true);
+        f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/SubMasterTransformDoc.xml");
+        f.createNewFile();
+        fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
+        }finally{
+            fos.close();
+        }
+    }
+
+    @Test
+    public void testUsageSubIntervalMaster_CompileToJasper() throws Exception {
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
+
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+        mappingValues.add("127.0.0.1Bronze");
+        mappingValues.add("127.0.0.1Gold");
+        mappingValues.add("127.0.0.1Silver");
+        mappingValues.add("127.0.0.2Bronze");
+        mappingValues.add("127.0.0.2Gold");
+        mappingValues.add("127.0.0.2Silver");
+        mappingValues.add("127.0.0.1Bronze1");
+        mappingValues.add("127.0.0.1Gold1");
+        mappingValues.add("127.0.0.1Silver1");
+        mappingValues.add("127.0.0.2Bronze1");
+        mappingValues.add("127.0.0.2Gold1");
+        mappingValues.add("127.0.0.2Silver1");
+
+        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportSubIntervalTransform_Master.xsl");
+        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
+
+        Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", transformDoc);
+        params.put("PageMinWidth", 535);
+
+        Document jasperDoc = transform(xslStr, xmlSrc, params);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(jasperDoc, baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+        JasperReport report = JasperCompileManager.compileReport(bais);
+        Assert.assertTrue(report != null);
+
+    }
+
+    @Test
+    public void testUsageSubReport() throws Exception {
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+//        keys.add("CUSTOMER");
+
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+        mappingValues.add("127.0.0.1");
+        mappingValues.add("127.0.0.2");
+//        mappingValues.add("127.0.0.1Bronze");
+//        mappingValues.add("127.0.0.1Gold");
+//        mappingValues.add("127.0.0.1Silver");
+//        mappingValues.add("127.0.0.2Bronze");
+//        mappingValues.add("127.0.0.2Gold");
+//        mappingValues.add("127.0.0.2Silver");
+//        mappingValues.add("127.0.0.1Bronze1");
+//        mappingValues.add("127.0.0.1Gold1");
+//        mappingValues.add("127.0.0.1Silver1");
+//        mappingValues.add("127.0.0.2Bronze1");
+//        mappingValues.add("127.0.0.2Gold1");
+//        mappingValues.add("127.0.0.2Silver1");
+
+        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
+        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+
+        Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(false, keys, mappingValues);
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", transformDoc);
+        params.put("PageMinWidth", 535);
+
+        Document jasperDoc = transform(xslStr, xmlSrc, params);
+
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/SubReportTransformJasper.jrxml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
+        }finally{
+            fos.close();
+        }
+
+        XmlUtil.format(transformDoc, true);
+        f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/SubReportTransformDoc.xml");
+        f.createNewFile();
+        fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
+        }finally{
+            fos.close();
+        }
+    }
+
+    @Test
+    public void testUsageSubReport_CompileToJasper() throws Exception {
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
+
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+        mappingValues.add("127.0.0.1Bronze");
+        mappingValues.add("127.0.0.1Gold");
+        mappingValues.add("127.0.0.1Silver");
+        mappingValues.add("127.0.0.2Bronze");
+        mappingValues.add("127.0.0.2Gold");
+        mappingValues.add("127.0.0.2Silver");
+        mappingValues.add("127.0.0.1Bronze1");
+        mappingValues.add("127.0.0.1Gold1");
+        mappingValues.add("127.0.0.1Silver1");
+        mappingValues.add("127.0.0.2Bronze1");
+        mappingValues.add("127.0.0.2Gold1");
+        mappingValues.add("127.0.0.2Silver1");
+
+        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
+        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+
+        Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(false, keys, mappingValues);
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", transformDoc);
+        params.put("PageMinWidth", 535);
+
+        Document jasperDoc = transform(xslStr, xmlSrc, params);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(jasperDoc, baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+        JasperReport report = JasperCompileManager.compileReport(bais);
+        Assert.assertTrue(report != null);
+
+    }
+
 }

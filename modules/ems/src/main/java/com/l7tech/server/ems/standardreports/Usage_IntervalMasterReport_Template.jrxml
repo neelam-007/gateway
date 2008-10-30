@@ -66,6 +66,10 @@
 	<parameter name="AUTHENTICATED_USERS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="SUB_INTERVAL_SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
+	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport">
+		<parameterDescription><![CDATA[Subreport, for the 3rd level report. Not used directly by this report, but passes to its subreport]]></parameterDescription>
+	</parameter>
 	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
@@ -188,7 +192,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
-			<band height="18"  isSplitAllowed="true" >
+			<band height="36"  isSplitAllowed="true" >
 				<frame>					<reportElement
 						style="TableCell"
 						mode="Opaque"
@@ -196,17 +200,32 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						y="0"
 						width="534"
 						height="18"
-						backcolor="#D6D6D6"
 						key="frame-16"/>
 					<box>					<topPen lineWidth="1.0" lineStyle="Solid"/>
 					<leftPen lineWidth="1.0" lineStyle="Solid"/>
 					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
 					<rightPen lineWidth="1.0" lineStyle="Solid"/>
 </box>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="5"
+						height="18"
+						key="textField-195"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[""]]></textFieldExpression>
+				</textField>
 				<staticText>
 					<reportElement
-						style="TableCell"
-						x="4"
+						style="TotalCell"
+						mode="Opaque"
+						x="5"
 						y="0"
 						width="112"
 						height="18"
@@ -242,7 +261,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						x="5"
 						y="0"
 						width="529"
-						height="17"
+						height="18"
 						key="textField-154"/>
 					<box></box>
 					<textElement>
@@ -264,17 +283,32 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						y="0"
 						width="534"
 						height="18"
-						backcolor="#D6D6D6"
 						key="frame-19"/>
 					<box>					<topPen lineWidth="1.0" lineStyle="Solid"/>
 					<leftPen lineWidth="1.0" lineStyle="Solid"/>
 					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
 					<rightPen lineWidth="1.0" lineStyle="Solid"/>
 </box>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="5"
+						height="18"
+						key="textField-196"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[""]]></textFieldExpression>
+				</textField>
 				<staticText>
 					<reportElement
-						style="TableCell"
-						x="4"
+						style="TotalCell"
+						mode="Opaque"
+						x="5"
 						y="0"
 						width="112"
 						height="18"
@@ -772,11 +806,14 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<subreportParameter  name="TEMPLATE_FILE_ABSOLUTE">
 						<subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>
 					</subreportParameter>
+					<subreportParameter  name="SUB_REPORT">
+						<subreportParameterExpression><![CDATA[$P{SUB_REPORT}]]></subreportParameterExpression>
+					</subreportParameter>
 					<dataSourceExpression><![CDATA[$V{TIME_PERIOD_DS}]]></dataSourceExpression>
 					<returnValue subreportVariable="TOTAL" toVariable="ROW_OPERATION_TOTAL" calculation="Sum"/>
 					<returnValue subreportVariable="TOTAL" toVariable="ROW_SERVICE_TOTAL" calculation="Sum"/>
 					<returnValue subreportVariable="TOTAL" toVariable="ROW_REPORT_TOTAL" calculation="Sum"/>
-					<subreportExpression  class="java.lang.String"><![CDATA[$P{SUBREPORT_DIRECTORY}+"/Usage_SubIntervalMasterReport.jasper"]]></subreportExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{SUB_INTERVAL_SUB_REPORT}]]></subreportExpression>
 				</subreport>
 				</frame>			</band>
 		</detail>
@@ -829,23 +866,38 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 		<summary>
 			<band height="18"  isSplitAllowed="true" >
 				<frame>					<reportElement
-						style="FrameTableTop"
+						style="TableCell"
 						mode="Opaque"
 						x="0"
 						y="0"
 						width="534"
 						height="18"
-						backcolor="#D6D6D6"
 						key="frame-17"/>
 					<box>					<topPen lineWidth="1.0" lineStyle="Solid"/>
 					<leftPen lineWidth="1.0" lineStyle="Solid"/>
 					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
 					<rightPen lineWidth="1.0" lineStyle="Solid"/>
 </box>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="5"
+						height="18"
+						key="textField-197"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[""]]></textFieldExpression>
+				</textField>
 				<staticText>
 					<reportElement
-						style="TableCell"
-						x="4"
+						style="TotalCell"
+						mode="Opaque"
+						x="5"
 						y="0"
 						width="112"
 						height="18"

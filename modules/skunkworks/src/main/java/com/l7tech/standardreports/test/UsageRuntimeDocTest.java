@@ -122,7 +122,62 @@ public class UsageRuntimeDocTest {
         }finally{
             fos.close();
         }
-        
     }
 
+    @Test
+    public void testGetUsageSubIntervalMasterRuntimeDoc() throws Exception{
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
+
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+        mappingValues.add("127.0.0.1Bronze");
+        mappingValues.add("127.0.0.1Gold");
+        mappingValues.add("127.0.0.1Silver");
+        mappingValues.add("127.0.0.2Bronze");
+        mappingValues.add("127.0.0.2Gold");
+        mappingValues.add("127.0.0.2Silver");
+
+        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        Assert.assertTrue(doc != null);
+
+        XmlUtil.format(doc, true);
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageSubIntervalMasterRuntimeDoc.xml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(doc, fos);
+        }finally{
+            fos.close();
+        }
+    }
+
+    @Test
+    public void testGetUsageSubReportRuntimeDoc() throws Exception{
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("CUSTOMER");
+
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+        mappingValues.add("127.0.0.1Bronze");
+        mappingValues.add("127.0.0.1Gold");
+        mappingValues.add("127.0.0.1Silver");
+        mappingValues.add("127.0.0.2Bronze");
+        mappingValues.add("127.0.0.2Gold");
+        mappingValues.add("127.0.0.2Silver");
+
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, mappingValues);
+        Assert.assertTrue(doc != null);
+
+        XmlUtil.format(doc, true);
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageSubReportRuntimeDoc.xml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(doc, fos);
+        }finally{
+            fos.close();
+        }
+    }
+    
 }

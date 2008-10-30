@@ -116,13 +116,17 @@ public class Utilities {
     private static final int LEFT_MARGIN_WIDTH = RIGHT_MARGIN_WIDTH;
     private static final int TOTAL_COLUMN_WIDTH = 80;
     private static final int DATA_COLUMN_WIDTH = 60;
-    private static final int MAPPING_KEY_FIELD_WIDTH = 68;
+    private static final int MAPPING_KEY_FIELD_WIDTH = 67;
     private static final int SERVICE_TITLE_WIDTH = 45;
-    private static final int DATA_ROW_STARTING_X_POS = MAPPING_KEY_FIELD_WIDTH + SERVICE_TITLE_WIDTH;
+    private static final int DATA_ROW_STARTING_X_POS = MAPPING_KEY_FIELD_WIDTH + SERVICE_TITLE_WIDTH + 5;
     private static final String SERVICE_HEADER = "serviceHeader";
     private static final String SUB_REPORT = "subReport";
     private static final String RETURN_VALUE = "returnValue";
     private static final String SUMMARY = "summary";
+    private static final String SUB_REPORT_WIDTH = "subReportWidth";
+    private static final String NO_DATA = "noData";
+    private static final int SUB_INTERVAL_STATIC_WIDTH = 118;
+    private static final int MAPPING_VALUE_FIELD_HEIGHT = 36;
 
 
     /**
@@ -1441,6 +1445,136 @@ Value is included in all or none, comment is just illustrative
         return mappingValue.replaceAll(";","").trim();
     }
 
+
+    /**
+     *
+     * @param useUser
+     * @param keys
+     * @param distinctMappingValues
+     * @return
+     */
+    public static Document getUsageSubReportRuntimeDoc(boolean useUser, List<String> keys, LinkedHashSet<String> distinctMappingValues) {
+        if((keys == null || keys.isEmpty()) && !useUser){
+            throw new IllegalArgumentException("keys must not be null or empty if useUser is not true");
+        }
+
+        if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
+            throw new IllegalArgumentException("distinctMappingValues must not be null or empty");
+        }
+
+        Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
+        int numMappingValues = distinctMappingValues.size();
+
+        Node rootNode = doc.getFirstChild();
+
+        //Create variables element
+        Element variables = doc.createElement(VARIABLES);
+        rootNode.appendChild(variables);
+
+        for(int i = 0; i < numMappingValues; i++){
+            addVariableToElement(doc, variables, "COLUMN_"+(i+1), "java.lang.Long","None", null, "Nothing", "getColumnValue", "COLUMN_"+(i+1));
+        }
+
+        Element serviceAndOperationFooterElement = doc.createElement(SERVICE_AND_OPERATION_FOOTER);
+        rootNode.appendChild(serviceAndOperationFooterElement);
+
+        int xPos = 0;
+        int yPos = 0;
+        
+        for(int i = 0; i < numMappingValues; i++){
+            addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
+                    "textField-ServiceOperationFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_"+(i+1)+"}",
+                    TABLE_CELL_STYLE, false);
+            xPos += DATA_COLUMN_WIDTH;
+        }
+
+        addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+                "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{TOTAL}",
+                TOTAL_CELL_STYLE, true);
+
+        Element noDataElement = doc.createElement(NO_DATA);
+        rootNode.appendChild(noDataElement);
+
+        xPos = 0;
+
+        for(int i = 0; i < numMappingValues; i++){
+            addStaticTextToElement(doc, noDataElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
+                    "noDataStaticText-"+(i+1), "NA", TABLE_CELL_STYLE, false);
+            xPos += DATA_COLUMN_WIDTH;
+        }
+
+        addStaticTextToElement(doc, noDataElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+                "noDataStaticText-Total", "NA", TOTAL_CELL_STYLE, true);
+        xPos += TOTAL_COLUMN_WIDTH;
+
+        //frame width is the same as page width for the subreport
+        Element pageWidth = doc.createElement(PAGE_WIDTH);
+        rootNode.appendChild(pageWidth);
+        pageWidth.setTextContent(String.valueOf(xPos));
+
+        return doc;
+    }
+
+    /**
+     *
+     * @param useUser
+     * @param keys
+     * @param distinctMappingValues
+     * @return
+     */
+    public static Document getUsageSubIntervalMasterRuntimeDoc(boolean useUser, List<String> keys, LinkedHashSet<String> distinctMappingValues) {
+        if((keys == null || keys.isEmpty()) && !useUser){
+            throw new IllegalArgumentException("keys must not be null or empty if useUser is not true");
+        }
+
+        if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
+            throw new IllegalArgumentException("distinctMappingValues must not be null or empty");
+        }
+
+        Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
+        int numMappingValues = distinctMappingValues.size();
+
+        Node rootNode = doc.getFirstChild();
+
+        //Create variables element
+        Element variables = doc.createElement(VARIABLES);
+        rootNode.appendChild(variables);
+
+        //Create the COLUMN_X variables first
+        for(int i = 0; i < numMappingValues; i++){
+            //<variable name="COLUMN_1" class="java.lang.Long" resetType="Report" calculation="Sum">
+            addVariableToElement(doc, variables, "COLUMN_"+(i+1), "java.lang.Long", "Report", null, "Sum");
+        }
+
+        //Subreport return values
+        //<returnValue subreportVariable="COLUMN_1" toVariable="COLUMN_1" calculation="Sum"/>
+        Element subReport = doc.createElement(SUB_REPORT);
+        rootNode.appendChild(subReport);
+
+        for(int i = 0; i < numMappingValues; i++){
+            //<returnValue subreportVariable="COLUMN_1" toVariable="COLUMN_1" calculation="Sum"/>
+            addSubReportReturnVariable(doc, subReport, "COLUMN_"+(i+1), "COLUMN_"+(i+1), "Sum");            
+        }
+
+        //determine how wide the sub report should be
+        int subReportWidth = 0;
+        for(int i = 0; i < numMappingValues; i++){
+            subReportWidth += DATA_COLUMN_WIDTH;
+        }
+        subReportWidth += TOTAL_COLUMN_WIDTH;
+
+        Element subReportWidthElement = doc.createElement(SUB_REPORT_WIDTH);
+        rootNode.appendChild(subReportWidthElement);
+        subReportWidthElement.setTextContent(String.valueOf(subReportWidth));
+
+        int pageWidth = subReportWidth + SUB_INTERVAL_STATIC_WIDTH;
+        Element pageWidthElement = doc.createElement(PAGE_WIDTH);
+        rootNode.appendChild(pageWidthElement);
+        pageWidthElement.setTextContent(String.valueOf(pageWidth));
+
+        return doc;
+    }
+
     /**
      * Create a document, given the input properties, which will be used to transform the
      * template usgae report.
@@ -1453,8 +1587,8 @@ Value is included in all or none, comment is just illustrative
      * @return the Document returned is not formatted
      */
     public static Document getUsageIntervalMasterRuntimeDoc(boolean useUser, List<String> keys, LinkedHashSet<String> distinctMappingValues) {
-        if(keys == null || keys.isEmpty()){
-            throw new IllegalArgumentException("keys must not be null or empty");
+        if((keys == null || keys.isEmpty()) && !useUser){
+            throw new IllegalArgumentException("keys must not be null or empty if useUser is not true");
         }
 
         if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
@@ -1489,14 +1623,25 @@ Value is included in all or none, comment is just illustrative
         Element serviceHeader = doc.createElement(SERVICE_HEADER);
         rootNode.appendChild(serviceHeader);
 
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        if(useUser){
+            sb.append("Auth User");
+            first = false;
+        }
+
+        for(String s: keys){
+            if(!first){
+                sb.append("<br>");
+            }
+            first = false;            
+            sb.append(s);
+        }
+
         int xPos = 50;
         int yPos = 0;
-        StringBuilder sb = new StringBuilder();
-        if(useUser) sb.append("Auth User<br>");
-        for(String s: keys){
-            sb.append(s).append("<br>");
-        }
-        addTextFieldToElement(doc, serviceHeader, xPos, yPos, MAPPING_KEY_FIELD_WIDTH, FIELD_HEIGHT,
+        
+        addTextFieldToElement(doc, serviceHeader, xPos, yPos, MAPPING_KEY_FIELD_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
                 "textField-serviceHeader-MappingKeys", "java.lang.String", sb.toString(), TABLE_CELL_STYLE, false);
         xPos += MAPPING_KEY_FIELD_WIDTH;
         
@@ -1505,13 +1650,13 @@ Value is included in all or none, comment is just illustrative
 
         //add a text field for each column
         for(int i = 0; i < numMappingValues; i++){
-            addTextFieldToElement(doc, serviceHeader, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
+            addTextFieldToElement(doc, serviceHeader, xPos, yPos, DATA_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
                     "textField-serviceHeader-"+(i+1), "java.lang.String", listMappingValues.get(i), TABLE_CELL_STYLE,
                     false);
             xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceHeader, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+        addTextFieldToElement(doc, serviceHeader, xPos, yPos, TOTAL_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
                 "textField-serviceHeader-ServiceTotals", "java.lang.String", "Service Totals", TABLE_CELL_STYLE,
                 false);
 
@@ -1548,11 +1693,12 @@ Value is included in all or none, comment is just illustrative
         //SERVICE_OPERATION footer
         Element serviceAndOperationFooterElement = doc.createElement(SERVICE_AND_OPERATION_FOOTER);
         rootNode.appendChild(serviceAndOperationFooterElement);
+        //todo [Donal] this is out by 5, 113 instead of 118, affects summary and master transforms, fix when reports completed
         xPos = DATA_ROW_STARTING_X_POS;
         for(int i = 0; i < numMappingValues; i++){
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_OPERATION_"+(i+1)+"}",
-                    TABLE_CELL_STYLE, false);
+                    TOTAL_CELL_STYLE, true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
@@ -1617,9 +1763,8 @@ Value is included in all or none, comment is just illustrative
      * @return the Document returned is not formatted
      */
     public static Document getUsageRuntimeDoc(boolean useUser, List<String> keys, LinkedHashSet<String> distinctMappingValues) {
-
-        if(keys == null || keys.isEmpty()){
-            throw new IllegalArgumentException("keys must not be null or empty");
+        if((keys == null || keys.isEmpty()) && !useUser){
+            throw new IllegalArgumentException("keys must not be null or empty if useUser is not true");
         }
 
         if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
@@ -1662,13 +1807,12 @@ Value is included in all or none, comment is just illustrative
         //should always work out to the be the same width. If they are wider, the report will not compile
         int xPos = SERVICE_TITLE_WIDTH;
         int yPos = 0;
-        int textFieldHeight = 36;
         StringBuilder sb = new StringBuilder();
         if(useUser) sb.append("Auth User<br>");
         for(String s: keys){
             sb.append(s).append("<br>");            
         }
-        addTextFieldToElement(doc, constantHeader, xPos, yPos, MAPPING_KEY_FIELD_WIDTH, textFieldHeight,
+        addTextFieldToElement(doc, constantHeader, xPos, yPos, MAPPING_KEY_FIELD_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
                 "textField-constantHeader-MappingKeys", "java.lang.String", sb.toString(), TABLE_CELL_STYLE, false);
         xPos += MAPPING_KEY_FIELD_WIDTH;
         
@@ -1677,14 +1821,14 @@ Value is included in all or none, comment is just illustrative
 
         //add a text field for each column
         for(int i = 0; i < numMappingValues; i++){
-            addTextFieldToElement(doc, constantHeader, xPos, yPos, DATA_COLUMN_WIDTH, textFieldHeight,
+            addTextFieldToElement(doc, constantHeader, xPos, yPos, DATA_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
                     "textField-constantHeader-"+(i+1), "java.lang.String", listMappingValues.get(i), TABLE_CELL_STYLE,
                     false);
             xPos += DATA_COLUMN_WIDTH;
         }
         //move x pos along for width of a column
 
-        addTextFieldToElement(doc, constantHeader, xPos, yPos, TOTAL_COLUMN_WIDTH, textFieldHeight,
+        addTextFieldToElement(doc, constantHeader, xPos, yPos, TOTAL_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
                 "textField-constantHeader-ServiceTotals", "java.lang.String", "Service Totals", TABLE_CELL_STYLE,
                 false);
 
@@ -1703,15 +1847,14 @@ Value is included in all or none, comment is just illustrative
         Element serviceAndOperationFooterElement = doc.createElement(SERVICE_AND_OPERATION_FOOTER);
         rootNode.appendChild(serviceAndOperationFooterElement);
         xPos = DATA_ROW_STARTING_X_POS;
-        textFieldHeight = FIELD_HEIGHT;
         for(int i = 0; i < numMappingValues; i++){
-            addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, textFieldHeight,
+            addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_"+(i+1)+"}",
                     TABLE_CELL_STYLE, false);
             xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, textFieldHeight,
+        addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{SERVICE_AND_OR_OPERATION_TOTAL}",
                 TOTAL_CELL_STYLE, true);
 
@@ -1721,13 +1864,13 @@ Value is included in all or none, comment is just illustrative
 
         xPos = DATA_ROW_STARTING_X_POS;
         for(int i = 0; i < numMappingValues; i++){
-            addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, textFieldHeight,
+            addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-ServiceIdFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_SERVICE_TOTAL_"+(i+1)+"}",
                     TOTAL_CELL_STYLE, true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, textFieldHeight,
+        addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
                 "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{SERVICE_ONLY_TOTAL}", TOTAL_CELL_STYLE, true);
 
         //constantFooter
@@ -1736,13 +1879,13 @@ Value is included in all or none, comment is just illustrative
 
         xPos = DATA_ROW_STARTING_X_POS;
         for(int i = 0; i < numMappingValues; i++){
-            addTextFieldToElement(doc, constantFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, textFieldHeight,
+            addTextFieldToElement(doc, constantFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-constantFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_MAPPING_TOTAL_"+(i+1)+"}",
                     TOTAL_CELL_STYLE, true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, constantFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, textFieldHeight,
+        addTextFieldToElement(doc, constantFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
                 "textField-constantFooterTotal", "java.lang.Long", "$V{GRAND_TOTAL}", TOTAL_CELL_STYLE, true);
 
 
@@ -1764,10 +1907,32 @@ Value is included in all or none, comment is just illustrative
     public static String getMappingValueString(String authUser, String [] mappingValues){
         StringBuilder sb = new StringBuilder();
 
-        if(!authUser.equals(Utilities.SQL_PLACE_HOLDER)) sb.append(authUser).append("<br>");
+//        boolean first = true;
+//        if(useUser){
+//            sb.append("Auth User");
+//            first = false;
+//        }
+//
+//        for(String s: keys){
+//            if(!first){
+//                sb.append("<br>");
+//                first = false;
+//            }
+//            sb.append(s);
+//        }
+
+        boolean first = true;
+        if(!authUser.equals(Utilities.SQL_PLACE_HOLDER)){
+            sb.append(authUser);
+            first = false;
+        }
 
         for(String s: mappingValues){
-            if(!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append(s).append("<br>");
+            if(!first){
+                if(!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append("<br>");
+            }
+            first = false;
+            if(!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append(s);
         }
 
         return sb.toString();
@@ -1833,7 +1998,7 @@ Value is included in all or none, comment is just illustrative
         Element textFieldExpressionElement = doc.createElement("textFieldExpression");
         textFieldExpressionElement.setAttribute("class",textFieldExpressionClass);
 
-        CDATASection cDataSection = null;
+        CDATASection cDataSection;
         if(textFieldExpressionClass.equals("java.lang.String")){
             cDataSection = doc.createCDATASection("\""+markedUpCData+"\"");
         }else{
@@ -1845,6 +2010,63 @@ Value is included in all or none, comment is just illustrative
 
         frameElement.appendChild(textField);
     }
+
+
+    /**
+     *         <staticText>
+            <reportElement
+                x="0"
+                y="0"
+                width="50"
+                height="17"
+                key="staticText-1"/>
+            <box></box>
+            <textElement>
+                <font/>
+            </textElement>
+        <text><![CDATA[NA]]></text>
+        </staticText>
+
+     * @param doc
+     * @param frameElement
+     * @param x
+     * @param y
+     * @param width
+     * @param height
+     * @param key
+     * @param markedUpCData
+     * @param style
+     */
+    private static void addStaticTextToElement(Document doc, Element frameElement, int x, int y, int width, int height,
+                                              String key, String markedUpCData, String style, boolean opaque){
+        Element staticText = doc.createElement("staticText");
+
+        Element reportElement = doc.createElement("reportElement");
+        reportElement.setAttribute("x", String.valueOf(x));
+        reportElement.setAttribute("y",String.valueOf(y));
+        reportElement.setAttribute("width",String.valueOf(width));
+        reportElement.setAttribute("height",String.valueOf(height));
+        reportElement.setAttribute("key",key);
+        reportElement.setAttribute("style", style);
+        if(opaque) reportElement.setAttribute("mode", "Opaque");
+        staticText.appendChild(reportElement);
+
+        Element boxElement = doc.createElement("box");
+        staticText.appendChild(boxElement);
+
+        Element textElement = doc.createElement("textElement");
+        textElement.setAttribute("markup","html");
+        Element fontElement = doc.createElement("font");
+        textElement.appendChild(fontElement);
+        staticText.appendChild(textElement);
+
+        Element text = doc.createElement("text");
+        CDATASection cDataSection = doc.createCDATASection(markedUpCData);
+        text.appendChild(cDataSection);
+        staticText.appendChild(text);
+        frameElement.appendChild(staticText);
+    }
+
 
     /**
      *
@@ -1872,7 +2094,7 @@ Value is included in all or none, comment is just illustrative
         newVariable.setAttribute("name", varName);
         newVariable.setAttribute("class", varClass);
         newVariable.setAttribute("resetType", resetType);
-        newVariable.setAttribute("resetGroup", resetGroup);
+        if(resetGroup != null && !resetGroup.equals("")) newVariable.setAttribute("resetGroup", resetGroup);
         newVariable.setAttribute("calculation", calc);
 
         Element variableExpression = doc.createElement("variableExpression");
