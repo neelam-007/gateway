@@ -6,6 +6,7 @@ package com.l7tech.external.assertions.esm.server;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.external.assertions.esm.EsmMetricsAssertion;
 import com.l7tech.external.assertions.esm.EsmSubscriptionAssertion;
+import com.l7tech.external.assertions.esm.EsmConstants;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.policy.assertion.Assertion;
@@ -156,7 +157,7 @@ public class EsmModuleApplicationListener implements ApplicationListener {
             throw new RuntimeException("Could not serialize the default policy for ESM subscription notifications.", e1);
         }
 
-        esmNotifyPolicyTags.put(Subscription.POLICY_TAG_ESM_NOTIFICATION, polXml);
+        esmNotifyPolicyTags.put(EsmConstants.POLICY_TAG_ESM_NOTIFICATION, polXml);
         subscriptionsTemplate = createServiceTemplate(ESM_SUBSCRIPTION_SERVICE_NAME, ESM_SUBSCRIPTION_SERVICE_ROOT_WSDL, ESM_SUBSCRIPTION_SERVICE_URI_PREFIX, esmNotifyPolicyTags);
 
         registerServices();

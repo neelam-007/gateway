@@ -21,7 +21,7 @@ import javax.persistence.Version;
 @Entity
 @Table(name="wsdm_subscription")
 public class Subscription extends PersistentEntityImp {
-    public static final String POLICY_TAG_ESM_NOTIFICATION = "esm-notification";
+    //public static final String POLICY_TAG_ESM_NOTIFICATION = "esm-notification";
     public static final int TOPIC_METRICS_CAPABILITY = 1;
     public static final int TOPIC_OPERATIONAL_STATUS = 2;
     public static final String NS = "http://www.layer7tech.com/ns/wsdm/subscription";

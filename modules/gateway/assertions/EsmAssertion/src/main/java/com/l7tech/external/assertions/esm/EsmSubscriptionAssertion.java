@@ -6,8 +6,6 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME;
 import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.server.wsdm.Namespaces;
-import com.l7tech.server.wsdm.subscription.SubscriptionNotifier;
 import com.l7tech.wsdl.Wsdl;
 
 import java.util.HashMap;
@@ -17,7 +15,8 @@ import java.util.logging.Logger;
 public class EsmSubscriptionAssertion extends Assertion implements UsesVariables, PolicyReference {
     protected static final Logger logger = Logger.getLogger(EsmSubscriptionAssertion.class.getName());
     private String notificationPolicyGuid;
-    private transient Policy notificationPolicy;
+    private transient Policy notificationPolicy;    
+    private static final String ESMSM = "http://metadata.dod.mil/mdr/ns/netops/esm/esmsm";
 
     public String[] getVariablesUsed() {
         return new String[0]; //Syntax.getReferencedNames(...);
@@ -64,18 +63,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
             return meta;
 
         // Cluster properties used by this assertion
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, new HashMap<String, String[]>() {{
-            put(SubscriptionNotifier.CLUSTER_PROP_ESM_ENABLED, new String[] {
-                "Enable ESM subscription notifications (true/false)",
-                "true"
-            });
-
-            put(SubscriptionNotifier.CLUSTER_PROP_NOTIFY_INTERVAL, new String[]{
-                "The interval between ESM subscription notification attempts (in milliseconds). Note " +
-                        "that this only applies to metrics notifications; status changes are sent as they occur.",
-                "60000"
-            });
-        }});
+        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, new HashMap<String, String[]>());
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "ESM Subscription");
@@ -129,7 +117,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
                                    null));
             }
             // check that the tns of the wsdl definition for the policy matches the expected ESM Subscription service
-            else if (!Namespaces.ESMSM.equals(wsdl.getTargetNamespace())) {
+            else if (!ESMSM.equals(wsdl.getTargetNamespace())) {
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
                                    path,

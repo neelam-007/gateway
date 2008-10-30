@@ -12,9 +12,9 @@ import com.l7tech.xml.soap.SoapUtil;
  * Date: Nov 5, 2007<br/>
  */
 public class Namespaces {
-    public static final String ESMSM	= "http://metadata.dod.mil/mdr/ns/netops/esm/esmsm";
+    //public static final String ESMSM	= "http://metadata.dod.mil/mdr/ns/netops/esm/esmsm";
     public static final String QOSM	    = "http://metadata.dod.mil/mdr/ns/netops/esm/qosm";
-    public static final String QOSMW	= "http://metadata.dod.mil/mdr/ns/netops/esm/qosmw";
+    //public static final String QOSMW	= "http://metadata.dod.mil/mdr/ns/netops/esm/qosmw";
     public static final String MUWS1	= "http://docs.oasis-open.org/wsdm/muws1-2.xsd";
     public static final String MUWS2	= "http://docs.oasis-open.org/wsdm/muws2-2.xsd";
     public static final String MUWS_EV	= "http://docs.oasis-open.org/wsdm/muwse2-2.xml";

@@ -10,7 +10,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_EXTERNAL_NAME;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.server.wsdm.Namespaces;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +20,7 @@ import java.util.logging.Logger;
  */
 public class EsmMetricsAssertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(EsmMetricsAssertion.class.getName());
+    private static final String QOSMW	= "http://metadata.dod.mil/mdr/ns/netops/esm/qosmw";
 
 
     public String[] getVariablesUsed() {
@@ -92,7 +92,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
                                    null));
             }
             // check that the tns of the wsdl definition for the policy matches the expected ESM QosMetrics service
-            else if (!Namespaces.QOSMW.equals(wsdl.getTargetNamespace())) {
+            else if (!QOSMW.equals(wsdl.getTargetNamespace())) {
                 // add warning
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,

@@ -3,10 +3,10 @@ package com.l7tech.external.assertions.esm.console;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.esm.EsmSubscriptionAssertion;
+import com.l7tech.external.assertions.esm.EsmConstants;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.server.wsdm.subscription.Subscription;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -85,7 +85,7 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
         try {
             Collection<PolicyHeader> allInternalHeaders = Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INTERNAL);
             for (PolicyHeader head : allInternalHeaders) {
-                if (Subscription.POLICY_TAG_ESM_NOTIFICATION.equals(head.getDescription())) {
+                if (EsmConstants.POLICY_TAG_ESM_NOTIFICATION.equals(head.getDescription())) {                    
                     notificationPolicyHeaders.add(new PolicyHeaderWrapper(head));
                 }
             }
