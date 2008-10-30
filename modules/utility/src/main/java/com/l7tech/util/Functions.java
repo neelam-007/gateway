@@ -250,9 +250,9 @@ public final class Functions {
                     //noinspection unchecked
                     return (OUT)getter.invoke(in);
                 } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("Unable to invoke method " + getter.getName() + ": " + ExceptionUtils.getMessage(e), e);
                 } catch (InvocationTargetException e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("Unable to invoke method " + getter.getName() + ": " + ExceptionUtils.getMessage(e), e);
                 }
             }
         };
