@@ -17,7 +17,9 @@ import java.io.IOException;
 import javax.swing.filechooser.FileFilter;
 
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -26,6 +28,7 @@ import com.l7tech.kerberos.Keytab;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.objectmodel.EntityType;
 
 /**
  * Dialog for displaying Kerberos configuration information.
@@ -88,11 +91,13 @@ public class KerberosDialog extends JDialog {
             }
         });
 
-        uploadKeytab.addActionListener(new ActionListener(){
-            public void actionPerformed(ActionEvent e) {
+        String label = uploadKeytab.getText();
+        uploadKeytab.setAction(new SecureAction(new AttemptedUpdateAny(EntityType.CLUSTER_PROPERTY)){
+            protected void performAction() {
                 loadKeytab();
             }
         });
+        uploadKeytab.setText(label);
 
         initData();
 
