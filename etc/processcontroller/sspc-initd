@@ -41,6 +41,22 @@ stop() {
         return $RETVAL
 }
 
+status() {
+        if [ -f "/var/run/${PID_FILE}.pid" ] ; then
+            PID=$(<"/var/run/${PID_FILE}.pid")
+            if [ ! -z "${PID}" ] && [ -d "/proc/${PID}" ] ; then
+                echo "ssg (pid $PID) is running..."
+                return 0
+            else
+                echo "ssg dead but pid file exists"
+                return 1
+            fi
+        else
+            echo "ssg is stopped"
+            return 3
+        fi
+}
+
 case "$1" in
   start)
 	start
