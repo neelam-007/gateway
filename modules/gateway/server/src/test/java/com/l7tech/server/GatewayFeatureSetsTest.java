@@ -173,7 +173,7 @@ public class GatewayFeatureSetsTest extends TestCase {
             }
         }
 
-        return servs.toArray(new String[0]);
+        return servs.toArray(new String[servs.size()]);
     }
 
     /** Makes sure that all registered services are included in ALL_SERVICES.  Dual of testAllServicesMapped. */
@@ -225,10 +225,10 @@ public class GatewayFeatureSetsTest extends TestCase {
     }
 
     public void testAllAssertionsProfiled() throws Exception {
-        Map<String, GatewayFeatureSet> allProfiles = GatewayFeatureSets.getProductProfiles();
+        final Collection<GatewayFeatureSet> allProfiles = GatewayFeatureSets.getProductProfiles().values();
         GatewayFeatureSet allProfilesSet =
                 new GatewayFeatureSet("EVERYTHING_PROFILED", "", null,
-                                                        allProfiles.values().toArray(new GatewayFeatureSet[0]));
+                        allProfiles.toArray(new GatewayFeatureSet[allProfiles.size()]));
 
         Assertion[] allAssertions = AllAssertions.SERIALIZABLE_EVERYTHING;
         for (Assertion assertion : allAssertions) {
@@ -237,7 +237,5 @@ public class GatewayFeatureSetsTest extends TestCase {
                 throw new RuntimeException("Assertion is not enabled by any root-level Product Profile: " +
                         assertion.getClass() + " (feature set name would be " + name + ")");
         }
-
-
     }
 }

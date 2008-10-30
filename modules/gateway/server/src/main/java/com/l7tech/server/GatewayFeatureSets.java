@@ -78,6 +78,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_TRUSTSTORE = "service:TrustStore"; // Ability to configure Trusted Certs
     public static final String SERVICE_KEYSTORE = "service:KeyStore"; // Ability to configure Private Keys
     public static final String SERVICE_MODULELOADER = "service:ModuleLoader"; // Ability to load jars from /ssg/modules/assertions
+    public static final String SERVICE_EMS = "service:EnterpriseManageable"; // Ability to be managed remotely by an Enterprise Manager Server
 
     public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
     public static final String UI_PUBLISH_XML_WIZARD = "ui:PublishXmlWizard";
@@ -170,8 +171,8 @@ public class GatewayFeatureSets {
         fsr("set:keyStore", "Ability to configure Private Keys",
             srv(SERVICE_KEYSTORE, "Ability to configure Private Keys"));
 
-        GatewayFeatureSet moduleLoader = srv(SERVICE_MODULELOADER, "Enables the assertion module loader",
-                "Note: This feature set IS REQUIRED in order to use optional modular assertions, as well as post-release modular assertions.");
+        GatewayFeatureSet moduleLoader = srv(SERVICE_MODULELOADER, "Enables the assertion module loader (.AAR files)",
+                "Note: This feature set IS REQUIRED in order to use bundled and optional modular assertions, as well as post-release modular assertions.");
 
         GatewayFeatureSet modularAssertions =
         fsr(SET_MODULAR_ASSERTIONS, "Ability to use post-release modular assertions",
@@ -179,6 +180,12 @@ public class GatewayFeatureSets {
               "Note: This feature set is NOT required in order to use optional modular assertions that WERE listed in GatewayFeatureSets when this " +
               "version of the SecureSpan code was built.  Enabling this implies also enabling the assertion module loader.",
             moduleLoader);
+
+        GatewayFeatureSet ems =
+        fsr("set:ems", "Enable Enterprise Manager support",
+            "Enables Gateway to be managed by an Enterprise Manager Server.",
+            srv(SERVICE_EMS, "Ability to be managed remotely by an Enterprise Manager Server",
+                "Includes the ability to view and modify Trusted EMS registrations and EMS user mappings, both in the SSM and using the bootstrap web page."));
 
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
@@ -529,6 +536,7 @@ public class GatewayFeatureSets {
             fs(ssb),
             fs(modularAssertions),
             fs(uiFw),
+            fs(ems),
             fs(experimental));
 
         fsp("set:Profile:PolicyIntegrationPoint", "SecureSpan Policy Integration Point",
