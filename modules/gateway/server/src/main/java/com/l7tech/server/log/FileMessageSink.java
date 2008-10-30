@@ -7,19 +7,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
 import java.io.IOException;
-import java.io.File;
-import java.text.MessageFormat;
+import java.io.Serializable;
+import java.io.ObjectStreamException;
 
 import com.l7tech.gateway.common.log.SinkConfiguration;
-import com.l7tech.util.ConfigurableLogFormatter;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.util.ExceptionUtils;
 
 /**
  * MessageSink that writes to a log file.
  *
  * @author Steve Jones
  */
-class FileMessageSink extends MessageSinkSupport {
+class FileMessageSink extends MessageSinkSupport implements Serializable {
 
     //- PUBLIC
 
@@ -33,7 +33,8 @@ class FileMessageSink extends MessageSinkSupport {
     FileMessageSink( final ServerConfig serverConfig,
                      final SinkConfiguration configuration ) throws ConfigurationException {
         super( configuration );
-        this.handler = buildHandler( serverConfig, configuration );
+        this.logFileConfiguration = buildLogFileConfiguration( serverConfig, configuration );
+        this.handler = buildHandler( logFileConfiguration );
     }
 
     void processMessage( final MessageCategory category, final LogRecord record ) {
@@ -44,21 +45,28 @@ class FileMessageSink extends MessageSinkSupport {
 
     private static final Logger logger = Logger.getLogger(FileMessageSink.class.getName());
 
-    private static final String DEFAULT_FILE_PATTERN_TEMPLATE = "{1}_%g_%u.log";
     private static final String PROP_FILE_LOG_PATH = "file.logPath";
-    private static final String DEFAULT_LOG_FORMAT_STANDARD = "%1$tb %1$te, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %5$d %3$s%n%2$s: %4$s%n";
-    private static final String DEFAULT_LOG_FORMAT_VERBOSE = "%1$tb %1$te, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %5$d %3$s %6$s%n%2$s: %4$s%n";
-    private static final String DEFAULT_LOG_FORMAT_RAW = "%4$s%n";
 
+    private final LogFileConfiguration logFileConfiguration;
     private final FileHandler handler;
 
     /**
      * Construct a file handler for the given config
      */
-    private FileHandler buildHandler( final ServerConfig serverConfig,
-                                      final SinkConfiguration configuration ) throws ConfigurationException {
-        FileHandler fileHandler;
+    private FileHandler buildHandler( final LogFileConfiguration logFileConfiguration ) throws ConfigurationException {
 
+        FileHandler fileHandler;
+        try {
+            fileHandler = logFileConfiguration.buildFileHandler();
+        } catch (IOException ioe) {
+            throw new ConfigurationException( "Error creating log file handler", ioe );
+        }
+
+        return fileHandler;
+    }
+
+    private LogFileConfiguration buildLogFileConfiguration( final ServerConfig serverConfig,
+                                                            final SinkConfiguration configuration ) throws ConfigurationException {
         String name = configuration.getName();
         String filelim = configuration.getProperty( SinkConfiguration.PROP_FILE_MAX_SIZE );
         String filenum = configuration.getProperty( SinkConfiguration.PROP_FILE_LOG_COUNT );
@@ -66,19 +74,17 @@ class FileMessageSink extends MessageSinkSupport {
         String format = configuration.getProperty( SinkConfiguration.PROP_FILE_FORMAT );
 
         try {
-            String filepat = getLogFilePattern( serverConfig, name, filepath );
-            int limit = parseIntWithDefault( "log file limit for " + name, filelim, 1024 );
+            String filepat = LogUtils.getLogFilePattern( serverConfig, name, filepath );
+            int limit = parseIntWithDefault( "log file limit for " + name, filelim, 1024 ) * 1024;
             int count = parseIntWithDefault( "log file count for " + name, filenum, 2 );
             boolean append = true;
+            String formatPattern = getFormatPattern(format);
+            int level = getThreshold();
 
-            fileHandler = new FileHandler( filepat, limit*1024, count, append );
-            fileHandler.setFormatter(new ConfigurableLogFormatter(getFormatPattern(format)));
-            fileHandler.setLevel(Level.ALL); // since we check the level before passing on
-        } catch (IOException ioe) {
-            throw new ConfigurationException( "Error creating log file handler", ioe );
+            return new LogFileConfiguration( filepat, limit, count, append, level, formatPattern );
+        } catch ( IOException ioe ) {
+            throw new ConfigurationException( ExceptionUtils.getMessage(ioe), ioe );
         }
-
-        return fileHandler;
     }
 
     /**
@@ -113,54 +119,19 @@ class FileMessageSink extends MessageSinkSupport {
         // use default if not set
         if ( formatPattern == null ) {
             if ( SinkConfiguration.FILE_FORMAT_RAW.equals(name) ) {
-                formatPattern = DEFAULT_LOG_FORMAT_RAW;
+                formatPattern = LogUtils.DEFAULT_LOG_FORMAT_RAW;
             } else if ( SinkConfiguration.FILE_FORMAT_VERBOSE.equals(name) ) {
-                formatPattern = DEFAULT_LOG_FORMAT_VERBOSE;
+                formatPattern = LogUtils.DEFAULT_LOG_FORMAT_VERBOSE;
             } else {
-                formatPattern = DEFAULT_LOG_FORMAT_STANDARD;
+                formatPattern = LogUtils.DEFAULT_LOG_FORMAT_STANDARD;
             }
         }
 
         return formatPattern;
     }
 
-    /**
-     * Construct a log file path pattern for JUL file handler
-     */
-    private String getLogFilePattern( final ServerConfig serverConfig,
-                                      final String filenamepart,
-                                      final String filepath ) throws ConfigurationException {
-        // get log directory, build from home if necessary
-        String ssgLogs = filepath != null ?
-                filepath :
-                serverConfig.getPropertyCached( ServerConfig.PARAM_SSG_LOG_DIRECTORY );
-        if ( ssgLogs == null ) {
-            try {
-                File ssgHome = serverConfig.getLocalDirectoryProperty( ServerConfig.PARAM_SSG_HOME_DIRECTORY, false );
-                ssgLogs = new File(ssgHome, "var/logs").getAbsolutePath();
-            } catch (RuntimeException re) {
-                throw new ConfigurationException("Error with home directory: " + re.getMessage());
-            }
-        } else {
-            if ( !new File(ssgLogs).exists() ) {
-                throw new ConfigurationException("Log directory does not exist '" + ssgLogs + "'.");                
-            }
-        }
-
-        if ( !ssgLogs.endsWith("/") ) {
-            ssgLogs += "/";
-        }
-
-        String filePatternTemplate = serverConfig.getProperty( ServerConfig.PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE );
-        if ( filePatternTemplate == null ) {
-            filePatternTemplate = DEFAULT_FILE_PATTERN_TEMPLATE;
-        }
-
-        try {
-            return ssgLogs + MessageFormat.format( filePatternTemplate , "default_", filenamepart, "%g", "%u" );
-        } catch (IllegalArgumentException iae) {
-            throw new ConfigurationException("Invalid log file pattern '" + filePatternTemplate + "'.");
-        }
+    private Object writeReplace() throws ObjectStreamException {
+        return logFileConfiguration;
     }
 
     /**

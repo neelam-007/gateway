@@ -51,26 +51,12 @@ public class ConsoleMessageSink extends MessageSinkSupport {
     private Handler getConsoleHandler() {
         Handler consoleHandler = null;
 
-        boolean hasStartupHandler = false;
         Logger rootLogger = Logger.getLogger("");
         Handler[] rootHandlers = rootLogger.getHandlers();
         for ( Handler handler : rootHandlers ) {
-            if ( handler instanceof StartupHandler ) {
-                hasStartupHandler = true;
-                StartupHandler sh = (StartupHandler) handler;
-                if ( sh.isConsole() ) {
-                    consoleHandler = handler;
-                    break;
-                }
-            }
-        }
-
-        if ( !hasStartupHandler ) {
-            for ( Handler handler : rootHandlers ) {
-                if ( handler instanceof ConsoleHandler ) {
-                    consoleHandler = handler;
-                    break;
-                }
+            if ( handler instanceof ConsoleHandler ) {
+                consoleHandler = handler;
+                break;
             }
         }
 

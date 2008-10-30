@@ -18,6 +18,8 @@ import java.beans.PropertyChangeEvent;
 import java.io.StringReader;
 import java.io.IOException;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
 
@@ -25,6 +27,7 @@ import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.objectmodel.FindException;
@@ -184,6 +187,7 @@ public class SinkManagerImpl
         updateLogLevels(null, null);
         installLogConfigurationListener();
         installConnectionListener();
+        closeMarkedHandlers();
         rebuildLogSinks();
 
         // close all on shutdown
@@ -193,9 +197,7 @@ public class SinkManagerImpl
             }
         }));
 
-        // Log a message to both startup and regular logs
-        logger.info("Redirecting logging to configured log sinks.");
-        notifyStarted();
+        logger.info("Redirected logging to configured log sinks.");
     }
 
     // - PACKAGE
@@ -251,12 +253,14 @@ public class SinkManagerImpl
     }
 
     /**
-     * Notify any startup aware Handlers
+     * Remove any startup aware Handlers
      */
-    private void notifyStarted() {
-        for ( Handler handler : Logger.getLogger("").getHandlers() )  {
+    private void closeMarkedHandlers() {
+        Logger rootLogger = Logger.getLogger("");
+        for ( Handler handler : rootLogger.getHandlers() )  {
             if ( handler instanceof StartupAwareHandler ) {
-                ((StartupAwareHandler)handler).notifyStarted();
+                rootLogger.removeHandler( handler );
+                handler.close();
             }
         }
     }
@@ -406,12 +410,35 @@ public class SinkManagerImpl
             }
         }
 
+        stashLogFileSettings( sinks );
         addConsoleSink( sinks );
         processOldTrafficLoggerConfig( sinks );
         updateTrafficLoggingEnabledState( sinks );
 
         // install new
         dispatchingSink.setMessageSinks( sinks );
+    }
+
+    private void stashLogFileSettings( final List<MessageSink> sinks ) {
+        File varDir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
+        File logConfig = new File( varDir, LogUtils.LOG_SER_FILE );
+
+        List<MessageSink> fileSinks = new ArrayList<MessageSink>();
+        for ( MessageSink sink : sinks ) {
+            if ( sink instanceof FileMessageSink ) {
+                fileSinks.add( sink );                
+            }
+        }
+
+        ObjectOutputStream out = null;
+        try {
+            out = new ObjectOutputStream(new FileOutputStream( logConfig ));
+            out.writeObject(fileSinks);            
+        } catch ( IOException ioe ) {
+            logger.warning("Error storing log configuration '"+ ExceptionUtils.getMessage(ioe) +"'.");        
+        } finally {
+            ResourceUtils.closeQuietly(out);
+        }
     }
 
     /**

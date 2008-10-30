@@ -1,9 +1,8 @@
 package com.l7tech.server.log;
 
 /**
- * Interface that can be implemented by Handlers that wish to recieve notification
- * on server logging started. 
+ * Marker Interface that can be implemented by Handlers that wish to be de-registered when
+ * sink logs are activated.
  */
 public interface StartupAwareHandler {
-    void notifyStarted();
 }

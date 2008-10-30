@@ -45,6 +45,13 @@ abstract class MessageSinkSupport implements MessageSink {
     }
 
     /**
+     * Get the threshold for this sink
+     */
+    int getThreshold() {
+        return threshold;
+    }
+
+    /**
      * Is the given category enabled for this sink.
      *
      * @param category The category to check.
@@ -118,7 +125,7 @@ abstract class MessageSinkSupport implements MessageSink {
      * Build a set of MessageCategories for the given configuration
      */
     private Set<MessageCategory> buildCategories( final SinkConfiguration configuration ) {
-        Set<MessageCategory> categories = new HashSet();
+        Set<MessageCategory> categories = new HashSet<MessageCategory>();
 
         String categoryString = configuration.getCategories();
         if ( categoryString != null ) {
