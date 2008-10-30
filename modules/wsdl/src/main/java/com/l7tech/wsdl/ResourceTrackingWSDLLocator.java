@@ -4,6 +4,7 @@ import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SchemaUtil;
 import org.w3c.dom.DOMConfiguration;
@@ -307,7 +308,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
                 }
             }
             catch(SAXException se) {
-                throw new IOException("Error parsing XML, message is '"+se.getMessage()+"'.");
+                throw new IOException("Error parsing XML with URI " + uri + ": " + ExceptionUtils.getMessage(se), se);
             }
         }
 
