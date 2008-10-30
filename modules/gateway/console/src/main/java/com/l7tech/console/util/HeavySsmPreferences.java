@@ -114,8 +114,11 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     public void updateSystemProperties() {
-        System.getProperties().putAll(props);
+        for ( String property : Collections.list((Enumeration<String>)props.propertyNames()) ) {
+            System.setProperty( property, props.getProperty(property) );            
+        }
     }
 
     public void store() throws IOException {
