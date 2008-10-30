@@ -2,7 +2,7 @@
 <!-- Created with iReport - A designer for JasperReports -->
 <!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="Usage_IntervalMasterReport"
+		 name="Usage_IntervalMasterReport_Template"
 		 columnCount="1"
 		 printOrder="Vertical"
 		 orientation="Portrait"
@@ -139,41 +139,6 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 			<groupHeader>
 			<band height="54"  isSplitAllowed="true" >
 				<frame>					<reportElement
-						style="FrameHeaderTableRow"
-						mode="Opaque"
-						x="0"
-						y="18"
-						width="534"
-						height="36"
-						key="frame-2"/>
-					<box>					<topPen lineWidth="1.0"/>
-</box>
-				<frame>					<reportElement
-						style="FrameHeaderTableRow"
-						mode="Opaque"
-						x="0"
-						y="0"
-						width="534"
-						height="36"
-						key="frame-30"
-						stretchType="RelativeToTallestObject"/>
-					<box>					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
-</box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="5"
-						y="0"
-						width="45"
-						height="36"
-						key="textField-164"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Interval"]]></textFieldExpression>
-				</textField>
-				</frame>				</frame>				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
@@ -195,6 +160,30 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						<font isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+				</textField>
+				</frame>				<frame>					<reportElement
+						style="FrameHeaderTableRow"
+						mode="Opaque"
+						x="0"
+						y="18"
+						width="534"
+						height="36"
+						key="frame-2"/>
+					<box>					<topPen lineWidth="1.0"/>
+</box>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="5"
+						y="0"
+						width="45"
+						height="36"
+						key="textField-194"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Interval"]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -306,6 +295,28 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 		<title>
 			<band height="243"  isSplitAllowed="true" >
 				<frame>					<reportElement
+						style="FrameTableTop"
+						mode="Opaque"
+						x="0"
+						y="-1"
+						width="534"
+						height="18"
+						key="frame-6"/>
+					<box></box>
+				<staticText>
+					<reportElement
+						x="3"
+						y="1"
+						width="105"
+						height="17"
+						key="staticText-32"/>
+					<box></box>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+				<text><![CDATA[Report Information]]></text>
+				</staticText>
+				</frame>				<frame>					<reportElement
 						style="FrameTableBottomReportInfo"
 						mode="Opaque"
 						x="0"
@@ -521,8 +532,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayString
-($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())
-]]></textFieldExpression>
+($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -685,29 +695,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					</textElement>
 				<text><![CDATA[Operations:]]></text>
 				</staticText>
-				</frame>				</frame>				<frame>					<reportElement
-						style="FrameTableTop"
-						mode="Opaque"
-						x="0"
-						y="-1"
-						width="534"
-						height="18"
-						key="frame-6"/>
-					<box></box>
-				<staticText>
-					<reportElement
-						x="3"
-						y="1"
-						width="105"
-						height="17"
-						key="staticText-32"/>
-					<box></box>
-					<textElement>
-						<font isBold="true"/>
-					</textElement>
-				<text><![CDATA[Report Information]]></text>
-				</staticText>
-				</frame>			</band>
+				</frame>				</frame>			</band>
 		</title>
 		<pageHeader>
 			<band height="0"  isSplitAllowed="true" >
@@ -785,7 +773,6 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						<subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>
 					</subreportParameter>
 					<dataSourceExpression><![CDATA[$V{TIME_PERIOD_DS}]]></dataSourceExpression>
-
 					<returnValue subreportVariable="TOTAL" toVariable="ROW_OPERATION_TOTAL" calculation="Sum"/>
 					<returnValue subreportVariable="TOTAL" toVariable="ROW_SERVICE_TOTAL" calculation="Sum"/>
 					<returnValue subreportVariable="TOTAL" toVariable="ROW_REPORT_TOTAL" calculation="Sum"/>
@@ -855,21 +842,20 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
 					<rightPen lineWidth="1.0" lineStyle="Solid"/>
 </box>
-                    <staticText>
-                        <reportElement
-                            style="TableCell"
-                            x="4"
-                            y="0"
-                            width="112"
-                            height="18"
-                            key="staticText-96"/>
-                        <box></box>
-                        <textElement>
-                            <font pdfFontName="Helvetica-Bold" isBold="false"/>
-                        </textElement>
-                    <text><![CDATA[Report Totals]]></text>
-                    </staticText>
-                    
+				<staticText>
+					<reportElement
+						style="TableCell"
+						x="4"
+						y="0"
+						width="112"
+						height="18"
+						key="staticText-96"/>
+					<box></box>
+					<textElement>
+						<font pdfFontName="Helvetica-Bold" isBold="false"/>
+					</textElement>
+				<text><![CDATA[Report Totals]]></text>
+				</staticText>
 				</frame>			</band>
 		</summary>
 		<noData>
@@ -1134,8 +1120,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayString
-($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())
-]]></textFieldExpression>
+($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement

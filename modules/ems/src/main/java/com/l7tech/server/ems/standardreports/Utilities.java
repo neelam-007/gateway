@@ -1482,7 +1482,7 @@ Value is included in all or none, comment is just illustrative
 
         for(int i = 0; i < numMappingValues; i++){
             //<variable name="COLUMN_REPORT_1" class="java.lang.Long" resetType="Report" calculation="Sum">
-            addVariableToElement(doc, variables, "COLUMN_OPERATION_"+(i+1), "java.lang.Long", "Report", null, "Sum");
+            addVariableToElement(doc, variables, "COLUMN_REPORT_"+(i+1), "java.lang.Long", "Report", null, "Sum");
         }
 
         //serviceHeader
@@ -1491,27 +1491,27 @@ Value is included in all or none, comment is just illustrative
 
         int xPos = 50;
         int yPos = 0;
-        int textFieldHeight = 36;
         StringBuilder sb = new StringBuilder();
         if(useUser) sb.append("Auth User<br>");
         for(String s: keys){
             sb.append(s).append("<br>");
         }
-        addTextFieldToElement(doc, serviceHeader, xPos, yPos, MAPPING_KEY_FIELD_WIDTH, textFieldHeight,
+        addTextFieldToElement(doc, serviceHeader, xPos, yPos, MAPPING_KEY_FIELD_WIDTH, FIELD_HEIGHT,
                 "textField-serviceHeader-MappingKeys", "java.lang.String", sb.toString(), TABLE_CELL_STYLE, false);
+        xPos += MAPPING_KEY_FIELD_WIDTH;
         
         List<String> listMappingValues = new ArrayList<String>();
         listMappingValues.addAll(distinctMappingValues);
 
         //add a text field for each column
         for(int i = 0; i < numMappingValues; i++){
-            addTextFieldToElement(doc, serviceHeader, xPos, yPos, DATA_COLUMN_WIDTH, textFieldHeight,
+            addTextFieldToElement(doc, serviceHeader, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-serviceHeader-"+(i+1), "java.lang.String", listMappingValues.get(i), TABLE_CELL_STYLE,
                     false);
             xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceHeader, xPos, yPos, TOTAL_COLUMN_WIDTH, textFieldHeight,
+        addTextFieldToElement(doc, serviceHeader, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
                 "textField-serviceHeader-ServiceTotals", "java.lang.String", "Service Totals", TABLE_CELL_STYLE,
                 false);
 
@@ -1549,15 +1549,14 @@ Value is included in all or none, comment is just illustrative
         Element serviceAndOperationFooterElement = doc.createElement(SERVICE_AND_OPERATION_FOOTER);
         rootNode.appendChild(serviceAndOperationFooterElement);
         xPos = DATA_ROW_STARTING_X_POS;
-        textFieldHeight = FIELD_HEIGHT;
         for(int i = 0; i < numMappingValues; i++){
-            addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, textFieldHeight,
+            addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_OPERATION_"+(i+1)+"}",
                     TABLE_CELL_STYLE, false);
             xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, textFieldHeight,
+        addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{ROW_OPERATION_TOTAL}",
                 TOTAL_CELL_STYLE, true);
 
@@ -1567,13 +1566,13 @@ Value is included in all or none, comment is just illustrative
 
         xPos = DATA_ROW_STARTING_X_POS;
         for(int i = 0; i < numMappingValues; i++){
-            addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, textFieldHeight,
+            addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-ServiceIdFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_SERVICE_"+(i+1)+"}",
                     TOTAL_CELL_STYLE, true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, textFieldHeight,
+        addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
                 "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{ROW_SERVICE_TOTAL}", TOTAL_CELL_STYLE, true);
 
         //summary
@@ -1582,13 +1581,13 @@ Value is included in all or none, comment is just illustrative
 
         xPos = DATA_ROW_STARTING_X_POS;
         for(int i = 0; i < numMappingValues; i++){
-            addTextFieldToElement(doc, summaryElement, xPos, yPos, DATA_COLUMN_WIDTH, textFieldHeight,
+            addTextFieldToElement(doc, summaryElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-constantFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_REPORT_"+(i+1)+"}",
                     TOTAL_CELL_STYLE, true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, summaryElement, xPos, yPos, TOTAL_COLUMN_WIDTH, textFieldHeight,
+        addTextFieldToElement(doc, summaryElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
                 "textField-constantFooterTotal", "java.lang.Long", "$V{ROW_REPORT_TOTAL}", TOTAL_CELL_STYLE, true);
 
         rootNode.appendChild(pageWidth);
