@@ -203,9 +203,23 @@ input[type='text'].invalid {
     cursor: default !important;
 }
 
-.unselected, .disabled {
+.noPadding {
+    padding: 0 0 0 0 !important;
+}
+
+.unselected {
     opacity: 0.2;
     *filter: alpha(opacity=20);
+}
+
+.disabled {
+    cursor: auto !important;
+    opacity: 0.2;
+    *filter: alpha(opacity=20);
+}
+
+.modified {
+    background-color: #ffffe4;
 }
 
 /** Used by treeTable.js. */
@@ -392,6 +406,8 @@ div.header {
 
 .panelToolbar {
     border-bottom: 1px solid #b2b2b2;
+    border-left: 1px solid #f0f0f0;
+    border-right: 1px solid #b2b2b2;
     border-top: 1px solid #f0f0f0;
     background-color: #d6d6d6;
     padding: 1px 6px 1px 6px;
@@ -502,6 +518,10 @@ img.debugLogReader {
     vertical-align: middle;
 }
 
+.dataTable th div.collapsedHeader {
+    overflow-x: hidden;
+}
+
 /* These are for color-coded grouping. */
 .dataTable th.group0 {
     background-color: #e8eaff;
@@ -558,6 +578,7 @@ img.debugLogReader {
 .dashboardsPanelContent {
     background-color: #ffffff;
     padding: 4px;
+    white-space: nowrap;
 }
 
 .dashboardPanel {
@@ -659,6 +680,14 @@ td.submissionMessageDisplay textarea {
     padding: 2px 8px 2px 8px;
 }
 
+/* for single-selection <SELECT> */
+.userRoleSelector {
+    background-color: #ffffff;
+    margin: 4px 0 4px 0;
+    width: 100%;
+}
+
+/* for multi-selection <IFRAME> <BODY> */
 .userRolesSelector {
     background-color: #ffffff;
     padding: 0 4px 0 4px;

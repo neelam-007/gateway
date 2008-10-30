@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" xmlns:wicket="http://wicket.apache.org/">
 <head>
     <!-- PROTOTYPE ONLY BEGIN -->
     <meta http-equiv="Expires" content="-1" />
@@ -11,7 +11,389 @@
     <title>Configure [Enterprise Service Manager]</title>
     <wicket:head>
         <link rel="stylesheet" type="text/css" href="../css/l7.css" />
+
+        <!-- Required YUI modules: button, connection, container, datasource, datatable, dom, event, get, json, logger, menu -->
+        <link rel="stylesheet" type="text/css" href="../yui/assets/skins/sam/skin.css">
+        <script type="text/javascript" src="../yui/utilities/utilities.js"></script>
+        <script type="text/javascript" src="../yui/container/container-min.js"></script>
+        <script type="text/javascript" src="../yui/menu/menu-min.js"></script>
+        <script type="text/javascript" src="../yui/button/button-min.js"></script>
+        <script type="text/javascript" src="../yui/datasource/datasource-min.js"></script>
+        <script type="text/javascript" src="../yui/datatable/datatable-min.js"></script>
+        <script type="text/javascript" src="../yui/json/json-min.js"></script>
+        <script type="text/javascript" src="../yui/logger/logger-min.js"></script>
+
+        <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css" /> <!-- modifies YUI sam skin; must come after YUI CSS files -->
         <script type="text/javascript" src="../js/l7.js"></script>
+        <script type="text/javascript" src="../js/enterpriseTreeTable.js"></script>
+        <script type="text/javascript">
+            // TODO generate these variables dynamically on the server according to user's langauge preference
+
+            /** Localized strings for passing into l7.EnterpriseTreeTable constructor. */
+            var enterpriseTreeTableLocalizedStrings = {
+                SSG_CLUSTER_STATE_UP : 'Up',
+                SSG_CLUSTER_STATE_PARTIAL : 'Partial',
+                SSG_CLUSTER_STATE_DOWN : 'Down',
+                SSG_NODE_STATE_ON : 'On',
+                SSG_NODE_STATE_OFF : 'Off',
+                SSG_NODE_STATE_DOWN : 'Down',
+                SSG_NODE_STATE_OFFLINE : 'Offline',
+                ACCESS_ACCOUNT_IS_SET : 'Access account is set. Click to change access account.',
+                ACCESS_ACCOUNT_NOT_SET : 'No access account. Click to enter access account.',
+                ACCESS_GRANTED : 'Access granted',
+                ACCESS_NOT_GRANTED : 'Access not granted',
+                DASHBOARD_CHECKBOX_TOOLTIP : 'Show/Hide dashboard for this SSG Cluster',
+                MONITORED_PROPERTY_BUTTON_TOOLTIP : 'Click to configure this monitoring property',
+                ENTERPRISE_FOLDER : 'folder',
+                SSG_CLUSTER : 'SSG Cluster',
+                SSG_NODE : 'SSG Node',
+                SSG_FOLDER : 'folder',
+                PUBLISHED_SERVICE : 'published service',
+                POLICY_FRAGMENT : 'policy fragment',
+                SSL_HOST_NAME : 'SSL host name',
+                ADMINISTRATIVE_PORT_NUMBER : 'administrative port number',
+                IP_ADDRESS : 'IP address',
+                DATABASE_HOSTS : 'database host(s)',
+                SELF_HOST_NAME : 'self host name',
+                ZOOM_ICON_TOOLTIP : 'Show details'
+            };
+
+            /** Localized strings for local HTML markups, e.g., toolbar buttons, context menu, error dialogs. */
+            var localizedStrings = {
+                ADD_FOLDER : 'New Folder',
+                ADD_SSG_CLUSTER : 'Add Cluster',
+                RENAME : 'Rename',
+                MOVE : 'Move',
+                DELETE : 'Delete',
+                START : 'Start',
+                STOP : 'Stop',
+                LAUNCH_SSM : 'Launch SecureSpan Manager',
+                NO_ACCESS : 'No Access',
+                ERROR : 'Error',
+                CANNOT_DOWNLOAD_ENTITY_DATA : 'Failed to get array of enterprise entities from server: ',
+                CANNOT_PARSE_ENTITY_DATA : 'Failed to parse array of enterprise entities downloaded from server: ',
+                ENTITY_DATA_ERROR : 'Data error.'
+            };
+        </script>
+        <script type="text/javascript">
+            /**
+             * The enterpries tree table object.
+             * @type l7.EnterpriseTreeTable
+             */
+            var enterpriseTreeTable;
+
+            var addFolderButton;
+            var addSSGClusterButton;
+            var renameButton;
+            var moveButton;
+            var deleteButton;
+            var startButton;
+            var stopButton;
+            var launchSSMButton;
+
+            var addFolderMenuItem;
+            var addSSGClusterMenuItem;
+            var renameMenuItem;
+            var moveMenuItem;
+            var deleteMenuItem;
+            var startMenuItem;
+            var stopMenuItem;
+            var launchSSMMenuItem;
+
+            function onClickAddFolder(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                // TODO
+alert('onClickAddFolder\nentity.name = ' + entity.name);
+            }
+
+            function onClickAddSSGCluster(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                // TODO
+alert('onClickAddSSGCluster\nentity.name = ' + entity.name);
+            }
+
+            function onClickRename(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                // TODO
+alert('onClickRename\nentity.name = ' + entity.name);
+            }
+
+            function onClickMove(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                // TODO
+alert('onClickMove\nentity.name = ' + entity.name);
+            }
+
+            function onClickDelete(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                // TODO
+alert('onClickDelete\nentity.name = ' + entity.name);
+            }
+
+            function onClickStart(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                // TODO
+alert('onClickStart\nentity.name = ' + entity.name);
+            }
+
+            function onClickStop(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                // TODO
+alert('onClickStop\nentity.name = ' + entity.name);
+            }
+
+            function onClickLaunchSSM(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                // TODO
+alert('onClickLaunchSSM\nentity.name = ' + entity.name);
+            }
+
+            /**
+             * Enables/Disables all toolbar buttons.
+             * @param {boolean} enabled     true to enable; false to disable
+             */
+            function enableToolbarButtons(enabled) {
+                addFolderButton.set('disabled', !enabled);
+                addSSGClusterButton.set('disabled', !enabled);
+                renameButton.set('disabled', !enabled);
+                moveButton.set('disabled', !enabled);
+                deleteButton.set('disabled', !enabled);
+                startButton.set('disabled', !enabled);
+                stopButton.set('disabled', !enabled);
+                launchSSMButton.set('disabled', !enabled);
+            }
+
+            function onEntitySelected(entity) {
+                enableToolbarButtons(false);
+                var movable = entity.movable == undefined || entity.movable;
+                if (!entity.accessStatus) {
+                    // Disables all.
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                    addFolderButton.set('disabled', false);
+                    renameButton.set('disabled', false);
+                    moveButton.set('disabled', !movable);
+                    deleteButton.set('disabled', !movable);
+                    addSSGClusterButton.set('disabled', false);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                    renameButton.set('disabled', false);
+                    moveButton.set('disabled', !movable);
+                    deleteButton.set('disabled', !movable);
+                    launchSSMButton.set('disabled', false);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_NODE) {
+                    startButton.set('disabled', false);
+                    stopButton.set('disabled', false);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_FOLDER) {
+                    addFolderButton.set('disabled', false);
+                    renameButton.set('disabled', false);
+                    moveButton.set('disabled', !movable);
+                    deleteButton.set('disabled', !movable);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                    launchSSMButton.set('disabled', false);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.POLICY_FRAGMENT) {
+                    launchSSMButton.set('disabled', false);
+                }
+            }
+
+            /**
+             * Fetches entities data from server and then populates table body.
+             */
+            function initEnterpriseTreeTable() {
+                var tbody = document.getElementById('enterpriseTreeTableBody');
+                var config = {
+                    localizedStrings : enterpriseTreeTableLocalizedStrings,
+                    columns : [
+                        l7.EnterpriseTreeTable.COLUMN.NAME,
+                        l7.EnterpriseTreeTable.COLUMN.ONLINE_STATUS,
+                        l7.EnterpriseTreeTable.COLUMN.ACCESS_STATUS,
+                        l7.EnterpriseTreeTable.COLUMN.TYPE,
+                        l7.EnterpriseTreeTable.COLUMN.VERSION,
+                        l7.EnterpriseTreeTable.COLUMN.DETAILS
+                    ],
+                    entitySelectable : true,
+                    onEntitySelected : onEntitySelected,
+                    onClickAccessDialogButton : function(event, entity) {
+                        // TODO
+alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
+                    }
+                };
+                enterpriseTreeTable = new l7.EnterpriseTreeTable(tbody, [], '../images', config);
+
+                function displayError() {
+                    var tr = tbody.insertRow(-1);
+                    var td = tr.insertCell(-1);
+                    td.colSpan = config.columns.length;
+                    td.innerHTML = localizedStrings.ENTITY_DATA_ERROR;
+                }
+
+                var callback = {
+                    success : function(o) {
+                        var entities;
+                        try {
+                            entities = YAHOO.lang.JSON.parse(o.responseText);
+                        } catch (e) {
+                            displayError();
+                            l7.Error.showDialog(localizedStrings.ERROR, '30em', localizedStrings.CANNOT_PARSE_ENTITY_DATA + e);
+                            return;
+                        }
+                        enterpriseTreeTable.load(entities);
+                    },
+                    failure : function(o) {
+                        displayError();
+                        l7.Error.showDialog(localizedStrings.ERROR, '30em', localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText);
+                    }
+                };
+                var url = 'dataSource/configure.json';
+                YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
+            }
+
+            function initDialogs() {
+                // TODO
+            }
+
+            function initToolbar() {
+                addFolderButton = new YAHOO.widget.Button('addFolderButton', {
+                    label   : '<img src="../images/addFolder.png" alt="" />&nbsp;' + localizedStrings.ADD_FOLDER,
+                    onclick : {fn : onClickAddFolder}
+                });
+                addSSGClusterButton = new YAHOO.widget.Button('addSSGClusterButton', {
+                    label   : '<img src="../images/addSSGCluster.png" alt="" />&nbsp;' + localizedStrings.ADD_SSG_CLUSTER,
+                    onclick : {fn : onClickAddSSGCluster}
+                });
+                renameButton = new YAHOO.widget.Button('renameButton', {
+                    label   : '<img src="../images/rename.png" alt="" />&nbsp;' + localizedStrings.RENAME,
+                    onclick : {fn : onClickRename}
+                });
+                moveButton = new YAHOO.widget.Button('moveButton', {
+                    label   : '<img src="../images/move.png" alt="" />&nbsp;' + localizedStrings.MOVE,
+                    onclick : {fn : onClickMove}
+                });
+                deleteButton = new YAHOO.widget.Button('deleteButton', {
+                    label   : '<img src="../images/delete.png" alt="" />&nbsp;' + localizedStrings.DELETE,
+                    onclick : {fn : onClickDelete}
+                });
+                startButton = new YAHOO.widget.Button('startButton', {
+                    label   : '<img src="../images/start.png" alt="" />&nbsp;' + localizedStrings.START,
+                    onclick : {fn : onClickStart}
+                });
+                stopButton = new YAHOO.widget.Button('stopButton', {
+                    label   : '<img src="../images/stop.png" alt="" />&nbsp;' + localizedStrings.STOP,
+                    onclick : {fn : onClickStop}
+                });
+                launchSSMButton = new YAHOO.widget.Button('launchSSMButton', {
+                    label   : '<img src="../images/ssm.png" alt="" />&nbsp;' + localizedStrings.LAUNCH_SSM,
+                    onclick : {fn : onClickLaunchSSM}
+                });
+
+                // Buttons are initially disabled because no entity has been selected yet.
+                enableToolbarButtons(false);
+            }
+
+            /**
+             * "beforeshow" event handler for the ContextMenu instance.
+             *
+             * @param {string} eventName    string representing the name of the event that was fired
+             * @param {array} args          first array element is the DOM event object (if this is a DOM event),
+             *                              second array element is the target of the event if it was a MenuItem instance
+             */
+            function onContextMenuBeforeShow(eventName, args) {
+                var entity = enterpriseTreeTable.findEntityFromContextEventTarget(this.contextEventTarget);
+                enterpriseTreeTable.selectEntity(entity, true);
+
+                this.clearContent();
+                initContextMenuItemsEventHandler(); // Alas, clearContent destroys the onclick handler of menu items.
+
+                var movable = entity.movable == undefined || entity.movable;
+                moveMenuItem.cfg.setProperty('disabled', !movable);
+                deleteMenuItem.cfg.setProperty('disabled', !movable);
+
+                if (!entity.accessStatus) {
+                    this.addItem({text : localizedStrings.NO_ACCESS, disabled : true});
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                    this.addItem(addFolderMenuItem);
+                    this.addItem(renameMenuItem);
+                    this.addItem(moveMenuItem);
+                    this.addItem(deleteMenuItem);
+                    this.addItem(addSSGClusterMenuItem);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                    this.addItem(renameMenuItem);
+                    this.addItem(moveMenuItem);
+                    this.addItem(deleteMenuItem);
+                    this.addItem(launchSSMMenuItem);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_NODE) {
+                    this.addItem(startMenuItem);
+                    this.addItem(stopMenuItem);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_FOLDER) {
+                    this.addItem(addFolderMenuItem);
+                    this.addItem(renameMenuItem);
+                    this.addItem(moveMenuItem);
+                    this.addItem(deleteMenuItem);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                    this.addItem(launchSSMMenuItem);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.POLICY_FRAGMENT) {
+                    this.addItem(launchSSMMenuItem);
+                }
+                this.render();
+            }
+
+            /**
+             * "hide" event handler for the ContextMenu instance.
+             *
+             * @param {string} eventName    string representing the name of the event that was fired
+             * @param {array} args          first array element is the DOM event object (if this is a DOM event),
+             *                              second array element is the target of the event if it was a MenuItem instance
+             */
+            function onContextMenuHide(eventName, args) {
+                enterpriseTreeTable.selectEntity(null, true);
+            }
+
+            function initContextMenuItemsEventHandler() {
+                addFolderMenuItem.cfg.setProperty('onclick', {fn : onClickAddFolder});
+                addSSGClusterMenuItem.cfg.setProperty('onclick', {fn : onClickAddSSGCluster});
+                renameMenuItem.cfg.setProperty('onclick', {fn : onClickRename});
+                moveMenuItem.cfg.setProperty('onclick', {fn : onClickMove});
+                deleteMenuItem.cfg.setProperty('onclick', {fn : onClickDelete});
+                startMenuItem.cfg.setProperty('onclick', {fn : onClickStart});
+                stopMenuItem.cfg.setProperty('onclick', {fn : onClickStop});
+                launchSSMMenuItem.cfg.setProperty('onclick', {fn : onClickLaunchSSM});
+            }
+
+            function initContextMenuItems() {
+                addFolderMenuItem = new YAHOO.widget.MenuItem('<img src="../images/addFolder.png">&nbsp;' + localizedStrings.ADD_FOLDER);
+                addSSGClusterMenuItem = new YAHOO.widget.MenuItem('<img src="../images/addSSGCluster.png">&nbsp;' + localizedStrings.ADD_SSG_CLUSTER);
+                renameMenuItem = new YAHOO.widget.MenuItem('<img src="../images/rename.png">&nbsp;' + localizedStrings.RENAME);
+                moveMenuItem = new YAHOO.widget.MenuItem('<img src="../images/move.png">&nbsp;' + localizedStrings.MOVE);
+                deleteMenuItem = new YAHOO.widget.MenuItem('<img src="../images/delete.png">&nbsp;' + localizedStrings.DELETE);
+                startMenuItem = new YAHOO.widget.MenuItem('<img src="../images/start.png">&nbsp;' + localizedStrings.START);
+                stopMenuItem = new YAHOO.widget.MenuItem('<img src="../images/stop.png">&nbsp;' + localizedStrings.STOP);
+                launchSSMMenuItem = new YAHOO.widget.MenuItem('<img src="../images/ssm.png">&nbsp;' + localizedStrings.LAUNCH_SSM);
+                initContextMenuItemsEventHandler(); // This could have been done by a configuration parameter passed into
+                                                    // the constructor, but refactored out so that onContextMenuBeforeShow
+                                                    // call the same function.
+            }
+
+            function initContextMenu() {
+                initContextMenuItems();
+
+                var tbody = document.getElementById('enterpriseTreeTableBody');
+                var contextMenu = new YAHOO.widget.ContextMenu('contextMenu', {
+                    trigger: tbody,
+                    lazyload: true
+                });
+
+                // Subscribe to the ContextMenu instance's "beforeshow" and "hide" events.
+                contextMenu.subscribe('beforeShow', onContextMenuBeforeShow);
+                contextMenu.subscribe('hide', onContextMenuHide);
+            }
+
+            function init() {
+                initEnterpriseTreeTable();
+                initDialogs();
+                initToolbar();
+                initContextMenu();
+            }
+
+            YAHOO.util.Event.onDOMReady(init);
+        </script>
     </wicket:head>
 </head>
 <body class="yui-skin-sam">
@@ -113,16 +495,39 @@
                 <span class="subtabOff"><a href="Restore.html">Restore</a></span>
             </div>
             <div class="content">
-                <div class="panel">
-                    <div class="panelTitle">Enterprise Gateways</div>
-                    <div id="enterpriseTree">
-                        <div class="panelToolbar">
-                        </div>
-                        <div class="panelContent">
-                            <span style="font-size: 1in;">X</span>
+                <wicket:extend>
+                    <div class="panel">
+                        <div class="panelTitle">Enterprise Gateways</div>
+                        <div id="enterpriseTree">
+                            <div class="panelToolbar">
+                                <button id="addFolderButton" type="submit" name="addFolderButton" value="addFolder"></button>
+                                <button id="addSSGClusterButton" type="submit" name="addSSGClusterButton" value="addSSGCluster"></button>
+                                <button id="renameButton" type="submit" name="renameButton" value="rename"></button>
+                                <button id="moveButton" type="submit" name="moveButton" value="move"></button>
+                                <button id="deleteButton" type="submit" name="deleteButton" value="delete"></button>
+                                <button id="startButton" type="submit" name="startButton" value="start"></button>
+                                <button id="stopButton" type="submit" name="stopButton" value="stop"></button>
+                                <button id="launchSSMButton" type="submit" name="launchSSMButton" value="ssm"></button>
+                            </div>
+                            <div class="panelContent">
+                                <table id="enterpriseTreeTable" class="dataTable l7-treeTable l7-enterpriseTable l7-enterpriseTable-rowSelectable" width="100%">
+                                    <thead>
+                                        <tr>
+                                            <th class="name">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+                                            <th><img src="../images/status.png" title="Status" alt="" /></th>
+                                            <th><img src="../images/accessAccount.png" title="Access Status" alt="" /></th>
+                                            <th>Type</th>
+                                            <th>Version</th>
+                                            <th width="100%">Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="enterpriseTreeTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </wicket:extend>
             </div>
             <div class="statusBar">
                 <table>

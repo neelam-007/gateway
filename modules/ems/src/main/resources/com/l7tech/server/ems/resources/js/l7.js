@@ -2,7 +2,7 @@
  * @module l7
  * @namespace l7
  * @requires YUI module "animation" if using l7.Resize
- * @requires YUI modules "container", "button" if using l7.Error
+ * @requires YUI modules "button", "container" if using l7.Error
  */
 
 // -----------------------------------------------------------------------------
@@ -260,10 +260,44 @@ if (!l7.Util) {
         };
 
         /**
-         * Tests if an array contains an object.
+         * Creates a set from an array. The resulting set can be used to determine
+         * existence of a value in the orginal array by testing for set[x] != undefined.
+         * @param {array} array     array of strings
+         * @return {object} the resulting set
+         */
+        l7.Util.arrayToSet = function(array) {
+            var result = {};
+            for (var i in array) {
+                result[array[i]] = array[i];
+            }
+            return result;
+        }
+
+        /**
+         * Creates a map from an array, using a property of each element as its key.
+         * The resulting map can be used to extract elements efficiently by its key, e.g.,
+         * result[keyValue].
+         * @param {array} array     array of strings
+         * @param {string} key      name of the property in each element to use as the key value
+         * @return {object} the resulting map
+         */
+        l7.Util.arrayToMap = function(array, keyName) {
+            var result = {};
+            var keyValue;
+            for (var i in array) {
+                keyValue = array[i][keyName];
+                if (keyValue != undefined) {
+                    result[keyValue] = array[i];
+                }
+            }
+        }
+
+        /**
+         * Tests if an array contains an object. For repeated usage on the same array,
+         * it it better to create a set using l7.Util.arrayToSet(array).
          *
          * @static
-         * @param {array} array     the array
+         * @param {array} array     the array to test
          * @param {object} obj      the object
          * @return {boolean}
          */
@@ -275,6 +309,21 @@ if (!l7.Util) {
             }
             return false;
         };
+
+        /**
+         * Tests if an object has a property with the specific value.
+         * @param {object} obj
+         * @param {any} value
+         * @return {boolean}
+         */
+        l7.Util.hasPropertyValue = function(obj, value) {
+            for (var i in obj) {
+                if (obj[i] == value) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         /**
          * Removes matching element(s) from an array.
@@ -290,6 +339,39 @@ if (!l7.Util) {
                 }
             }
         };
+
+        /**
+         * Finds all elments in a given array which has a given property value.
+         * @param {array} array         the array to search
+         * @param {string} propName     the property name to look up
+         * @param {any} propValue       the property value to match
+         * @return {array} array of all element objects found
+         */
+        l7.Util.findArrayElementsByProperty = function(array, propName, propValue) {
+            var result = [];
+            for (var i in array) {
+                if (array[i][propName] == propValue) {
+                    result.push(array[i]);
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Finds the first elments in a given array which has a given property value.
+         * @param {array} array         the array to search
+         * @param {string} propName     the property name to look up
+         * @param {any} propValue       the property value to match
+         * @return {object} the element object found; null if no match
+         */
+        l7.Util.findFirstArrayElementByProperty = function(array, propName, propValue) {
+            for (var i in array) {
+                if (array[i][propName] == propValue) {
+                    return array[i];
+                }
+            }
+            return null;
+        }
 
         /**
          * Returns true if a string (all of it) is the text form of an integer (excluding floating point number).
@@ -316,6 +398,34 @@ if (!l7.Util) {
         }
     })();
 };
+
+// -----------------------------------------------------------------------------
+// Widget
+// -----------------------------------------------------------------------------
+if (!l7.Widget) {
+    (function(){
+        l7.Widget = {};
+
+        /**
+         * Creates a input radio button element; accounting for browser differences.
+         * @param name
+         * @return {HTMLInputElement} the created radio button
+         */
+        l7.Widget.createInputRadio = function(name) {
+            var result;
+            try{
+                // Works in IE7. Throws in FF3, Opera 9, Safari 3.
+                result = document.createElement('<input type="radio" name="' + name + '" />');
+            } catch (err) {
+                // Works in FF3, Opera 9, Safari 3. Doesn't work in IE7.
+                result = document.createElement('input');
+            }
+            result.type = 'radio';
+            result.name = name;
+            return result;
+        }
+    })();
+}
 
 // -----------------------------------------------------------------------------
 // Tab bar

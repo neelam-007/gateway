@@ -10,7 +10,7 @@ if (!l7.EnterpriseTable) {
     (function() {
 
         /**
-         * Constructor for a table with Layer 7 entities.
+         * Constructor for a table with SecureSpan enterprise entities.
          *
          * A enterprise table is a table where some of its rows are enterprise entities.
          * This class will add context menu to those rows.
@@ -41,9 +41,6 @@ if (!l7.EnterpriseTable) {
          * 7. To localize, overrides these label text after referencing this file:
          *    l7.EnterpriseTable.NEW_FOLDER
          *    l7.EnterpriseTable.ADD_SSG_CLUSTER
-         *    l7.EnterpriseTable.CREATE_SSG_NODE
-         *    l7.EnterpriseTable.CREATE_SSG_NODE
-         *    l7.EnterpriseTable.DELETE_SSG_NODE
          *    l7.EnterpriseTable.RENAME
          *    l7.EnterpriseTable.MOVE
          *    l7.EnterpriseTable.DELETE
@@ -108,20 +105,17 @@ if (!l7.EnterpriseTable) {
                         menuItems = [
                             {text: '<img src="' + imgFolder + '/addFolder.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.NEW_FOLDER},
                             {text: '<img src="' + imgFolder + '/addSSGCluster.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.ADD_SSG_CLUSTER},
-                            {text: '<img src="' + imgFolder + '/createSSGCluster.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.CREATE_SSG_CLUSTER},
                             {text: '<img src="' + imgFolder + '/rename.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.RENAME},
                             {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.MOVE, disabled: l7.Util.hasClass(selectedTR, 'l7-enterpriseTable-cannotDelete')},
                             {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.DELETE, disabled: l7.Util.hasClass(selectedTR, 'l7-enterpriseTable-cannotDelete')}];
                     } else if (l7.Util.hasClass(selectedTR, 'l7-SSGCluster')) {
                         menuItems = [
-                            {text: '<img src="' + imgFolder + '/createSSGNode.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.CREATE_SSG_NODE},
                             {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.MOVE},
                             {text: '<img src="' + imgFolder + '/rename.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.RENAME},
                             {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.DELETE},
                             {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.LAUNCH_SSM}];
                     } else if (l7.Util.hasClass(selectedTR, 'l7-SSGNode')) {
                         menuItems = [
-                            {text: '<img src="' + imgFolder + '/deleteSSGNode.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.DELETE_SSG_NODE},
                             {text: '<img src="' + imgFolder + '/start.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.START},
                             {text: '<img src="' + imgFolder + '/stop.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.STOP}];
                     } else if (l7.Util.hasClass(selectedTR, 'l7-policyFolder')) {
@@ -233,9 +227,6 @@ if (!l7.EnterpriseTable) {
         // To localize, overrides them on your web page after referencing this file.
         /** @static */ l7.EnterpriseTable.NEW_FOLDER = 'New Folder';
         /** @static */ l7.EnterpriseTable.ADD_SSG_CLUSTER = 'Add Cluster';
-        /** @static */ l7.EnterpriseTable.CREATE_SSG_CLUSTER = 'Create Cluster';
-        /** @static */ l7.EnterpriseTable.CREATE_SSG_NODE = 'Create Node';
-        /** @static */ l7.EnterpriseTable.DELETE_SSG_NODE = 'Delete Node';
         /** @static */ l7.EnterpriseTable.RENAME = 'Rename';
         /** @static */ l7.EnterpriseTable.MOVE = 'Move';
         /** @static */ l7.EnterpriseTable.DELETE = 'Delete';

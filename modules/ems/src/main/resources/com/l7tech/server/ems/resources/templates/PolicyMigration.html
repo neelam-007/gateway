@@ -12,9 +12,11 @@
     <wicket:head>
         <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
 
-        <!-- Required YUI modules: animation -->
+        <!-- Required YUI modules: animation, event, logger -->
+        <link rel="stylesheet" type="text/css" href="../yui/logger/assets/skins/sam/logger.css">
         <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
         <script type="text/javascript" src="../yui/animation/animation-min.js"></script>
+        <script type="text/javascript" src="../yui/logger/logger-min.js"></script>
 
         <script type="text/javascript" src="../js/l7.js"></script>
         <script type="text/javascript">
@@ -24,30 +26,41 @@
             var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
 
             function initSrcSSGClusterSelector(self) {
-                self.contentWindow.ssgClusterContentIFrameName = 'srcSSGClusterContent';
-                self.contentWindow.ssgClusterContentIFrameType = 'ssgClusterContentWithCheckbox';
+                self.contentWindow.setCallbackId(self.id);
             }
 
             function initDestSSGClusterSelector(self) {
-                self.contentWindow.ssgClusterContentIFrameName = 'destSSGClusterContent';
-                self.contentWindow.ssgClusterContentIFrameType = 'ssgClusterContentWithFolderRadio';
+                self.contentWindow.setCallbackId(self.id);
             }
 
             function initSrcSSGClusterContent(self) {
-                if (self.src != '') {
-                    self.contentWindow.setDetailsIFrameName('srcItemDetails');
-                }
+                self.contentWindow.setCallbackId(self.id);
             }
 
             function initDestSSGClusterContent(self) {
-                if (self.src != '') {
-                    self.contentWindow.setDetailsIFrameName('destItemDetails');
+                self.contentWindow.setCallbackId(self.id);
+            }
+
+            function showSSGClusterContent(callbackId, ssgClusterId) {
+                if (callbackId == 'srcSSGClusterSelector') {
+                    document.getElementById('srcSSGClusterContent').contentWindow.loadSSGClusterContent(ssgClusterId);
+                } else if (callbackId == 'destSSGClusterSelector') {
+                    document.getElementById('destSSGClusterContent').contentWindow.loadSSGClusterContent(ssgClusterId);
+                }
+            }
+
+            function zoomItem(callbackId, ssgClusterId, entityType, entityId) {
+                var url = 'dataSource/' + entityType + '/' + ssgClusterId + '/' + entityId + '.xml';
+                if (callbackId == 'srcSSGClusterContent') {
+                    document.getElementById('srcItemDetails').src = url;
+                } else if (callbackId == 'destSSGClusterContent') {
+                    document.getElementById('destItemDetails').src = url;
                 }
             }
         </script>
     </wicket:head>
 </head>
-<body>
+<body class="yui-skin-sam">
 <noscript><div class="javascriptWarning">This page requires JavaScript. Your browser either does not have JavaScript support or has disabled it.</div></noscript>
 <table width="100%">
     <tr>
@@ -147,122 +160,122 @@
             </div>
             <div class="content">
               <wicket:extend>
-                <div class="sideBySide">
-                    <table>
-                        <tr>
-                            <td><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width --></td>
-                            <td class="srcDestCenter"></td>
-                            <td><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width --></td>
-                        </tr>
-                        <tr>
-                            <td width="50%"><table width="100%">
-                                <tr>
-                                    <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                    <td class="srcDestTitleCenter" width="100%">Source</td>
-                                    <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                </tr>
-                            </table></td>
-                            <td class="srcDestCenter"></td>
-                            <td width="50%"><table width="100%">
-                                <tr>
-                                    <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                    <td class="srcDestTitleCenter" width="100%">Destination</td>
-                                    <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                </tr>
-                            </table></td>
-                        </tr>
-                        <tr>
-                            <td class="srcDestTop">
-                                <table width="100%">
-                                    <tr>
-                                        <td class="nowrap">Select a source SSG Cluster:</td>
-                                        <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                            <td class="srcDestCenter"></td>
-                            <td class="srcDestTop">
-                                <table width="100%">
-                                    <tr>
-                                        <td class="nowrap">Select a destination SSG Cluster:</td>
-                                        <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="srcDest"><iframe id="srcSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterSelector(this);"></iframe></td>
-                            <td class="srcDestCenter"></td>
-                            <td class="srcDest"><iframe id="destSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestSSGClusterSelector(this);"></iframe></td>
-                        </tr>
-                        <tr>
-                            <td class="srcDest">
-                                <table width="100%">
-                                    <tr>
-                                        <td class="nowrap">Select items to copy:</td>
-                                        <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                            <td class="srcDestCenter"></td>
-                            <td class="srcDest">
-                                <table width="100%">
-                                    <tr>
-                                        <td class="nowrap">Select a destination folder (<input id="checkbox:enable" type="checkbox" /><label for="checkbox:enable"> enable service policies upon save</label>):</td>
-                                        <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="srcDest"><iframe id="srcSSGClusterContent" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterContent(this);"></iframe></td>
-                            <td class="srcDestCenter">Copy<br /><img src="../images/copy.png" alt="" /></td>
-                            <td class="srcDest"><iframe id="destSSGClusterContent" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestSSGClusterContent(this);"></iframe></td>
-                        </tr>
-                        <tr>
-                            <td class="srcDest">
-                                <table width="100%">
-                                    <tr>
-                                        <td class="nowrap"><img src="../images/zoom.png" alt="" /> Item Details:</td>
-                                        <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                            <td class="srcDestCenter"></td>
-                            <td class="srcDest">
-                                <table width="100%">
-                                    <tr>
-                                        <td class="nowrap"><img src="../images/zoom.png" alt="" /> Item Details:</td>
-                                        <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="srcDestBottom"><iframe id="srcItemDetails" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
-                            <td class="srcDestCenter"></td>
-                            <td class="srcDestBottom"><iframe id="destItemDetails" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
-                        </tr>
-                    </table>
-                </div>                  
+                  <div class="sideBySide">
+                      <table>
+                          <tr>
+                              <td><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width --></td>
+                              <td class="srcDestCenter"></td>
+                              <td><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width --></td>
+                          </tr>
+                          <tr>
+                              <td width="50%"><table width="100%">
+                                  <tr>
+                                      <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                      <td class="srcDestTitleCenter" width="100%">Source</td>
+                                      <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                  </tr>
+                              </table></td>
+                              <td class="srcDestCenter"></td>
+                              <td width="50%"><table width="100%">
+                                  <tr>
+                                      <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                      <td class="srcDestTitleCenter" width="100%">Destination</td>
+                                      <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                  </tr>
+                              </table></td>
+                          </tr>
+                          <tr>
+                              <td class="srcDestTop">
+                                  <table width="100%">
+                                      <tr>
+                                          <td class="nowrap">Select a source SSG Cluster:</td>
+                                          <td class="right" width="100%">
+                                              <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                              <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                          </td>
+                                      </tr>
+                                  </table>
+                              </td>
+                              <td class="srcDestCenter"></td>
+                              <td class="srcDestTop">
+                                  <table width="100%">
+                                      <tr>
+                                          <td class="nowrap">Select a destination SSG Cluster:</td>
+                                          <td class="right" width="100%">
+                                              <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                              <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                          </td>
+                                      </tr>
+                                  </table>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td class="srcDest"><iframe id="srcSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterSelector(this);"></iframe></td>
+                              <td class="srcDestCenter"></td>
+                              <td class="srcDest"><iframe id="destSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestSSGClusterSelector(this);"></iframe></td>
+                          </tr>
+                          <tr>
+                              <td class="srcDest">
+                                  <table width="100%">
+                                      <tr>
+                                          <td class="nowrap">Select items to copy:</td>
+                                          <td class="right" width="100%">
+                                              <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                              <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                          </td>
+                                      </tr>
+                                  </table>
+                              </td>
+                              <td class="srcDestCenter"></td>
+                              <td class="srcDest">
+                                  <table width="100%">
+                                      <tr>
+                                          <td class="nowrap">Select a destination folder (<input id="checkbox:enable" type="checkbox" /><label for="checkbox:enable"> enable service policies upon save</label>):</td>
+                                          <td class="right" width="100%">
+                                              <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                              <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                          </td>
+                                      </tr>
+                                  </table>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td class="srcDest"><iframe id="srcSSGClusterContent" src="SrcSSGClusterContent.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterContent(this);"></iframe></td>
+                              <td class="srcDestCenter">Copy<br /><img src="../images/copy.png" alt="" /></td>
+                              <td class="srcDest"><iframe id="destSSGClusterContent" src="DestSSGClusterContent.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestSSGClusterContent(this);"></iframe></td>
+                          </tr>
+                          <tr>
+                              <td class="srcDest">
+                                  <table width="100%">
+                                      <tr>
+                                          <td class="nowrap"><img src="../images/zoom.png" alt="" /> Item Details:</td>
+                                          <td class="right" width="100%">
+                                              <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                              <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                          </td>
+                                      </tr>
+                                  </table>
+                              </td>
+                              <td class="srcDestCenter"></td>
+                              <td class="srcDest">
+                                  <table width="100%">
+                                      <tr>
+                                          <td class="nowrap"><img src="../images/zoom.png" alt="" /> Item Details:</td>
+                                          <td class="right" width="100%">
+                                              <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                              <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                          </td>
+                                      </tr>
+                                  </table>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td class="srcDestBottom"><iframe id="srcItemDetails" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
+                              <td class="srcDestCenter"></td>
+                              <td class="srcDestBottom"><iframe id="destItemDetails" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
+                          </tr>
+                      </table>
+                  </div>
               </wicket:extend>
             </div>
             <div class="statusBar">
