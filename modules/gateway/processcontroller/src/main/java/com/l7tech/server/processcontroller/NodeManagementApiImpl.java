@@ -16,6 +16,7 @@ import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.apache.cxf.interceptor.InInterceptors;
+import org.apache.cxf.interceptor.OutFaultInterceptors;
 
 import javax.activation.DataHandler;
 import javax.annotation.Resource;
@@ -34,6 +35,7 @@ import java.util.logging.Logger;
             targetNamespace="http://ns.l7tech.com/secureSpan/5.0/component/processController/nodeManagementApi",
             endpointInterface="com.l7tech.server.management.api.node.NodeManagementApi")
 @InInterceptors(interceptors = "org.apache.cxf.interceptor.LoggingInInterceptor")
+@OutFaultInterceptors(interceptors = "org.apache.cxf.interceptor.LoggingOutInterceptor")
 public class NodeManagementApiImpl implements NodeManagementApi {
     private static final Logger logger = Logger.getLogger(NodeManagementApiImpl.class.getName());
 
@@ -43,7 +45,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     @Resource
     private ProcessController processController;
 
-    @Resource
+    @Resource @SuppressWarnings({ "SpringJavaAutowiringInspection" })
     private WebServiceContext webServiceContext;
 
     private void checkRequest() {
@@ -287,8 +289,12 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     @Override
-    public DatabaseConfig createDatabase(DatabaseConfig dbconfig) throws DatabaseCreationException {
-        throw new UnsupportedOperationException(); // TODO
+    public void createDatabase(String nodeName, DatabaseConfig dbconfig, String adminLogin, String adminPassword) throws DatabaseCreationException {
+        try {
+            NodeConfigurationManager.createDatabase(nodeName, dbconfig, Collections.<String>emptyList(), adminLogin, adminPassword);
+        } catch (IOException e) {
+            throw new DatabaseCreationException("Unable to create database", e);
+        }
     }
 
     private DatabaseConfig[] getDatabaseConfigurations( final NodeConfig nodeConfig ) throws SaveException {

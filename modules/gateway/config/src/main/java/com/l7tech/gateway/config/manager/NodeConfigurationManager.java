@@ -44,6 +44,8 @@ public class NodeConfigurationManager {
     private static final String NODEPROPERTIES_DB_PASS_FORMAT = "node.db.config.{0}.pass";
     private static final String NODEPROPERTIES_DB_TYPE_FORMAT = "node.db.config.{0}.type";
 
+    private static final DBActions dbActions = new DBActions();
+
     /**
      * Configure a gateway node properties and create database if required..
      *
@@ -64,7 +66,7 @@ public class NodeConfigurationManager {
                                              final boolean createdb ) throws IOException {
         String nodeName = name;
         if ( nodeName == null ) {
-            nodeName = "default";    
+            nodeName = "default";
         }
 
         File configDirectory = getConfigurationDirectory(name);
@@ -79,28 +81,20 @@ public class NodeConfigurationManager {
             if ( databaseConfig.getHost() == null ) throw new CausedIOException("Database host is required.");
             if ( databaseConfig.getPort() == 0 ) throw new CausedIOException("Database port is required.");
             if ( databaseConfig.getName() == null ) throw new CausedIOException("Database name is required.");
-            if ( databaseConfig.getNodeUsername() == null ) throw new CausedIOException("Database username is required."); 
+            if ( databaseConfig.getNodeUsername() == null ) throw new CausedIOException("Database username is required.");
 
-            DBActions dbActions = new DBActions();
             String dbVersion = dbActions.checkDbVersion( databaseConfig );
             if ( dbVersion != null && !dbVersion.equals(BuildInfo.getFormalProductVersion()) ) {
                 throw new CausedIOException("Database version mismatch '"+dbVersion+"'.");
             }
 
             if ( dbVersion == null ) {
-                // check that we have sufficient
                 if ( !createdb ) {
                     throw new CausedIOException("Cannot connect to database.");
                 }
 
-                // then create the DB, we may need a localhost connection for admin access.
-                String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
-
                 // TODO split this out into its own API
-                createDatabase(databaseConfig,
-                               database2ndConfig == null ? Collections.<String>emptyList() : Arrays.asList(database2ndConfig.getHost()),
-                               dbActions, new File( pathToSqlScript ).getCanonicalFile()
-                );
+                createDatabase(nodeName, databaseConfig, database2ndConfig == null ? Collections.<String>emptyList() : Arrays.asList(database2ndConfig.getHost()), null, null);
             }
         }
 
@@ -182,15 +176,14 @@ public class NodeConfigurationManager {
     }
 
     /**
+     * @param nodeName
      * @param databaseConfig the configuration for the database to be created.
      * @param extraGrantHosts additional hostnames from which access to the database should be granted
+     * @param adminLogin
+     * @param adminPassword
      */
-    private static void createDatabase(final DatabaseConfig databaseConfig,
-                                       final List<String> extraGrantHosts,
-                                       final DBActions dbActions,
-                                       final File sqlScriptFile)
-        throws IOException
-    {
+    public static void createDatabase(String nodeName, final DatabaseConfig databaseConfig, final List<String> extraGrantHosts, String adminLogin, String adminPassword)
+        throws IOException {
         final DatabaseConfig localConfig;
         try {
             // If the host is localhost then use that when connecting
@@ -208,10 +201,16 @@ public class NodeConfigurationManager {
         hosts.add( databaseConfig.getHost() );
         if (extraGrantHosts != null) hosts.addAll(extraGrantHosts);
 
-        DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, sqlScriptFile.getAbsolutePath(), false);
-        if ( res.getStatus() != DBActions.DB_SUCCESS ) {
-            throw new CausedIOException("Cannot create database '" + res.getErrorMessage() + "'");
+        String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
+
+        DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, new File(pathToSqlScript).getAbsolutePath(), false);
+        if ( res.getStatus() != DBActions.StatusType.SUCCESS) {
+            throw new CausedIOException(MessageFormat.format("Cannot create database ''{0}''", res.getErrorMessage()), res.getThrown());
         }
+
+        AccountReset.resetAccount(databaseConfig, adminLogin, adminPassword);
+        // TODO create clusterHostname?
+        // TODO create initialSslPort 
     }
 
     public static NodeConfig loadNodeConfig( final String name, final boolean loadSecrets ) throws IOException {

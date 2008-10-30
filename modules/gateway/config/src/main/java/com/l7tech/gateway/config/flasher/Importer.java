@@ -206,7 +206,7 @@ class Importer {
                 config.setDatabaseAdminUsername( rootDBUsername );
                 config.setDatabaseAdminPassword( rootDBPasswd );
                 DBActions.DBActionsResult res = dba.createDb( config, null, "../etc/sql/ssg.sql", false );
-                if ( res.getStatus() != DBActions.DB_SUCCESS ) {
+                if ( res.getStatus() != DBActions.StatusType.SUCCESS) {
                     throw new IOException("cannot create database " + res.getErrorMessage());
                 }
                 newDatabaseCreated = true;

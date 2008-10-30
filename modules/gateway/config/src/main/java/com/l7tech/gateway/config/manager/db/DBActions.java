@@ -32,20 +32,6 @@ public class DBActions {
     private static final String EOL_CHAR = System.getProperty("line.separator");
     private static final String DEFAULT_DB_URL = "jdbc:mysql://{0}:{1}/{2}?autoReconnect=false&characterEncoding=UTF8&characterSetResults=UTF8&socketTimeout=120000&connectTimeout=10000";
 
-    public static final int DB_SUCCESS = 0;
-    public static final int DB_ALREADY_EXISTS = 2;
-    public static final int DB_CREATEFILE_MISSING = 3;
-    public static final int DB_INCORRECT_VERSION = 4;
-    public static final int DB_ERROR = 5;
-
-    public static final int DB_AUTHORIZATION_FAILURE = 28000;
-    public static final int DB_UNKNOWNDB_FAILURE = 42000;
-
-    public static final int DB_UNKNOWN_FAILURE = -1;
-    public static final int DB_CHECK_INTERNAL_ERROR = -2;
-    public static final int DB_UNKNOWNHOST_FAILURE = -3;
-    public static final int DB_CANNOT_UPGRADE = -4;
-
     public static final String MYSQL_CLASS_NOT_FOUND_MSG = "Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard";
     public static final String GENERIC_DBCREATE_ERROR_MSG = "There was an error while attempting to create the database. Please try again";
     public static final String CONNECTION_SUCCESSFUL_MSG = "Connection to the database was a success";
@@ -74,24 +60,9 @@ public class DBActions {
         }
     }
 
-    private CheckSSGDatabase ssgDbChecker;
+    private final CheckSSGDatabase ssgDbChecker;
 
-    private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
-        new DbVersion50Checker(),
-        new DbVersion46Checker(),
-        new DbVersion45Checker(),
-        new DbVersion44Checker(),
-        new DbVersion43Checker(),
-        new DbVersion42Checker(),
-        new DbVersion40Checker(),
-        new DbVersion37Checker(),
-        new DbVersion365Checker(),
-        new DbVersion36Checker(),
-        new DbVersion35Checker(),
-        new DbVersion34Checker(),
-        new DbVersion33Checker(),
-        new DbVersion3132Checker(),
-    };
+    private final DbVersionChecker[] dbCheckers;
 
     private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
 
@@ -99,7 +70,36 @@ public class DBActions {
     // CONSTRUCTOR
     //
     public DBActions() {
-        init();
+        ssgDbChecker = new CheckSSGDatabase();
+        //always sort the dbCheckers in reverse in case someone has added one out of sequence so things still work properly
+
+        List<DbVersionChecker> dbCheckers = Arrays.asList(
+            new DbVersion50Checker(),
+            new DbVersion46Checker(),
+            new DbVersion45Checker(),
+            new DbVersion44Checker(),
+            new DbVersion43Checker(),
+            new DbVersion42Checker(),
+            new DbVersion40Checker(),
+            new DbVersion37Checker(),
+            new DbVersion365Checker(),
+            new DbVersion36Checker(),
+            new DbVersion35Checker(),
+            new DbVersion34Checker(),
+            new DbVersion33Checker(),
+            new DbVersion3132Checker()
+        );
+
+        Collections.sort(dbCheckers, Collections.reverseOrder());
+
+        if (!hasCheckForCurrentVersion(dbCheckers)) {
+            List<DbVersionChecker> checkers = new ArrayList<DbVersionChecker>();
+            checkers.add(new DbVersionBeHappyChecker(dbCheckers.size() > 0 ? dbCheckers.get(0) : null));
+            checkers.addAll(dbCheckers);
+            this.dbCheckers = checkers.toArray(new DbVersionChecker[checkers.size()]);
+        } else {
+            this.dbCheckers = dbCheckers.toArray(new DbVersionChecker[dbCheckers.size()]);
+        }
     }
 
     //
@@ -122,37 +122,32 @@ public class DBActions {
     }
 
     public DBActionsResult createDb(DatabaseConfig config, Set<String> hosts, String dbCreateScript, boolean overwriteDb) throws IOException {
-        DBActionsResult result = new DBActionsResult();
-
         Connection conn = null;
         try {
             conn = getConnection(config, true);
 
             if (testForExistingDb(conn, config.getName())) {
-                if (!overwriteDb)
-                    result.setStatus(DB_ALREADY_EXISTS);
-                else {
+                if (overwriteDb) {
                     //we should overwrite the db
                     dropDatabase( conn, config.getName(), false );
                     createDatabaseWithGrants( conn, config, hosts );
                     createTables( config, dbCreateScript );
-                    result.setStatus(DB_SUCCESS);
+                    return new DBActionsResult(StatusType.SUCCESS);
+                } else {
+                    return new DBActionsResult(StatusType.ALREADY_EXISTS);
                 }
             } else {
                 createDatabaseWithGrants( conn, config, hosts );
                 createTables( config, dbCreateScript );
-                result.setStatus(DB_SUCCESS);
+                return new DBActionsResult(StatusType.SUCCESS);
             }
         } catch (SQLException e) {
-            result.setStatus(determineErrorStatus(e.getSQLState()));
-            result.setErrorMessage(ExceptionUtils.getMessage(e));
-
-            logger.warning("Could not create database. An exception occurred." + ExceptionUtils.getMessage(e));
+            final String msg = ExceptionUtils.getMessage(e);
+            logger.warning("Could not create database. An exception occurred: " + msg);
+            return new DBActionsResult(determineErrorStatus(e.getSQLState()), msg, e);
         } finally {
             ResourceUtils.closeQuietly(conn);
         }
-
-        return result;
     }
 
 
@@ -161,7 +156,6 @@ public class DBActions {
                                            String newVersion,
                                            String schemaFilePath,
                                            final DBActionsListener ui) throws IOException {
-        DBActionsResult result = new DBActionsResult();
         File file = new File(schemaFilePath);
 
         Map<String, String[]> upgradeMap = buildUpgradeMap(file.getParentFile());
@@ -179,9 +173,7 @@ public class DBActions {
                 if (upgradeInfo == null) {
                     String msg = "no upgrade path from \"" + oldVersion + "\" to \"" + newVersion + "\"";
                     logger.warning(msg);
-                    result.setStatus(DB_CANNOT_UPGRADE);
-                    result.setErrorMessage(msg);
-                    break;
+                    return new DBActionsResult(StatusType.CANNOT_UPGRADE, msg, null);
                 } else {
                     logger.info("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0]);
 
@@ -209,16 +201,14 @@ public class DBActions {
                     }
                     if (ui != null) ui.showSuccess("completed" + EOL_CHAR);
 
-
                     oldVersion = checkDbVersion(conn);
                 }
             }
             if (ui != null) ui.showSuccess(databaseName + " was upgraded successfully." + EOL_CHAR);
-
+            return new DBActionsResult(StatusType.SUCCESS);
         } catch (SQLException e) {
-            result.setStatus(determineErrorStatus(e.getSQLState()));
-            result.setErrorMessage(ExceptionUtils.getMessage(e));
             logger.log( Level.WARNING, "Error during upgrade.", e );
+            return new DBActionsResult(determineErrorStatus(e.getSQLState()), ExceptionUtils.getMessage(e), e);
         } finally {
             ResourceUtils.closeQuietly(stmt);
             ResourceUtils.closeQuietly(conn);
@@ -226,8 +216,6 @@ public class DBActions {
                 Background.cancel(spammer);
             }
         }
-
-        return result;
     }
 
     public boolean doCreateDb(DatabaseConfig config, Set<String> hosts, String schemaFilePath, boolean overwriteDb, DBActionsListener ui) {
@@ -264,26 +252,23 @@ public class DBActions {
         try {
             logger.info("Attempting to create a new database (" + databaseConfig.getHost() + "/" + databaseConfig.getName() + ") using privileged user \"" + pUsername + "\"");
 
-            result = createDb(databaseConfig,
-                              hosts,
-                              schemaFilePath,
-                              overwriteDb);
+            result = createDb(databaseConfig, hosts, schemaFilePath, overwriteDb);
 
-            int status = result.getStatus();
-            if ( status == DBActions.DB_SUCCESS) {
+            final StatusType status = result.getStatus();
+            if ( status == StatusType.SUCCESS) {
                 isOk = true;
                 if (ui != null)
                     ui.showSuccess("Database Successfully Created\n");
             } else {
                 switch (status) {
-                    case DBActions.DB_UNKNOWNHOST_FAILURE:
+                    case UNKNOWNHOST_FAILURE:
                         errorMsg = "Could not connect to the host: \"" +  databaseConfig.getHost() + "\". Please check the hostname and try again.";
                         logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
                         logger.warning(errorMsg);
                         if (ui != null) ui.showErrorMessage(errorMsg);
                         isOk = false;
                         break;
-                    case DBActions.DB_AUTHORIZATION_FAILURE:
+                    case AUTHORIZATION_FAILURE:
                         errorMsg = "There was an authentication error when attempting to create the new database using the username \"" +
                                 pUsername + "\". Perhaps the password is wrong. Please retry.";
                         logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
@@ -291,7 +276,7 @@ public class DBActions {
                         if (ui != null) ui.showErrorMessage(errorMsg);
                         isOk = false;
                         break;
-                    case DBActions.DB_ALREADY_EXISTS:
+                    case ALREADY_EXISTS:
                         logger.warning("The database named \"" +  databaseConfig.getName() + "\" already exists");
                         if (ui != null) {
                             if (ui.getOverwriteConfirmationFromUser(databaseConfig.getName())) {
@@ -303,7 +288,7 @@ public class DBActions {
                             isOk = false;
                         }
                         break;
-                    case DBActions.DB_UNKNOWN_FAILURE:
+                    case UNKNOWN_FAILURE:
                     default:
                         errorMsg = GENERIC_DBCREATE_ERROR_MSG + ": " + result.getErrorMessage();
                         logger.warning(errorMsg);
@@ -345,7 +330,7 @@ public class DBActions {
         logger.info("Attempting to connect to an existing database (" + hostname + "/" + dbName + ")" + "using username/password " + username + "/" + hidepass(password));
 
         DBActions.DBActionsResult status = checkExistingDb(databaseConfig);
-        if (status.getStatus() == DBActions.DB_SUCCESS) {
+        if (status.getStatus() == StatusType.SUCCESS) {
             logger.info(CONNECTION_SUCCESSFUL_MSG);
 
             logger.info("Now Checking database version.");
@@ -404,14 +389,14 @@ public class DBActions {
             }
         } else {
             switch (status.getStatus()) {
-                case DBActions.DB_UNKNOWNHOST_FAILURE:
+                case UNKNOWNHOST_FAILURE:
                     errorMsg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
                     logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
                     logger.warning(errorMsg);
                     if (ui != null) ui.showErrorMessage(errorMsg);
                     isOk = false;
                     break;
-                case DBActions.DB_AUTHORIZATION_FAILURE:
+                case AUTHORIZATION_FAILURE:
                     logger.info(CONNECTION_UNSUCCESSFUL_MSG);
                     errorMsg = MessageFormat.format("There was a connection error when attempting to connect to the database \"{0}\" using the username \"{1}\". " +
                             "Perhaps the password is wrong. Either the username and/or password is incorrect, or the database \"{2}\" does not exist.",
@@ -421,7 +406,7 @@ public class DBActions {
                             username + "\" and password \"" + password + "\".");
                     isOk = false;
                     break;
-                case DBActions.DB_UNKNOWNDB_FAILURE:
+                case UNKNOWNDB_FAILURE:
                     logger.info(CONNECTION_UNSUCCESSFUL_MSG);
                     errorMsg = "Could not connect to the database \"" + dbName + "\". The database does not exist or the user \"" + username + "\" does not have permission to access it." +
                             "Please check your input and try again.";
@@ -554,40 +539,22 @@ public class DBActions {
 
     private DBActionsResult checkExistingDb(DatabaseConfig databaseConfig) {
 
-        DBActionsResult result = new DBActionsResult();
         Connection conn = null;
 
         try {
             conn = getConnection(databaseConfig, false);
-            result.setStatus(DB_SUCCESS);
+            return new DBActionsResult(StatusType.SUCCESS);
         } catch (SQLException e) {
             String message = ExceptionUtils.getMessage(e);
-            result.setStatus(determineErrorStatus(e.getSQLState()));
-            result.setErrorMessage(message);
-
             logger.warning("Could not login to the database using " + databaseConfig.getNodeUsername() + ":" + hidepass(databaseConfig.getNodePassword()) +  "@" + databaseConfig.getHost() + ":" + databaseConfig.getPort() + "/" + databaseConfig.getName());
             logger.warning(message);
+            return new DBActionsResult(determineErrorStatus(e.getSQLState()), message, e);
         } finally {
             ResourceUtils.closeQuietly(conn);
         }
-        
-        return result;
     }
 
-    private void init() {
-        ssgDbChecker = new CheckSSGDatabase();
-        //always sort the dbCheckers in reverse in case someone has added one out of sequence so things still work properly
-        Arrays.sort(dbCheckers, Collections.reverseOrder());
-
-        if (!hasCheckForCurrentVersion(dbCheckers)) {
-            DbVersionChecker[] checkers = new DbVersionChecker[dbCheckers.length+1];
-            System.arraycopy(dbCheckers, 0, checkers, 1, dbCheckers.length);
-            checkers[0] =  new DbVersionBeHappyChecker(dbCheckers.length > 0 ? dbCheckers[0] : null);
-            dbCheckers = checkers;
-        }
-    }
-
-    private boolean hasCheckForCurrentVersion(DbVersionChecker[] checkers) {
+    private boolean hasCheckForCurrentVersion(List<DbVersionChecker> checkers) {
         boolean hasCurrent = false;
         String currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
         if (StringUtils.isNotEmpty(BuildInfo.getProductVersionSubMinor())) {
@@ -898,7 +865,7 @@ public class DBActions {
         if (ui != null) ui.showSuccess("Testing the upgrade on a test database ... " + EOL_CHAR);
 
         DBActions.DBActionsResult testUpgradeResult = testDbUpgrade(databaseConfig, schemaFilePath, dbVersion, currentVersion, ui);
-        if (testUpgradeResult.getStatus() != DB_SUCCESS) {
+        if (testUpgradeResult.getStatus() != StatusType.SUCCESS) {
             String msg = "The database was not upgraded due to the following reasons:\n\n" + testUpgradeResult.getErrorMessage() + "\n\n" +
                     "No changes have been made to the database. Please correct the problem and try again.";
             if (ui != null) ui.showErrorMessage(msg);
@@ -909,17 +876,17 @@ public class DBActions {
             DBActionsResult upgradeResult = upgradeDbSchema(databaseConfig, schemaFilePath, dbVersion, currentVersion, ui);
             String msg;
             switch (upgradeResult.getStatus()) {
-                case DBActions.DB_SUCCESS:
+                case SUCCESS:
                     logger.info("The database was successfully upgraded");
                     isOk = true;
                     break;
-                case DBActions.DB_AUTHORIZATION_FAILURE:
+                case AUTHORIZATION_FAILURE:
                     msg = "login to the database with the supplied credentials failed, please try again";
                     logger.warning(msg);
                     if (ui != null) ui.showErrorMessage(msg);
                     isOk = false;
                     break;
-                case DBActions.DB_UNKNOWNHOST_FAILURE:
+                case UNKNOWNHOST_FAILURE:
                     msg = "Could not connect to the host: \"" + databaseConfig.getHost() + "\". Please check the hostname and try again.";
                     logger.warning(msg);
                     if (ui != null) ui.showErrorMessage(msg);
@@ -938,7 +905,6 @@ public class DBActions {
     }
 
     private DBActionsResult testDbUpgrade(DatabaseConfig databaseConfig, String schemaFilePath, String dbVersion, String currentVersion, DBActionsListener ui) throws IOException {
-        DBActionsResult result = new DBActionsResult();
         DatabaseConfig testDatabaseConfig = new DatabaseConfig( databaseConfig );
         testDatabaseConfig.setName(databaseConfig.getName() + "_testUpgrade");
         try {
@@ -951,32 +917,29 @@ public class DBActions {
             if (ui != null) ui.showSuccess("The test database was created." + EOL_CHAR);
             if (ui != null) ui.showSuccess("Upgrading the test database. This could take a while" + EOL_CHAR);
             DBActionsResult upgradeResult  = upgradeDbSchema(testDatabaseConfig, schemaFilePath, dbVersion, currentVersion, ui);
-            if (upgradeResult.getStatus() != DB_SUCCESS) {
-                result.setStatus(DB_CANNOT_UPGRADE);
-                result.setErrorMessage(upgradeResult.getErrorMessage());
+            if (upgradeResult.getStatus() != StatusType.SUCCESS) {
+                return new DBActionsResult(StatusType.CANNOT_UPGRADE, upgradeResult.getErrorMessage(), null);
             } else {
                 logger.info(testDatabaseConfig.getName() + " was successfully upgraded.");
+                return new DBActionsResult(StatusType.SUCCESS);
             }
         } catch (SQLException e) {
-            result.setStatus(determineErrorStatus(e.getSQLState()));
-            result.setErrorMessage(ExceptionUtils.getMessage(e));
+            return new DBActionsResult(determineErrorStatus(e.getSQLState()), ExceptionUtils.getMessage(e), e);
         } finally {
             //get rid of the temp database
             dropDatabase(testDatabaseConfig, null, true, false, null);
         }
-
-        return result;
     }
 
-    private int determineErrorStatus(String sqlState) {
+    private StatusType determineErrorStatus(String sqlState) {
         if (StringUtils.equals(ERROR_CODE_UNKNOWNDB, sqlState))
-            return DB_UNKNOWNDB_FAILURE;
+            return StatusType.UNKNOWNDB_FAILURE;
         else if (StringUtils.equals(ERROR_CODE_AUTH_FAILURE, sqlState))
-            return DB_AUTHORIZATION_FAILURE;
+            return StatusType.AUTHORIZATION_FAILURE;
         else if (StringUtils.equals("08S01", sqlState))
-            return DB_UNKNOWNHOST_FAILURE;
+            return StatusType.UNKNOWNHOST_FAILURE;
         else
-            return DB_UNKNOWN_FAILURE;
+            return StatusType.UNKNOWN_FAILURE;
     }
 
     public void copyDatabase(DatabaseConfig sourceConfig, DatabaseConfig targetConfig, boolean skipAudits, DBActionsListener ui) throws SQLException {
@@ -1256,27 +1219,57 @@ public class DBActions {
         }
     }
 
+    public static enum StatusType {
+        SUCCESS(0),
+        ALREADY_EXISTS(2),
+        CREATEFILE_MISSING(3),
+        INCORRECT_VERSION(4),
+        ERROR(5),
+        AUTHORIZATION_FAILURE(28000),
+        UNKNOWNDB_FAILURE(42000),
+        UNKNOWN_FAILURE(-1),
+        CHECK_INTERNAL_ERROR(-2),
+        UNKNOWNHOST_FAILURE(-3),
+        CANNOT_UPGRADE(-4);
+
+        public int getCode() {
+            return code;
+        }
+
+        private StatusType(int code) {
+            this.code = code;
+        }
+
+        private final int code;
+    }
+
     public static class DBActionsResult {
-        private int status = DB_ERROR;
-        private String errorMessage = null;
+        private final StatusType status;
+        private final String errorMessage;
+        private final Throwable thrown;
 
-        public DBActionsResult() {
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
-        public void setStatus(int status) {
+        public DBActionsResult(StatusType status) {
             this.status = status;
+            this.errorMessage = null;
+            this.thrown = null;
+        }
+
+        public DBActionsResult(StatusType statusType, String message, Throwable thrown) {
+            this.status = statusType;
+            this.errorMessage = message;
+            this.thrown = thrown;
+        }
+
+        public StatusType getStatus() {
+            return status;
         }
 
         public String getErrorMessage() {
             return errorMessage;
         }
 
-        public void setErrorMessage(String errorMessage) {
-            this.errorMessage = errorMessage;
+        public Throwable getThrown() {
+            return thrown;
         }
     }
 

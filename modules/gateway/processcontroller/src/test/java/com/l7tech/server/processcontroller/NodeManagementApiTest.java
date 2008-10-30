@@ -4,6 +4,7 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.server.management.api.node.NodeManagementApi;
+import com.l7tech.server.management.config.node.DatabaseConfig;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.interceptor.LoggingInInterceptor;
@@ -24,19 +25,26 @@ public class NodeManagementApiTest {
     private static final Logger log = Logger.getLogger(NodeManagementApiTest.class.getName());
     
     @Test
-    @Ignore("destructive and unlikely to work on your computer anyway")
+    @Ignore("Destructive and unlikely to work on your computer anyway")
     public void testDeleteNode() throws Exception {
-        JaxWsProxyFactoryBean pfb = makeSslStub("https://localhost:8765/services/nodeManagementApi", NodeManagementApi.class);
-        pfb.getInInterceptors().add(new LoggingInInterceptor());
-        pfb.getOutInterceptors().add(new LoggingOutInterceptor());
-        NodeManagementApi api = (NodeManagementApi)pfb.create();
+        NodeManagementApi api = makeSslStub();
         api.deleteNode("default", 36000);
     }
 
-    private static JaxWsProxyFactoryBean makeSslStub(String url, final Class<?> apiClass) {
+    @Test
+    @Ignore("Change the mysql root password if you want to try it")
+    public void testCreateDatabase() throws Exception {
+        NodeManagementApi api = makeSslStub();
+        final DatabaseConfig dbc = new DatabaseConfig("localhost", 3306, "ssgtemp", "gatewaytemp", "7layertemp");
+        dbc.setDatabaseAdminUsername("root");
+        dbc.setDatabaseAdminPassword("thisIsNotMyMysqlPassword");
+        api.createDatabase("default", dbc, "myadmin", "mypass");
+    }
+
+    private static NodeManagementApi makeSslStub() {
         final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean(new JaxWsClientFactoryBean());
-        pfb.setServiceClass(apiClass);
-        pfb.setAddress(url);
+        pfb.setServiceClass(NodeManagementApi.class);
+        pfb.setAddress("https://localhost:8765/services/nodeManagementApi");
         final Client c = pfb.getClientFactoryBean().create();
         final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
         httpConduit.setTlsClientParameters(new TLSClientParameters() {
@@ -53,7 +61,9 @@ public class NodeManagementApiTest {
                 }};
             }
         });
-        return pfb;
+        pfb.getInInterceptors().add(new LoggingInInterceptor());
+        pfb.getOutInterceptors().add(new LoggingOutInterceptor());
+        return (NodeManagementApi)pfb.create();
     }
 
 }

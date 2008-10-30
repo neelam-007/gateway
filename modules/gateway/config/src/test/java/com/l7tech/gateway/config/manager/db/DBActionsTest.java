@@ -1,16 +1,15 @@
 package com.l7tech.gateway.config.manager.db;
 
-import com.l7tech.util.BuildInfo;
 import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.util.BuildInfo;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.Ignore;
 
 /**
  Tests the DBActions class. For use only when working on the DBActions class.
@@ -44,12 +43,11 @@ public class DBActionsTest {
 
     @Before
     public void setUp() throws Exception {
-
         if (!DBalreadyCreated) {
             System.setProperty("com.l7tech.server.home", "/ssg");
             dbActions = new DBActions();
-            DBActions.DBActionsResult result = createTestDatabases(dbActions);
-            Assert.assertEquals(DBActions.DB_SUCCESS, result.getStatus());
+            DBActions.StatusType result = createTestDatabases(dbActions);
+            Assert.assertEquals(DBActions.StatusType.SUCCESS, result);
             DBalreadyCreated = true;
         }
     }
@@ -82,7 +80,8 @@ public class DBActionsTest {
             DBActions.DBActionsResult upgradeStatus;
             try {
                 upgradeStatus = dbActions.upgradeDbSchema(getDatabaseConfig(dbName + versionName), getSchemaPath(), dbVersion, currentVersion, null);
-                Assert.assertEquals("Failed upgrade procedure. upgradeStatus != success [" + upgradeStatus.getErrorMessage() + "]", DBActions.DB_SUCCESS, upgradeStatus.getStatus());
+                Assert.assertEquals("Failed upgrade procedure. upgradeStatus != success [" + upgradeStatus.getErrorMessage() + "]", 
+                                    DBActions.StatusType.SUCCESS, upgradeStatus.getStatus());
                 dbVersion = dbActions.checkDbVersion(getDatabaseConfig(dbName + versionName));
                 Assert.assertEquals("The version of the upgraded DB is incorrect", currentVersion, dbVersion);
             } catch (IOException e) {
@@ -132,19 +131,19 @@ public class DBActionsTest {
         return "etc/db/mysql/ssg.sql";    
     }
 
-    private DBActions.DBActionsResult createTestDatabases(DBActions dbActions) throws IOException {
+    private DBActions.StatusType createTestDatabases(DBActions dbActions) throws IOException {
         System.out.println("------- Creating test databases -------");
         DBActions.DBActionsResult result = null;
         for (String realVersion : versions) {
             result = dbActions.createDb(getDatabaseConfig(dbName),
                     null,
                     "ssg" + realVersion + ".sql", true);
-            if (result.getStatus() != DBActions.DB_SUCCESS) {
+            if (result.getStatus() != DBActions.StatusType.SUCCESS) {
                 System.out.println("Could not create database realVersion: " + realVersion +
                         "\n----------------------------------------\n");
-                result.setStatus(DBActions.DB_UNKNOWN_FAILURE);
+                return DBActions.StatusType.UNKNOWN_FAILURE;
             }
         }
-        return result;
+        return DBActions.StatusType.SUCCESS;
     }
 }

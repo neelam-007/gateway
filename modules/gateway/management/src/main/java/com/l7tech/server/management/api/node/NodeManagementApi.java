@@ -21,9 +21,8 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Date;
-import java.util.Set;
 import java.util.Collection;
+import java.util.Date;
 
 /**
  * Part of the API invoked on the Process Controller by Enterprise Manager Servers.
@@ -166,6 +165,8 @@ public interface NodeManagementApi {
      * the node to shutdown and wait up to <code>shutdownTimeout</code> milliseconds for the shutdown to conclude.  If,
      * after the timeout has elapsed, the node has still not stopped, the PC will forcibly kill the node's process and
      * continue with the deletion.
+     * <p/>
+     * TODO figure out just how much it's appropriate to delete--currently we just stop the node and rename node.properties to prevent it from starting next time.
      *
      * @param nodeName the name of the Node to delete.
      * @param shutdownTimeout the period, in milliseconds, to wait for a clean shutdown to complete before killing the node process. Values <= 0 indicate that the PC should wait indefinitely.
@@ -226,9 +227,14 @@ public interface NodeManagementApi {
     void stopNode(String nodeName, int timeout) throws FindException, ForcedShutdownException;
 
     /**
-     * Attempt to create the database described by the provided configuration.
+     * Attempt to create the database described by the provided configuration, including a few initial settings
+     * 
+     * @param nodeName the name of the node for which the database is being created
+     * @param dbconfig the database configuration
+     * @param adminLogin the login for the initial administrator account
+     * @param adminPassword the password for the initial administrator account
      */
-    DatabaseConfig createDatabase(DatabaseConfig dbconfig) throws DatabaseCreationException;
+    void createDatabase(String nodeName, DatabaseConfig dbconfig, String adminLogin, String adminPassword) throws DatabaseCreationException;
 
     public class DatabaseCreationException extends Exception {
         public DatabaseCreationException(String message, Throwable cause) {
