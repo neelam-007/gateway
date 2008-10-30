@@ -11,6 +11,7 @@ import com.l7tech.gui.util.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.console.action.*;
 import com.l7tech.console.auditalerts.AuditAlertChecker;
 import com.l7tech.console.auditalerts.AuditAlertConfigBean;
@@ -2531,6 +2532,23 @@ public class MainWindow extends JFrame implements SheetHolder {
         };
 
        addLogonListener(closeWindowListener);
+    }
+
+    /**
+     * Perform configuration validation
+     */
+    void checkConfiguration() {
+        String trustStore = SyspropUtil.getString("javax.net.ssl.trustStore", null);
+        if ( trustStore != null ) {
+            File storeFile = new File(trustStore);
+            if ( !storeFile.exists() ) {
+                if ( storeFile.getParentFile()==null || !storeFile.getParentFile().exists() ) {
+                    DialogDisplayer.showMessageDialog(this, null, "Invalid Trust Store configuration.\n File '"+trustStore+"'.", null);
+                }
+            } else if ( !storeFile.canWrite() ) {
+                log.warning("Trust store file is not writable '"+storeFile.getAbsolutePath()+"'.");
+            }
+        }
     }
 
     /**

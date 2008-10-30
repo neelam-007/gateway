@@ -51,6 +51,7 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
         running = true;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+                mainWindow.checkConfiguration();
                 mainWindow.activateLogonDialog();
             }
         });

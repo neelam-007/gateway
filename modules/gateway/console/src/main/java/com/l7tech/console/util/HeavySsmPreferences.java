@@ -95,8 +95,8 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         knownProps.put("javax.net.ssl.trustStorePassword", TRUST_STORE_PASSWORD);
 
         for (String key : knownProps.keySet()) {
-            if (null == props.getProperty(key)) {
-                putProperty(key, knownProps.get(key));
+            if (null == defaultProps.getProperty(key)) {
+                defaultProps.setProperty(key, knownProps.get(key));
             }
         }
     }

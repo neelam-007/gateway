@@ -25,7 +25,8 @@ import java.security.NoSuchAlgorithmException;
 public abstract class AbstractSsmPreferences extends ApplicationObjectSupport implements SsmPreferences {
     protected static final Logger logger = Logger.getLogger(AbstractSsmPreferences.class.getName());
     protected static boolean debug = false;
-    protected Properties props = new Properties();
+    protected Properties defaultProps = new Properties();
+    protected Properties props = new Properties(defaultProps);
     private static final int DEFAULT_INACTIVITY_TIMEOUT = 30;
 
     public void updateFromProperties(Properties p, boolean append) {
