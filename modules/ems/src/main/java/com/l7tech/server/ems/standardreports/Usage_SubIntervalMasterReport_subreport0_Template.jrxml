@@ -2,7 +2,7 @@
 <!-- Created with iReport - A designer for JasperReports -->
 <!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="Usage_SubIntervalMasterReport_subreport0"
+		 name="Usage_SubIntervalMasterReport_subreport0_Template"
 		 columnCount="1"
 		 printOrder="Vertical"
 		 orientation="Portrait"
@@ -82,9 +82,7 @@ $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VA
 						height="18"
 						key="frame-1"/>
 					<box></box>
-
-                </frame>
-			</band>
+				</frame>			</band>
 			</groupFooter>
 		</group>
 		<background>
@@ -129,7 +127,6 @@ $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VA
 						height="18"
 						key="frame-2"/>
 					<box></box>
-				</frame>
-			</band>
+				</frame>			</band>
 		</noData>
 </jasperReport>

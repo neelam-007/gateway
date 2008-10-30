@@ -231,6 +231,21 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Totals"]]></textFieldExpression>
 				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TotalCell"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="6"
+						height="18"
+						key="textField-197"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[""]]></textFieldExpression>
+				</textField>
 				</frame>			</band>
 			</groupFooter>
 		</group>
