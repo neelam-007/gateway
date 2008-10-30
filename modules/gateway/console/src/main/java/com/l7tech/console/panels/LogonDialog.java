@@ -109,9 +109,6 @@ public class LogonDialog extends JDialog {
     public static String remoteProtocolVersion;
     public static String remoteSoftwareVersion;
 
-    //flag to determine if the login dialog should be display
-    private boolean displayLogin = true;
-
     /**
      * Create a new LogonDialog
      *
@@ -711,8 +708,9 @@ public class LogonDialog extends JDialog {
                   }
 
                   public void finished() {
+                      boolean showLogin = true;
                       if (memoException != null) {
-                          handleLogonThrowable(memoException, sHost);
+                          showLogin = !handleLogonThrowable(memoException, sHost);
                       }
                       try {
                           preferences.store();
@@ -735,7 +733,7 @@ public class LogonDialog extends JDialog {
                                   logonListener.onAuthFailure();
                               }
 
-                              setVisible(displayLogin);
+                              setVisible(showLogin);
                           }
                       }
                   }
@@ -964,8 +962,11 @@ public class LogonDialog extends JDialog {
      *
      * @param e  the throwable to handle
      * @param host  the host we were trying to connect to
+     * @return true if this error is handled and the login dialog should not be displayed
      */
-    private void handleLogonThrowable(Throwable e, String host) {
+    private boolean handleLogonThrowable(Throwable e, String host) {
+        boolean handled = false;
+
         Throwable cause = ExceptionUtils.unnestToRoot(e);
         if (cause instanceof VersionException) {
             VersionException versionex = (VersionException)cause;
@@ -1004,14 +1005,12 @@ public class LogonDialog extends JDialog {
             ChangePasswordDialog changePasswordDialog = new ChangePasswordDialog(this, cause.getMessage(), userNameTextField.getText(), false);
             changePasswordDialog.setVisible(true);
             if (changePasswordDialog.wasOk()) {
-                displayLogin = false;
+                handled = true;
                 String newPassword = new String(changePasswordDialog.getNewPasswordAuthentication().getPassword());
                 PasswordAuthentication newPasswordAuth = changePasswordDialog.getCurrentPasswordAuthentication();
                 changePasswordDialog.setVisible(false);
                 changePasswordDialog.dispose();
                 doLogon(newPassword, newPasswordAuth);  //try logon again
-            } else {
-                displayLogin = true;
             }
         }
         else if (cause instanceof LoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException ||
@@ -1025,14 +1024,12 @@ public class LogonDialog extends JDialog {
                         new ChangePasswordDialog(this, "Password expired, please change your password.", userNameTextField.getText(), false);
                 changePasswordDialog.setVisible(true);
                 if (changePasswordDialog.wasOk()) {
-                    displayLogin = false;
+                    handled = true;
                     String newPassword = new String(changePasswordDialog.getNewPasswordAuthentication().getPassword());
                     PasswordAuthentication newPasswordAuth = changePasswordDialog.getCurrentPasswordAuthentication();
                     changePasswordDialog.setVisible(false);
                     changePasswordDialog.dispose();
                     doLogon(newPassword, newPasswordAuth);  //try again
-                } else {
-                    displayLogin = true;
                 }
             } else {
                 showInvalidCredentialsMessage();
@@ -1060,6 +1057,7 @@ public class LogonDialog extends JDialog {
                                                                        cert,
                                                                        resources.getString("logon.ssg.untrustedCert.title"),
                                                                        resources.getString("logon.ssg.untrustedCert.question"));
+            handled = true;
             dialog.setVisible(true);
             if( dialog.isTrusted() ) {
                 // import new certificate to trust store
@@ -1075,13 +1073,19 @@ public class LogonDialog extends JDialog {
 
                 if ( imported ) {
                     // try again
-                    doLogon(null, null);
+                    SwingUtilities.invokeLater(new Runnable(){
+                        public void run() {
+                            doLogon(null, null);
+                        }
+                    });
                 }
             }
         }
         else {
             ErrorManager.getDefault().notify(Level.WARNING, e, MessageFormat.format(resources.getString("logon.connect.error"), host));
         }
+
+        return handled;
     }
 
     /**
