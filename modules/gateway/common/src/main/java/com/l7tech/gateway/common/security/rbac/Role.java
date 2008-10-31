@@ -14,12 +14,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.util.TextUtils;
 
-import javax.persistence.Table;
-import javax.persistence.OneToMany;
-import javax.persistence.Column;
-import javax.persistence.CascadeType;
-import javax.persistence.FetchType;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Iterator;
@@ -43,6 +38,7 @@ import org.hibernate.annotations.Cascade;
 @Table(name="rbac_role")
 public class Role extends NamedEntityImp implements Comparable<Role> {
     public static final int ADMIN_ROLE_OID = -100;
+    public static enum Tag { ADMIN };
 
     private Set<Permission> permissions = new HashSet<Permission>();
     private Set<RoleAssignment> roleAssignments = new HashSet<RoleAssignment>();
@@ -51,6 +47,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     private EntityType entityType;
     private Long entityOid;
     private Entity cachedSpecificEntity;
+    private Tag tag; 
 
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="role")
     @Fetch(FetchMode.SUBSELECT)
@@ -72,6 +69,16 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
 
     protected void setRoleAssignments(Set<RoleAssignment> roleAssignments) {
         this.roleAssignments = roleAssignments;
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="tag", length= 36)
+    public Tag getTag() {
+        return tag;
+    }
+
+    public void setTag(Tag tag) {
+        this.tag = tag;
     }
 
     public void setName(String name) {

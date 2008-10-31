@@ -163,7 +163,7 @@ public class RoleManagerImpl
     @Override
     public void update(Role role) throws UpdateException {
         // Quick pre-check for admin role assignment
-        if (role.getOid() == Role.ADMIN_ROLE_OID && role.getRoleAssignments().isEmpty())
+        if (role.getTag() == Role.Tag.ADMIN && role.getRoleAssignments().isEmpty())
             throw new UpdateException(RoleManager.ADMIN_REQUIRED);
 
         // Merge in OIDs for any known user assignments (See bug 4176)

@@ -21,6 +21,11 @@ ALTER TABLE audit_detail CHANGE exception exception_message MEDIUMTEXT;
 UPDATE rbac_role set description='Users assigned to the {0} role have the ability to read, update and delete the {1} policy.' where entity_type='POLICY' and entity_oid IS NOT NULL and description is NULL;
 
 --
+-- Add a new column, "tag" into rbac_role
+--
+ALTER TABLE rbac_role ADD COLUMN tag varchar(36) default NULL;
+UPDATE rbac_role set tag = 'ADMIN' where objectid = -100;
+--
 -- Update rbac_assignments with new entity_type columns and user_id renamed to identity_id
 --
 ALTER TABLE rbac_assignment DROP KEY unique_assignment;

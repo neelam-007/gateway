@@ -281,6 +281,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             logger.info("Creating configuration for administration role.");
             Role role = new Role();
             role.setName("Administrator");
+            role.setTag(Role.Tag.ADMIN);
             role.setDescription("Users assigned to the {0} role have full access to the gateway.");
             role.getPermissions().add(new Permission(role, OperationType.CREATE, EntityType.ANY));
             role.getPermissions().add(new Permission(role, OperationType.READ, EntityType.ANY));
