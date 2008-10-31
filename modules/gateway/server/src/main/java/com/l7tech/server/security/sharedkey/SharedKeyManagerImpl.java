@@ -62,6 +62,7 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
      *                          (or to encrypt it if a new one needs to be created).
      */
     public SharedKeyManagerImpl(char[] clusterPassphrase) {
+        if ( clusterPassphrase == null || clusterPassphrase.length==0 ) throw new IllegalArgumentException("clusterPassphrase is required");
         try {
             SecretKeyFactory skf = SecretKeyFactory.getInstance(CIPHER);
             this.sharedKeyDecryptionKey = skf.generateSecret(new PBEKeySpec(clusterPassphrase));

@@ -672,11 +672,11 @@
         <property name="targetMethod" value="getSslKeyManagers"/>
     </bean>
 
-    <!--
-      Allow use of node.properties keys in bean values (e.g "${node.cluster.pass}")
-    -->
-    <bean id="ssgPropertyPlaceholderConfigurer" class="com.l7tech.server.util.PasswordDecryptingPropertyPlaceholderConfigurer" depends-on="systemProperties">
+    <bean id="nodeProperties"
+          class="com.l7tech.server.util.PasswordDecryptingPropertiesFactoryBean"
+          depends-on="systemProperties">
         <constructor-arg ref="propertiesDecryptor"/>
+        <property name="ignoreResourceNotFound" value="true"/>
         <property name="locations">
             <list>
                 <value>file:${com.l7tech.server.configDirectory}${file.separator}node.properties</value>
@@ -979,7 +979,12 @@
         <constructor-arg ref="sharedKeyManager"/>
         <constructor-arg ref="keystoreFileManager"/>
         <constructor-arg ref="serverConfig"/>
-        <constructor-arg value="${node.cluster.pass}"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.PropertiesValueFactoryBean">
+                <constructor-arg ref="nodeProperties"/>
+                <constructor-arg value="node.cluster.pass"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
@@ -996,7 +1001,12 @@
     </bean>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
-        <constructor-arg value="${node.cluster.pass}"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.PropertiesValueFactoryBean">
+                <constructor-arg ref="nodeProperties"/>
+                <constructor-arg value="node.cluster.pass"/>
+            </bean>
+        </constructor-arg>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 

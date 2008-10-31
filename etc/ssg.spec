@@ -39,6 +39,7 @@ rm -fr %{buildroot}
 %defattr(0644,layer7,layer7,0755)
 %dir /opt/SecureSpan/Gateway/controller
 %dir /opt/SecureSpan/Gateway/node
+%dir /opt/SecureSpan/Gateway/node/default
 %dir /opt/SecureSpan/Gateway/runtime
 %dir /opt/SecureSpan/Gateway/runtime/etc
 /opt/SecureSpan/Gateway/runtime/etc/profile
@@ -77,8 +78,6 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Gateway/config/etc
 /opt/SecureSpan/Gateway/runtime/web
 /opt/SecureSpan/Gateway/runtime/lib
-%defattr(0444,root,root,0755)
-/opt/SecureSpan/Gateway/runtime/modules
 %defattr(0644,gateway,gateway,0755)
 /opt/SecureSpan/Gateway/node/default/var
 

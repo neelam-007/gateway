@@ -40,6 +40,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     private List<SsgKeyFinder> keystores = null;
 
     public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, ServerConfig serverConfig, char[] sslKeystorePassphrase) throws KeyStoreException, FindException {
+        if ( sslKeystorePassphrase == null || sslKeystorePassphrase.length==0 ) throw new IllegalArgumentException("sslKeystorePassphrase is required");
         this.keystoreFileManager = kem;
         this.softwareKeystorePasssword = toPassphrase(skm.getSharedKey());
         this.serverConfig = serverConfig;

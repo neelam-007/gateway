@@ -77,7 +77,7 @@ public class NodeConfigurationManager {
         }
 
         // Update DB
-        if ( databaseConfig != null ) {
+        if ( databaseConfig != null && databaseConfig.getNodePassword() != null ) {
             if ( databaseConfig.getHost() == null ) throw new CausedIOException("Database host is required.");
             if ( databaseConfig.getPort() == 0 ) throw new CausedIOException("Database port is required.");
             if ( databaseConfig.getName() == null ) throw new CausedIOException("Database name is required.");
@@ -136,7 +136,7 @@ public class NodeConfigurationManager {
         setPropertyIfNotNull( props, NODEPROPERTIES_ID, nodeid );
         setPropertyIfNotNull( props, NODEPROPERTIES_ENABLED, setEnabled );
         setPropertyIfNotNull( props, NODEPROPERTIES_CLUSTPROP, encClusterPassword );
-        if ( databaseConfig != null ) {
+        if ( databaseConfig != null && databaseConfig.getNodePassword() != null ) {
             setPropertyIfNotNull( props, "node.db.config.main.host", databaseConfig.getHost() );
             setPropertyIfNotNull( props, "node.db.config.main.port", Integer.toString(databaseConfig.getPort()) );
             setPropertyIfNotNull( props, "node.db.config.main.name", databaseConfig.getName() );
