@@ -289,7 +289,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         FileFilter pemFilter = FileChooserUtil.buildFilter(".pem", "(*.pem) BASE64 PEM Certificate Chain");
         fc.setFileFilter(pemFilter);
 
-        int result = fc.showOpenDialog(this);
+        int result = fc.showSaveDialog(this);
         if (JFileChooser.APPROVE_OPTION != result)
             return;
 
