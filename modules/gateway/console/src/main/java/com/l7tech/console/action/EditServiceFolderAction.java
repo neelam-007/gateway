@@ -10,7 +10,9 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ConstraintViolationException;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -77,6 +79,11 @@ public class EditServiceFolderAction extends SecureAction {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     model.nodeChanged(folderToRename);
                 }
+            } catch(ConstraintViolationException e) {
+                DialogDisplayer.showMessageDialog(dialog,
+                                                 "Folder '"+dialog.getName()+"' already exists.",
+                                                 "Folder Already Exists",
+                                                 JOptionPane.WARNING_MESSAGE, null);
             } catch(UpdateException e) {
                 log.log(Level.WARNING, "Failed to update policy folder", e);
             } catch(SaveException e) {

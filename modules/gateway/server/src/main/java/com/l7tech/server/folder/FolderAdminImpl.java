@@ -35,7 +35,7 @@ public class FolderAdminImpl implements FolderAdmin {
         return folderManager.findFolderHeaders();
     }
 
-    public long saveFolder(Folder folder) throws UpdateException, SaveException {
+    public long saveFolder(Folder folder) throws UpdateException, SaveException, ConstraintViolationException {
         String name = folder.getName();
         if( name != null){
             if(name.length() > MAX_FOLDER_NAME_LENGTH){

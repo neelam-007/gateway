@@ -12,7 +12,9 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ConstraintViolationException;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -81,6 +83,11 @@ public class CreateFolderAction extends SecureAction {
                     final AbstractTreeNode sn = new FolderNode(header);
                     model.insertNodeInto(sn, parentNode, parentNode.getInsertPosition(sn, RootNode.getComparator()));
                 }
+            } catch(ConstraintViolationException e) {
+                DialogDisplayer.showMessageDialog(dialog,
+                                                 "Folder '"+dialog.getName()+"' already exists.",
+                                                 "Folder Already Exists",
+                                                 JOptionPane.WARNING_MESSAGE, null);
             } catch(UpdateException e) {
                 log.log(Level.WARNING, "Failed to create policy folder", e);
             } catch(SaveException e) {
