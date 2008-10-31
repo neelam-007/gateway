@@ -129,7 +129,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         for (Iterator<RoleAssignment> i = roleAssignments.iterator(); i.hasNext();) {
             RoleAssignment roleAssignment = i.next();
             if (roleAssignment.getIdentityId().equals(user.getId()) && roleAssignment.getProviderId() == user.getProviderId()
-                    && roleAssignment.getEntityType().equals(EntityType.USER)) {
+                    && roleAssignment.getEntityType().equals(EntityType.USER.getName())) {
                 i.remove();
             }
         }
