@@ -18,6 +18,7 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
@@ -90,19 +91,21 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private final DefaultKey defaultKeyManager;
     private final Object connectorCrudLuck = new Object();
     private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, Connector>>();
+    private final Set<SsgConnectorActivationListener> endpointListeners;
     private Embedded embedded;
     private Engine engine;
     private Host host;
     private StandardContext context;
     private StandardThreadExecutor executor;
 
-    public HttpTransportModule(ServerConfig serverConfig,
-                               AuditContext context,
-                               MasterPasswordManager masterPasswordManager,
-                               DefaultKey defaultKeyManager,
-                               SsgKeyStoreManager ssgKeyStoreManager,
-                               LicenseManager licenseManager,
-                               SsgConnectorManager ssgConnectorManager)
+    public HttpTransportModule( final ServerConfig serverConfig,
+                                final AuditContext context,
+                                final MasterPasswordManager masterPasswordManager,
+                                final DefaultKey defaultKeyManager,
+                                final SsgKeyStoreManager ssgKeyStoreManager,
+                                final LicenseManager licenseManager,
+                                final SsgConnectorManager ssgConnectorManager,
+                                final Set<SsgConnectorActivationListener> endpointListeners )
     {
         super("HTTP Transport Module", logger, GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
         this.serverConfig = serverConfig;
@@ -111,6 +114,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         this.defaultKeyManager = defaultKeyManager;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
         this.instanceId = nextInstanceId.getAndIncrement();
+        this.endpointListeners = endpointListeners;
         //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<HttpTransportModule>(this));
     }
@@ -443,6 +447,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 logger.log(Level.WARNING, "HttpTransportModule is ignoring non-HTTP(S) connector with scheme " + scheme);
             }
         }
+
+        notifyEndpointActivation( connector );
     }
 
     /**
@@ -853,5 +859,18 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         
         Reference<HttpTransportModule> instance = instancesById.get(id);
         return instance == null ? null : instance.get();
+    }
+
+    /**
+     * Dispatch notifications for endpoint activation. 
+     */
+    private void notifyEndpointActivation( final SsgConnector connector ) {      
+        for ( SsgConnectorActivationListener listener : endpointListeners ) {
+            try {
+                listener.notifyActivated( connector );
+            } catch ( Exception e ) {
+                logger.log( Level.WARNING, "Unexpected error during connector activation notification.", e );    
+            }
+        }
     }
 }

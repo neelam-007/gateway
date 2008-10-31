@@ -1038,6 +1038,13 @@
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgConnectorManager"/>
+        <constructor-arg>
+            <set>
+                <bean class="com.l7tech.server.util.ClusterNodeSsgConnectorActivationListener">
+                    <constructor-arg ref="serverConfig"/>
+                </bean>
+            </set>
+        </constructor-arg>
     </bean>
 
     <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl">
@@ -1178,6 +1185,16 @@
                 <ref local="jmsClassLoader"/>
             </list>
         </property>
+    </bean>
+
+    <bean id="clusterPropertyCleanup" class="com.l7tech.server.cluster.ClusterPropertyCleanup">
+        <constructor-arg index="0">
+            <set>
+                <value>cluster.internodePort</value>
+            </set>
+        </constructor-arg>
+        <constructor-arg index="1" ref="transactionManager"/>
+        <constructor-arg index="2" ref="clusterPropertyManager"/>
     </bean>
 
 </beans>

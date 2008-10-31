@@ -174,7 +174,6 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     private Set<Endpoint> endpointSet;
     private boolean inetAddressSet = false;
     private InetAddress inetAddress;
-    private boolean readonly = false;
 
     public SsgConnector() {
     }
@@ -198,6 +197,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     public void setEnabled(boolean enabled) {
+        if ( isLocked() ) throw new IllegalStateException("readonly");
         this.enabled = enabled;
     }
 
@@ -217,6 +217,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param port a TCP port from 1-65535.
      */
     public void setPort(int port) {
+        if ( isLocked() ) throw new IllegalStateException("readonly");
         this.port = port;
     }
 
@@ -236,6 +237,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param scheme a scheme.  currently must be one of "http" or "https".
      */
     public void setScheme(String scheme) {
+        if ( isLocked() ) throw new IllegalStateException("readonly");
         this.scheme = scheme;
     }
 
@@ -259,6 +261,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param secure the secure flag.
      */
     public void setSecure(boolean secure) {
+        if ( isLocked() ) throw new IllegalStateException("readonly");
         this.secure = secure;
     }
 
@@ -280,6 +283,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *         {@link #CLIENT_AUTH_OPTIONAL}.
      */
     public void setClientAuth(int clientAuth) {
+        if ( isLocked() ) throw new IllegalStateException("readonly");
         this.clientAuth = clientAuth;
     }
 
@@ -310,6 +314,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *        {@link #keyAlias}, or null if one is not configured.
      */
     public void setKeystoreOid(Long keystoreOid) {
+        if ( isLocked() ) throw new IllegalStateException("readonly");
         this.keystoreOid = keystoreOid;
     }
 
@@ -329,6 +334,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param keyAlias the private key alias, or null if one is not to be used.
      */
     public void setKeyAlias(String keyAlias) {
+        if ( isLocked() ) throw new IllegalStateException("readonly");
         this.keyAlias = keyAlias;
     }
 
@@ -366,7 +372,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param value the value to set it to, or null to remove the property
      */
     public void putProperty(String key, String value) {
-        if (readonly) throw new IllegalStateException("readonly");
+        if ( isLocked() ) throw new IllegalStateException("readonly");
 
         if (PROP_BIND_ADDRESS.equals(key)) {
             inetAddressSet = false;
@@ -400,7 +406,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param propertyName the property name whose property will be removed from the list.
      */
     public void removeProperty(String propertyName) {
-        if (readonly) throw new IllegalStateException("readonly");
+        if ( isLocked() ) throw new IllegalStateException("readonly");
 
         for (SsgConnectorProperty property : properties) {
             if (propertyName.equals(property.getName())) {
@@ -428,7 +434,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param endpoints endpoint names to enable, ie "MESSAGE_INPUT,ADMIN_REMOTE,CSRHANDLER".
      */
     public void setEndpoints(String endpoints) {
-        if (readonly) throw new IllegalStateException("readonly");
+        if ( isLocked() ) throw new IllegalStateException("readonly");
 
         this.endpoints = endpoints;
         endpointSet = null;
@@ -522,7 +528,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param properties the properties set to use
      */
     protected void setProperties(Set<SsgConnectorProperty> properties) {
-        if (readonly) throw new IllegalStateException("readonly");
+        if ( isLocked() ) throw new IllegalStateException("readonly");
 
         inetAddressSet = false;
         inetAddress = null;
@@ -605,7 +611,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         this.getPort();
         this.getPropertyNames();
         this.getScheme();
-        readonly = true;
+        this.lock();
     }
 
     @Transient

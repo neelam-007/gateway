@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 public class DefaultHttpConnectors {
     protected static final Logger logger = Logger.getLogger(DefaultHttpConnectors.class.getName());
     static final String defaultEndpoints = "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS";
-    static final String defaultStrongCiphers = "TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_DSS_WITH_AES_128_CBC_SHA,TLS_DHE_DSS_WITH_AES_256_CBC_SHA";
+    static final String defaultStrongCiphers = "TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_DSS_WITH_AES_256_CBC_SHA";
 
     /**
      * Create connectors from server.xml if possible, or by creating some hardcoded defaults.
@@ -54,6 +54,9 @@ public class DefaultHttpConnectors {
         httpsNocc.setEnabled(true);
         ret.add(httpsNocc);
 
+        SsgConnector nodeHttps = buildNodeHttpsConnector(2124);
+        ret.add(nodeHttps);
+
         return ret;
     }
 
@@ -61,22 +64,31 @@ public class DefaultHttpConnectors {
         List<SsgConnector> ret = new ArrayList<SsgConnector>();
 
         if ( !connectorExists( existingConnectors, SsgConnector.Endpoint.NODE_COMMUNICATION ) ) {
-            int port = ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_CLUSTER_PORT, 2124, 30000);
+            int port = ServerConfig.getInstance().getIntPropertyCached("clusterPortOld", 0, 30000);
 
-            SsgConnector nodeHttps = new SsgConnector();
-            nodeHttps.setName("Node HTTPS ("+port+")");
-            nodeHttps.setScheme(SsgConnector.SCHEME_HTTPS);
-            nodeHttps.setEndpoints(SsgConnector.Endpoint.NODE_COMMUNICATION.name() + "," + SsgConnector.Endpoint.PC_NODE_API.name());
-            nodeHttps.setPort(port);
-            nodeHttps.setKeyAlias("SSL");
-            nodeHttps.setSecure(true);
-            nodeHttps.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
-            nodeHttps.putProperty(SsgConnector.PROP_CIPHERLIST, defaultStrongCiphers);
-            nodeHttps.setEnabled(true);
-            ret.add(nodeHttps);
+            if ( port > 0 ) {
+                // If port > 0 then they have a cluster property for the inter-node port
+                // this is the case for upgraded systems
+                ret.add(buildNodeHttpsConnector(port));
+            }
         }
 
         return ret;
+    }
+
+
+    private static SsgConnector buildNodeHttpsConnector( int port ) {
+        SsgConnector nodeHttps = new SsgConnector();
+        nodeHttps.setName("Node HTTPS ("+port+")");
+        nodeHttps.setScheme(SsgConnector.SCHEME_HTTPS);
+        nodeHttps.setEndpoints(SsgConnector.Endpoint.NODE_COMMUNICATION.name() + "," + SsgConnector.Endpoint.PC_NODE_API.name());
+        nodeHttps.setPort(port);
+        nodeHttps.setKeyAlias("SSL");
+        nodeHttps.setSecure(true);
+        nodeHttps.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
+        nodeHttps.putProperty(SsgConnector.PROP_CIPHERLIST, defaultStrongCiphers);
+        nodeHttps.setEnabled(true);
+        return nodeHttps;
     }
 
     /**

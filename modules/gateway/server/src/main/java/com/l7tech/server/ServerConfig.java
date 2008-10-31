@@ -134,7 +134,7 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_CERT_EXPIRY_INFO_AGE = "trustedCert.expiryInfoAge";
     public static final String PARAM_CERT_EXPIRY_WARNING_AGE = "trustedCert.expiryWarningAge";
 
-    public static final String PARAM_CLUSTER_PORT = "clusterPort";
+    public static final String PARAM_CLUSTER_PORT = "clusterNodePort";
 
     public static final String PARAM_IO_HTTP_POOL_MAX_CONCURRENCY = "ioHttpPoolMaxConcurrency";
     public static final String PARAM_IO_HTTP_POOL_MAX_IDLE_TIME = "ioHttpPoolMaxIdleTime";

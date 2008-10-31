@@ -160,17 +160,17 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
         connector.putProperty(SsgConnector.PROP_CIPHERLIST, cipherlist.toString());
 
-        editAndSave(connector);
+        editAndSave(connector, connector.getReadOnlyCopy());
     }
 
     private void doProperties() {
         SsgConnector connector = connectorTable.getSelectedConnector();
         if (connector != null) {
-            editAndSave(connector);
+            editAndSave(connector, connector.getReadOnlyCopy());
         }
     }
 
-    private void editAndSave(final SsgConnector connector) {
+    private void editAndSave(final SsgConnector connector, final SsgConnector originalConnector) {
         final SsgConnectorPropertiesDialog dlg = new SsgConnectorPropertiesDialog(this, connector, Registry.getDefault().getClusterStatusAdmin().isCluster());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
@@ -180,11 +180,16 @@ public class SsgConnectorManagerWindow extends JDialog {
                     Runnable reedit = new Runnable() {
                         public void run() {
                             loadConnectors();
-                            editAndSave(connector);
+                            editAndSave(connector, originalConnector);
                         }
                     };
 
                     if (warnAboutConflicts(connector)) {
+                        reedit.run();
+                        return;
+                    }
+
+                    if (warnAboutFeatures(originalConnector, connector)) {
                         reedit.run();
                         return;
                     }
@@ -230,6 +235,42 @@ public class SsgConnectorManagerWindow extends JDialog {
         String warningMessage = "The port " + connector.getPort() + " has already been in use.  Please try another port again.";
         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), title, warningMessage, null);
         return true;
+    }
+
+    /**
+     *
+     */
+    private boolean warnAboutFeatures(SsgConnector originalConnector, SsgConnector editedConnector) {
+        boolean reedit = false;
+
+        if (originalConnector != null && editedConnector != null) {
+            boolean disabledNodeToNode =
+                    originalConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION) &&
+                    !editedConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION);
+            boolean disabledProcessController =
+                    originalConnector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API) &&
+                    !editedConnector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API);
+
+            if ( disabledNodeToNode || disabledProcessController ) {
+                String title = "Confirm Disabled Features";
+                String warningMessage = "You have disabled the following Gateway features:\n";
+
+                if ( disabledNodeToNode ) {
+                    warningMessage += "\nInter-Node Communication - required for some administrative functionality (such as log viewing).";
+                }
+                if ( disabledProcessController ) {
+                    warningMessage += "\nNode Control - required for full management of the Gateway.";
+                }
+
+                warningMessage += "\n\nSelect OK to Save or Cancel to edit.";
+
+                if ( JOptionPane.CANCEL_OPTION == JOptionPane.showConfirmDialog(this, warningMessage, title, JOptionPane.OK_CANCEL_OPTION) ){
+                    reedit = true;
+                }
+            }
+        }
+
+        return reedit;
     }
 
     private static String explainConflict(Pair<PortRange, String> conflict) {

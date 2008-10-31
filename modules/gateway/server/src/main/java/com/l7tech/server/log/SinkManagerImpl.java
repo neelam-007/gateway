@@ -183,6 +183,8 @@ public class SinkManagerImpl
 
     @Override
     protected void initDao() {
+        logger.info("Redirecting logging to configured log sinks.");
+
         installHandlers();
         updateLogLevels(null, null);
         installLogConfigurationListener();
