@@ -72,7 +72,7 @@ public abstract class ServerCredentialSourceAssertion extends AbstractServerAsse
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
                 context.addCredentials( pc );
-                return checkCredentials(pc, authParams);
+                return checkCredentials(pc, findCredentialAuthParams(pc, authParams));
             }
         } catch (CredentialFinderException cfe) {
             AssertionStatus status = cfe.getStatus();
@@ -93,6 +93,18 @@ public abstract class ServerCredentialSourceAssertion extends AbstractServerAsse
                 return status;
             }
         }
+    }
+
+    /**
+     * Attempts to find the authorized parameter from the login credentials.  If it cannot find any from the login
+     * credentials, then it'll return the one provided in the 'authParam' parameter.
+     *
+     * @param pc    The login credentials
+     * @param authParam The authorized parameter returned if cannot find one from login credentials, cannot be NULL.
+     * @return  Map of authorized parameter information.
+     */
+    protected Map findCredentialAuthParams( LoginCredentials pc, Map authParam ) {
+        return authParam;
     }
 
     /**

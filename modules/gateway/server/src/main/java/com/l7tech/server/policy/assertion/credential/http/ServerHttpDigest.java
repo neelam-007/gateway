@@ -100,6 +100,15 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
                                      CredentialFormat.DIGEST, _data.getClass(), realmName, authParams );
     }
 
+    @Override
+    protected Map findCredentialAuthParams(LoginCredentials pc, Map authParam) {
+        Object payload = pc.getPayload();
+        if (payload instanceof Map) {
+            return (Map) payload;
+        }
+        return authParam;
+    }
+
     private Map myChallengeParams( String nonce ) {
         Map params = new HashMap();
         params.put( HttpDigest.PARAM_QOP, HttpDigest.QOP_AUTH );

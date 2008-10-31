@@ -24,9 +24,11 @@ import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.server.policy.assertion.credential.DigestSessions;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.TimeUnit;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
@@ -51,6 +53,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.PasswordAuthentication;
+import java.lang.reflect.Field;
+import java.lang.reflect.Constructor;
 
 /**
  * Functional tests for message processing.
@@ -102,7 +106,8 @@ public class PolicyProcessingTest extends TestCase {
         {"/httpwssheaderremove", "POLICY_httpwssheaderremove.xml"},
         {"/httpwssheaderpromote", "POLICY_httpwssheaderpromote.xml"},
         {"/attachment", "POLICY_signed_attachment.xml"},
-        {"/requestnonxmlok", "POLICY_request_modified_non_xml.xml"}
+        {"/requestnonxmlok", "POLICY_request_modified_non_xml.xml"},
+        {"/httpdigestauth", "POLICY_twohttpdigestauth.xml"}
     };
 
     /**
@@ -205,6 +210,39 @@ public class PolicyProcessingTest extends TestCase {
     }
 
     /**
+     * Test case for having two Http Digest assertions
+     *
+      * @throws Exception
+     */
+    public void testTwoHttpDigestAuth() throws Exception {
+        String requestMessage = new String(loadResource("REQUEST_general.xml"));
+
+        //need to register the nonce so that we'll always be using the same nonce = 70ec76c747e23906120eec731341660f
+        //create new instance of nonce info so that it can be registered into the digest session
+        String nonce = "70ec76c747e23906120eec731341660f";
+        Class classNonceInfo = Class.forName("com.l7tech.server.policy.assertion.credential.DigestSessions$NonceInfo");
+        Constructor constructor = classNonceInfo.getDeclaredConstructor(String.class, Long.TYPE, Integer.TYPE);
+        constructor.setAccessible(true); //suppress Java language accesschecking
+
+        DigestSessions digestSession = DigestSessions.getInstance();
+        Field nonceInfoField = DigestSessions.class.getDeclaredField("_nonceInfos");
+        nonceInfoField.setAccessible(true);
+        Map nonceInfo = (Map) nonceInfoField.get(digestSession);    //grab the field from the digest session
+
+        //register the nonce
+        nonceInfo.put(nonce, constructor.newInstance(nonce, System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1), 3));
+
+        //create request header for http digest
+        String authHeader = "Digest username=\"testuser2\", realm=\"L7SSGDigestRealm\", nonce=\"70ec76c747e23906120eec731341660f\", " +
+                "uri=\"/ssg/soap\", response=\"326f367c241545fd0628bc0becf5948e\", qop=auth, nc=00000001, " +
+                "cnonce=\"c1f102ea2080f3694288f0841cbfc1b0\", opaque=\"2f9e9d78e4ec2de1258ee75634badb41\"";
+
+
+        processMessage("/httpdigestauth", requestMessage, "10.0.0.1", AssertionStatus.AUTH_REQUIRED.getNumeric(), null, null);
+        processMessage("/httpdigestauth", requestMessage, "10.0.0.1", AssertionStatus.NONE.getNumeric(), null, authHeader); 
+    }
+
+    /**
      * Test rejection of message with SQL injection.
      */
     public void testSQLAttack() throws Exception  {
@@ -304,7 +342,9 @@ public class PolicyProcessingTest extends TestCase {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         String username = "\u00e9\u00e2\u00e4\u00e5";
-        Result result = processMessage("/httpbasic", requestMessage1, "10.0.0.1", 0, null, new PasswordAuthentication(username, "password".toCharArray()));
+        PasswordAuthentication pa = new PasswordAuthentication(username, "password".toCharArray());
+        String authHeader = "Basic " + HexUtils.encodeBase64( (pa.getUserName() + ":" + new String(pa.getPassword())).getBytes("ISO-8859-1") );
+        Result result = processMessage("/httpbasic", requestMessage1, "10.0.0.1", 0, null, authHeader);
         assertTrue("Credential present", !result.context.getCredentials().isEmpty());
         assertEquals("Username correct", username, result.context.getCredentials().iterator().next().getLogin());
     }
@@ -448,7 +488,7 @@ public class PolicyProcessingTest extends TestCase {
     /**
      *
      */
-    private Result processMessage(String uri, String message, String requestIp, int expectedStatus, PasswordAuthentication contextAuth, PasswordAuthentication transportAuth) throws IOException {
+    private Result processMessage(String uri, String message, String requestIp, int expectedStatus, PasswordAuthentication contextAuth, String authHeader) throws IOException {
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
@@ -467,8 +507,10 @@ public class PolicyProcessingTest extends TestCase {
         hrequest.setContent(message.getBytes());
         ConnectionId.setConnectionId(new ConnectionId(0,0));
         hrequest.setAttribute("com.l7tech.server.connectionIdentifierObject", ConnectionId.getConnectionId());
-        if ( transportAuth != null ) {
-            hrequest.addHeader( "Authorization", "Basic " + HexUtils.encodeBase64( (transportAuth.getUserName() + ":" + new String(transportAuth.getPassword())).getBytes("ISO-8859-1") ) );    
+
+        //set authorization header if available
+        if (authHeader != null) {
+            hrequest.addHeader("Authorization", authHeader);
         }
 
         // Initialize processing context

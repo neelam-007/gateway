@@ -68,7 +68,7 @@ public class DigestSessions {
         return nonceValue;
     }
 
-    private class NonceInfo implements Comparable {
+    private static class NonceInfo implements Comparable {
         public NonceInfo( String nonce, long expires, int maxUses ) {
             _nonce = nonce;
             _expires = expires;
