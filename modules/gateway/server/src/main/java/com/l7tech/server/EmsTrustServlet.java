@@ -34,9 +34,9 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.SecureRandom;
-import java.security.PrivilegedActionException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
@@ -161,6 +161,14 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         } catch (CertificateException e) {
             logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
             param.put("message", "Invalid EMS PEM certificate.");
+            sendForm(hresponse, param);
+        } catch (CertificateMismatchException e) {
+            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
+            param.put("message", "The specified EMS ID has already been registered with a different EMS certificate.");
+            sendForm(hresponse, param);
+        } catch (TrustedEmsUserManager.MappingAlreadyExistsException e) {
+            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
+            param.put("message", "The specified EMS username on that EMS instance has already been mapped on this Gateway.");
             sendForm(hresponse, param);
         } catch (LoginException e) {
             logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);

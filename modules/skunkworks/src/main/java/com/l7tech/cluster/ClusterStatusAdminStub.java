@@ -2,6 +2,8 @@ package com.l7tech.cluster;
 
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.gateway.common.emstrust.TrustedEms;
+import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
@@ -201,5 +203,15 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
 
     public String getHardwareCapability(String capability) {
         return null;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public Collection<TrustedEms> getTrustedEmsInstances() throws FindException {
+        return Collections.emptyList();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public Collection<TrustedEmsUser> getTrustedEmsUserMappings(long trustedEmsId) throws FindException {
+        return Collections.emptyList();
     }
 }

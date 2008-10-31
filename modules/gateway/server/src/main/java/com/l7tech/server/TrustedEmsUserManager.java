@@ -7,11 +7,30 @@ import com.l7tech.objectmodel.*;
 import java.security.AccessControlException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 
 /**
  * Entity manager for {@link com.l7tech.gateway.common.emstrust.TrustedEmsUser}.
  */
 public interface TrustedEmsUserManager extends EntityManager<TrustedEmsUser, EntityHeader> {
+    /** Exception thrown if an attempt is made to configure a user mapping which already exists. */
+    public static class MappingAlreadyExistsException extends Exception {
+        public MappingAlreadyExistsException() {
+        }
+
+        public MappingAlreadyExistsException(String message) {
+            super(message);
+        }
+
+        public MappingAlreadyExistsException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public MappingAlreadyExistsException(Throwable cause) {
+            super(cause);
+        }
+    }
+
     /**
      * Add or update a mapping allowing this Gateway to be administered by the specified EMS user, using the access
      * rights of the specified User.
@@ -41,8 +60,12 @@ public interface TrustedEmsUserManager extends EntityManager<TrustedEmsUser, Ent
      * @throws java.security.AccessControlException if the specified user lacks sufficient permission to create or update this mapping
      * @throws com.l7tech.objectmodel.ObjectModelException  if there is a problem accessing or updating the database
      * @throws java.security.cert.CertificateException if there is a problem with the emsCert
+     * @throws CertificateMismatchException if the specified emsId has already been registered on this Gateway with a different
+     *                                      certificate from emsCert.
+     * @throws MappingAlreadyExistsException If a mapping already exists for the specified EMS username on the specified EMS instance.
      */
-    TrustedEmsUser configureUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername) throws ObjectModelException, AccessControlException, CertificateException;
+    TrustedEmsUser configureUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername) 
+            throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException, MappingAlreadyExistsException;
 
     /**
      * Deletes all EMS user mappings for the specified user.
@@ -63,4 +86,13 @@ public interface TrustedEmsUserManager extends EntityManager<TrustedEmsUser, Ent
      * @throws com.l7tech.objectmodel.DeleteException if DB problem
      */
     boolean deleteMappingsForIdentityProvider(long identityProviderOid) throws FindException, DeleteException;
+
+    /**
+     * Find all user mappings for the specified Trusted EMS, identified by its OID.
+     *
+     * @param trustedEmsOid OID of the EMS instance whose mappings to find.
+     * @return a Collection of all TrustedEmsUser instances associated with this TrustedEms.  May be empty but never null.
+     * @throws com.l7tech.objectmodel.FindException if DB problem
+     */
+    Collection<TrustedEmsUser> findByEmsId(long trustedEmsOid) throws FindException;
 }

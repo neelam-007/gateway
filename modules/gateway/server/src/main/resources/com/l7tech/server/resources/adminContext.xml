@@ -288,6 +288,8 @@
         <constructor-arg ref="serviceMetricsManager"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="assertionRegistry"/>
+        <constructor-arg ref="trustedEmsManager"/>
+        <constructor-arg ref="trustedEmsUserManager"/>
     </bean>
 
     <!-- RBAC admin impl -->

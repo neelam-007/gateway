@@ -1,32 +1,28 @@
 package com.l7tech.server.cluster;
 
-import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.util.CollectionUpdate;
-import com.l7tech.util.CollectionUpdateProducer;
-import com.l7tech.util.TimeUnit;
-import com.l7tech.xml.TarariLoader;
+import com.l7tech.gateway.common.admin.LicenseRuntimeException;
+import com.l7tech.gateway.common.cluster.*;
+import com.l7tech.gateway.common.emstrust.TrustedEms;
+import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
+import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.GatewayLicenseManager;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.*;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.service.ServiceMetricsManager;
-import com.l7tech.gateway.common.service.MetricsSummaryBin;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.gateway.common.cluster.ServiceUsage;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
+import com.l7tech.util.CollectionUpdate;
+import com.l7tech.util.CollectionUpdateProducer;
+import com.l7tech.util.TimeUnit;
+import com.l7tech.xml.TarariLoader;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,7 +49,9 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
                                  LicenseManager licenseManager,
                                  ServiceMetricsManager metricsManager,
                                  ServerConfig serverConfig,
-                                 AssertionRegistry assertionRegistry)
+                                 AssertionRegistry assertionRegistry,
+                                 TrustedEmsManager trustedEmsManager,
+                                 TrustedEmsUserManager trustedEmsUserManager)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
@@ -62,6 +60,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         this.serviceMetricsManager = metricsManager;
         this.serverConfig = serverConfig;
         this.assertionRegistry = (ServerAssertionRegistry)assertionRegistry;
+        this.trustedEmsManager = trustedEmsManager;
+        this.trustedEmsUserManager = trustedEmsUserManager;
 
         if (clusterInfoManager == null)
             throw new IllegalArgumentException("Cluster Info manager is required");
@@ -300,6 +300,14 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return TarariLoader.getGlobalContext() != null ? ClusterStatusAdmin.CAPABILITY_HWXPATH_TARARI : null;
     }
 
+    public Collection<TrustedEms> getTrustedEmsInstances() throws FindException {
+        return trustedEmsManager.findAll();
+    }
+
+    public Collection<TrustedEmsUser> getTrustedEmsUserMappings(long trustedEmsId) throws FindException {
+        return trustedEmsUserManager.findByEmsId(trustedEmsId);
+    }
+
     private CollectionUpdateProducer<ClusterNodeInfo, FindException> clusterNodesUpdateProducer =
             new CollectionUpdateProducer<ClusterNodeInfo, FindException>(5 * 60 * 1000, 100, null) {
                 protected Collection<ClusterNodeInfo> getCollection() throws FindException {
@@ -314,6 +322,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     private final ServiceMetricsManager serviceMetricsManager;
     private final ServerConfig serverConfig;
     private final ServerAssertionRegistry assertionRegistry;
+    private final TrustedEmsManager trustedEmsManager;
+    private final TrustedEmsUserManager trustedEmsUserManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 

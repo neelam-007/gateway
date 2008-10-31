@@ -1,17 +1,15 @@
 package com.l7tech.gateway.common.cluster;
 
-import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.emstrust.TrustedEms;
+import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.util.CollectionUpdate;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
+import com.l7tech.objectmodel.*;
+import com.l7tech.util.CollectionUpdate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -364,6 +362,27 @@ public interface ClusterStatusAdmin {
     @Transactional(propagation=Propagation.SUPPORTS)
     @Administrative(licensed=false)
     String getHardwareCapability(String capability);
+
+    /**
+     * Get all TrustedEms instances currently registered to administer this Gateway cluster.
+     *
+     * @return a List of TrustedEms descriptors.  May be empty but never null.
+     * @throws FindException if there is a problem finding the requested information.
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(types=EntityType.TRUSTED_EMS, stereotype=MethodStereotype.FIND_ENTITIES)
+    Collection<TrustedEms> getTrustedEmsInstances() throws FindException;
+
+    /**
+     * Get all TrustedEmsUser instances belonging to the registered TrustedEms instance with the specified
+     * OID on this Gateway.
+     *
+     * @param trustedEmsId object ID of a TrustedEms instance.
+     * @return a List of the user mappings for this TrustedEms.  May be empty but never null.
+     * @throws FindException if there is a problem finding the requested information.
+     */
+    @Secured(types=EntityType.TRUSTED_EMS_USER, stereotype=MethodStereotype.FIND_ENTITIES)
+    Collection<TrustedEmsUser> getTrustedEmsUserMappings(long trustedEmsId) throws FindException;
 
     public static final String CAPABILITY_HWXPATH = "hardwareXpath";
     public static final String CAPABILITY_HWXPATH_TARARI = "tarari";

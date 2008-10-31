@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.emstrust;
 
+import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.*;
@@ -9,8 +10,8 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name="trusted_ems_user")
-public class TrustedEmsUser extends PersistentEntityImp {
-    private TrustedEms trustedEms;
+public class TrustedEmsUser extends PersistentEntityImp implements NamedEntity {
+    private transient TrustedEms trustedEms;
     private long providerOid;
     private String ssgUserId;
     private String emsUserId;
@@ -57,5 +58,10 @@ public class TrustedEmsUser extends PersistentEntityImp {
 
     public void setEmsUserId(String emsUserId) {
         this.emsUserId = emsUserId;
+    }
+
+    @Transient
+    public String getName() {
+        return emsUserId + " -> " + ssgUserId;
     }
 }

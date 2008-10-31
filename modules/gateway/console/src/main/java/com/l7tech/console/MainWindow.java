@@ -151,6 +151,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageCertificatesAction manageCertificatesAction = null;
     private ManagePrivateKeysAction managePrivateKeysAction = null;
     private ManageSsgConnectorsAction manageSsgConnectorsAction = null;
+    private ManageTrustedEmsUsersAction manageTrustedEmsUsersAction = null;
     private RevokeCertificatesAction revokeCertificatesAction = null;
     private ManageGlobalSchemasAction manageGlobalSchemasAction = null;
     private ManageClusterPropertiesAction manageClusterPropertiesAction = null;
@@ -659,6 +660,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageLogSinksAction());
             menu.add(getManageEmailListenersAction());
             menu.add(getConfigureFtpAuditArchiverAction());
+            menu.add(getManageTrustedEmsUsersAction());
 
 
             int mnemonic = menu.getText().toCharArray()[0];
@@ -678,9 +680,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (manageAuditAlertsAction == null) {
             manageAuditAlertsAction = AuditAlertOptionsAction.getInstance();
             manageAuditAlertsAction.addAuditWatcher(getAuditAlertBar());
-            manageAuditAlertsAction.setEnabled(false);
-            this.addLogonListener(manageAuditAlertsAction);
-            addPermissionRefreshListener(manageAuditAlertsAction);
+            disableUntilLogin(manageAuditAlertsAction);
         }
         return manageAuditAlertsAction;
     }
@@ -909,9 +909,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return changePasswordAction;
         }
         changePasswordAction = new ChangePasswordAction();
-        changePasswordAction.setEnabled(false);
-        this.addLogonListener(changePasswordAction);
-        addPermissionRefreshListener(changePasswordAction);
+        disableUntilLogin(changePasswordAction);
         return changePasswordAction;
     }
 
@@ -923,9 +921,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return publishServiceAction;
         }
         publishServiceAction = new PublishServiceAction();
-        publishServiceAction.setEnabled(false);
-        this.addLogonListener(publishServiceAction);
-        addPermissionRefreshListener(publishServiceAction);
+        disableUntilLogin(publishServiceAction);
         return publishServiceAction;
     }
 
@@ -934,9 +930,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return publishNonSoapServiceAction;
         }
         publishNonSoapServiceAction = new PublishNonSoapServiceAction();
-        publishNonSoapServiceAction.setEnabled(false);
-        this.addLogonListener(publishNonSoapServiceAction);
-        addPermissionRefreshListener(publishNonSoapServiceAction);
+        disableUntilLogin(publishNonSoapServiceAction);
         return publishNonSoapServiceAction;
     }
 
@@ -949,9 +943,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return createServiceAction;
         }
         createServiceAction = new CreateServiceWsdlAction();
-        createServiceAction.setEnabled(false);
-        this.addLogonListener(createServiceAction);
-        addPermissionRefreshListener(createServiceAction);
+        disableUntilLogin(createServiceAction);
         return createServiceAction;
     }
 
@@ -1546,9 +1538,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
 
         manageJmsEndpointsAction = new ManageJmsEndpointsAction();
-        manageJmsEndpointsAction.setEnabled(false);
-        this.addLogonListener(manageJmsEndpointsAction);
-        addPermissionRefreshListener(manageJmsEndpointsAction);
+        disableUntilLogin(manageJmsEndpointsAction);
         return manageJmsEndpointsAction;
     }
 
@@ -1558,9 +1548,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
 
         manageKerberosAction = new ManageKerberosAction();
-        manageKerberosAction.setEnabled(false);
-        this.addLogonListener(manageKerberosAction);
-        addPermissionRefreshListener(manageKerberosAction);
+        disableUntilLogin(manageKerberosAction);
         return manageKerberosAction;
     }
 
@@ -1569,9 +1557,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return manageCertificatesAction;
 
         manageCertificatesAction = new ManageCertificatesAction();
-        manageCertificatesAction.setEnabled(false);
-        this.addLogonListener(manageCertificatesAction);
-        addPermissionRefreshListener(manageCertificatesAction);
+        disableUntilLogin(manageCertificatesAction);
         return manageCertificatesAction;
     }
 
@@ -1580,10 +1566,23 @@ public class MainWindow extends JFrame implements SheetHolder {
             return manageSsgConnectorsAction;
 
         manageSsgConnectorsAction = new ManageSsgConnectorsAction();
-        manageSsgConnectorsAction.setEnabled(false);
-        this.addLogonListener(manageSsgConnectorsAction);
-        addPermissionRefreshListener(manageSsgConnectorsAction);
+        disableUntilLogin(manageSsgConnectorsAction);
         return manageSsgConnectorsAction;
+    }
+
+    private Action getManageTrustedEmsUsersAction() {
+        if (manageTrustedEmsUsersAction != null)
+            return manageTrustedEmsUsersAction;
+
+        SecureAction action = new ManageTrustedEmsUsersAction();
+        disableUntilLogin(action);
+        return manageTrustedEmsUsersAction = (ManageTrustedEmsUsersAction) action;
+    }
+
+    private void disableUntilLogin(SecureAction action) {
+        action.setEnabled(false);
+        this.addLogonListener(action);
+        addPermissionRefreshListener(action);
     }
 
     private Action getManageLogSinksAction() {
@@ -1591,9 +1590,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return manageLogSinksAction;
 
         manageLogSinksAction = new ManageLogSinksAction();
-        manageLogSinksAction.setEnabled(false);
-        this.addLogonListener(manageLogSinksAction);
-        addPermissionRefreshListener(manageLogSinksAction);
+        disableUntilLogin(manageLogSinksAction);
         return manageLogSinksAction;
     }
 
@@ -1602,9 +1599,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return manageEmailListenersAction;
 
         manageEmailListenersAction = new ManageEmailListenersAction();
-        manageEmailListenersAction.setEnabled(false);
-        this.addLogonListener(manageEmailListenersAction);
-        addPermissionRefreshListener(manageEmailListenersAction);
+        disableUntilLogin(manageEmailListenersAction);
         return manageEmailListenersAction;
     }
 
@@ -1613,9 +1608,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return configureFtpAuditArchiver;
 
         configureFtpAuditArchiver = new ConfigureFtpAuditArchiverAction();
-        configureFtpAuditArchiver.setEnabled(false);
-        this.addLogonListener(configureFtpAuditArchiver);
-        addPermissionRefreshListener(configureFtpAuditArchiver);
+        disableUntilLogin(configureFtpAuditArchiver);
         return configureFtpAuditArchiver;
     }
 
@@ -1624,9 +1617,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return managePrivateKeysAction;
 
         managePrivateKeysAction = new ManagePrivateKeysAction();
-        managePrivateKeysAction.setEnabled(false);
-        this.addLogonListener(managePrivateKeysAction);
-        addPermissionRefreshListener(managePrivateKeysAction);
+        disableUntilLogin(managePrivateKeysAction);
         return managePrivateKeysAction;
     }
 
@@ -1635,45 +1626,35 @@ public class MainWindow extends JFrame implements SheetHolder {
             return revokeCertificatesAction;
 
         revokeCertificatesAction = new RevokeCertificatesAction();
-        revokeCertificatesAction.setEnabled(false);
-        this.addLogonListener(revokeCertificatesAction);
-        addPermissionRefreshListener(revokeCertificatesAction);
+        disableUntilLogin(revokeCertificatesAction);
         return revokeCertificatesAction;
     }
 
     private Action getManageGlobalSchemasAction() {
         if (manageGlobalSchemasAction != null) return manageGlobalSchemasAction;
         manageGlobalSchemasAction = new ManageGlobalSchemasAction();
-        manageGlobalSchemasAction.setEnabled(false);
-        this.addLogonListener(manageGlobalSchemasAction);
-        addPermissionRefreshListener(manageGlobalSchemasAction);
+        disableUntilLogin(manageGlobalSchemasAction);
         return manageGlobalSchemasAction;
     }
 
     private Action getManageClusterPropertiesAction() {
         if (manageClusterPropertiesAction != null) return manageClusterPropertiesAction;
         manageClusterPropertiesAction = new ManageClusterPropertiesAction();
-        manageClusterPropertiesAction.setEnabled(false);
-        this.addLogonListener(manageClusterPropertiesAction);
-        addPermissionRefreshListener(manageClusterPropertiesAction);
+        disableUntilLogin(manageClusterPropertiesAction);
         return manageClusterPropertiesAction;
     }
 
     private Action getShowDashboardAction() {
         if (showDashboardAction != null) return showDashboardAction;
         showDashboardAction = new ShowDashboardAction();
-        showDashboardAction.setEnabled(false);
-        this.addLogonListener(showDashboardAction);
-        addPermissionRefreshListener(showDashboardAction);
+        disableUntilLogin(showDashboardAction);
         return showDashboardAction;
     }
 
     private Action getManagerClusterLicensesAction() {
         if (manageClusterLicensesAction != null) return manageClusterLicensesAction;
         manageClusterLicensesAction = new ManageClusterLicensesAction();
-        manageClusterLicensesAction.setEnabled(false);
-        this.addLogonListener(manageClusterLicensesAction);
-        addPermissionRefreshListener(manageClusterLicensesAction);
+        disableUntilLogin(manageClusterLicensesAction);
         return manageClusterLicensesAction;
     }
 
@@ -1688,18 +1669,14 @@ public class MainWindow extends JFrame implements SheetHolder {
                 super.performAction();
             }
         };
-        viewGatewayAuditsWindowAction.setEnabled(false);
-        this.addLogonListener(viewGatewayAuditsWindowAction);
-        addPermissionRefreshListener(viewGatewayAuditsWindowAction);
+        disableUntilLogin(viewGatewayAuditsWindowAction);
         return viewGatewayAuditsWindowAction;
     }
 
     private ViewAuditsOrLogsFromFileAction getAuditOrLogsFromFileAction() {
         if (auditOrLogFromFileAction != null) return auditOrLogFromFileAction;
         auditOrLogFromFileAction = new ViewAuditsOrLogsFromFileAction();
-        auditOrLogFromFileAction.setEnabled(false);
-        this.addLogonListener(auditOrLogFromFileAction);
-        addPermissionRefreshListener(auditOrLogFromFileAction);
+        disableUntilLogin(auditOrLogFromFileAction);
         return auditOrLogFromFileAction;
     }
 
@@ -1896,6 +1873,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageLogSinksAction());
             menu.add(getManageEmailListenersAction());
             menu.add(getConfigureFtpAuditArchiverAction());
+            menu.add(getManageTrustedEmsUsersAction());
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/Properties16.gif");
 
@@ -2609,9 +2587,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private Action getManageRolesAction() {
         if (manageRolesAction == null) {
             manageRolesAction = new ManageRolesAction();
-            manageRolesAction.setEnabled(false);
-            this.addLogonListener(manageRolesAction);
-            addPermissionRefreshListener(manageRolesAction);
+            disableUntilLogin(manageRolesAction);
         }
         return manageRolesAction;
     }
@@ -3045,9 +3021,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return publishInternalServiceAction;
         }
         publishInternalServiceAction = new PublishInternalServiceAction();
-        publishInternalServiceAction.setEnabled(false);
-        this.addLogonListener(publishInternalServiceAction);
-        addPermissionRefreshListener(publishInternalServiceAction);
+        disableUntilLogin(publishInternalServiceAction);
         return publishInternalServiceAction;
     }
 }

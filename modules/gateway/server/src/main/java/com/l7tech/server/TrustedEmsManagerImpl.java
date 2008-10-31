@@ -58,8 +58,7 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
         return tc != null && tc.size() > 0 ? (TrustedCert) tc.get(0) : null;
     }
 
-    public TrustedEms getOrCreateEmsAssociation(User user, String emsId, X509Certificate emsCert) throws ObjectModelException, AccessControlException, CertificateException
-    {
+    public TrustedEms getOrCreateEmsAssociation(User user, String emsId, X509Certificate emsCert) throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException {
         if (user == null)
             throw new IllegalArgumentException("Missing authenticated user");
         if (emsId == null || emsId.trim().length() < 1)
@@ -74,7 +73,7 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
             if (!CertUtils.certsAreEqual(trustedEms.getTrustedCert().getCertificate(), emsCert)) {
                 // It is NOT safe to just replace the cert -- this could allow an admin user to instantly
                 // reassign all existing user mappings to a totally different EMS without being completely aware of it.
-                throw new CertificateException("Specified EMS certificate does not match the previously-known certificate for the specified EMS ID");
+                throw new CertificateMismatchException("Specified EMS certificate does not match the previously-known certificate for the specified EMS ID");
             }
             return trustedEms;
         }

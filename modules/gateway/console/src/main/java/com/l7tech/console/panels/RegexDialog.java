@@ -10,11 +10,8 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.plaf.basic.BasicSplitPaneDivider;
-import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -192,9 +189,9 @@ public class RegexDialog extends JDialog {
         Utilities.enableGrayOnDisabled(replaceTextArea);
         Utilities.enableGrayOnDisabled(encodingField);
 
-        deuglifySplitPane(splitPaneTop);
-        deuglifySplitPane(splitPaneTest);
-        deuglifySplitPane(splitPaneRegex);
+        Utilities.deuglifySplitPane(splitPaneTop);
+        Utilities.deuglifySplitPane(splitPaneTest);
+        Utilities.deuglifySplitPane(splitPaneRegex);
 
         modelToView();
         updateEncodingEnabledState();
@@ -327,18 +324,6 @@ public class RegexDialog extends JDialog {
         } catch (BadLocationException e1) {
             throw new RuntimeException(e1);
         }
-    }
-
-    public static void deuglifySplitPane(JSplitPane pane) {
-        pane.setUI(new BasicSplitPaneUI() {
-            public BasicSplitPaneDivider createDefaultDivider() {
-                return new BasicSplitPaneDivider(this) {
-                    public void setBorder(Border border) {
-                    }
-                };
-            }
-        });
-        pane.setBorder(null);
     }
 
     public BeanEditSupport getBeanEditSupport() {

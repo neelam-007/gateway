@@ -2,13 +2,12 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.emstrust.TrustedEms;
 import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
-import com.l7tech.objectmodel.EntityType;
-import static com.l7tech.objectmodel.EntityType.TRUSTED_EMS_USER;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import static com.l7tech.gateway.common.security.rbac.OperationType.CREATE;
 import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_EMS_USER;
 import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,10 +16,7 @@ import javax.annotation.Resource;
 import java.security.AccessControlException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Arrays;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,7 +58,8 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
     }
 
 
-    public TrustedEmsUser configureUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername) throws ObjectModelException, AccessControlException, CertificateException
+    public TrustedEmsUser configureUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername)
+            throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException, MappingAlreadyExistsException
     {
         if (user == null)
             throw new IllegalArgumentException("Missing authenticated user");
@@ -79,7 +76,7 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         TrustedEmsUser trustedEmsUser = findByEmsUsername(trustedEms, emsUsername);
         if (trustedEmsUser != null) {
             // Another local user -- possible the same one -- already mapped as this EMS user
-            throw new ConstraintViolationException("A mapping already exists for the specified user on the specified EMS instance.");
+            throw new MappingAlreadyExistsException("A mapping already exists for the specified user on the specified EMS instance.");
         }
 
         trustedEmsUser = new TrustedEmsUser();
@@ -126,6 +123,12 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         }
 
         return didDelete;
+    }
+
+    public Collection<TrustedEmsUser> findByEmsId(long trustedEmsOid) throws FindException {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("trustedEms.oid", trustedEmsOid);
+        return findMatching(Arrays.asList(map));
     }
 
     private TrustedEmsUser findByEmsUsername(TrustedEms trustedEms, String emsUsername) throws FindException {

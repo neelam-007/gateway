@@ -39,9 +39,8 @@ public interface TrustedEmsManager extends EntityManager<TrustedEms, EntityHeade
      * @return the found, added or updated TrustedEms instance.  Never null.
      * @throws java.security.AccessControlException if the specified user lacks sufficient permission to create or update this association
      * @throws com.l7tech.objectmodel.ObjectModelException  if there is a problem accessing or updating the database
-     * @throws CertificateException if emsCert cannot be encoded; or,
-     *                              if an association already exists for the specified emsId but with a certificate
-     *                              other than emsCert
+     * @throws CertificateException if emsCert cannot be encoded
+     * @throws CertificateMismatchException if an association already exists for the specified emsId but with a certificate other than emsCert
      */
-    TrustedEms getOrCreateEmsAssociation(User requestingUser, String emsId, X509Certificate emsCert) throws ObjectModelException, AccessControlException, CertificateException;
+    TrustedEms getOrCreateEmsAssociation(User requestingUser, String emsId, X509Certificate emsCert) throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException;
 }

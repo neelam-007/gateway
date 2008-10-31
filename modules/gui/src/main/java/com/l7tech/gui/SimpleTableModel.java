@@ -49,11 +49,11 @@ public class SimpleTableModel<RT> extends AbstractTableModel {
     /**
      * Get the backing object for the specified row.
      *
-     * @param rowIndex the row index
-     * @return the backing object for that row
+     * @param rowIndex the row index.  If negative, this method returns null.
+     * @return the backing object for that row, or null.
      */
     public RT getRowObject(int rowIndex) {
-        return rows.get(rowIndex);
+        return rowIndex < 0 ? null : rows.get(rowIndex);
     }
 
     /**
