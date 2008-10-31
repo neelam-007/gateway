@@ -4,6 +4,9 @@
 package com.l7tech.gui.util;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.plaf.basic.BasicSplitPaneDivider;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.text.JTextComponent;
@@ -14,14 +17,11 @@ import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.AccessControlException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Properties;
-import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -720,6 +720,18 @@ public class Utilities {
         return (T)result;
     }
 
+    public static void deuglifySplitPane(JSplitPane pane) {
+        pane.setUI(new BasicSplitPaneUI() {
+            public BasicSplitPaneDivider createDefaultDivider() {
+                return new BasicSplitPaneDivider(this) {
+                    public void setBorder(Border border) {
+                    }
+                };
+            }
+        });
+        pane.setBorder(null);
+    }
+
 
     /**
      * Creates pop-up menus for text components.
@@ -1226,82 +1238,6 @@ public class Utilities {
                 }
             }
         };
-    }
-
-    private static final Method methodSetIconImages;
-    private static final Method methodGetIconImages;
-    static {
-        final Method[] getMethod = new Method[]{null};
-        final Method[] setMethod = new Method[]{null};
-
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                try {
-                    getMethod[0] = Window.class.getMethod("getIconImages", new Class[0]);
-                    setMethod[0] = Window.class.getMethod("setIconImages", new Class[] { java.util.List.class });
-                } catch (NoSuchMethodException e) {
-                    // No can do
-                } catch (AccessControlException e) {
-                    // No can do
-                }
-                return null;
-            }
-        });
-
-        methodSetIconImages = setMethod[0];
-        methodGetIconImages = getMethod[0];
-    }
-
-    /**
-     * Safely get the icon images for the specified window, if running under a supported JRE (Java 1.6 or higher).
-     *
-     * @param window  the window whose icon images to get.  Must not be null.
-     * @return a List of Image instances of various sizes to be used for the Window's frame and taskbar icon.
-     *         May be null or empty if not set or running with a pre-1.6 JRE.
-     */
-    public static java.util.List getIconImages(final Window window) {
-        if (methodGetIconImages == null) return null;
-
-        return (java.util.List)AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                try {
-                    return methodGetIconImages.invoke(window, new Object[0]);
-                } catch (IllegalAccessException e) {
-                    return null;
-                } catch (InvocationTargetException e) {
-                    return null;
-                } catch (AccessControlException e) {
-                    return null;
-                }
-            }
-        });
-    }
-
-    /**
-     * Safely set the icon images for the specified window, if running under a supported JRE (Java 1.6 or higher).
-     *
-     * @param window  the window whose icon images to set.  Must not be null.
-     * @param images  a List of Image instances.  Must not be null or empty, and must not contain nulls.
-     * @return true if the image list was set; false if the operation was not supported.
-     */
-    public static boolean setIconImages(final Window window, final java.util.List images) {
-        if (methodSetIconImages == null) return false;
-
-        Boolean result = (Boolean)AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                try {
-                    methodSetIconImages.invoke(window, new Object[] { images });
-                    return Boolean.TRUE;
-                } catch (IllegalAccessException e) {
-                    return Boolean.FALSE;
-                } catch (InvocationTargetException e) {
-                    return Boolean.FALSE;
-                } catch (AccessControlException e) {
-                    return Boolean.FALSE;
-                }
-            }
-        });
-        return result != null && result.booleanValue();
     }
 
     /**

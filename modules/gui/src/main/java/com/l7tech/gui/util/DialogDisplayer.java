@@ -250,9 +250,9 @@ public class DialogDisplayer {
 
             dialog.addWindowListener(windowAdapter);
         }
-        List images = Utilities.getIconImages(dialog);
+        List images = dialog.getIconImages();
         if ((images == null || images.isEmpty()) && defaultWindowImages != null && !defaultWindowImages.isEmpty())
-            Utilities.setIconImages(dialog, defaultWindowImages);        
+            dialog.setIconImages(defaultWindowImages);
         dialog.setVisible(true);
     }
 
@@ -469,7 +469,7 @@ public class DialogDisplayer {
     static Icon findFrameIcon(RootPaneContainer rpc) {
         if (rpc instanceof Window) {
             // Check for already-configured Window images (Java 1.6 or higher)
-            List windowImages = Utilities.getIconImages((Window)rpc);
+            List windowImages = ((Window)rpc).getIconImages();
             if (windowImages != null && windowImages.size() > 0) {
                 // We have no way to know what size would be best, so just use the first one
                 return new ImageIcon((Image)windowImages.iterator().next());
