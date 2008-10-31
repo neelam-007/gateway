@@ -228,7 +228,6 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity
     private String mac;
     private String address;
     private String multicastAddress;
-    private int clusterPort;
     private long boottime;
     private long uptime;
     private double avgLoad;

@@ -159,13 +159,11 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      */
     @Transactional(propagation= Propagation.REQUIRED)
     public void updateSelfUptime() throws UpdateException {
-        long newboottimevalue = System.currentTimeMillis();
         ClusterNodeInfo selfCI = getSelfNodeInf();
         if (selfCI != null) {
-            selfCI.setBootTime(newboottimevalue);
-            selfCI.setLastUpdateTimeStamp(newboottimevalue);
+            selfCI.setBootTime(rememberedBootTime);
+            selfCI.setLastUpdateTimeStamp(System.currentTimeMillis());
             updateSelfStatus( selfCI );
-            rememberedBootTime = newboottimevalue;
         } else {
             logger.warning("cannot retrieve db entry for this node.");
         }
@@ -261,7 +259,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = :nodeid";
 
     private static final Logger logger = Logger.getLogger(ClusterInfoManagerImpl.class.getName());
-    private long rememberedBootTime = -1;
+    private static final long rememberedBootTime = System.currentTimeMillis();
     private String thisNodeIPAddress;
     private String thisNodeMac;
     private final String nodeid;
@@ -287,6 +285,8 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         newClusterInfo.setAddress(getIPAddress());
         newClusterInfo.setNodeIdentifier(nodeid);
         newClusterInfo.setMac(macid);
+        newClusterInfo.setBootTime(rememberedBootTime);
+        newClusterInfo.setLastUpdateTimeStamp(System.currentTimeMillis());
         // choose first available name
         String newnodename = null;
         for (int i = 1; i < 25; i++) {
