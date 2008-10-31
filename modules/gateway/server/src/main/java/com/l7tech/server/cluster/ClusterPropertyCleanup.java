@@ -82,7 +82,9 @@ public class ClusterPropertyCleanup implements ApplicationListener {
                     }
                 }
             });
-            logger.log( Level.INFO, "Deleted cluster properties " + deletedProperties + "." );
+            if ( !deletedProperties.isEmpty() ) {
+                logger.log( Level.INFO, "Deleted cluster properties " + deletedProperties + "." );
+            }
         } catch ( TransactionException e ) {
             logger.log( Level.WARNING, "Error deleting properties " + deletedProperties + ".", e );
         }
