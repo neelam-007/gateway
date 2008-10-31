@@ -160,7 +160,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         });
 
         // Load the last window status (size and location).
-        Utilities.restoreWindowStatus(this, preferences.asProperties(), 800, 600);
+        Utilities.restoreWindowStatus(this, preferences.asProperties(), 970, 600);
     }
 
     /**
