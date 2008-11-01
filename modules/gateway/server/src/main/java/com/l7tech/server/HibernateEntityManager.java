@@ -839,7 +839,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         return deleted;
     }
 
-    protected List<ET> findByPropertyMaybeNull(final String property, final String value) throws FindException {
+    protected List<ET> findByPropertyMaybeNull(final String property, final Object value) throws FindException {
         try {
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {

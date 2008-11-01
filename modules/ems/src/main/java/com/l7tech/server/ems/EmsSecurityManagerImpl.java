@@ -6,6 +6,7 @@ import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.security.rbac.RoleManagerIdentitySourceSupport;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
@@ -31,11 +32,12 @@ import java.util.Date;
 import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 /**
  * Manages which pages are secure and performs authentication
  */
-public class EmsSecurityManagerImpl implements EmsSecurityManager {
+public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport implements EmsSecurityManager {
 
     //- PUBLIC
 
@@ -75,22 +77,13 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
         User user = null;
 
         logger.info("Authenticating user '"+username+"'.");
-        try {
-            for ( IdentityProvider provider : identityProviderFactory.findAllIdentityProviders() ) {
-                IdentityProviderConfig config = provider.getConfig();
-                if ( config.isAdminEnabled() ) {
-                    try {
-                        AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
-                        user = authResult == null ? null : authResult.getUser();
-                    } catch (AuthenticationException e) {
-                        logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
-                    }
-                } else {
-                    logger.info("Administrative users not enabled for provider '"+config.getName()+"'.");
-                }
+        for ( IdentityProvider provider : getAdminIdentityProviders() ) {
+            try {
+                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
+                user = authResult == null ? null : authResult.getUser();
+            } catch (AuthenticationException e) {
+                logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
             }
-        } catch (FindException fe) {
-            logger.log(Level.WARNING, "Error loading identity providers", fe);
         }
 
         boolean authenticated = user != null;
@@ -212,6 +205,27 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
                 new LoginInfo(user.getLogin(), date, user);
     }
 
+    //- PROTECTED
+    
+    protected Set<IdentityProvider> getAdminIdentityProviders() {
+        Set<IdentityProvider> providers = new LinkedHashSet<IdentityProvider>();
+
+        try {
+            for ( IdentityProvider provider : identityProviderFactory.findAllIdentityProviders() ) {
+                IdentityProviderConfig config = provider.getConfig();
+                if ( config.isAdminEnabled() ) {
+                    providers.add( provider );
+                } else {
+                    logger.info("Administrative users not enabled for provider '"+config.getName()+"'.");
+                }
+            }
+        } catch (FindException fe) {
+            logger.log(Level.WARNING, "Error loading identity providers", fe);
+        }
+
+        return providers;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( EmsSecurityManagerImpl.class.getName() );
@@ -220,7 +234,6 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
     private static final String ATTR_DATE = "com.l7tech.logindate";
 
     private final IdentityProviderFactory identityProviderFactory;
-    private final RoleManager roleManager;
     private final SessionAuthorizer authorizer = new SessionAuthorizer();
 
     private final class SessionAuthorizer extends Authorizer {

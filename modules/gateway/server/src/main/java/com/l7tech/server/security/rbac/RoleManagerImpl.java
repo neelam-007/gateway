@@ -227,6 +227,18 @@ public class RoleManagerImpl
         return false;
     }
 
+    public Role findByTag(final Role.Tag tag) throws FindException {
+        if ( tag == null ) throw new IllegalArgumentException("tag must not be null");
+
+        Role role = null;
+        Collection<Role> roles = this.findByPropertyMaybeNull("tag", tag);
+        if ( roles.size() > 1 ) {
+            throw new  FindException("Found multiple matching roles for tag '"+tag+"'.");
+        } else if ( !roles.isEmpty() ) {
+            role = roles.iterator().next();    
+        }
+        return role;
+    }
 
     public Role findEntitySpecificRole(PermissionMatchCallback callback) throws FindException {
         for (Role role : findAll()) {
@@ -366,10 +378,10 @@ public class RoleManagerImpl
             }
         } catch (FindException fe) {
             logger.log(Level.INFO, "Failed to find assigned roles for user '" + user.getLogin() + "' for provider " + user.getProviderId());
-            throw new DeleteException("Failed to delete role assignment for user '" + user.getLogin() +"'");
+            throw new DeleteException("Failed to delete role assignment for user '" + user.getLogin() +"'", fe.getCause());
         } catch (UpdateException ue) {
             logger.log(Level.INFO, "Failed to update role for assigned roles deletion");
-            throw new DeleteException("Failed to delete role assignment for user '" + user.getLogin() +"'");
+            throw new DeleteException("Failed to delete role assignment for user '" + user.getLogin() +"'", ue.getCause());
         }
     }
 }

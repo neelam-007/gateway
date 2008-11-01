@@ -1,8 +1,8 @@
 package com.l7tech.server.admin;
 
-import org.apache.commons.collections.LRUMap;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.beans.factory.InitializingBean;
+import org.apache.commons.collections.map.LRUMap;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
@@ -12,22 +12,17 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.RoleAssignment;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
-import com.l7tech.server.identity.internal.InternalGroupManager;
-import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.security.rbac.RoleManagerIdentitySource;
+import com.l7tech.server.security.rbac.RoleManagerIdentitySourceSupport;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -48,7 +43,7 @@ import java.util.logging.Logger;
  * resume an admin session as that user; thus, the cookies must be sent over SSL, never written to disk by
  * either client or server, and not kept longer than necessary.</p>
  */
-public class AdminSessionManager implements InitializingBean, RoleManagerIdentitySource {
+public class AdminSessionManager extends RoleManagerIdentitySourceSupport implements InitializingBean {
 
     //- PUBLIC
 
@@ -388,84 +383,12 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
         return Collections.emptySet();
     }
 
-    /**
-     * Ensure that the current (perhaps not yet committed) role assignments are valid.
-     *
-     * <p>This check ensures that:</p>
-     *
-     * <li>
-     *   <ul>There is an administrative assignement to at least one internal user or group.</ul>
-     *   <ul>If a group is assigned that there is at least one user in that group.</ul>
-     *   <ul>That the user that is assigned is not an expired account.</ul>
-     * </li>
-     *
-     * @throws UpdateException If there is a problem with assignments or an error while checking.
-     */
-    public void validateRoleAssignments() throws UpdateException {
-        try {
-            // Try internal first (internal accounts with the same credentials should hide externals)
-            Set<IdentityProvider> providers;
-            synchronized( providerSync ) {
-                providers = adminProviders;
-            }
-
-            boolean found = false;
-            IdentityProvider provider = !providers.isEmpty() ? providers.iterator().next() : null;
-            if ( provider instanceof InternalIdentityProvider ) {
-                InternalIdentityProvider internalProvider = (InternalIdentityProvider) provider;
-                InternalUserManager userManager = internalProvider.getUserManager();
-                InternalGroupManager groupManager = internalProvider.getGroupManager();
-                long expiryMinTime = System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1); // good for an hour at least
-
-                Role adminRole = roleManager.findByPrimaryKey( Role.ADMIN_ROLE_OID );
-                if ( adminRole != null ) {
-                    Set<String> checkedUserOids = new HashSet<String>();
-
-                    // Check for user assignment first
-                    for ( RoleAssignment assignment : adminRole.getRoleAssignments() ) {
-                        if ( assignment.getProviderId()==internalProvider.getConfig().getOid() ) {
-                            if ( EntityType.USER.getName().equals(assignment.getEntityType()) ) {
-                                InternalUser user = userManager.findByPrimaryKey( assignment.getIdentityId() );
-                                if ( user != null && (user.getExpiration()<0 || user.getExpiration() < expiryMinTime)) {
-                                    found = true;
-                                    break;
-                                } else {
-                                    checkedUserOids.add( assignment.getIdentityId() );
-                                }
-                            }
-                        }
-                    }
-
-                    if ( !found ) {
-                        // Check group assignments
-                        for ( RoleAssignment assignment : adminRole.getRoleAssignments() ) {
-                            if ( assignment.getProviderId()==internalProvider.getConfig().getOid() ) {
-                                if ( EntityType.GROUP.getName().equals(assignment.getEntityType()) ) {
-                                    Set<IdentityHeader> users = groupManager.getUserHeaders( assignment.getIdentityId() );
-                                    for ( IdentityHeader userHeader : users ) {
-                                        if ( checkedUserOids.contains( userHeader.getStrId() ) ) continue;
-
-                                        InternalUser user = userManager.findByPrimaryKey( userHeader.getStrId() );
-                                        if ( user != null && (user.getExpiration()<0 || user.getExpiration() < expiryMinTime)) {
-                                            found = true;
-                                            break;
-                                        } else {
-                                            checkedUserOids.add( assignment.getIdentityId() );
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if ( !found ) {
-                        throw new UpdateException( "At least one internal user must be assigned to the administrative role (can be via group assignment)." );
-                    }
-                }
-            }
-        } catch ( FindException fe ) {
-            throw new UpdateException( "Error checking role assignements.", fe );
+    protected Set<IdentityProvider> getAdminIdentityProviders(){
+        Set<IdentityProvider> providers;
+        synchronized( providerSync ) {
+            providers = adminProviders;
         }
+        return providers;
     }
 
     //- PRIVATE
@@ -478,7 +401,6 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
 
     // spring components
     private IdentityProviderFactory identityProviderFactory;
-    private RoleManager roleManager;
     private PasswordEnforcerManager passwordEnforcerManager;
 
     //

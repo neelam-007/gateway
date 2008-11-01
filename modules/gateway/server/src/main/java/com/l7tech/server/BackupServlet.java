@@ -133,7 +133,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         try {
             boolean isAdmin = false;
             for (Role role : _roleManager.getAssignedRoles(user)) {
-                if (role.getOid() == Role.ADMIN_ROLE_OID) {
+                if (role.getTag() == Role.Tag.ADMIN) {                    
                     isAdmin = true;
                     break;
                 }

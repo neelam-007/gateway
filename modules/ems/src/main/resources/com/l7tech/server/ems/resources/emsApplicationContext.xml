@@ -270,6 +270,17 @@
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean"/>
 
+    <bean id="roleManagerHelper" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.security.rbac.RoleManagerImpl"/>
+        <property name="targetMethod" value="setIdentitySource"/>
+        <property name="arguments">
+            <list>
+                <ref bean="securityManager"/>
+            </list>
+        </property>
+    </bean>
+
+
     <!-- logon manager handles the persistence of login attempts information to the database layer -->
     <bean id="logonManager" class="com.l7tech.server.logon.LogonInfoManagerImpl" parent="hibernateBean"/>
 

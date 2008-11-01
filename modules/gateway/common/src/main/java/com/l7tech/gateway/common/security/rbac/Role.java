@@ -37,7 +37,6 @@ import org.hibernate.annotations.Cascade;
 @javax.persistence.Entity
 @Table(name="rbac_role")
 public class Role extends NamedEntityImp implements Comparable<Role> {
-    public static final int ADMIN_ROLE_OID = -100;
     public static enum Tag { ADMIN };
 
     private Set<Permission> permissions = new HashSet<Permission>();

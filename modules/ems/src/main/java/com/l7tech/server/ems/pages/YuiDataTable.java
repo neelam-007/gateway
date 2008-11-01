@@ -4,6 +4,7 @@ import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
+import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.WicketAjaxReference;
 import org.apache.wicket.behavior.AbstractAjaxBehavior;
@@ -36,6 +37,12 @@ public class YuiDataTable extends Panel {
 
     //- PUBLIC
 
+    public static void contributeHeaders( final Component component ) {
+        component.add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_BUTTON ) );
+        component.add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_MENU ) );
+        component.add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_DATATABLE ) );
+    }
+
     public YuiDataTable( final String id,
                          final List<PropertyColumn> columns,
                          final String sortProperty,
@@ -60,9 +67,7 @@ public class YuiDataTable extends Panel {
 
         setOutputMarkupId(true);
 
-        add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_BUTTON ) );
-        add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_MENU ) );
-        add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_DATATABLE ) );
+        contributeHeaders( this );
 
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM_EVENT ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_ELEMENT ) );

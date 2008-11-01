@@ -32,8 +32,11 @@ import java.text.MessageFormat;
 public class UserRoles extends EmsPage {
     private static final Logger logger = Logger.getLogger(UserRoles.class.getName());
 
+    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private RoleManager roleManager;
+
+    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private EmsAccountManager emsAccountManager;
 
@@ -52,6 +55,9 @@ public class UserRoles extends EmsPage {
 
         // Create a form to select a role
         add(new SelectRoleForm("form.selectRole"));
+
+        // Add headers to page early to fix issue with CSS ordering
+        YuiDataTable.contributeHeaders( this );
 
         // Create a container to contain all components to manage roles for users.
         initRoleManagementContainer();

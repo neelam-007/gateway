@@ -40,6 +40,14 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
     boolean isPermittedForAnyEntityOfType(User authenticatedUser, OperationType requiredOperation, EntityType requiredType) throws FindException;
 
     /**
+     * Find a role by tag.
+     *
+     * @return The role or null if non was found.
+     */
+    @Transactional(readOnly=true)
+    Role findByTag(Role.Tag tag) throws FindException;;
+
+    /**
      * Finds the first role in which every {@link com.l7tech.gateway.common.security.rbac.Permission}
      * matches the provided callback.
      *

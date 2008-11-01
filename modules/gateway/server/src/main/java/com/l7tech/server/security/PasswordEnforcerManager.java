@@ -223,7 +223,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener {
 
             if (roles == null) return false;
             for (Role role : roles) {
-                if (role.getOid() == Role.ADMIN_ROLE_OID) {
+                if (role.getTag() == Role.Tag.ADMIN) {
                     return true;
                 }
             }
