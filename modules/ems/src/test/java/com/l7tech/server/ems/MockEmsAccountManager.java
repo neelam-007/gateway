@@ -25,6 +25,10 @@ public class MockEmsAccountManager implements EmsAccountManager {
         return null;
     }
 
+    public InternalUser findByPrimaryKey(String identifier) throws FindException {
+        return null;
+    }
+
     public String save(InternalUser user) throws SaveException {
         throw new SaveException("Mock does not support save");
     }

@@ -19,6 +19,8 @@ public interface EmsAccountManager {
 
     InternalUser findByLogin( String login ) throws FindException;
 
+    InternalUser findByPrimaryKey(final String identifier) throws FindException;
+
     String save( InternalUser user ) throws SaveException;
 
     void update( InternalUser user ) throws UpdateException;

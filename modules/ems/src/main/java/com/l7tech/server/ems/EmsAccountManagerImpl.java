@@ -83,6 +83,10 @@ public class EmsAccountManagerImpl implements EmsAccountManager {
         return getUserManager().findByLogin(login);
     }
 
+    public InternalUser findByPrimaryKey(final String identifier) throws FindException {
+        return getUserManager().findByPrimaryKey(identifier);
+    }
+
     public void update( final InternalUser user ) throws UpdateException {
         try {
             getUserManager().update( user );
