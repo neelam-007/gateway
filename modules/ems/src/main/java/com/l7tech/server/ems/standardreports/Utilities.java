@@ -111,22 +111,25 @@ public class Utilities {
     public static final String RIGHT_MARGIN = "rightMargin";
     private static final String TABLE_CELL_STYLE = "TableCell";
     private static final String TOTAL_CELL_STYLE = "TotalCell";
-    private static final int FIELD_HEIGHT = 18;
-    private static final int RIGHT_MARGIN_WIDTH = 30;
-    private static final int LEFT_MARGIN_WIDTH = RIGHT_MARGIN_WIDTH;
-    private static final int TOTAL_COLUMN_WIDTH = 80;
-    private static final int DATA_COLUMN_WIDTH = 60;
-    private static final int MAPPING_KEY_FIELD_WIDTH = 67;
+    public static final int FIELD_HEIGHT = 18;
+    public static final int RIGHT_MARGIN_WIDTH = 30;
+    public static final int LEFT_MARGIN_WIDTH = RIGHT_MARGIN_WIDTH;
+    public static final int TOTAL_COLUMN_WIDTH = 80;
+    public static final int DATA_COLUMN_WIDTH = 60;
+    public static final int MAPPING_KEY_FIELD_WIDTH = 67;
     private static final int SERVICE_TITLE_WIDTH = 45;
-    private static final int DATA_ROW_STARTING_X_POS = MAPPING_KEY_FIELD_WIDTH + SERVICE_TITLE_WIDTH + 5;
-    private static final String SERVICE_HEADER = "serviceHeader";
-    private static final String SUB_REPORT = "subReport";
-    private static final String RETURN_VALUE = "returnValue";
-    private static final String SUMMARY = "summary";
+    public static final int DATA_ROW_STARTING_X_POS = MAPPING_KEY_FIELD_WIDTH + SERVICE_TITLE_WIDTH + 5;
+    public static final String SERVICE_HEADER = "serviceHeader";
+    public static final String SUB_REPORT = "subReport";
+    public static final String RETURN_VALUE = "returnValue";
+    public static final String SUMMARY = "summary";
     private static final String SUB_REPORT_WIDTH = "subReportWidth";
-    private static final String NO_DATA = "noData";
-    private static final int SUB_INTERVAL_STATIC_WIDTH = 118;
-    private static final int MAPPING_VALUE_FIELD_HEIGHT = 36;
+    public static final String NO_DATA = "noData";
+    public static final int SUB_INTERVAL_STATIC_WIDTH = 118;
+    public static final int MAPPING_VALUE_FIELD_HEIGHT = 36;
+    //service text field is 5 from left margin
+    public static final int CONSTANT_HEADER_START_X = SERVICE_TITLE_WIDTH + 5;
+    public static final int SERVICE_HEADER_X_POS = 50;
 
 
     /**
@@ -1575,6 +1578,24 @@ Value is included in all or none, comment is just illustrative
         return doc;
     }
 
+    private static String getContextKeysDiaplayString(boolean useUser, List<String> keys){
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        if(useUser){
+            sb.append("Auth User");
+            first = false;
+        }
+
+        for(String s: keys){
+            if(!first){
+                sb.append("<br>");
+            }
+            first = false;
+            sb.append(s);
+        }
+        return sb.toString();
+    }
+    
     /**
      * Create a document, given the input properties, which will be used to transform the
      * template usgae report.
@@ -1623,26 +1644,12 @@ Value is included in all or none, comment is just illustrative
         Element serviceHeader = doc.createElement(SERVICE_HEADER);
         rootNode.appendChild(serviceHeader);
 
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-        if(useUser){
-            sb.append("Auth User");
-            first = false;
-        }
-
-        for(String s: keys){
-            if(!first){
-                sb.append("<br>");
-            }
-            first = false;            
-            sb.append(s);
-        }
-
-        int xPos = 50;
+        int xPos = SERVICE_HEADER_X_POS;
         int yPos = 0;
-        
+
+        String keyDisplayValue = getContextKeysDiaplayString(useUser, keys);
         addTextFieldToElement(doc, serviceHeader, xPos, yPos, MAPPING_KEY_FIELD_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
-                "textField-serviceHeader-MappingKeys", "java.lang.String", sb.toString(), TABLE_CELL_STYLE, false);
+                "textField-serviceHeader-MappingKeys", "java.lang.String", keyDisplayValue, TABLE_CELL_STYLE, false);
         xPos += MAPPING_KEY_FIELD_WIDTH;
         
         List<String> listMappingValues = new ArrayList<String>();
@@ -1805,15 +1812,12 @@ Value is included in all or none, comment is just illustrative
         //The widths for the entire document are determined from this first header.
         //it has slightly different make up as it has an additional text field, however all other headers
         //should always work out to the be the same width. If they are wider, the report will not compile
-        int xPos = SERVICE_TITLE_WIDTH;
+        int xPos = CONSTANT_HEADER_START_X;
         int yPos = 0;
-        StringBuilder sb = new StringBuilder();
-        if(useUser) sb.append("Auth User<br>");
-        for(String s: keys){
-            sb.append(s).append("<br>");            
-        }
+
+        String keyDisplayValue = getContextKeysDiaplayString(useUser, keys);
         addTextFieldToElement(doc, constantHeader, xPos, yPos, MAPPING_KEY_FIELD_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
-                "textField-constantHeader-MappingKeys", "java.lang.String", sb.toString(), TABLE_CELL_STYLE, false);
+                "textField-constantHeader-MappingKeys", "java.lang.String", keyDisplayValue, TABLE_CELL_STYLE, false);
         xPos += MAPPING_KEY_FIELD_WIDTH;
         
         List<String> listMappingValues = new ArrayList<String>();
@@ -1906,20 +1910,6 @@ Value is included in all or none, comment is just illustrative
 
     public static String getMappingValueString(String authUser, String [] mappingValues){
         StringBuilder sb = new StringBuilder();
-
-//        boolean first = true;
-//        if(useUser){
-//            sb.append("Auth User");
-//            first = false;
-//        }
-//
-//        for(String s: keys){
-//            if(!first){
-//                sb.append("<br>");
-//                first = false;
-//            }
-//            sb.append(s);
-//        }
 
         boolean first = true;
         if(!authUser.equals(Utilities.SQL_PLACE_HOLDER)){

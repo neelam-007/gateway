@@ -471,7 +471,7 @@ public class ReportApp
 
         //now generate the report to be compiled
         Document transformDoc = Utilities.getUsageRuntimeDoc(useUser, keys, mappingValues);
-        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
+        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
         try{
@@ -492,7 +492,7 @@ public class ReportApp
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperDoc = transform(xslStr, xmlFileName, params);
 
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/JasperRuntimeDoc.xml");
+        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
         try{
@@ -514,16 +514,6 @@ public class ReportApp
         }finally{
             connection.close();
         }
-        XmlUtil.format(jasperDoc, true);
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/ReportAppRuntimeDoc.xml");
-        f.createNewFile();
-        fos = new FileOutputStream(f);
-        try{
-            XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
-            fos.close();
-        }
-
     }
 
     private String getResAsString(String path) throws IOException {
