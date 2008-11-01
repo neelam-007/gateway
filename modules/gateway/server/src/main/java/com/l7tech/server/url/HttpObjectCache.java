@@ -9,7 +9,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.common.io.IOUtils;
 
-import org.apache.commons.collections.LRUMap;
+import org.apache.commons.collections.map.LRUMap;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
