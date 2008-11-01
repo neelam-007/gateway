@@ -3,6 +3,7 @@ package com.l7tech.gateway.config.client;
 import com.l7tech.gateway.config.client.beans.ConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.NodeConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.StateConfigurationBeanProvider;
+import com.l7tech.gateway.config.client.beans.NodeManagementApiFactory;
 import com.l7tech.gateway.config.client.options.OptionSet;
 import com.l7tech.gateway.config.client.options.Option;
 import com.l7tech.util.JdkLoggerConfigurator;
@@ -117,17 +118,17 @@ public class Main {
     private static final ConfigurationType[] configurationTypes = {
         new ConfigurationType( "appliance-full", "configTemplates/GatewayApplianceConfiguration.xml", true ){
             public ConfigurationBeanProvider getProvider() {
-                return new NodeConfigurationBeanProvider(pcUrl);
+                return new NodeConfigurationBeanProvider( new NodeManagementApiFactory( pcUrl ) );
             }
         },
         new ConfigurationType( "appliance", "configTemplates/GatewayApplianceConfiguration.xml", false ){
             public ConfigurationBeanProvider getProvider() {
-                return new NodeConfigurationBeanProvider(pcUrl);
+                return new NodeConfigurationBeanProvider( new NodeManagementApiFactory( pcUrl ) );
             }
         },
         new ConfigurationType( "software", "configTemplates/GatewaySoftwareConfiguration.xml", true ){
             public ConfigurationBeanProvider getProvider() {
-                return new NodeConfigurationBeanProvider(pcUrl);
+                return new NodeConfigurationBeanProvider( new NodeManagementApiFactory() );
             }
         },
         new ConfigurationType( "status", "configTemplates/NodeStatus.xml", true ){

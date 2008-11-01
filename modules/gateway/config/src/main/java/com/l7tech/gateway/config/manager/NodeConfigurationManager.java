@@ -62,8 +62,7 @@ public class NodeConfigurationManager {
                                              final Boolean enabled,
                                              final String clusterPassword,
                                              final DatabaseConfig databaseConfig,
-                                             final DatabaseConfig database2ndConfig,
-                                             final boolean createdb ) throws IOException {
+                                             final DatabaseConfig database2ndConfig ) throws IOException {
         String nodeName = name;
         if ( nodeName == null ) {
             nodeName = "default";
@@ -76,7 +75,7 @@ public class NodeConfigurationManager {
             throw new FileNotFoundException( "Missing configuration directory '" + configDirectory.getAbsolutePath() + "'." );
         }
 
-        // Update DB
+        // Validate DB
         if ( databaseConfig != null && databaseConfig.getNodePassword() != null ) {
             if ( databaseConfig.getHost() == null ) throw new CausedIOException("Database host is required.");
             if ( databaseConfig.getPort() == 0 ) throw new CausedIOException("Database port is required.");
@@ -86,15 +85,8 @@ public class NodeConfigurationManager {
             String dbVersion = dbActions.checkDbVersion( databaseConfig );
             if ( dbVersion != null && !dbVersion.equals(BuildInfo.getFormalProductVersion()) ) {
                 throw new CausedIOException("Database version mismatch '"+dbVersion+"'.");
-            }
-
-            if ( dbVersion == null ) {
-                if ( !createdb ) {
-                    throw new CausedIOException("Cannot connect to database.");
-                }
-
-                // TODO split this out into its own API
-                createDatabase(nodeName, databaseConfig, database2ndConfig == null ? Collections.<String>emptyList() : Arrays.asList(database2ndConfig.getHost()), null, null);
+            } else if ( dbVersion == null ) {
+                throw new CausedIOException("Cannot connect to database.");
             }
         }
 
@@ -130,7 +122,7 @@ public class NodeConfigurationManager {
         }
 
         MasterPasswordManager mpm = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
-        String encDatabasePassword = databaseConfig==null ? null : mpm.encryptPassword( databaseConfig.getNodePassword().toCharArray() );
+        String encDatabasePassword = databaseConfig==null || databaseConfig.getNodePassword()==null ? null : mpm.encryptPassword( databaseConfig.getNodePassword().toCharArray() );
         String encClusterPassword = clusterPassword==null ? null : mpm.encryptPassword( clusterPassword.toCharArray() );
 
         setPropertyIfNotNull( props, NODEPROPERTIES_ID, nodeid );
@@ -182,7 +174,7 @@ public class NodeConfigurationManager {
      * @param adminLogin
      * @param adminPassword
      */
-    public static void createDatabase(String nodeName, final DatabaseConfig databaseConfig, final List<String> extraGrantHosts, String adminLogin, String adminPassword)
+    public static void createDatabase(String nodeName, final DatabaseConfig databaseConfig, final Collection<String> extraGrantHosts, String adminLogin, String adminPassword)
         throws IOException {
         final DatabaseConfig localConfig;
         try {

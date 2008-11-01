@@ -18,39 +18,12 @@ import java.util.logging.Level;
  *
  * @since 5.0
  */
-public class NodeConfigurationBeanProvider extends ProcessControllerConfigurationBeanProvider implements ConfigurationBeanProvider {
+public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProviderSupport<NodeConfig> implements ConfigurationBeanProvider {
 
     //- PUBLIC
 
-    public NodeConfigurationBeanProvider( final String nodeManagementUrl ) {
-        super(nodeManagementUrl);
-    }
-
-    public Collection<ConfigurationBean> loadConfiguration() throws ConfigurationException {
-        NodeManagementApi managementService = getManagementService();
-        try {
-            Collection<NodeManagementApi.NodeHeader> nodeHeaders = managementService.listNodes();
-            if ( nodeHeaders != null && nodeHeaders.size() > 0) {
-                config = managementService.getNode(DEFAULT_NODE_NAME);
-                if ( config == null ) {
-                    logger.warning("Could not get configuration for node '"+DEFAULT_NODE_NAME+"'.");
-                }
-
-                for (NodeManagementApi.NodeHeader node : nodeHeaders ) {
-                    if ( !DEFAULT_NODE_NAME.equals(node.getName()) ) {
-                        logger.warning("Will not report status for unsupported node '"+DEFAULT_NODE_NAME+"'.");
-                    }
-                }
-            } else {
-                logger.info("No nodes configured.");
-            }
-        } catch ( FindException fe ) {
-            throw new ConfigurationException( "Error loading node configuration.", fe );
-        } catch ( SOAPFaultException sf ) {
-            throw new ConfigurationException( "Error loading node configuration", sf );
-        }
-
-        return toBeans( config );
+    public NodeConfigurationBeanProvider( final NodeManagementApiFactory nodeManagementApiFactory ) {
+        this.nodeManagementApiFactory = nodeManagementApiFactory;
     }
 
     public void storeConfiguration(Collection<ConfigurationBean> configuration) throws ConfigurationException {
@@ -71,12 +44,33 @@ public class NodeConfigurationBeanProvider extends ProcessControllerConfiguratio
                 config.setClusterHostname((String)getOption("cluster.host", configuration));
                 config.setClusterPassphrase((String)getOption("cluster.pass", configuration));
                 fromBeans( config, configuration );
-                managementService.createNode(
-                        config,
-                        (String)getOption("admin.user", configuration),
-                        (String)getOption("admin.pass", configuration)                        
-                );
+
+                DatabaseConfig databaseConfig = config.getDatabase(DatabaseType.NODE_ALL, ClusterType.STANDALONE, ClusterType.REPL_MASTER);
+                String adminLogin = (String) getOption("admin.user", configuration);
+                String adminPassphrase = (String)getOption("admin.pass", configuration);
+
+                boolean createdb =
+                        config.getClusterHostname() != null &&
+                        config.getClusterHostname().trim().length() > 0 &&
+                        databaseConfig != null &&
+                        databaseConfig.getDatabaseAdminUsername()!=null &&
+                        adminLogin != null &&
+                        adminLogin.trim().length() > 0 &&
+                        adminPassphrase != null &&
+                        adminPassphrase.trim().length() > 0;
+
+                if ( createdb ) {
+                    Collection<String> hosts = new ArrayList<String>();
+                    for ( DatabaseConfig dbConfig : config.getDatabases() ) {
+                        hosts.add( dbConfig.getHost() );
+                    }
+                    managementService.createDatabase( config.getName(), databaseConfig, hosts,  adminLogin, adminPassphrase );
+                }
+
+                managementService.createNode( config );
             }
+        } catch ( NodeManagementApi.DatabaseCreationException dce ) {
+            throw new ConfigurationException( "Error creating database when saving configuration '"+dce.getMessage()+"'" );
         } catch ( ObjectModelException ome ) {
             throw new ConfigurationException( "Error saving configuration '"+ome.getMessage()+"'" );
         } catch ( SOAPFaultException sf ) {
@@ -88,8 +82,18 @@ public class NodeConfigurationBeanProvider extends ProcessControllerConfiguratio
         }
     }
 
+    //- PACKAGE
+
+    NodeManagementApi getManagementService() {
+        return nodeManagementApiFactory.getManagementService();
+    }
+
+    NodeConfig toConfig(NodeManagementApi.NodeHeader nodeHeader) throws FindException {
+        return getManagementService().getNode( nodeHeader.getName() );
+    }
+
     @SuppressWarnings({"unchecked"})
-    private Collection<ConfigurationBean> toBeans( final NodeConfig config ) {
+    Collection<ConfigurationBean> toBeans( final NodeConfig config ) {
         List<ConfigurationBean> configuration = new ArrayList<ConfigurationBean>();
 
         if ( config != null ) {
@@ -167,7 +171,7 @@ public class NodeConfigurationBeanProvider extends ProcessControllerConfiguratio
                             configBean.setConfigName( "database.failover.port" );
                             configBean.setConfigValue( Integer.toString(dbConfig.getPort()) );
                             configuration.add(configBean);
-                        }                        
+                        }
                     }
                 }
             }
@@ -176,6 +180,10 @@ public class NodeConfigurationBeanProvider extends ProcessControllerConfiguratio
 
         return configuration;
     }
+
+    //- PRIVATE
+
+    private final NodeManagementApiFactory nodeManagementApiFactory;
 
     @SuppressWarnings({"unchecked"})
     private <T> T getOption( final String id, final Collection<ConfigurationBean> beans ) {
@@ -251,8 +259,4 @@ public class NodeConfigurationBeanProvider extends ProcessControllerConfiguratio
             config.getDatabases().add( failoverConfig );
         }
     }
-
-    //- PRIVATE
-
-    private NodeConfig config;
 }

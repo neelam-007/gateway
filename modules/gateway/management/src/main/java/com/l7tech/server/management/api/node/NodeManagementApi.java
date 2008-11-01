@@ -46,13 +46,11 @@ public interface NodeManagementApi {
      *                   on the default database server(s) with the default username(s) and randomly generated
      *                   password(s).  If the PC is unable to create the databases (e.g. because it doesn't have
      *                   sufficient credentials to do so) a {@link SaveException} will be thrown.
-     * @param adminLogin The admin account to create for cluster administration.
-     * @param adminPassphrase The admin account passphrase
      *
      * @return the newly created NodeConfig
      * @throws SaveException if the new node cannot be created
      */
-    NodeConfig createNode(NodeConfig nodeConfig, String adminLogin, String adminPassphrase) throws SaveException;
+    NodeConfig createNode(NodeConfig nodeConfig) throws SaveException;
 
     /**
      * Retrieves the {@link com.l7tech.server.management.config.node.NodeConfig} with the provided name, or null if no such node exists on this host.
@@ -231,10 +229,11 @@ public interface NodeManagementApi {
      * 
      * @param nodeName the name of the node for which the database is being created
      * @param dbconfig the database configuration
+     * @param dbHosts the list of database hosts
      * @param adminLogin the login for the initial administrator account
      * @param adminPassword the password for the initial administrator account
      */
-    void createDatabase(String nodeName, DatabaseConfig dbconfig, String adminLogin, String adminPassword) throws DatabaseCreationException;
+    void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword) throws DatabaseCreationException;
 
     public class DatabaseCreationException extends Exception {
         public DatabaseCreationException(String message, Throwable cause) {

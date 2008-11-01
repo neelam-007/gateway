@@ -4,11 +4,13 @@ import com.l7tech.gateway.config.client.ConfigurationException;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.objectmodel.FindException;
 
+import javax.xml.ws.soap.SOAPFaultException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Date;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * ConfigurationBeanProvider for process controller / node enabled status.
@@ -20,51 +22,45 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
-public class StateConfigurationBeanProvider extends ProcessControllerConfigurationBeanProvider implements ConfigurationBeanProvider {
+public class StateConfigurationBeanProvider extends NodeConfigurationBeanProviderSupport<NodeManagementApi.NodeHeader> implements ConfigurationBeanProvider {
 
     //- PUBLIC
 
     public StateConfigurationBeanProvider( final String nodeManagementUrl ) {
-        super(nodeManagementUrl);
+        this.nodeManagementApiFactory = new NodeManagementApiFactory( nodeManagementUrl );
     }
 
-    public Collection<ConfigurationBean> loadConfiguration() throws ConfigurationException {
+    public boolean isValid() {
+        boolean valid = false;
+
         NodeManagementApi managementService = getManagementService();
         try {
-            Collection<NodeManagementApi.NodeHeader> nodeHeaders = managementService.listNodes();
-            if ( nodeHeaders != null && nodeHeaders.size() > 0) {
-                for (NodeManagementApi.NodeHeader node : nodeHeaders ) {
-                    if ( DEFAULT_NODE_NAME.equals(node.getName()) ) {
-                        config = node;
-                    } else {
-                        logger.warning("Will not report status for unsupported node '"+DEFAULT_NODE_NAME+"'.");
-                    }
-                }
-
-                if ( config == null ) {
-                    logger.warning("Could not get configuration for node '"+DEFAULT_NODE_NAME+"'.");
-                }
-            } else {
-                logger.info("No nodes configured.");
-            }
+            managementService.listNodes();
+            valid = true;
         } catch ( FindException fe ) {
-            throw new ConfigurationException( "Error loading node configuration.", fe );
-        } 
+            logger.log(Level.WARNING, "Error listing nodes", fe );
+        } catch ( SOAPFaultException sf ) {
+            logger.log(Level.WARNING, "Error listing nodes", sf );
+        }
 
-        return toBeans( config );
+        return valid;
     }
 
     public void storeConfiguration(Collection<ConfigurationBean> configuration) throws ConfigurationException {
         throw new ConfigurationException("This provider is read-only.");
     }
 
-    //- PRIVATE
+    //- PACKAGE
 
-    private static final Logger logger = Logger.getLogger( StateConfigurationBeanProvider.class.getName() );
+    NodeManagementApi getManagementService() {
+        return nodeManagementApiFactory.getManagementService();
+    }
 
-    private NodeManagementApi.NodeHeader config;
+    NodeManagementApi.NodeHeader toConfig(NodeManagementApi.NodeHeader nodeHeader) throws FindException {
+        return nodeHeader;
+    }
 
-    private Collection<ConfigurationBean> toBeans( final NodeManagementApi.NodeHeader config ) {
+    Collection<ConfigurationBean> toBeans( final NodeManagementApi.NodeHeader config ) {
         List<ConfigurationBean> configuration = new ArrayList<ConfigurationBean>();
 
         ConfigurationBean<String> statusConfigBean = new ConfigurationBean<String>();
@@ -90,5 +86,11 @@ public class StateConfigurationBeanProvider extends ProcessControllerConfigurati
 
         return configuration;
     }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger( StateConfigurationBeanProvider.class.getName() );
+
+    private final NodeManagementApiFactory nodeManagementApiFactory;
 
 }

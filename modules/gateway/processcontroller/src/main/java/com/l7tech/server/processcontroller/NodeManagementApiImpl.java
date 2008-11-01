@@ -1,6 +1,5 @@
 package com.l7tech.server.processcontroller;
 
-import com.l7tech.gateway.config.manager.AccountReset;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
@@ -83,7 +82,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     @Override
-    public NodeConfig createNode(NodeConfig nodeConfig, String adminLogin, String adminPassphrase)
+    public NodeConfig createNode(NodeConfig nodeConfig)
             throws SaveException {
         checkRequest();
 
@@ -118,17 +117,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         node.getDatabases().add(failoverDatabaseConfig);
 
         try {
-            boolean createdb =
-                    node.getClusterHostname() != null &&
-                    node.getClusterHostname().trim().length() > 0 &&
-                    databaseConfig.getDatabaseAdminUsername()!=null &&
-                    adminLogin != null &&
-                    adminLogin.trim().length() > 0 &&
-                    adminPassphrase != null &&
-                    adminPassphrase.trim().length() > 0;
-            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), enabled, clusterPassphrase, databaseConfig, failoverDatabaseConfig, createdb );
-            if ( createdb )
-                AccountReset.resetAccount( databaseConfig, adminLogin, adminPassphrase );
+            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), enabled, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
@@ -191,7 +180,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         DatabaseConfig failoverDatabaseConfig = configs[1];
 
         try {
-            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), clusterPassphrase, databaseConfig, failoverDatabaseConfig, false );
+            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), clusterPassphrase, databaseConfig, failoverDatabaseConfig  );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
@@ -233,7 +222,8 @@ public class NodeManagementApiImpl implements NodeManagementApi {
             processController.deleteNode(nodeName, shutdownTimeout);
             configService.deleteNode(nodeName);
         } catch (Exception e) {
-            throw new DeleteException("Couldn't delete node", e);
+            logger.log(Level.WARNING, "Error deleting node '"+nodeName+"'.", e );
+            throw new DeleteException("Couldn't delete node '"+nodeName+"', due to '"+ExceptionUtils.getMessage(e)+"'.");
         }
     }
 
@@ -289,11 +279,12 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     @Override
-    public void createDatabase(String nodeName, DatabaseConfig dbconfig, String adminLogin, String adminPassword) throws DatabaseCreationException {
+    public void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword) throws DatabaseCreationException {
         try {
-            NodeConfigurationManager.createDatabase(nodeName, dbconfig, Collections.<String>emptyList(), adminLogin, adminPassword);
+            NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword);
         } catch (IOException e) {
-            throw new DatabaseCreationException("Unable to create database", e);
+            logger.log(Level.WARNING, "Error creating database for '"+nodeName+"'.", e );
+            throw new DatabaseCreationException("Unable to create database '"+ExceptionUtils.getMessage(e)+"'" );
         }
     }
 

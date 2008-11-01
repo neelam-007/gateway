@@ -18,11 +18,10 @@ import org.junit.Test;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
+import java.util.Collections;
 
 /** @author alex */
 public class NodeManagementApiTest {
-    private static final Logger log = Logger.getLogger(NodeManagementApiTest.class.getName());
     
     @Test
     @Ignore("Destructive and unlikely to work on your computer anyway")
@@ -38,7 +37,7 @@ public class NodeManagementApiTest {
         final DatabaseConfig dbc = new DatabaseConfig("localhost", 3306, "ssgtemp", "gatewaytemp", "7layertemp");
         dbc.setDatabaseAdminUsername("root");
         dbc.setDatabaseAdminPassword("thisIsNotMyMysqlPassword");
-        api.createDatabase("default", dbc, "myadmin", "mypass");
+        api.createDatabase("default", dbc, Collections.<String>emptySet(), "myadmin", "mypass");
     }
 
     private static NodeManagementApi makeSslStub() {
