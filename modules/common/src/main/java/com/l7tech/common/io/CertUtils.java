@@ -10,6 +10,9 @@ import org.apache.harmony.security.asn1.ASN1Sequence;
 import org.apache.harmony.security.asn1.ASN1Type;
 
 import javax.security.auth.x500.X500Principal;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
+import javax.naming.InvalidNameException;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
@@ -85,50 +88,6 @@ public class CertUtils {
         boolean[] usages = cert.getKeyUsage();
         return usages != null && usages[KeyUsage.keyCertSign] && cert.getBasicConstraints() > 0;
     }
-
-    public interface DnParser {
-        Map<String, List<String>> dnToAttributeMap(String dn);
-    }
-    static final DnParser DEFAULT_DN_PARSER;
-    static {
-        DnParser dp = null;
-        Throwable jdk15err = null;
-        try {
-            // First try using the Java 1.5 parser
-            Class dpclass = Class.forName("com.l7tech.common.io.DnParserJava15");
-            if (dpclass != null) dp = (DnParser)dpclass.newInstance();
-        } catch (ClassNotFoundException e) {
-            jdk15err = e;
-        } catch (IllegalAccessException e) {
-            jdk15err = e;
-        } catch (InstantiationException e) {
-            jdk15err = e;
-        }
-
-        Throwable bcErr = null;
-        if (dp == null) {
-            // Try using Bouncy Castle parser
-            try {
-                Class dpclass = Class.forName("com.l7tech.proxy.util.DnParserBc");
-                if (dpclass != null) dp = (DnParser)dpclass.newInstance();
-            } catch (ClassNotFoundException e) {
-                bcErr = e;
-            } catch (IllegalAccessException e) {
-                bcErr = e;
-            } catch (InstantiationException e) {
-                bcErr = e;
-            }
-        }
-
-        if (dp == null) {
-            if (jdk15err != null) logger.log(Level.SEVERE, "Unable to initialize: no DN parser available; JDK 1.5 parser failed: " + ExceptionUtils.getMessage(jdk15err), jdk15err);
-            if (bcErr != null) logger.log(Level.SEVERE, "Unable to initialize: no DN parser available; BC parser failed: " + ExceptionUtils.getMessage(bcErr), bcErr);
-            throw (LinkageError)new LinkageError("Unable to initialize CertUtils: no DN parser available").initCause(bcErr != null ? bcErr : jdk15err);
-        }
-
-        DEFAULT_DN_PARSER = dp;
-    }
-    static DnParser DN_PARSER = DEFAULT_DN_PARSER;
 
     /** Exception thrown if there is more than one CN in a cert DN. */
     public static class MultipleCnValuesException extends Exception {}
@@ -645,7 +604,28 @@ public class CertUtils {
      * @return a Map of attribute names to value lists
      */
     public static Map<String, List<String>> dnToAttributeMap(String dn) {
-        return DN_PARSER.dnToAttributeMap(dn);
+        final LdapName name;
+        try {
+            name = new LdapName(dn);
+        } catch (InvalidNameException e) {
+            throw new IllegalArgumentException("Invalid DN", e);
+        }
+
+        Map<String, List<String>> map = new HashMap<String, List<String>>();
+        List<Rdn> rdns = name.getRdns();
+        for (Rdn rdn : rdns) {
+            String type = rdn.getType().toUpperCase();
+
+            List<String> values = map.get(type);
+            if (values == null) {
+                values = new ArrayList<String>();
+                map.put(type, values);
+            }
+
+            values.add(rdn.getValue().toString());
+        }
+
+        return map;
     }
 
     /**

@@ -134,20 +134,11 @@ public class CertUtilsTest extends TestCase {
     }
 
     public void testDnParser() throws Exception {
-        CertUtils.DN_PARSER = CertUtils.DEFAULT_DN_PARSER;
-        doTestDnParse();
-        doTestDnPatterns();
-    }
-
-    public void testDnParserJava15() throws Exception {
-        CertUtils.DN_PARSER = new DnParserJava15();
         doTestDnParse();
         doTestDnPatterns();
     }
 
     protected void doTestDnParse() throws Exception {
-        log.info("\nTrying parser " + CertUtils.DN_PARSER.getClass().getName() + ":");
-
         Map map = CertUtils.dnToAttributeMap("cn=Mike Lyons, ou=Research, o=Layer 7 Technologies");
 
         Set entries = map.entrySet();
