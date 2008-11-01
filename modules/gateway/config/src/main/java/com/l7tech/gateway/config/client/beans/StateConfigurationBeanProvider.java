@@ -60,7 +60,7 @@ public class StateConfigurationBeanProvider extends ProcessControllerConfigurati
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger( DatabaseConfigBeanProvider.class.getName() );
+    private static final Logger logger = Logger.getLogger( StateConfigurationBeanProvider.class.getName() );
 
     private NodeManagementApi.NodeHeader config;
 
