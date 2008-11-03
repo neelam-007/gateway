@@ -26,7 +26,7 @@
 	<parameter name="INTERVAL_START" isForPrompting="false" class="java.lang.Long"/>
 	<parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
 	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME"/>
 	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAPPING_VALUE_1" isForPrompting="false" class="java.lang.String"/>

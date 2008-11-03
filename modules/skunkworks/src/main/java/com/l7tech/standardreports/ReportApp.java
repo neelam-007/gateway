@@ -235,8 +235,9 @@ public class ReportApp
             }
         }else{
             int numRelativeTimeUnits = Integer.valueOf(parameters.get(RELATIVE_NUM_OF_TIME_UNITS).toString());
-            long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, prop.getProperty(RELATIVE_TIME_UNIT));
-            long endTimeInPast = Utilities.getMillisForEndTimePeriod(prop.getProperty(RELATIVE_TIME_UNIT));
+            Utilities.UNIT_OF_TIME relUnitOfTime = Utilities.getUnitFromString(prop.getProperty(RELATIVE_TIME_UNIT));
+            long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime );
+            long endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime);
 
             List<String> keys = (List<String>) parameters.get(MAPPING_KEYS);
             List<String> values = (List<String>) parameters.get(MAPPING_VALUES);
@@ -470,6 +471,7 @@ public class ReportApp
         helper.setKeyToColumnMap(keyToColumnName);
 
         //now generate the report to be compiled
+        //todo [Donal] note - if there is no data this throws an exception. Need to create a canned report showing report info to return to user
         Document transformDoc = Utilities.getUsageRuntimeDoc(useUser, keys, mappingValues);
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTransformDoc.xml");
         f.createNewFile();
@@ -613,11 +615,13 @@ public class ReportApp
         //relative and absolute time
         b = Boolean.parseBoolean(prop.getProperty(IS_RELATIVE));
         parameters.put(IS_RELATIVE, b);
-        parameters.put(RELATIVE_TIME_UNIT, prop.getProperty(RELATIVE_TIME_UNIT));
+        Utilities.UNIT_OF_TIME unitOfTime = Utilities.getUnitFromString(prop.getProperty(RELATIVE_TIME_UNIT));
+        parameters.put(RELATIVE_TIME_UNIT, unitOfTime);
         Integer numRelativeTimeUnits = Integer.parseInt(prop.getProperty(RELATIVE_NUM_OF_TIME_UNITS).toString());
         parameters.put(RELATIVE_NUM_OF_TIME_UNITS, numRelativeTimeUnits);
 
-        parameters.put(INTERVAL_TIME_UNIT, prop.getProperty(INTERVAL_TIME_UNIT));
+        Utilities.UNIT_OF_TIME intervalUnitOfTime = Utilities.getUnitFromString(prop.getProperty(INTERVAL_TIME_UNIT));
+        parameters.put(INTERVAL_TIME_UNIT, intervalUnitOfTime);
         Integer i = Integer.parseInt(prop.getProperty(INTERVAL_NUM_OF_TIME_UNITS).toString());
         parameters.put(INTERVAL_NUM_OF_TIME_UNITS, i);
 

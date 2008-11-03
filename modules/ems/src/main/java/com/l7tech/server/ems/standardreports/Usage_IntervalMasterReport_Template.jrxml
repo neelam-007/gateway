@@ -35,15 +35,15 @@
 	<parameter name="RELATIVE_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="RELATIVE_TIME_UNIT" isForPrompting="false" class="java.lang.String">
+	<parameter name="RELATIVE_TIME_UNIT" isForPrompting="false" class="com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME">
 		<parameterDescription><![CDATA[Valid values are HOUR, DAY, WEEK and MONTH]]></parameterDescription>
-		<defaultValueExpression ><![CDATA["DAY"]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME.DAY]]></defaultValueExpression>
 	</parameter>
 	<parameter name="IS_ABSOLUTE" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="ABSOLUTE_START_TIME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ABSOLUTE_END_TIME" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="INTERVAL_TIME_UNIT" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA["HOUR"]]></defaultValueExpression>
+	<parameter name="INTERVAL_TIME_UNIT" isForPrompting="false" class="com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME">
+		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME.HOUR]]></defaultValueExpression>
 	</parameter>
 	<parameter name="INTERVAL_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
@@ -94,16 +94,10 @@
 		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getResolutionFromTimePeriod($P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
 	</parameter>
 	<parameter name="intervalAsString" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS} + " "
-+ $P{INTERVAL_TIME_UNIT}.substring(0,1).toUpperCase()
-+ $P{INTERVAL_TIME_UNIT}.toLowerCase().substring(1, $P{INTERVAL_TIME_UNIT}.length())
-+ (($P{INTERVAL_NUM_OF_TIME_UNITS}.intValue() > 1)? "s":"")]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS} + " " + Utilities.getIntervalAsString($P{INTERVAL_TIME_UNIT},$P{INTERVAL_NUM_OF_TIME_UNITS}.intValue())]]></defaultValueExpression>
 	</parameter>
 	<parameter name="timePeriodAsString" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[$P{RELATIVE_NUM_OF_TIME_UNITS} + " "
-+ $P{RELATIVE_TIME_UNIT}.substring(0,1).toUpperCase()
-+ $P{RELATIVE_TIME_UNIT}.toLowerCase().substring(1, $P{RELATIVE_TIME_UNIT}.length())
-+ (($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue() > 1)? "s":"")]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[$P{RELATIVE_NUM_OF_TIME_UNITS} + " " + Utilities.getIntervalAsString($P{RELATIVE_TIME_UNIT},$P{RELATIVE_NUM_OF_TIME_UNITS}.intValue())]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getStringNamesFromCollection((java.util.Collection)$P{SERVICE_NAME_TO_ID_MAP}.keySet())]]></defaultValueExpression>

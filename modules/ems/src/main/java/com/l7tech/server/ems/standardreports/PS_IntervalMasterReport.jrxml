@@ -22,7 +22,8 @@
 	<import value="java.util.*" />
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
-	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
+    <import value="com.l7tech.server.ems.standardreports.*" />
+    <template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
 	<parameter name="REPORT_TYPE" isForPrompting="false" class="java.lang.String">
@@ -34,15 +35,15 @@
 	<parameter name="RELATIVE_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="RELATIVE_TIME_UNIT" isForPrompting="false" class="java.lang.String">
+	<parameter name="RELATIVE_TIME_UNIT" isForPrompting="false" class="com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME">
 		<parameterDescription><![CDATA[Valid values are HOUR, DAY, WEEK and MONTH]]></parameterDescription>
-		<defaultValueExpression ><![CDATA["DAY"]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[Utilities.UNIT_OF_TIME.DAY]]></defaultValueExpression>
 	</parameter>
 	<parameter name="IS_ABSOLUTE" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="ABSOLUTE_START_TIME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ABSOLUTE_END_TIME" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="INTERVAL_TIME_UNIT" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA["HOUR"]]></defaultValueExpression>
+	<parameter name="INTERVAL_TIME_UNIT" isForPrompting="false" class="com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME">
+		<defaultValueExpression ><![CDATA[Utilities.UNIT_OF_TIME.HOUR]]></defaultValueExpression>
 	</parameter>
 	<parameter name="INTERVAL_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
@@ -69,18 +70,18 @@
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
-		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())
-?new Long(com.l7tech.server.ems.standardreports.Utilities.getMillisForEndTimePeriod($P{RELATIVE_TIME_UNIT}))
+?new Long(Utilities.getMillisForEndTimePeriod($P{RELATIVE_TIME_UNIT}))
 : null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="absoluteStartTimeMilli" isForPrompting="false" class="java.lang.Long">
-		<defaultValueExpression ><![CDATA[new Long(com.l7tech.server.ems.standardreports.Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_START_TIME}))]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[new Long(Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_START_TIME}))]]></defaultValueExpression>
 	</parameter>
 	<parameter name="absoluteEndTimeMilli" isForPrompting="false" class="java.lang.Long">
-		<defaultValueExpression ><![CDATA[new Long(com.l7tech.server.ems.standardreports.Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_END_TIME}))]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[new Long(Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_END_TIME}))]]></defaultValueExpression>
 	</parameter>
 	<parameter name="startTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?$P{relativeStartTimeMilli}:$P{absoluteStartTimeMilli}]]></defaultValueExpression>
@@ -89,22 +90,16 @@
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?$P{relativeEndTimeMilli}:$P{absoluteEndTimeMilli}]]></defaultValueExpression>
 	</parameter>
 	<parameter name="resolution" isForPrompting="false" class="java.lang.Integer">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getResolutionFromTimePeriod($P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[Utilities.getResolutionFromTimePeriod($P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
 	</parameter>
 	<parameter name="intervalAsString" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS} + " "
-+ $P{INTERVAL_TIME_UNIT}.substring(0,1).toUpperCase()
-+ $P{INTERVAL_TIME_UNIT}.toLowerCase().substring(1, $P{INTERVAL_TIME_UNIT}.length())
-+ (($P{INTERVAL_NUM_OF_TIME_UNITS}.intValue() > 1)? "s":"")]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS} + " " + Utilities.getIntervalAsString($P{INTERVAL_TIME_UNIT},$P{INTERVAL_NUM_OF_TIME_UNITS}.intValue())]]></defaultValueExpression>
 	</parameter>
 	<parameter name="timePeriodAsString" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[$P{RELATIVE_NUM_OF_TIME_UNITS} + " "
-+ $P{RELATIVE_TIME_UNIT}.substring(0,1).toUpperCase()
-+ $P{RELATIVE_TIME_UNIT}.toLowerCase().substring(1, $P{RELATIVE_TIME_UNIT}.length())
-+ (($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue() > 1)? "s":"")]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[$P{RELATIVE_NUM_OF_TIME_UNITS} + " " + Utilities.getIntervalAsString($P{RELATIVE_TIME_UNIT},$P{RELATIVE_NUM_OF_TIME_UNITS}.intValue())]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getStringNamesFromCollection((java.util.Collection)$P{SERVICE_NAME_TO_ID_MAP}.keySet())]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[Utilities.getStringNamesFromCollection((java.util.Collection)$P{SERVICE_NAME_TO_ID_MAP}.keySet())]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdValueToDisplay" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[($P{serviceIdDisplayText} == null || $P{serviceIdDisplayText}.equals(""))
@@ -113,11 +108,11 @@
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
-com.l7tech.server.ems.standardreports.Utilities.createMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
+Utilities.createMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 ,$P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
 $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
 :
-com.l7tech.server.ems.standardreports.Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
+Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 ,$P{SERVICE_NAME_TO_ID_MAP}.values(),$P{resolution}.intValue())
 )]]></defaultValueExpression>
 	</parameter>
@@ -135,9 +130,9 @@ com.l7tech.server.ems.standardreports.Utilities.getNoMappingQuery(true, $P{start
 	<field name="AUTHENTICATED_USER" class="java.lang.String"/>
 
 	<variable name="TIME_PERIOD_DS" class="java.lang.Object" resetType="Group" resetGroup="SERVICE" calculation="Nothing">
-		<variableExpression><![CDATA[new com.l7tech.server.ems.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})]]></variableExpression>
+		<variableExpression><![CDATA[new TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})]]></variableExpression>
 		<initialValueExpression><![CDATA[($P{IS_RELATIVE}.booleanValue())
-?(new com.l7tech.server.ems.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})):null]]></initialValueExpression>
+?(new TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})):null]]></initialValueExpression>
 	</variable>
 	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
 	</variable>
@@ -231,7 +226,7 @@ com.l7tech.server.ems.standardreports.Utilities.getNoMappingQuery(true, $P{start
 					<textElement>
 						<font isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getMappingValueDisplayString(
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingValueDisplayString(
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 				</textField>
@@ -698,7 +693,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 			<groupHeader>
 			<band height="18"  isSplitAllowed="true" >
 				<printWhenExpression><![CDATA[new Boolean(
-!com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
+!Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
 && $P{IS_CONTEXT_MAPPING}.booleanValue()
 )]]></printWhenExpression>
 				<frame>					<reportElement
@@ -729,7 +724,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 			<groupFooter>
 			<band height="18"  isSplitAllowed="true" >
 				<printWhenExpression><![CDATA[new Boolean(
-!com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
+!Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
 && $P{IS_CONTEXT_MAPPING}.booleanValue()
 )]]></printWhenExpression>
 				<frame>					<reportElement
@@ -983,11 +978,11 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_RELATIVE}.booleanValue())?("Last " + $P{timePeriodAsString} +
-" (" + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
+" (" + Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
 :
-com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
+Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -1098,7 +1093,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
-com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayString
+Utilities.getMappingReportInfoDisplayString
 ($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())
 :"None")]]></textFieldExpression>
 				</textField>
@@ -1248,7 +1243,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayStrin
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{OPERATIONS} == null || $P{OPERATIONS}.isEmpty())?"All"
-:com.l7tech.server.ems.standardreports.Utilities.getStringNamesFromCollection($P{OPERATIONS})]]></textFieldExpression>
+:Utilities.getStringNamesFromCollection($P{OPERATIONS})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -1984,11 +1979,11 @@ com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayStrin
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_RELATIVE}.booleanValue())?("Last " + $P{timePeriodAsString} +
-" (" + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
+" (" + Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
 :
-com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
+Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement

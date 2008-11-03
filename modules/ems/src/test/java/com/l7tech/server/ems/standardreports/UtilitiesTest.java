@@ -562,24 +562,24 @@ public class UtilitiesTest{
         control.set(Calendar.MINUTE, 0);
         control.set(Calendar.MILLISECOND, 0);
 
-        Calendar cal = Utilities.getCalendarForTimeUnit(Utilities.HOUR);
+        Calendar cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.HOUR);
         Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
-        cal = Utilities.getCalendarForTimeUnit(Utilities.DAY);
+        cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.DAY);
         control = Calendar.getInstance();
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
         control.set(Calendar.MILLISECOND, 0);
         Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
-        cal = Utilities.getCalendarForTimeUnit(Utilities.WEEK);
+        cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.WEEK);
         control = Calendar.getInstance();
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
         control.set(Calendar.MILLISECOND, 0);
         Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
-        cal = Utilities.getCalendarForTimeUnit(Utilities.MONTH);
+        cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.MONTH);
         control = Calendar.getInstance();
         control.set(Calendar.DAY_OF_MONTH, 1);
         control.set(Calendar.HOUR_OF_DAY, 0);
@@ -601,16 +601,16 @@ public class UtilitiesTest{
         d = DATE_FORMAT.parse(endDate);
         long endTime = d.getTime();
 
-        String timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.HOUR);
+        String timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.HOUR);
         Assert.assertTrue(timeDisplay.equals("08/01 14:12 - 15:12"));
 
-        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.DAY);
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY);
         Assert.assertTrue(timeDisplay.equals("Fri 08/01"));
         
-        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.WEEK);
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.WEEK);
         Assert.assertTrue(timeDisplay.equals("08/01 - 10/13"));
 
-        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.MONTH);
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.MONTH);
         Assert.assertTrue(timeDisplay.equals("2008 Aug"));
 
         //System.out.println("timeDisplay: "+ timeDisplay);
@@ -633,13 +633,13 @@ public class UtilitiesTest{
 
         //Hour
         List<Long> intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.HOUR);
+                1, Utilities.UNIT_OF_TIME.HOUR);
 
         //00:00 - 00:00, 24 hours but 25 is the interval size as it is 0 based and end time is exclusive.
         Assert.assertTrue(intervals.size() == 25);
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.HOUR);
+                2, Utilities.UNIT_OF_TIME.HOUR);
 
         Assert.assertTrue(intervals.size() == 13);
 
@@ -652,12 +652,12 @@ public class UtilitiesTest{
         timePeriodEndExclusive = d.getTime();
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.DAY);
+                1, Utilities.UNIT_OF_TIME.DAY);
 
         Assert.assertTrue(intervals.size() == 13);
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.DAY);
+                3, Utilities.UNIT_OF_TIME.DAY);
 
         Assert.assertTrue(intervals.size() == 5);
 
@@ -670,11 +670,11 @@ public class UtilitiesTest{
         timePeriodEndExclusive = d.getTime();
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.WEEK);
+                1, Utilities.UNIT_OF_TIME.WEEK);
         Assert.assertTrue(intervals.size() == 7);
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.WEEK);
+                2, Utilities.UNIT_OF_TIME.WEEK);
         Assert.assertTrue(intervals.size() == 4);
 
         //Month
@@ -686,11 +686,11 @@ public class UtilitiesTest{
         timePeriodEndExclusive = d.getTime();
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.MONTH);
+                1, Utilities.UNIT_OF_TIME.MONTH);
 
         Assert.assertTrue(intervals.size() == 10);
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.MONTH);
+                3, Utilities.UNIT_OF_TIME.MONTH);
 
         Assert.assertTrue(intervals.size() == 4);
     }
@@ -825,17 +825,17 @@ public class UtilitiesTest{
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        long endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.HOUR);
+        long endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.HOUR);
         Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
 
         calendar.set(Calendar.HOUR_OF_DAY, 0);
-        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.DAY);
+        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.DAY);
         Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
-        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.WEEK);
+        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.WEEK);
         Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
 
         calendar.set(Calendar.DAY_OF_MONTH, 1);
-        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.MONTH);
+        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.MONTH);
         Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
     }
 
@@ -1086,11 +1086,11 @@ public class UtilitiesTest{
         calendar.set(Calendar.MILLISECOND, 0);
 
         calendar.add(Calendar.HOUR_OF_DAY, -1);
-        long timeInPast = Utilities.getRelativeMilliSecondsInPast(1, Utilities.HOUR);
+        long timeInPast = Utilities.getRelativeMilliSecondsInPast(1, Utilities.UNIT_OF_TIME.HOUR);
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         calendar.add(Calendar.HOUR_OF_DAY, -1);
-        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.HOUR);
+        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.HOUR);
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         //day
@@ -1100,8 +1100,15 @@ public class UtilitiesTest{
         calendar.set(Calendar.HOUR_OF_DAY, 0);
 
         calendar.add(Calendar.DAY_OF_MONTH, -2);
-        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.DAY);
+        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.DAY);
+
+        System.out.println("Calendar date: " + DATE_FORMAT.format(calendar.getTime()));
+        Calendar testCal = Calendar.getInstance();
+        testCal.setTimeInMillis(timeInPast);
+        System.out.println("Test Calendar date: " + DATE_FORMAT.format(testCal.getTime()));        
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
+
+
 
         //week
         calendar = Calendar.getInstance();
@@ -1110,7 +1117,7 @@ public class UtilitiesTest{
         calendar.set(Calendar.HOUR_OF_DAY, 0);
 
         calendar.add(Calendar.WEEK_OF_YEAR, -2);
-        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.WEEK);
+        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.WEEK);
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         //month
@@ -1121,7 +1128,7 @@ public class UtilitiesTest{
         calendar.set(Calendar.DAY_OF_MONTH, 1);
 
         calendar.add(Calendar.MONTH, -2);
-        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.MONTH);
+        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.MONTH);
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
     }
 
@@ -2341,6 +2348,18 @@ public class UtilitiesTest{
                 actualIntValue ,actualIntValue == expectedIntValue);
 
     }
-    
+
+    @Test
+    public void testGetIntervalAsString(){
+        Utilities.UNIT_OF_TIME unitOfTime = Utilities.UNIT_OF_TIME.HOUR;
+        String expectedValue = "Hour";
+        String actualValue = Utilities.getIntervalAsString(unitOfTime, 1);
+        Assert.assertTrue("expectedValue is: " + expectedValue+" actual value was " + actualValue, expectedValue.equals(actualValue));
+
+        expectedValue = "Hours";
+        actualValue = Utilities.getIntervalAsString(unitOfTime, 2);
+        Assert.assertTrue("expectedValue is: " + expectedValue+" actual value was " + actualValue, expectedValue.equals(actualValue));
+    }
+
 }
 

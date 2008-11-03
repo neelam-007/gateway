@@ -38,7 +38,7 @@ public class TimePeriodDataSourceTest {
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.HOUR);
+                1, Utilities.UNIT_OF_TIME.HOUR);
 
         int counter = 0;
         while(dataSource.next()){
@@ -48,7 +48,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 24);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.HOUR);
+                2, Utilities.UNIT_OF_TIME.HOUR);
         counter = 0;
         while(dataSource.next()){
             counter++;
@@ -57,7 +57,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 12);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.HOUR);
+                3, Utilities.UNIT_OF_TIME.HOUR);
         counter = 0;
         while(dataSource.next()){
             counter++;
@@ -66,7 +66,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 8);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.HOUR);
+                5, Utilities.UNIT_OF_TIME.HOUR);
         counter = 0;
         while(dataSource.next()){
             counter++;
@@ -91,7 +91,7 @@ public class TimePeriodDataSourceTest {
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.DAY);
+                1, Utilities.UNIT_OF_TIME.DAY);
 
         int counter = 0;
         while(dataSource.next()){
@@ -101,7 +101,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 30);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.DAY);
+                2, Utilities.UNIT_OF_TIME.DAY);
 
         counter = 0;
         while(dataSource.next()){
@@ -111,7 +111,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 15);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.DAY);
+                3, Utilities.UNIT_OF_TIME.DAY);
 
         counter = 0;
         while(dataSource.next()){
@@ -121,7 +121,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 10);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                7, Utilities.DAY);
+                7, Utilities.UNIT_OF_TIME.DAY);
 
         counter = 0;
         while(dataSource.next()){
@@ -147,7 +147,7 @@ public class TimePeriodDataSourceTest {
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.WEEK);
+                1, Utilities.UNIT_OF_TIME.WEEK);
 
         int counter = 0;
         while(dataSource.next()){
@@ -158,7 +158,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.WEEK);
+                2, Utilities.UNIT_OF_TIME.WEEK);
 
         counter = 0;
         while(dataSource.next()){
@@ -169,7 +169,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.WEEK);
+                3, Utilities.UNIT_OF_TIME.WEEK);
 
         counter = 0;
         while(dataSource.next()){
@@ -179,7 +179,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 3);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.WEEK);
+                5, Utilities.UNIT_OF_TIME.WEEK);
 
         counter = 0;
         while(dataSource.next()){
@@ -205,7 +205,7 @@ public class TimePeriodDataSourceTest {
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.MONTH);
+                1, Utilities.UNIT_OF_TIME.MONTH);
 
         int counter = 0;
         while(dataSource.next()){
@@ -216,7 +216,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.MONTH);
+                2, Utilities.UNIT_OF_TIME.MONTH);
 
         counter = 0;
         while(dataSource.next()){
@@ -227,7 +227,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.MONTH);
+                3, Utilities.UNIT_OF_TIME.MONTH);
 
         counter = 0;
         while(dataSource.next()){
@@ -238,7 +238,7 @@ public class TimePeriodDataSourceTest {
         
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.MONTH);
+                5, Utilities.UNIT_OF_TIME.MONTH);
 
         counter = 0;
         while(dataSource.next()){
@@ -264,7 +264,7 @@ public class TimePeriodDataSourceTest {
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.HOUR);
+                1, Utilities.UNIT_OF_TIME.HOUR);
 
         long hourInMilli = 3600000L;
         while(dataSource.next()){
@@ -278,7 +278,7 @@ public class TimePeriodDataSourceTest {
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.HOUR);
+                2, Utilities.UNIT_OF_TIME.HOUR);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -291,7 +291,7 @@ public class TimePeriodDataSourceTest {
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.HOUR);
+                3, Utilities.UNIT_OF_TIME.HOUR);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -305,7 +305,7 @@ public class TimePeriodDataSourceTest {
 
         //5 doesn't go into 24, so the last interval is a remainder
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.HOUR);
+                5, Utilities.UNIT_OF_TIME.HOUR);
         int counter = 0;
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -338,7 +338,7 @@ public class TimePeriodDataSourceTest {
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.DAY);
+                1, Utilities.UNIT_OF_TIME.DAY);
 
         long dayInMilli = 86400000L; 
         while(dataSource.next()){
@@ -353,7 +353,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.DAY);
+                2, Utilities.UNIT_OF_TIME.DAY);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -366,7 +366,7 @@ public class TimePeriodDataSourceTest {
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.DAY);
+                3, Utilities.UNIT_OF_TIME.DAY);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -379,7 +379,7 @@ public class TimePeriodDataSourceTest {
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                7, Utilities.DAY);
+                7, Utilities.UNIT_OF_TIME.DAY);
 
         int counter = 0;
         while(dataSource.next()){
@@ -415,7 +415,7 @@ public class TimePeriodDataSourceTest {
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.WEEK);
+                1, Utilities.UNIT_OF_TIME.WEEK);
 
         long weekInMilli = 604800000L;
         while(dataSource.next()){
@@ -430,7 +430,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.WEEK);
+                2, Utilities.UNIT_OF_TIME.WEEK);
 
         int counter = 0;
         while(dataSource.next()){
@@ -447,7 +447,7 @@ public class TimePeriodDataSourceTest {
         
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.WEEK);
+                3, Utilities.UNIT_OF_TIME.WEEK);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -461,7 +461,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.WEEK);
+                5, Utilities.UNIT_OF_TIME.WEEK);
 
         counter = 0;
         while(dataSource.next()){
@@ -499,7 +499,7 @@ public class TimePeriodDataSourceTest {
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.MONTH);
+                1, Utilities.UNIT_OF_TIME.MONTH);
 
         Calendar cal = Calendar.getInstance();
         
@@ -517,7 +517,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.MONTH);
+                2, Utilities.UNIT_OF_TIME.MONTH);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -533,7 +533,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.MONTH);
+                3, Utilities.UNIT_OF_TIME.MONTH);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -548,7 +548,7 @@ public class TimePeriodDataSourceTest {
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.MONTH);
+                5, Utilities.UNIT_OF_TIME.MONTH);
 
         int counter = 0;
         while(dataSource.next()){

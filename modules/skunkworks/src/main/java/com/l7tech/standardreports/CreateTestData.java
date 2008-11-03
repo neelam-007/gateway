@@ -41,7 +41,7 @@ public class CreateTestData {
             "completed, back_min, back_max, back_sum, front_min, front_max, front_sum)" +
             " VALUES ( ";
     private int currentMonth;
-    private String unitOfTime;
+    private Utilities.UNIT_OF_TIME unitOfTime;
     private String fileName;
 
     //mapping_type to mapping_key
@@ -219,13 +219,13 @@ public class CreateTestData {
         }
     }
 
-    public void createMetricData(String unitOfTime, String serviceId) throws Exception{
+    public void createMetricData(Utilities.UNIT_OF_TIME unitOfTime, String serviceId) throws Exception{
 
         timeUnitChanges = 0;
-        if(unitOfTime.equals(Utilities.HOUR)){
+        if(unitOfTime == Utilities.UNIT_OF_TIME.HOUR){
             maxUnitChanges = 744;
             fileName = "HourlyData";
-        }else if(unitOfTime.equals(Utilities.DAY)){
+        }else if(unitOfTime == Utilities.UNIT_OF_TIME.DAY){
             maxUnitChanges = 365;
             fileName = "DailyData";
         }else{
@@ -306,11 +306,11 @@ public class CreateTestData {
     private Object[] getValues(String serviceId){
         int resolutionToUse;
         long intervalToUse;
-        if(unitOfTime.equals(Utilities.HOUR)){
+        if(unitOfTime == Utilities.UNIT_OF_TIME.HOUR){
             cal.add(Calendar.HOUR_OF_DAY, -1);
             resolutionToUse = hourlyResolution;
             intervalToUse = hourlyInterval;
-        }else if(unitOfTime.equals(Utilities.DAY)){
+        }else if(unitOfTime == Utilities.UNIT_OF_TIME.DAY){
             cal.add(Calendar.DAY_OF_MONTH, -1);
             resolutionToUse = dailyResolution;
             intervalToUse = dailyInterval;
@@ -380,6 +380,7 @@ public class CreateTestData {
      * @throws Exception
      */
     public static void main(String [] args) throws Exception{
+        System.out.println("Starting");
         FileInputStream fileInputStream = new FileInputStream("report.properties");
         Properties prop = new Properties();
         prop.load(fileInputStream);
@@ -418,9 +419,10 @@ public class CreateTestData {
         CreateTestData testData = new CreateTestData(nodeId, mappingKeyList, values, operations, authenticatedUser);
         testData.createMappingData();
         for(String s: nameToId.values()){
-            testData.createMetricData(Utilities.HOUR, s);
-            testData.createMetricData(Utilities.DAY, s);
+            testData.createMetricData(Utilities.UNIT_OF_TIME.HOUR, s);
+            testData.createMetricData(Utilities.UNIT_OF_TIME.DAY, s);
         }
+        System.out.println("Finishing");
     }
 
 

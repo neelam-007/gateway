@@ -25,6 +25,7 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JRException;
 import com.l7tech.server.ems.standardreports.ScripletHelper;
+import com.l7tech.server.ems.standardreports.Utilities;
 
 public class FillReportHandler extends AbstractHandler {
     //db props
@@ -139,12 +140,14 @@ public class FillReportHandler extends AbstractHandler {
 
 
         reportProps.put(IS_RELATIVE, true);
-        reportProps.put(RELATIVE_TIME_UNIT, relativeTimeUnit);
+        Utilities.UNIT_OF_TIME unitOfTime = Utilities.getUnitFromString(relativeTimeUnit);
+        reportProps.put(RELATIVE_TIME_UNIT, unitOfTime);
         Integer num = Integer.parseInt(numRelativeTimeUnit);
         reportProps.put(RELATIVE_NUM_OF_TIME_UNITS, num);
 
         if(!isSummary){
-            reportProps.put(INTERVAL_TIME_UNIT, intervalTimeUnit);
+            Utilities.UNIT_OF_TIME intervalUnitOfTime = Utilities.getUnitFromString(intervalTimeUnit);
+            reportProps.put(INTERVAL_TIME_UNIT, intervalUnitOfTime);
             num = Integer.parseInt(numIntervalTimeUnit);
             reportProps.put(INTERVAL_NUM_OF_TIME_UNITS, num);
         }

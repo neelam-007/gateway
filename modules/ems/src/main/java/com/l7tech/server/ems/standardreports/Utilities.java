@@ -33,10 +33,20 @@ public class Utilities {
      */
     public static final String SQL_PLACE_HOLDER =  ";";
 
-    public static final String HOUR = "HOUR";
-    public static final String DAY = "DAY";
-    public static final String WEEK = "WEEK";
-    public static final String MONTH = "MONTH";
+    public static enum UNIT_OF_TIME {
+        HOUR, DAY, WEEK, MONTH; 
+    }
+
+    public static UNIT_OF_TIME getUnitFromString(String unitOfTime){
+        for(UNIT_OF_TIME u: UNIT_OF_TIME.values()){
+            if(u.toString().equals(unitOfTime)){
+                return u;
+            }
+        }
+        throw new IllegalArgumentException("No unit of time found for param: " + unitOfTime);
+    }
+
+
     public static final int NUM_MAPPING_KEYS = 5;
     public static final String AUTHENTICATED_USER_DISPLAY = "Authenticated User";
 
@@ -147,24 +157,28 @@ public class Utilities {
      * @param unitOfTime valid values are HOUR, DAY, WEEK and MONTH
      * @return
      */
-    public static long getRelativeMilliSecondsInPast(int numberOfUnits, String unitOfTime){
-        checkUnitOfTime(unitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});
+    public static long getRelativeMilliSecondsInPast(int numberOfUnits, UNIT_OF_TIME unitOfTime){
         Calendar calendar = getCalendarForTimeUnit(unitOfTime);
 
-        int calendarTimeUnit = -1;//will always be assigned a value due to checkUnitOfTime above
-        if(unitOfTime.equals(HOUR)){
-            calendarTimeUnit = Calendar.HOUR_OF_DAY;
-        }else if(unitOfTime.equals(DAY)){
-            calendarTimeUnit = Calendar.DAY_OF_MONTH;
-        }else if(unitOfTime.equals(WEEK)){
-            calendarTimeUnit = Calendar.WEEK_OF_YEAR;
-        }
-        else if(unitOfTime.equals(MONTH)){
-            calendarTimeUnit = Calendar.MONTH;
-        }
+        int calendarTimeUnit = getCalendarTimeUnit(unitOfTime);
         calendar.add(calendarTimeUnit, numberOfUnits * -1);
         return calendar.getTimeInMillis();
     }
+
+    private static int getCalendarTimeUnit(UNIT_OF_TIME unitOfTime) {
+        switch( unitOfTime){
+            case HOUR:
+                return Calendar.HOUR_OF_DAY;
+            case DAY:
+                return Calendar.DAY_OF_MONTH;
+            case WEEK:
+                return Calendar.WEEK_OF_YEAR;
+            case MONTH:
+                return Calendar.MONTH;
+        }
+        throw new IllegalArgumentException("Invalid unitOfTime");
+    }
+
     /**
      * Get the resolution to use in queries. Used in a summary report
      * If the difference between the startTimeMilli and endTimeMilli > hourRetentionPeriod * num milli seconds in a day,
@@ -180,7 +194,7 @@ public class Utilities {
         if(startTimeMilli >= endTimeMilli) throw new IllegalArgumentException("Start time must be before end time");
         
         long duration = endTimeMilli - startTimeMilli;
-        long dayMillis = getMilliSecondsForTimeUnit(Utilities.DAY);
+        long dayMillis = 86400000L;//day milli seconds
         long maxHourRenentionMilli = dayMillis * hourRetentionPeriod;
         if(duration > maxHourRenentionMilli){
             return new Integer(2);
@@ -200,6 +214,14 @@ public class Utilities {
         return DATE_FORMAT.format(cal.getTime());
     }
 
+    public static String getIntervalAsString(UNIT_OF_TIME unitOfTime, int numIntervalUnits){
+        StringBuilder sb = new StringBuilder();
+        String unit = unitOfTime.toString();
+        sb.append(unit.substring(0,1).toUpperCase());
+        sb.append(unit.substring(1, unit.length()).toLowerCase());
+        if(numIntervalUnits > 1) sb.append("s");
+        return sb.toString();
+    }
     /**
      * Get the date to display on a report. The timeMilliSecond value since epoch will be converted into a suitable
      * format to use in the report as the interval information.
@@ -213,8 +235,7 @@ public class Utilities {
      * @return String representing the date, to be displayed to the viewer of the report
      */
     public static String getIntervalDisplayDate(Long startIntervalMilliSeconds, Long endIntervalMilliSeconds,
-                                        String intervalUnitOfTime){
-        checkUnitOfTime(intervalUnitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});
+                                        UNIT_OF_TIME intervalUnitOfTime){
         
         Calendar calStart = Calendar.getInstance();
         calStart.setTimeInMillis(startIntervalMilliSeconds);
@@ -223,31 +244,32 @@ public class Utilities {
         calEnd.setTimeInMillis(endIntervalMilliSeconds);
 
         SimpleDateFormat WEEK_DATE_FORMAT = new SimpleDateFormat(WEEK_DATE_STRING);
-
         //todo [Donal] could validate that the end time is an hour, day..etc from the start time
-        if(intervalUnitOfTime.equals(HOUR)){
-            SimpleDateFormat HOUR_DATE_FORMAT = new SimpleDateFormat(HOUR_DATE_STRING);
-            SimpleDateFormat DAY_HOUR_DATE_FORMAT = new SimpleDateFormat(DAY_HOUR_DATE_STRING);
-            return DAY_HOUR_DATE_FORMAT.format(calStart.getTime()) + " - " +
-                        HOUR_DATE_FORMAT.format(calEnd.getTime());
-        }else if(intervalUnitOfTime.equals(DAY)){
-            if(calStart.get(Calendar.MONTH) == Calendar.JANUARY){
-                SimpleDateFormat DAY_MONTH_DATE_FORMAT = new SimpleDateFormat(DAY_MONTH_DATE_STRING);
-                return DAY_MONTH_DATE_FORMAT.format(calStart.getTime());
-            }
-            SimpleDateFormat DAY_DATE_FORMAT = new SimpleDateFormat(DAY_DATE_STRING);
-            return DAY_DATE_FORMAT.format(calStart.getTime());
-        }else if(intervalUnitOfTime.equals(WEEK)){
-            if(calStart.get(Calendar.MONTH) == Calendar.JANUARY){
-                SimpleDateFormat WEEK_YEAR_DATE_FORMAT = new SimpleDateFormat(WEEK_YEAR_DATE_STRING);
-                return WEEK_YEAR_DATE_FORMAT.format(calStart.getTime())+ " - " +
-                        WEEK_DATE_FORMAT.format(calEnd.getTime());
-            }
-            return WEEK_DATE_FORMAT.format(calStart.getTime())+ " - " +
-                        WEEK_DATE_FORMAT.format(calEnd.getTime());
-        }else if(intervalUnitOfTime.equals(MONTH)){
-            SimpleDateFormat MONTH_DATE_FORMAT = new SimpleDateFormat(MONTH_DATE_STRING);
-            return MONTH_DATE_FORMAT.format(calStart.getTime());
+        switch( intervalUnitOfTime){
+            case HOUR:
+                SimpleDateFormat HOUR_DATE_FORMAT = new SimpleDateFormat(HOUR_DATE_STRING);
+                SimpleDateFormat DAY_HOUR_DATE_FORMAT = new SimpleDateFormat(DAY_HOUR_DATE_STRING);
+                return DAY_HOUR_DATE_FORMAT.format(calStart.getTime()) + " - " +
+                            HOUR_DATE_FORMAT.format(calEnd.getTime());
+            case DAY:
+                if(calStart.get(Calendar.MONTH) == Calendar.JANUARY){
+                    SimpleDateFormat DAY_MONTH_DATE_FORMAT = new SimpleDateFormat(DAY_MONTH_DATE_STRING);
+                    return DAY_MONTH_DATE_FORMAT.format(calStart.getTime());
+                }
+                SimpleDateFormat DAY_DATE_FORMAT = new SimpleDateFormat(DAY_DATE_STRING);
+                return DAY_DATE_FORMAT.format(calStart.getTime());
+            case WEEK:
+                if(calStart.get(Calendar.MONTH) == Calendar.JANUARY){
+                    SimpleDateFormat WEEK_YEAR_DATE_FORMAT = new SimpleDateFormat(WEEK_YEAR_DATE_STRING);
+                    return WEEK_YEAR_DATE_FORMAT.format(calStart.getTime())+ " - " +
+                            WEEK_DATE_FORMAT.format(calEnd.getTime());
+                }
+                return WEEK_DATE_FORMAT.format(calStart.getTime())+ " - " +
+                            WEEK_DATE_FORMAT.format(calEnd.getTime());
+            case MONTH:
+                SimpleDateFormat MONTH_DATE_FORMAT = new SimpleDateFormat(MONTH_DATE_STRING);
+                return MONTH_DATE_FORMAT.format(calStart.getTime());
+
         }
         return null;
     }
@@ -259,7 +281,7 @@ public class Utilities {
      * @param unitOfTime
      * @return
      */
-    public static long getMillisForEndTimePeriod(String unitOfTime){
+    public static long getMillisForEndTimePeriod(UNIT_OF_TIME unitOfTime){
         return Utilities.getCalendarForTimeUnit(unitOfTime).getTimeInMillis();
     }
 
@@ -277,12 +299,11 @@ public class Utilities {
                 + allUnits.toString());
     }
 
-    public static Calendar getCalendarForTimeUnit(String unitOfTime){
-        checkUnitOfTime(unitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});
+    public static Calendar getCalendarForTimeUnit(UNIT_OF_TIME unitOfTime){
         Calendar calendar = Calendar.getInstance();
 
         //Set the calendar to be the correct end of time period
-        if(!unitOfTime.equals(HOUR)){
+        if(unitOfTime != UNIT_OF_TIME.HOUR){
             calendar.set(Calendar.HOUR_OF_DAY, 0);
         }
 
@@ -291,31 +312,11 @@ public class Utilities {
 
         //if the unit is month we also want to set the calendar at the start of this month, end time is exclusive
         //which means that a query will capture the entire previous month
-        if(unitOfTime.equals(MONTH)){
+        if(unitOfTime == UNIT_OF_TIME.MONTH){
             calendar.set(Calendar.DAY_OF_MONTH, 1);
         }
 
         return calendar;
-    }
-
-    /**
-     * Get the absolute period of time for either HOUR, DAY or WEEK
-     * @param unitOfTime HOUR, DAY or WEEK. Month not supported as a month does not have a fixed number of milliseconds
-     * @return long representing the absolute time unit in milli seconds
-     * @throws IllegalArgumentException if an incorrect unit of time is supplied
-     */
-    private static long getMilliSecondsForTimeUnit(String unitOfTime){
-        checkUnitOfTime(unitOfTime, new String[]{HOUR, DAY, WEEK});
-        if(unitOfTime.equals("HOUR")){
-            return 3600000L;
-        }else if(unitOfTime.equals("DAY")){
-            return 86400000L;
-        }else if(unitOfTime.equals("WEEK")){
-            return 604800000L;
-        }else{
-            throw new IllegalArgumentException("Unsupported unitOfTime: " + unitOfTime+ " Supported units are " +
-                    "HOUR, DAY and WEEK");
-        }
     }
 
     /**
@@ -346,7 +347,7 @@ public class Utilities {
      * the end of the last interval.
      */
     public static List<Long> getIntervalsForTimePeriod(Long timePeriodStartInclusive, Long timePeriodEndExclusive,
-                                                               int intervalNumberOfUnits, String intervalUnitOfTime){
+                                                               int intervalNumberOfUnits, UNIT_OF_TIME intervalUnitOfTime){
         if(timePeriodStartInclusive >= timePeriodEndExclusive){
             Calendar test = Calendar.getInstance();
             test.setTimeInMillis(timePeriodStartInclusive);
@@ -359,37 +360,12 @@ public class Utilities {
             startDate+" value = "+ timePeriodStartInclusive+" end: " + endDate+" value = " + timePeriodEndExclusive);
         }
 
-        checkUnitOfTime(intervalUnitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});        
+//        checkUnitOfTime(intervalUnitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});
+        if(intervalNumberOfUnits <= 0) throw new IllegalArgumentException("intervalNumberOfUnits must greater than 0");
+
+        int calendarUnitOfTime = getCalendarTimeUnit(intervalUnitOfTime);
+
         List<Long> returnList = new ArrayList<Long>();
-
-        if(!intervalUnitOfTime.equals(MONTH)){
-            long unitMilliSeconds = getMilliSecondsForTimeUnit(intervalUnitOfTime);
-            long currentIntervalStart = timePeriodStartInclusive;
-            long intervalLength = unitMilliSeconds * intervalNumberOfUnits;
-            //in this case there is only one interval
-            if(currentIntervalStart + intervalLength >= timePeriodEndExclusive){
-                returnList.add(currentIntervalStart);
-                returnList.add(timePeriodEndExclusive);
-                return returnList;
-            }
-
-            while(currentIntervalStart <= timePeriodEndExclusive){
-                returnList.add(currentIntervalStart);
-                if (currentIntervalStart == timePeriodEndExclusive) break;
-                currentIntervalStart += intervalLength;
-            }
-
-            //Catch any difference due to timeperiod / interval having a remainder
-            if (currentIntervalStart != timePeriodEndExclusive) {
-                returnList.add(timePeriodEndExclusive);
-            }
-            return returnList;
-        }
-
-        //The code for month is the same logic as for the other time units
-        //but as the length of a month varies can't deal with an absolute time interval value
-        //and instead use Calendar functions to move through time.
-        //This could prob be refactored for one set of logic using only calendar functions
 
         Calendar endOfTimePeriod = Calendar.getInstance();
         endOfTimePeriod.setTimeInMillis(timePeriodEndExclusive);
@@ -399,7 +375,7 @@ public class Utilities {
 
         Calendar temp = Calendar.getInstance();
         temp.setTimeInMillis(timePeriodStartInclusive);
-        temp.add(Calendar.MONTH, intervalNumberOfUnits);
+        temp.add(calendarUnitOfTime, intervalNumberOfUnits);
 
         //in this case there is only one interval
         if(temp.getTimeInMillis() >= timePeriodEndExclusive){
@@ -411,7 +387,7 @@ public class Utilities {
         while(startOfTimePeriod.getTimeInMillis() <= endOfTimePeriod.getTimeInMillis()){
             returnList.add(startOfTimePeriod.getTimeInMillis());
             if (startOfTimePeriod.getTimeInMillis() == timePeriodEndExclusive) break;
-            startOfTimePeriod.add(Calendar.MONTH, intervalNumberOfUnits);
+            startOfTimePeriod.add(calendarUnitOfTime, intervalNumberOfUnits);
         }
 
         if(startOfTimePeriod.getTimeInMillis() != endOfTimePeriod.getTimeInMillis()){
