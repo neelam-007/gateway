@@ -9,6 +9,8 @@ package com.l7tech.standardreports.test;
 import org.junit.*;
 
 import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.File;
 import java.util.Properties;
 import java.util.List;
 import java.util.ArrayList;
@@ -19,7 +21,7 @@ import com.l7tech.standardreports.ReportApp;
 
 public class CheckTestData{
 
-    private static final Properties prop = new Properties();
+    private Properties prop;
 
     private static String sqlNumDistinctValueRows = "select count(*) as num_rows from " +
             "(select distinct service_operation, mapping1_value, mapping2_value from " +
@@ -35,8 +37,9 @@ public class CheckTestData{
 
     @Before
     public void setUp() throws Exception {
-        Properties prop = new Properties();
-        prop.load(getClass().getResourceAsStream("report.properties"));
+        prop = new Properties();
+        InputStream is = new FileInputStream(new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/report.properties"));
+        prop.load(is);
         conn = ReportApp.getConnection(prop);
         stmt = conn.createStatement();
     }
