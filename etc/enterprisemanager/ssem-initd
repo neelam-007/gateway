@@ -22,7 +22,10 @@ EM_USER="ssem"
 EM_SCRIPT="/opt/SecureSpan/EnterpriseManager/bin/enterprisemanager.sh"
 
 start() {
-        [ -x "${EM_SCRIPT}" ] || exit 5
+        if [ ! -x "${EM_SCRIPT}" ] ; then
+            echo "Service script not found or not executable."
+            exit 5
+        fi
 
         echo -n $"Starting Enterprise Manager: "
         daemon --check "${PID_FILE}" "${EM_SCRIPT}" "${EM_USER}" "/var/run/${PID_FILE}.pid"

@@ -22,7 +22,10 @@ PC_USER="layer7"
 PC_SCRIPT="/opt/SecureSpan/Gateway/controller/bin/processcontroller.sh"
 
 start() {
-        [ -x "${PC_SCRIPT}" ] || exit 5
+        if [ ! -x "${PC_SCRIPT}" ] ; then
+            echo "Service script not found or not executable."
+            exit 5
+        fi
 
         echo -n $"Starting Gateway Services: "
         daemon --check "${PID_FILE}" "${PC_SCRIPT}" "${PC_USER}" "/var/run/${PID_FILE}.pid"
