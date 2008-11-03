@@ -150,21 +150,21 @@ public class Utilities {
     public static long getRelativeMilliSecondsInPast(int numberOfUnits, String unitOfTime){
         checkUnitOfTime(unitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});
         Calendar calendar = getCalendarForTimeUnit(unitOfTime);
-        long calTime = calendar.getTimeInMillis();
 
-        if(!unitOfTime.equals(MONTH)){
-            long unitMilliSeconds = getMilliSecondsForTimeUnit(unitOfTime);
-            long totalNumMilliSecs = numberOfUnits * unitMilliSeconds;
-            return calTime - totalNumMilliSecs;
+        int calendarTimeUnit = -1;//will always be assigned a value due to checkUnitOfTime above
+        if(unitOfTime.equals(HOUR)){
+            calendarTimeUnit = Calendar.HOUR_OF_DAY;
+        }else if(unitOfTime.equals(DAY)){
+            calendarTimeUnit = Calendar.DAY_OF_MONTH;
+        }else if(unitOfTime.equals(WEEK)){
+            calendarTimeUnit = Calendar.WEEK_OF_YEAR;
         }
-
-        Calendar monthCal = Calendar.getInstance();
-        monthCal.setTimeInMillis(calTime);
-        monthCal.add(Calendar.MONTH, numberOfUnits * -1);
-        monthCal.set(Calendar.DAY_OF_MONTH, 1);
-        return monthCal.getTimeInMillis();
+        else if(unitOfTime.equals(MONTH)){
+            calendarTimeUnit = Calendar.MONTH;
+        }
+        calendar.add(calendarTimeUnit, numberOfUnits * -1);
+        return calendar.getTimeInMillis();
     }
-
     /**
      * Get the resolution to use in queries. Used in a summary report
      * If the difference between the startTimeMilli and endTimeMilli > hourRetentionPeriod * num milli seconds in a day,
