@@ -344,12 +344,13 @@ public class ReportApp
         }
 
         String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
-        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
+        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 535);
         params.put("PageMinWidth", 595);
         params.put("ReportInfoStaticTextSize", 128);
+        params.put("TitleInnerFrameBuffer", 7);
 
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperMasterDoc = transform(xslStr, xmlFileName, params);
@@ -375,7 +376,7 @@ public class ReportApp
         }
 
         xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportSubIntervalTransform_Master.xsl");
-        xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
+        xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
         params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -404,7 +405,7 @@ public class ReportApp
         }
 
         xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
-        xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+        xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
         params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -484,12 +485,14 @@ public class ReportApp
 
         //get xsl and xml
         String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
-        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
+        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 535);
         params.put("PageMinWidth", 595);
         params.put("ReportInfoStaticTextSize", 128);
+        params.put("TitleInnerFrameBuffer", 7);
+
 
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperDoc = transform(xslStr, xmlFileName, params);

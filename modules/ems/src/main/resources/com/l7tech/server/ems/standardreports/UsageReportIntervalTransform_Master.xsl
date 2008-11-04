@@ -16,6 +16,8 @@
     <xsl:param name="ReportInfoStaticTextSize"/>
     <xsl:param name="FrameMinWidth"/>
     <xsl:param name="PageMinWidth"/>
+    <!-- Frames within the title frame are slightly shorter due to formatting. Currently this value is 7-->
+    <xsl:param name="TitleInnerFrameBuffer"/>
 
     <xsl:variable name="useDynamicWidths">
         <xsl:choose>
@@ -179,10 +181,9 @@
         <xsl:for-each select="reportElement">
             <xsl:element name="reportElement">
                 <xsl:choose>
-                    <!--//todo [Donal] remove magic numbers-->
                     <xsl:when test="$useDynamicWidths = 1" >
                         <xsl:attribute name="width">
-                            <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth - 7" />
+                            <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth - $TitleInnerFrameBuffer" />
                         </xsl:attribute>
                         <xsl:apply-templates select="node()|@*[local-name()!='width']" />
                     </xsl:when>

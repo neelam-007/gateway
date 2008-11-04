@@ -2406,6 +2406,10 @@ public class UtilitiesTest{
     /**
      * Validate the transformed runtime Usage Summary jrxml file. Confirms that all elements which should exist do,
      * and that the dynamic widths have been incorporated into existing template elements
+     * Note: This test, tests for widths. Widths will only change in a transform if the min width set as a param
+     * to the transform is exceeded. Currently this width is guaranteed to be exceeded. If the canned transform
+     * documents were to change such that they min width was no longer exceeded, then these tests would fail
+     * 
      * @throws Exception
      */
     @Test
@@ -2419,7 +2423,10 @@ public class UtilitiesTest{
         params.put("RuntimeDoc", runtimeDoc);
         params.put("FrameMinWidth", 535);
         params.put("PageMinWidth", 595);
-        params.put("ReportInfoStaticTextSize", 128);
+        int reportInfoStaticTextSize = 128;
+        params.put("ReportInfoStaticTextSize", reportInfoStaticTextSize);
+        int titleInnerFrameBuffer = 7;
+        params.put("TitleInnerFrameBuffer", titleInnerFrameBuffer);
 
         Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
 //        printOutDocument(transformedRuntimeDoc);
@@ -2480,16 +2487,45 @@ public class UtilitiesTest{
                 expectedWidth.intValue(), actualWidth.intValue()),
                 expectedWidth.intValue() == actualWidth.intValue());
 
-        //make sure all frames are the correct width
+        //make sure all frames are the correct width, there are various width requirements throughout the document
         expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);
-        nodeList = (NodeList) xPath.evaluate("//frame/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/title/band/frame/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
         for(int i = 0; i < nodeList.getLength(); i++){
             actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
-            System.out.println("Width: " + actualWidth);
-            //todo [Donal] fix
-//            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
-//                    expectedWidth.intValue(), actualWidth.intValue()),
-//                    expectedWidth.intValue() == actualWidth.intValue());
+            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+                    expectedWidth.intValue(), actualWidth.intValue()),
+                    expectedWidth.intValue() == actualWidth.intValue());
+        }
+
+        expectedWidth -= titleInnerFrameBuffer;
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/title/band/frame[2]/frame/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+        for(int i = 0; i < nodeList.getLength(); i++){
+            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
+            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+                    expectedWidth.intValue(), actualWidth.intValue()),
+                    expectedWidth.intValue() == actualWidth.intValue());
+        }
+
+        //all dynamic text fields in title - two elements per frame, this is the rhs element
+        expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);
+        expectedWidth -= reportInfoStaticTextSize;
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/title/band/frame[2]/frame/textField/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+        for(int i = 0; i < nodeList.getLength(); i++){
+            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
+            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+                    expectedWidth.intValue(), actualWidth.intValue()),
+                    expectedWidth.intValue() == actualWidth.intValue());
+        }
+
+        //All group header and footer frames have the same frame width
+        expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);
+
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/group/*/band/frame/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+        for(int i = 0; i < nodeList.getLength(); i++){
+            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
+            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+                    expectedWidth.intValue(), actualWidth.intValue()),
+                    expectedWidth.intValue() == actualWidth.intValue());
         }
 
         expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/leftMargin/text()", runtimeDoc, XPathConstants.NUMBER);
@@ -2510,6 +2546,10 @@ public class UtilitiesTest{
     /**
      * Validate the transformed runtime Usage Master jrxml file. Confirms that all elements which should exist do,
      * and that the dynamic widths have been incorporated into existing template elements
+     * Note: This test, tests for widths. Widths will only change in a transform if the min width set as a param
+     * to the transform is exceeded. Currently this width is guaranteed to be exceeded. If the canned transform
+     * documents were to change such that they min width was no longer exceeded, then these tests would fail
+     * 
      * @throws Exception
      */
     @Test
@@ -2523,7 +2563,10 @@ public class UtilitiesTest{
         params.put("RuntimeDoc", runtimeDoc);
         params.put("FrameMinWidth", 535);
         params.put("PageMinWidth", 595);
-        params.put("ReportInfoStaticTextSize", 128);
+        int reportInfoStaticTextSize = 128;
+        params.put("ReportInfoStaticTextSize", reportInfoStaticTextSize);
+        int titleInnerFrameBuffer = 7;
+        params.put("TitleInnerFrameBuffer", titleInnerFrameBuffer);
 
         Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
         Assert.assertNotNull("Transform document should not be null", transformedRuntimeDoc);
@@ -2590,16 +2633,62 @@ public class UtilitiesTest{
                 expectedWidth.intValue(), actualWidth.intValue()),
                 expectedWidth.intValue() == actualWidth.intValue());
 
-        //make sure all frames are the correct width
+        //make sure all frames are the correct width, there are various width requirements throughout the document
         expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);
-        nodeList = (NodeList) xPath.evaluate("//frame/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/title/band/frame/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
         for(int i = 0; i < nodeList.getLength(); i++){
             actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
-            System.out.println("Actual width: " + actualWidth);
-            //todo [Donal] fix
-//            Assert.assertTrue(MessageFormat.format("Width should be {0} actual width was {1}",
-//                    expectedWidth.intValue(), actualWidth.intValue()),
-//                    expectedWidth.intValue() == actualWidth.intValue());
+            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+                    expectedWidth.intValue(), actualWidth.intValue()),
+                    expectedWidth.intValue() == actualWidth.intValue());
+        }
+
+        expectedWidth -= titleInnerFrameBuffer;
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/title/band/frame[2]/frame/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+        for(int i = 0; i < nodeList.getLength(); i++){
+            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
+            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+                    expectedWidth.intValue(), actualWidth.intValue()),
+                    expectedWidth.intValue() == actualWidth.intValue());
+        }
+
+        //all dynamic text fields in title - two elements per frame, this is the rhs element
+        expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);
+        expectedWidth -= reportInfoStaticTextSize;
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/title/band/frame[2]/frame/textField/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+        for(int i = 0; i < nodeList.getLength(); i++){
+            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
+            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+                    expectedWidth.intValue(), actualWidth.intValue()),
+                    expectedWidth.intValue() == actualWidth.intValue());
+        }
+
+        expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/detail/band/frame/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+        for(int i = 0; i < nodeList.getLength(); i++){
+            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
+            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+                    expectedWidth.intValue(), actualWidth.intValue()),
+                    expectedWidth.intValue() == actualWidth.intValue());
+        }
+
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/detail/band/frame/subreport/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+        for(int i = 0; i < nodeList.getLength(); i++){
+            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
+            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+                    expectedWidth.intValue(), actualWidth.intValue()),
+                    expectedWidth.intValue() == actualWidth.intValue());
+        }
+
+        //All group header and footer frames have the same frame width
+        expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);
+
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/group/*/band/frame/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+        for(int i = 0; i < nodeList.getLength(); i++){
+            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
+            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+                    expectedWidth.intValue(), actualWidth.intValue()),
+                    expectedWidth.intValue() == actualWidth.intValue());
         }
 
         expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/leftMargin/text()", runtimeDoc, XPathConstants.NUMBER);
@@ -2614,6 +2703,105 @@ public class UtilitiesTest{
                 expectedWidth.intValue(), actualWidth.intValue()),
                 expectedWidth.intValue() == actualWidth.intValue());
         
+    }
+
+
+    /**
+     * Validate the transformed runtime Usage Sub Interval jrxml file. Confirms that all elements which should exist do,
+     * and that the dynamic widths have been incorporated into existing template elements
+     * Note: This test, tests for widths. Widths will only change in a transform if the min width set as a param
+     * to the transform is exceeded. Currently this width is guaranteed to be exceeded. If the canned transform
+     * documents were to change such that they min width was no longer exceeded, then these tests would fail
+     *
+     * @throws Exception
+     */
+    @Test
+    public void transformUsageSubIntervalTemplate() throws Exception{
+        String transformXml = getResAsStringClasspath("UsageSubIntervalTransformDoc.xml");
+        String transformXsl = getResAsStringClasspath("UsageReportSubIntervalTransform_Master.xsl");
+        String templateXml = getResAsStringClasspath("Usage_SubIntervalMasterReport_Template.jrxml");
+
+        Document runtimeDoc = XmlUtil.stringToDocument(transformXml);
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", runtimeDoc);
+        params.put("PageMinWidth", 535);
+        
+        Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
+        Assert.assertNotNull("Transform document should not be null", transformedRuntimeDoc);
+
+        XPathFactory factory = XPathFactory.newInstance(XPathFactory.DEFAULT_OBJECT_MODEL_URI);
+        XPath xPath = factory.newXPath();
+
+        NodeList nodeList = (NodeList)xPath.evaluate("/JasperRuntimeTransformation/variables/variable[contains(@name, 'COLUMN_')]", runtimeDoc, XPathConstants.NODESET);
+        int numColumns = nodeList.getLength();
+
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/variable[contains(@name,'COLUMN_')]", transformedRuntimeDoc, XPathConstants.NODESET);
+        Assert.assertTrue("There should be "+ numColumns+ " @COLUMN_ variables, there were " + nodeList.getLength(), nodeList.getLength() == numColumns);
+
+        //sub report return values
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/detail/band/subreport/returnValue[contains(@toVariable, 'COLUMN_')]", transformedRuntimeDoc, XPathConstants.NODESET);
+        Assert.assertTrue("There should be "+ numColumns + " returnValue @toVariable=COLUMN_ , there were " + nodeList.getLength(), nodeList.getLength() == numColumns);
+
+        Double expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/pageWidth/text()", runtimeDoc, XPathConstants.NUMBER);
+        Double actualWidth = (Double) xPath.evaluate("/jasperReport/@pageWidth", transformedRuntimeDoc, XPathConstants.NUMBER);
+        Assert.assertTrue(MessageFormat.format("Page width should be {0} actual width was {1}",
+                expectedWidth.intValue(), actualWidth.intValue()),
+                expectedWidth.intValue() == actualWidth.intValue());
+
+        //sub report width
+        expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/subReportWidth/text()", runtimeDoc, XPathConstants.NUMBER);
+        actualWidth = (Double) xPath.evaluate("/jasperReport/detail/band/subreport/reportElement/@width", transformedRuntimeDoc, XPathConstants.NUMBER);
+        Assert.assertTrue(MessageFormat.format("Subreport width should be {0} actual width was {1}",
+                expectedWidth.intValue(), actualWidth.intValue()),
+                expectedWidth.intValue() == actualWidth.intValue());
+
+    }
+
+    /**
+     * Validate the transformed runtime Usage Sub Interval jrxml file. Confirms that all elements which should exist do,
+     * and that the dynamic widths have been incorporated into existing template elements
+     * Note: This test, tests for widths. Widths will only change in a transform if the min width set as a param
+     * to the transform is exceeded. Currently this width is guaranteed to be exceeded. If the canned transform
+     * documents were to change such that they min width was no longer exceeded, then these tests would fail
+     * @throws Exception
+     */
+    @Test
+    public void transformUsageSubReportTemplate() throws Exception{
+        String transformXml = getResAsStringClasspath("UsageSubReportTransformDoc.xml");
+        String transformXsl = getResAsStringClasspath("Usage_SubReport.xsl");
+        String templateXml = getResAsStringClasspath("Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+
+        Document runtimeDoc = XmlUtil.stringToDocument(transformXml);
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", runtimeDoc);
+        params.put("PageMinWidth", 535);
+
+        Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
+        Assert.assertNotNull("Transform document should not be null", transformedRuntimeDoc);
+
+        XPathFactory factory = XPathFactory.newInstance(XPathFactory.DEFAULT_OBJECT_MODEL_URI);
+        XPath xPath = factory.newXPath();
+
+        NodeList nodeList = (NodeList)xPath.evaluate("/JasperRuntimeTransformation/variables/variable[contains(@name, 'COLUMN_')]", runtimeDoc, XPathConstants.NODESET);
+        int numColumns = nodeList.getLength();
+
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/variable[contains(@name,'COLUMN_')]", transformedRuntimeDoc, XPathConstants.NODESET);
+        Assert.assertTrue("There should be "+ numColumns+ " @COLUMN_ variables, there were " + nodeList.getLength(), nodeList.getLength() == numColumns);
+
+        //serviceAndOperationFooter - 12 + 1 total text fields
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/group[@name='SERVICE_AND_OPERATION']/groupFooter/band/frame/textField", transformedRuntimeDoc, XPathConstants.NODESET);
+        Assert.assertTrue("There should be "+ (numColumns + 1) + " SERVICE_AND_OPERATION group footer text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 1));
+
+        //no data - 12 + 1 for total text fields
+        nodeList = (NodeList) xPath.evaluate("/jasperReport/noData/band/frame/staticText", transformedRuntimeDoc, XPathConstants.NODESET);
+        Assert.assertTrue("There should be "+ (numColumns + 1) + " no data static fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 1));
+        
+        Double expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/pageWidth/text()", runtimeDoc, XPathConstants.NUMBER);
+        Double actualWidth = (Double) xPath.evaluate("/jasperReport/@pageWidth", transformedRuntimeDoc, XPathConstants.NUMBER);
+        Assert.assertTrue(MessageFormat.format("Page width should be {0} actual width was {1}",
+                expectedWidth.intValue(), actualWidth.intValue()),
+                expectedWidth.intValue() == actualWidth.intValue());
+
     }
 
     private void printOutDocument(Document doc) throws Exception{

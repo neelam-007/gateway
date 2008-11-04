@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JasperRuntimeTransformation>
+    <variables>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_1" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_2" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_3" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_4" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_5" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_6" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_7" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_8" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_9" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_10" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_11" resetType="Report"/>
+        <variable calculation="Sum" class="java.lang.Long"
+            name="COLUMN_12" resetType="Report"/>
+    </variables>
+    <subReport>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_1" toVariable="COLUMN_1"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_2" toVariable="COLUMN_2"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_3" toVariable="COLUMN_3"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_4" toVariable="COLUMN_4"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_5" toVariable="COLUMN_5"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_6" toVariable="COLUMN_6"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_7" toVariable="COLUMN_7"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_8" toVariable="COLUMN_8"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_9" toVariable="COLUMN_9"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_10" toVariable="COLUMN_10"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_11" toVariable="COLUMN_11"/>
+        <returnValue calculation="Sum" subreportVariable="COLUMN_12" toVariable="COLUMN_12"/>
+    </subReport>
+    <subReportWidth>800</subReportWidth>
+    <pageWidth>918</pageWidth>
+</JasperRuntimeTransformation>

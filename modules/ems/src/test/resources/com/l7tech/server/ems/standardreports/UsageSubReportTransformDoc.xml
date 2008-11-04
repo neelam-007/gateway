@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JasperRuntimeTransformation>
+    <variables>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_1" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_1", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_2" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_2", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_3" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_3", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_4" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_4", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_5" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_5", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_6" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_6", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_7" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_7", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_8" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_8", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_9" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_9", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_10" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_10", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_11" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_11", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+        <variable calculation="Nothing" class="java.lang.Long"
+            name="COLUMN_12" resetType="None">
+            <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getColumnValue("COLUMN_12", $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
+        </variable>
+    </variables>
+    <serviceAndOperationFooter>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-1"
+                style="TableCell" width="60" x="0" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_1}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-2"
+                style="TableCell" width="60" x="60" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_2}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-3"
+                style="TableCell" width="60" x="120" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_3}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-4"
+                style="TableCell" width="60" x="180" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_4}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-5"
+                style="TableCell" width="60" x="240" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_5}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-6"
+                style="TableCell" width="60" x="300" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_6}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-7"
+                style="TableCell" width="60" x="360" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_7}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-8"
+                style="TableCell" width="60" x="420" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_8}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-9"
+                style="TableCell" width="60" x="480" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_9}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-10"
+                style="TableCell" width="60" x="540" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_10}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-11"
+                style="TableCell" width="60" x="600" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_11}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooter-12"
+                style="TableCell" width="60" x="660" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{COLUMN_12}]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18"
+                key="textField-ServiceOperationFooterTotal"
+                mode="Opaque" style="TotalCell" width="80" x="720" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.Long"><![CDATA[$V{TOTAL}]]></textFieldExpression>
+        </textField>
+    </serviceAndOperationFooter>
+    <noData>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-1"
+                style="TableCell" width="60" x="0" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-2"
+                style="TableCell" width="60" x="60" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-3"
+                style="TableCell" width="60" x="120" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-4"
+                style="TableCell" width="60" x="180" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-5"
+                style="TableCell" width="60" x="240" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-6"
+                style="TableCell" width="60" x="300" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-7"
+                style="TableCell" width="60" x="360" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-8"
+                style="TableCell" width="60" x="420" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-9"
+                style="TableCell" width="60" x="480" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-10"
+                style="TableCell" width="60" x="540" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-11"
+                style="TableCell" width="60" x="600" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-12"
+                style="TableCell" width="60" x="660" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+        <staticText>
+            <reportElement height="18" key="noDataStaticText-Total"
+                mode="Opaque" style="TotalCell" width="80" x="720" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <text><![CDATA[NA]]></text>
+        </staticText>
+    </noData>
+    <pageWidth>800</pageWidth>
+</JasperRuntimeTransformation>
