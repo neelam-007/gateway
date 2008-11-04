@@ -126,7 +126,7 @@
                     } catch (e) {
                         enterpriseTreeTable.clear();
                         displayError();
-                        l7.Error.showDialog(localizedStrings.ERROR, '30em', localizedStrings.CANNOT_PARSE_ENTITY_DATA + e);
+                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, '30em', localizedStrings.CANNOT_PARSE_ENTITY_DATA + e);
                         return;
                     }
                     enterpriseTreeTable.load(entities);
@@ -135,7 +135,7 @@
                 failure : function(o) {
                     enterpriseTreeTable.clear();
                     displayError();
-                    l7.Error.showDialog(localizedStrings.ERROR, '30em', localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, '30em', localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText);
                 }
             };
             var url = 'dataSource/ssgClusterContent/' + ssgClusterId + '.json';

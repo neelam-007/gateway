@@ -98,7 +98,7 @@ if (!l7.EnterpriseTreeTable) {
          *
          * Entity data are passed in as an array of entity object literals, with these properties (as applicable):
          *   id {string} (always required)
-         *   parentId {string} (always required)
+         *   parentId {string} (always required) - null if no parent, i.e., this is root
          *   type {string} (always required) - an l7.EnterpriseTreeTable.ENTITY value
          *   name {string} (always required)
          *   ancestors {array} - array of ancestor's names, ordered from topmost to immediate parent
@@ -450,7 +450,7 @@ if (!l7.EnterpriseTreeTable) {
              * Finds the index position of a column in the table.
              * @private
              * @param {string} column   an l7.EnterpriseTreeTable.COLUMN value
-             * @return column index if found; -1 if not column is not in table
+             * @return column index if found; null if not column is not in table
              */
             this._getColumnIndex = function(column) {
                 var columns = this._config.columns;
@@ -459,7 +459,7 @@ if (!l7.EnterpriseTreeTable) {
                         return i;
                     }
                 }
-                return -1;
+                return null;
             }
 
             /**
@@ -1090,16 +1090,6 @@ if (!l7.EnterpriseTreeTable) {
              *
              * @public
              * @param {array} entities     array of entity object literals
-             *
-             * An entity object literal has the following values:
-             *   id {string} (required) The entity ID.
-             *   parentId {string} (required) ID of parent entity; -1 if none, i.e., this is root.
-             *
-             * TODO
-             *
-             *
-             *
-             *
              */
             this.load = function(entities) {
                 // Clears existing data and table body rows.
@@ -1182,6 +1172,30 @@ if (!l7.EnterpriseTreeTable) {
         // --------------------------------------------------------------------------------
 
         /**
+         * Enum of monitoring property names for SSG Cluster entities.
+         * @public
+         * @final
+         */
+        l7.EnterpriseTreeTable.SSG_CLUSTER_MONITORING_PROPERTY = {
+            AUDIT_SIZE  : 'auditSize'
+        }
+
+        /**
+         * Enum of monitoring property names for SSG Node entities.
+         * @public
+         * @final
+         */
+        l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY = {
+            LOG_SIZE    : 'logSize',
+            DISK_USED   : 'diskUsed',
+            DISK_FREE   : 'diskFree',
+            RAID_STATUS : 'raidStatus',
+            CPU_TEMP    : 'cpuTemp',
+            CPU_USAGE   : 'cpuUsage',
+            CLOCK_DRIFT : 'clockDrift'
+        }
+
+        /**
          * Enum of all available columns.
          * @public
          * @final
@@ -1195,14 +1209,14 @@ if (!l7.EnterpriseTreeTable) {
             DASHBOARD              : 'dashboard',
             DETAILS                : 'details',
             ZOOM                   : 'zoom',
-            MONITORING_AUDIT_SIZE  : MONITORING_COLUMN_PREFIX + 'auditSize',
-            MONITORING_LOG_SIZE    : MONITORING_COLUMN_PREFIX + 'logSize',
-            MONITORING_DISK_USED   : MONITORING_COLUMN_PREFIX + 'diskUsed',
-            MONITORING_DISK_FREE   : MONITORING_COLUMN_PREFIX + 'diskFree',
-            MONITORING_RAID_STATUS : MONITORING_COLUMN_PREFIX + 'raidStatus',
-            MONITORING_CPU_TEMP    : MONITORING_COLUMN_PREFIX + 'cpuTemp',
-            MONITORING_CPU_USAGE   : MONITORING_COLUMN_PREFIX + 'cpuUsage',
-            MONITORING_CLOCK_DRIFT : MONITORING_COLUMN_PREFIX + 'clockDrift'
+            MONITORING_AUDIT_SIZE  : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE,
+            MONITORING_LOG_SIZE    : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.LOG_SIZE,
+            MONITORING_DISK_USED   : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.DISK_USED,
+            MONITORING_DISK_FREE   : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.DISK_FREE,
+            MONITORING_RAID_STATUS : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.RAID_STATUS,
+            MONITORING_CPU_TEMP    : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.CPU_TEMP,
+            MONITORING_CPU_USAGE   : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.CPU_USAGE,
+            MONITORING_CLOCK_DRIFT : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.CLOCK_DRIFT
         };
 
         /**
@@ -1241,30 +1255,6 @@ if (!l7.EnterpriseTreeTable) {
             DOWN    : 'down',
             OFFLINE : 'offline'
         };
-
-        /**
-         * Enum of monitoring property names for SSG Cluster entities.
-         * @public
-         * @final
-         */
-        l7.EnterpriseTreeTable.SSG_CLUSTER_MONITORING_PROPERTY = {
-            AUDIT_SIZE  : 'auditSize'
-        }
-
-        /**
-         * Enum of monitoring property names for SSG Node entities.
-         * @public
-         * @final
-         */
-        l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY = {
-            LOG_SIZE    : 'logSize',
-            DISK_USED   : 'diskUsed',
-            DISK_FREE   : 'diskFree',
-            RAID_STATUS : 'raidStatus',
-            CPU_TEMP    : 'cpuTemp',
-            CPU_USAGE   : 'cpuUsage',
-            CLOCK_DRIFT : 'clockDrift'
-        }
 
         /**
          * Enum of monitoring property states. Note that the corresponding CSS classes are identical.

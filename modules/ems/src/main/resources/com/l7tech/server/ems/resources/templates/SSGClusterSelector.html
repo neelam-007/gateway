@@ -53,6 +53,7 @@
 
         /** Localized strings for local HTML markups, e.g., error dialogs. */
         var localizedStrings = {
+            OK : 'OK',
             ERROR : 'Error',
             CANNOT_DOWNLOAD_ENTITY_DATA : 'Failed to get array of enterprise entities from server: ',
             CANNOT_PARSE_ENTITY_DATA : 'Failed to parse array of enterprise entities downloaded from server: ',
@@ -124,14 +125,14 @@ alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type =
                         entities = YAHOO.lang.JSON.parse(o.responseText);
                     } catch (e) {
                         displayError();
-                        l7.Error.showDialog(localizedStrings.ERROR, '30em', localizedStrings.CANNOT_PARSE_ENTITY_DATA + e);
+                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_PARSE_ENTITY_DATA + e, localizedStrings.OK);
                         return;
                     }
                     enterpriseTreeTable.load(entities);
                 },
                 failure : function(o) {
                     displayError();
-                    l7.Error.showDialog(localizedStrings.ERROR, '30em', localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText, localizedStrings.OK);
                 }
             };
             var url = 'dataSource/ssgClusterSelector.json';

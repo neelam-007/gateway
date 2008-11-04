@@ -442,6 +442,11 @@ img.tippy {
     padding-right: 6px;
 }
 
+img.refresh {
+    margin: 0 6px 0 6px;
+    vertical-align: middle;
+}
+
 /* A ghost dialog icon is an icon for bringing up a dialog.
    It is normally invisible until mouse is over its containing table cell. */
 img.ghostDialogIcon {

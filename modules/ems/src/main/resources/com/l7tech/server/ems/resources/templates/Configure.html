@@ -58,7 +58,7 @@
                 ZOOM_ICON_TOOLTIP : 'Show details'
             };
 
-            /** Localized strings for local HTML markups, e.g., toolbar buttons, context menu, error dialogs. */
+            /** Localized strings for local HTML markups, e.g., toolbar buttons, context menu, dialogs. */
             var localizedStrings = {
                 ADD_FOLDER : 'New Folder',
                 ADD_SSG_CLUSTER : 'Add Cluster',
@@ -69,10 +69,24 @@
                 STOP : 'Stop',
                 LAUNCH_SSM : 'Launch SecureSpan Manager',
                 NO_ACCESS : 'No Access',
+                OK : 'OK',
+                CANCEL : 'Cancel',
                 ERROR : 'Error',
                 CANNOT_DOWNLOAD_ENTITY_DATA : 'Failed to get array of enterprise entities from server: ',
                 CANNOT_PARSE_ENTITY_DATA : 'Failed to parse array of enterprise entities downloaded from server: ',
-                ENTITY_DATA_ERROR : 'Data error.'
+                ENTITY_DATA_ERROR : 'Data error.',
+                FOLDER_NAME_HINT : 'must be &le; 128 characters, no slash "/"',
+                SSG_CLUSTER_NAME_HINT : 'must be &le; 128 characters, no slash "/"',
+                STARTING_SSG_NODE : 'Starting SSG Node ',
+                STOPPING_SSG_NODE : 'Stopping SSG Node ',
+                CANNOT_ADD_FOLDER : 'Failed to add folder: ',
+                CANNOT_RENAME_FOLDER : 'Failed to rename folder: ',
+                CANNOT_DELETE_FOLDER : 'Failed to delete folder: ',
+                CANNOT_ADD_SSG_CLUSTER : 'Failed to add SSG Cluster: ',
+                CANNOT_RENAME_SSG_CLUSTER : 'Failed to rename SSG Cluster: ',
+                CANNOT_DELETE_SSG_CLUSTER : 'Failed to delete SSG Cluster: ',
+                CANNOT_START_SSG_NODE : 'Failed to start SSG Node: ',
+                CANNOT_STOP_SSG_NODE : 'Failed to stop SSG Node: '
             };
         </script>
         <script type="text/javascript">
@@ -100,52 +114,20 @@
             var stopMenuItem;
             var launchSSMMenuItem;
 
-            function onClickAddFolder(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
-                // TODO
-alert('onClickAddFolder\nentity.name = ' + entity.name);
-            }
+            var addFolderDialog;
+            var renameFolderDialog;
+            var deleteFolderDialog;
+            var addSSGClusterDialog;
+            var renameSSGClusterDialog;
+            var deleteSSGClusterDialog;
 
-            function onClickAddSSGCluster(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
-                // TODO
-alert('onClickAddSSGCluster\nentity.name = ' + entity.name);
-            }
-
-            function onClickRename(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
-                // TODO
-alert('onClickRename\nentity.name = ' + entity.name);
-            }
-
-            function onClickMove(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
-                // TODO
-alert('onClickMove\nentity.name = ' + entity.name);
-            }
-
-            function onClickDelete(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
-                // TODO
-alert('onClickDelete\nentity.name = ' + entity.name);
-            }
-
-            function onClickStart(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
-                // TODO
-alert('onClickStart\nentity.name = ' + entity.name);
-            }
-
-            function onClickStop(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
-                // TODO
-alert('onClickStop\nentity.name = ' + entity.name);
-            }
-
-            function onClickLaunchSSM(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
-                // TODO
-alert('onClickLaunchSSM\nentity.name = ' + entity.name);
+            function showHideLogReader() {
+                var debugLogReader = document.getElementById('debugLogReader');
+                if (debugLogReader.style.display == '') {
+                    debugLogReader.style.display = 'none';
+                } else {
+                    debugLogReader.style.display = '';
+                }
             }
 
             /**
@@ -194,6 +176,39 @@ alert('onClickLaunchSSM\nentity.name = ' + entity.name);
                 }
             }
 
+            function loadEnterpriseTreeTable() {
+                enterpriseTreeTable.clear();
+                enableToolbarButtons(false);    // because no entity is selected now
+
+                function displayError() {
+                    var tbody = document.getElementById('enterpriseTreeTableBody');
+                    var tr = tbody.insertRow(-1);
+                    var td = tr.insertCell(-1);
+                    td.colSpan = enterpriseTreeTable._config.columns.length;
+                    td.innerHTML = localizedStrings.ENTITY_DATA_ERROR;
+                }
+
+                var callback = {
+                    success : function(o) {
+                        var entities;
+                        try {
+                            entities = YAHOO.lang.JSON.parse(o.responseText);
+                        } catch (e) {
+                            displayError();
+                            l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_PARSE_ENTITY_DATA + e, localizedStrings.OK);
+                            return;
+                        }
+                        enterpriseTreeTable.load(entities);
+                    },
+                    failure : function(o) {
+                        displayError();
+                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText, localizedStrings.OK);
+                    }
+                };
+                var url = 'dataSource/configure.json';
+                YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
+            }
+
             /**
              * Fetches entities data from server and then populates table body.
              */
@@ -213,41 +228,441 @@ alert('onClickLaunchSSM\nentity.name = ' + entity.name);
                     onEntitySelected : onEntitySelected,
                     onClickAccessDialogButton : function(event, entity) {
                         // TODO
-alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
+alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
                     }
                 };
                 enterpriseTreeTable = new l7.EnterpriseTreeTable(tbody, [], '../images', config);
 
-                function displayError() {
-                    var tr = tbody.insertRow(-1);
-                    var td = tr.insertCell(-1);
-                    td.colSpan = config.columns.length;
-                    td.innerHTML = localizedStrings.ENTITY_DATA_ERROR;
-                }
+                loadEnterpriseTreeTable();
+            }
 
+            /**
+             * @param {string} name
+             * @return {boolean}
+             */
+            function isValidFolderName(name) {
+                return name.length > 0 && name.length <= 128 && name.indexOf('/') == -1;
+            }
+
+            /**
+             * @param {string} name
+             * @return {boolean}
+             */
+            function isValidSSGClusterName(name) {
+                return name.length > 0 && name.length <= 128 && name.indexOf('/') == -1;
+            }
+
+            function onClickAddFolder(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                document.getElementById('addFolderDialog_parentId').value = entity.id;
+                document.getElementById('addFolderDialog_name').value = '';
+                validateAddFolderDialog();
+                addFolderDialog.show();
+            }
+
+            function onClickRenameFolder(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                document.getElementById('renameFolderDialog_id').value = entity.id;
+                document.getElementById('renameFolderDialog_name').value = entity.name;
+                validateRenameFolderDialog();
+                renameFolderDialog.show();
+            }
+
+            function onClickRenameSSGCluster(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                document.getElementById('renameSSGClusterDialog_id').value = entity.id;
+                document.getElementById('renameSSGClusterDialog_name').value = entity.name;
+                validateRenameSSGClusterDialog();
+                renameSSGClusterDialog.show();
+            }
+
+            function onClickRename(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                if (entity.type == l7.EnterpriseTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                    onClickRenameFolder(event);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                    onClickRenameSSGCluster(event);
+                } else {
+                    YAHOO.log('No rename handler for entity type: ' + entity.type, 'error', 'Configure.html');
+                }
+            }
+
+            function onClickMove(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                // TODO
+alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
+            }
+
+            function onClickDeleteFolder(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                document.getElementById('deleteFolderDialog_id').value = entity.id;
+                document.getElementById('deleteFolderDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
+                deleteFolderDialog.show();
+            }
+
+            function onClickDeleteSSGCluster(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                document.getElementById('deleteSSGClusterDialog_id').value = entity.id;
+                document.getElementById('deleteSSGClusterDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
+                deleteSSGClusterDialog.show();
+            }
+
+            function onClickDelete(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                if (entity.type == l7.EnterpriseTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                    onClickDeleteFolder(event);
+                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                    onClickDeleteSSGCluster(event);
+                } else {
+                    YAHOO.log('No delete handler for entity type: ' + entity.type, 'error', 'Configure.html');
+                }
+            }
+
+            function onClickAddSSGCluster(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                document.getElementById('addSSGClusterDialog_parentId').value = entity.id;
+                document.getElementById('addSSGClusterDialog_name').value = '';
+                validateAddSSGClusterDialog();
+                addSSGClusterDialog.show();
+            }
+
+            function onClickStart(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
                 var callback = {
                     success : function(o) {
-                        var entities;
-                        try {
-                            entities = YAHOO.lang.JSON.parse(o.responseText);
-                        } catch (e) {
-                            displayError();
-                            l7.Error.showDialog(localizedStrings.ERROR, '30em', localizedStrings.CANNOT_PARSE_ENTITY_DATA + e);
-                            return;
-                        }
-                        enterpriseTreeTable.load(entities);
+                        l7.Dialog.hideWaitDialog();
+                        loadEnterpriseTreeTable(); // TODO should instead just update the status icon
                     },
                     failure : function(o) {
-                        displayError();
-                        l7.Error.showDialog(localizedStrings.ERROR, '30em', localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText);
+                        l7.Dialog.hideWaitDialog();
+                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_START_SSG_NODE + o.statusText, localizedStrings.OK);
                     }
                 };
-                var url = 'dataSource/configure.json';
-                YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
+                var url = 'action/startSSGNode';
+                var postData = 'id=' + encodeURIComponent(entity.id);
+                l7.Dialog.showWaitDialog(localizedStrings.STARTING_SSG_NODE + '&ldquo;' + entity.name + '&rdquo;...');
+                YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
+            }
+
+            function onClickStop(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                var callback = {
+                    success : function(o) {
+                        l7.Dialog.hideWaitDialog();
+                        loadEnterpriseTreeTable(); // TODO should instead just update the status icon
+                    },
+                    failure : function(o) {
+                        l7.Dialog.hideWaitDialog();
+                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_STOP_SSG_NODE + o.statusText, localizedStrings.OK);
+                    }
+                };
+                var url = 'action/stopSSGNode';
+                var postData = 'id=' + encodeURIComponent(entity.id);
+                l7.Dialog.showWaitDialog(localizedStrings.STARTING_SSG_NODE + '&ldquo;' + entity.name + '&rdquo;...');
+                YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
+            }
+
+            function onClickLaunchSSM(event) {
+                var entity = enterpriseTreeTable.getSelectedEntity();
+                // TODO
+alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
+            }
+
+            function validateAddFolderDialog() {
+                var nameTextBox = document.getElementById('addFolderDialog_name');
+                var name = nameTextBox.value;
+                var nameIsValid = isValidFolderName(name);
+                if (nameIsValid || name.length == 0) {
+                    YAHOO.util.Dom.removeClass(nameTextBox, 'invalid');
+                    document.getElementById('addFolderDialog_name_hint').innerHTML = '';
+                } else if (name.length != 0) {
+                    YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
+                    document.getElementById('addFolderDialog_name_hint').innerHTML = '(' + localizedStrings.FOLDER_NAME_HINT + ')';
+                }
+
+                var okButton = addFolderDialog.getButtons()[0];
+                if (nameIsValid) {
+                    okButton.set('disabled', false);
+                } else {
+                    okButton.set('disabled', true);
+                }
+            }
+
+            function validateRenameFolderDialog() {
+                var nameTextBox = document.getElementById('renameFolderDialog_name');
+                var name = nameTextBox.value;
+                var nameIsValid = isValidFolderName(name);
+                if (nameIsValid || name.length == 0) {
+                    YAHOO.util.Dom.removeClass(nameTextBox, 'invalid');
+                    document.getElementById('renameFolderDialog_name_hint').innerHTML = '';
+                } else if (name.length != 0) {
+                    YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
+                    document.getElementById('renameFolderDialog_name_hint').innerHTML = '(' + localizedStrings.FOLDER_NAME_HINT + ')';
+                }
+
+                var okButton = addSSGClusterDialog.getButtons()[0];
+                if (nameIsValid) {
+                    okButton.set('disabled', false);
+                } else {
+                    okButton.set('disabled', true);
+                }
+            }
+
+            function validateAddSSGClusterDialog() {
+                var nameTextBox = document.getElementById('addSSGClusterDialog_name');
+                var name = nameTextBox.value;
+                var nameIsValid = isValidSSGClusterName(name);
+                if (nameIsValid || name.length == 0) {
+                    YAHOO.util.Dom.removeClass(nameTextBox, 'invalid');
+                    document.getElementById('addSSGClusterDialog_name_hint').innerHTML = '';
+                } else if (name.length != 0) {
+                    YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
+                    document.getElementById('addSSGClusterDialog_name_hint').innerHTML = '(' + localizedStrings.SSG_CLUSTER_NAME_HINT + ')';
+                }
+
+                var hostNameIsValid = document.getElementById('addSSGClusterDialog_hostName').value.length > 0;
+                var portIsValid = document.getElementById('addSSGClusterDialog_port').value.length > 0;
+
+                var okButton = addSSGClusterDialog.getButtons()[0];
+                if (nameIsValid && hostNameIsValid && portIsValid) {
+                    okButton.set('disabled', false);
+                } else {
+                    okButton.set('disabled', true);
+                }
+            }
+
+            function validateRenameSSGClusterDialog() {
+                var nameTextBox = document.getElementById('renameSSGClusterDialog_name');
+                var name = nameTextBox.value;
+                var nameIsValid = isValidSSGClusterName(name);
+                if (nameIsValid || name.length == 0) {
+                    YAHOO.util.Dom.removeClass(nameTextBox, 'invalid');
+                    document.getElementById('renameSSGClusterDialog_name_hint').innerHTML = '';
+                } else if (name.length != 0) {
+                    YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
+                    document.getElementById('renameSSGClusterDialog_name_hint').innerHTML = '(' + localizedStrings.SSG_CLUSTER_NAME_HINT + ')';
+                }
+
+                var okButton = addSSGClusterDialog.getButtons()[0];
+                if (nameIsValid) {
+                    okButton.set('disabled', false);
+                } else {
+                    okButton.set('disabled', true);
+                }
+            }
+
+            function initAddFolderDialog() {
+                addFolderDialog = new YAHOO.widget.Dialog('addFolderDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    fixedcenter : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'async',
+                    visible     : false
+                });
+                addFolderDialog.render();
+                addFolderDialog.callback.success = function(o) {
+                    loadEnterpriseTreeTable();  // Reloads to show new folder.
+                }
+                addFolderDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_FOLDER + o.status, localizedStrings.OK);
+                }
+            }
+
+            function initRenameFolderDialog() {
+                renameFolderDialog = new YAHOO.widget.Dialog('renameFolderDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    fixedcenter : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'async',
+                    visible     : false
+                });
+                renameFolderDialog.render();
+                renameFolderDialog.callback.success = function(o) {
+                    loadEnterpriseTreeTable();  // Reloads to show new folder.
+                }
+                renameFolderDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_RENAME_FOLDER + o.status, localizedStrings.OK);
+                }
+            }
+
+            function initDeleteFolderDialog() {
+                deleteFolderDialog = new YAHOO.widget.Dialog('deleteFolderDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    fixedcenter : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'async',
+                    visible     : false
+                });
+                deleteFolderDialog.render();
+                deleteFolderDialog.callback.success = function(o) {
+                    loadEnterpriseTreeTable();  // Reloads to show new folder.
+                }
+                deleteFolderDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_FOLDER + o.status, localizedStrings.OK);
+                }
+            }
+
+            function initAddSSGClusterDialog() {
+                addSSGClusterDialog = new YAHOO.widget.Dialog('addSSGClusterDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    fixedcenter : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'async',
+                    visible     : false
+                });
+                addSSGClusterDialog.render();
+                addSSGClusterDialog.callback.success = function(o) {
+                    loadEnterpriseTreeTable();  // Reloads to show new SSG Cluster.
+                }
+                addSSGClusterDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_SSG_CLUSTER + o.status, localizedStrings.OK);
+                }
+            }
+
+            function initRenameSSGClusterDialog() {
+                renameSSGClusterDialog = new YAHOO.widget.Dialog('renameSSGClusterDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    fixedcenter : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'async',
+                    visible     : false
+                });
+                renameSSGClusterDialog.render();
+                renameSSGClusterDialog.callback.success = function(o) {
+                    loadEnterpriseTreeTable();  // Reloads to show new folder.
+                }
+                renameSSGClusterDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_RENAME_SSG_CLUSTER + o.status, localizedStrings.OK);
+                }
+            }
+
+            function initDeleteSSGClusterDialog() {
+                deleteSSGClusterDialog = new YAHOO.widget.Dialog('deleteSSGClusterDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    fixedcenter : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'async',
+                    visible     : false
+                });
+                deleteSSGClusterDialog.render();
+                deleteSSGClusterDialog.callback.success = function(o) {
+                    loadEnterpriseTreeTable();  // Reloads to show new folder.
+                }
+                deleteSSGClusterDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SSG_CLUSTER + o.status, localizedStrings.OK);
+                }
             }
 
             function initDialogs() {
-                // TODO
+                initAddFolderDialog();
+                initRenameFolderDialog();
+                initDeleteFolderDialog();
+                initAddSSGClusterDialog();
+                initRenameSSGClusterDialog();
+                initDeleteSSGClusterDialog();
+                // TODO access account dialog
             }
 
             function initToolbar() {
@@ -386,10 +801,13 @@ alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type =
             }
 
             function init() {
-                initEnterpriseTreeTable();
+                var debugLogReader = new YAHOO.widget.LogReader('debugLogReader');
+                debugLogReader.hide();   // Initially hidden.
+
                 initDialogs();
                 initToolbar();
                 initContextMenu();
+                initEnterpriseTreeTable();
             }
 
             YAHOO.util.Event.onDOMReady(init);
@@ -497,7 +915,7 @@ alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type =
             <div class="content">
                 <wicket:extend>
                     <div class="panel">
-                        <div class="panelTitle">Enterprise Gateways</div>
+                        <div class="panelTitle">Enterprise Gateways <img class="refresh clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="loadEnterpriseTreeTable();" /></div>
                         <div id="enterpriseTree">
                             <div class="panelToolbar">
                                 <button id="addFolderButton" type="submit" name="addFolderButton" value="addFolder"></button>
@@ -510,7 +928,7 @@ alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type =
                                 <button id="launchSSMButton" type="submit" name="launchSSMButton" value="ssm"></button>
                             </div>
                             <div class="panelContent">
-                                <table id="enterpriseTreeTable" class="dataTable l7-treeTable l7-enterpriseTable l7-enterpriseTable-rowSelectable" width="100%">
+                                <table id="enterpriseTreeTable" class="dataTable" width="100%">
                                     <thead>
                                         <tr>
                                             <th class="name">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
@@ -541,5 +959,95 @@ alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type =
         </td>
     </tr>
 </table>
+
+<div id="addFolderDialog">
+    <div class="hd">New Folder</div>
+    <div class="bd">
+        <form name="addFolderForm" action="action/addEnterpriseFolder">
+            <input id="addFolderDialog_parentId" type="hidden" name="parentId" />
+            <table class="spaced">
+                <tr>
+                    <th>Name:</th>
+                    <td><input type="text" id="addFolderDialog_name" name="name" size="40" maxlength="128" onkeyup="validateAddFolderDialog();" /> <span id="addFolderDialog_name_hint" class="red"></span></td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+
+<div id="renameFolderDialog">
+    <div class="hd">Rename Folder</div>
+    <div class="bd">
+        <form name="renameFolderForm" action="action/renameEnterpriseFolder">
+            <input id="renameFolderDialog_id" type="hidden" name="id" />
+            <table class="spaced">
+                <tr>
+                    <th>New Name:</th>
+                    <td><input type="text" id="renameFolderDialog_name" name="name" size="40" maxlength="128" onkeyup="validateRenameFolderDialog();" /> <span id="renameFolderDialog_name_hint" class="red"></span></td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+
+<div id="deleteFolderDialog">
+    <div class="hd">Delete Folder</div>
+    <div class="bd">
+        <form name="deleteFolderForm" action="action/deleteEnterpriseFolder">
+            <input id="deleteFolderDialog_id" type="hidden" name="id" />
+            Delete folder &ldquo;<span id="deleteFolderDialog_name"></span>&rdquo; and all its children?
+        </form>
+    </div>
+</div>
+
+<div id="addSSGClusterDialog">
+    <div class="hd">Add SSG Cluster</div>
+    <div class="bd">
+        <form name="addSSGClusterForm" action="action/addSSGCluster">
+            <input id="addSSGClusterDialog_parentId" type="hidden" name="parentId" />
+            <table class="spaced">
+                <tr>
+                    <th>Name:</th>
+                    <td><input type="text" id="addSSGClusterDialog_name" name="name" size="40" maxlength="128" onkeyup="validateAddSSGClusterDialog();" /> <span id="addSSGClusterDialog_name_hint" class="red"></span></td>
+                </tr>
+                <tr>
+                    <th>Host Name:</th>
+                    <td><input type="text" id="addSSGClusterDialog_hostName" name="name" size="40" maxlength="128" onkeyup="validateAddSSGClusterDialog();" /></td>
+                </tr>
+                <tr>
+                    <th>Administrative Port Number:</th>
+                    <td><input type="text" id="addSSGClusterDialog_port" name="name" size="10" onkeyup="validateAddSSGClusterDialog();" /></td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+
+<div id="renameSSGClusterDialog">
+    <div class="hd">Rename SSG Cluster</div>
+    <div class="bd">
+        <form name="renameSSGClusterForm" action="action/renameSSGCluster">
+            <input id="renameSSGClusterDialog_id" type="hidden" name="id" />
+            <table class="spaced">
+                <tr>
+                    <th>New Name:</th>
+                    <td><input type="text" id="renameSSGClusterDialog_name" name="name" size="40" maxlength="128" onkeyup="validateRenameSSGClusterDialog();" /> <span id="renameSSGClusterDialog_name_hint" class="red"></span></td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+
+<div id="deleteSSGClusterDialog">
+    <div class="hd">Delete SSG Cluster</div>
+    <div class="bd">
+        <form name="deleteSSGClusterForm" action="action/deleteSSGCluster">
+            <input id="deleteSSGClusterDialog_id" type="hidden" name="id" />
+            Delete SSG Cluster &ldquo;<span id="deleteSSGClusterDialog_name"></span>&rdquo; from the enterprise tree?
+            <br/>This will not destroy the SSG Cluster itself.
+        </form>
+    </div>
+</div>
+
 </body>
 </html>

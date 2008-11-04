@@ -2,7 +2,7 @@
  * @module l7
  * @namespace l7
  * @requires YUI module "animation" if using l7.Resize
- * @requires YUI modules "button", "container" if using l7.Error
+ * @requires YUI modules "button", "container" if using l7.Dialog
  */
 
 // -----------------------------------------------------------------------------
@@ -654,49 +654,89 @@ if (!l7.Resize) {
 }
 
 // -----------------------------------------------------------------------------
-// Error
+// Dialog
 // -----------------------------------------------------------------------------
-if (!l7.Error) {
+if (!l7.Dialog) {
     (function(){
         /**
          * Provides simple error dialog.
          *
-         * @class l7.Error
+         * @class l7.Dialog
          * @static
          */
-        l7.Error = {};
+        l7.Dialog = {};
+
+        /**
+         * @private
+         */
+        l7.Dialog._waitDialog = new YAHOO.widget.Panel('l7_Dialog_waitDialog', {
+            close       : false,
+            draggable   : false,
+            fixedcenter : true,
+            modal       : true,
+            visible     : false,
+            zindex      : 999
+        });
+        l7.Dialog._waitDialog.setBody('<div class="center"><img src="../images/busy32.gif" /></div>');
+
+        /**
+         * Shows the wait dialog.
+         *
+         * @public
+         * @static
+         * @param {string} header   text for dialog header
+         */
+        l7.Dialog.showWaitDialog = function(header) {
+            l7.Dialog._waitDialog.setHeader(header);
+            l7.Dialog._waitDialog.render(document.body);
+            l7.Dialog._waitDialog.show();
+        }
+
+        /**
+         * Hides the wait dialog.
+         *
+         * @public
+         * @static
+         */
+        l7.Dialog.hideWaitDialog = function() {
+            l7.Dialog._waitDialog.hide();
+        }
+
+        /**
+         * @private
+         */
+        l7.Dialog._errorDialog = new YAHOO.widget.Dialog('l7_Dialog_errorDialog', {
+            buttons     : [
+                {
+                    text      : 'OK',
+                    handler   : function() { this.hide(); },
+                    isDefault : true
+                }
+            ],
+            close       : true,
+            draggable   : false,
+            fixedcenter : true,
+            icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
+            modal       : true,
+            visible     : false,
+            zindex      : 999
+        });
 
         /**
          * Displays a simple error dialog.
          *
          * @param {string} header   localized header text; defaults to 'Error' if null
-         * @param {string} width    width; defaults to '30em' if null
          * @param {html} body       HTML content
-         * @param {string} okText   localized text label for the OK button
-         * @requires YAHOO.widget.SimpleDialog
+         * @param {string} okText   localized text label for the OK button; defaults to 'OK' if null
+         * @requires YAHOO.widget.Dialog
          * @requires YAHOO.widget.Button
          */
-        l7.Error.showDialog = function(header, width, body, okText) {
-            var errDlg = new YAHOO.widget.SimpleDialog('errDlg', {
-                buttons     : [
-                    {
-                        text      : okText == null ? 'OK' : okText,
-                        handler   : function() { this.hide() },
-                        isDefault : true
-                    }
-                ],
-                close       : true,
-                draggable   : false,
-                fixedcenter : true,
-                icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
-                modal       : true,
-                width       : width == null ? '30em' : width,
-                visible     : false
-            });
-            errDlg.setHeader(header == null ? 'Error' : header);
-            errDlg.setBody(body);
-            errDlg.render(document.body);
-            errDlg.show();
+        l7.Dialog.showErrorDialog = function(header, body, okText) {
+            l7.Dialog._errorDialog.setHeader(header == null ? 'Error' : header);
+            l7.Dialog._errorDialog.setBody(body);
+            l7.Dialog._errorDialog.render(document.body);
+            l7.Dialog._errorDialog.getButtons()[0].set('label', okText == null ? 'OK' : okText);
+            l7.Dialog._errorDialog.show();
         }
     })();
 }
