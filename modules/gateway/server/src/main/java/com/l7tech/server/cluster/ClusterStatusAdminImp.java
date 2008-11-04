@@ -4,15 +4,14 @@ import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.cluster.*;
 import com.l7tech.gateway.common.emstrust.TrustedEms;
 import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.*;
@@ -302,6 +301,18 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
 
     public Collection<TrustedEms> getTrustedEmsInstances() throws FindException {
         return trustedEmsManager.findAll();
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    @Secured(types = EntityType.TRUSTED_EMS, stereotype = MethodStereotype.DELETE_BY_ID, relevantArg = 0)
+    public void deleteTrustedEmsInstance(long trustedEmsOid) throws DeleteException, FindException {
+        trustedEmsManager.delete(trustedEmsOid);
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    @Secured(types = EntityType.TRUSTED_EMS_USER, stereotype = MethodStereotype.DELETE_BY_ID, relevantArg = 0)
+    public void deleteTrustedEmsUserMapping(long trustedEmsUserOid) throws DeleteException, FindException {
+        trustedEmsUserManager.delete(trustedEmsUserOid);
     }
 
     public Collection<TrustedEmsUser> getTrustedEmsUserMappings(long trustedEmsId) throws FindException {

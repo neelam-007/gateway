@@ -2,6 +2,8 @@ package com.l7tech.cluster;
 
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.emstrust.TrustedEms;
 import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
@@ -12,10 +14,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayFeatureSets;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -208,6 +207,18 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     @Transactional(propagation = Propagation.REQUIRED)
     public Collection<TrustedEms> getTrustedEmsInstances() throws FindException {
         return Collections.emptyList();
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    @Secured(types = EntityType.TRUSTED_EMS, stereotype = MethodStereotype.DELETE_BY_ID, relevantArg = 0)
+    public void deleteTrustedEmsInstance(long trustedEmsOid) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    @Secured(types = EntityType.TRUSTED_EMS_USER, stereotype = MethodStereotype.DELETE_BY_ID, relevantArg = 0)
+    public void deleteTrustedEmsUserMapping(long trustedEmsUserOid) {
+        throw new UnsupportedOperationException();
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

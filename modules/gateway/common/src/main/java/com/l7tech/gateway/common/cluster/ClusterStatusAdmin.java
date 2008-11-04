@@ -374,6 +374,24 @@ public interface ClusterStatusAdmin {
     Collection<TrustedEms> getTrustedEmsInstances() throws FindException;
 
     /**
+     * Delete an EMS registration and all its user mappings.
+     *
+     * @param trustedEmsOid the object ID of the TrustedEms instance to delete.
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(types=EntityType.TRUSTED_EMS, stereotype=MethodStereotype.DELETE_BY_ID, relevantArg=0)
+    void deleteTrustedEmsInstance(long trustedEmsOid) throws DeleteException, FindException;
+
+    /**
+     * Delete an EMS user mapping.
+     *
+     * @param trustedEmsUserOid the object ID of the TrustedEmsUser instance to delete.   
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(types=EntityType.TRUSTED_EMS_USER, stereotype=MethodStereotype.DELETE_BY_ID, relevantArg=0)
+    void deleteTrustedEmsUserMapping(long trustedEmsUserOid) throws DeleteException, FindException;
+
+    /**
      * Get all TrustedEmsUser instances belonging to the registered TrustedEms instance with the specified
      * OID on this Gateway.
      *

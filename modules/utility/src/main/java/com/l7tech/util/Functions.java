@@ -177,6 +177,20 @@ public final class Functions {
     }
 
     /**
+     * Convenience method that filters all null elements out of a list.
+     *
+     * @param in an Iterable to filter.  Required.
+     * @return a new ArrayList containing all non-null elements from the Iterable.  Never null but may be empty.
+     */
+    public static <I> List<I> grepNotNull(Iterable<I> in) {
+        return grep(new ArrayList<I>(), in, new Unary<Boolean, I>() {
+            public Boolean call(I i) {
+                return i != null;
+            }
+        });
+    }
+
+    /**
      * Return a new predicate which negates an existing predicate.
      *
      * @param predicate the predicate to negate.  Required.
