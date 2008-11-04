@@ -408,7 +408,7 @@
 
         <!-- install to our temp repository under "build" -->
         <echo level="info">Downloading artifacts to cache.</echo>
-        <ivy:install settingsRef="ivy.remote" organisation="${org}" module="${mod}" revision="${rev}" from="libraries" to="localfile" transitive="true"/>
+        <ivy:install settingsRef="ivy.remote" organisation="${org}" module="${mod}" revision="${rev}" type="jar" from="libraries" to="localfile" transitive="true"/>
 
         <!-- copy to main repository -->
         <echo level="info">Moving artifacts to repository.</echo>
