@@ -64,27 +64,25 @@ public class PrivateKeyManagerWindow extends JDialog {
     static {
         TimerTask task = new TimerTask() {
             public void run() {
-                if (!timerClients.isEmpty()) {
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            // Deliver tick events on the swing thread, as long as we are connected to the SSG
-                            if (!Registry.getDefault().isAdminContextPresent())
-                                return;
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        // Deliver tick events on the swing thread, as long as we are connected to the SSG
+                        if (timerClients.isEmpty() || !Registry.getDefault().isAdminContextPresent())
+                            return;
 
-                            for (PrivateKeyManagerWindow client : timerClients.keySet())
-                                if (client != null)
-                                    deliverTimerTick(client);
-                        }
+                        for (PrivateKeyManagerWindow client : timerClients.keySet())
+                            if (client != null)
+                                deliverTimerTick(client);
+                    }
 
-                        private void deliverTimerTick(PrivateKeyManagerWindow client) {
-                            try {
-                                client.onTimerTick();
-                            } catch (Exception e) {
-                                logger.log(Level.WARNING, "Unable to check status of background key management jobs: " + ExceptionUtils.getMessage(e), e);
-                            }
+                    private void deliverTimerTick(PrivateKeyManagerWindow client) {
+                        try {
+                            client.onTimerTick();
+                        } catch (Exception e) {
+                            logger.log(Level.WARNING, "Unable to check status of background key management jobs: " + ExceptionUtils.getMessage(e), e);
                         }
-                    });
-                }
+                    }
+                });
             }
         };
         jobStatusTimer.schedule(task, 311, 311);
