@@ -2687,6 +2687,15 @@
         </copy>
 
         <unzip src="${src.root}/webhelp/ssm/help.zip" dest="${install.src.ssg.help}"/>
+        <path id="ssmhelp.spacespath">
+            <fileset dir="${install.src.ssg.help}">
+                <include name="**/* *"/>
+            </fileset>
+        </path>
+        <condition property="ssmhelp.fail.path.with.spaces">
+            <length string="${toString:ssmhelp.spacespath}" when="greater" length="0" />
+        </condition>
+        <fail if="ssmhelp.fail.path.with.spaces">SSM help.zip contains path with spaces, please remove the spaces and try again.${line.separator}${toString:ssmhelp.spacespath}</fail>
 
         <copy todir="${install.src.ssg.appletlib}">
             <fileset dir="${build.dir}/managerappletlibs"/>
