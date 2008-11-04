@@ -79,7 +79,7 @@ public class DBActionsTest {
             System.out.println("Upgrading " + dbName + versionName + " from " + dbVersion + " to " + currentVersion);
             DBActions.DBActionsResult upgradeStatus;
             try {
-                upgradeStatus = dbActions.upgradeDbSchema(getDatabaseConfig(dbName + versionName), getSchemaPath(), dbVersion, currentVersion, null);
+                upgradeStatus = dbActions.upgradeDbSchema(getDatabaseConfig(dbName + versionName), false, dbVersion, currentVersion, getSchemaPath(), null);
                 Assert.assertEquals("Failed upgrade procedure. upgradeStatus != success [" + upgradeStatus.getErrorMessage() + "]", 
                                     DBActions.StatusType.SUCCESS, upgradeStatus.getStatus());
                 dbVersion = dbActions.checkDbVersion(getDatabaseConfig(dbName + versionName));
