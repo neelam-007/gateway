@@ -10,11 +10,7 @@ import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.text.MessageFormat;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Type;
+import java.io.*;
 
 import org.junit.Test;
 import org.junit.Assert;
@@ -32,6 +28,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
+
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.JasperCompileManager;
 
 /**
  * Test coverage for class Utilities
@@ -2802,6 +2801,83 @@ public class UtilitiesTest{
                 expectedWidth.intValue(), actualWidth.intValue()),
                 expectedWidth.intValue() == actualWidth.intValue());
 
+    }
+
+    /**
+     * Usage template jrxml files are required as resources so are not compiled as part of the build process.
+     * This test compiles all 4 usage jrxml files
+     * @exception 
+     */
+    @Test
+    public void compileUsageReports() throws Exception {
+
+        String templateXml = getResAsStringClasspath("Usage_Summary_Template.jrxml");
+        Document templateDoc = getTemplateDocument(templateXml);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(templateDoc, baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        boolean exceptionThrown = false;
+        try{
+            JasperReport compiledReport = JasperCompileManager.compileReport(bais);
+            Assert.assertTrue("Compiled report should not be null", compiledReport != null);
+        }catch(Exception ex){
+            ex.printStackTrace();
+            exceptionThrown = true;
+        }
+        Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);        
+
+        templateXml = getResAsStringClasspath("Usage_IntervalMasterReport_Template.jrxml");
+        templateDoc = getTemplateDocument(templateXml);
+        baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(templateDoc, baos);
+        bais = new ByteArrayInputStream(baos.toByteArray());
+        exceptionThrown = false;
+        try{
+            JasperReport compiledReport = JasperCompileManager.compileReport(bais);
+            Assert.assertTrue("Compiled report should not be null", compiledReport != null);
+        }catch(Exception ex){
+            ex.printStackTrace();
+            exceptionThrown = true;
+        }
+        Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);
+
+        templateXml = getResAsStringClasspath("Usage_SubIntervalMasterReport_Template.jrxml");
+        templateDoc = getTemplateDocument(templateXml);
+        baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(templateDoc, baos);
+        bais = new ByteArrayInputStream(baos.toByteArray());
+        exceptionThrown = false;
+        try{
+            JasperReport compiledReport = JasperCompileManager.compileReport(bais);
+            Assert.assertTrue("Compiled report should not be null", compiledReport != null);
+        }catch(Exception ex){
+            ex.printStackTrace();
+            exceptionThrown = true;
+        }
+        Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);
+
+        templateXml = getResAsStringClasspath("Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+        templateDoc = getTemplateDocument(templateXml);
+        baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(templateDoc, baos);
+        bais = new ByteArrayInputStream(baos.toByteArray());
+        exceptionThrown = false;
+        try{
+            JasperReport compiledReport = JasperCompileManager.compileReport(bais);
+            Assert.assertTrue("Compiled report should not be null", compiledReport != null);
+        }catch(Exception ex){
+            ex.printStackTrace();
+            exceptionThrown = true;
+        }
+        Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);
+    }
+
+    private Document getTemplateDocument(String xml) throws Exception{
+        DocumentBuilderFactory builderF = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = builderF.newDocumentBuilder();
+        InputSource is = new InputSource(new StringReader(xml));
+        Document doc = builder.parse(is);
+        return doc;
     }
 
     private void printOutDocument(Document doc) throws Exception{
