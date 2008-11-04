@@ -303,14 +303,10 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return trustedEmsManager.findAll();
     }
 
-    @Transactional(propagation = Propagation.SUPPORTS)
-    @Secured(types = EntityType.TRUSTED_EMS, stereotype = MethodStereotype.DELETE_BY_ID, relevantArg = 0)
     public void deleteTrustedEmsInstance(long trustedEmsOid) throws DeleteException, FindException {
         trustedEmsManager.delete(trustedEmsOid);
     }
 
-    @Transactional(propagation = Propagation.SUPPORTS)
-    @Secured(types = EntityType.TRUSTED_EMS_USER, stereotype = MethodStereotype.DELETE_BY_ID, relevantArg = 0)
     public void deleteTrustedEmsUserMapping(long trustedEmsUserOid) throws DeleteException, FindException {
         trustedEmsUserManager.delete(trustedEmsUserOid);
     }

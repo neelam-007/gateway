@@ -209,14 +209,10 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
         return Collections.emptyList();
     }
 
-    @Transactional(propagation = Propagation.SUPPORTS)
-    @Secured(types = EntityType.TRUSTED_EMS, stereotype = MethodStereotype.DELETE_BY_ID, relevantArg = 0)
     public void deleteTrustedEmsInstance(long trustedEmsOid) {
         throw new UnsupportedOperationException();
     }
 
-    @Transactional(propagation = Propagation.SUPPORTS)
-    @Secured(types = EntityType.TRUSTED_EMS_USER, stereotype = MethodStereotype.DELETE_BY_ID, relevantArg = 0)
     public void deleteTrustedEmsUserMapping(long trustedEmsUserOid) {
         throw new UnsupportedOperationException();
     }
