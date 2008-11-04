@@ -399,7 +399,7 @@
         <fail unless="rev">rev is a required property (the artifact revision)</fail>
         
         <echo level="info">Deleting installation cache.</echo>
-        <property name="build.repo" value="${build.dir}/temp.nu"/>
+        <property name="build.repo" value="${build.dir}/ivy/temp.repository/"/>
         <delete dir="${build.repo}" verbose="true"/>
         <mkdir dir="${build.repo}"/>
 
