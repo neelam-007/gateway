@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.Functions;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -12,6 +13,11 @@ import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionCallback;
 
 import javax.crypto.*;
 import javax.crypto.spec.PBEKeySpec;
@@ -24,6 +30,7 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidParameterSpecException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,6 +60,7 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
     public static final String CLUSTER_WIDE_IDENTIFIER = "%ClusterWidePBE%";
     public static final String CIPHER = "PBEWithSHA1AndDESede";
 
+    private final PlatformTransactionManager transactionManager;
     private SecretKey sharedKeyDecryptionKey;
 
     /**
@@ -61,7 +69,23 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
      * @param clusterPassphrase passphrase to be used to create PBE key to decrypt cluster shared key
      *                          (or to encrypt it if a new one needs to be created).
      */
-    public SharedKeyManagerImpl(char[] clusterPassphrase) {
+    public SharedKeyManagerImpl(final char[] clusterPassphrase,
+                                final PlatformTransactionManager transactionManager) {
+        if ( clusterPassphrase == null || clusterPassphrase.length==0 ) throw new IllegalArgumentException("clusterPassphrase is required");
+        if ( transactionManager == null ) throw new IllegalArgumentException("transactionManager is required");
+        try {
+            SecretKeyFactory skf = SecretKeyFactory.getInstance(CIPHER);
+            this.sharedKeyDecryptionKey = skf.generateSecret(new PBEKeySpec(clusterPassphrase));
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException("Unable to initialize decryption key for cluster shared key: " + ExceptionUtils.getMessage(e), e);
+        }
+        this.transactionManager = transactionManager;
+    }
+
+    /**
+     * For tests only.
+     */
+    SharedKeyManagerImpl(final char[] clusterPassphrase) {
         if ( clusterPassphrase == null || clusterPassphrase.length==0 ) throw new IllegalArgumentException("clusterPassphrase is required");
         try {
             SecretKeyFactory skf = SecretKeyFactory.getInstance(CIPHER);
@@ -69,6 +93,7 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
         } catch (GeneralSecurityException e) {
             throw new RuntimeException("Unable to initialize decryption key for cluster shared key: " + ExceptionUtils.getMessage(e), e);
         }
+        this.transactionManager = null;
     }
 
     /**
@@ -96,7 +121,7 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
     private byte[] generateAndSaveNewKey() throws FindException {
         logger.info("Shared key does not yet exist, attempting to create one");
         final SharedKeyRecord sharedKeyToSave = new SharedKeyRecord();
-        byte[] theKey = generate64RandomBytes();
+        final byte[] theKey = generate64RandomBytes();
 
         try {
             sharedKeyToSave.setEncodingID(CLUSTER_WIDE_IDENTIFIER);
@@ -108,11 +133,32 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
         logger.info("new shared created, saving it");
 
         try {
-            saveSharedKeyRecord(sharedKeyToSave);
-            logger.info("new shared key saved, returning it");
-            return theKey;
+            transactionIfAvailable(new Functions.Nullary<Object>(){
+                public Object call() {
+                    saveSharedKeyRecord(sharedKeyToSave);
+                    return null;
+                }
+            });
         } catch (DataAccessException e) {
             throw new FindException("Unable to save new key: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        logger.info("new shared key saved, returning it");
+        return theKey;
+    }
+
+    @SuppressWarnings({"unchecked"})
+    private <T> T transactionIfAvailable( final Functions.Nullary<T> func ) {
+        if ( transactionManager != null ) {
+            TransactionTemplate template = new TransactionTemplate(transactionManager);
+            template.setPropagationBehavior( TransactionTemplate.PROPAGATION_REQUIRES_NEW );
+            return (T) template.execute(new TransactionCallback(){
+                public Object doInTransaction(final TransactionStatus transactionStatus) {
+                   return func.call();
+                }
+            });
+        } else {
+            return func.call();
         }
     }
 

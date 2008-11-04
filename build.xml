@@ -397,8 +397,9 @@
         <fail unless="mod">mod is a required property (the module to install)</fail>
         <fail unless="org">org is a required property (organization for the new library)</fail>
         <fail unless="rev">rev is a required property (the artifact revision)</fail>
-        
-        <echo level="info">Deleting installation cache.</echo>
+        <property name="trans" value="true"/>        
+
+        <echo level="info">Deleting installation cache.</echo>        
         <property name="build.repo" value="${build.dir}/ivy/temp.repository/"/>
         <delete dir="${build.repo}" verbose="true"/>
         <mkdir dir="${build.repo}"/>
@@ -408,7 +409,7 @@
 
         <!-- install to our temp repository under "build" -->
         <echo level="info">Downloading artifacts to cache.</echo>
-        <ivy:install settingsRef="ivy.remote" organisation="${org}" module="${mod}" revision="${rev}" type="jar" from="libraries" to="localfile" transitive="true"/>
+        <ivy:install settingsRef="ivy.remote" organisation="${org}" module="${mod}" revision="${rev}" type="jar" from="libraries" to="localfile" transitive="${trans}"/>
 
         <!-- copy to main repository -->
         <echo level="info">Moving artifacts to repository.</echo>
@@ -951,6 +952,15 @@
         <ivy:resolve file="modules/xmlvpnclient/ivy.xml" conf="default" showprogress="false" log="quiet"/>
         <ivy:report todir="${build.reports}/ivy" outputpattern="xmlvpnclient_dependencies.html" graph="false"/>
 
+        <ivy:resolve file="modules/ems/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:report todir="${build.reports}/ivy" outputpattern="ems_dependencies.html" graph="false"/>
+
+        <ivy:resolve file="modules/gateway/config/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:report todir="${build.reports}/ivy" outputpattern="gateway_config_dependencies.html" graph="false"/>
+
+        <ivy:resolve file="modules/gateway/processcontroller/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:report todir="${build.reports}/ivy" outputpattern="gateway_processcontroller_dependencies.html" graph="false"/>
+
         <echoxml file="${build.reports}/ivy/index.html">
             <html>
                 <head>
@@ -961,6 +971,9 @@
                         <li><a href="gateway_dependencies.html">Gateway</a></li>
                         <li><a href="manager_dependencies.html">Manager</a></li>
                         <li><a href="xmlvpnclient_dependencies.html">XML VPN Client</a></li>
+                        <li><a href="ems_dependencies.html">Enterprise Service Manager</a></li>
+                        <li><a href="gateway_config_dependencies.html">Gateway Configuration Client</a></li>
+                        <li><a href="gateway_processcontroller_dependencies.html">Gateway Process Controller</a></li>
                     </ul>
                 </body>
             </html>
@@ -1393,10 +1406,10 @@
         <pack-mac jarfile="${build.dir}/managerappletlibs/dom4j-1.6.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/ehcache-1.2.3.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/forms_rt-7.0.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/hibernate-3.2.6.ga.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/hibernate-core-3.3.1.GA.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/jaxb-api-2.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/jaxb-impl-2.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/jaxen-1.1-beta-10.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jaxen-1.1.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/jaxws-api-2.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/jaxws-rt-2.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/jcalendar-1.3.2.jar"/>
@@ -1420,13 +1433,13 @@
         <pack-mac jarfile="${build.dir}/managerappletlibs/saaj-impl-1.3.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/servlet-api-2.5.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/sjsxp-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-aop-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-beans-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-context-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-core-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-orm-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-tx-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-web-2.5.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-aop-2.5.6.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-beans-2.5.6.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-context-2.5.6.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-core-2.5.6.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-orm-2.5.6.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-tx-2.5.6.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-web-2.5.6.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/whirlycache-1.0.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/wsdl4j-1.6.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/xalan-2.7.1.jar"/>

@@ -25,6 +25,9 @@
         <dependency name="layer7-common" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core"/>
+        <!-- Hibernate annotations used on beans -->
+        <dependency org="org.hibernate" name="hibernate-annotations" rev="3.4.0.GA" force="true" conf="compile->master"/>
+        <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.1.0.GA" force="true" conf="compile->master"/>
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
     </dependencies>
 </ivy-module>

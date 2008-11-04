@@ -653,6 +653,7 @@
         <constructor-arg index="1" ref="auditContext"/>
         <constructor-arg index="2" ref="clusterPropertyManager"/>
         <constructor-arg index="3" ref="ssgKeyStoreManager"/>
+        <constructor-arg index="4" ref="transactionManager"/>
     </bean>
     <bean id="keystoreMutatorSwitch" class="com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore$StartupListener"/>
 
@@ -1001,12 +1002,13 @@
     </bean>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
-        <constructor-arg>
+        <constructor-arg index="0">
             <bean class="com.l7tech.server.util.PropertiesValueFactoryBean">
                 <constructor-arg ref="nodeProperties"/>
                 <constructor-arg value="node.cluster.pass"/>
             </bean>
         </constructor-arg>
+        <constructor-arg index="1" ref="transactionManager"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 

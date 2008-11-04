@@ -32,6 +32,11 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionCallback;
+
 /**
  * Knows about the location and passwords for the SSL and CA keystores, server certificates, etc.
  */
@@ -45,7 +50,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private final AuditContext auditContext;
     private final ClusterPropertyManager clusterPropertyManager;
     private final SsgKeyStoreManager keyStoreManager;
-
+    private final PlatformTransactionManager transactionManager;
     private final AtomicReference<SsgKeyEntry> cachedSslInfo = new AtomicReference<SsgKeyEntry>();
     private final AtomicReference<SsgKeyEntry> cachedCaInfo = new AtomicReference<SsgKeyEntry>();
     private static final String SC_PROP_SSL_KEY = ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY;
@@ -53,11 +58,13 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     public DefaultKeyImpl( final ServerConfig serverConfig,
                            final AuditContext auditContext,
                            final ClusterPropertyManager clusterPropertyManager,
-                           final SsgKeyStoreManager keyStoreManager) {
+                           final SsgKeyStoreManager keyStoreManager,
+                           final PlatformTransactionManager transactionManager) {
         this.serverConfig = serverConfig;
         this.auditContext = auditContext;
         this.clusterPropertyManager = clusterPropertyManager;
         this.keyStoreManager = keyStoreManager;
+        this.transactionManager = transactionManager;
     }
 
     public SsgKeyEntry getSslInfo() throws IOException {
@@ -71,7 +78,25 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
                     return getCachedEntry(cachedSslInfo, SC_PROP_SSL_KEY, true);
                 } catch (ObjectNotFoundException e1) {
                     // Create a new one
-                    return generateSelfSignedSslCert();
+                    TransactionTemplate template = new TransactionTemplate(transactionManager);
+                    template.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
+                    final IOException[] holder = new IOException[1];
+                    SsgKeyEntry entry = (SsgKeyEntry) template.execute(new TransactionCallback(){
+                        public Object doInTransaction(TransactionStatus transactionStatus) {
+                            try {
+                                return generateSelfSignedSslCert();
+                            } catch (IOException ioe) {
+                                holder[0] = ioe;
+                                return null;
+                            }
+                        }
+                    });
+
+                    if ( holder[0] != null ) {
+                        throw holder[0];
+                    }
+
+                    return entry;
                 }
             }
         }

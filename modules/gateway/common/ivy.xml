@@ -28,11 +28,14 @@
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-uddi" rev="latest.integration" force="true" conf="core"/>
         <dependency org="aopalliance" name="aopalliance" rev="1.0" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-aop" rev="2.5.4" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-tx" rev="2.5.4" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-orm" rev="2.5.4" force="true" conf="core"/>
+        <!-- Hibernate annotations used on beans -->
+        <dependency org="org.hibernate" name="hibernate-annotations" rev="3.4.0.GA" force="true" conf="compile->master"/>
+        <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.1.0.GA" force="true" conf="compile->master"/>
+        <dependency org="org.springframework" name="spring-aop" rev="2.5.6" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-tx" rev="2.5.6" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-orm" rev="2.5.6" force="true" conf="core"/>
         <!-- Required on server -->
-        <dependency org="org.springframework" name="spring-web" rev="2.5.4" force="true" conf="optional"/>
+        <dependency org="org.springframework" name="spring-web" rev="2.5.6" force="true" conf="optional"/>
 
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
     </dependencies>

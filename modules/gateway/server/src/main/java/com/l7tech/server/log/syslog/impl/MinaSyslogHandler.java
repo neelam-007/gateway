@@ -152,5 +152,17 @@ class MinaSyslogHandler extends IoHandlerAdapter {
         public void warn(String string, Object object, Object object1) {}
         public void warn(String string, Object[] objects) {}
         public void warn(String string, Throwable throwable) {}
+        public boolean isTraceEnabled() { return false; }
+        public void trace(String s) {}
+        public void trace(String s, Object o) {}
+        public void trace(String s, Object o, Object o1) {}
+        public void trace(String s, Object[] objects) {}
+        public void trace(String s, Throwable throwable) {}
+        public boolean isTraceEnabled(Marker marker) { return false; }
+        public void trace(Marker marker, String s) {}
+        public void trace(Marker marker, String s, Object o) {}
+        public void trace(Marker marker, String s, Object o, Object o1) {}
+        public void trace(Marker marker, String s, Object[] objects) {}
+        public void trace(Marker marker, String s, Throwable throwable) {}
     }
 }

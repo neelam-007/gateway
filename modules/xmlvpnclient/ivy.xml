@@ -38,6 +38,8 @@
             <exclude org="org.mortbay.jetty" module="servlet-api-2.5" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
         </dependency>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.5.2" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.5.2" force="true" conf="core"/>
         <dependency org="snoozesoft" name="systray4j" rev="2.3.2" force="true" conf="core"/>
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
     </dependencies>

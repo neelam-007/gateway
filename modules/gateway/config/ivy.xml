@@ -34,12 +34,18 @@
                      matcher="exact"/>
         </dependency>
         <dependency org="mysql" name="mysql-connector-java" rev="5.0.4" force="true" conf="core"/>
-        <dependency org="org.apache.cxf" name="cxf-rt-frontend-jaxws" rev="2.1.1" force="true" conf="core"/>
-        <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.1.1" force="true" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-frontend-jaxws" rev="2.1.3" force="true" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.1.3" force="true" conf="core"/>
+        <!-- Hibernate annotations used on beans that we use, so we need these 2 hibernate annotation JARs to compile -->
+        <dependency org="org.hibernate" name="hibernate-annotations" rev="3.4.0.GA" force="true" conf="compile->master"/>
+        <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.1.0.GA" force="true" conf="compile->master"/>
 
         <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
+        <exclude org="org.springframework" module="spring-web" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
+
+        <override org="antlr" module="antlr" matcher="exact" rev="2.7.7-l7p1"/>
     </dependencies>
 </ivy-module>
