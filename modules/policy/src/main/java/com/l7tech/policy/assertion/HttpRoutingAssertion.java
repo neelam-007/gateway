@@ -322,6 +322,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setKrbConfiguredPassword(source.getKrbConfiguredPassword());
         this.setKrbDelegatedAuthentication(source.isKrbDelegatedAuthentication());
         this.setGzipEncodeDownstream(source.isGzipEncodeDownstream());
+        this.setCustomURLs(source.getCustomURLs());
     }
 
     public String[] getVariablesUsed() {

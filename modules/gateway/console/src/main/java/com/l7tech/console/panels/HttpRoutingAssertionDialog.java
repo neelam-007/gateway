@@ -172,8 +172,6 @@ public class HttpRoutingAssertionDialog extends JDialog {
         };
 
         ipListPanel.alsoEnableDiffURLS();
-        initComponents(readOnly);
-        initFormData();
 
         ipListPanel.registerStateCallback(new IpListPanel.StateCallback() {
             public void stateChanged(int newState) {
@@ -184,6 +182,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 }
             }
         });
+
+        initComponents(readOnly);
+        initFormData();
     }
 
     /**

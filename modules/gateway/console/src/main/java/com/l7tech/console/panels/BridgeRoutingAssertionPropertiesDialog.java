@@ -102,8 +102,14 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
                 Utilities.centerOnScreen(httpDialog);
                 DialogDisplayer.display(httpDialog, new Runnable() {
                     public void run() {
-                        if (httpDialog.isConfirmed())
-                            lastRoutingProperties = editingCopy;
+                        try {
+                            if (httpDialog.isConfirmed()) {
+                                lastRoutingProperties = cloneAssertion(editingCopy);
+                            }
+                        } catch (IOException e1) {
+                            throw new RuntimeException(e1); // can't happen, but just in case, pass up to error handler
+                        }
+
                     }
                 });
             }
