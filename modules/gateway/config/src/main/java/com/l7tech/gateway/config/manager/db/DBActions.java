@@ -31,6 +31,7 @@ public class DBActions {
     private static final Logger logger = Logger.getLogger(DBActions.class.getName());
     private static final String EOL_CHAR = System.getProperty("line.separator");
     private static final String DEFAULT_DB_URL = "jdbc:mysql://{0}:{1}/{2}?autoReconnect=false&characterEncoding=UTF8&characterSetResults=UTF8&socketTimeout=120000&connectTimeout=10000";
+    private static final String DB_VERSION_UNKNOWN = "Unknown";
 
     public static final String MYSQL_CLASS_NOT_FOUND_MSG = "Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard";
     public static final String GENERIC_DBCREATE_ERROR_MSG = "There was an error while attempting to create the database. Please try again";
@@ -152,11 +153,15 @@ public class DBActions {
 
 
     public DBActionsResult upgradeDbSchema(DatabaseConfig databaseConfig,
+                                           boolean useAdminConnection,
                                            String oldVersion,
                                            String newVersion,
                                            String schemaFilePath,
                                            final DBActionsListener ui) throws IOException {
         File file = new File(schemaFilePath);
+        if ( !file.isFile() ) {
+            throw new FileNotFoundException("File not found '"+schemaFilePath+"'.");
+        }
 
         Map<String, String[]> upgradeMap = buildUpgradeMap(file.getParentFile());
 
@@ -166,12 +171,12 @@ public class DBActions {
         TimerTask spammer = null;
         try {
             String databaseName = databaseConfig.getName();
-            conn = getConnection(databaseConfig, false);
+            conn = getConnection(databaseConfig, useAdminConnection, false);
             stmt = conn.createStatement();
             while (!oldVersion.equals(newVersion)) {
                 String[] upgradeInfo = upgradeMap.get(oldVersion);
                 if (upgradeInfo == null) {
-                    String msg = "no upgrade path from \"" + oldVersion + "\" to \"" + newVersion + "\"";
+                    String msg = "No upgrade path from \"" + oldVersion + "\" to \"" + newVersion + "\"";
                     logger.warning(msg);
                     return new DBActionsResult(StatusType.CANNOT_UPGRADE, msg, null);
                 } else {
@@ -199,12 +204,11 @@ public class DBActions {
                         Background.cancel(spammer);
                         spammer = null;
                     }
-                    if (ui != null) ui.showSuccess("completed" + EOL_CHAR);
+                    if (ui != null) ui.showSuccess("Completed upgrade from " + oldVersion + "->" + upgradeInfo[0] + EOL_CHAR);
 
                     oldVersion = checkDbVersion(conn);
                 }
             }
-            if (ui != null) ui.showSuccess(databaseName + " was upgraded successfully." + EOL_CHAR);
             return new DBActionsResult(StatusType.SUCCESS);
         } catch (SQLException e) {
             logger.log( Level.WARNING, "Error during upgrade.", e );
@@ -335,7 +339,7 @@ public class DBActions {
 
             logger.info("Now Checking database version.");
             String dbVersion = checkDbVersion(databaseConfig);
-            if (dbVersion == null) {
+            if ( dbVersion == null || DB_VERSION_UNKNOWN.equals(dbVersion)) {
                 errorMsg = "The " + dbName + " database does not appear to be a valid SSG database.";
                 logger.warning(errorMsg);
                 if (ui != null) ui.showErrorMessage(errorMsg);
@@ -518,6 +522,128 @@ public class DBActions {
         return allIsWell;
     }
 
+    /**
+     * Determine the current database version.
+     *
+     * @param databaseConfig The configuration for the database (admin creds optional)
+     * @return The database version string or null on error.
+     */
+    public String checkDbVersion( final DatabaseConfig databaseConfig ) {
+        Connection conn = null;
+        String dbVersion = null;
+        try {
+            conn = getConnection(databaseConfig, false);
+            dbVersion = checkDbVersion(conn);
+        } catch ( SQLException sqle ) {
+            if ( sqle.getSQLState().equals(ERROR_CODE_AUTH_FAILURE) && databaseConfig.getDatabaseAdminUsername() != null ) {
+                // try again with admin credentials
+                ResourceUtils.closeQuietly(conn);
+                conn = null;
+
+                try {
+                    conn = getConnection(databaseConfig, true, false);
+                    dbVersion = checkDbVersion(conn);
+                } catch (SQLException sqle2) {
+                    dbVersion = DB_VERSION_UNKNOWN;
+                    logger.warning("Error while checking the database version: " + ExceptionUtils.getMessage(sqle2));
+                }
+            } else {
+                dbVersion = DB_VERSION_UNKNOWN;
+                logger.warning("Error while checking the database version: " + ExceptionUtils.getMessage(sqle));
+            }
+        } finally {
+            ResourceUtils.closeQuietly(conn);
+        }
+        return dbVersion;
+    }
+
+    /**
+     * Upgrade a database to the current version.
+     *
+     * @param config         The configuration for the database (admin creds required)
+     * @param schemaFilePath The path to the ssg.sql file
+     * @param currentVersion The software version
+     * @param ui             The listener for any feedback
+     * @throws IOException   If an error occurs
+     */
+    public boolean upgradeDb( final DatabaseConfig config,
+                              final String schemaFilePath,
+                              final String currentVersion,
+                              final DBActionsListener ui ) throws IOException {
+        boolean success = false;
+
+        DatabaseConfig databaseConfig = new DatabaseConfig(config);
+        String hostname = databaseConfig.getHost();
+        String dbName = databaseConfig.getName();
+        String username = databaseConfig.getNodeUsername();
+        String password = databaseConfig.getNodePassword();
+
+        logger.info("Attempting to connect to an existing database (" + hostname + "/" + dbName + ")" + " using username/password " + username + "/" + hidepass(password));
+        
+        DBActions.DBActionsResult status = checkExistingDb(databaseConfig);
+        if ( status.getStatus() == StatusType.SUCCESS ) {
+            logger.info(CONNECTION_SUCCESSFUL_MSG);
+
+            logger.info("Now Checking database version.");
+            String dbVersion = checkDbVersion(databaseConfig);
+            if ( dbVersion == null || DB_VERSION_UNKNOWN.equals(dbVersion) ) {
+                String errorMsg = "The " + dbName + " database does not appear to be a valid SSG database.";
+                logger.warning(errorMsg);
+                if (ui != null) ui.showErrorMessage(errorMsg);
+            } else {
+                if ( dbVersion.equals(currentVersion) ) {
+                    logger.info("Database version is correct (" + dbVersion + ")");
+                    if (ui != null) ui.hideErrorMessage();
+                    success = true;
+                }
+                else {
+                    try {
+                        success = doDbUpgrade(config, schemaFilePath, currentVersion, dbVersion, ui);
+                        if (success) ui.showSuccess("The database was successfully upgraded\n");
+                    } catch (IOException e) {
+                        String errorMsg = "There was an error while attempting to upgrade the database";
+                        logger.severe(errorMsg);
+                        logger.severe(ExceptionUtils.getMessage(e));
+                        ui.showErrorMessage(errorMsg);
+                    }
+                }
+            }
+        } else {
+            switch (status.getStatus()) {
+                case UNKNOWNHOST_FAILURE:
+                    String errorMsg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
+                    logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
+                    logger.warning(errorMsg);
+                    if (ui != null) ui.showErrorMessage(errorMsg);
+                    break;
+                case AUTHORIZATION_FAILURE:
+                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
+                    errorMsg = MessageFormat.format("There was a connection error when attempting to connect to the database \"{0}\" using the username \"{1}\". " +
+                            "Perhaps the password is wrong. Either the username and/or password is incorrect, or the database \"{2}\" does not exist.",
+                            dbName, username, dbName);
+                    if (ui != null) ui.showErrorMessage(errorMsg);
+                    logger.warning("There was an authentication error when attempting to connect to the database \"" + dbName + "\" using the username \"" +
+                            username + "\" and password \"" + password + "\".");
+                    break;
+                case UNKNOWNDB_FAILURE:
+                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
+                    errorMsg = "Could not connect to the database \"" + dbName + "\". The database does not exist or the user \"" + username + "\" does not have permission to access it." +
+                            "Please check your input and try again.";
+                    if (ui != null) ui.showErrorMessage(errorMsg);
+                    logger.warning("Could not connect to the database \"" + dbName + "\". The database does not exist.");
+                    break;
+                default:
+                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
+                    errorMsg = GENERIC_DBCONNECT_ERROR_MSG;
+                    if (ui != null) ui.showErrorMessage(errorMsg);
+                    logger.warning("There was an unknown error while attempting to connect to the database.");
+                    break;
+            }
+        }
+
+        return success;
+    }
+
 //
 // PRIVATE METHODS
 //
@@ -599,33 +725,6 @@ public class DBActions {
          }
          return version;
      }
-
-    public String checkDbVersion(final DatabaseConfig databaseConfig) {
-        Connection conn = null;
-        String dbVersion = null;
-        try {
-            conn = getConnection(databaseConfig, false);
-            dbVersion = checkDbVersion(conn);
-        } catch (SQLException e) {
-            if ( e.getSQLState().equals("28000") && databaseConfig.getDatabaseAdminUsername() != null ) {
-                // try again with admin credentials
-                ResourceUtils.closeQuietly(conn);
-                conn = null;
-
-                try {
-                    conn = getConnection(databaseConfig, true, false);
-                    dbVersion = checkDbVersion(conn);
-                } catch (SQLException sqle) {
-                    logger.warning("Error while checking the database version: " + ExceptionUtils.getMessage(sqle));
-                }
-            } else {
-                logger.warning("Error while checking the database version: " + ExceptionUtils.getMessage(e));
-            }
-        } finally {
-            ResourceUtils.closeQuietly(conn);
-        }
-        return dbVersion;
-    }
 
     //checks the database version heuristically by looking for table names, columns etc. known to have been introduced
     //in particular versions. The checks are, for the most part, self contained and the code is designed to be extensible.
@@ -873,7 +972,7 @@ public class DBActions {
             isOk = false;
         } else {
             logger.info("Attempting to upgrade the existing database \"" + databaseConfig.getName()+ "\"");
-            DBActionsResult upgradeResult = upgradeDbSchema(databaseConfig, schemaFilePath, dbVersion, currentVersion, ui);
+            DBActionsResult upgradeResult = upgradeDbSchema(databaseConfig, false, dbVersion, currentVersion, schemaFilePath, ui);
             String msg;
             switch (upgradeResult.getStatus()) {
                 case SUCCESS:
@@ -908,19 +1007,18 @@ public class DBActions {
         DatabaseConfig testDatabaseConfig = new DatabaseConfig( databaseConfig );
         testDatabaseConfig.setName(databaseConfig.getName() + "_testUpgrade");
         try {
-            if (ui != null) ui.showSuccess("Creating the test database \"" + testDatabaseConfig.getName() + "\" (without audits)." +
-                    EOL_CHAR +
-                    "this might take a few minutes" +
-                    EOL_CHAR);
+            if (ui != null) ui.showSuccess("Creating test database \"" + testDatabaseConfig.getName() + "\" (without audits)." +EOL_CHAR);
+            if (ui != null) ui.showSuccess("Database creation may take a few minutes." + EOL_CHAR);
 
             copyDatabase(databaseConfig, testDatabaseConfig, true, ui);
             if (ui != null) ui.showSuccess("The test database was created." + EOL_CHAR);
-            if (ui != null) ui.showSuccess("Upgrading the test database. This could take a while" + EOL_CHAR);
-            DBActionsResult upgradeResult  = upgradeDbSchema(testDatabaseConfig, schemaFilePath, dbVersion, currentVersion, ui);
+            if (ui != null) ui.showSuccess("Upgrading the test database. This may take a few minutes." + EOL_CHAR);
+            DBActionsResult upgradeResult  = upgradeDbSchema(testDatabaseConfig, true, dbVersion, currentVersion, schemaFilePath, ui);
             if (upgradeResult.getStatus() != StatusType.SUCCESS) {
                 return new DBActionsResult(StatusType.CANNOT_UPGRADE, upgradeResult.getErrorMessage(), null);
             } else {
-                logger.info(testDatabaseConfig.getName() + " was successfully upgraded.");
+                if (ui != null) ui.showSuccess("The test database \"" + testDatabaseConfig.getName() + "\" was upgraded successfully.");
+                logger.info(testDatabaseConfig.getName() + " was upgraded successfully.");
                 return new DBActionsResult(StatusType.SUCCESS);
             }
         } catch (SQLException e) {
@@ -956,7 +1054,7 @@ public class DBActions {
 
             createDatabase( targetConfig );
 
-            targetConnection = getConnection(targetConfig, false);
+            targetConnection = getConnection(targetConfig, true, false);
             targetConnection.setAutoCommit(false);
 
             copyDbSchema(sourceConnection, targetConnection);

@@ -22,6 +22,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.net.PasswordAuthentication;
+import java.net.NetworkInterface;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * Prompts the user to confirm database upgrade.
@@ -164,21 +167,51 @@ public class DatabaseUpgrader {
             }
 
             if ( upgrade ) {
-                dba.upgradeDbSchema( config, dbVersion, swVersion, "etc/sql/ssg.sql", new DBActionsListener(){
-                    public void showErrorMessage(String errorMsg) {}
-                    public void hideErrorMessage() {}
-                    public boolean getOverwriteConfirmationFromUser(String dbName) { return false; }
-                    public boolean getGenericUserConfirmation(String msg) { return false; }
-                    public PasswordAuthentication getPrivelegedCredentials(String message, String usernamePrompt, String passwordPrompt, String defaultUsername) {return null;}
-                    public void showSuccess(String message) {
-                        System.out.print(message);
+                System.out.print("Enter Administrative Database Username [root]: ");
+                config.setDatabaseAdminUsername( fallbackReadLine( console, reader, "root" ) );
+
+                System.out.print("Enter Administrative Database Password: ");
+                config.setDatabaseAdminPassword( fallbackReadPassword( console, reader ) );
+
+                DBActionsListener consoleLoggingListener = getLoggingActionListener();
+
+                final DatabaseConfig localConfig;
+                try {
+                    // If the host is localhost then use that when connecting
+                    if ( NetworkInterface.getByInetAddress(InetAddress.getByName(config.getHost())) != null ) {
+                        localConfig = new DatabaseConfig(config);
+                        localConfig.setHost("localhost");
+                    } else {
+                        localConfig = config;
                     }
-                } );
+                } catch ( UnknownHostException uhe ) {
+                    throw new CausedIOException("Could not resolve host '"+config.getHost()+"'.");
+                }
+
+                System.out.println();
+                System.out.println("Performing database upgrade:");
+                System.out.println();
+                dba.upgradeDb( localConfig, "etc/sql/ssg.sql", swVersion, consoleLoggingListener );
             } else {
                 System.out.println("Database upgrade is required, but was declined.");
             }
         } else {
             System.out.println("Database upgrade not required.");
         }
+    }
+
+    private static DBActionsListener getLoggingActionListener() {
+        return new DBActionsListener(){
+            public void hideErrorMessage() {}
+            public boolean getOverwriteConfirmationFromUser(String dbName) { return false; }
+            public boolean getGenericUserConfirmation(String msg) { return false; }
+            public PasswordAuthentication getPrivelegedCredentials(String message, String usernamePrompt, String passwordPrompt, String defaultUsername) {return null;}
+            public void showErrorMessage(String message) {
+                System.out.print("  " + message);
+            }
+            public void showSuccess(String message) {
+                System.out.print("  " + message);
+            }
+        };
     }
 }
