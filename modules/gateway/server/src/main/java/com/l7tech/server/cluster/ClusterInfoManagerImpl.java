@@ -13,8 +13,6 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -41,7 +39,6 @@ import java.util.regex.Pattern;
  * $Id$
  *
  */
-@Transactional(propagation= Propagation.REQUIRED)
 public class ClusterInfoManagerImpl extends HibernateDaoSupport implements ClusterInfoManager {
 
     //- PUBLIC
@@ -54,7 +51,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         this.serverConfig = serverConfig;
     }
 
-    @Transactional(readOnly=true)
     public String thisNodeId() {
         return nodeid;
     }
@@ -96,10 +92,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     session.createQuery( HQL_DELETE_BY_ID )
                             .setString("nodeid", selfCI.getNodeIdentifier() )
                             .executeUpdate();
-                    if ( session.contains( selfCI ) ) {
-                        session.evict( selfCI );
-                    }
-                    session.save( selfCI );
+                    session.merge( selfCI );
                     return null;
                 }
             });
@@ -157,7 +150,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * when the server boots. it updates the boot time and update time in the cluster_status
      * table.
      */
-    @Transactional(propagation= Propagation.REQUIRED)
     public void updateSelfUptime() throws UpdateException {
         ClusterNodeInfo selfCI = getSelfNodeInf();
         if (selfCI != null) {
@@ -173,7 +165,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * @return a collection containing ClusterNodeInfo objects. if the collection is empty, it means that
      * the SSG operated by itself outsides a cluster.
      */
-    @Transactional(readOnly=true)
     public Collection<ClusterNodeInfo> retrieveClusterStatus() throws FindException {
         // get all objects from that table
         try {

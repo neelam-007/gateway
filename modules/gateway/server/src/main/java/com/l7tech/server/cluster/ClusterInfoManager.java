@@ -15,8 +15,10 @@ import java.util.Collection;
 /**
  * @author alex
  */
-@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+@Transactional(propagation=Propagation.REQUIRES_NEW, rollbackFor=Throwable.class)
 public interface ClusterInfoManager {
+
+    @Transactional(readOnly=true)
     String thisNodeId();
 
     void updateSelfStatus(double avgLoad) throws UpdateException;

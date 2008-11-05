@@ -179,23 +179,25 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        final ClusterNodeInfo that = (ClusterNodeInfo)o;
+        ClusterNodeInfo that = (ClusterNodeInfo) o;
 
         if (address != null ? !address.equals(that.address) : that.address != null) return false;
         if (mac != null ? !mac.equals(that.mac) : that.mac != null) return false;
         if (multicastAddress != null ? !multicastAddress.equals(that.multicastAddress) : that.multicastAddress != null)
             return false;
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
+        if (nodeId != null ? !nodeId.equals(that.nodeId) : that.nodeId != null) return false;
 
         return true;
     }
 
     public int hashCode() {
         int result;
-        result = (mac != null ? mac.hashCode() : 0);
-        result = 29 * result + (address != null ? address.hashCode() : 0);
-        result = 29 * result + (name != null ? name.hashCode() : 0);
-        result = 29 * result + (multicastAddress != null ? multicastAddress.hashCode() : 0);
+        result = (nodeId != null ? nodeId.hashCode() : 0);
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (mac != null ? mac.hashCode() : 0);
+        result = 31 * result + (address != null ? address.hashCode() : 0);
+        result = 31 * result + (multicastAddress != null ? multicastAddress.hashCode() : 0);
         return result;
     }
 
