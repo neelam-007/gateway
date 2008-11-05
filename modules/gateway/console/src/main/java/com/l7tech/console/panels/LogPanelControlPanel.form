@@ -329,12 +329,12 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="6073d" class="javax.swing.JButton" binding="filterButton" default-binding="true">
+          <component id="6073d" class="javax.swing.JButton" binding="searchButton">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Filter"/>
+              <text value="Search"/>
             </properties>
           </component>
           <hspacer id="22f5b">

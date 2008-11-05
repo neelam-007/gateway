@@ -1476,7 +1476,7 @@ public class LogPanel extends JPanel {
     }
 
     public JButton getSearchButton() {
-        return controlPanel.filterButton;
+        return controlPanel.searchButton;
     }
 
 
@@ -2206,6 +2206,6 @@ public class LogPanel extends JPanel {
         private JPanel auditTypePane;
         private JPanel nodePane;
         private JPanel timeRangePane;
-        private JButton filterButton;
+        private JButton searchButton;
     }
 }
