@@ -21,6 +21,7 @@ import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
+import org.apache.wicket.Application;
 import org.xml.sax.SAXException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -126,8 +127,14 @@ public class SystemSettings extends EmsPage {
         add(maximumMemoryLabel);
 
         // Time when EMS process started
+        long timeStarted;
+        Application app = getApplication();
+        if (app instanceof EmsApplication) {
+            timeStarted = ((EmsApplication)app).getTimeStarted();
+        } else { // This case is applied for a testing purpose, since PagesTest is running.
+            timeStarted = System.currentTimeMillis();
+        }
         SimpleDateFormat dateFormat = new SimpleDateFormat(getSession().getDateTimeFormatPattern());
-        long timeStarted = ((EmsApplication)getApplication()).getTimeStarted();
         Label timeStartedLabel = new Label("time.ems.process.started", dateFormat.format(new Date(timeStarted)));
         add(timeStartedLabel);
     }
