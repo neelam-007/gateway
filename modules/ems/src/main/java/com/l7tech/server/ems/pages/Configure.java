@@ -1,15 +1,15 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.NavigationPage;
-import org.mortbay.util.ajax.JSON;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.markup.html.form.RequiredTextField;
+import org.apache.wicket.model.Model;
+import org.mortbay.util.ajax.JSON;
 
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -142,7 +142,7 @@ public class Configure extends EmsPage  {
         public void toJSON(JSON.Output output) {
             JSONEnterpriseTreeNode node = this;
             output.add( "id", node.getId() );
-            output.add( "parentid", node.getParentId() );
+            output.add( "parentId", node.getParentId() );
             output.add( "type", node.getType());
             output.add( "name", node.getName());
             output.add( "ancestors", node.getAncestors() );
