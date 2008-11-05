@@ -640,6 +640,13 @@ public class DialogDisplayer {
     /**
      * Display a confirmation dialog, in which the OK button won't enabled until the checkbox is marked.
      * Such safe manner is to avoid that the user accidentally clicked OK and could not undo the action.
+     * <p/>
+     * <b>Note</b>: overuse of this dialog will train users to automtically accept it, defeating
+     * the purpose of having it.  This dialog should be used only in cases where accidental confirmation
+     * will lead to irrecoverable loss of user data that is stored nowhere else (example: deleting private keys)
+     * or actions that may permanently place the system into a degraded state (example: removing the license).
+     * It should not be used to guard deletion of anything that can be easily recreated
+     * (up to and including entire policies in most cases).
      *
      * @param parent: a parent of the safe-confirmation dialog
      * @param mess: a message reminding the user what the safe-confirmation dialog does.
