@@ -106,21 +106,34 @@ grep -q ^gateway: /etc/group || groupadd gateway
 grep -q ^layer7: /etc/group || groupadd layer7
 
 # If user gateway already exists ensure group membership is ok, if it doesn't exist add it
-grep -qvL ^gateway: /etc/passwd || usermod -g gateway -G '' gateway
-grep -q   ^gateway: /etc/passwd || useradd -g gateway -G '' gateway
+if grep -q ^gateway: /etc/passwd; then
+  usermod -g gateway -G '' gateway
+else
+  useradd -g gateway -G '' gateway
+fi
 
 # If user layer7 already exists ensure group membership is ok, if it doesn't exist add it
-grep -qvL ^layer7: /etc/passwd || usermod -g layer7 -G '' layer7
-grep -q   ^layer7: /etc/passwd || useradd -g layer7 -G '' layer7
+if grep -q ^layer7: /etc/passwd; then
+  usermod -g layer7 -G '' layer7
+else
+  useradd -g layer7 -G '' layer7
+fi
+
+# Chown any files that have been left behind by a previous installation
+[ ! -d %{prefix}/config ] || chown -R layer7.layer7 %{prefix}/config
+[ ! -d %{prefix}/controller/etc ] || chown -R layer7.layer7 %{prefix}/controller/etc
+[ ! -d %{prefix}/controller/var ] || chown -R layer7.layer7 %{prefix}/controller/var
+[ ! -d %{prefix}/node/default/etc/conf ] || chown -R layer7.layer7 %{prefix}/node/default/etc/conf
+[ ! -d %{prefix}/node/default/var ] || chown -R gateway.gateway %{prefix}/node/default/var
 
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then
     # $1 is  on last uninstall, ie, package remove, not upgrade
 
-    grep -qvL ^gateway: /etc/passwd || userdel -r gateway
-    grep -qvL ^layer7: /etc/passwd || userdel -r layer7
+    if grep -q '^gateway:' /etc/passwd; then userdel -r gateway; fi
+    if grep -q '^layer7:' /etc/passwd; then userdel -r layer7; fi
 
-    grep -qvL ^gateway: /etc/group || groupdel gateway
-    grep -qvL ^layer7: /etc/group || groupdel layer7
+    if grep -q ^gateway: /etc/group; then groupdel gateway; fi
+    if grep -q ^layer7: /etc/group; then groupdel layer7; fi
 fi

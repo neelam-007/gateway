@@ -109,7 +109,8 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 /opt/SecureSpan/Appliance/sysconfig/*.properties
 
 # SSG config user files
-%attr(0664,ssgconfig,ssgconfig) /home/ssgconfig/.bash_profile
+%defattr(0644,ssgconfig,ssgconfig,0700)
+/home/ssgconfig
 
 # Appliance migration configuration
 %attr(0644,layer7,layer7) /opt/SecureSpan/Gateway/config/migration/cfg/grandmaster_flash
@@ -117,18 +118,25 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 %pre
 
 grep -q ^gateway: /etc/group || groupadd gateway
+grep -q ^layer7: /etc/group || groupadd layer7
 grep -q ^pkcs11: /etc/group || groupadd pkcs11
+grep -q ^ssgconfig: /etc/group || groupadd ssgconfig
 
 # If user gateway already exists ensure group membership is ok, if it doesn't exist add it
-grep -qvL ^gateway: /etc/passwd || usermod -g gateway -G 'pkcs11' gateway
-grep -q   ^gateway: /etc/passwd || useradd -g gateway -G 'pkcs11' gateway
+if grep -q ^gateway: /etc/passwd; then
+  usermod -g gateway -G 'pkcs11' gateway
+else
+  useradd -g gateway -G 'pkcs11' gateway
+fi
 
 # If user layer7 already exists ensure group membership is ok, if it doesn't exist add it
-grep -qvL ^layer7: /etc/passwd || usermod -g layer7 -G 'pkcs11' layer7
-grep -q   ^layer7: /etc/passwd || useradd -g layer7 -G 'pkcs11' layer7
+if grep -q ^layer7: /etc/passwd; then
+  usermod -g layer7 -G 'pkcs11' layer7
+else
+  useradd -g layer7 -G 'pkcs11' layer7
+fi
 
-grep -q ^ssgconfig: /etc/group || groupadd ssgconfig
-if [ -n "`grep ^ssgconfig: /etc/passwd`" ]; then
+if grep -q ^ssgconfig: /etc/passwd; then
     #user ssgconfig already exists, but needs it's group membership modified
     usermod -G '' -g ssgconfig ssgconfig
 else
@@ -147,20 +155,17 @@ else
     fi
 fi
 
-SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
-if [ -n "${SSGCONFIGENTRY}" ]; then
+if grep -q ^ssgconfig /etc/sudoers; then
     #user already exists in the sudoers file but since the paths may have changed we'll remove everything and reset
     perl -pi.bak -e 's/^ssgconfig.*$//gs' /etc/sudoers
 fi
 
-SSPANENTRY=`grep ^layer7 /etc/sudoers`
-if [ -n "${SSPANENTRY}" ]; then
+if grep -q ^layer7 /etc/sudoers; then
     #user already exists in the sudoers file but since the paths may have changed we'll remove everything and reset
     perl -pi.bak -e 's/^layer7.*$//gs' /etc/sudoers
 fi
 
-GATEWAYCONFIGENTRY=`grep ^gateway /etc/sudoers`
-if [ -n "${GATEWAYCONFIGENTRY}" ]; then
+if grep -q ^gateway /etc/sudoers; then
     #user already exists in the sudoers file but since the paths have changed we'll remove everything and reset
     perl -pi.bak -e 's/^gateway.*$//gs' /etc/sudoers
 fi
@@ -184,8 +189,7 @@ echo "layer7 ALL = (gateway) NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /e
 echo "gateway ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
 echo "gateway ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/update_firewall" >> /etc/sudoers
 
-REBOOTPARAM=`grep kernel.panic /etc/sysctl.conf`
-if [ "${REBOOTPARAM}" ]; then
+if grep -q kernel.panic /etc/sysctl.conf; then
 	echo -n ""
 	# its got the panic time in there already"
 else
@@ -219,6 +223,8 @@ if [ -z "${CONNTRACK}" ]; then
 	echo "options ip_conntrack hashsize=65536" >> /etc/modprobe.conf
 fi
 
+# Chown any files that have been left behind by a previous installation
+[ ! -d /opt/SecureSpan/Appliance/sysconfig ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/sysconfig
 
 %post
 
@@ -249,6 +255,12 @@ echo "Kernel \r on an \m" >>/etc/issue
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then
+    if grep -q '^pkcs11:' /etc/passwd; then userdel -r pkcs11; fi
+    if grep -q '^ssgconfig:' /etc/passwd; then userdel -r ssgconfig; fi
+
+    if grep -q ^pkcs11: /etc/group; then groupdel pkcs11; fi
+    if grep -q ^ssgconfig: /etc/group; then groupdel ssgconfig; fi
+
     SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
     if [ -n "${SSGCONFIGENTRY}" ]; then
         #remove the sudoers entry for ssgconfig

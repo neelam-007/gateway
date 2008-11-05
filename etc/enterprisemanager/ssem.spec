@@ -50,11 +50,13 @@ rm -fr %{buildroot}
 grep -q ^ssem: /etc/group || groupadd ssem
 
 # If user ssem already exists ensure group membership is ok, if it doesn't exist add it
-grep -qvL ^ssem: /etc/passwd || usermod -g ssem -G '' ssem
-grep -q   ^ssem: /etc/passwd || useradd -g ssem -G '' ssem
+if grep -q ^ssem: /etc/passwd; then
+  usermod -g ssem -G '' ssem
+else
+  useradd -g ssem -G '' ssem
+fi
 
-SSEMENTRY=`grep ^ssem /etc/sudoers`
-if [ -n "${SSEMENTRY}" ]; then
+if grep -q ^ssem /etc/sudoers; then
     #user already exists in the sudoers file but since the paths have changed we'll remove everything and reset
     perl -pi.bak -e 's/^ssem.*$//gs' /etc/sudoers
 fi
@@ -74,11 +76,10 @@ fi
 if [ "$1" = "0" ] ; then
     # $1 is  on last uninstall, ie, package remove, not upgrade
 
-    grep -qvL ^ssem: /etc/passwd || ssem -r gateway
-    grep -qvL ^ssem: /etc/group || groupdel ssem
+    if grep -q ^ssem: /etc/passwd; then userdel -r ssem; fi
+    if grep -q ^ssem: /etc/group; then groupdel ssem; fi
 
-    SSEMENTRY=`grep ^ssem /etc/sudoers`
-    if [ -n "${SSEMENTRY}" ]; then
+    if grep -q ^ssem /etc/sudoers; then
         #remove the sudoers entry for ssem
         perl -pi.bak -e 's/^ssem.*$//gs' /etc/sudoers
     fi
