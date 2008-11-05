@@ -5,8 +5,8 @@ package com.l7tech.policy.assertion;
 
 /** @author alex */
 public abstract class MessageTargetableAssertion extends Assertion implements MessageTargetable, UsesVariables {
-    private TargetMessageType target = TargetMessageType.REQUEST;
-    private String otherTargetMessageVariable;
+    protected TargetMessageType target = TargetMessageType.REQUEST;
+    protected String otherTargetMessageVariable;
 
     public TargetMessageType getTarget() {
         return target;
