@@ -2,11 +2,32 @@
 <!DOCTYPE jasperTemplate PUBLIC "-//JasperReports//DTD Template//EN"
         "http://jasperreports.sourceforge.net/dtds/jaspertemplate.dtd">
 <jasperTemplate>
+
     <style
-            name="TableCell"
-            isDefault="true"
+            name="FrameTitle"
+            isDefault="false"
             mode="Transparent"
             vAlign="Middle"
+            hAlign="Left"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="true"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box leftPadding="5" />
+    </style>
+
+    <style
+            name="ReportInfo"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Left"
             fontName="SansSerif"
             fontSize="10"
             isBold="false"
@@ -16,9 +37,146 @@
             pdfFontName="Helvetica"
             pdfEncoding="Cp1252"
             isPdfEmbedded="false"
-            backcolor="#F8F8F8"
             >
+        <box leftPadding="5" />
     </style>
+
+    <style
+            name="TableHeadingInterval"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Left"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box leftPadding="5">
+            <pen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <style
+            name="TableHeading"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            markup="html"
+            >
+        <box>
+            <pen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <style
+            name="TableCellInterval"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Left"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            />
+
+    <style
+            name="TableCell"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            />
+
+    <style
+            name="RowTotalHeading"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Left"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box leftPadding="5">
+            <pen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <style
+            name="RowTotal"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box>
+            <pen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+
     <style
             name="FrameStyle"
             isDefault="false"
@@ -63,7 +221,35 @@
             <rightPen lineWidth="1.0"/>
         </box>
     </style>
-    <!-- E8EDB4 #0000ff-->
+
+    <style
+            name="MappingTitleFrame"
+            isDefault="false"
+            backcolor="#FFDC5A"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>            
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <style
+            name="TitleFrame"
+            isDefault="false"
+            backcolor="#E8EDB4"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <!-- E8EDB4 #0000ff-->    
     <style
             name="FrameTableTop"
             isDefault="false"
@@ -109,12 +295,12 @@
             <rightPen lineWidth="1.0"/>
         </box>
     </style>
-	<style
-		name="TotalCell"
-		backcolor="#D6D6D6"
-        vAlign="Middle"
-    >
-	</style>
+	<!--<style-->
+		<!--name="TotalCell"-->
+		<!--backcolor="#D6D6D6"-->
+        <!--vAlign="Middle"-->
+    <!-->-->
+	<!--</style>-->
 
 	<style
 		name="SubTableHeader"

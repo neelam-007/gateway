@@ -11,6 +11,7 @@ import org.w3c.dom.*;
 
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.text.MessageFormat;
 import java.util.*;
 
 import com.l7tech.common.io.XmlUtil;
@@ -62,7 +63,6 @@ public class Utilities {
     public static final String BRTMX = "BRTMX";
     public static final String AP = "AP";
 
-    //todo [Donal] check if constant group still needed?
     public static final String CONSTANT_GROUP = "CONSTANT_GROUP";
     public static final String AUTHENTICATED_USER = "AUTHENTICATED_USER";
     public static final String SERVICE_OPERATION_VALUE = "SERVICE_OPERATION_VALUE";
@@ -77,26 +77,21 @@ public class Utilities {
 
     private final static String aggregateSelect = "SELECT p.objectid as SERVICE_ID, " +
             "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
-            "SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT, MIN(smd.front_min) as FRTM, " +
-            "MAX(smd.front_max) as FRTMX, if(SUM(smd.front_sum), if(SUM(smd.attempted), " +
-            "SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA, MIN(smd.back_min) as BRTM, " +
-            "MAX(smd.back_max) as BRTMX, if(SUM(smd.back_sum), if(SUM(smd.completed), " +
-            "SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA, " +
-            "if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP'" +
+            "SUM(if({0}.attempted, {0}.attempted,0)) as ATTEMPTED, "+
+            "SUM(if({0}.completed, {0}.completed,0)) as THROUGHPUT," +
+            "if(SUM({0}.attempted), if(SUM({0}.authorized), SUM({0}.attempted)-SUM({0}.authorized),0),0)  as POLICY_VIOLATIONS, "+
+            "if(SUM({0}.authorized), if(SUM({0}.completed), SUM({0}.authorized)-SUM({0}.completed),0),0)  as ROUTING_FAILURES, "+
+            " MIN({0}.front_min) as FRTM, " +
+            "MAX({0}.front_max) as FRTMX, if(SUM({0}.front_sum), if(SUM({0}.attempted), " +
+            "SUM({0}.front_sum)/SUM({0}.attempted),0), 0) as FRTA, MIN({0}.back_min) as BRTM, " +
+            "MAX({0}.back_max) as BRTMX, if(SUM({0}.back_sum), if(SUM({0}.completed), " +
+            "SUM({0}.back_sum)/SUM({0}.completed),0), 0) as BRTA, " +
+            "if(SUM({0}.attempted), ( 1.0 - ( ( (SUM({0}.authorized) - SUM({0}.completed)) / SUM({0}.attempted) ) ) ) , 0) as 'AP'" +
             " ,'1' as CONSTANT_GROUP ";
 
     private final static String usageAggregateSelect = "SELECT p.objectid as SERVICE_ID, " +
             "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
             "SUM(if(smd.completed, smd.completed,0)) as USAGE_SUM,'1' as CONSTANT_GROUP ";
-
-    private final static String noMappingAggregateSelect = "SELECT '1' as CONSTANT_GROUP, count(*) as count, p.objectid as SERVICE_ID, " +
-            "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
-            "SUM(if(sm.completed, sm.completed,0)) as THROUGHPUT, MIN(sm.front_min) as FRTM, " +
-            "MAX(sm.front_max) as FRTMX, if(SUM(sm.front_sum), if(SUM(sm.attempted), " +
-            "SUM(sm.front_sum)/SUM(sm.attempted),0), 0) as FRTA, MIN(sm.back_min) as BRTM, " +
-            "MAX(sm.back_max) as BRTMX, if(SUM(sm.back_sum), if(SUM(sm.completed), " +
-            "SUM(sm.back_sum)/SUM(sm.completed),0), 0) as BRTA, " +
-            "if(SUM(sm.attempted), ( 1.0 - ( ( (SUM(sm.authorized) - SUM(sm.completed)) / SUM(sm.attempted) ) ) ) , 0) as 'AP' ";
 
     private final static String mappingJoin = " FROM service_metrics sm, published_service p, service_metrics_details smd," +
             " message_context_mapping_values mcmv, message_context_mapping_keys mcmk WHERE p.objectid = sm.published_service_oid " +
@@ -840,7 +835,8 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         if(isMasterQuery){
             sb = new StringBuilder(distinctFrom);
         }else{
-            sb = new StringBuilder(aggregateSelect);
+            String select = MessageFormat.format(aggregateSelect ,"smd");
+            sb = new StringBuilder(select);
         }
         //----SECTION B----
         addUserToSelect(true, useUser, sb);
@@ -957,7 +953,8 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         if(isMasterQuery){
             sb = new StringBuilder(distinctFrom);
         }else{
-            sb = new StringBuilder(noMappingAggregateSelect);
+            String select = MessageFormat.format(aggregateSelect ,"sm");
+            sb = new StringBuilder(select);
         }
 
         //fill in place holder's

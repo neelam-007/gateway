@@ -22,6 +22,8 @@
 	<import value="java.util.*" />
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
+	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
+
 
 	<parameter name="INTERVAL_START" isForPrompting="false" class="java.lang.Long"/>
 	<parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
@@ -60,6 +62,7 @@ com.l7tech.server.ems.standardreports.Utilities.getNoMappingQuery($P{INTERVAL_ST
 $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 )]]></defaultValueExpression>
 	</parameter>
+	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
 	<field name="THROUGHPUT" class="java.lang.Long"/>
@@ -126,10 +129,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 			<band height="18"  isSplitAllowed="true" >
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="TableCell"
 						x="0"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="textField-1"/>
 					<box></box>
 					<textElement>
@@ -139,10 +143,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="52"
+						style="TableCell"
+						x="57"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="textField-2"/>
 					<box></box>
 					<textElement>
@@ -152,10 +157,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="104"
+						style="TableCell"
+						x="114"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="textField-3"/>
 					<box></box>
 					<textElement>
@@ -165,10 +171,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="156"
+						style="TableCell"
+						x="171"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="textField-4"/>
 					<box></box>
 					<textElement>
@@ -178,10 +185,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="208"
+						style="TableCell"
+						x="228"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="textField-5"/>
 					<box></box>
 					<textElement>
@@ -191,10 +199,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="260"
+						style="TableCell"
+						x="285"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="textField-6"/>
 					<box></box>
 					<textElement>
@@ -204,10 +213,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="312"
+						style="TableCell"
+						x="342"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="textField-7"/>
 					<box></box>
 					<textElement>
@@ -217,10 +227,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="364"
+						style="TableCell"
+						x="399"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="textField-8"/>
 					<box></box>
 					<textElement>
@@ -246,10 +257,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 			<band height="18"  isSplitAllowed="true" >
 				<staticText>
 					<reportElement
+						style="TableCell"
 						x="0"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="staticText-1"/>
 					<box></box>
 					<textElement>
@@ -259,10 +271,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</staticText>
 				<staticText>
 					<reportElement
-						x="52"
+						style="TableCell"
+						x="57"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="staticText-2"/>
 					<box></box>
 					<textElement>
@@ -272,10 +285,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</staticText>
 				<staticText>
 					<reportElement
-						x="104"
+						style="TableCell"
+						x="114"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="staticText-3"/>
 					<box></box>
 					<textElement>
@@ -285,10 +299,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</staticText>
 				<staticText>
 					<reportElement
-						x="156"
+						style="TableCell"
+						x="171"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="staticText-4"/>
 					<box></box>
 					<textElement>
@@ -298,10 +313,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</staticText>
 				<staticText>
 					<reportElement
-						x="208"
+						style="TableCell"
+						x="228"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="staticText-5"/>
 					<box></box>
 					<textElement>
@@ -311,10 +327,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</staticText>
 				<staticText>
 					<reportElement
-						x="260"
+						style="TableCell"
+						x="285"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="staticText-6"/>
 					<box></box>
 					<textElement>
@@ -324,10 +341,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</staticText>
 				<staticText>
 					<reportElement
-						x="312"
+						style="TableCell"
+						x="342"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="staticText-7"/>
 					<box></box>
 					<textElement>
@@ -337,10 +355,11 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				</staticText>
 				<staticText>
 					<reportElement
-						x="364"
+						style="TableCell"
+						x="399"
 						y="0"
-						width="52"
-						height="17"
+						width="57"
+						height="18"
 						key="staticText-8"/>
 					<box></box>
 					<textElement>

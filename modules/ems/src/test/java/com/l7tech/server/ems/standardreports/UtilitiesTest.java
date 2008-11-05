@@ -1035,6 +1035,7 @@ public class UtilitiesTest{
         long endTime = DATE_FORMAT.parse(endDate).getTime();
 
         String sql = Utilities.getNoMappingQuery(false, startTime, endTime, null, 1);
+        System.out.println(sql);
         int index = sql.indexOf("GROUP BY p.objectid");
         Assert.assertTrue(index != -1);
     }

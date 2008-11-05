@@ -23,6 +23,7 @@
 	<import value="java.util.*" />
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
+	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 	<style 
 		name="DefaultText"
@@ -52,6 +53,7 @@
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 
 	<field name="INTERVAL_START" class="java.lang.Long"/>
 	<field name="INTERVAL_END" class="java.lang.Long"/>
@@ -89,13 +91,13 @@
 			</band>
 		</columnHeader>
 		<detail>
-			<band height="19"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="true" >
 				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						style="DefaultText"
-						x="5"
+						style="RowTotalHeading"
+						x="0"
 						y="0"
-						width="113"
+						width="108"
 						height="18"
 						key="textField"
 						isPrintWhenDetailOverflows="true"/>
@@ -112,9 +114,9 @@
 				<subreport  isUsingCache="false">
 					<reportElement
 						style="DefaultText"
-						x="118"
-						y="1"
-						width="417"
+						x="108"
+						y="0"
+						width="468"
 						height="18"
 						key="subreport-1"/>
 					<subreportParameter  name="INTERVAL_START">
@@ -164,6 +166,9 @@
 					</subreportParameter>
 					<subreportParameter  name="IS_CONTEXT_MAPPING">
 						<subreportParameterExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="TEMPLATE_FILE_ABSOLUTE">
+						<subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>
 					</subreportParameter>
 					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 					<returnValue subreportVariable="THROUGHPUT" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
