@@ -174,6 +174,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
      */
     private TreePath[] getSortedSelectedTreePaths() {
         int[] selectedRows = getSelectionRows();
+
+        //if no selection, then we'll return empty tree path
+        if (selectedRows == null) return new TreePath[0];
+
         Arrays.sort(selectedRows);
         TreePath[] paths = new TreePath[selectedRows.length];
         for(int i = 0;i < selectedRows.length;i++) {
