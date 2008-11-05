@@ -110,7 +110,7 @@ public class TrustedEmsManagerWindow extends JDialog {
         if (user == null)
             return;
 
-        DialogDisplayer.showSafeConfirmDialog(this,
+        DialogDisplayer.showConfirmDialog(this,
                 "Are you sure you wish to delete the mapping for user " + user.getEmsUserId() + " from EMS " + ems.getName() + "?",
                 "Delete User Mapping",
                 JOptionPane.OK_CANCEL_OPTION,
@@ -134,7 +134,7 @@ public class TrustedEmsManagerWindow extends JDialog {
         if (ems == null)
             return;
 
-        DialogDisplayer.showSafeConfirmDialog(this,
+        DialogDisplayer.showConfirmDialog(this,
                 "Are you sure you wish to remove the registration for EMS " + ems.getName() + "?\nThis will also delete all its user mappings.",
                 "Remove EMS Registration And Delete User Mappings",
                 JOptionPane.OK_CANCEL_OPTION,
