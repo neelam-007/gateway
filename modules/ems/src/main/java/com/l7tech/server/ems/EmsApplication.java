@@ -62,6 +62,9 @@ public class EmsApplication extends WebApplication {
      */
     @Override
     protected void init() {
+        // Record the starting time of ems process
+        timeStarted = System.currentTimeMillis();
+        
         super.init();
 
         // Wires up SpringBean annotation references
@@ -206,12 +209,18 @@ public class EmsApplication extends WebApplication {
         return dateValue + " " + timeValue;
     }
 
+    public long getTimeStarted() {
+        return timeStarted;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( EmsApplication.class.getName() );
 
     private static final Map<String,String> dates;
     private static final Map<String,String> times;
+
+    private long timeStarted; // The time when EMS process started.
 
     static {
         Map<String,String> dateMap = new LinkedHashMap<String,String>();

@@ -6,10 +6,8 @@ import com.l7tech.gateway.common.License;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.util.DateUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.TextUtils;
+import com.l7tech.server.ems.EmsApplication;
+import com.l7tech.util.*;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextArea;
@@ -22,14 +20,19 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.lang.Bytes;
+import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.xml.sax.SAXException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.SimpleDateFormat;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * Page for system settings
@@ -39,18 +42,103 @@ public class SystemSettings extends EmsPage {
 
     private static final int MAX_LICENSE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.licenseFile.maxBytes", 1024 * 500);
     private static final Logger logger = Logger.getLogger(SystemSettings.class.getName());
+    private static final String COPYRIGHT = "Copyright (c) 2008 by Layer 7 Technologies, Inc. All rights reserved.";
 
     @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean(name="licenseManager")
     private UpdatableLicenseManager licenseManager;
 
     /**
-     * Create system settings page 
+     * Create system settings page
      */
     public SystemSettings() {
+        initComponentsForProductInfo();
+
+        initComponentsForSystemInfo();
+
+        initComponentsForLicense();
+    }
+
+    /**
+     * Initialize components that display product information.
+     */
+    private void initComponentsForProductInfo() {
+        // Product Name
+        Label productNameLabel = new Label("product.name", BuildInfo.getProductName());
+        add(productNameLabel);
+
+        // Product Version
+        Label productVersionLabel = new Label("product.version", BuildInfo.getProductVersion());
+        add(productVersionLabel);
+
+        // Build Number
+        Label buildNumberLabel = new Label("build.number", BuildInfo.getBuildNumber());
+        add(buildNumberLabel);
+
+        // Copyright Notice
+        Label copyrightLabel = new Label("copyright", COPYRIGHT);
+        add(copyrightLabel);
+    }
+
+    /**
+     * Initialize components that display system information
+     */
+    private void initComponentsForSystemInfo() {
+        // Host Name
+        HttpServletRequest request = ((ServletWebRequest) getRequest()).getHttpServletRequest();
+        String hostName;
+        try {
+            URL url = new URL(request.getRequestURL().toString());
+            hostName = url.getHost();
+        } catch (MalformedURLException e) {
+            logger.warning("The URL specified an unkown protocol.");
+            hostName = "Unknown host name";
+        }
+        Label hostNameLabel = new Label("host.name", hostName);
+        add(hostNameLabel);
+
+        // Host IP Address
+        Label hostIpLabel = new Label("host.ip", request.getLocalAddr());
+        add(hostIpLabel);
+
+        // Operating System Information
+        String osInfo = System.getProperty("os.name") + " " +
+                        System.getProperty("os.arch") + " " +
+                        System.getProperty("os.version");
+        Label osInfoLabel = new Label("operating.system", osInfo);
+        add(osInfoLabel);
+
+        // Java VM Information
+        String jvmInfo = System.getProperty("java.vm.vendor") + " " +
+                         System.getProperty("java.vm.name") + " " +
+                         System.getProperty("java.vm.version");
+        Label jvmInfoLabel = new Label("jvm", jvmInfo);
+        add(jvmInfoLabel);
+
+        // Java VM Memory Details
+        Label totalMemoryLabel = new Label("memory.total", "" + Runtime.getRuntime().totalMemory());
+        add(totalMemoryLabel);
+
+        Label freeMemoryLabel = new Label("memory.free", "" + Runtime.getRuntime().freeMemory());
+        add(freeMemoryLabel);
+
+        Label maximumMemoryLabel = new Label("memory.maximum", "" + Runtime.getRuntime().maxMemory());
+        add(maximumMemoryLabel);
+
+        // Time when EMS process started
+        SimpleDateFormat dateFormat = new SimpleDateFormat(getSession().getDateTimeFormatPattern());
+        long timeStarted = ((EmsApplication)getApplication()).getTimeStarted();
+        Label timeStartedLabel = new Label("time.ems.process.started", dateFormat.format(new Date(timeStarted)));
+        add(timeStartedLabel);
+    }
+
+    /**
+     * Initialize components that display licnese information.
+     */
+    private void initComponentsForLicense() {
         LicenseModel licenseModel = new LicenseModel();
 
-        //
+        // Feedback
         add( new FeedbackPanel("feedback") );
 
         // labels
@@ -71,7 +159,7 @@ public class SystemSettings extends EmsPage {
     }
 
     /**
-     *
+     * Get the date string for license starting.
      */
     private String getlicenseStartText( final License license ) {
         String licenseStartText = "";
@@ -80,14 +168,15 @@ public class SystemSettings extends EmsPage {
         if ( startDate != null ) {
             String m = DateUtils.makeRelativeDateMessage(startDate, true);
             m = m != null && m.length() > 0 ? " (" + m + ")" : m;
-            licenseStartText = startDate.toString() + m;
+            SimpleDateFormat dateFormat = new SimpleDateFormat(getSession().getDateTimeFormatPattern());
+            licenseStartText = dateFormat.format(startDate) + m;
         }
 
         return licenseStartText;
     }
 
     /**
-     *
+     * Get the date string for license expiring.
      */
     private String getlicenseEndText( final License license ) {
         String licenseEndText = "";
@@ -96,14 +185,15 @@ public class SystemSettings extends EmsPage {
         if ( endDate != null ) {
             String m = DateUtils.makeRelativeDateMessage(endDate, false);
             m = m != null && m.length() > 0 ? " (" + m + ")" : m;
-            licenseEndText = endDate.toString() + m;
+            SimpleDateFormat dateFormat = new SimpleDateFormat(getSession().getDateTimeFormatPattern());
+            licenseEndText = dateFormat.format(endDate)  + m;
         }
 
         return licenseEndText;
     }
 
     /**
-     *
+     * Get the string of license attributes.
      */
     private String getLicenseAttributeText( final License license ) {
         StringBuilder licenseAttributeText = new StringBuilder();
@@ -123,7 +213,7 @@ public class SystemSettings extends EmsPage {
     }
 
     /**
-     * Add new license 
+     * Add new license
      */
     private boolean licenseSetup(final String license) {
         try {
@@ -244,7 +334,7 @@ public class SystemSettings extends EmsPage {
                     upload.closeStreams();
                 }
             } else {
-                logger.log( Level.INFO, "License not found in upload." );                
+                logger.log( Level.INFO, "License not found in upload." );
             }
         }
     }
