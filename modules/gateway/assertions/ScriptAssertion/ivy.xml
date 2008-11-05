@@ -27,9 +27,5 @@
         <dependency org="rhino" name="js" rev="1.6R7" force="true" conf="core"/>
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
-
-        <!-- add direct dependency on server to work around problem when building idea project files -->
-        <dependency name="layer7-gateway-server" rev="latest.integration" force="true"
-                    conf="optional; test->default,test" transitive="false"/>
     </dependencies>
 </ivy-module>

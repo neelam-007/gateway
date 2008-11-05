@@ -20,9 +20,5 @@
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true" conf="compile,runtime,test"/>
-
-        <!-- add direct dependency on server to work around problem when building idea project files -->
-        <dependency name="layer7-gateway-server" rev="latest.integration" force="true"
-                    conf="optional; test->default,test" transitive="false"/>
 	</dependencies>
 </ivy-module>

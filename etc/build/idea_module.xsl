@@ -46,55 +46,50 @@
             <!-- Direct Module Dependencies -->
             <xsl:for-each select="$ivy-report/dependencies/module">
                 <xsl:sort select="revision/@position"/>
-                <xsl:if test="revision[contains(@conf,'default') or contains(@conf,'core')]">
-                    <xsl:if test="revision/caller[@name = $ivy-report/info/@module and @organisation = $ivy-report/info/@organisation]">
-                      <xsl:choose>
-                          <xsl:when test="@organisation = 'com.l7tech'">
-                            <orderEntry type="module" module-name="{@name}"  exported=""/>
-                          </xsl:when>
-                          <xsl:otherwise>
-                            <orderEntry type="module-library"  exported="">
-                              <library name="{@organisation}.{@name}">
-                                <CLASSES>
-                                  <xsl:choose>
-                                    <xsl:when test="revision/artifacts/artifact">
-                                        <xsl:for-each select="revision/artifacts/artifact">
-                                          <root url="jar://{@location}!/" />
-                                        </xsl:for-each>
-                                    </xsl:when>
-                                    <xsl:otherwise>
-                                        <!-- treat as a library -->
-                                        <xsl:call-template name="library">
-                                            <xsl:with-param name="organisation"><xsl:value-of select="@organisation"/></xsl:with-param>
-                                            <xsl:with-param name="name"><xsl:value-of select="@name"/></xsl:with-param>
-                                        </xsl:call-template>
-                                    </xsl:otherwise>
-                                  </xsl:choose>
-                                </CLASSES>
-                                <xsl:call-template name="javadoc">
-                                    <xsl:with-param name="libraryname"><xsl:value-of select="@organisation"/>.<xsl:value-of select="@name"/></xsl:with-param>
+                <xsl:if test="revision/caller[@name = $ivy-report/info/@module and @organisation = $ivy-report/info/@organisation]">
+                  <xsl:choose>
+                      <xsl:when test="@organisation = 'com.l7tech'">
+                        <orderEntry type="module" module-name="{@name}"  exported=""/>
+                      </xsl:when>
+                      <xsl:otherwise>
+                        <orderEntry type="module-library"  exported="">
+                          <library name="{@organisation}.{@name}">
+                            <CLASSES>
+                                <!-- direct jars -->
+                                <xsl:for-each select="revision/artifacts/artifact">
+                                  <root url="jar://{@location}!/" />
+                                </xsl:for-each>
+                                <!-- dependency jars -->
+                                <xsl:call-template name="library">
+                                    <xsl:with-param name="organisation"><xsl:value-of select="@organisation"/></xsl:with-param>
+                                    <xsl:with-param name="name"><xsl:value-of select="@name"/></xsl:with-param>
                                 </xsl:call-template>
-                                <xsl:call-template name="sources">
-                                    <xsl:with-param name="libraryname"><xsl:value-of select="@organisation"/>.<xsl:value-of select="@name"/></xsl:with-param>
-                                </xsl:call-template>
-                              </library>
-                            </orderEntry>
-                          </xsl:otherwise>
-                      </xsl:choose>
-                    </xsl:if>
-                  </xsl:if>
-              </xsl:for-each>
-
-            <!-- Runtime Module Dependencies -->
-            <xsl:for-each select="$ivy-report/dependencies/module">
-                <xsl:sort select="revision/@position"/>
-                <xsl:if test="revision[@default = 'false' and contains(@conf,'runtime') and not(contains(@conf,'default'))]">
-                    <xsl:call-template name="runtime-module-library">
-                        <xsl:with-param name="organisation"><xsl:value-of select="@organisation"/></xsl:with-param>
-                        <xsl:with-param name="name"><xsl:value-of select="@name"/></xsl:with-param>
-                    </xsl:call-template>
+                            </CLASSES>
+                            <xsl:call-template name="javadoc">
+                                <xsl:with-param name="libraryname"><xsl:value-of select="@organisation"/>.<xsl:value-of select="@name"/></xsl:with-param>
+                            </xsl:call-template>
+                            <xsl:call-template name="sources">
+                                <xsl:with-param name="libraryname"><xsl:value-of select="@organisation"/>.<xsl:value-of select="@name"/></xsl:with-param>
+                            </xsl:call-template>
+                          </library>
+                        </orderEntry>
+                      </xsl:otherwise>
+                  </xsl:choose>
                 </xsl:if>
-              </xsl:for-each>
+            </xsl:for-each>
+
+            <!-- Runtime Dependencies -->
+            <!--<xsl:for-each select="$ivy-report/dependencies/module">-->
+                <!--<xsl:sort select="revision/@position"/>-->
+                <!--<xsl:if test="revision/caller[@name = $ivy-report/info/@module and @organisation = $ivy-report/info/@organisation]">-->
+                <!--<xsl:if test="not(revision[@default = 'false']/caller[@name = $ivy-report/info/@module and @organisation = $ivy-report/info/@organisation])">-->
+                    <!--<xsl:call-template name="runtime-module-library">-->
+                        <!--<xsl:with-param name="organisation"><xsl:value-of select="@organisation"/></xsl:with-param>-->
+                        <!--<xsl:with-param name="name"><xsl:value-of select="@name"/></xsl:with-param>-->
+                    <!--</xsl:call-template>-->
+                <!--</xsl:if>-->
+            <!--</xsl:for-each>-->
+
         </xsl:copy>
     </xsl:template>
 
@@ -102,8 +97,19 @@
         <xsl:param name="organisation"/>
         <xsl:param name="name"/>
 
-        <xsl:for-each select="$ivy-report/dependencies/module/revision[caller/@organisation = $organisation and caller/@name = $name]/artifacts/artifact">
-          <root url="jar://{@location}!/" />
+        <xsl:for-each select="$ivy-report/dependencies/module">
+            <xsl:if test="revision[caller/@organisation = $organisation and caller/@name = $name]">
+                <!-- direct jars -->
+                <xsl:for-each select="revision/artifacts/artifact">
+                    <root url="jar://{@location}!/" />
+                </xsl:for-each>
+
+                <!-- dependency jars -->
+                <xsl:call-template name="library">
+                    <xsl:with-param name="organisation"><xsl:value-of select="@organisation"/></xsl:with-param>
+                    <xsl:with-param name="name"><xsl:value-of select="@name"/></xsl:with-param>
+                </xsl:call-template>
+            </xsl:if>
         </xsl:for-each>
     </xsl:template>                      
 
@@ -144,23 +150,21 @@
         <xsl:param name="organisation"/>
         <xsl:param name="name"/>
 
-        <xsl:if test="$ivy-report/dependencies/module/revision[contains(@conf,'runtime') and not(contains(@conf,'default'))]">
-            <orderEntry type="module-library">
-              <library name="{@organisation}.{@name}">
-                <CLASSES>
-                    <xsl:for-each select="$ivy-report/dependencies/module[@organisation = $organisation and @name = $name]/revision/artifacts/artifact">
-                      <root url="jar://{@location}!/" />
-                    </xsl:for-each>
-                </CLASSES>
-                <xsl:call-template name="javadoc">
-                    <xsl:with-param name="libraryname"><xsl:value-of select="@organisation"/>.<xsl:value-of select="@name"/></xsl:with-param>
-                </xsl:call-template>
-                <xsl:call-template name="sources">
-                    <xsl:with-param name="libraryname"><xsl:value-of select="@organisation"/>.<xsl:value-of select="@name"/></xsl:with-param>
-                </xsl:call-template>
-              </library>
-            </orderEntry>
-        </xsl:if>
+        <orderEntry type="module-library">
+          <library name="{@organisation}.{@name}">
+            <CLASSES>
+                <xsl:for-each select="$ivy-report/dependencies/module[@organisation = $organisation and @name = $name]/revision/artifacts/artifact">
+                  <root url="jar://{@location}!/" />
+                </xsl:for-each>
+            </CLASSES>
+            <xsl:call-template name="javadoc">
+                <xsl:with-param name="libraryname"><xsl:value-of select="@organisation"/>.<xsl:value-of select="@name"/></xsl:with-param>
+            </xsl:call-template>
+            <xsl:call-template name="sources">
+                <xsl:with-param name="libraryname"><xsl:value-of select="@organisation"/>.<xsl:value-of select="@name"/></xsl:with-param>
+            </xsl:call-template>
+          </library>
+        </orderEntry>
 
         <!-- This select is not quite right, we should be choosing modules there the organisation/name are found for the same revision/caller -->
         <!--
