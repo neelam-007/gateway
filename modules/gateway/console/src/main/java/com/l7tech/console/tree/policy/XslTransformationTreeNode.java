@@ -17,17 +17,7 @@ public class XslTransformationTreeNode extends LeafAssertionTreeNode<XslTransfor
     }
 
     public String getName() {
-        StringBuilder nodeName = new StringBuilder("XSL transform ");
-
-        final int dir = assertion.getDirection();
-        switch (dir) {
-            case XslTransformation.APPLY_TO_REQUEST:
-                nodeName.append("request messages");
-                break;
-            case XslTransformation.APPLY_TO_RESPONSE:
-                nodeName.append("response messages");
-                break;
-        }
+        StringBuilder nodeName = new StringBuilder("XSL transform " + assertion.getTargetName());
 
         final String tname = assertion.getTransformName();
         if (tname != null && tname.length() > 0 && tname.trim().length() > 0) {

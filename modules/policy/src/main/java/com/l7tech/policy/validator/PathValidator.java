@@ -1,8 +1,5 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.util.Functions;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -21,17 +18,15 @@ import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
-import com.l7tech.policy.variable.VariableNameSyntaxException;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.util.Functions;
+import com.l7tech.wsdl.Wsdl;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
@@ -452,20 +447,18 @@ class PathValidator {
     }
 
     private void processPrecondition(final Assertion a) {
-        if (a instanceof XslTransformation) {
-            // check that the assertion is on the right side of the routing
-            XslTransformation ass = (XslTransformation)a;
-
-            if (ass.getDirection() == XslTransformation.APPLY_TO_REQUEST && seenResponse) {
+        if (a instanceof MessageTargetable) {
+            MessageTargetable mt = (MessageTargetable)a;
+            if (mt.getTarget() == TargetMessageType.REQUEST && seenResponse) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "XSL transformation on the request occurs after a response is available.", null));
-            } else if (ass.getDirection() == XslTransformation.APPLY_TO_RESPONSE && !seenResponse) {
+                  "Assertion targets the request after a response is available.", null));
+            } else if (mt.getTarget() == TargetMessageType.RESPONSE && !seenResponse) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                  "XSL transformation on the response must not be positioned before a response is available.", null));
+                  "Assertion targeting the response must not be positioned before a response is available.", null));
             }
+        }
 
-
-        } else if (a instanceof RequestWssIntegrity ||
+        if (a instanceof RequestWssIntegrity ||
                     a instanceof ResponseWssConfidentiality ||
                    (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired() && ((RequestWssTimestamp)a).getTarget() == TargetMessageType.REQUEST) ||
                    (a instanceof RequestSwAAssertion && ((RequestSwAAssertion)a).requiresSignature()) ||

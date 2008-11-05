@@ -254,9 +254,9 @@ public class AssertionMessages extends Messages {
     public static final M UNKNOWN_ASSERTION                                 = m(5800, Level.WARNING, "Unknown assertion invoked; details: {0}");
 
     // ServerXslTransformation
-    public static final M XSLT_REQ_NOT_XML   = m(5900, Level.INFO, "Message not XML; cannot perform XSL transformation");
+    public static final M XSLT_MSG_NOT_XML = m(5900, Level.INFO, "Message not XML; cannot perform XSL transformation");
     public static final M XSLT_REQUEST       = m(5901, Level.FINEST, "Transforming request");
-    public static final M XSLT_RESP_NOT_XML  = m(5902, Level.INFO, "Response not XML; cannot perform XSL transformation");
+    /** @deprecated {@link #XSLT_MSG_NOT_XML} is always used now */ @Deprecated public static final M __UNUSED_XSLT_RESP_NOT_XML = m(5902, Level.INFO, "Response not XML; cannot perform XSL transformation");
     public static final M XSLT_RESPONSE      = m(5903, Level.FINEST, "Transforming response");
     public static final M XSLT_CONFIG_ISSUE  = m(5904, Level.WARNING, "Assertion does not specify whether transformation applies to request or response; returning failure");
     public static final M XSLT_NO_SUCH_PART  = m(5905, Level.WARNING, "Assertion refers to nonexistent MIME part {0}");
@@ -270,6 +270,7 @@ public class AssertionMessages extends Messages {
     public static final M XSLT_TRANS_WARN    = m(5913, Level.INFO,    "XSL-T Warning ''{0}''");
     public static final M XSLT_TRANS_ERR     = m(5914, Level.INFO,    "XSL-T Error ''{0}''");
     public static final M XSLT_NO_PI_OK      = m(5915, Level.INFO, "No <?xml-stylesheet?> processing instruction was found in the message; assertion succeeds");
+    public static final M XSLT_OTHER         = m(5916, Level.FINEST, "Transforming message ''{0}''");
 
     // TODO move this message, now that it is shared among multiple assertion (XSLT + schema)
     public static final M RR_CANT_READ_REMOTE_RESOURCE = m(5912, Level.WARNING, "Could not retrieve remote resource at {0}: {1}; continuing using previous version");

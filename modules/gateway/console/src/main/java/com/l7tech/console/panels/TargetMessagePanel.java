@@ -107,6 +107,16 @@ public class TargetMessagePanel extends JPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
+    @Override
+    public void setBorder(Border border) {
+        if (mainPanel != null) mainPanel.setBorder(border);
+    }
+
+    @Override
+    public Border getBorder() {
+        return mainPanel == null ? null : mainPanel.getBorder();
+    }
+
     private String getVariableName() {
         String varname = otherMessageVariableTextfield.getText().trim();
         // As a convenience to our poor confused users, we'll remove any ${ } surrounding the variable name

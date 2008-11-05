@@ -3,17 +3,35 @@
  */
 package com.l7tech.server.policy.assertion.xml;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.common.http.GenericHttpClientFactory;
-import com.l7tech.message.Message;
-import com.l7tech.message.TarariMessageContextFactory;
-import com.l7tech.message.XmlKnob;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
+import com.l7tech.message.TarariMessageContextFactory;
+import com.l7tech.message.XmlKnob;
+import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.MessageUrlResourceInfo;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.url.UrlResolver;
+import com.l7tech.server.util.res.ResourceGetter;
+import com.l7tech.server.util.res.ResourceObjectFactory;
+import com.l7tech.server.util.res.UrlFinder;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -28,23 +46,6 @@ import com.l7tech.xml.xslt.CompiledStylesheet;
 import com.l7tech.xml.xslt.StylesheetCompiler;
 import com.l7tech.xml.xslt.TransformInput;
 import com.l7tech.xml.xslt.TransformOutput;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.policy.AssertionResourceInfo;
-import com.l7tech.policy.MessageUrlResourceInfo;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.util.res.ResourceGetter;
-import com.l7tech.server.util.res.ResourceObjectFactory;
-import com.l7tech.server.util.res.UrlFinder;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.Attributes;
@@ -189,19 +190,28 @@ public class ServerXslTransformation
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // 1. Get document to transform
         final Message message;
-        final boolean isrequest;
+        final TargetMessageType isrequest = assertion.getTarget();
 
-        switch (assertion.getDirection()) {
-            case XslTransformation.APPLY_TO_REQUEST:
+        switch (isrequest) {
+            case REQUEST:
                 auditor.logAndAudit(AssertionMessages.XSLT_REQUEST);
-                isrequest = true;
                 message = context.getRequest();
                 break;
-            case XslTransformation.APPLY_TO_RESPONSE:
+            case RESPONSE:
                 auditor.logAndAudit(AssertionMessages.XSLT_RESPONSE);
-                isrequest = false;
                 message = context.getResponse();
                 break;
+            case OTHER:
+                final String mvar = assertion.getOtherTargetMessageVariable();
+                if (mvar == null) throw new PolicyAssertionException(assertion, "Target message variable not set");
+                try {
+                    auditor.logAndAudit(AssertionMessages.XSLT_OTHER, mvar);
+                    message = context.getTargetMessage(assertion, true);
+                    break;
+                } catch (NoSuchVariableException e) {
+                    auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{ e.getVariable() }, e);
+                    return AssertionStatus.FAILED;
+                }
             default:
                 // should not get here!
                 auditor.logAndAudit(AssertionMessages.XSLT_CONFIG_ISSUE);
@@ -209,9 +219,9 @@ public class ServerXslTransformation
         }
 
         try {
-            return doCheckRequest(message, isrequest, context);
+            return doCheckRequest(message, context);
         } catch (SAXException e) {
-            auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
+            auditor.logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         }
     }
@@ -221,9 +231,7 @@ public class ServerXslTransformation
      * performes the transformation
      * @param context  the context for the current request.  required
      */
-    private AssertionStatus doCheckRequest(final Message message,
-                                           boolean isrequest,
-                                           final PolicyEnforcementContext context)
+    private AssertionStatus doCheckRequest(final Message message, final PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException, SAXException
     {
 
@@ -250,7 +258,7 @@ public class ServerXslTransformation
                 try {
                     xmlKnob = message.getXmlKnob();
                 } catch (SAXException e) {
-                    auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
+                    auditor.logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
                     return AssertionStatus.BAD_REQUEST;
                 }
                 transformInput = makeFirstPartTransformInput(xmlKnob, variableGetter);
@@ -280,7 +288,7 @@ public class ServerXslTransformation
             // These variables are used ONLY for interpolation into a remote URL; variables used inside
             // the stylesheet itself are fed in via the variableGetter inside TransformInput
             Map urlVars = context.getVariableMap(urlVarsUsed, auditor);
-            return transform(transformInput, transformOutput, isrequest, urlVars);
+            return transform(transformInput, transformOutput, urlVars);
         } finally {
             if (transformInput instanceof Closeable) {
                 ((Closeable)transformInput).close();
@@ -289,7 +297,7 @@ public class ServerXslTransformation
     }
 
     //  Get a stylesheet from the resourceGetter and transform input into output
-    private AssertionStatus transform(TransformInput input, TransformOutput output, boolean isReq, Map urlVars)
+    private AssertionStatus transform(TransformInput input, TransformOutput output, Map urlVars)
             throws IOException, PolicyAssertionException
     {
         try {
@@ -311,10 +319,10 @@ public class ServerXslTransformation
             return AssertionStatus.NONE;
 
         } catch (ResourceGetter.InvalidMessageException e) {
-            auditor.logAndAudit(isReq ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
+            auditor.logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         } catch (SAXException e) {
-            auditor.logAndAudit(isReq ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
+            auditor.logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         } catch (ResourceGetter.MalformedResourceUrlException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, e.getUrl(), "URL is invalid");

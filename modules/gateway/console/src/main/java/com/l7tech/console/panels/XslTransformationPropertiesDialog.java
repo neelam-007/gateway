@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
@@ -17,29 +20,21 @@ import java.util.logging.Logger;
 
 
 /**
- * A dialog to view / configure the properties of a xslt assertion.
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 6, 2004<br/>
- * $Id$<br/>
+ * A dialog to view / configure the properties of an {@link XslTransformation xslt assertion}.
  */
 public class XslTransformationPropertiesDialog extends JDialog {
     private static final Logger log = Logger.getLogger(XslTransformationPropertiesDialog.class.getName());
 
     private JButton okButton;
     private JButton cancelButton;
-    private JComboBox directionCombo;
     private JPanel mainPanel;
     private JSpinner whichMimePartSpinner;
-    private JLabel directionLabel;
     private JLabel whichMimePartLabel;
     private JPanel borderPanel;
     private JPanel innerPanel;
     private JComboBox cbXslLocation;
+    private TargetMessagePanel targetMessagePanel;
 
-    private final boolean readOnly;
     private XslTransformation assertion;
     private final XslTransformationSpecifyPanel specifyPanel;
     private final XslTransformationFetchPanel fetchPanel;
@@ -52,11 +47,6 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private final String MODE_SPECIFY_XSL = resources.getString("specifyRadio.label");
     private final String MODE_SPECIFY_URL = resources.getString("fetchUrlRadio.label");
     private final String MODE_FETCH_PI_URL = resources.getString("fetchRadio.label");
-    private final String[] MODES = new String[] {
-            MODE_SPECIFY_XSL,
-            MODE_SPECIFY_URL,
-            MODE_FETCH_PI_URL,
-    };
 
     private final String BORDER_TITLE_PREFIX = resources.getString("xslLocationPrefix.text");
 
@@ -64,21 +54,20 @@ public class XslTransformationPropertiesDialog extends JDialog {
         return resources;
     }
 
-    private final String DIRECTION_REQUEST = resources.getString("directionCombo.requestValue");
-    private final String DIRECTION_RESPONSE = resources.getString("directionCombo.responseValue");
-    private final String[] DIRECTIONS = new String[]{DIRECTION_REQUEST, DIRECTION_RESPONSE};
-
     public XslTransformationPropertiesDialog(Frame owner, boolean modal, boolean readOnly, XslTransformation assertion) {
         super(owner, resources.getString("window.title"), modal);
-        if (assertion == null) {
-            throw new IllegalArgumentException("Xslt Transformation == null");
-        }
-        this.readOnly = readOnly;
+
+        if (assertion == null) throw new IllegalArgumentException("Xslt Transformation == null");
+
         this.assertion = assertion;
 
         Utilities.setEscKeyStrokeDisposes(this);
 
-        directionLabel.setLabelFor(directionCombo);
+        targetMessagePanel.setTitle(null);
+        targetMessagePanel.setBorder(null);
+        targetMessagePanel.setModel(assertion);
+        targetMessagePanel.setAllowNonMessageVariables(true);
+
         whichMimePartLabel.setLabelFor(whichMimePartSpinner);
 
         specifyPanel = new XslTransformationSpecifyPanel(this, assertion);
@@ -89,6 +78,12 @@ public class XslTransformationPropertiesDialog extends JDialog {
         innerPanel.add(specifyPanel);
         innerPanel.add(fetchPanel);
         innerPanel.add(specifyUrlPanel);
+
+        String[] MODES = new String[]{
+            MODE_SPECIFY_XSL,
+            MODE_SPECIFY_URL,
+            MODE_FETCH_PI_URL,
+        };
 
         cbXslLocation.setModel(new DefaultComboBoxModel(MODES));
         cbXslLocation.addActionListener(new ActionListener(){
@@ -103,22 +98,9 @@ public class XslTransformationPropertiesDialog extends JDialog {
             specifyPanel.getUrlButton()
         });
 
-        // create controls
-        directionCombo.setModel(new DefaultComboBoxModel(DIRECTIONS));
-        if (this.assertion.getDirection() == XslTransformation.APPLY_TO_REQUEST) {
-            directionCombo.setSelectedItem(DIRECTION_REQUEST);
-        } else {
-            directionCombo.setSelectedItem(DIRECTION_RESPONSE);
-        }
-
         whichMimePartSpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
         //noinspection UnnecessaryBoxing
         whichMimePartSpinner.setValue(new Integer(assertion.getWhichMimePart()));
-
-        Utilities.equalizeComponentSizes(new JComponent[] {
-                directionCombo,
-                whichMimePartSpinner,
-        });
 
         AssertionResourceInfo ri = assertion.getResourceInfo();
         AssertionResourceType rit = ri.getType();
@@ -208,15 +190,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
             return;
         }
 
-        if (directionCombo.getSelectedItem() == DIRECTION_REQUEST) {
-            log.finest("selected request direction");
-            assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
-        } else if (directionCombo.getSelectedItem() == DIRECTION_RESPONSE) {
-            log.finest("selected response direction");
-            assertion.setDirection(XslTransformation.APPLY_TO_RESPONSE);
-        } else {
-            throw new IllegalStateException("Neither request nor response was selected");
-        }
+        targetMessagePanel.updateModel(assertion);
 
         assertion.setWhichMimePart(((Number)whichMimePartSpinner.getValue()).intValue());
 

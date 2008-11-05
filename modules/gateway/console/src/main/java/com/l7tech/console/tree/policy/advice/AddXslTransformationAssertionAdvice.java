@@ -6,6 +6,7 @@ import com.l7tech.console.panels.XslTransformationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
 import javax.swing.*;
@@ -51,12 +52,12 @@ public class AddXslTransformationAssertionAdvice extends AddContextSensitiveAsse
 
     protected void notifyPostRouting(PolicyChange pc, Assertion assertion) {
         XslTransformation xslTransformation = (XslTransformation)assertion;
-        xslTransformation.setDirection(XslTransformation.APPLY_TO_RESPONSE);
+        if (xslTransformation.getTarget() != TargetMessageType.OTHER) xslTransformation.setTarget(TargetMessageType.RESPONSE);
     }
 
     protected void notifyPreRouting(PolicyChange pc, Assertion assertion) {
         XslTransformation xslTransformation = (XslTransformation)assertion;
-        xslTransformation.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        if (xslTransformation.getTarget() != TargetMessageType.OTHER) xslTransformation.setTarget(TargetMessageType.REQUEST);
     }
 
     private final Logger log = Logger.getLogger(getClass().getName());
