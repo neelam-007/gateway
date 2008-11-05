@@ -7,10 +7,12 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.ResourceUtils;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.jdbc.Work;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
@@ -20,6 +22,8 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -89,10 +93,22 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                 public Object doInHibernate(final Session session) throws HibernateException, SQLException {
                     // Use a bulk delete to ensure that a replicable SQL statement is run
                     // even if there is nothing in the table (see bug 4615)
-                    session.createQuery( HQL_DELETE_BY_ID )
-                            .setString("nodeid", selfCI.getNodeIdentifier() )
-                            .executeUpdate();
-                    session.merge( selfCI );
+                    session.doWork(new Work(){
+                        public void execute(final Connection connection) throws SQLException {
+                            PreparedStatement statement = null;
+                            try {
+                                statement = connection.prepareStatement(SQL_DELETE_BY_ID);
+                                statement.setString( 1, selfCI.getNodeIdentifier() );
+                                statement.executeUpdate();
+                            } finally {
+                                ResourceUtils.closeQuietly(statement);
+                            }
+                        }
+                    });
+                    if ( session.contains( selfCI ) ) {
+                        session.evict( selfCI );
+                    }
+                    session.save( selfCI );
                     return null;
                 }
             });
@@ -245,9 +261,8 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     " in class " + ClusterNodeInfo.class.getName() +
                     " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = ?";
 
-    private static final String HQL_DELETE_BY_ID =
-            "delete from " + ClusterNodeInfo.class.getName() + " as " + TABLE_NAME +
-                    " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = :nodeid";
+    private static final String SQL_DELETE_BY_ID =
+            "delete from cluster_info where nodeid = ?";
 
     private static final Logger logger = Logger.getLogger(ClusterInfoManagerImpl.class.getName());
     private static final long rememberedBootTime = System.currentTimeMillis();
