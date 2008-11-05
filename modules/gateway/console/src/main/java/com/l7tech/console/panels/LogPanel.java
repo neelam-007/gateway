@@ -1175,7 +1175,7 @@ public class LogPanel extends JPanel {
 
 
             JPanel buttonPanel = new JPanel();
-            buttonPanel.add(getSearchButton());
+            //buttonPanel.add(getSearchButton());
             bottomPane.add(buttonPanel, BorderLayout.EAST);
             if(!isAuditType) getSearchButton().setEnabled(false);
         }
@@ -1476,11 +1476,9 @@ public class LogPanel extends JPanel {
     }
 
     public JButton getSearchButton() {
-        if (searchButton == null) {
-            searchButton = new JButton("Search");
-        }
-        return searchButton;
+        return controlPanel.filterButton;
     }
+
 
     /**
      * Return lastUpdateTimeLabel property value
@@ -2208,5 +2206,6 @@ public class LogPanel extends JPanel {
         private JPanel auditTypePane;
         private JPanel nodePane;
         private JPanel timeRangePane;
+        private JButton filterButton;
     }
 }
