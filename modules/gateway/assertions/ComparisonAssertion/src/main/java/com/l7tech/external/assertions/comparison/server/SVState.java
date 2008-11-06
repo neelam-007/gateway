@@ -32,7 +32,7 @@ class SVState extends State {
             DataTypePredicate dtpred = (DataTypePredicate) pred;
             if (this.type != null) throw new IllegalStateException("DataType already set");
             this.type = dtpred.getType();
-            Object val = convertValue(value, type);
+            Object val = value == null ? null : convertValue(value, type);
             if (val == null) {
                 // Unable to convert this value to the desired type
                 assertionResult = false;

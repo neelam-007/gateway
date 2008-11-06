@@ -3,25 +3,26 @@
  */
 package com.l7tech.external.assertions.comparison.server;
 
+import com.l7tech.external.assertions.comparison.*;
 import com.l7tech.message.Message;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.Functions;
-import com.l7tech.external.assertions.comparison.*;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.ApplicationContexts;
-
-import java.util.logging.Logger;
-import java.util.List;
-import java.util.ArrayList;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -36,8 +37,7 @@ public class ServerComparisonAssertionTest {
 
         ComparisonAssertion comp = make();
 
-        ServerComparisonAssertion sca = new ServerComparisonAssertion(comp, ApplicationContexts.getTestApplicationContext());
-        AssertionStatus stat = sca.checkRequest(context);
+        AssertionStatus stat = doit(context, comp);
         assertEquals(AssertionStatus.NONE, stat);
     }
 
@@ -75,8 +75,7 @@ public class ServerComparisonAssertionTest {
             new NumericRangePredicate(12345, 12346)
         );
 
-        ServerComparisonAssertion sca = new ServerComparisonAssertion(comp, ApplicationContexts.getTestApplicationContext());
-        AssertionStatus stat = sca.checkRequest(context);
+        AssertionStatus stat = doit(context, comp);
         assertEquals(stat, AssertionStatus.NONE);
     }
 
@@ -99,9 +98,35 @@ public class ServerComparisonAssertionTest {
         preds.add(new BinaryPredicate(ComparisonOperator.CONTAINS, "234", false, false));
         preds.add(new BinaryPredicate(ComparisonOperator.EMPTY, null, false, true));
         comp.setPredicates(preds.toArray(new Predicate[0]));
-        ServerComparisonAssertion sca = new ServerComparisonAssertion(comp, ApplicationContexts.getTestApplicationContext());
-        AssertionStatus stat = sca.checkRequest(context);
+        AssertionStatus stat = doit(context, comp);
         assertEquals(stat, AssertionStatus.NONE);
     }
 
+    @Test
+    public void testNullRightValue() throws Exception {
+        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        context.setVariable("asdf", "asdf");
+        ComparisonAssertion comp = new ComparisonAssertion();
+        comp.setExpression1("${asdf}");
+        comp.setPredicates(new BinaryPredicate(ComparisonOperator.EQ, "${nonexistent}", true, false));
+        AssertionStatus stat = doit(context, comp);
+        assertEquals(AssertionStatus.FALSIFIED, stat);
+    }
+
+    @Test
+    public void testNullLeftValue() throws Exception {
+        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
+        context.setVariable("asdf", "asdf");
+        ComparisonAssertion comp = new ComparisonAssertion();
+        comp.setExpression1("${nonexistent}");
+        comp.setPredicates(new BinaryPredicate(ComparisonOperator.EQ, "${asdf}", true, false));
+        AssertionStatus stat = doit(context, comp);
+        assertEquals(AssertionStatus.FAILED, stat);
+    }
+
+    private AssertionStatus doit(PolicyEnforcementContext context, ComparisonAssertion comp)
+        throws IOException, PolicyAssertionException {
+        ServerComparisonAssertion sca = new ServerComparisonAssertion(comp, ApplicationContexts.getTestApplicationContext());
+        return sca.checkRequest(context);
+    }
 }

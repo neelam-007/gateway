@@ -34,6 +34,7 @@ public class CertUtilsTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
+    @SuppressWarnings({ "UnusedAssignment" })
     public void testUnparseableCertBug2641() throws Exception {
         String serverCertB64 = "-----BEGIN CERTIFICATE-----\n" +
                 "MIIEjTCCA/agAwIBAgIQUlv1nylQ9FxN+RpkLYfa6zANBgkqhkiG9w0BAQUFADCB\n" +
@@ -96,40 +97,42 @@ public class CertUtilsTest extends TestCase {
         cert = CertUtils.decodeCert(clientCertB64.getBytes());
 
 
-        String otherCertB64 = "-----BEGIN CERTIFICATE-----\n" +
-                "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tDQpNSUlFalRDQ0EvYWdBd0lCQWdJUVVsdjFueWxR\n" +
-                "OUZ4TitScGtMWWZhNnpBTkJna3Foa2lHOXcwQkFRVUZBRENCDQp1akVmTUIwR0ExVUVDaE1XVm1W\n" +
-                "eWFWTnBaMjRnVkhKMWMzUWdUbVYwZDI5eWF6RVhNQlVHQTFVRUN4TU9WbVZ5DQphVk5wWjI0c0lF\n" +
-                "bHVZeTR4TXpBeEJnTlZCQXNUS2xabGNtbFRhV2R1SUVsdWRHVnlibUYwYVc5dVlXd2dVMlZ5DQpk\n" +
-                "bVZ5SUVOQklDMGdRMnhoYzNNZ016RkpNRWNHQTFVRUN4TkFkM2QzTG5abGNtbHphV2R1TG1OdmJT\n" +
-                "OURVRk1nDQpTVzVqYjNKd0xtSjVJRkpsWmk0Z1RFbEJRa2xNU1ZSWklFeFVSQzRvWXlrNU55Qlda\n" +
-                "WEpwVTJsbmJqQWVGdzB3DQpOakF4TURZd01EQXdNREJhRncwd056QXhNRFl5TXpVNU5UbGFNSUhS\n" +
-                "TVFzd0NRWURWUVFHRXdKVlV6RVRNQkVHDQpBMVVFQ0JNS1EyRnNhV1p2Y201cFlURVBNQTBHQTFV\n" +
-                "RUJ4UUdUbTkyWVhSdk1TZ3dKZ1lEVlFRS0ZCOUdhWEpsDQpiV0Z1Y3lCR2RXNWtJRWx1YzNWeVlX\n" +
-                "NWpaU0JEYjIxd1lXNTVNUll3RkFZRFZRUUxGQTFKVkNCRVpYQmhjblJ0DQpaVzUwTVRNd01RWURW\n" +
-                "UVFMRkNwVVpYSnRjeUJ2WmlCMWMyVWdZWFFnZDNkM0xuWmxjbWx6YVdkdUxtTnZiUzl5DQpjR0Vn\n" +
-                "S0dNcE1EQXhKVEFqQmdOVkJBTVVISEJ5YjJSbllYUmxkMkY1TG1acGNtVnRZVzV6Wm5WdVpDNWpi\n" +
-                "MjB3DQpnWjh3RFFZSktvWklodmNOQVFFQkJRQURnWTBBTUlHSkFvR0JBSXBNOW1raDNPSkhuOTZM\n" +
-                "cll0ZnFoZGdlUC9kDQpCWDZlRm84TzU0RFMrL1EvdHNYZjdjZTNaNEVMWVNnWVJZNHJCZlMzVnZu\n" +
-                "K0hsRTJTM3d6M3FhU3FqQTZzRStRDQorSlBFTWMrRWx3bEdMREhqZ2FwYlNGNUxVTDZyYmhmKzVJ\n" +
-                "OEZQcUw1TlFDY2lSd1dOYjFmTGNBSDdXbTlpNnl1DQplQ29uYStNRTZIc1ZzWmRQQWdNQkFBR2pn\n" +
-                "Z0Y1TUlJQmRUQUpCZ05WSFJNRUFqQUFNQXNHQTFVZER3UUVBd0lGDQpvREJHQmdOVkhSOEVQekE5\n" +
-                "TUR1Z09hQTNoalZvZEhSd09pOHZZM0pzTG5abGNtbHphV2R1TG1OdmJTOURiR0Z6DQpjek5KYm5S\n" +
-                "bGNtNWhkR2x2Ym1Gc1UyVnlkbVZ5TG1OeWJEQkVCZ05WSFNBRVBUQTdNRGtHQzJDR1NBR0crRVVC\n" +
-                "DQpCeGNETUNvd0tBWUlLd1lCQlFVSEFnRVdIR2gwZEhCek9pOHZkM2QzTG5abGNtbHphV2R1TG1O\n" +
-                "dmJTOXljR0V3DQpLQVlEVlIwbEJDRXdId1lKWUlaSUFZYjRRZ1FCQmdnckJnRUZCUWNEQVFZSUt3\n" +
-                "WUJCUVVIQXdJd05BWUlLd1lCDQpCUVVIQVFFRUtEQW1NQ1FHQ0NzR0FRVUZCekFCaGhob2RIUndP\n" +
-                "aTh2YjJOemNDNTJaWEpwYzJsbmJpNWpiMjB3DQpiUVlJS3dZQkJRVUhBUXdFWVRCZm9WMmdXekJa\n" +
-                "TUZjd1ZSWUphVzFoWjJVdloybG1NQ0V3SHpBSEJnVXJEZ01DDQpHZ1FVaitYVEdvYXNqWTVydzgr\n" +
-                "QWF0UklHQ3g3R1M0d0pSWWphSFIwY0RvdkwyeHZaMjh1ZG1WeWFYTnBaMjR1DQpZMjl0TDNaemJH\n" +
-                "OW5ieTVuYVdZd0RRWUpLb1pJaHZjTkFRRUZCUUFEZ1lFQUlXaGp1aitaVzdRclhqbVV6cVJnDQox\n" +
-                "Q1p6YjY3NXZOWHNxaU80cHJWTTZOQkhKK2I5cjBQVUJ2bGhDcS9ZbkJjblkwZG5zMDRpaXBtcktw\n" +
-                "c3E5NjlIDQpkS292eTE1VEtZdHczNWF3OTQzRDg5NW5TZktQZ0NTWnBmaTVBVWMvNWJ4Q280WVM4\n" +
-                "V05jNUx0eXIvSmkwRVdiDQpYZFM1VnFra3pvMUhOSjAxV0dDdmtiaz0NCi0tLS0tRU5EIENFUlRJ\n" +
-                "RklDQVRFLS0tLS0NCg==\n" +
-                "-----END CERTIFICATE-----";
+        final String otherCertBase64 = "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tDQpNSUlFalRDQ0EvYWdBd0lCQWdJUVVsdjFueWxR\n" +
+            "OUZ4TitScGtMWWZhNnpBTkJna3Foa2lHOXcwQkFRVUZBRENCDQp1akVmTUIwR0ExVUVDaE1XVm1W\n" +
+            "eWFWTnBaMjRnVkhKMWMzUWdUbVYwZDI5eWF6RVhNQlVHQTFVRUN4TU9WbVZ5DQphVk5wWjI0c0lF\n" +
+            "bHVZeTR4TXpBeEJnTlZCQXNUS2xabGNtbFRhV2R1SUVsdWRHVnlibUYwYVc5dVlXd2dVMlZ5DQpk\n" +
+            "bVZ5SUVOQklDMGdRMnhoYzNNZ016RkpNRWNHQTFVRUN4TkFkM2QzTG5abGNtbHphV2R1TG1OdmJT\n" +
+            "OURVRk1nDQpTVzVqYjNKd0xtSjVJRkpsWmk0Z1RFbEJRa2xNU1ZSWklFeFVSQzRvWXlrNU55Qlda\n" +
+            "WEpwVTJsbmJqQWVGdzB3DQpOakF4TURZd01EQXdNREJhRncwd056QXhNRFl5TXpVNU5UbGFNSUhS\n" +
+            "TVFzd0NRWURWUVFHRXdKVlV6RVRNQkVHDQpBMVVFQ0JNS1EyRnNhV1p2Y201cFlURVBNQTBHQTFV\n" +
+            "RUJ4UUdUbTkyWVhSdk1TZ3dKZ1lEVlFRS0ZCOUdhWEpsDQpiV0Z1Y3lCR2RXNWtJRWx1YzNWeVlX\n" +
+            "NWpaU0JEYjIxd1lXNTVNUll3RkFZRFZRUUxGQTFKVkNCRVpYQmhjblJ0DQpaVzUwTVRNd01RWURW\n" +
+            "UVFMRkNwVVpYSnRjeUJ2WmlCMWMyVWdZWFFnZDNkM0xuWmxjbWx6YVdkdUxtTnZiUzl5DQpjR0Vn\n" +
+            "S0dNcE1EQXhKVEFqQmdOVkJBTVVISEJ5YjJSbllYUmxkMkY1TG1acGNtVnRZVzV6Wm5WdVpDNWpi\n" +
+            "MjB3DQpnWjh3RFFZSktvWklodmNOQVFFQkJRQURnWTBBTUlHSkFvR0JBSXBNOW1raDNPSkhuOTZM\n" +
+            "cll0ZnFoZGdlUC9kDQpCWDZlRm84TzU0RFMrL1EvdHNYZjdjZTNaNEVMWVNnWVJZNHJCZlMzVnZu\n" +
+            "K0hsRTJTM3d6M3FhU3FqQTZzRStRDQorSlBFTWMrRWx3bEdMREhqZ2FwYlNGNUxVTDZyYmhmKzVJ\n" +
+            "OEZQcUw1TlFDY2lSd1dOYjFmTGNBSDdXbTlpNnl1DQplQ29uYStNRTZIc1ZzWmRQQWdNQkFBR2pn\n" +
+            "Z0Y1TUlJQmRUQUpCZ05WSFJNRUFqQUFNQXNHQTFVZER3UUVBd0lGDQpvREJHQmdOVkhSOEVQekE5\n" +
+            "TUR1Z09hQTNoalZvZEhSd09pOHZZM0pzTG5abGNtbHphV2R1TG1OdmJTOURiR0Z6DQpjek5KYm5S\n" +
+            "bGNtNWhkR2x2Ym1Gc1UyVnlkbVZ5TG1OeWJEQkVCZ05WSFNBRVBUQTdNRGtHQzJDR1NBR0crRVVC\n" +
+            "DQpCeGNETUNvd0tBWUlLd1lCQlFVSEFnRVdIR2gwZEhCek9pOHZkM2QzTG5abGNtbHphV2R1TG1O\n" +
+            "dmJTOXljR0V3DQpLQVlEVlIwbEJDRXdId1lKWUlaSUFZYjRRZ1FCQmdnckJnRUZCUWNEQVFZSUt3\n" +
+            "WUJCUVVIQXdJd05BWUlLd1lCDQpCUVVIQVFFRUtEQW1NQ1FHQ0NzR0FRVUZCekFCaGhob2RIUndP\n" +
+            "aTh2YjJOemNDNTJaWEpwYzJsbmJpNWpiMjB3DQpiUVlJS3dZQkJRVUhBUXdFWVRCZm9WMmdXekJa\n" +
+            "TUZjd1ZSWUphVzFoWjJVdloybG1NQ0V3SHpBSEJnVXJEZ01DDQpHZ1FVaitYVEdvYXNqWTVydzgr\n" +
+            "QWF0UklHQ3g3R1M0d0pSWWphSFIwY0RvdkwyeHZaMjh1ZG1WeWFYTnBaMjR1DQpZMjl0TDNaemJH\n" +
+            "OW5ieTVuYVdZd0RRWUpLb1pJaHZjTkFRRUZCUUFEZ1lFQUlXaGp1aitaVzdRclhqbVV6cVJnDQox\n" +
+            "Q1p6YjY3NXZOWHNxaU80cHJWTTZOQkhKK2I5cjBQVUJ2bGhDcS9ZbkJjblkwZG5zMDRpaXBtcktw\n" +
+            "c3E5NjlIDQpkS292eTE1VEtZdHczNWF3OTQzRDg5NW5TZktQZ0NTWnBmaTVBVWMvNWJ4Q280WVM4\n" +
+            "V05jNUx0eXIvSmkwRVdiDQpYZFM1VnFra3pvMUhOSjAxV0dDdmtiaz0NCi0tLS0tRU5EIENFUlRJ\n" +
+            "RklDQVRFLS0tLS0NCg==" ;
 
-        cert = CertUtils.decodeCert(otherCertB64.getBytes());
+        String otherCertPEM = "-----BEGIN CERTIFICATE-----\n" + otherCertBase64 + "\n-----END CERTIFICATE-----";
+
+        cert = CertUtils.decodeFromPEM(otherCertBase64);
+        cert = CertUtils.decodeFromPEM(otherCertPEM);
+        cert = CertUtils.decodeCert(otherCertPEM.getBytes());
 
     }
 

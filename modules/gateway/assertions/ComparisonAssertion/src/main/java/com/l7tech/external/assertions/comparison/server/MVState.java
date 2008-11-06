@@ -37,7 +37,7 @@ class MVState extends State {
             Object[] newvals = new Object[values.length];
             for (int i = 0; i < values.length; i++) {
                 Object value = values[i];
-                Object newval = convertValue(value, type);
+                Object newval = value == null ? null : convertValue(value, type);
                 if (newval == null) {
                     // Unable to convert this value to the desired type
                     assertionResult = false;

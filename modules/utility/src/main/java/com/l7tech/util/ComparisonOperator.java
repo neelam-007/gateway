@@ -118,6 +118,8 @@ public class ComparisonOperator implements Serializable {
      *                    If true, either side that is a String will be forced to lowercase before comparing
      */
     public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
+        if (left == null) throw new NullPointerException();
+        if (right == null) return false;
         boolean match;
         int comp = left.compareTo(right);
         if (comp > 0) comp = 1;

@@ -61,7 +61,12 @@ abstract class State {
         }
     }
 
+    /**
+     * @param value the value to be converted; must not be null.
+     * @return the converted object; never null.
+     */
     protected Object convertValue(Object value, DataType type) {
+        if (value == null) throw new NullPointerException();
         for (Class clazz : type.getValueClasses()) {
             if (clazz.isAssignableFrom(value.getClass())) {
                 // no conversion required
@@ -70,6 +75,7 @@ abstract class State {
         }
 
         auditor.logAndAudit(AssertionMessages.COMPARISON_CONVERTING, value.getClass().getName(), type.getShortName());
+
         ValueConverter conv = ValueConverter.Factory.getConverter(type);
         try {
             return conv.convert(value);
@@ -79,13 +85,13 @@ abstract class State {
         }
     }
 
-    protected boolean evalBinary(final Object value, final BinaryPredicate bpred, final Map<String, Object> vars) {
+    protected boolean evalBinary(final Object left, final BinaryPredicate bpred, final Map<String, Object> vars) {
         Comparable cleft;
-        if (value instanceof Comparable) {
-            cleft = (Comparable)value;
+        if (left instanceof Comparable) {
+            cleft = (Comparable)left;
         } else {
-            auditor.logAndAudit(AssertionMessages.COMPARISON_NOT_COMPARABLE, value.getClass().getSimpleName(), bpred.toString());
-            cleft = value.toString();
+            auditor.logAndAudit(AssertionMessages.COMPARISON_NOT_COMPARABLE, left.getClass().getSimpleName(), bpred.toString());
+            cleft = left.toString();
         }
 
         Comparable cright;
@@ -93,15 +99,15 @@ abstract class State {
             cright = null;
         } else {
             Object right = ServerComparisonAssertion.getValue(bpred.getRightValue(), vars, auditor);
-            if (type != null) {
+            if (type != null && right != null) {
                 // Convert this rvalue before comparing if there's a DataTypePredicate present
                 right = convertValue(right, type);
             }
-            if (right instanceof Comparable) {
+            if (right instanceof Comparable || right == null) {
                 cright = (Comparable) right;
             } else {
-                auditor.logAndAudit(AssertionMessages.COMPARISON_NOT_COMPARABLE, value.getClass().getSimpleName(), bpred.toString());
-                cright = value.toString();
+                auditor.logAndAudit(AssertionMessages.COMPARISON_NOT_COMPARABLE, left.getClass().getSimpleName(), bpred.toString());
+                cright = right.toString();
             }
         }
         return bpred.getOperator().compare(cleft, cright, !bpred.isCaseSensitive());
