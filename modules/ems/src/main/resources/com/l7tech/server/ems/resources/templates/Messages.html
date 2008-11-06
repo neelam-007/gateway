@@ -255,24 +255,26 @@
                 <span class="subtabOff"><a href="Logs.html">Logs</a></span>
             </div>
             <div class="content">
-                <div class="panel">
-                    <div class="panelTitle tippy"><img id="sysMsgTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'sysMsgContent')" /><span class="clickable" title="System-wide messages" onclick="l7.Tippy.toggleTippy('sysMsgTippy', 'sysMsgContent')">System Messages</span></div>
-                    <div id="sysMsgContent">
-                        <div id="sysMsgPagination" class="panelToolbar"></div>
-                        <div id="sysMsgResize" class="panelContent">
-                            <div id="sysMsgDataTable"></div>
+                <wicket:extend>
+                    <div class="panel">
+                        <div class="panelTitle tippy"><img id="sysMsgTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'sysMsgContent')" /><span class="clickable" title="System-wide messages" onclick="l7.Tippy.toggleTippy('sysMsgTippy', 'sysMsgContent')">System Messages</span></div>
+                        <div id="sysMsgContent">
+                            <div id="sysMsgPagination" class="panelToolbar"></div>
+                            <div id="sysMsgResize" class="panelContent">
+                                <div id="sysMsgDataTable"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="panel">
-                    <div class="panelTitle tippy"><img id="usrMsgTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'usrMsgContent')" /><span class="clickable" title="User-specific messages" onclick="l7.Tippy.toggleTippy('usrMsgTippy', 'usrMsgContent')">User Messages</span></div>
-                    <div id="usrMsgContent">
-                        <div id="usrMsgPagination" class="panelToolbar"></div>
-                        <div id="usrMsgResize" class="panelContent">
-                            <div id="usrMsgDataTable"></div>
+                    <div class="panel">
+                        <div class="panelTitle tippy"><img id="usrMsgTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'usrMsgContent')" /><span class="clickable" title="User-specific messages" onclick="l7.Tippy.toggleTippy('usrMsgTippy', 'usrMsgContent')">User Messages</span></div>
+                        <div id="usrMsgContent">
+                            <div id="usrMsgPagination" class="panelToolbar"></div>
+                            <div id="usrMsgResize" class="panelContent">
+                                <div id="usrMsgDataTable"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </wicket:extend>
             </div>
             <div class="statusBar">
                 <table>

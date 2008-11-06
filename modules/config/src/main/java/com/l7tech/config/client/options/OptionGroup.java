@@ -13,6 +13,7 @@ import javax.xml.bind.annotation.XmlType;
 public class OptionGroup {
     private String id; // unique id
     private Boolean required = true; // is this group required
+    private Boolean deletable = true; // is this group deletable (if not required)
     private String prompt; // wizard step prompt
     private String description; // property description
 
@@ -33,8 +34,17 @@ public class OptionGroup {
     public void setRequired(Boolean required) {
         if ( required == null ) throw new NullPointerException(); 
         this.required = required;
-    }    
-           
+    }
+
+    @XmlAttribute
+    public Boolean isDeletable() {
+        return deletable;
+    }
+
+    public void setDeletable(Boolean deletable) {
+        this.deletable = deletable;
+    }
+
     @XmlElement(required=true)
     public String getPrompt() {
         return prompt;

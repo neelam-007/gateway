@@ -254,49 +254,51 @@
                             <span class="clickable" onclick="l7.Tippy.toggleTippy('licenseTippy', 'license')"><wicket:message key="label.license"/></span>
                         </div>
                         <div id="license" class="panelContent">
-                            <h4><wicket:message key="label.current.license"/></h4>
-                            <table class="indent spaced">
-                                <tr>
-                                    <th><wicket:message key="label.license.status"/>:</th>
-                                    <td><span wicket:id="licenseStatus"/></td>
-                                </tr>
-                                <tr>
-                                    <th><wicket:message key="label.license.id"/>:</th>
-                                    <td><span wicket:id="licenseId"/></td>
-                                </tr>
-                                <tr>
-                                    <th><wicket:message key="label.description"/>:</th>
-                                    <td><span wicket:id="licenseDescription"/></td>
-                                </tr>
-                                <tr>
-                                    <th><wicket:message key="label.attributes"/>:</th>
-                                    <td><span wicket:id="licenseAttributes"/></td>
-                                </tr>
-                                <tr>
-                                    <th><wicket:message key="label.issuer"/>:</th>
-                                    <td><span wicket:id="licenseIssuer"/></td>
-                                </tr>
-                                <tr>
-                                    <th><wicket:message key="label.licensee"/>:</th>
-                                    <td><span wicket:id="licensee"/></td>
-                                </tr>
-                                <tr>
-                                    <th><wicket:message key="label.licensee.contact.email"/>:</th>
-                                    <td><span wicket:id="licenseContact"/></td>
-                                </tr>
-                                <tr>
-                                    <th><wicket:message key="label.valid.from"/>:</th>
-                                    <td><span wicket:id="licenseStartDate"/></td>
-                                </tr>
-                                <tr>
-                                    <th><wicket:message key="label.expires"/>:</th>
-                                    <td><span wicket:id="licenseEndDate"/></td>
-                                </tr>
-                                <tr>
-                                    <th class="top"><wicket:message key="label.grants"/>:</th>
-                                    <td><textarea rows="3" cols="80" wicket:id="licenseGrants" readonly="true"></textarea></td>
-                                </tr>
-                            </table>
+                            <wicket:enclosure child="licenseStatus">
+                                <h4><wicket:message key="label.current.license"/></h4>
+                                <table class="indent spaced">
+                                    <tr>
+                                        <th><wicket:message key="label.license.status"/>:</th>
+                                        <td><span wicket:id="licenseStatus"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th><wicket:message key="label.license.id"/>:</th>
+                                        <td><span wicket:id="licenseId"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th><wicket:message key="label.description"/>:</th>
+                                        <td><span wicket:id="licenseDescription"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th><wicket:message key="label.attributes"/>:</th>
+                                        <td><span wicket:id="licenseAttributes"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th><wicket:message key="label.issuer"/>:</th>
+                                        <td><span wicket:id="licenseIssuer"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th><wicket:message key="label.licensee"/>:</th>
+                                        <td><span wicket:id="licensee"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th><wicket:message key="label.licensee.contact.email"/>:</th>
+                                        <td><span wicket:id="licenseContact"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th><wicket:message key="label.valid.from"/>:</th>
+                                        <td><span wicket:id="licenseStartDate"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th><wicket:message key="label.expires"/>:</th>
+                                        <td><span wicket:id="licenseEndDate"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="top"><wicket:message key="label.grants"/>:</th>
+                                        <td><textarea rows="3" cols="80" wicket:id="licenseGrants" readonly="true"></textarea></td>
+                                    </tr>
+                                </table>
+                            </wicket:enclosure>                                
                             <h4><wicket:message key="label.change.license"/></h4>
                             <div wicket:id="feedback" class="center"/>
                             <form method="post" action="SystemSettings.html" enctype="multipart/form-data"  wicket:id="licenseForm">

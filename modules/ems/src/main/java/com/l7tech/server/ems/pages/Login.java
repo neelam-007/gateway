@@ -14,7 +14,6 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.behavior.HeaderContributor;
 import com.l7tech.server.ems.SetupManager;
 import com.l7tech.server.ems.EmsSecurityManager;
-import com.l7tech.server.ems.SetupException;
 import com.l7tech.server.ems.EmsSession;
 import com.l7tech.server.ems.EmsApplication;
 import com.l7tech.server.ems.user.UserPropertyManager;
@@ -23,8 +22,6 @@ import com.l7tech.objectmodel.FindException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -32,7 +29,6 @@ import java.util.TimeZone;
  * Login page
  */
 public class Login extends WebPage {
-    private static final Logger logger = Logger.getLogger(Login.class.getName());
 
     @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
@@ -58,24 +54,19 @@ public class Login extends WebPage {
             securityManager.logout( request.getSession(true) );
         }
 
-        if ( !isSetup() ) {
-            // If not configured send the user to the setup page
-            setResponsePage(new Setup());
-        } else {
-            final FeedbackPanel feedback = new FeedbackPanel("feedback");
-            add( feedback.setOutputMarkupId(true) );
-            LoginForm form = new LoginForm("loginForm");
-            form.add(
-                new YuiAjaxButton("submit", form){
-                    protected void onSubmit(AjaxRequestTarget target, Form form) {}
-                    @Override
-                    protected void onError(AjaxRequestTarget target, Form form) {
-                        target.addComponent(feedback);
-                    }
+        final FeedbackPanel feedback = new FeedbackPanel("feedback");
+        add( feedback.setOutputMarkupId(true) );
+        LoginForm form = new LoginForm("loginForm");
+        form.add(
+            new YuiAjaxButton("submit", form){
+                protected void onSubmit(AjaxRequestTarget target, Form form) {}
+                @Override
+                protected void onError(AjaxRequestTarget target, Form form) {
+                    target.addComponent(feedback);
                 }
-            );
-            add(form);
-        }
+            }
+        );
+        add(form);
 
         EmptyPanel empty = new EmptyPanel("empty");
         empty.add( HeaderContributor.forCss( EmsPage.RES_CSS_SKIN ) );
@@ -157,20 +148,5 @@ public class Login extends WebPage {
 
         session.setDateTimeFormatPattern( format );
         session.setTimeZoneId(zoneid);
-    }
-
-    /**
-     * Check if Ems server is configured 
-     */
-    private boolean isSetup() {
-        boolean setup = false;
-
-        try {
-            setup = setupManager.isSetupPerformed();
-        } catch ( SetupException e ) {
-            logger.log( Level.WARNING, "Error when determining if configured.", e );
-        }
-
-        return setup;
     }
 }

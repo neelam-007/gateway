@@ -2,8 +2,8 @@ package com.l7tech.server.ems;
 
 import com.l7tech.server.ems.pages.EmsError;
 import com.l7tech.server.ems.pages.Login;
-import com.l7tech.server.ems.pages.Setup;
 import com.l7tech.server.ems.pages.SystemSettings;
+import com.l7tech.util.SyspropUtil;
 import org.apache.wicket.*;
 import org.apache.wicket.authorization.Action;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
@@ -48,7 +48,7 @@ public class EmsApplication extends WebApplication {
      * 
      */
     public String getConfigurationType() {
-        return WebApplication.DEPLOYMENT;
+        return SyspropUtil.getBoolean("com.l7tech.ems.development") ? WebApplication.DEVELOPMENT : WebApplication.DEPLOYMENT;
     }
 
     public Session newSession(Request request, Response response) {
@@ -112,7 +112,6 @@ public class EmsApplication extends WebApplication {
 
                 return EmsError.class.equals(aClass) ||
                        Login.class.equals(aClass) ||
-                       Setup.class.equals(aClass) ||
                        !Page.class.isAssignableFrom(aClass) ||
                        EmsSecurityManagerImpl.isAuthenticated();
             }
@@ -122,7 +121,6 @@ public class EmsApplication extends WebApplication {
                     logger.finer("Action authorized check for component : " + component.getId() + ", " + action.getName());
                 return component.getPage() instanceof EmsError ||
                        component.getPage() instanceof Login ||
-                       component.getPage() instanceof Setup ||
                        EmsSecurityManagerImpl.isAuthenticated();
             }
         });

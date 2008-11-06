@@ -2,6 +2,8 @@ package com.l7tech.server.ems;
 
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.Handler;
+import org.mortbay.jetty.bio.SocketConnector;
+import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.jetty.servlet.FilterHolder;
@@ -24,6 +26,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.security.auth.Subject;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLContext;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Map;
@@ -45,6 +49,8 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.DefaultKey;
 
 /**
  * An embedded servlet container that the EMS uses to host itself.
@@ -61,28 +67,67 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
     private static final Map<Long, Reference<EmsServletContainer>> instancesById =
             new ConcurrentHashMap<Long, Reference<EmsServletContainer>>();
 
+    private final ServerConfig serverConfig;
+    private final DefaultKey defaultKey;
     private final long instanceId;
+    private final String addr;
     private final int httpPort;
+    private final int httpsPort;
+    private final File temp;
     private ApplicationContext applicationContext;
     private Server server;
     private Audit audit;
 
-    public EmsServletContainer(int httpPort) {
+    public EmsServletContainer( final ServerConfig serverConfig,
+                                final DefaultKey defaultKey ) {
+        this.serverConfig = serverConfig;
+        this.defaultKey = defaultKey;
         this.instanceId = nextInstanceId.getAndIncrement();
         //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<EmsServletContainer>(this));
 
-        this.httpPort = httpPort;
+        this.addr = this.serverConfig.getProperty("em.server.listenaddr");
+        this.httpPort = this.serverConfig.getIntProperty("em.server.listenportdev", 8181);
+        this.httpsPort = this.serverConfig.getIntProperty("em.server.listenport", 8182);
+
+        File temp;
+        File var = new File("var");
+        if ( !var.exists() ) {
+            temp = new File("/tmp");
+        } else {
+            temp = new File( "var/tmp" );
+            temp.mkdir();
+        }
+        this.temp = temp;
     }
 
     private void initializeServletEngine() throws Exception {
-        server = new Server(httpPort);
+        logger.info("Starting HTTPS listener '"+addr+":"+httpsPort+"'.");
 
-        File temp = new File("/tmp");
+        server = new Server();
+
+        final SSLContext ctx = SSLContext.getInstance("SSL");
+        ctx.init( defaultKey.getSslKeyManagers(), null, null );
+
+        SslSocketConnector sslConnector = new SslSocketConnector(){
+            @Override
+            protected SSLServerSocketFactory createFactory() throws Exception {
+                return ctx.getServerSocketFactory();
+            }
+        };
+        sslConnector.setPort( httpsPort );
+        sslConnector.setHost( addr );
+        server.addConnector( sslConnector );
+
+        SocketConnector connector = new SocketConnector();
+        connector.setPort( httpPort );
+        connector.setHost( addr );
+        server.addConnector( connector );
+
         final Context root = new Context(server, "/", Context.SESSIONS);
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources")); //TODO [steve] map root elsewhere and add other mappings for css/images/etc
         root.setDisplayName("Layer 7 Enterprise Service Manager Server");
-        root.setAttribute("javax.servlet.context.tempdir", temp); //TODO [steve] temp directory ?
+        root.setAttribute("javax.servlet.context.tempdir", temp);
         root.addEventListener(new EmsContextLoaderListener());
         root.setClassLoader(Thread.currentThread().getContextClassLoader());
 
@@ -164,14 +209,17 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
 
         server.start();
         if ( audit != null ) {
-            audit.logAndAudit( SystemMessages.HTTPSERVER_START, "HTTPS Port: " + httpPort);
+            audit.logAndAudit( SystemMessages.HTTPSERVER_START, "HTTPS Port: " + httpsPort);
         }
 
         List<SsgConnector> connectors = new ArrayList<SsgConnector>();
         SsgConnector rc = new SsgConnector();
-        rc.setPort(httpPort);
+        rc.setPort(httpsPort);
         connectors.add(rc);
-        FirewallUtils.openFirewallForConnectors( temp, connectors );  // TODO use conf/var directory for rules?
+        SsgConnector rc2 = new SsgConnector();
+        rc2.setPort(httpPort);
+        connectors.add(rc2);
+        FirewallUtils.openFirewallForConnectors( temp, connectors );
     }
 
     private void shutdownServletEngine() throws Exception {
@@ -182,7 +230,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
             audit.logAndAudit( SystemMessages.HTTPSERVER_STOP, "HTTPS Port: " + httpPort);            
         }
 
-        FirewallUtils.closeFirewallForConnectors( new File("/tmp") );  // TODO use conf/var directory for rules?
+        FirewallUtils.closeFirewallForConnectors( temp );
     }
 
     public void afterPropertiesSet() throws Exception {

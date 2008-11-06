@@ -8,9 +8,12 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.User;
 
-import com.l7tech.server.GatewayLicenseManager;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.security.keystore.KeystoreFileManager;
+import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.gateway.common.InvalidLicenseException;
@@ -51,23 +54,29 @@ import java.io.IOException;
 public class SetupManagerImpl implements InitializingBean, SetupManager {
     private static final Logger logger = Logger.getLogger(SetupManagerImpl.class.getName());
 
-    private final GatewayLicenseManager licenseManager;
+    private final ServerConfig serverConfig;
+    private final UpdatableLicenseManager licenseManager;
     private final IdentityProviderFactory identityProviderFactory;
     private final IdentityProviderConfigManager identityProviderConfigManager;
     private final RoleManager roleManager;
     private final AuditContext auditContext;
+    private final KeystoreFileManager keystoreFileManager;
 
-    public SetupManagerImpl(final GatewayLicenseManager licenseManager,
+    public SetupManagerImpl(final ServerConfig serverConfig,
+                            final UpdatableLicenseManager licenseManager,
                             final IdentityProviderFactory identityProviderFactory,
                             final IdentityProviderConfigManager identityProviderConfigManager,
                             final RoleManager roleManager,
-                            final AuditContext context
+                            final AuditContext context,
+                            final KeystoreFileManager keystoreFileManager
     ) {
+        this.serverConfig = serverConfig;
         this.licenseManager = licenseManager;
         this.identityProviderFactory = identityProviderFactory;
         this.identityProviderConfigManager = identityProviderConfigManager;
         this.roleManager = roleManager;
         this.auditContext = context;
+        this.keystoreFileManager = keystoreFileManager;
     }
 
     /**
@@ -291,5 +300,53 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             id = roleManager.save(role);
             logger.info("Created configuration for administration role with identifier '" + id + "'.");
         }
+
+        InternalUserManager internalUserManager = getInternalUserManager();
+        if ( internalUserManager != null ) {
+            String initialAdminUsername = serverConfig.getProperty("em.admin.user");
+            String initialAdminPassword = serverConfig.getProperty("em.admin.pass");
+
+            boolean create = false;
+            if ( initialAdminUsername != null && initialAdminUsername.trim().length() > 0 &&
+                 initialAdminPassword != null && initialAdminPassword.trim().length() > 0) {
+                create = internalUserManager.findByLogin(initialAdminUsername) == null;
+            }
+
+            if ( create ) {
+                logger.info("Creating administative user with account '" + initialAdminUsername + "'.");
+                InternalUser user = new InternalUser();
+                user.setName(initialAdminUsername);
+                user.setLogin(initialAdminUsername);
+                user.setHashedPassword(initialAdminPassword);
+
+                String id = internalUserManager.save(user, Collections.<IdentityHeader>emptySet());
+                user.setOid( Long.parseLong(id) );
+
+                Role adminRole = roleManager.findByTag(Role.Tag.ADMIN);
+                if ( adminRole != null ) {
+                    adminRole.addAssignedUser( user );
+                    roleManager.update( adminRole );
+                }
+            } 
+        } else {
+            logger.warning("User manager not found during initialization.");
+        }
+
+        if ( keystoreFileManager.findAll().isEmpty() ) {
+            final boolean wasSystem = auditContext.isSystem();
+            auditContext.setSystem(true);
+            try {
+                keystoreFileManager.save( newKeystore("Software DB", "sdb.pkcs12") );
+            } finally {
+                auditContext.setSystem(wasSystem);
+            }
+        }
+    }
+
+    private KeystoreFile newKeystore( final String name, final String format ) {
+        KeystoreFile keystoreFile = new KeystoreFile();
+        keystoreFile.setName( name );
+        keystoreFile.setFormat( format );
+        return keystoreFile;
     }
 }

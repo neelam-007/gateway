@@ -104,7 +104,7 @@ public class EditInteraction extends ConfigurationInteraction {
                         optionSelection = optionSet.getOptionsForGroup(selectedOption);
                     }
 
-                    if ( optionGroup != null && !optionGroup.isRequired() && isOptionGroupValid( optionGroup.getId() ) ) {
+                    if ( optionGroup != null && !optionGroup.isRequired() && optionGroup.isDeletable() && isOptionGroupValid( optionGroup.getId() ) ) {
                         // allow deletion if currently configured but optional
                         print("Configuration of ");
                         print( optionGroup.getDescription() );

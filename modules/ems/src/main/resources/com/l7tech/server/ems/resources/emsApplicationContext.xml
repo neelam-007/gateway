@@ -19,13 +19,17 @@
     <!-- export beans to JMX -->
     <context:mbean-export/>
 
-    <bean id="systemProperties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
+    <bean id="propertiesInjector" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" depends-on="serverConfig"/>
+
+    <bean id="emProperties"
+          class="com.l7tech.server.util.PasswordDecryptingPropertiesFactoryBean"
+          depends-on="propertiesInjector">
+        <constructor-arg ref="propertiesDecryptor"/>
+        <property name="ignoreResourceNotFound" value="true"/>
         <property name="properties">
             <!-- default properties if not overridden by system properties -->
             <map>
-                <entry key="com.l7tech.ems.httpPort" value="8182"/>
-                <entry key="com.l7tech.ems.httpsPort" value="8545"/>
+                <entry key="em.sharedkey.pass" value="${com.l7tech.em.sharedkeypass}"/>
             </map>
         </property>
     </bean>
@@ -84,6 +88,8 @@
                 <value>com.l7tech.identity.IdentityProviderConfig</value>
                 <value>com.l7tech.server.ems.user.UserProperty</value>
                 <value>com.l7tech.server.logon.LogonInfo</value>
+                <value>com.l7tech.server.security.keystore.KeystoreFile</value>
+                <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
             </list>
         </property>
         <property name="hibernateProperties" value="hibernate.dialect=org.hibernate.dialect.DerbyDialect"/>
@@ -136,8 +142,6 @@
             <bean class="com.l7tech.server.util.LazyPropertyChangeDispatcher">
                 <constructor-arg>
                     <map>
-                        <entry key="auditLogListenerTarget"><list><value>auditBatchExternal</value></list></entry>
-                        <entry key="auditDetailFilter"><list><value>auditAssociatedLogsThreshold</value></list></entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -163,6 +167,49 @@
                 <constructor-arg value="EntityVersionChecker"/>
             </bean>
         </property>
+    </bean>
+
+    <bean id="masterPasswordManager" class="com.l7tech.util.MasterPasswordManager">
+        <constructor-arg>
+            <bean class="com.l7tech.util.DefaultMasterPasswordFinder">
+                <constructor-arg value="etc${file.separator}omp.dat"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <!-- Current cluster shared key, as raw byte array -->
+    <bean id="clusterSharedKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref="sharedKeyManager"/>
+        <property name="targetMethod" value="getSharedKey"/>
+    </bean>
+
+    <bean id="propertiesDecryptor" class="com.l7tech.server.util.PropertiesDecryptor">
+        <constructor-arg ref="masterPasswordManager"/>
+        <property name="passwordProperties">
+            <list>
+                <value>em.sharedkey.pass</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
+        <constructor-arg index="0">
+            <bean class="com.l7tech.server.util.PropertiesValueFactoryBean">
+                <constructor-arg ref="emProperties"/>
+                <constructor-arg value="em.sharedkey.pass"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="1" ref="transactionManager"/>
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="keystoreFileManager" class="com.l7tech.server.security.keystore.KeystoreFileManagerImpl" parent="hibernateBean"/>
+
+    <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl" depends-on="setupManager">
+        <constructor-arg index="0" ref="sharedKeyManager"/>
+        <constructor-arg index="1" ref="keystoreFileManager"/>
+        <constructor-arg index="2" ref="serverConfig"/>
+        <constructor-arg index="3" value=" "/>
     </bean>
 
     <!-- server side log manager -->
@@ -304,11 +351,13 @@
 
     <!-- Initial setup manager -->
     <bean id="setupManager" class="com.l7tech.server.ems.SetupManagerImpl" depends-on="internalIdentityProvider">
-        <constructor-arg index="0" ref="licenseManager"/>        
-        <constructor-arg index="1" ref="identityProviderFactory"/>
-        <constructor-arg index="2" ref="identityProviderConfigManager"/>
-        <constructor-arg index="3" ref="roleManager"/>
-        <constructor-arg index="4" ref="auditContext"/>
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="licenseManager"/>
+        <constructor-arg index="2" ref="identityProviderFactory"/>
+        <constructor-arg index="3" ref="identityProviderConfigManager"/>
+        <constructor-arg index="4" ref="roleManager"/>
+        <constructor-arg index="5" ref="auditContext"/>
+        <constructor-arg index="6" ref="keystoreFileManager"/>
     </bean>
 
     <!-- Security Manager -->
@@ -318,7 +367,8 @@
     </bean>
 
     <bean id="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">
-        <constructor-arg index="0" value="${com.l7tech.ems.httpPort}"/>
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="defaultKey"/>
     </bean>
 
     <bean id="userPropertyManager" class="com.l7tech.server.ems.user.UserPropertyManagerImpl" parent="hibernateBean"/>
@@ -343,6 +393,15 @@
                 <ref local="securityManager"/>
             </list>
         </property>
+    </bean>
+
+    <!-- keystore root cert and ssl config  -->
+    <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="auditContext"/>
+        <constructor-arg index="2" ref="clusterPropertyManager"/>
+        <constructor-arg index="3" ref="ssgKeyStoreManager"/>
+        <constructor-arg index="4" ref="transactionManager"/>
     </bean>
 
 </beans>

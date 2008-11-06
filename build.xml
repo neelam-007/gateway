@@ -579,7 +579,7 @@
             <param name="idea.gateway.vmOptions" expression="-Dcom.l7tech.server.home=&quot;${deploy.dir}&quot; -Dcom.l7tech.server.runtime=&quot;${deploy.dir}&quot; -Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.client.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.manager.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
-            <param name="idea.ems.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.em.version} -Dcom.l7tech.ems.outputDbScript=overwrite -Dcom.l7tech.ems.showExceptions=true"/>
+            <param name="idea.ems.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.em.version} -Dcom.l7tech.ems.outputDbScript=overwrite -Dcom.l7tech.ems.development=true"/>
         </xslt>
         <move file="UneasyRooster.iws.tmp" tofile="UneasyRooster.iws" overwrite="true"/>
         <echo level="info">Generation complete.</echo>
@@ -2839,6 +2839,7 @@
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/bin"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/config"/>
+        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/etc"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/lib"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var/logs"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var/db"/>
@@ -2853,6 +2854,7 @@
         <copy todir="${install.src.em}/opt/SecureSpan/EnterpriseManager/config">
             <fileset dir="${build.dir}/emsconfigwizard"/>
         </copy>
+        <copy file="${src.root}/etc/omp.dat" tofile="${install.src.em}/opt/SecureSpan/EnterpriseManager/etc/omp.dat"/>
 
         <!-- package -->
         <property name="emtarball" value="${build.dir}/enterprisemanager-b${install.build.number}.tar.gz"/>

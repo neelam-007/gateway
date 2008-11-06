@@ -69,12 +69,6 @@ public class PagesTest {
     }
 
     @Test
-    public void testSetupPage() {
-        tester.startPage(Setup.class);
-        tester.assertRenderedPage(Setup.class);
-    }
-
-    @Test
     public void testSystemSettingsPage() {
         tester.startPage(SystemSettings.class);
         tester.assertRenderedPage(SystemSettings.class);

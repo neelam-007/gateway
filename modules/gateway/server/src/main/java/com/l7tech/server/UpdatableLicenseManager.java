@@ -4,10 +4,12 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.objectmodel.UpdateException;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 
  */
+@Transactional
 public interface UpdatableLicenseManager extends LicenseManager {
 
     /**
@@ -18,6 +20,7 @@ public interface UpdatableLicenseManager extends LicenseManager {
      * @return the currently installed valid license, or null if no license is installed or present in the database.
      * @throws com.l7tech.gateway.common.InvalidLicenseException if a license is present in the database but was not installed because it was invalid.
      */
+    @Transactional(readOnly=true)
     License getCurrentLicense() throws InvalidLicenseException;
 
     /**

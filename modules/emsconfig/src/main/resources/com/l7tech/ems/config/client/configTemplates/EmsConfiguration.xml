@@ -22,7 +22,7 @@ Press "&lt;" to go to the previous step.
 
 This step lets you create the administrative user account.</prompt>
     </optionGroup>
-    <optionGroup id="server" required="false">
+    <optionGroup id="server" required="false" deletable="false">
         <description>Server Settings</description>
         <prompt>
 -----------------------------
@@ -51,19 +51,14 @@ This step lets you configure the ESM server.</prompt>
     <!--
       Options for server
     -->
-    <option id="server-host" group="server" type="HOSTNAME" order="200" updatable="false" name="Server Host">
-        <configName>server.host</configName>
-        <description>Hostname</description>
-        <prompt>Enter the hostname.</prompt>
-    </option>
-    <option id="server-listener-ip" group="server" type="IP_ADDRESS" order="201" updatable="false" name="Server IP Address">
+    <option id="server-listener-ip" group="server" type="IP_ADDRESS" order="200" name="Server IP Address">
         <configName>server.listenaddr</configName>
         <configValue>*</configValue>
         <emptyValue>*</emptyValue>
         <description>HTTPS Listener IP Address</description>
         <prompt>Enter the IP address for the HTTPS listener.</prompt>
     </option>
-    <option id="server-listener-port" group="server" type="PORT" order="202" updatable="false" name="Server Port">
+    <option id="server-listener-port" group="server" type="PORT" order="201" name="Server Port">
         <configName>server.listenport</configName>
         <configValue>8182</configValue>
         <description>HTTPS Listener Port</description>

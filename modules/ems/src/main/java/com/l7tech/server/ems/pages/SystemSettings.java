@@ -22,6 +22,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.Application;
+import org.apache.wicket.Component;
 import org.xml.sax.SAXException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -149,7 +150,8 @@ public class SystemSettings extends EmsPage {
         add( new FeedbackPanel("feedback") );
 
         // labels
-        add(new Label("licenseStatus", new StringResourceModel("license.signaturevalid.${valid}", this, new Model(licenseModel))));
+        Label statusLabel = new Label("licenseStatus", new StringResourceModel("license.signaturevalid.${valid}", this, new Model(licenseModel)));
+        add( statusLabel );
         add(new Label("licenseId", new PropertyModel(licenseModel, "id")));
         add(new Label("licenseDescription", new PropertyModel(licenseModel, "description")));
         add(new Label("licenseAttributes", new PropertyModel(licenseModel, "attributes")));
@@ -159,10 +161,14 @@ public class SystemSettings extends EmsPage {
         add(new Label("licenseStartDate", new PropertyModel(licenseModel, "startDate")));
         add(new Label("licenseEndDate",  new PropertyModel(licenseModel, "endDate")));
 
+        if ( licenseModel.getLicense() == null ) {
+            statusLabel.setVisible(false);
+        }
+
         // text area
         add(new TextArea("licenseGrants", new PropertyModel(licenseModel, "grants")));
 
-        add(new LicenseForm("licenseForm"));
+        add(new LicenseForm("licenseForm", statusLabel));
     }
 
     /**
@@ -244,48 +250,48 @@ public class SystemSettings extends EmsPage {
         private License license;
 
         public String getId() {
-            long id = getLicense().getId();
+            long id = getLicense()==null ? -1 : getLicense().getId();
             return id <= 0 ? "" : String.valueOf(id);
         }
 
         public String getDescription() {
-            return TextUtils.toString(getLicense().getDescription());
+            return TextUtils.toString(getLicense()==null ? null : getLicense().getDescription());
         }
 
         public String getGrants() {
-            return TextUtils.toString(getLicense().getGrants());
+            return TextUtils.toString(getLicense()==null ? null : getLicense().getGrants());
         }
 
         public String getContact() {
-            return TextUtils.toString(getLicense().getLicenseeContactEmail());
+            return TextUtils.toString(getLicense()==null ? null : getLicense().getLicenseeContactEmail());
         }
 
         public String getAttributes() {
-            return getLicenseAttributeText(getLicense());
+            return getLicense()==null ? "" : getLicenseAttributeText(getLicense());
         }
 
         public String getLicensee() {
-            return TextUtils.toString(getLicense().getLicenseeName());
+            return TextUtils.toString(getLicense()==null ? null : getLicense().getLicenseeName());
         }
 
         public String getStartDate() {
-            return getlicenseStartText( getLicense() );
+            return getLicense()==null ? "" : getlicenseStartText( getLicense() );
         }
 
         public String getEndDate() {
-            return getlicenseEndText( getLicense() );
+            return getLicense()==null ? "" : getlicenseEndText( getLicense() );
         }
 
         public boolean isValid() {
-            return getLicense().isValidSignature();
+            return getLicense() != null && getLicense().isValidSignature();
         }
 
         public boolean isIssuerAvailable() {
-            return getLicense().getTrustedIssuer() != null;
+            return getLicense() != null && getLicense().getTrustedIssuer() != null;
         }
 
         public String getIssuer() {
-            X509Certificate issuer = getLicense().getTrustedIssuer();
+            X509Certificate issuer = getLicense()==null ? null : getLicense().getTrustedIssuer();
             return issuer==null ? "" : issuer.getSubjectDN().getName();
         }
 
@@ -315,10 +321,12 @@ public class SystemSettings extends EmsPage {
     private final class LicenseForm extends Form {
 
         private final FileUploadField fileUpload = new FileUploadField("license");
+        private final Component component;
 
-        public LicenseForm(final String componentName) {
+        public LicenseForm(final String componentName, final Component component) {
             super(componentName);
 
+            this.component = component;
             add(fileUpload);
             add(new YuiButton("license.submit"));
 
@@ -331,6 +339,7 @@ public class SystemSettings extends EmsPage {
                 try {
                     String license = XmlUtil.nodeToString(XmlUtil.parse(upload.getInputStream(), false));
                     licenseSetup( license );
+                    component.setVisible(true);
                 } catch ( IOException e ) {
                     error( ExceptionUtils.getMessage(e) );
                     logger.log( Level.WARNING, "Error accessing license '"+ExceptionUtils.getMessage(e)+"'." );

@@ -997,6 +997,9 @@ public class ServerConfig implements ClusterPropertyListener {
                         val2.append(val);
                         break;
                     }
+                } else {
+                    val2.append(val);
+                    break;                    
                 }
             }
         } else {

@@ -3,6 +3,7 @@ package com.l7tech.server.ems;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.BuildInfo;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.server.ServerConfig;
 
 import java.util.logging.Level;
@@ -18,12 +19,29 @@ public class EmsMain {
     public static void main(String[] args) {
         BuildInfo.setProduct( EmsMain.class.getPackage(), "Layer 7 Enterprise Service Manager" );
 
+        // initialize config location
+        //TODO [steve] rename the ems_config.properties file to emconfig.properties for consistency
+        System.setProperty(ServerConfig.PROPS_RESOURCE_PROPERTY, "/com/l7tech/server/ems/resources/ems_config.properties");
+        if ( new File("var").exists() ) {
+            System.setProperty(ServerConfig.PROPS_OVER_PATH_PROPERTY, "var/emconfig.properties");
+        }
+
         // configure logging if the logs directory is found, else leave console output
         if ( new File("var/logs").exists() ) {
             JdkLoggerConfigurator.configure("com.l7tech.server.ems", "com/l7tech/server/ems/resources/logging.properties");
         }
-        // initialize config location
-        System.setProperty(ServerConfig.PROPS_RESOURCE_PROPERTY, "/com/l7tech/server/ems/resources/ems_config.properties");
+
+        logger.info("Starting " + BuildInfo.getLongBuildString());        
+
+        if ( SyspropUtil.getBoolean("com.l7tech.ems.development") ) {
+            System.setProperty("com.l7tech.ems.showExceptions", "true");
+            ServerConfig serverConfig = ServerConfig.getInstance();
+            if ( serverConfig.getProperty("em.admin.user") == null ) {
+                logger.info("Creating default administration account on startup.");
+                serverConfig.putProperty("em.admin.user", "admin");
+                serverConfig.putProperty("em.admin.pass", "a41306e4b1b5858d3e3d705dd2e738e2");
+            }
+        }
 
         // add shutdown handler
         final Object shutdown = new Object();
