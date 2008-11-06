@@ -32,6 +32,16 @@ public abstract class AssertionDescription {
      * @return the long description for the assertion
      */
     public String getLongDescription() {
+        String longDesc = getLongDescriptionFromResource();
+        if (longDesc == null || longDesc.length() < 1) longDesc = (String)assertion.meta().get(AssertionMetadata.LONG_NAME);
+        if (longDesc == null) longDesc = "";
+        return MessageFormat.format(longDesc, parameters());
+    }
+
+    /**
+     * @return long description from the resource file, or null if not found.
+     */
+    private String getLongDescriptionFromResource() {
         Class assertionClass = assertion.getClass();
         String key = assertionClass.getName()+ ".long";
         String longDesc = null;
@@ -40,9 +50,7 @@ public abstract class AssertionDescription {
         } catch (MissingResourceException e) {
             // fallthrough
         }
-        if (longDesc == null || longDesc.length() < 1) longDesc = (String)assertion.meta().get(AssertionMetadata.LONG_NAME);
-        if (longDesc == null) longDesc = "";
-        return MessageFormat.format(longDesc, parameters());
+        return longDesc;
     }
 
     /**
@@ -82,7 +90,11 @@ public abstract class AssertionDescription {
             desc = getMessageBundle().getString(key);
         } catch (MissingResourceException mrex) {
             try {
-                desc = getLongDescription();
+                if (desc == null) {
+                    // Ignore AssertionMetadata LONG_NAME here because DESCRIPTION's
+                    // default MetadataFinder already takes it into account
+                    desc = getLongDescriptionFromResource();
+                }
             } catch(MissingResourceException mrexagain) {
                 desc = null;
             }

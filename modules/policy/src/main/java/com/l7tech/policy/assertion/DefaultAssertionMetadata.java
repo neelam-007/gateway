@@ -239,7 +239,9 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         // Default finder for description.  The SSM replaces this with a smarter one that looks in properties files.
         put(DESCRIPTION, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, "This is the " + meta.get(SHORT_NAME) + " assertion.");
+                Object longName = meta.get(LONG_NAME);                
+                String value = longName == null ? "This is the " + meta.get(SHORT_NAME) + " assertion." : longName.toString();
+                return cache(meta, key, value);
             }
         });
 
@@ -393,12 +395,14 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
     }
 
     /**
+     * Get a value as a String by calling toString() on the value (if any).
+     *
      * @param key the property name to get.  Must not be null.
-     * @return The specified property value, if it exists and is a String, otherwise null.
+     * @return The result of calling toString() on the specified property value, if it exists; otherwise null.
      */
     public String getString(String key) {
         Object got = get(key);
-        return got instanceof String ? ((String)got) : null;
+        return got == null ? null : got.toString();
     }
 
     /**

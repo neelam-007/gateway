@@ -387,13 +387,15 @@ public interface AssertionMetadata {
 
     /**
      * String. Long name to use for this assertion, ie "The response must match a specified XPath pattern".
+     * <p/>
      * The default value is SHORT_NAME followed by " Assertion".
      */
     String LONG_NAME = "longName";
 
     /**
      * String. Description to use for this assertion, if any.
-     * The default value is "This is the ${shortName} assertion."
+     * <p/>
+     * The default is to use the value of LONG_NAME, or "This is the ${shortName} assertion." if LONG_NAME is null.
      */
     String DESCRIPTION = "description";
 
@@ -479,7 +481,7 @@ public interface AssertionMetadata {
     String FEATURE_SET_FACTORY = "featureSetFactory";
 
     /**
-     * Map<String, String[2]>.  Possibly-new cluster properties used by this assertion's server implementation, or null.
+     * Map< String, String[2]>.  Possibly-new cluster properties used by this assertion's server implementation, or null.
      * Keys are names of cluster properties (and server config keys).  Values are tuples of [description, default].
      * This is the same format returned by ClusterStatusAdmin#getKnownProperties.
      * <p/>
