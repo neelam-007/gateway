@@ -3,7 +3,7 @@
  */
 package com.l7tech.gateway.config.client.beans;
 
-import com.l7tech.gateway.config.client.ConfigurationException;
+import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.util.ExceptionUtils;
 
 import java.net.MalformedURLException;

@@ -45,6 +45,8 @@
                      matcher="exact"/>
             <exclude org="commons-beanutils" module="commons-beanutils-core" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
+            <exclude org="xerces" module="xerces" name="*" type="*" ext="*" conf=""
+                     matcher="exact"/>
         </dependency>
         <dependency org="c3p0" name="c3p0" rev="0.9.1.2" force="true" conf="core"/>
         <dependency org="org.hibernate" name="hibernate-core" rev="3.3.1.GA" force="true" conf="core"/>

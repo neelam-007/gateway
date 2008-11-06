@@ -5,6 +5,7 @@ trap doLogout INT
 
 SYSWIZARD="sudo -u layer7 /opt/SecureSpan/Appliance/sysconfig/systemconfig.sh"
 CONFWIZARD="sudo -u layer7 /opt/SecureSpan/Gateway/config/ssgconfig.sh"
+EMCONFWIZARD="sudo -u layer7 /opt/SecureSpan/EnterpriseManager/config/emconfig.sh"
 MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
 GETROOT="su -"
 MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak"
@@ -153,6 +154,58 @@ doConfiguration() {
     done
 }
 
+doEmsConfiguration() {
+    isMenuValid="n"
+    while [ "$isMenuValid" != "y" ]
+    do
+        clear
+        echo "This menu allows you to configure the Enterprise Service Manager"
+        echo "What would you like to do?"
+        echo ""
+        echo " 1) Configure the Enterprise Service Manager"
+        /sbin/chkconfig ssem && true # && true due to set -e
+        if [ ${?} -eq 0 ] ; then
+            echo " 2) Disable the Enterprise Service Manager"
+        else
+            echo " 2) Enable the Enterprise Service Manager"
+        fi
+        echo " X) Exit menu"
+
+        echo ""
+        echo -n "Please make a selection: "
+        read choice
+
+        case $choice in
+            1)
+                clear;
+                (${EMCONFWIZARD});
+                confirmedMessage ""
+                clear;;
+            2)
+                /sbin/chkconfig ssem && true # && true due to set -e
+                if [ ${?} -eq 0 ] ; then
+                    echo "Disabing the Enterprise Service Manager."
+                    sudo /sbin/chkconfig ssem off
+                    confirmedMessage "Enterprise Service Manager disabled."
+                else
+                    echo "Enabling the Enterprise Service Manager."
+                    sudo /sbin/chkconfig ssem on
+                    confirmedMessage "Enterprise Service Manager enabled."
+                fi
+                clear;;
+            x|X)
+                clear;
+                isMenuValid="y";
+                clear;;
+            *)
+                clear;
+                confirmedMessage "That is not a valid selection";
+                clear;;
+        esac
+    done
+}
+
+
 checkForSca
 checkForEm
 isValid="n"
@@ -164,8 +217,8 @@ do
         echo "This user account allows you to configure the appliance"
         echo "What would you like to do?"
         echo ""
-        echo " 1) Configure networking on this SecureSpan Gateway appliance"
-        echo " 2) Configure the SecureSpan Gateway application on this appliance"
+        echo " 1) Configure networking"
+        echo " 2) SecureSpan Gateway settings"
         echo " 3) Use a privileged shell (root)"
         echo " 4) Change the Master Passphrase"
         echo " 5) Configure Remote Management"
@@ -174,13 +227,8 @@ do
         fi
 
         if [ "${EM_PRESENT}" == "true" ] ; then
-            /sbin/chkconfig ssem && true # && true due to set -e
-            if [ ${?} -eq 0 ] ; then
-                echo " 7) Disable Enterprise Manager server"
-            else
-                echo " 7) Enable Enterprise Manager server"
-            fi
-        fi        
+            echo " 7) Enterprise Service Manager settings"
+        fi
         echo " R) Reboot the SSG appliance (apply the new configuration)"
         echo " X) Exit (no reboot)"
 
@@ -238,16 +286,8 @@ do
                             fi
                         fi
                     elif [ "$choice" == "7" ] && [ "${EM_PRESENT}" == "true" ]; then
-                        /sbin/chkconfig ssem && true # && true due to set -e
-                        if [ ${?} -eq 0 ] ; then
-                            echo "Disabing Enterprise Manager server."
-                            sudo /sbin/chkconfig ssem off
-                            confirmedMessage "Enterprise Manager server disabled."
-                        else
-                            echo "Enabling Enterprise Manager server."
-                            sudo /sbin/chkconfig ssem on
-                            confirmedMessage "Enterprise Manager server enabled."
-                        fi
+                        clear;
+                        doEmsConfiguration
                         clear;
                     else
                         isValid="n";

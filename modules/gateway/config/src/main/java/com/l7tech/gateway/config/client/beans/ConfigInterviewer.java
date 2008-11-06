@@ -3,7 +3,8 @@
  */
 package com.l7tech.gateway.config.client.beans;
 
-import com.l7tech.gateway.config.client.ConfigurationException;
+import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 
@@ -21,8 +22,8 @@ public class ConfigInterviewer {
     private static final Logger logger = Logger.getLogger(ConfigInterviewer.class.getName());
 
     private final ConfigurationBean[] beans;
-    private static final Pair<MenuResultType,ConfigurationBean> MENU_QUIT = new Pair<MenuResultType, ConfigurationBean>(MenuResultType.QUIT, null);
-    private static final Pair<MenuResultType,ConfigurationBean> MENU_REPEAT = new Pair<MenuResultType, ConfigurationBean>(MenuResultType.REPEAT, null);
+    private static final Pair<MenuResultType,DynamicConfigurationBean> MENU_QUIT = new Pair<MenuResultType, DynamicConfigurationBean>(MenuResultType.QUIT, null);
+    private static final Pair<MenuResultType,DynamicConfigurationBean> MENU_REPEAT = new Pair<MenuResultType, DynamicConfigurationBean>(MenuResultType.REPEAT, null);
 
     public ConfigInterviewer(ConfigurationBean... beans) {
         this.beans = beans;
@@ -34,11 +35,11 @@ public class ConfigInterviewer {
 
         ConfigurationContext currentContext = new ConfigurationContext(null, beans);
         menuLoop: while (true) {
-            List<Pair<String, ConfigurationBean>> configurables = buildMenu(currentContext);
+            List<Pair<String, DynamicConfigurationBean>> configurables = buildMenu(currentContext);
 
-            final ConfigurationBean selected;
+            final DynamicConfigurationBean selected;
             if (configurables.size() > 1) {
-                Pair<MenuResultType, ConfigurationBean> mr = doMenu(configurables, currentContext, inReader);
+                Pair<MenuResultType, DynamicConfigurationBean> mr = doMenu(configurables, currentContext, inReader);
                 switch(mr.left) {
                     case REPEAT:
                         continue menuLoop;
@@ -156,10 +157,10 @@ public class ConfigInterviewer {
         REPEAT, QUIT, APPLY, SELECT
     }
 
-    private Pair<MenuResultType, ConfigurationBean> doMenu(List<Pair<String, ConfigurationBean>> configurables, ConfigurationContext currentContext, BufferedReader inReader)
+    private Pair<MenuResultType, DynamicConfigurationBean> doMenu(List<Pair<String, DynamicConfigurationBean>> configurables, ConfigurationContext currentContext, BufferedReader inReader)
             throws IOException
     {
-        for (Pair<String, ConfigurationBean> pair : configurables) {
+        for (Pair<String, DynamicConfigurationBean> pair : configurables) {
             System.out.println(pair.left);
         }
 
@@ -183,7 +184,7 @@ public class ConfigInterviewer {
             }
         } else if ("s".equalsIgnoreCase(cmd.trim().toLowerCase())) {
             if (currentContext.getParent() == null) {
-                return new Pair<MenuResultType, ConfigurationBean>(MenuResultType.APPLY, null);
+                return new Pair<MenuResultType, DynamicConfigurationBean>(MenuResultType.APPLY, null);
             } else {
                 throw new IllegalStateException("Can't apply from non-root context!");
             }
@@ -205,20 +206,20 @@ public class ConfigInterviewer {
             return MENU_REPEAT;
         }
 
-        return new Pair<MenuResultType, ConfigurationBean>(MenuResultType.SELECT, configurables.get(choice - 1).right);
+        return new Pair<MenuResultType, DynamicConfigurationBean>(MenuResultType.SELECT, configurables.get(choice - 1).right);
     }
 
     @SuppressWarnings({"unchecked"})
-    private List<Pair<String, ConfigurationBean>> buildMenu(ConfigurationContext ctx) {
+    private List<Pair<String, DynamicConfigurationBean>> buildMenu(ConfigurationContext ctx) {
         int i = 0;
-        final List<Pair<String, ConfigurationBean>> configurables = new ArrayList<Pair<String,ConfigurationBean>>();
+        final List<Pair<String, DynamicConfigurationBean>> configurables = new ArrayList<Pair<String,DynamicConfigurationBean>>();
         for (ConfigurationBean config : ctx.getBeans()) {
             if (config instanceof ConfigurableBeanFactory) {
                 final ConfigurableBeanFactory factory = (ConfigurableBeanFactory)config;
                 final ConfigurationBean bean = factory.make();
-                configurables.add(new Pair<String, ConfigurationBean>(
+                configurables.add(new Pair<String, DynamicConfigurationBean>(
                             String.format("%3d: %s", ++i, "New " + config.getConfigName()),
-                            new ConfigurationBean("_new." + bean.getId(), "New " + bean.getConfigName(), null) {
+                            new DynamicConfigurationBean("_new." + bean.getId(), "New " + bean.getConfigName(), null) {
                                 @Override
                                 public ConfigResult onConfiguration(Object value, ConfigurationContext context) {
                                     return ConfigResult.push(bean);
@@ -229,12 +230,12 @@ public class ConfigInterviewer {
                 // TODO what if a bean is both editable and deletable?
                 EditableConfigurationBean configurableBean = (EditableConfigurationBean)config;
                 String desc = config.getShortValueDescription();
-                configurables.add(new Pair<String, ConfigurationBean>(
+                configurables.add(new Pair<String, DynamicConfigurationBean>(
                         String.format("%3d: %s: %s", ++i, config.getConfigName(), desc == null ? "<not configured>" : desc),
                         configurableBean));
             } else if (config.isDeletable()) {
                 // TODO what if a bean is both editable and deletable?
-                configurables.add(new Pair<String, ConfigurationBean>(
+                configurables.add(new Pair<String, DynamicConfigurationBean>(
                         String.format("%3d: %s %s", ++i, "Delete " + config.getConfigName(), config.getShortValueDescription()),
                         new ConfirmDeletion(config)));
             }

@@ -2828,7 +2828,7 @@
     </target>
 
     <!-- Create the TAR used when building the Enterprise Manager -->
-    <target name="package.em.tar" depends="init" if="ssg.install.enabled">
+    <target name="package.em.tar" depends="package.em.config" if="ssg.install.enabled">
         <echo level="info">Creating Enterprise Manager Build Tar ...</echo>
 
         <property name="install.src.em" value="${install.src.base}/enterprisemanager"/>
@@ -2838,6 +2838,7 @@
         <mkdir dir="${install.src.em}/etc/init.d"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/bin"/>
+        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/config"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/lib"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var/logs"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var/db"/>
@@ -2848,6 +2849,9 @@
         <copy file="${build.dir}/EnterpriseManager.jar" todir="${install.src.em}/opt/SecureSpan/EnterpriseManager/"/>
         <copy todir="${install.src.em}/opt/SecureSpan/EnterpriseManager/lib">
             <fileset dir="${build.dir}/enterprisemanagerlibs"/>
+        </copy>
+        <copy todir="${install.src.em}/opt/SecureSpan/EnterpriseManager/config">
+            <fileset dir="${build.dir}/emsconfigwizard"/>
         </copy>
 
         <!-- package -->
@@ -2860,6 +2864,31 @@
                 <exclude name="**/*.sh"/>
             </tarfileset>
         </tar>
+    </target>
+
+    <target name="package.em.config" unless="ssg.only" depends="package.jars">
+        <echo level="info">Packaging Enterprise Manager Configuration Client</echo>
+        <mkdir dir="${build.dir}/emsconfigwizard/lib"/>
+
+        <copy todir="${build.dir}/emsconfigwizard">
+            <fileset dir="${src.root}/etc/enterprisemanager">
+                <include name="emconfig.sh"/>
+            </fileset>
+        </copy>
+
+        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-ems-config" showprogress="false" conf="default" log="quiet"/>
+        <ivy:retrieve inline="true" organisation="com.l7tech" module="layer7-ems-config" conf="default" pattern="${build.dir}/emsconfigwizard/lib/[artifact]-[revision].[ext]"/>
+        <ivy:findrevision organisation="com.l7tech" module="layer7-utility" revision="latest.integration" property="module.utility.version"/>
+        <ivy:findrevision organisation="com.l7tech" module="layer7-ems-config" revision="latest.integration" property="module.ems.config.version"/>
+
+        <jar jarfile="${build.dir}/emsconfigwizard/ConfigWizard.jar">
+            <manifest>
+                <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
+                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="lib/layer7-ems-config-${module.ems.config.version}.jar"/>
+                <attribute name="X-Layer7-Main-Class" value="com.l7tech.ems.config.client.Main"/>
+            </manifest>
+        </jar>
     </target>
 
     <!--

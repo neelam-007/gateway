@@ -2,7 +2,9 @@ package com.l7tech.gateway.config.client.beans;
 
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.config.client.ConfigurationException;
+import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.config.client.beans.ConfigurationBean;
+import com.l7tech.config.client.beans.ConfigurationBeanProvider;
 
 import javax.xml.ws.soap.SOAPFaultException;
 import java.util.logging.Level;
@@ -68,7 +70,7 @@ public abstract class NodeConfigurationBeanProviderSupport<C> implements Configu
 
     abstract NodeManagementApi getManagementService();
     abstract C toConfig( NodeManagementApi.NodeHeader nodeHeader ) throws FindException;
-    abstract Collection<ConfigurationBean> toBeans( C config );  
+    abstract Collection<ConfigurationBean> toBeans( C config );
 
     C config;
 

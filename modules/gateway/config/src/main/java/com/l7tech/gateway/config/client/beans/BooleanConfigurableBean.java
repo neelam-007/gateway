@@ -3,8 +3,8 @@
  */
 package com.l7tech.gateway.config.client.beans;
 
-import com.l7tech.gateway.config.client.ConfigurationException;
-import com.l7tech.gateway.config.client.options.OptionType;
+import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.config.client.options.OptionType;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;

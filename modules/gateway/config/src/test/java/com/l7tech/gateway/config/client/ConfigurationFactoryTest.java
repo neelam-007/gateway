@@ -2,9 +2,11 @@ package com.l7tech.gateway.config.client;
 
 import org.junit.Test;
 import org.junit.Assert;
-import com.l7tech.gateway.config.client.options.OptionSet;
-import com.l7tech.gateway.config.client.options.OptionGroup;
-import com.l7tech.gateway.config.client.options.Option;
+import com.l7tech.config.client.options.OptionSet;
+import com.l7tech.config.client.options.OptionGroup;
+import com.l7tech.config.client.options.Option;
+import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.config.client.ConfigurationFactory;
 
 /**
  *
@@ -14,7 +16,7 @@ public class ConfigurationFactoryTest {
     @Test
     public void testLoadMissingConfiguration() throws Exception {
         try {
-            ConfigurationFactory.newConfiguration("thereisnothinghere.xml");
+            ConfigurationFactory.newConfiguration(ConfigurationFactoryTest.class, "thereisnothinghere.xml");
             Assert.fail("Expected ConfigurationException");
         } catch ( ConfigurationException ce ) {
             // expected
@@ -23,7 +25,7 @@ public class ConfigurationFactoryTest {
 
     @Test
     public void testLoadParentConfiguration() throws Exception {
-        OptionSet options = ConfigurationFactory.newConfiguration("configTemplates/GatewayBaseConfiguration.xml");
+        OptionSet options = ConfigurationFactory.newConfiguration(ConfigurationFactoryTest.class, "configTemplates/GatewayBaseConfiguration.xml");
         System.out.println( "Loaded option set : " + options.getId() );
         System.out.println( "Loaded option grps: " + options.getOptionGroups().size() );
         System.out.println( "Loaded options    : " + options.getOptions().size() );
@@ -33,7 +35,7 @@ public class ConfigurationFactoryTest {
 
     @Test
     public void testLoadSoftwareConfiguration() throws Exception {
-        OptionSet options = ConfigurationFactory.newConfiguration("configTemplates/GatewaySoftwareConfiguration.xml");
+        OptionSet options = ConfigurationFactory.newConfiguration(ConfigurationFactoryTest.class, "configTemplates/GatewaySoftwareConfiguration.xml");
         System.out.println( "Loaded option set : " + options.getId() );
         System.out.println( "Loaded option grps: " + options.getOptionGroups().size() );
         System.out.println( "Loaded options    : " + options.getOptions().size() );
@@ -53,7 +55,7 @@ public class ConfigurationFactoryTest {
 
     @Test
     public void testLoadApplianceConfiguration() throws Exception {
-        OptionSet options = ConfigurationFactory.newConfiguration("configTemplates/GatewayApplianceConfiguration.xml");
+        OptionSet options = ConfigurationFactory.newConfiguration(ConfigurationFactoryTest.class, "configTemplates/GatewayApplianceConfiguration.xml");
         System.out.println( "Loaded option set : " + options.getId() );
         System.out.println( "Loaded option grps: " + options.getOptionGroups().size() );
         System.out.println( "Loaded options    : " + options.getOptions().size() );
@@ -86,7 +88,7 @@ public class ConfigurationFactoryTest {
     }
 
     private void validateConfiguration(final String resource) throws Exception {
-        OptionSet options = ConfigurationFactory.newConfiguration(resource);
+        OptionSet options = ConfigurationFactory.newConfiguration(ConfigurationFactoryTest.class, resource);
 
         for ( OptionGroup group : options.getOptionGroups() ) {
             Assert.assertNotNull( "Missing group id", group.getId());

@@ -5,7 +5,7 @@ package com.l7tech.gateway.config.client.beans.trust;
 
 import com.l7tech.common.io.PermissiveHostnameVerifier;
 import com.l7tech.common.io.PermissiveSSLSocketFactory;
-import com.l7tech.gateway.config.client.ConfigurationException;
+import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.gateway.config.client.beans.UrlConfigurableBean;
 import com.l7tech.gateway.config.client.beans.ConfigResult;
 import com.l7tech.gateway.config.client.beans.ConfigurationContext;

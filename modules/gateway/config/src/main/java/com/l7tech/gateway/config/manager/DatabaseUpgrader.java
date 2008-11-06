@@ -11,7 +11,7 @@ import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.db.DBActionsListener;
-import com.l7tech.gateway.config.client.options.OptionType;
+import com.l7tech.config.client.options.OptionType;
 
 import java.io.File;
 import java.io.IOException;

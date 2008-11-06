@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<optionSet id="ems">
+    <description>
+----------------------------------------------------------------------
+Enterprise Service Manager
+----------------------------------------------------------------------</description>
+    <prompt>
+----------------------------------------------------------------------
+Configure Enterprise Service Manager
+----------------------------------------------------------------------
+At any time type "quit" to quit.</prompt>
+
+
+    <optionGroup id="admin">
+        <description>Administrative Account</description>
+        <prompt>
+----------------------------
+Set Up the ESM Administrator
+----------------------------
+At any time type "quit" to quit.
+Press "&lt;" to go to the previous step.
+
+This step lets you create the administrative user account.</prompt>
+    </optionGroup>
+    <optionGroup id="server" required="false">
+        <description>Server Settings</description>
+        <prompt>
+-----------------------------
+Set Up the ESM HTTPS Listener
+-----------------------------
+At any time type "quit" to quit.
+Press "&lt;" to go to the previous step.
+
+This step lets you configure the ESM server.</prompt>
+    </optionGroup>
+
+    <!--
+      Options for Administrative user account configuration
+    -->
+    <option id="admin-user" group="admin" type="USERNAME" order="100" updatable="false" name="Administrative Username">
+        <configName>admin.user</configName>
+        <description>Administrative Username</description>
+        <prompt>Enter the administrative user.</prompt>
+    </option>
+    <option id="admin-pass" group="admin" type="PASSWORD" order="101" updatable="false" confirmed="true" name="Administrative Password">
+        <configName>admin.pass</configName>
+        <description>Administrative Password</description>
+        <prompt>Enter the administrative password.</prompt>
+    </option>
+
+    <!--
+      Options for server
+    -->
+    <option id="server-host" group="server" type="HOSTNAME" order="200" updatable="false" name="Server Host">
+        <configName>server.host</configName>
+        <description>Hostname</description>
+        <prompt>Enter the hostname.</prompt>
+    </option>
+    <option id="server-listener-ip" group="server" type="IP_ADDRESS" order="201" updatable="false" name="Server IP Address">
+        <configName>server.listenaddr</configName>
+        <configValue>*</configValue>
+        <emptyValue>*</emptyValue>
+        <description>HTTPS Listener IP Address</description>
+        <prompt>Enter the IP address for the HTTPS listener.</prompt>
+    </option>
+    <option id="server-listener-port" group="server" type="PORT" order="202" updatable="false" name="Server Port">
+        <configName>server.listenport</configName>
+        <configValue>8182</configValue>
+        <description>HTTPS Listener Port</description>
+        <prompt>Enter the port for the HTTPS listener.</prompt>
+    </option>
+
+</optionSet>

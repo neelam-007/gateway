@@ -3,6 +3,8 @@
  */
 package com.l7tech.gateway.config.client.beans;
 
+import com.l7tech.config.client.beans.ConfigurationBean;
+
 /**
  * Used to add the option to make new ConfigurableBeans that might then be customized
  * @author alex

@@ -3,6 +3,8 @@
  */
 package com.l7tech.gateway.config.client.beans;
 
+import com.l7tech.config.client.beans.ConfigurationBean;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

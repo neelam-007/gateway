@@ -3,7 +3,7 @@
  */
 package com.l7tech.gateway.config.client.beans.trust;
 
-import com.l7tech.gateway.config.client.beans.ConfigurationBean;
+import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.gateway.config.client.beans.Repeatable;
 
 import java.security.cert.X509Certificate;

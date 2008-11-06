@@ -36,14 +36,18 @@ rm -fr %{buildroot}
 %defattr(0644,layer7,layer7,0755)
 %dir /opt/SecureSpan/EnterpriseManager/bin
 %attr(0555,layer7,layer7) /opt/SecureSpan/EnterpriseManager/bin/*
+%attr(0555,layer7,layer7) /opt/SecureSpan/EnterpriseManager/config/*.sh
 
 # Libraries
 %defattr(0444,layer7,layer7,0755)
 /opt/SecureSpan/EnterpriseManager/EnterpriseManager.jar
+%dir /opt/SecureSpan/EnterpriseManager/config
+/opt/SecureSpan/EnterpriseManager/config/ConfigWizard.jar
+/opt/SecureSpan/EnterpriseManager/config/lib
 /opt/SecureSpan/EnterpriseManager/lib
 
 # Runtime files
-%defattr(0644,ssem,ssem,0755)
+%defattr(0664,ssem,layer7,0775)
 /opt/SecureSpan/EnterpriseManager/var
 
 %pre

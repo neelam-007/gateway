@@ -1,11 +1,15 @@
 package com.l7tech.gateway.config.client;
 
-import com.l7tech.gateway.config.client.beans.ConfigurationBeanProvider;
+import com.l7tech.config.client.beans.ConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.NodeConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.StateConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.NodeManagementApiFactory;
-import com.l7tech.gateway.config.client.options.OptionSet;
-import com.l7tech.gateway.config.client.options.Option;
+import com.l7tech.config.client.options.OptionSet;
+import com.l7tech.config.client.options.Option;
+import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.config.client.ConfigurationFactory;
+import com.l7tech.config.client.ConfigurationClient;
+import com.l7tech.config.client.InvalidConfigurationStateException;
 import com.l7tech.util.JdkLoggerConfigurator;
 
 import java.io.IOException;
@@ -58,7 +62,7 @@ public class Main {
                 }
                 
                 try {
-                    OptionSet os = ConfigurationFactory.newConfiguration( type.getResource() );
+                    OptionSet os = ConfigurationFactory.newConfiguration( Main.class, type.getResource() );
                     if ( !type.isIncludeCreateOnlyOptions() ) {
                         Set<Option> options = os.getOptions();
                         for (Iterator<Option> optionIter = options.iterator(); optionIter.hasNext(); ) {

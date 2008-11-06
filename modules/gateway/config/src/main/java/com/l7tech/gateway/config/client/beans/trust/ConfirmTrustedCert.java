@@ -6,7 +6,7 @@ package com.l7tech.gateway.config.client.beans.trust;
 import com.l7tech.gateway.config.client.beans.BooleanConfigurableBean;
 import com.l7tech.gateway.config.client.beans.ConfigResult;
 import com.l7tech.gateway.config.client.beans.ConfigurationContext;
-import com.l7tech.gateway.config.client.beans.ConfigurationBean;
+import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.util.HexUtils;
 
 import java.security.cert.X509Certificate;

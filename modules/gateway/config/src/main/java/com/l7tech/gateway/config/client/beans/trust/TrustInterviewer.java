@@ -4,9 +4,9 @@
 package com.l7tech.gateway.config.client.beans.trust;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.gateway.config.client.ConfigurationException;
+import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.gateway.config.client.beans.ConfigInterviewer;
-import com.l7tech.gateway.config.client.beans.ConfigurationBean;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;

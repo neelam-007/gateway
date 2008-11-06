@@ -3,6 +3,8 @@
  */
 package com.l7tech.gateway.config.client.beans;
 
+import com.l7tech.config.client.beans.ConfigurationBean;
+
 /** @author alex */
 public class ConfirmDeletion extends BooleanConfigurableBean {
     private final ConfigurationBean victim;

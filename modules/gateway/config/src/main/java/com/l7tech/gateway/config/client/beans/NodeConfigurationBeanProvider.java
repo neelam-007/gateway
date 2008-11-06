@@ -1,6 +1,8 @@
 package com.l7tech.gateway.config.client.beans;
 
-import com.l7tech.gateway.config.client.ConfigurationException;
+import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.config.client.beans.ConfigurationBean;
+import com.l7tech.config.client.beans.ConfigurationBeanProvider;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.management.api.node.NodeManagementApi;

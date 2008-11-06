@@ -3,14 +3,14 @@
  */
 package com.l7tech.gateway.config.client.beans;
 
-import com.l7tech.gateway.config.client.ConfigurationException;
+import com.l7tech.config.client.ConfigurationException;
 
 /**
  * A ConfigurationBean that can be edited by a user.
  *
  * @author alex
  */
-public abstract class EditableConfigurationBean<T> extends ConfigurationBean<T> {
+public abstract class EditableConfigurationBean<T> extends DynamicConfigurationBean<T> {
     private final T defaultValue;
 
     protected EditableConfigurationBean(String id, String shortIntro, T defaultValue) {
@@ -31,7 +31,7 @@ public abstract class EditableConfigurationBean<T> extends ConfigurationBean<T> 
      * semantically validate the value.  If this method returns without throwing an exception, the value will be stored
      * in {@link #configValue}, and {@link #onConfiguration} will be called to find out how to proceed.
      *
-     * @throws ConfigurationException to indicate invalid data
+     * @throws com.l7tech.config.client.ConfigurationException to indicate invalid data
      */
     public void validate(T value) throws ConfigurationException { }
 
@@ -41,7 +41,7 @@ public abstract class EditableConfigurationBean<T> extends ConfigurationBean<T> 
      *
      * @param userInput a line of user input.
      * @return the value parsed from the user input.
-     * @throws ConfigurationException if the user's input is not valid.
+     * @throws com.l7tech.config.client.ConfigurationException if the user's input is not valid.
      */
     public abstract T parse(String userInput) throws ConfigurationException;
 

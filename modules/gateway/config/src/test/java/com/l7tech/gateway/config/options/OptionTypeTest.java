@@ -2,7 +2,7 @@ package com.l7tech.gateway.config.options;
 
 import org.junit.Test;
 import org.junit.Assert;
-import com.l7tech.gateway.config.client.options.OptionType;
+import com.l7tech.config.client.options.OptionType;
 
 import java.util.regex.Pattern;
 
