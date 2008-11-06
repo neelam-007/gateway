@@ -224,7 +224,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 						key="textField-86"/>
 					<box></box>
 					<textElement>
-						<font />
+						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingValueDisplayString(
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
@@ -236,19 +236,14 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 			<band height="36"  isSplitAllowed="true" >
 				<printWhenExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></printWhenExpression>
 				<frame>					<reportElement
-						style="FrameTableTop"
+						style="FrameTableBottom"
 						mode="Opaque"
 						x="0"
 						y="0"
 						width="564"
 						height="18"
-						backcolor="#D6D6D6"
 						key="frame-8"/>
-					<box>					<topPen lineWidth="1.0" lineStyle="Solid"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid"/>
-</box>
+					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="RowTotal"
@@ -287,7 +282,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-39"/>
 					<box></box>
 					<textElement>
-						<font pdfFontName="Helvetica-Bold" isBold="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Mapping Totals]]></text>
 				</staticText>
@@ -393,7 +388,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						style="FrameTitle"
+						style="SummaryRowHeading"
 						x="0"
 						y="0"
 						width="564"
@@ -401,7 +396,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="textField-93"/>
 					<box></box>
 					<textElement>
-						<font />
+						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
 				</textField>
@@ -413,8 +408,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						width="564"
 						height="36"
 						key="frame-2"/>
-					<box>					<topPen lineWidth="1.0"/>
-</box>
+					<box></box>
 				<staticText>
 					<reportElement
 						style="TableHeading"
@@ -425,7 +419,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-20"/>
 					<box></box>
 					<textElement markup="html">
-						<font isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[% Service<br>Availability]]></text>
 				</staticText>
@@ -439,7 +433,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-21"/>
 					<box></box>
 					<textElement>
-						<font isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Average]]></text>
 				</staticText>
@@ -453,7 +447,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-22"/>
 					<box></box>
 					<textElement markup="html">
-						<font isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Successful<br> Requests #]]></text>
 				</staticText>
@@ -467,7 +461,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-23"/>
 					<box></box>
 					<textElement>
-						<font isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Min]]></text>
 				</staticText>
@@ -481,7 +475,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-24"/>
 					<box></box>
 					<textElement>
-						<font isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Max]]></text>
 				</staticText>
@@ -495,7 +489,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-25"/>
 					<box></box>
 					<textElement>
-						<font isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Average]]></text>
 				</staticText>
@@ -509,7 +503,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-26"/>
 					<box></box>
 					<textElement>
-						<font isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Min]]></text>
 				</staticText>
@@ -523,7 +517,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-27"/>
 					<box></box>
 					<textElement>
-						<font isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Max]]></text>
 				</staticText>
@@ -572,21 +566,16 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
-			<band height="36"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="true" >
 				<frame>					<reportElement
-						style="TableCell"
+						style="FrameTotalTableRow"
 						mode="Opaque"
 						x="0"
 						y="0"
 						width="564"
 						height="18"
-						backcolor="#D6D6D6"
 						key="frame-16"/>
-					<box>					<topPen lineWidth="1.0" lineStyle="Solid"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid"/>
-</box>
+					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="RowTotal"
@@ -625,7 +614,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-95"/>
 					<box></box>
 					<textElement>
-						<font pdfFontName="Helvetica-Bold" isBold="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Service Totals]]></text>
 				</staticText>
@@ -735,7 +724,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						style="FrameTitle"
+						style="SummaryRowHeading"
 						x="0"
 						y="0"
 						width="564"
@@ -756,19 +745,14 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 && $P{IS_CONTEXT_MAPPING}.booleanValue()
 )]]></printWhenExpression>
 				<frame>					<reportElement
-						style="TableCell"
+						style="FrameTotalTableRow"
 						mode="Opaque"
 						x="0"
 						y="0"
 						width="564"
 						height="18"
-						backcolor="#D6D6D6"
 						key="frame-19"/>
-					<box>					<topPen lineWidth="1.0" lineStyle="Solid"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid"/>
-</box>
+					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="RowTotal"
@@ -807,7 +791,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-97"/>
 					<box></box>
 					<textElement>
-						<font pdfFontName="Helvetica-Bold" isBold="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Operation Totals]]></text>
 				</staticText>
@@ -908,21 +892,22 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
-						y="-1"
+						y="0"
 						width="564"
 						height="18"
 						key="frame-6"/>
 					<box></box>
 				<staticText>
 					<reportElement
+						style="FrameTitle"
 						x="3"
-						y="1"
+						y="0"
 						width="105"
 						height="17"
 						key="staticText-32"/>
 					<box></box>
 					<textElement>
-						<font isBold="true"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
@@ -956,12 +941,13 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-107"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Report Type:]]></text>
 				</staticText>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -992,12 +978,13 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 						key="staticText-108"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Timezone:]]></text>
 				</staticText>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1020,6 +1007,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1046,7 +1034,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						key="staticText-109"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Time Period:]]></text>
 				</staticText>
@@ -1061,6 +1049,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1084,7 +1073,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						positionType="Float"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Interval:]]></text>
 				</staticText>
@@ -1099,6 +1088,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1122,7 +1112,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						positionType="Float"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Selected Services:]]></text>
 				</staticText>
@@ -1137,6 +1127,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1163,7 +1154,7 @@ Utilities.getMappingReportInfoDisplayString
 						positionType="Float"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Context Mapping:]]></text>
 				</staticText>
@@ -1178,6 +1169,7 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<textField isStretchWithOverflow="false" pattern="yyyy/MM/dd hh:mm" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1201,7 +1193,7 @@ Utilities.getMappingReportInfoDisplayString
 						positionType="Float"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Report Generated At:]]></text>
 				</staticText>
@@ -1216,6 +1208,7 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1239,7 +1232,7 @@ Utilities.getMappingReportInfoDisplayString
 						positionType="Float"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Report Ran By:]]></text>
 				</staticText>
@@ -1254,6 +1247,7 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1275,7 +1269,7 @@ Utilities.getMappingReportInfoDisplayString
 						key="staticText-117"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Detail Report:]]></text>
 				</staticText>
@@ -1292,6 +1286,7 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1314,7 +1309,7 @@ Utilities.getMappingReportInfoDisplayString
 						key="staticText-118"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Operations:]]></text>
 				</staticText>
@@ -1448,7 +1443,7 @@ Utilities.getMappingReportInfoDisplayString
 			<band height="18"  isSplitAllowed="true" >
 				<textField isStretchWithOverflow="false" pattern="" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						x="328"
+						x="357"
 						y="0"
 						width="170"
 						height="18"
@@ -1467,7 +1462,7 @@ Utilities.getMappingReportInfoDisplayString
 				<textField isStretchWithOverflow="false" pattern="" isBlankWhenNull="false" evaluationTime="Report" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						mode="Transparent"
-						x="498"
+						x="528"
 						y="0"
 						width="36"
 						height="18"
@@ -1480,7 +1475,7 @@ Utilities.getMappingReportInfoDisplayString
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 </box>
 					<textElement>
-						<font size="10" isBold="false" isItalic="false" isUnderline="false" isPdfEmbedded ="false" isStrikeThrough="false" />
+						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
 				</textField>
@@ -1489,13 +1484,12 @@ Utilities.getMappingReportInfoDisplayString
 		<summary>
 			<band height="18"  isSplitAllowed="true" >
 				<frame>					<reportElement
-						style="FrameTableTop"
+						style="FrameReportTotals"
 						mode="Opaque"
 						x="0"
 						y="0"
 						width="564"
 						height="18"
-						backcolor="#D6D6D6"
 						key="frame-17"/>
 					<box>					<topPen lineWidth="1.0" lineStyle="Solid"/>
 					<leftPen lineWidth="1.0" lineStyle="Solid"/>
@@ -1540,7 +1534,7 @@ Utilities.getMappingReportInfoDisplayString
 						key="staticText-96"/>
 					<box></box>
 					<textElement>
-						<font pdfFontName="Helvetica-Bold" isBold="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Report Totals]]></text>
 				</staticText>
@@ -1650,7 +1644,7 @@ Utilities.getMappingReportInfoDisplayString
 						key="staticText-51"/>
 					<box></box>
 					<textElement>
-						<font isBold="true"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
@@ -1683,12 +1677,13 @@ Utilities.getMappingReportInfoDisplayString
 						key="staticText-107"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Report Type:]]></text>
 				</staticText>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1718,12 +1713,13 @@ Utilities.getMappingReportInfoDisplayString
 						key="staticText-108"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Timezone:]]></text>
 				</staticText>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1746,6 +1742,7 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1771,7 +1768,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						key="staticText-109"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Time Period:]]></text>
 				</staticText>
@@ -1786,6 +1783,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1808,7 +1806,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						positionType="Float"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Interval:]]></text>
 				</staticText>
@@ -1823,6 +1821,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1845,7 +1844,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						positionType="Float"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Selected Services:]]></text>
 				</staticText>
@@ -1860,6 +1859,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1885,7 +1885,7 @@ Utilities.getMappingReportInfoDisplayString
 						positionType="Float"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Context Mapping:]]></text>
 				</staticText>
@@ -1900,6 +1900,7 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<textField isStretchWithOverflow="false" pattern="yyyy/MM/dd hh:mm" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1922,7 +1923,7 @@ Utilities.getMappingReportInfoDisplayString
 						positionType="Float"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Report Generated At:]]></text>
 				</staticText>
@@ -1937,6 +1938,7 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1959,7 +1961,7 @@ Utilities.getMappingReportInfoDisplayString
 						positionType="Float"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Report Ran By:]]></text>
 				</staticText>
@@ -1974,6 +1976,7 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -1994,7 +1997,7 @@ Utilities.getMappingReportInfoDisplayString
 						key="staticText-117"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Detail Report:]]></text>
 				</staticText>
@@ -2011,6 +2014,7 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="DefaultStyle"
 						x="121"
 						y="0"
 						width="443"
@@ -2032,7 +2036,7 @@ Utilities.getMappingReportInfoDisplayString
 						key="staticText-118"/>
 					<box></box>
 					<textElement>
-						<font isBold="true" isUnderline="false"/>
+						<font/>
 					</textElement>
 				<text><![CDATA[Operations:]]></text>
 				</staticText>

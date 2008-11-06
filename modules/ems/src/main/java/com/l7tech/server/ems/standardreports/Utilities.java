@@ -73,7 +73,7 @@ public class Utilities {
     public static final String MAPPING_VALUE_5 = "MAPPING_VALUE_5";
 
     private final static String distinctFrom = "SELECT distinct p.objectid as SERVICE_ID, p.name as SERVICE_NAME, " +
-            "p.routing_uri as ROUTING_URI ";
+            "p.routing_uri as ROUTING_URI ,'1' as CONSTANT_GROUP";
 
     private final static String aggregateSelect = "SELECT p.objectid as SERVICE_ID, " +
             "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +

@@ -4,6 +4,22 @@
 <jasperTemplate>
 
     <style
+            name="DefaultStyle"
+            isDefault="true"
+            mode="Transparent"
+            vAlign="Middle"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            />
+
+    <style
             name="FrameTitle"
             isDefault="false"
             mode="Transparent"
@@ -23,7 +39,7 @@
     </style>
 
     <style
-            name="ReportInfo"
+            name="SummaryRowHeading"
             isDefault="false"
             mode="Transparent"
             vAlign="Middle"
@@ -31,6 +47,25 @@
             fontName="SansSerif"
             fontSize="10"
             isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box leftPadding="5" />
+    </style>
+
+    <style
+            name="ReportInfo"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Left"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="true"
             isItalic="false"
             isUnderline="false"
             isStrikeThrough="false"
@@ -200,7 +235,21 @@
             >
         <box>
             <pen lineWidth="1.0"/>
-            <topPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <style
+            name="FrameReportTotals"
+            isDefault="false"
+            backcolor="#D6D6D6"
+            vAlign="Middle"
+            >
+        <box>
+            <pen lineWidth="1.0"/>
+            <topPen lineWidth="1.0" />
             <leftPen lineWidth="1.0"/>
             <bottomPen lineWidth="1.0"/>
             <rightPen lineWidth="1.0"/>
