@@ -488,7 +488,7 @@ public class ReportApp
         String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
-        params.put("FrameMinWidth", 535);
+        params.put("FrameMinWidth", 565);
         params.put("PageMinWidth", 595);
         params.put("ReportInfoStaticTextSize", 128);
         params.put("TitleInnerFrameBuffer", 7);
@@ -511,14 +511,29 @@ public class ReportApp
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
 
         JasperReport report = JasperCompileManager.compileReport(bais);
+
         System.out.println("Report compiled");
+        
+        JasperPrint jp = null;
         try{
             System.out.println("Filling report");
-            JasperFillManager.fillReportToFile(report, fileName+".jrprint", parameters, connection);
+            jp = JasperFillManager.fillReport(report, parameters, connection);
             System.out.println("Report filled");
         }finally{
             connection.close();
         }
+
+        System.out.println("Viewing...");
+        try{
+            JasperViewer.viewReport(jp, false);
+        }catch(Exception ex){
+            System.out.println("Exception: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        JasperExportManager.exportReportToPdfFile(jp,"UsageSummary.pdf");
+
+
     }
 
     private String getResAsString(String path) throws IOException {

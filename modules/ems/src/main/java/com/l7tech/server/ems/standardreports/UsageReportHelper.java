@@ -43,9 +43,9 @@ public class UsageReportHelper extends JRDefaultScriptlet {
         JRFillField field = (JRFillField) this.fieldsMap.get("USAGE_SUM");
         String colVarName = keyToColumnMap.get(mappingValue);
 
-        System.out.println("Looking up: " + mappingValue);
+//        System.out.println("Looking up: " + mappingValue);
         if(varName.equals(colVarName)){
-            System.out.println(colVarName+" is " + field.getValue());
+//            System.out.println(colVarName+" is " + field.getValue());
             return (Long) field.getValue();
         }
 

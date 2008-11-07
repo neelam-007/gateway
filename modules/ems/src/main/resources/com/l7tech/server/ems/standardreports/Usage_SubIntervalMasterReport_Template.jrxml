@@ -6,9 +6,9 @@
 		 columnCount="1"
 		 printOrder="Vertical"
 		 orientation="Portrait"
-		 pageWidth="535"
+		 pageWidth="564"
 		 pageHeight="802"
-		 columnWidth="535"
+		 columnWidth="564"
 		 columnSpacing="0"
 		 leftMargin="0"
 		 rightMargin="0"
@@ -24,12 +24,8 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 	<import value="com.l7tech.server.ems.standardreports.*" />
+	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
-	<style 
-		name="DefaultText"
-		isDefault="true"
-	>
-	</style>
 
 	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
 	<parameter name="SERVICE_NAME" isForPrompting="false" class="java.lang.String"/>
@@ -78,29 +74,24 @@
 			<band height="18"  isSplitAllowed="true" >
 				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						style="DefaultText"
-						x="5"
+						style="SummaryRowHeading"
+						x="0"
 						y="0"
-						width="112"
+						width="113"
 						height="18"
 						key="textField"
 						isPrintWhenDetailOverflows="true"/>
-					<box leftPadding="2" rightPadding="2">					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-</box>
+					<box></box>
 					<textElement>
-						<font fontName="Times-Roman" size="10"/>
+						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME})]]></textFieldExpression>
 				</textField>
 				<subreport  isUsingCache="false">
 					<reportElement
-						style="DefaultText"
-						x="117"
+						x="113"
 						y="0"
-						width="417"
+						width="450"
 						height="18"
 						key="subreport-1"/>
 					<subreportParameter  name="INTERVAL_START">

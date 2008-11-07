@@ -93,13 +93,64 @@
             isPdfEmbedded="false"
             >
         <box leftPadding="5">
-            <pen lineWidth="0.5" lineStyle="Solid"/>
             <topPen lineWidth="0.5" lineStyle="Solid"/>
             <leftPen lineWidth="0.5" lineStyle="Solid"/>
             <bottomPen lineWidth="0.5" lineStyle="Solid"/>
             <rightPen lineWidth="0.5" lineStyle="Solid"/>
         </box>
     </style>
+
+    <!-- Usage table column headings need color information-->
+    <style
+            name="UsageTableHeading"
+            isDefault="false"
+            mode="Opaque"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            backcolor="#DBD3B0"
+            >
+        <box leftPadding="5">
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <style
+            name="UsageTableHeadingFirst"
+            isDefault="false"
+            mode="Opaque"
+            vAlign="Middle"
+            hAlign="Left"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            backcolor="#DBD3B0"
+            >
+        <box leftPadding="5">
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
 
     <style
             name="TableHeading"
@@ -119,7 +170,6 @@
             markup="html"
             >
         <box>
-            <pen lineWidth="0.5" lineStyle="Solid"/>
             <topPen lineWidth="0.5" lineStyle="Solid"/>
             <leftPen lineWidth="0.5" lineStyle="Solid"/>
             <bottomPen lineWidth="0.5" lineStyle="Solid"/>
@@ -178,7 +228,58 @@
             isPdfEmbedded="false"
             >
         <box leftPadding="5">
-            <pen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="UsageRowTotalHeading"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Left"
+            fontName="SansSerif"
+            fontSize="10"
+            backcolor="#D6D6D6"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box leftPadding="5">
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="UsageRowTotal"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            backcolor="#D6D6D6"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box>
             <topPen lineWidth="0.5" lineStyle="Solid"/>
             <leftPen lineWidth="0.5" lineStyle="Solid"/>
             <bottomPen lineWidth="0.5" lineStyle="Solid"/>
@@ -203,7 +304,6 @@
             isPdfEmbedded="false"
             >
         <box>
-            <pen lineWidth="0.5" lineStyle="Solid"/>
             <topPen lineWidth="0.5" lineStyle="Solid"/>
             <leftPen lineWidth="0.5" lineStyle="Solid"/>
             <bottomPen lineWidth="0.5" lineStyle="Solid"/>
@@ -218,7 +318,6 @@
             vAlign="Middle"
             >
         <box>
-            <pen lineWidth="1.0" lineStyle="Solid"/>
             <topPen lineWidth="1.0" lineStyle="Solid"/>
             <leftPen lineWidth="1.0" lineStyle="Solid"/>
             <bottomPen lineWidth="1.0" lineStyle="Solid"/>
@@ -226,7 +325,6 @@
         </box>
     </style>
             <!--backcolor="#0000ff" - blue-->
-    <!--#D6D6D6-->
     <style
             name="FrameTableBottom"
             isDefault="false"
@@ -234,7 +332,34 @@
             vAlign="Middle"
             >
         <box>
-            <pen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <!--#D6D6D6-->
+    <style
+            name="ReportInfoTableBottom"
+            isDefault="false"
+            backcolor="#F8F8F8"
+            vAlign="Middle"
+            >
+        <box>
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <!-- For usage reports, we want the all around border, but no colour, as thats controlled by the cell styles-->
+    <style
+            name="UsageFrameTableBottom"
+            isDefault="false"
+            vAlign="Middle"
+            backcolor="#F8F8F8"
+            >
+        <box>
             <leftPen lineWidth="1.0"/>
             <bottomPen lineWidth="1.0"/>
             <rightPen lineWidth="1.0"/>
@@ -248,7 +373,6 @@
             vAlign="Middle"
             >
         <box>
-            <pen lineWidth="1.0"/>
             <topPen lineWidth="1.0" />
             <leftPen lineWidth="1.0"/>
             <bottomPen lineWidth="1.0"/>
@@ -263,7 +387,6 @@
             vAlign="Middle"
             >
         <box>
-            <pen lineWidth="1.0"/>
             <topPen lineWidth="1.0"/>
             <leftPen lineWidth="1.0"/>
             <bottomPen lineWidth="1.0"/>
@@ -344,19 +467,19 @@
             <rightPen lineWidth="1.0"/>
         </box>
     </style>
-	<!--<style-->
-		<!--name="TotalCell"-->
-		<!--backcolor="#D6D6D6"-->
-        <!--vAlign="Middle"-->
-    <!-->-->
-	<!--</style>-->
-
 	<style
-		name="SubTableHeader"
+		name="TotalCell"
+		backcolor="#D6D6D6"
         vAlign="Middle"
     >
-					<box>					<leftPen lineWidth="1.0" lineStyle="Solid"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid"/>
-</box>
-	</style>    
+	</style>
+
+	<!--<style-->
+		<!--name="SubTableHeader"-->
+        <!--vAlign="Middle"-->
+    <!-->-->
+					<!--<box>					<leftPen lineWidth="1.0" lineStyle="Solid"/>-->
+					<!--<rightPen lineWidth="1.0" lineStyle="Solid"/>-->
+<!--</box>-->
+	<!--</style>    -->
 </jasperTemplate>

@@ -106,16 +106,31 @@ public class UsageTestTransforms{
         mappingValues.add("127.0.0.1Silver");
 
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
-        String xmlFileName = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("RuntimeDoc", doc);
-        //Document doc = transform(xslStr, xmlStr, params);
-        Document transformDoc = transform(xslStr, xmlFileName, params);
-
-        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeJasper.jrxml");
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageRuntimeTransform.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(doc, fos);
+        }finally{
+            fos.close();
+        }
+
+        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
+        String xmlFileName = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", doc);
+        params.put("FrameMinWidth", 565);
+        params.put("PageMinWidth", 595);
+        int reportInfoStaticTextSize = 128;
+        params.put("ReportInfoStaticTextSize", reportInfoStaticTextSize);
+        int titleInnerFrameBuffer = 7;
+        params.put("TitleInnerFrameBuffer", titleInnerFrameBuffer);
+
+        Document transformDoc = transform(xslStr, xmlFileName, params);
+
+        f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeJasper.jrxml");
+        f.createNewFile();
+        fos = new FileOutputStream(f);
         try{
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
         }finally{
@@ -201,7 +216,7 @@ public class UsageTestTransforms{
         mappingValues.add("127.0.0.2Silver1");
 
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
+        String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
 
         Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues);
         Map<String, Object> params = new HashMap<String, Object>();

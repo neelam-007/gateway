@@ -33,6 +33,8 @@ public class Utilities {
      * value ';' is valid in a wsdl.
      */
     public static final String SQL_PLACE_HOLDER =  ";";
+    public static final String ROW_TOTAL_STYLE = "UsageRowTotal";
+    public static final String USAGE_TABLE_HEADING_STYLE = "UsageTableHeading";
 
     public static enum UNIT_OF_TIME {
         HOUR, DAY, WEEK, MONTH; 
@@ -115,25 +117,21 @@ public class Utilities {
     public static final String LEFT_MARGIN = "leftMargin";
     public static final String RIGHT_MARGIN = "rightMargin";
     private static final String TABLE_CELL_STYLE = "TableCell";
-    private static final String TOTAL_CELL_STYLE = "TotalCell";
     public static final int FIELD_HEIGHT = 18;
-    public static final int RIGHT_MARGIN_WIDTH = 30;
+    public static final int RIGHT_MARGIN_WIDTH = 15;
     public static final int LEFT_MARGIN_WIDTH = RIGHT_MARGIN_WIDTH;
     public static final int TOTAL_COLUMN_WIDTH = 80;
-    public static final int DATA_COLUMN_WIDTH = 60;
-    public static final int MAPPING_KEY_FIELD_WIDTH = 67;
-    private static final int SERVICE_TITLE_WIDTH = 45;
-    public static final int DATA_ROW_STARTING_X_POS = MAPPING_KEY_FIELD_WIDTH + SERVICE_TITLE_WIDTH + 5;
+    public static final int DATA_COLUMN_WIDTH = 80;
     public static final String SERVICE_HEADER = "serviceHeader";
     public static final String SUB_REPORT = "subReport";
     public static final String RETURN_VALUE = "returnValue";
     public static final String SUMMARY = "summary";
     private static final String SUB_REPORT_WIDTH = "subReportWidth";
     public static final String NO_DATA = "noData";
-    public static final int SUB_INTERVAL_STATIC_WIDTH = 118;
+    public static final int SUB_INTERVAL_STATIC_WIDTH = 113;
     public static final int MAPPING_VALUE_FIELD_HEIGHT = 36;
     //service text field is 5 from left margin
-    public static final int CONSTANT_HEADER_START_X = SERVICE_TITLE_WIDTH + 5;
+    public static final int CONSTANT_HEADER_START_X = 113;
     public static final int SERVICE_HEADER_X_POS = 50;
 
 
@@ -1466,7 +1464,7 @@ Value is included in all or none, comment is just illustrative
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{TOTAL}",
-                TOTAL_CELL_STYLE, true);
+                ROW_TOTAL_STYLE, true);
 
         Element noDataElement = doc.createElement(NO_DATA);
         rootNode.appendChild(noDataElement);
@@ -1480,7 +1478,7 @@ Value is included in all or none, comment is just illustrative
         }
 
         addStaticTextToElement(doc, noDataElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
-                "noDataStaticText-Total", "NA", TOTAL_CELL_STYLE, true);
+                "noDataStaticText-Total", "NA", ROW_TOTAL_STYLE, true);
         xPos += TOTAL_COLUMN_WIDTH;
 
         //frame width is the same as page width for the subreport
@@ -1559,9 +1557,11 @@ Value is included in all or none, comment is just illustrative
             first = false;
         }
 
-        for(String s: keys){
-            if(!first){
-                sb.append("<br>");
+        for (int i = 0; i < keys.size(); i++) {
+            String s = keys.get(i);
+            if (!first) {
+                if (i != keys.size()-1 ) sb.append(", ");
+                else sb.append(" and ");
             }
             first = false;
             sb.append(s);
@@ -1617,28 +1617,29 @@ Value is included in all or none, comment is just illustrative
         Element serviceHeader = doc.createElement(SERVICE_HEADER);
         rootNode.appendChild(serviceHeader);
 
-        int xPos = SERVICE_HEADER_X_POS;
+        int xPos = CONSTANT_HEADER_START_X;
         int yPos = 0;
 
         String keyDisplayValue = getContextKeysDiaplayString(useUser, keys);
-        addTextFieldToElement(doc, serviceHeader, xPos, yPos, MAPPING_KEY_FIELD_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
-                "textField-serviceHeader-MappingKeys", "java.lang.String", keyDisplayValue, TABLE_CELL_STYLE, false);
-        xPos += MAPPING_KEY_FIELD_WIDTH;
-        
+        Element keyInfoElement = doc.createElement("keyInfo");
+        rootNode.appendChild(keyInfoElement);
+        CDATASection cData = doc.createCDATASection(keyDisplayValue);
+        keyInfoElement.appendChild(cData);
+
         List<String> listMappingValues = new ArrayList<String>();
         listMappingValues.addAll(distinctMappingValues);
 
         //add a text field for each column
         for(int i = 0; i < numMappingValues; i++){
             addTextFieldToElement(doc, serviceHeader, xPos, yPos, DATA_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
-                    "textField-serviceHeader-"+(i+1), "java.lang.String", listMappingValues.get(i), TABLE_CELL_STYLE,
-                    false);
+                    "textField-serviceHeader-"+(i+1), "java.lang.String", listMappingValues.get(i), USAGE_TABLE_HEADING_STYLE,
+                    true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceHeader, xPos, yPos, TOTAL_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
-                "textField-serviceHeader-ServiceTotals", "java.lang.String", "Service Totals", TABLE_CELL_STYLE,
-                false);
+                "textField-serviceHeader-ServiceTotals", "java.lang.String", "Service Totals", USAGE_TABLE_HEADING_STYLE,
+                true);
 
         xPos += TOTAL_COLUMN_WIDTH;
 
@@ -1674,47 +1675,47 @@ Value is included in all or none, comment is just illustrative
         Element serviceAndOperationFooterElement = doc.createElement(SERVICE_AND_OPERATION_FOOTER);
         rootNode.appendChild(serviceAndOperationFooterElement);
         //todo [Donal] this is out by 5, 113 instead of 118, affects summary and master transforms, fix when reports completed
-        xPos = DATA_ROW_STARTING_X_POS;
+        xPos = CONSTANT_HEADER_START_X;
         for(int i = 0; i < numMappingValues; i++){
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_OPERATION_"+(i+1)+"}",
-                    TOTAL_CELL_STYLE, true);
+                    ROW_TOTAL_STYLE, true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{ROW_OPERATION_TOTAL}",
-                TOTAL_CELL_STYLE, true);
+                ROW_TOTAL_STYLE, true);
 
         //serviceIdFooter
         Element serviceIdFooterElement = doc.createElement(SERVICE_ID_FOOTER);
         rootNode.appendChild(serviceIdFooterElement);
 
-        xPos = DATA_ROW_STARTING_X_POS;
+        xPos = CONSTANT_HEADER_START_X;
         for(int i = 0; i < numMappingValues; i++){
             addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-ServiceIdFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_SERVICE_"+(i+1)+"}",
-                    TOTAL_CELL_STYLE, true);
+                    ROW_TOTAL_STYLE, true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
-                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{ROW_SERVICE_TOTAL}", TOTAL_CELL_STYLE, true);
+                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{ROW_SERVICE_TOTAL}", ROW_TOTAL_STYLE, true);
 
         //summary
         Element summaryElement = doc.createElement(SUMMARY);
         rootNode.appendChild(summaryElement);
 
-        xPos = DATA_ROW_STARTING_X_POS;
+        xPos = CONSTANT_HEADER_START_X;
         for(int i = 0; i < numMappingValues; i++){
             addTextFieldToElement(doc, summaryElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-constantFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_REPORT_"+(i+1)+"}",
-                    TOTAL_CELL_STYLE, true);
+                    ROW_TOTAL_STYLE, true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, summaryElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
-                "textField-constantFooterTotal", "java.lang.Long", "$V{ROW_REPORT_TOTAL}", TOTAL_CELL_STYLE, true);
+                "textField-constantFooterTotal", "java.lang.Long", "$V{ROW_REPORT_TOTAL}", ROW_TOTAL_STYLE, true);
 
         rootNode.appendChild(pageWidth);
         //columnWidth -is page width - left + right margin
@@ -1781,7 +1782,7 @@ Value is included in all or none, comment is just illustrative
         Element constantHeader = doc.createElement(CONSTANT_HEADER);
         rootNode.appendChild(constantHeader);
 
-        //Constant header starts at x = 50
+        //Constant header starts at x = 113
         //The widths for the entire document are determined from this first header.
         //it has slightly different make up as it has an additional text field, however all other headers
         //should always work out to the be the same width. If they are wider, the report will not compile
@@ -1789,24 +1790,25 @@ Value is included in all or none, comment is just illustrative
         int yPos = 0;
 
         String keyDisplayValue = getContextKeysDiaplayString(useUser, keys);
-        addTextFieldToElement(doc, constantHeader, xPos, yPos, MAPPING_KEY_FIELD_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
-                "textField-constantHeader-MappingKeys", "java.lang.String", keyDisplayValue, TABLE_CELL_STYLE, false);
-        xPos += MAPPING_KEY_FIELD_WIDTH;
-        
+        Element keyInfoElement = doc.createElement("keyInfo");
+        rootNode.appendChild(keyInfoElement);
+        CDATASection cData = doc.createCDATASection(keyDisplayValue);
+        keyInfoElement.appendChild(cData);
+
         List<String> listMappingValues = new ArrayList<String>();
         listMappingValues.addAll(distinctMappingValues);
 
         //add a text field for each column
         for(int i = 0; i < numMappingValues; i++){
             addTextFieldToElement(doc, constantHeader, xPos, yPos, DATA_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
-                    "textField-constantHeader-"+(i+1), "java.lang.String", listMappingValues.get(i), TABLE_CELL_STYLE,
+                    "textField-constantHeader-"+(i+1), "java.lang.String", listMappingValues.get(i), USAGE_TABLE_HEADING_STYLE,
                     false);
             xPos += DATA_COLUMN_WIDTH;
         }
         //move x pos along for width of a column
 
         addTextFieldToElement(doc, constantHeader, xPos, yPos, TOTAL_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
-                "textField-constantHeader-ServiceTotals", "java.lang.String", "Service Totals", TABLE_CELL_STYLE,
+                "textField-constantHeader-ServiceTotals", "java.lang.String", "Service Totals", USAGE_TABLE_HEADING_STYLE,
                 false);
 
         xPos += TOTAL_COLUMN_WIDTH;
@@ -1823,7 +1825,7 @@ Value is included in all or none, comment is just illustrative
         //serviceAndOperationFooter
         Element serviceAndOperationFooterElement = doc.createElement(SERVICE_AND_OPERATION_FOOTER);
         rootNode.appendChild(serviceAndOperationFooterElement);
-        xPos = DATA_ROW_STARTING_X_POS;
+        xPos = CONSTANT_HEADER_START_X;
         for(int i = 0; i < numMappingValues; i++){
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_"+(i+1)+"}",
@@ -1833,37 +1835,37 @@ Value is included in all or none, comment is just illustrative
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{SERVICE_AND_OR_OPERATION_TOTAL}",
-                TOTAL_CELL_STYLE, true);
+                ROW_TOTAL_STYLE, true);
 
         //serviceIdFooter
         Element serviceIdFooterElement = doc.createElement(SERVICE_ID_FOOTER);
         rootNode.appendChild(serviceIdFooterElement);
 
-        xPos = DATA_ROW_STARTING_X_POS;
+        xPos = CONSTANT_HEADER_START_X;
         for(int i = 0; i < numMappingValues; i++){
             addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-ServiceIdFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_SERVICE_TOTAL_"+(i+1)+"}",
-                    TOTAL_CELL_STYLE, true);
+                    ROW_TOTAL_STYLE, true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
-                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{SERVICE_ONLY_TOTAL}", TOTAL_CELL_STYLE, true);
+                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{SERVICE_ONLY_TOTAL}", ROW_TOTAL_STYLE, true);
 
         //constantFooter
         Element constantFooterElement = doc.createElement(CONSTANT_FOOTER);
         rootNode.appendChild(constantFooterElement);
 
-        xPos = DATA_ROW_STARTING_X_POS;
+        xPos = CONSTANT_HEADER_START_X;
         for(int i = 0; i < numMappingValues; i++){
             addTextFieldToElement(doc, constantFooterElement, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "textField-constantFooter-"+(i+1), "java.lang.Long", "$V{COLUMN_MAPPING_TOTAL_"+(i+1)+"}",
-                    TOTAL_CELL_STYLE, true);
+                    ROW_TOTAL_STYLE, true);
             xPos += DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, constantFooterElement, xPos, yPos, TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
-                "textField-constantFooterTotal", "java.lang.Long", "$V{GRAND_TOTAL}", TOTAL_CELL_STYLE, true);
+                "textField-constantFooterTotal", "java.lang.Long", "$V{GRAND_TOTAL}", ROW_TOTAL_STYLE, true);
 
 
         rootNode.appendChild(pageWidth);

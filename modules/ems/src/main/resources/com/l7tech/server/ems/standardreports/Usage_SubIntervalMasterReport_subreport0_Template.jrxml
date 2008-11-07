@@ -6,7 +6,7 @@
 		 columnCount="1"
 		 printOrder="Vertical"
 		 orientation="Portrait"
-		 pageWidth="535"
+		 pageWidth="564"
 		 pageHeight="802"
 		 columnWidth="535"
 		 columnSpacing="0"
@@ -77,7 +77,7 @@ $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VA
 						style="TableCell"
 						x="0"
 						y="0"
-						width="535"
+						width="564"
 						height="18"
 						key="frame-1"/>
 					<box></box>
@@ -122,7 +122,7 @@ $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VA
 						style="TableCell"
 						x="0"
 						y="0"
-						width="535"
+						width="564"
 						height="18"
 						key="frame-2"/>
 					<box></box>

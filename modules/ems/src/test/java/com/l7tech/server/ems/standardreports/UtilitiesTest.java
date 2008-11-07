@@ -1364,9 +1364,10 @@ public class UtilitiesTest{
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
-        //2 text fields which are hardcoded, and 4 value sets from getTestMappingValues() 
-        Assert.assertTrue(Utilities.CONSTANT_HEADER+" element should have " + (mappingValues.size() + 2) + " elements",
-                list.getLength() == mappingValues.size() + 2);
+        //1 text fields which are hardcoded, and 4 value sets from getTestMappingValues()
+        Assert.assertTrue(Utilities.CONSTANT_HEADER+" element should have " + (mappingValues.size() + 1) + " elements, " +
+                "instead it had " + list.getLength(),
+                list.getLength() == mappingValues.size() + 1);
     }
 
     @Test
@@ -1398,8 +1399,7 @@ public class UtilitiesTest{
 
             Node width = attributes.getNamedItem("width");
             actualIntValue = Integer.valueOf(width.getNodeValue());
-            if(i == 0) expectedIntValue = Utilities.MAPPING_KEY_FIELD_WIDTH;
-            else if(i < list.getLength() - 1) expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
+            if(i < list.getLength() - 1) expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
             else expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
 
             Assert.assertTrue("width attribute should equal " + expectedIntValue+ " Actual value was: "
@@ -1407,7 +1407,7 @@ public class UtilitiesTest{
 
             Node x = attributes.getNamedItem("x");
             if(i == 0) expectedIntValue = Utilities.CONSTANT_HEADER_START_X;
-            else expectedIntValue = Utilities.CONSTANT_HEADER_START_X + Utilities.MAPPING_KEY_FIELD_WIDTH + (Utilities.DATA_COLUMN_WIDTH * (i-1));
+            else expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue+ " Actual value was: "
@@ -1421,7 +1421,7 @@ public class UtilitiesTest{
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            expectedValue = "TableCell";
+            expectedValue = Utilities.USAGE_TABLE_HEADING_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -1460,6 +1460,7 @@ public class UtilitiesTest{
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
         Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        printOutDocument(doc);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1483,7 +1484,7 @@ public class UtilitiesTest{
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            expectedIntValue = Utilities.DATA_ROW_STARTING_X_POS + (Utilities.DATA_COLUMN_WIDTH * i);
+            expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue+ " Actual value was: "
@@ -1499,7 +1500,7 @@ public class UtilitiesTest{
             Node style = attributes.getNamedItem("style");
             String expectedValue;
             if(i < list.getLength() - 1) expectedValue = "TableCell";
-            else expectedValue = "TotalCell";
+            else expectedValue = Utilities.ROW_TOTAL_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -1579,7 +1580,7 @@ public class UtilitiesTest{
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            expectedIntValue = Utilities.DATA_ROW_STARTING_X_POS + (Utilities.DATA_COLUMN_WIDTH * i);
+            expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue+ " Actual value was: "
@@ -1593,7 +1594,7 @@ public class UtilitiesTest{
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = "TotalCell";
+            String expectedValue = Utilities.ROW_TOTAL_STYLE;
             
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -1671,7 +1672,7 @@ public class UtilitiesTest{
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            expectedIntValue = Utilities.DATA_ROW_STARTING_X_POS + (Utilities.DATA_COLUMN_WIDTH * i);
+            expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue+ " Actual value was: "
@@ -1685,7 +1686,7 @@ public class UtilitiesTest{
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = "TotalCell";
+            String expectedValue = Utilities.ROW_TOTAL_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -1816,16 +1817,15 @@ public class UtilitiesTest{
 
             Node width = attributes.getNamedItem("width");
             actualIntValue = Integer.valueOf(width.getNodeValue());
-            if(i == 0) expectedIntValue = Utilities.MAPPING_KEY_FIELD_WIDTH;
-            else if(i == list.getLength() - 1) expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
+            if(i == list.getLength() - 1) expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
             else expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
 
             Assert.assertTrue("width attribute should equal " + expectedIntValue+ " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            if(i == 0) expectedIntValue = Utilities.SERVICE_HEADER_X_POS;
-            else expectedIntValue = Utilities.SERVICE_HEADER_X_POS + Utilities.MAPPING_KEY_FIELD_WIDTH + (Utilities.DATA_COLUMN_WIDTH * (i-1));
+            if(i == 0) expectedIntValue = Utilities.CONSTANT_HEADER_START_X;
+            else expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
 
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
@@ -1840,7 +1840,7 @@ public class UtilitiesTest{
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = "TableCell";
+            String expectedValue = Utilities.USAGE_TABLE_HEADING_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -1934,7 +1934,7 @@ public class UtilitiesTest{
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            expectedIntValue = Utilities.DATA_ROW_STARTING_X_POS + (Utilities.DATA_COLUMN_WIDTH * i);
+            expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue+ " Actual value was: "
@@ -1948,7 +1948,7 @@ public class UtilitiesTest{
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = "TotalCell";
+            String expectedValue = Utilities.ROW_TOTAL_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -2001,7 +2001,7 @@ public class UtilitiesTest{
 
     private void testWidths(Node rootNode, int numMappingValues){
         Node pageWidth = findFirstChildElementByName(rootNode, "pageWidth");
-        int expectedIntValue = Utilities.DATA_ROW_STARTING_X_POS + (Utilities.DATA_COLUMN_WIDTH * numMappingValues)
+        int expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * numMappingValues)
                 + Utilities.TOTAL_COLUMN_WIDTH + Utilities.LEFT_MARGIN_WIDTH + Utilities.RIGHT_MARGIN_WIDTH;
         int actualIntValue = Integer.valueOf(pageWidth.getTextContent());
 
@@ -2009,7 +2009,7 @@ public class UtilitiesTest{
                 actualIntValue ,actualIntValue == expectedIntValue);
 
         Node columnWidth = findFirstChildElementByName(rootNode, "columnWidth");
-        expectedIntValue = Utilities.DATA_ROW_STARTING_X_POS + (Utilities.DATA_COLUMN_WIDTH * numMappingValues)
+        expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * numMappingValues)
                 + Utilities.TOTAL_COLUMN_WIDTH;
         actualIntValue = Integer.valueOf(columnWidth.getTextContent());
 
@@ -2017,7 +2017,7 @@ public class UtilitiesTest{
                 actualIntValue ,actualIntValue == expectedIntValue);
 
         Node frameWidth = findFirstChildElementByName(rootNode, "frameWidth");
-        expectedIntValue = Utilities.DATA_ROW_STARTING_X_POS + (Utilities.DATA_COLUMN_WIDTH * numMappingValues)
+        expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * numMappingValues)
                 + Utilities.TOTAL_COLUMN_WIDTH;
         actualIntValue = Integer.valueOf(frameWidth.getTextContent());
 
@@ -2245,7 +2245,7 @@ public class UtilitiesTest{
             Node style = attributes.getNamedItem("style");
             String expectedValue;
             if(i < list.getLength() - 1) expectedValue = "TableCell";
-            else expectedValue = "TotalCell";
+            else expectedValue = Utilities.ROW_TOTAL_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -2329,7 +2329,7 @@ public class UtilitiesTest{
             Node style = attributes.getNamedItem("style");
             String expectedValue;
             if(i < list.getLength() - 1) expectedValue = "TableCell";
-            else expectedValue = "TotalCell";
+            else expectedValue = Utilities.ROW_TOTAL_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -2421,7 +2421,7 @@ public class UtilitiesTest{
         Document runtimeDoc = XmlUtil.stringToDocument(transformXml);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", runtimeDoc);
-        params.put("FrameMinWidth", 535);
+        params.put("FrameMinWidth", 565);
         params.put("PageMinWidth", 595);
         int reportInfoStaticTextSize = 128;
         params.put("ReportInfoStaticTextSize", reportInfoStaticTextSize);
@@ -2561,7 +2561,7 @@ public class UtilitiesTest{
         Document runtimeDoc = XmlUtil.stringToDocument(transformXml);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", runtimeDoc);
-        params.put("FrameMinWidth", 535);
+        params.put("FrameMinWidth", 565);
         params.put("PageMinWidth", 595);
         int reportInfoStaticTextSize = 128;
         params.put("ReportInfoStaticTextSize", reportInfoStaticTextSize);
@@ -2609,17 +2609,17 @@ public class UtilitiesTest{
         nodeList = (NodeList) xPath.evaluate("/jasperReport/detail/band/frame/subreport/returnValue[contains(@toVariable, 'COLUMN_REPORT_')]", transformedRuntimeDoc, XPathConstants.NODESET);
         Assert.assertTrue("There should be "+ numColumns + " returnValue @toVariable=COLUMN_REPORT_ , there were " + nodeList.getLength(), nodeList.getLength() == numColumns);
 
-        //serviceAndOperationFooter - 12 columns + 1 total + 1 display text (1 static text also not counted)
+        //serviceAndOperationFooter - 12 columns + 1 total (1 static text also not counted)
         nodeList = (NodeList) xPath.evaluate("/jasperReport/group[@name='SERVICE_OPERATION']/groupFooter/band/frame/textField", transformedRuntimeDoc, XPathConstants.NODESET);
-        Assert.assertTrue("There should be "+ (numColumns + 2) + " SERVICE_OPERATION group footer text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 2));
+        Assert.assertTrue("There should be "+ (numColumns + 1) + " SERVICE_OPERATION group footer text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 1));
 
-        //serviceIdFooter - 12 columns + 1 total + 1 display text (1 static text also not counted)
+        //serviceIdFooter - 12 columns + 1 total(1 static text also not counted)
         nodeList = (NodeList) xPath.evaluate("/jasperReport/group[@name='SERVICE']/groupFooter/band/frame/textField", transformedRuntimeDoc, XPathConstants.NODESET);
-        Assert.assertTrue("There should be "+ (numColumns + 2) + " SERVICE group footer text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 2));
+        Assert.assertTrue("There should be "+ (numColumns + 1) + " SERVICE group footer text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 1));
 
-        //summary - 12 columns + 1 total + 1 display text (1 static text also not counted)
+        //summary - 12 columns + 1 total (1 static text also not counted)
         nodeList = (NodeList) xPath.evaluate("/jasperReport/summary/band/frame/textField", transformedRuntimeDoc, XPathConstants.NODESET);
-        Assert.assertTrue("There should be "+ (numColumns + 2) + " summary text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 2));
+        Assert.assertTrue("There should be "+ (numColumns + 1) + " summary text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 1));
 
         Double expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/pageWidth/text()", runtimeDoc, XPathConstants.NUMBER);
         Double actualWidth = (Double) xPath.evaluate("/jasperReport/@pageWidth", transformedRuntimeDoc, XPathConstants.NUMBER);
@@ -2881,11 +2881,15 @@ public class UtilitiesTest{
         return doc;
     }
 
-    private void printOutDocument(Document doc) throws Exception{
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        XmlUtil.nodeToFormattedOutputStream(doc, baos);
-        String testXml = new String(baos.toByteArray());
-        System.out.println(testXml);
+    private void printOutDocument(Document doc){
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            XmlUtil.nodeToFormattedOutputStream(doc, baos);
+            String testXml = new String(baos.toByteArray());
+            System.out.println(testXml);
+        } catch (IOException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
     }
 }
 

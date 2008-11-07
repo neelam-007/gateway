@@ -175,6 +175,47 @@
         </xsl:copy>
     </xsl:template>
 
+    <!-- Copy in the key info into the Usage Summary frame-->
+    <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[1]/textField/textFieldExpression">
+        <xsl:element name="textFieldExpression" >
+            <xsl:text>"Usage data grouped by </xsl:text>
+            <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/keyInfo" />
+            <xsl:text>"</xsl:text>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[1]/reportElement">
+        <xsl:element name="reportElement">
+            <xsl:choose>
+                <xsl:when test="$useDynamicWidths = 1" >
+                    <xsl:attribute name="width">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='width']" />
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="node()|@*" />
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[1]/textField/reportElement">
+        <xsl:element name="reportElement">
+            <xsl:choose>
+                <xsl:when test="$useDynamicWidths = 1" >
+                    <xsl:attribute name="width">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='width']" />
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="node()|@*" />
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:element>
+    </xsl:template>
+    
     <!--todo [Donal] these are the same as for the usage summary - place into a file and include somehow-->
     <xsl:template match="/jasperReport/title/band/frame[2]/frame">
         <xsl:copy>
