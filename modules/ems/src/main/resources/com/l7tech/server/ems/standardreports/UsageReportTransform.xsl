@@ -199,6 +199,22 @@
         </xsl:element>
     </xsl:template>
 
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[*]/reportElement">
+        <xsl:element name="reportElement">
+            <xsl:choose>
+                <xsl:when test="$useDynamicWidths = 1" >
+                    <xsl:attribute name="width">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='width']" />
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="node()|@*" />
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:element>
+    </xsl:template>
+
     <xsl:template match="/jasperReport/group[@name='SERVICE_ID']/groupHeader/band/frame/reportElement">
         <xsl:element name="reportElement">
             <xsl:choose>

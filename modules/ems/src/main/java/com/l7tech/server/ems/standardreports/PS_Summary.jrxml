@@ -260,7 +260,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						x="0"
 						y="0"
 						width="105"
-						height="17"
+						height="18"
 						key="staticText-144"/>
 					<box></box>
 					<textElement>
