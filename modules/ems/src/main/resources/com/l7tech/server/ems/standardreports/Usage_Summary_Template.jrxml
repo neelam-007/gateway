@@ -168,7 +168,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						stretchType="RelativeToTallestObject"/>
 					<box></box>
 				<pieChart>
-					<chart evaluationTime="Group" evaluationGroup="CONSTANT_CHART"  hyperlinkTarget="Self" >
+					<chart evaluationTime="Group" evaluationGroup="CONSTANT_CHART"  hyperlinkTarget="Self"  renderType="image" >
 					<reportElement
 						x="0"
 						y="5"
@@ -192,8 +192,8 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 				<sectionHyperlink >
 				</sectionHyperlink>
 					</pieDataset>
-					<piePlot
->
+					<piePlot 
+isCircular="true" >
 						<plot />
 					</piePlot>
 				</pieChart>

@@ -277,7 +277,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						key="frame-34"/>
 					<box></box>
 				<stackedBarChart>
-					<chart evaluationTime="Group" evaluationGroup="CONSTANT_CHART"  hyperlinkTarget="Self"  customizerClass="com.l7tech.server.ems.standardreports.PerformanceSummaryChartCustomizer" >
+					<chart evaluationTime="Group" evaluationGroup="CONSTANT_CHART"  hyperlinkTarget="Self"  customizerClass="com.l7tech.server.ems.standardreports.PerformanceSummaryChartCustomizer"  renderType="image" >
 					<reportElement
 						x="0"
 						y="5"
@@ -1362,7 +1362,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 						x="0"
 						y="0"
 						width="105"
-						height="17"
+						height="18"
 						key="staticText-32"/>
 					<box></box>
 					<textElement>
@@ -1374,7 +1374,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
-						y="18"
+						y="19"
 						width="564"
 						height="207"
 						key="frame-5"
@@ -1383,7 +1383,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="4"
+						y="3"
 						width="564"
 						height="18"
 						key="frame-20"
@@ -1420,7 +1420,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="24"
+						y="23"
 						width="564"
 						height="18"
 						key="frame-21"
@@ -1457,7 +1457,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="44"
+						y="43"
 						width="564"
 						height="18"
 						key="frame-22"
@@ -1499,7 +1499,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="64"
+						y="63"
 						width="564"
 						height="18"
 						key="frame-23"
@@ -1536,7 +1536,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="84"
+						y="83"
 						width="564"
 						height="18"
 						key="frame-19"
@@ -1575,7 +1575,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="104"
+						y="103"
 						width="564"
 						height="18"
 						key="frame-25"
@@ -1612,12 +1612,12 @@ Utilities.getMappingReportInfoDisplayString
 					<textElement>
 						<font/>
 					</textElement>
-				<text><![CDATA[Context Mapping:]]></text>
+				<text><![CDATA[Groupings:]]></text>
 				</staticText>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="124"
+						y="123"
 						width="564"
 						height="18"
 						key="frame-26"
@@ -1656,7 +1656,7 @@ Utilities.getMappingReportInfoDisplayString
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="144"
+						y="143"
 						width="564"
 						height="18"
 						key="frame-27"
@@ -1695,7 +1695,7 @@ Utilities.getMappingReportInfoDisplayString
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="164"
+						y="163"
 						width="564"
 						height="18"
 						key="frame-28"
@@ -1732,7 +1732,7 @@ Utilities.getMappingReportInfoDisplayString
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="184"
+						y="183"
 						width="564"
 						height="18"
 						key="frame-29"

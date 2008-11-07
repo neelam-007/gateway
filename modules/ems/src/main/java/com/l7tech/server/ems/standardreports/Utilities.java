@@ -1327,7 +1327,7 @@ Value is included in all or none, comment is just illustrative
         if(sb.toString().equals("")){
             return "Detail Report";
         }else{
-            sb.insert(0, "Mapping Value: ");
+            sb.insert(0, "Group values: ");
             return sb.toString();
         }
     }
@@ -1917,8 +1917,15 @@ Value is included in all or none, comment is just illustrative
      */
     public static List<Color> getSeriesColours(int howMany){
         List<Color> colours = new ArrayList<Color>();
-        for (int i = 0; i < hexColours.length && i < howMany; i++) {
-            int l = hexColours[i];
+        for (int i = 0; i < hexColours.length; i++) {
+
+            int l;
+            if(i > hexColours.length){
+                l = hexColours[i % hexColours.length];
+                l = l + (i * 20) +20;
+            }else{
+                l = hexColours[i];
+            }
             Color c = new Color(l);
             colours.add(c);
         }

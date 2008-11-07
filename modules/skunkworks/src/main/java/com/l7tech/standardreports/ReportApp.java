@@ -252,7 +252,8 @@ public class ReportApp
             boolean isDetail = Boolean.valueOf(parameters.get(IS_DETAIL).toString());
             Object scriplet = parameters.get(REPORT_SCRIPTLET);
 
-            String sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serviceIds, keys, values, useAnd, 2, isDetail, operations, useUser, authUsers);
+            int resolution = Utilities.getResolutionFromTimePeriod(30, startTimeInPast, endTimeInPast);
+            String sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serviceIds, keys, values, useAnd, resolution, isDetail, operations, useUser, authUsers);
             System.out.println("Distinct sql: " + sql);
 
             if(type.equals("Usage")){
@@ -459,6 +460,8 @@ public class ReportApp
             System.out.println("Exception: " + ex.getMessage());
             ex.printStackTrace();
         }
+
+        JasperExportManager.exportReportToPdfFile(jp,"UsageInterval.pdf");
 
     }
 
