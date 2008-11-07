@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gui.util.GuiCertUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
@@ -20,6 +21,7 @@ import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
@@ -286,6 +288,9 @@ public class CertPropertiesWindow extends JDialog {
 
         validationDescriptionText.setText(resources.getString("usage.desc.validation"));
         validationDescriptionText.getCaret().setDot(0);
+
+        //set max length size for certificate name
+        ((AbstractDocument)certNameTextField.getDocument()).setDocumentFilter(new DocumentSizeFilter(128));
 
         pack();
         Utilities.centerOnParentWindow(this);
