@@ -305,6 +305,17 @@ public class GuiCertUtil {
         if(r == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             if(file!=null) {
+
+                //if file already exists, we need to ask for confirmation to overwrite.
+                if (file.exists())
+                {
+                    int result = JOptionPane.showOptionDialog(fc, "The file '" + file.getName() + "' already exists.  Overwrite?",
+                                                      "Warning",JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
+                    if (result != JOptionPane.YES_OPTION) {
+                        return;
+                    }
+                }
+
                 //
                 // Can't check parent is writable due to JDK bug (see bug 2349 for info)
                 //
