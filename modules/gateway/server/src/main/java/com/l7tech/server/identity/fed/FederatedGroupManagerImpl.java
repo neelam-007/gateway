@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -46,12 +48,14 @@ public class FederatedGroupManagerImpl
     public FederatedGroupManagerImpl() {
     }
 
+    @Override
     public void configure(final FederatedIdentityProvider provider) {
         this.setIdentityProvider( provider );
         federatedProvider = provider;
         providerConfig = (FederatedIdentityProviderConfig)federatedProvider.getConfig();
     }
 
+    @Override
     public FederatedGroup reify(GroupBean bean) {
         FederatedGroup fg = new FederatedGroup(bean.getProviderId(), bean.getName(), bean.getProperties());
         fg.setDescription(bean.getDescription());
@@ -59,16 +63,19 @@ public class FederatedGroupManagerImpl
         return fg;
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public GroupMembership newMembership(FederatedGroup group, FederatedUser user) {
         FederatedGroup fgroup = cast(group);
         return new FederatedGroupMembership(providerConfig.getOid(), fgroup.getOid(), Long.parseLong(user.getId()));
     }
 
+    @Override
     protected Class getMembershipClass() {
         return FederatedGroupMembership.class;
     }
 
+    @Override
     protected void preSave(FederatedGroup group) throws SaveException {
         if ( group instanceof VirtualGroup && providerConfig.getTrustedCertOids().length == 0 )
             throw new NoTrustedCertsSaveException("Virtual groups cannot be created in a Federated Identity Provider with no Trusted Certificates");
@@ -79,10 +86,12 @@ public class FederatedGroupManagerImpl
         crit.add(Restrictions.eq("providerId", getProviderOid()));
     }
 
+    @Override
     protected void addFindAllCriteria( Criteria allHeadersCriteria ) {
         allHeadersCriteria.add(Restrictions.eq("providerId", getProviderOid()));
     }
 
+    @Override
     @Transactional(readOnly=true)
     public FederatedGroup findByPrimaryKey( String oid ) throws FindException {
         try {
@@ -99,6 +108,7 @@ public class FederatedGroupManagerImpl
         }
     }
 
+    @Override
     @Transactional(readOnly=true)
     public boolean isMember(User user, FederatedGroup genericGroup) throws FindException {
         FederatedGroup group = cast(genericGroup);
@@ -149,17 +159,20 @@ public class FederatedGroupManagerImpl
         }
     }
 
-    protected Map<String, Object> getUniqueAttributeMap(FederatedUser entity) {
+    @Override
+    protected Collection<Map<String, Object>> getUniqueConstraints(final FederatedGroup entity) {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("providerId", entity.getProviderId());
         map.put("name", entity.getName());
-        return map;
+        return Collections.singletonList(map);
     }
 
+    @Override
     protected void addMembershipCriteria(Criteria crit, Group group, Identity identity) {
         crit.add(Restrictions.eq("thisGroupProviderOid", group.getProviderId()));
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public FederatedGroup cast(Group group) {
         if ( group instanceof GroupBean ) {
@@ -169,14 +182,17 @@ public class FederatedGroupManagerImpl
         }
     }
 
+    @Override
     public Class<FederatedGroup> getImpClass() {
         return FederatedGroup.class;
     }
 
+    @Override
     public Class<Group> getInterfaceClass() {
         return Group.class;
     }
 
+    @Override
     public String getTableName() {
         return "fed_group";
     }

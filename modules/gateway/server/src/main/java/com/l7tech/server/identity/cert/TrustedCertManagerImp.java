@@ -71,6 +71,7 @@ public class TrustedCertManagerImp
         this.clusterInfoManager = clusterInfoManager;
     }
 
+    @Override
     @Transactional(readOnly=true)
     public Collection<TrustedCert> findBySubjectDn(final String dn) throws FindException {
         final StringBuffer hql = new StringBuffer("FROM ");
@@ -79,6 +80,7 @@ public class TrustedCertManagerImp
         try {
             //noinspection unchecked
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     return session.createQuery(hql.toString()).setString(0, dn).list();
                 }
@@ -89,6 +91,7 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Override
     @Transactional(readOnly=true)
     public List findByThumbprint(String thumbprint) throws FindException {
         StringBuffer hql = new StringBuffer("FROM ");
@@ -108,6 +111,7 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Override
     @Transactional(readOnly=true)
     public List findBySki(String ski) throws FindException {
         StringBuffer hql = new StringBuffer("FROM ");
@@ -127,6 +131,7 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Override
     public long save(TrustedCert cert) throws SaveException {
         try {
             checkCachable(cert);
@@ -137,6 +142,7 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Override
     public void update(TrustedCert cert) throws UpdateException {
         try {
             checkCachable(cert);
@@ -151,22 +157,27 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Override
     public Class<TrustedCert> getImpClass() {
         return TrustedCert.class;
     }
 
+    @Override
     public Class<TrustedCert> getInterfaceClass() {
         return TrustedCert.class;
     }
 
+    @Override
     public String getTableName() {
         return "trusted_cert";
     }
 
+    @Override
     public EntityType getEntityType() {
         return EntityType.TRUSTED_CERT;
     }
 
+    @Override
     @Transactional(readOnly=true)
     public Collection<TrustedCert> getCachedCertsBySubjectDn(final String dn) throws FindException {
         Collection<TrustedCert> certs = findBySubjectDn(dn);
@@ -175,6 +186,7 @@ public class TrustedCertManagerImp
         return certs;
     }
 
+    @Override
     @Transactional(readOnly=true)
     public TrustedCert getCachedCertByOid(long o, int maxAge) throws FindException, CertificateException {
         try {
@@ -185,12 +197,14 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Override
     protected void initDao() throws Exception {
         if (transactionManager == null) {
             throw new IllegalArgumentException("Transaction Manager is required");
         }
 
         new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+            @Override
             protected void doInTransactionWithoutResult(TransactionStatus status) {
                 peruseTrustedCertificates();
             }
@@ -215,16 +229,10 @@ public class TrustedCertManagerImp
         timer.schedule(expiryCheckerTask, 0, period);
     }
 
-    protected Map<String,Object> getUniqueAttributeMap(TrustedCert cert) {
-        Map<String,Object> map = new HashMap<String, Object>();
-        map.put("thumbprintSha1", cert.getThumbprintSha1());
-        return map;
-    }
-
+    @Override
     protected Collection<Map<String, Object>> getUniqueConstraints(final TrustedCert cert) {
-        Map<String,Object> map1 = new HashMap<String, Object>() {{ put("name", cert.getName()); }};
-        Map<String,Object> map2 = new HashMap<String, Object>() {{ put("subjectDn", cert.getSubjectDn()); }};
-        return Arrays.asList(map1, map2);
+        Map<String,Object> map1 = new HashMap<String, Object>() {{ put("thumbprintSha1", cert.getSubjectDn()); }};
+        return Collections.singletonList(map1);
     }
 
     @Override
@@ -245,11 +253,13 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);
         this.spring = applicationContext;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (ServerConfig.PARAM_CERT_EXPIRY_CHECK_PERIOD.equals(evt.getPropertyName())) {
             final String ov = evt.getOldValue() == null ? null : evt.getOldValue().toString();
@@ -267,6 +277,7 @@ public class TrustedCertManagerImp
      * audit messages accordingly.
      */
     private class ExpiryCheckerTask extends ManagedTimerTask {
+        @Override
         protected void doRun() {
             final long nowUTC = System.currentTimeMillis();
             final AuditContext auditContext = (AuditContext)spring.getBean("auditContext");
