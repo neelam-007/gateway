@@ -232,10 +232,10 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_INT_REQUEST_MULTI_SIGNED              = m(5551, Level.WARNING, true, false, "Request has multiple signers; failing");
 
     // ServerSchemaValidation
-    public static final M SCHEMA_VALIDATION_VALIDATE_REQUEST                = m(5600, Level.FINEST, "Validating request document");
-    public static final M SCHEMA_VALIDATION_RESPONSE_NOT_XML                = m(5601, Level.INFO, true, true, "Response not well-formed XML; cannot validate schema");
-    public static final M SCHEMA_VALIDATION_VALIDATE_RESPONSE               = m(5602, Level.FINEST, "Validating response document");
-    public static final M SCHEMA_VALIDATION_REQUEST_NOT_XML                 = m(5603, Level.INFO, true, false, "Request not well-formed XML; cannot validate schema");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_SCHEMA_VALIDATION_VALIDATE_REQUEST                = m(5600, Level.FINEST, "Validating request document");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_SCHEMA_VALIDATION_RESPONSE_NOT_XML                = m(5601, Level.INFO, true, true, "Response not well-formed XML; cannot validate schema");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_SCHEMA_VALIDATION_VALIDATE_RESPONSE               = m(5602, Level.FINEST, "Validating response document");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_SCHEMA_VALIDATION_REQUEST_NOT_XML                 = m(5603, Level.INFO, true, false, "Request not well-formed XML; cannot validate schema");
     public static final M SCHEMA_VALIDATION_FAILED                          = m(5604, Level.INFO, true, true, "Schema validation failure: {0}");
     public static final M SCHEMA_VALIDATION_SUCCEEDED                       = m(5605, Level.FINEST, "Schema validation success");
     /** @deprecated */ @Deprecated public static final M _UNUSED_SCHEMA_VALIDATION_EMPTY_BODY = m(5606, Level.FINE, "Nothing to validate because the body is empty");
@@ -243,6 +243,8 @@ public class AssertionMessages extends Messages {
     public static final M SCHEMA_VALIDATION_FALLBACK                        = m(5608, Level.INFO, "Hardware-accelerated schema validation failed; falling back to software");
     public static final M SCHEMA_VALIDATION_VALID_BUT_WRONG_NS              = m(5609, Level.INFO, "Message was valid but payload was in an unexpected namespace");
     public static final M SCHEMA_VALIDATION_GLOBALREF_BROKEN                = m(5610, Level.WARNING, "Cannot validate schema because the global schema named {0} cannot be retrieved");
+    public static final M SCHEMA_VALIDATION_NOT_XML                         = m(5611, Level.INFO, "{0} is not well-formed XML; cannot validate");
+    public static final M SCHEMA_VALIDATION_VALIDATING                      = m(5612, Level.FINEST, "Validating {0}");
 
     // ServerTimeRange
     public static final M TIME_RANGE_NOTHING_TO_CHECK                       = m(5700, Level.FINEST, "Nothing to check");

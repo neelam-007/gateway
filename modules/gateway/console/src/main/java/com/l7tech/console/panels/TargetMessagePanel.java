@@ -12,6 +12,8 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.regex.Pattern;
 
 /** @author alex */
@@ -31,6 +33,12 @@ public class TargetMessagePanel extends JPanel {
             enableDisable();
             final boolean valid = !otherRadioButton.isSelected() || otherMessageVariableTextfield.getText().trim().length() > 0;
             firePropertyChange("valid", null, valid);
+            if (valid) {
+                final ActionEvent event = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "updated", 0);
+                for (ActionListener actionListener : listenerList.getListeners(ActionListener.class)) {
+                    actionListener.actionPerformed(event);
+                }
+            }
         }
     });
 
@@ -149,5 +157,13 @@ public class TargetMessagePanel extends JPanel {
 
         model.setTarget(type);
         model.setOtherTargetMessageVariable(var);
+    }
+
+    public void addActionListener(ActionListener l) {
+        listenerList.add(ActionListener.class, l);
+    }
+
+    public void removeActionListener(ActionListener l) {
+        listenerList.remove(ActionListener.class, l);
     }
 }

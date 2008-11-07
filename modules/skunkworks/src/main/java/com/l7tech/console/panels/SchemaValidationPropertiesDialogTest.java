@@ -52,7 +52,7 @@ public class SchemaValidationPropertiesDialogTest {
         SchemaValidation sass = new SchemaValidation();
         AssertionTreeNode tn = AssertionTreeNodeFactory.asTreeNode(sass);
 
-        SchemaValidationPropertiesDialog d = new SchemaValidationPropertiesDialog(null, (SchemaValidationTreeNode)tn, ps);
+        SchemaValidationPropertiesDialog d = new SchemaValidationPropertiesDialog(null, (SchemaValidationTreeNode)tn, ps, null);
 
         d.setModal(true);
         d.pack();

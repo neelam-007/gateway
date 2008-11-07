@@ -3,36 +3,35 @@
  */
 package com.l7tech.console.panels;
 
+import com.japisoft.xmlpad.PopupModel;
+import com.japisoft.xmlpad.UIAccessibility;
+import com.japisoft.xmlpad.XMLContainer;
+import com.japisoft.xmlpad.action.ActionModel;
+import com.japisoft.xmlpad.editor.XMLEditor;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.SsmApplication;
+import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionResourceType;
 import com.l7tech.policy.assertion.GlobalResourceInfo;
+import com.l7tech.policy.assertion.MessageTargetableAssertion;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.schema.SchemaEntry;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.FileChooserUtil;
-import com.l7tech.gui.widgets.OkCancelDialog;
-import com.l7tech.wsdl.WsdlSchemaAnalizer;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ExceptionUtils;
-
-import com.japisoft.xmlpad.PopupModel;
-import com.japisoft.xmlpad.UIAccessibility;
-import com.japisoft.xmlpad.XMLContainer;
-import com.japisoft.xmlpad.action.ActionModel;
-import com.japisoft.xmlpad.editor.XMLEditor;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
+import com.l7tech.wsdl.Wsdl;
+import com.l7tech.wsdl.WsdlSchemaAnalizer;
 import org.dom4j.DocumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -45,6 +44,9 @@ import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.wsdl.Binding;
 import javax.wsdl.WSDLException;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -52,7 +54,11 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlException;
-import java.util.*;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -95,6 +101,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private JPanel globalURLTab;
     private JComboBox globalSchemaCombo;
     private JButton editGlobalXMLSchemasButton;
+    private TargetMessagePanel targetMessagePanel;
 
     // Other fields
     private final boolean readOnly;
@@ -124,13 +131,16 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     /** Set to true if the Ok button completes. */
     private boolean changesCommitted = false;
 
-    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service) {
+    private volatile TargetMessageType inferredTargetMessageType;
+
+    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service, TargetMessageType inferredTarget) {
         super(owner, true);
         final SchemaValidation assertion = node.asAssertion();
         if (assertion == null) throw new IllegalArgumentException("Schema Validation Node == null");
         this.readOnly = !node.canEdit();
         schemaValidationAssertion = assertion;
         this.service = service;
+        this.inferredTargetMessageType = inferredTarget;
         initialize();
     }
 
@@ -142,6 +152,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         this.readOnly = false;
         schemaValidationAssertion = assertion;
         this.service = service;
+        this.inferredTargetMessageType = null;
         initialize();
     }
 
@@ -171,6 +182,21 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         xmldisplayPanel.removeAll();
         xmldisplayPanel.setLayout(new BorderLayout(0, CONTROL_SPACING));
         xmldisplayPanel.add(xmlContainer.getView(), BorderLayout.CENTER);
+
+        // Set up a fake model for the TMP to avoid mutating the assertion prior to {@link #ok}
+        targetMessagePanel.setModel(new MessageTargetableAssertion() {{
+            this.target = schemaValidationAssertion.getTarget();
+            if (target == null) target = inferredTargetMessageType;
+            this.otherTargetMessageVariable = schemaValidationAssertion.getOtherTargetMessageVariable();
+        }});
+
+        targetMessagePanel.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // They selected something; no point warning anybody
+                inferredTargetMessageType = null;
+            }
+        });
 
         Utilities.setEscKeyStrokeDisposes(this);
 
@@ -397,19 +423,17 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         try {
             Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
             wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-            Collection bindings = wsdl.getBindings();
+            Collection<Binding> bindings = wsdl.getBindings();
             if (bindings.isEmpty()) return;
 
             try {
-                for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
-                    Binding binding = (Binding)iterator.next();
+                for (Binding binding : bindings) {
                     if (!Wsdl.STYLE_DOCUMENT.equals(wsdl.getBindingStyle(binding))) {
                         break;
                     }
                 }
                 wsdlBindingSoapUseIsLiteral = true;
-                for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
-                    Binding binding = (Binding)iterator.next();
+                for (Binding binding : bindings) {
                     if (!Wsdl.USE_LITERAL.equals(wsdl.getSoapUse(binding))) {
                         wsdlBindingSoapUseIsLiteral = false;
                         break;
@@ -430,34 +454,33 @@ public class SchemaValidationPropertiesDialog extends JDialog {
      */
     private boolean checkForUnresolvedImports(Document schemaDoc) {
         Element schemael = schemaDoc.getDocumentElement();
-        java.util.List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
+        java.util.List<Element> listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
         if (listofimports.isEmpty()) return false;
-        ArrayList unresolvedImportsList = new ArrayList();
-        ArrayList resolutionSuggestionList = new ArrayList();
+        ArrayList<String> unresolvedImportsList = new ArrayList<String>();
+        ArrayList<String> resolutionSuggestionList = new ArrayList<String>();
         Registry reg = Registry.getDefault();
         if (reg == null || reg.getSchemaAdmin() == null) {
             throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
         }
-        for (Iterator iterator = listofimports.iterator(); iterator.hasNext();) {
-            Element importEl = (Element) iterator.next();
+        for (Element importEl : listofimports) {
             String importns = importEl.getAttribute("namespace");
             String importloc = importEl.getAttribute("schemaLocation");
             try {
                 if (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) {
                     //if (importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty()) {
-                        if (importloc != null) {
-                            unresolvedImportsList.add(importloc);
+                    if (importloc != null) {
+                        unresolvedImportsList.add(importloc);
 
-                            // Check for the desired namespace with different location
-                            if (importns != null) {
-                                for (SchemaEntry entry : reg.getSchemaAdmin().findByTNS(importns)) {
-                                    if (entry.getName() != null && entry.getName().length() > 0)
-                                        resolutionSuggestionList.add(entry.getName());
-                                }
+                        // Check for the desired namespace with different location
+                        if (importns != null) {
+                            for (SchemaEntry entry : reg.getSchemaAdmin().findByTNS(importns)) {
+                                if (entry.getName() != null && entry.getName().length() > 0)
+                                    resolutionSuggestionList.add(entry.getName());
                             }
-                        } else {
-                            unresolvedImportsList.add(importns);
                         }
+                    } else {
+                        unresolvedImportsList.add(importns);
+                    }
                     //}
                 }
             } catch (ObjectModelException e) {
@@ -467,14 +490,14 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         if (!unresolvedImportsList.isEmpty()) {
             StringBuffer msg = new StringBuffer("The assertion cannot be saved because the schema\n" +
                                                 "contains the following unresolved imported schemas:\n");
-            for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
-                msg.append("  " + iterator.next());
+            for (String anUnresolvedImportsList : unresolvedImportsList) {
+                msg.append("  ").append(anUnresolvedImportsList);
                 msg.append("\n");
             }
             if (!resolutionSuggestionList.isEmpty()) {
                 msg.append("Note that these schemas are imported but the locations do not match:\n");
-                for (Iterator iterator = resolutionSuggestionList.iterator(); iterator.hasNext();) {
-                    msg.append("  " + iterator.next());
+                for (String aResolutionSuggestionList : resolutionSuggestionList) {
+                    msg.append("  ").append(aResolutionSuggestionList);
                     msg.append("\n");
                 }
             }
@@ -582,12 +605,32 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             throw new RuntimeException("Unhandled mode " + mode);
         }
 
+        if (inferredTargetMessageType != null) {
+            DialogDisplayer.showConfirmDialog(this, MessageFormat.format(resources.getString("warning.inferredTarget.message"), inferredTargetMessageType.name()),
+                                              resources.getString("warning.inferredTarget.title"),
+                                              JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE,
+                                              new DialogDisplayer.OptionListener() {
+                @Override
+                public void reportResult(int option) {
+                    if (option == JOptionPane.OK_OPTION) {
+                        done();
+                    }
+                }
+            });
+        } else {
+            done();
+        }
+    }
+
+    private void done() {
+        targetMessagePanel.updateModel(schemaValidationAssertion);
+
         // save new schema
         schemaValidationAssertion.setApplyToArguments(rbApplyToArgs.isSelected());
 
         // exit
         changesCommitted = true;
-        SchemaValidationPropertiesDialog.this.dispose();
+        this.dispose();
     }
 
     private boolean docIsSchema(Document doc) {
@@ -781,14 +824,18 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private String doc2String(Document doc) throws IOException {
-        final StringWriter sw = new StringWriter(512);
-        XMLSerializer xmlSerializer = new XMLSerializer();
-        xmlSerializer.setOutputCharStream(sw);
-        OutputFormat of = new OutputFormat();
-        of.setIndent(4);
-        xmlSerializer.setOutputFormat(of);
-        xmlSerializer.serialize(doc);
-        return sw.toString();
+        StringWriter sw = new StringWriter(1024);
+        try {
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer t = tf.newTransformer();
+            t.setOutputProperty(OutputKeys.INDENT, "yes");
+            t.transform(new DOMSource(doc), new StreamResult(sw));
+            return sw.toString();
+        } catch (TransformerConfigurationException e) {
+            throw new RuntimeException(e); // Can't happen
+        } catch (TransformerException e) {
+            throw new RuntimeException(e); // Can't happen
+        }
     }
 
     private void displayError(String msg, String title) {

@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 import javax.swing.*;
+import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,7 +21,11 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode<SchemaValida
     }
 
     public String getName() {
-        return "[Validate Message's Schema]";
+        if (assertion.getTarget() == null) {
+            return "[Validate Message's Schema]";
+        } else {
+            return MessageFormat.format("[Validate {0}''s Schema]", assertion.getTargetName());
+        }
     }
 
     protected String iconResource(boolean open) {

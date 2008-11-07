@@ -1,30 +1,33 @@
+/**
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.policy.assertion.xml;
 
 import com.l7tech.policy.AssertionResourceInfo;
-import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.assertion.AssertionResourceType;
+import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionResourceType;
-import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
+import com.l7tech.policy.assertion.annotation.RequiresXML;
+import com.l7tech.policy.variable.Syntax;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Contains the xml schema for which requests and/or responses need to be validated against.
  * At runtime, the element being validated is always the child of the soap body element.
- *
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 4, 2004<br/>
- * $Id$<br/>
- *
  */
 @RequiresXML
 @HardwareAccelerated( type=HardwareAccelerated.Type.SCHEMA )
-public class SchemaValidation extends Assertion implements UsesResourceInfo, UsesVariables {
+public class SchemaValidation extends MessageTargetableAssertion implements UsesResourceInfo, UsesVariables {
+    public SchemaValidation() {
+        this.target = null; // Backward compatibility; null implies old post-routing heuristic
+    }
 
     /**
      * Return whether the schema validation has been configured for message/operation
@@ -69,10 +72,12 @@ public class SchemaValidation extends Assertion implements UsesResourceInfo, Use
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
 
     public String[] getVariablesUsed() {
+        List<String> vars = new ArrayList<String>();
+        vars.addAll(Arrays.asList(super.getVariablesUsed()));
         if (resourceInfo.getType() == AssertionResourceType.SINGLE_URL) {
             SingleUrlResourceInfo suri = (SingleUrlResourceInfo) resourceInfo;
-            return Syntax.getReferencedNames(suri.getUrl());
+            vars.addAll(Arrays.asList(Syntax.getReferencedNames(suri.getUrl())));
         }
-        return new String[0];
+        return vars.toArray(new String[vars.size()]);
     }
 }

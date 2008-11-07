@@ -1,23 +1,16 @@
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.url.UrlResolver;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.assertion.GlobalResourceInfo;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
@@ -25,8 +18,13 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.url.UrlResolver;
 import com.l7tech.server.util.res.ResourceGetter;
 import com.l7tech.server.util.res.ResourceObjectFactory;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -36,14 +34,14 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.net.MalformedURLException;
+import java.util.logging.Logger;
 
 /**
  * Validates the soap body's contents of a soap request or soap response against
@@ -72,7 +70,6 @@ public class ServerSchemaValidation
         this.auditor = new Auditor(this, springContext, logger);
         this.schemaManager = (SchemaManager)springContext.getBean("schemaManager");
         this.varsUsed = data.getVariablesUsed();
-
 
         AssertionResourceInfo resourceInfo = assertion.getResourceInfo();
 
@@ -122,20 +119,51 @@ public class ServerSchemaValidation
      * Validates the soap envelope's body's child against the schema
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        // decide which document to act upon based on routing status
-        RoutingStatus routing = context.getRoutingStatus();
+        TargetMessageType target = assertion.getTarget();
         final Message msg;
-        try {
-            msg = getMessageToValidate(routing, context);
+        final String targetDesc;
+        if (target == null) {
+            // Backward compatibility: decide which document to act upon based on routing status
+            final RoutingStatus routing = context.getRoutingStatus();
+            final boolean isRequest = routing != RoutingStatus.ROUTED && routing != RoutingStatus.ATTEMPTED;
+
+            if (isRequest) {
+                msg = context.getRequest();
+                target = TargetMessageType.REQUEST;
+            } else {
+                msg = context.getResponse();
+                target = TargetMessageType.RESPONSE;
+            }
+            targetDesc = target.name().toLowerCase();
+        } else {
+            try {
+                msg = context.getTargetMessage(assertion, true);
+                targetDesc = assertion.getTargetName();
+            } catch (NoSuchVariableException e) {
+                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, assertion.getOtherTargetMessageVariable());
+                return AssertionStatus.FAILED;
+            }
         }
-        catch (IllegalStateException ise) {
+
+        if (!msg.isXml()) {
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_NOT_XML, targetDesc);
             return AssertionStatus.NOT_APPLICABLE;
         }
 
+        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATING, targetDesc);
         AssertionStatus status = validateMessage(msg, context);
-        // not pretty, but functional ...
-        if (!isRequest(routing) && status == AssertionStatus.BAD_REQUEST) {
-            status = AssertionStatus.BAD_RESPONSE;
+        if (status == AssertionStatus.BAD_REQUEST) {
+            switch (target) {
+                case RESPONSE:
+                    status = AssertionStatus.BAD_RESPONSE;
+                    break;
+                case OTHER:
+                    status = AssertionStatus.FAILED;
+                    break;
+                default:
+                    // Leave it alone
+                    break;
+            }
         }
 
         return status;
@@ -160,7 +188,7 @@ public class ServerSchemaValidation
                 try {
                     ps = schemaManager.getSchemaByUrl(globalSchemaID);
                 } catch (MalformedURLException e) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, new String[]{globalSchemaID});
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, globalSchemaID);
                     return AssertionStatus.SERVER_ERROR;
                 }
             } else {
@@ -187,7 +215,7 @@ public class ServerSchemaValidation
                     }
                     elementsToValidate = result;
                 } catch ( InvalidDocumentFormatException e) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[]{"The document to validate does not respect the expected format"});
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate does not respect the expected format");
                     return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
                 }
                 if (elementsToValidate == null || elementsToValidate.length < 1) {
@@ -215,12 +243,12 @@ public class ServerSchemaValidation
                 Collection<SAXParseException> errors = reporter.recordedErrors();
                 if (!errors.isEmpty()) {
                     for (Object error : errors) {
-                        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[]{error.toString()});
+                        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, error.toString());
                     }
                     return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
                 }
                 // Tarari failure with no message
-                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[]{ExceptionUtils.getMessage(validationException)});
+                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, ExceptionUtils.getMessage(validationException));
                 return AssertionStatus.BAD_REQUEST;
             }
 
@@ -230,97 +258,45 @@ public class ServerSchemaValidation
 
         } catch (ResourceGetter.InvalidMessageException e) {
             logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
-                    new String[]{"The document to validate was not well-formed XML"});
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate was not well-formed XML");
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } catch (ResourceGetter.UrlNotFoundException e) {
             logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
-                    new String[]{"The document to validate made use of namespaces for which we have no schemas registered, " +
-                            "and did not include schema URLs for these namespaces"});
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate made use of namespaces for which we have no schemas registered, and did not include schema URLs for these namespaces");
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } catch (ResourceGetter.MalformedResourceUrlException e) {
             logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
-                    new String[]{"The document to validate included a schema declaration pointing at an invalid URL"});
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate included a schema declaration pointing at an invalid URL");
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } catch (ResourceGetter.UrlNotPermittedException e) {
             logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
-                    new String[]{"The document to validate included a schema declaration pointing at a URL that is not permitted by the whitelist"});
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "The document to validate included a schema declaration pointing at a URL that is not permitted by the whitelist");
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } catch (ResourceGetter.ResourceIOException e) {
             logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
-                    new String[]{"Unable to retrieve a schema document: " + ExceptionUtils.getMessage(e)});
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "Unable to retrieve a schema document: " + ExceptionUtils.getMessage(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (ResourceGetter.ResourceParseException e) {
             logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
-                    new String[]{"A remote schema document could not be parsed: " + ExceptionUtils.getMessage(e)});
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "A remote schema document could not be parsed: " + ExceptionUtils.getMessage(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (GeneralSecurityException e) {
             logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
-                    new String[]{"A remote schema document could not be downloaded because an SSL context could not be created: " + ExceptionUtils.getMessage(e)});
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "A remote schema document could not be downloaded because an SSL context could not be created: " + ExceptionUtils.getMessage(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (NoSuchPartException e) {
             logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
-                    new String[]{"A required MIME part was lost: " + ExceptionUtils.getMessage(e)});
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, "A required MIME part was lost: " + ExceptionUtils.getMessage(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
             logger.log(Level.INFO, "validation failed", e);
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
-                    new String[]{e.getMessage()});
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, e.getMessage());
             return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         } finally {
             if (ps != null) ps.close();
         }
     }
 
-
-    /**
-     * Get the request or response message depending on routing state
-     */
-    private Message getMessageToValidate(RoutingStatus routing, PolicyEnforcementContext context) throws IOException {
-        Message msg;
-
-        if (isRequest(routing)) {
-            // try to validate request
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_REQUEST);
-
-            if (!context.getRequest().isXml()) {
-                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_REQUEST_NOT_XML);
-                throw new IllegalStateException();
-            }
-
-            msg = context.getRequest();
-        } else {
-            // try to validate response
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_RESPONSE);
-
-            if (!context.getResponse().isXml()) {
-                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_RESPONSE_NOT_XML);
-                throw new IllegalStateException();
-            }
-
-            msg = context.getResponse();
-        }
-
-        return msg;
-    }
-
-    // TODO introduce a proper field for selecting validation of request or response.  this hack is past its best-before date
-    private boolean isRequest(RoutingStatus routing) {
-        boolean isRequest = true;
-
-        if (routing == RoutingStatus.ROUTED || routing == RoutingStatus.ATTEMPTED) {
-            isRequest = false;
-        }
-
-        return isRequest;
-    }
 
     /**
      * Goes one level deeper than getRequestBodyChild
