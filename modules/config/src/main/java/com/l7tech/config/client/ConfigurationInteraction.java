@@ -183,7 +183,11 @@ public abstract class ConfigurationInteraction extends Interaction {
         
         for ( Option option : optionSet.getOptionsForGroup(groupId) ) {
             ConfigurationBean bean = configBeans.get( option.getId() );
-            if ( bean == null || bean.getConfigValue() == null ) {
+            //
+            // Currently checking emptyValue to allow for some config values to be null.
+            // May be better to have a separate property for "nullable"
+            //
+            if ( (bean == null || bean.getConfigValue() == null) && option.getEmptyValue()==null ) {
                 valid = false;
                 break;
             }
