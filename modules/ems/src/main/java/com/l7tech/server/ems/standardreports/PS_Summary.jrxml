@@ -130,6 +130,8 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 	<field name="MAPPING_VALUE_5" class="java.lang.String"/>
 	<field name="AUTHENTICATED_USER" class="java.lang.String"/>
 	<field name="CONSTANT_GROUP" class="java.lang.String"/>
+	<field name="POLICY_VIOLATIONS" class="java.lang.Long"/>
+	<field name="ROUTING_FAILURES" class="java.lang.Long"/>
 
 	<variable name="SERVICE_ID" class="java.lang.Long" resetType="Report" calculation="Nothing">
 		<variableExpression><![CDATA[$F{SERVICE_ID}]]></variableExpression>
@@ -238,6 +240,103 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
 	</variable>
 
+		<group  name="CONSTANT_CHART" >
+			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
+			<groupHeader>
+			<band height="228"  isSplitAllowed="true" >
+				<printWhenExpression><![CDATA[new Boolean(!$P{IS_CONTEXT_MAPPING}.booleanValue() )]]></printWhenExpression>
+				<frame>					<reportElement
+						style="FrameTableTop"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="564"
+						height="18"
+						key="frame-35"/>
+					<box></box>
+				<staticText>
+					<reportElement
+						style="FrameTitle"
+						x="0"
+						y="0"
+						width="105"
+						height="17"
+						key="staticText-144"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Summary Chart]]></text>
+				</staticText>
+				</frame>				<frame>					<reportElement
+						style="ChartFrame"
+						x="0"
+						y="18"
+						width="564"
+						height="192"
+						key="frame-34"/>
+					<box></box>
+				<stackedBarChart>
+					<chart evaluationTime="Group" evaluationGroup="CONSTANT_CHART"  hyperlinkTarget="Self"  customizerClass="com.l7tech.server.ems.standardreports.PerformanceSummaryChartCustomizer" >
+					<reportElement
+						x="0"
+						y="5"
+						width="564"
+						height="182"
+						key="element-1"/>
+					<box></box>
+						<chartTitle color="#000000" >
+								<titleExpression><![CDATA["Performance Summary"]]></titleExpression>
+					</chartTitle>
+						<chartLegend textColor="#000000" backgroundColor="#FFFFFF" >
+					</chartLegend>
+					</chart>
+					<categoryDataset>
+						<dataset resetType="Group" resetGroup="CONSTANT_CHART" incrementType="Group" incrementGroup="SERVICE_ID_GROUP" >
+						</dataset>
+						<categorySeries>
+							<seriesExpression><![CDATA["Throughput"]]></seriesExpression>
+							<categoryExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"]]></categoryExpression>
+							<valueExpression><![CDATA[$F{THROUGHPUT}]]></valueExpression>
+				<itemHyperlink >
+				</itemHyperlink>
+						</categorySeries>
+						<categorySeries>
+							<seriesExpression><![CDATA["Policy Violations"]]></seriesExpression>
+							<categoryExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"]]></categoryExpression>
+							<valueExpression><![CDATA[$F{POLICY_VIOLATIONS}]]></valueExpression>
+				<itemHyperlink >
+				</itemHyperlink>
+						</categorySeries>
+						<categorySeries>
+							<seriesExpression><![CDATA["Routing Failures"]]></seriesExpression>
+							<categoryExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"]]></categoryExpression>
+							<valueExpression><![CDATA[$F{ROUTING_FAILURES}]]></valueExpression>
+				<itemHyperlink >
+				</itemHyperlink>
+						</categorySeries>
+					</categoryDataset>
+					<barPlot isShowLabels="true" >
+						<plot orientation="Horizontal" />
+					<categoryAxisLabelExpression><![CDATA["Services"]]></categoryAxisLabelExpression>
+						<categoryAxisFormat>
+							<axisFormat >
+							</axisFormat>
+						</categoryAxisFormat>
+					<valueAxisLabelExpression><![CDATA["# Requests"]]></valueAxisLabelExpression>
+						<valueAxisFormat>
+							<axisFormat >
+							</axisFormat>
+						</valueAxisFormat>
+					</barPlot>
+				</stackedBarChart>
+				</frame>			</band>
+			</groupHeader>
+			<groupFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+			</groupFooter>
+		</group>
 		<group  name="CONSTANT" >
 			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
 			<groupHeader>
@@ -1260,7 +1359,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 				<staticText>
 					<reportElement
 						style="FrameTitle"
-						x="3"
+						x="0"
 						y="0"
 						width="105"
 						height="17"
@@ -1272,13 +1371,12 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
 				</frame>				<frame>					<reportElement
-						style="FrameTableBottom"
+						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
 						y="18"
 						width="564"
 						height="207"
-						backcolor="#F8F8F8"
 						key="frame-5"
 						isPrintRepeatedValues="false"/>
 					<box></box>
