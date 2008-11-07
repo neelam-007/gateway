@@ -207,6 +207,12 @@ public class CertPropertiesWindow extends JDialog {
 
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                //validate fields
+                String errorMsg = validateFields();
+                if (errorMsg != null) {
+                    JOptionPane.showMessageDialog(mainPanel, errorMsg, resources.getString("save.error.title"), JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
                 TrustedCert tc;
 
@@ -578,5 +584,18 @@ public class CertPropertiesWindow extends JDialog {
 
             return this;
         }
-    }    
+    }
+
+    /**
+     * @return  Returns NULL if all fields are valid, otherwise it'll return an error message describing the invalid field.
+     */
+    private String validateFields() {
+        //certificate name cannot be empty
+        String certName = certNameTextField.getText();
+        if (certName == null || certName.length() <= 0){
+            return resources.getString("cert.certname.empty.error");
+        }
+
+        return null;
+    }
 }
