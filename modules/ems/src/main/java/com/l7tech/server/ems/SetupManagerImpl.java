@@ -1,51 +1,43 @@
 package com.l7tech.server.ems;
 
+import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.UserBean;
-import com.l7tech.identity.User;
-
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.security.keystore.KeystoreFileManager;
-import com.l7tech.server.security.keystore.KeystoreFile;
-import com.l7tech.server.identity.internal.InternalUserManager;
+import com.l7tech.server.ems.enterprise.EnterpriseFolder;
+import com.l7tech.server.ems.enterprise.EnterpriseFolderManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.server.identity.internal.InternalUserManager;
+import com.l7tech.server.security.keystore.KeystoreFile;
+import com.l7tech.server.security.keystore.KeystoreFileManager;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.ExceptionUtils;
-import static org.springframework.transaction.annotation.Propagation.*;
-import org.springframework.transaction.annotation.Transactional;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.Resource;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.Subject;
 import javax.sql.DataSource;
-import java.util.Collections;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StreamTokenizer;
 import java.security.AccessController;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
-import java.io.StreamTokenizer;
-import java.io.InputStreamReader;
-import java.io.IOException;
+import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Encapsulates behavior for initial setup of a new EMS instance.
@@ -59,6 +51,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
     private final IdentityProviderFactory identityProviderFactory;
     private final IdentityProviderConfigManager identityProviderConfigManager;
     private final RoleManager roleManager;
+    private final EnterpriseFolderManager enterpriseFolderManager;
     private final AuditContext auditContext;
     private final KeystoreFileManager keystoreFileManager;
 
@@ -67,6 +60,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                             final IdentityProviderFactory identityProviderFactory,
                             final IdentityProviderConfigManager identityProviderConfigManager,
                             final RoleManager roleManager,
+                            final EnterpriseFolderManager enterpriseFolderManager,
                             final AuditContext context,
                             final KeystoreFileManager keystoreFileManager
     ) {
@@ -75,6 +69,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         this.identityProviderFactory = identityProviderFactory;
         this.identityProviderConfigManager = identityProviderConfigManager;
         this.roleManager = roleManager;
+        this.enterpriseFolderManager = enterpriseFolderManager;
         this.auditContext = context;
         this.keystoreFileManager = keystoreFileManager;
     }
@@ -127,7 +122,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                 throw new SetupException("This EMS instance has already been set up.");
 
             InternalUserManager internalUserManager = getInternalUserManager();
-            if ( internalUserManager == null ) throw new SetupException("Unable to access user manager."); 
+            if ( internalUserManager == null ) throw new SetupException("Unable to access user manager.");
 
             Subject subject = Subject.getSubject(AccessController.getContext());
             User temp = new UserBean(initialAdminUsername);
@@ -191,13 +186,13 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                 } else {
                     logger.log( Level.WARNING, "SQL Warning: " + warning.getErrorCode() + ", SQLState: " + warning.getSQLState() + ", Message: " + warning.getMessage());
                 }
-                
+
                 warning = warning.getNextWarning();
             }
 
             if ( created ) {
                 runScripts( connection, scripts );
-            }            
+            }
         } catch ( SQLException se ) {
             throw new RuntimeException( "Could not connect to database.", se );
         } finally {
@@ -269,7 +264,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
     }
 
     /**
-     * Add initial identity provider configuration if not present. 
+     * Add initial identity provider configuration if not present.
      */
     public void afterPropertiesSet() throws Exception {
         if ( identityProviderConfigManager.findAll().isEmpty() &&
@@ -299,6 +294,9 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             auditContext.setSystem(true);
             id = roleManager.save(role);
             logger.info("Created configuration for administration role with identifier '" + id + "'.");
+
+            logger.info("Creating root folder with name \"" + EnterpriseFolder.DEFAULT_ROOT_FOLDER_NAME + "\".");
+            enterpriseFolderManager.create(EnterpriseFolder.DEFAULT_ROOT_FOLDER_NAME, (EnterpriseFolder)null);
         }
 
         InternalUserManager internalUserManager = getInternalUserManager();
@@ -327,7 +325,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                     adminRole.addAssignedUser( user );
                     roleManager.update( adminRole );
                 }
-            } 
+            }
         } else {
             logger.warning("User manager not found during initialization.");
         }

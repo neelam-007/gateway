@@ -81,6 +81,10 @@
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value> <!-- TODO [steve] create subclass of msar and remove mapping key/values? -->
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingValues</value>
 
+                <!-- Enterprise Organization Entities -->
+                <value>com.l7tech.server.ems.enterprise.EnterpriseFolder</value>
+                <value>com.l7tech.server.ems.enterprise.SsgCluster</value>
+
                 <!-- General -->                
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
                 <value>com.l7tech.identity.internal.InternalUser</value>
@@ -356,8 +360,9 @@
         <constructor-arg index="2" ref="identityProviderFactory"/>
         <constructor-arg index="3" ref="identityProviderConfigManager"/>
         <constructor-arg index="4" ref="roleManager"/>
-        <constructor-arg index="5" ref="auditContext"/>
-        <constructor-arg index="6" ref="keystoreFileManager"/>
+        <constructor-arg index="5" ref="enterpriseFolderManager" />
+        <constructor-arg index="6" ref="auditContext"/>
+        <constructor-arg index="7" ref="keystoreFileManager"/>
     </bean>
 
     <!-- Security Manager -->
@@ -393,6 +398,16 @@
                 <ref local="securityManager"/>
             </list>
         </property>
+    </bean>
+
+    <!-- Enterprise Folder Manager -->
+    <bean id="enterpriseFolderManager" class="com.l7tech.server.ems.enterprise.EnterpriseFolderManagerImpl" parent="hibernateBean">
+        <property name="ssgClusterManager" ref="ssgClusterManager"/>
+    </bean>
+
+    <!-- SSG Cluster Manager -->
+    <bean id="ssgClusterManager" class="com.l7tech.server.ems.enterprise.SsgClusterManagerImpl" parent="hibernateBean">
+        <property name="enterpriseFolderManager" ref="enterpriseFolderManager"/>
     </bean>
 
     <!-- keystore root cert and ssl config  -->

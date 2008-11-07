@@ -319,6 +319,8 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                 var entity = enterpriseTreeTable.getSelectedEntity();
                 document.getElementById('addSSGClusterDialog_parentId').value = entity.id;
                 document.getElementById('addSSGClusterDialog_name').value = '';
+                document.getElementById('addSSGClusterDialog_hostName').value = '';
+                document.getElementById('addSSGClusterDialog_port').value = '';
                 validateAddSSGClusterDialog();
                 addSSGClusterDialog.show();
             }
@@ -979,9 +981,9 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
 <div id="deleteFolderDialog">
     <div class="hd">Delete Folder</div>
     <div class="bd">
-        <form name="deleteFolderForm" action="action/deleteEnterpriseFolder">
-            <input id="deleteFolderDialog_id" type="hidden" name="id" />
-            Delete folder &ldquo;<span id="deleteFolderDialog_name"></span>&rdquo; and all its children?
+        <form name="deleteFolderForm" wicket:id="deleteFolderForm" method="POST">
+            <input id="deleteFolderDialog_id" wicket:id="deleteFolderDialog_id" type="hidden" name="id" />
+            Delete folder &ldquo;<span id="deleteFolderDialog_name"></span>&rdquo; and all its descendents?
         </form>
     </div>
 </div>
@@ -989,22 +991,29 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
 <div id="addSSGClusterDialog">
     <div class="hd">Add SSG Cluster</div>
     <div class="bd">
-        <form name="addSSGClusterForm" action="action/addSSGCluster">
-            <input id="addSSGClusterDialog_parentId" type="hidden" name="parentId" />
+        <form name="addSSGClusterForm" wicket:id="addSSGClusterForm" method="POST">
+            <input id="addSSGClusterDialog_parentId" wicket:id="addSSGClusterDialog_parentId" type="hidden" name="parentId" />
             <table class="spaced">
                 <tr>
                     <th>Name:</th>
-                    <td><input type="text" id="addSSGClusterDialog_name" name="name" size="40" maxlength="128" onkeyup="validateAddSSGClusterDialog();" /> <span id="addSSGClusterDialog_name_hint" class="red"></span></td>
+                    <td><input type="text" id="addSSGClusterDialog_name" wicket:id="addSSGClusterDialog_name" name="name" size="40" maxlength="128" onkeyup="validateAddSSGClusterDialog();" /> <span id="addSSGClusterDialog_name_hint" class="red"></span></td>
                 </tr>
                 <tr>
                     <th>Host Name:</th>
-                    <td><input type="text" id="addSSGClusterDialog_hostName" name="name" size="40" maxlength="128" onkeyup="validateAddSSGClusterDialog();" /></td>
+                    <td><input type="text" id="addSSGClusterDialog_hostName" wicket:id="addSSGClusterDialog_hostName" name="name" size="40" maxlength="128" onkeyup="validateAddSSGClusterDialog();" /></td>
                 </tr>
                 <tr>
                     <th>Administrative Port Number:</th>
-                    <td><input type="text" id="addSSGClusterDialog_port" name="name" size="10" onkeyup="validateAddSSGClusterDialog();" /></td>
+                    <td><input type="text" id="addSSGClusterDialog_port" wicket:id="addSSGClusterDialog_port" name="name" size="10" onkeyup="validateAddSSGClusterDialog();" /></td>
                 </tr>
             </table>
+            <div style="width: 40em;">
+                When you click OK, you will be redirected to the specified SSG Cluster where
+                you will authenticate using an administrator account on that SSG Cluster,
+                create a trust relationship  between the SSG Cluster and this Enterprise Service Manager,
+                and map the supplied account to your Enterprise Service Manager account.
+                When completed, you will be returned to this page.
+            </div>
         </form>
     </div>
 </div>
