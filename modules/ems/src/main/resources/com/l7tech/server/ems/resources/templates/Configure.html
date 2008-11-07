@@ -70,11 +70,13 @@
                 OK : 'OK',
                 CANCEL : 'Cancel',
                 ERROR : 'Error',
+                CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server: ',
                 CANNOT_DOWNLOAD_ENTITY_DATA : 'Failed to get array of enterprise entities from server: ',
                 CANNOT_PARSE_ENTITY_DATA : 'Failed to parse array of enterprise entities downloaded from server: ',
                 ENTITY_DATA_ERROR : 'Data error.',
                 FOLDER_NAME_HINT : 'must be &le; 128 characters, no slash "/"',
                 SSG_CLUSTER_NAME_HINT : 'must be &le; 128 characters, no slash "/"',
+                SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
                 STARTING_SSG_NODE : 'Starting SSG Node ',
                 STOPPING_SSG_NODE : 'Stopping SSG Node ',
                 CANNOT_ADD_FOLDER : 'Failed to add folder: ',
@@ -330,7 +332,15 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                 var callback = {
                     success : function(o) {
                         l7.Dialog.hideWaitDialog();
-                        loadEnterpriseTreeTable(); // TODO should instead just update the status icon
+                        var result = l7.Dialog.showExceptionDialogIfJSONException(
+                                o.responseText,
+                                localizedStrings.ERROR,
+                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_START_SSG_NODE) + '</p>',
+                                localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                localizedStrings.OK);
+                        if (typeof result != 'boolean') {
+                            loadEnterpriseTreeTable();  // TODO should instead just update the status icon
+                        }
                     },
                     failure : function(o) {
                         l7.Dialog.hideWaitDialog();
@@ -348,7 +358,15 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                 var callback = {
                     success : function(o) {
                         l7.Dialog.hideWaitDialog();
-                        loadEnterpriseTreeTable(); // TODO should instead just update the status icon
+                        var result = l7.Dialog.showExceptionDialogIfJSONException(
+                                o.responseText,
+                                localizedStrings.ERROR,
+                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_STOP_SSG_NODE) + '</p>',
+                                localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                localizedStrings.OK);
+                        if (typeof result != 'boolean') {
+                            loadEnterpriseTreeTable();  // TODO should instead just update the status icon
+                        }
                     },
                     failure : function(o) {
                         l7.Dialog.hideWaitDialog();
@@ -399,7 +417,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     document.getElementById('renameFolderDialog_name_hint').innerHTML = '(' + localizedStrings.FOLDER_NAME_HINT + ')';
                 }
 
-                var okButton = addSSGClusterDialog.getButtons()[0];
+                var okButton = renameFolderDialog.getButtons()[0];
                 if (nameIsValid) {
                     okButton.set('disabled', false);
                 } else {
@@ -420,7 +438,17 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 }
 
                 var hostNameIsValid = document.getElementById('addSSGClusterDialog_hostName').value.length > 0;
-                var portIsValid = document.getElementById('addSSGClusterDialog_port').value.length > 0;
+
+                var portTextBox = document.getElementById('addSSGClusterDialog_port');
+                var port = portTextBox.value;
+                var portIsValid = l7.Util.isIntString(port) && port > 0;
+                if (portIsValid || port.length == 0) {
+                    YAHOO.util.Dom.removeClass(portTextBox, 'invalid');
+                    document.getElementById('addSSGClusterDialog_port_hint').innerHTML = '';
+                } else if (port.length != 0) {
+                    YAHOO.util.Dom.addClass(portTextBox, 'invalid');
+                    document.getElementById('addSSGClusterDialog_port_hint').innerHTML = '(' + localizedStrings.SSG_CLUSTER_PORT_HINT + ')';
+                }
 
                 var okButton = addSSGClusterDialog.getButtons()[0];
                 if (nameIsValid && hostNameIsValid && portIsValid) {
@@ -442,7 +470,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     document.getElementById('renameSSGClusterDialog_name_hint').innerHTML = '(' + localizedStrings.SSG_CLUSTER_NAME_HINT + ')';
                 }
 
-                var okButton = addSSGClusterDialog.getButtons()[0];
+                var okButton = renameSSGClusterDialog.getButtons()[0];
                 if (nameIsValid) {
                     okButton.set('disabled', false);
                 } else {
@@ -477,7 +505,15 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 addFolderDialog.render();
                 addFolderDialog.callback.success = function(o) {
-                    loadEnterpriseTreeTable();  // Reloads to show new folder.
+                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_ADD_FOLDER) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (typeof result != 'boolean') {
+                        loadEnterpriseTreeTable();  // Reloads to show new folder.
+                    }
                 }
                 addFolderDialog.callback.failure = function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_FOLDER + o.status, localizedStrings.OK);
@@ -511,7 +547,15 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 renameFolderDialog.render();
                 renameFolderDialog.callback.success = function(o) {
-                    loadEnterpriseTreeTable();  // Reloads to show new folder.
+                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_RENAME_FOLDER) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (typeof result != 'boolean') {
+                        loadEnterpriseTreeTable();  // Reloads to show new folder name.
+                    }
                 }
                 renameFolderDialog.callback.failure = function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_RENAME_FOLDER + o.status, localizedStrings.OK);
@@ -545,7 +589,15 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 deleteFolderDialog.render();
                 deleteFolderDialog.callback.success = function(o) {
-                    loadEnterpriseTreeTable();  // Reloads to show new folder.
+                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_FOLDER) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (typeof result != 'boolean') {
+                        loadEnterpriseTreeTable();  // Reloads to show folder gone.
+                    }
                 }
                 deleteFolderDialog.callback.failure = function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_FOLDER + o.status, localizedStrings.OK);
@@ -579,7 +631,15 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 addSSGClusterDialog.render();
                 addSSGClusterDialog.callback.success = function(o) {
-                    loadEnterpriseTreeTable();  // Reloads to show new SSG Cluster.
+                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_ADD_SSG_CLUSTER) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (typeof result != 'boolean') {
+                        loadEnterpriseTreeTable();  // Reloads to show new SSG Cluster.
+                    }
                 }
                 addSSGClusterDialog.callback.failure = function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_SSG_CLUSTER + o.status, localizedStrings.OK);
@@ -613,7 +673,15 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 renameSSGClusterDialog.render();
                 renameSSGClusterDialog.callback.success = function(o) {
-                    loadEnterpriseTreeTable();  // Reloads to show new folder.
+                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_RENAME_SSG_CLUSTER) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (typeof result != 'boolean') {
+                        loadEnterpriseTreeTable();  // Reloads to show new SSG Cluster name.
+                    }
                 }
                 renameSSGClusterDialog.callback.failure = function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_RENAME_SSG_CLUSTER + o.status, localizedStrings.OK);
@@ -647,7 +715,15 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 deleteSSGClusterDialog.render();
                 deleteSSGClusterDialog.callback.success = function(o) {
-                    loadEnterpriseTreeTable();  // Reloads to show new folder.
+                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_SSG_CLUSTER) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (typeof result != 'boolean') {
+                        loadEnterpriseTreeTable();  // Reloads to show SSG Cluster gone.
+                    }
                 }
                 deleteSSGClusterDialog.callback.failure = function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SSG_CLUSTER + o.status, localizedStrings.OK);
@@ -1000,11 +1076,11 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 </tr>
                 <tr>
                     <th>Host Name:</th>
-                    <td><input type="text" id="addSSGClusterDialog_hostName" wicket:id="addSSGClusterDialog_hostName" name="name" size="40" maxlength="128" onkeyup="validateAddSSGClusterDialog();" /></td>
+                    <td><input type="text" id="addSSGClusterDialog_hostName" wicket:id="addSSGClusterDialog_hostName" name="hostName" size="40" maxlength="128" onkeyup="validateAddSSGClusterDialog();" /></td>
                 </tr>
                 <tr>
                     <th>Administrative Port Number:</th>
-                    <td><input type="text" id="addSSGClusterDialog_port" wicket:id="addSSGClusterDialog_port" name="name" size="10" onkeyup="validateAddSSGClusterDialog();" /></td>
+                    <td><input type="text" id="addSSGClusterDialog_port" wicket:id="addSSGClusterDialog_port" name="port" size="10" onkeyup="validateAddSSGClusterDialog();" /> <span id="addSSGClusterDialog_port_hint" class="red"></span></td>
                 </tr>
             </table>
             <div style="width: 40em;">

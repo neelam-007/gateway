@@ -397,6 +397,16 @@ if (!l7.Util) {
             return x - s == 0;
         }
     })();
+
+    /**
+     * Tests if an object literal is an Layer 7 exception object
+     *
+     * @param {object} o    the object literal
+     * @return {boolean} true if it is an Layer 7 exception object
+     */
+    l7.Util.isException = function(o) {
+        return o != null && o.exception != undefined && o.exception != null;
+    }
 };
 
 // -----------------------------------------------------------------------------
@@ -667,19 +677,6 @@ if (!l7.Dialog) {
         l7.Dialog = {};
 
         /**
-         * @private
-         */
-        l7.Dialog._waitDialog = new YAHOO.widget.Panel('l7_Dialog_waitDialog', {
-            close       : false,
-            draggable   : false,
-            fixedcenter : true,
-            modal       : true,
-            visible     : false,
-            zindex      : 999
-        });
-        l7.Dialog._waitDialog.setBody('<div class="center"><img src="../images/busy32.gif" /></div>');
-
-        /**
          * Shows the wait dialog.
          *
          * @public
@@ -687,6 +684,20 @@ if (!l7.Dialog) {
          * @param {string} header   text for dialog header
          */
         l7.Dialog.showWaitDialog = function(header) {
+            if (l7.Dialog._waitDialog == undefined) {
+                /**
+                 * @private
+                 */
+                l7.Dialog._waitDialog = new YAHOO.widget.Panel('l7_Dialog_waitDialog', {
+                    close       : false,
+                    draggable   : false,
+                    fixedcenter : true,
+                    modal       : true,
+                    visible     : false,
+                    zindex      : 999
+                });
+                l7.Dialog._waitDialog.setBody('<div class="center"><img src="../images/busy32.gif" /></div>');
+            }
             l7.Dialog._waitDialog.setHeader(header);
             l7.Dialog._waitDialog.render(document.body);
             l7.Dialog._waitDialog.show();
@@ -703,26 +714,6 @@ if (!l7.Dialog) {
         }
 
         /**
-         * @private
-         */
-        l7.Dialog._errorDialog = new YAHOO.widget.Dialog('l7_Dialog_errorDialog', {
-            buttons     : [
-                {
-                    text      : 'OK',
-                    handler   : function() { this.hide(); },
-                    isDefault : true
-                }
-            ],
-            close       : true,
-            draggable   : false,
-            fixedcenter : true,
-            icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
-            modal       : true,
-            visible     : false,
-            zindex      : 999
-        });
-
-        /**
          * Displays a simple error dialog.
          *
          * @param {string} header   localized header text; defaults to 'Error' if null
@@ -732,11 +723,98 @@ if (!l7.Dialog) {
          * @requires YAHOO.widget.Button
          */
         l7.Dialog.showErrorDialog = function(header, body, okText) {
+            if (l7.Dialog._errorDialog == undefined) {
+                /**
+                 * @private
+                 */
+                l7.Dialog._errorDialog = new YAHOO.widget.Dialog('l7_Dialog_errorDialog', {
+                    buttons     : [
+                        {
+                            text      : 'OK',
+                            handler   : function() { this.hide(); },
+                            isDefault : true
+                        }
+                    ],
+                    close       : true,
+                    draggable   : false,
+                    fixedcenter : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
+                    modal       : true,
+                    visible     : false,
+                    zindex      : 999
+                });
+            }
             l7.Dialog._errorDialog.setHeader(header == null ? 'Error' : header);
             l7.Dialog._errorDialog.setBody(body);
             l7.Dialog._errorDialog.render(document.body);
             l7.Dialog._errorDialog.getButtons()[0].set('label', okText == null ? 'OK' : okText);
             l7.Dialog._errorDialog.show();
+        }
+
+        /**
+         * Displays the given l7-style exception object literal in a simple error dialog.
+         *
+         * @public
+         * @param {object} ex       an l7-style exception object literal
+         * @param {string} header   localized header text; defaults to 'Error' if null
+         * @param {html} beginBody  beginning HTML content
+         * @param {string} okText   localized text label for the OK button; defaults to 'OK' if null
+         */
+        l7.Dialog.showExceptionDialog = function(exception, header, beginBody, okText) {
+            var body = beginBody;
+            for (var e = exception; e != null || e != undefined; e = e.cause) {
+                if (e !== exception) body += '<div>Caused By:</div>';
+                body += '<table class="spaced" style="border: 1px solid #000000; margin: 6px 0 6px 0; width: 50em;">';
+                body += '<tr><th>Exception:</th><td>' + l7.Util.escapeAsText(e.exception) + '</td></tr>';
+                if (e.message) {
+                    body += '<tr><th>Message:</th><td class="wrap">' + l7.Util.escapeAsText(e.message) + '</td></tr>';
+                }
+                if (e.localizedMessage) {
+                    body += '<tr><th>Localized Message:</th><td class="wrap">' + l7.Util.escapeAsText(e.localizedMessage) + '</td></tr>';
+                }
+                body += '</table>';
+            }
+            body += '</div>';
+            l7.Dialog.showErrorDialog(header, body, okText);
+        }
+
+        /**
+         * Displays a simple error dialog if the given object is an l7-style exception object.
+         *
+         * @param {object} o        the object literal to test
+         * @param {string} header   localized header text; defaults to 'Error' if null
+         * @param {html} beginBody  beginning HTML content
+         * @param {string} okText   localized text label for the OK button; defaults to 'OK' if null
+         * @return {boolean} true if it was an exception.
+         */
+        l7.Dialog.showExceptionDialogIfException = function(o, header, beginBody, okText) {
+            var result = l7.Util.isException(o);
+            if (result) {
+                l7.Dialog.showExceptionDialog(o, header, beginBody, okText);
+            }
+            return result;
+        }
+
+        l7.Dialog.showExceptionDialogIfJSONException = function(s, header, beginBodyIfException, bodyIfJSONParseException, okText) {
+            if (s.search(/\S/) == -1) {
+                return null;
+            } else {
+                try {
+                    var o = YAHOO.lang.JSON.parse(s);
+                    var isException = l7.Util.isException(o);
+                    if (isException) {
+                        l7.Dialog.showExceptionDialog(o, header, beginBodyIfException, okText);
+                        return true;
+                    } else {
+                        return o;
+                    }
+                    var isException = l7.Dialog.showExceptionDialogIfException(o, header, beginBodyIfException, okText);
+                    return o;
+                } catch (e) {
+                    l7.Dialog.showErrorDialog(header, bodyIfJSONParseException + ': ' + e, okText);
+                    return false;
+                }
+            }
         }
     })();
 }
