@@ -90,6 +90,18 @@ public class YuiDialog extends Panel {
     public YuiDialog( final String id,
                       final String title,
                       final Style style,
+                      final Component content,
+                      final OkCancelCallback callback,
+                      final String width ) {
+        this( id, title, content, callback, style.getDefaultButton(), style.getButtons(), width );
+    }
+
+    /**
+     * Create a dialog with the given style and content.
+     */
+    public YuiDialog( final String id,
+                      final String title,
+                      final Style style,
                       final Component content ) {
         this( id, title, content, null, style.getDefaultButton(), style.getButtons() );
     }
@@ -103,6 +115,19 @@ public class YuiDialog extends Panel {
                       final OkCancelCallback callback,
                       final Button defaultButton,
                       final Button[] buttons ) {
+        this( id, title, content, callback, defaultButton, buttons, "40em" );
+    }
+
+    /**
+     * Create a dialog with the given buttons and content.
+     */
+    public YuiDialog( final String id,
+                      final String title,
+                      final Component content,
+                      final OkCancelCallback callback,
+                      final Button defaultButton,
+                      final Button[] buttons,
+                      final String width ) {
         super( id );
         this.callback = callback;
 
@@ -141,7 +166,7 @@ public class YuiDialog extends Panel {
         }
         AjaxButton[] ajaxButtons = buildButtons( targetForm, feedback );
 
-        String initScript = buildInitJavascript(dialog.getMarkupId(), ajaxButtons, defaultButton, buttons);
+        String initScript = buildInitJavascript(dialog.getMarkupId(), ajaxButtons, defaultButton, buttons, width);
         Component script = new Label("javascript", initScript).setEscapeModelStrings(false);
         
         add( dialog );
@@ -227,7 +252,8 @@ public class YuiDialog extends Panel {
     private String buildInitJavascript( final String dialogId, 
                                         final AjaxButton[] ajaxButtons, 
                                         final Button defaultButton,
-                                        final Button[] buttons ) {
+                                        final Button[] buttons,
+                                        final String width ) {
         StringBuilder scriptBuilder = new StringBuilder();
         scriptBuilder.append("YAHOO.util.Event.onDOMReady( function(){ showDialog('");
         scriptBuilder.append( dialogId );
@@ -245,7 +271,9 @@ public class YuiDialog extends Panel {
             scriptBuilder.append( button == defaultButton );
             scriptBuilder.append( "}" );
         }
-        scriptBuilder.append("]); });");
+        scriptBuilder.append("], '");
+        scriptBuilder.append(width);
+        scriptBuilder.append("' ); });");
         
         return scriptBuilder.toString();
     }

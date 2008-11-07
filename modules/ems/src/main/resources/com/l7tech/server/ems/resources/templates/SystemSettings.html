@@ -254,7 +254,8 @@
                             <span class="clickable" onclick="l7.Tippy.toggleTippy('licenseTippy', 'license')"><wicket:message key="label.license"/></span>
                         </div>
                         <div id="license" class="panelContent">
-                            <wicket:enclosure child="licenseStatus">
+                            <div wicket:id="feedback" class="center"/>
+                            <div wicket:id="license.container">
                                 <h4><wicket:message key="label.current.license"/></h4>
                                 <table class="indent spaced">
                                     <tr>
@@ -298,9 +299,8 @@
                                         <td><textarea rows="3" cols="80" wicket:id="licenseGrants" readonly="true"></textarea></td>
                                     </tr>
                                 </table>
-                            </wicket:enclosure>                                
+                            </div>                                
                             <h4><wicket:message key="label.change.license"/></h4>
-                            <div wicket:id="feedback" class="center"/>
                             <form method="post" action="SystemSettings.html" enctype="multipart/form-data"  wicket:id="licenseForm">
                                 <table class="indent spaced">
                                     <tr>
@@ -310,7 +310,21 @@
                                     </tr>
                                 </table>
                             </form>
+                            <div wicket:id="delete.license.container">
+                                <form method="post" action="SystemSettings.html" wicket:id="licenseDeleteForm">
+                                    <table class="indent spaced">
+                                        <tr>
+                                            <th class="middle"><wicket:message key="label.delete.license"/>:</th>
+                                            <td class="middle"><button type="button" wicket:id="deleteLicenseButton"><wicket:message key="label.delete">Delete</wicket:message></button></td>
+                                            <td class="middle"></td>
+                                        </tr>
+                                    </table>
+                                </form>
+                            </div>
                         </div>
+                    </div>
+                    <div wicket:id="eula.holder">
+                        <div wicket:id="eula.holder.content"/>
                     </div>
                 </wicket:extend>
             </div>

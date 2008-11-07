@@ -236,7 +236,7 @@
 
     <!-- server side audit download manager -->
     <bean id="auditDownloadManager" class="com.l7tech.server.audit.AuditDownloadManager">
-        <constructor-arg><null/></constructor-arg> <!-- TODO [steve] signing for audit downloads --> 
+        <constructor-arg ref="defaultKey"/>
     </bean>
 
     <!-- server side audit exporter -->
@@ -252,7 +252,7 @@
     <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="singleton">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
-        <!--<property name="keystore" ref="keystore"/>-->
+        <property name="keystore" ref="defaultKey"/>
         <property name="auditLogListener" ref="auditLogListener"/>
     </bean>
 
@@ -312,7 +312,6 @@
     </bean>
     <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" scope="prototype">
         <property name="clientCertManager"><null/></property>
-        <property name="keystore"><null/></property>
         <property name="certificateAuthenticator"><null/></property>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager"><null/></property>
@@ -363,6 +362,7 @@
         <constructor-arg index="5" ref="enterpriseFolderManager" />
         <constructor-arg index="6" ref="auditContext"/>
         <constructor-arg index="7" ref="keystoreFileManager"/>
+        <constructor-arg index="8" ref="clusterPropertyManager"/>
     </bean>
 
     <!-- Security Manager -->

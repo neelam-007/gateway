@@ -17,11 +17,15 @@
  * @param dialogId DOM id for div holding dialog.
  * @param optionButtons the object array for button config
  */
-function showDialog( dialogId, optionButtons ) {
+function showDialog( dialogId, optionButtons, width ) {
         // Track use of ok/close/cancel so we can ignore close after ok/cancel
         var handled = false;
+        var dialogWidth = "40em";
+        if ( width ) {
+            dialogWidth = width;    
+        }
 
-	    // Event handlers and helpers  for Dialog
+        // Event handlers and helpers  for Dialog
         var handle = function( id, dialog, callback ) {
             if ( !handled ) {
                 handled = !callback;
@@ -61,7 +65,7 @@ function showDialog( dialogId, optionButtons ) {
         // Create the Dialog
 	    var dialog = new YAHOO.widget.Dialog(
                                     dialogId,
-                                    { width : "40em",
+                                    { width : dialogWidth,
                                       fixedcenter : true,
                                       visible : false,
                                       modal : true,

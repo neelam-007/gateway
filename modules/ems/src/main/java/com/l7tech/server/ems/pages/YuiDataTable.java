@@ -117,7 +117,7 @@ public class YuiDataTable extends Panel {
         final String pagingId = pagingContainer.getMarkupId();
         final String selectionId = selectionComponent == null ? "null" : selectionComponent.getMarkupId();
 
-        Label jsContainer = new Label("script", "initDataTable"+tableId+"();");
+        Label jsContainer = new Label("script", "YAHOO.util.Event.onDOMReady( function(){ initDataTable"+tableId+"(); } );");
         add( jsContainer );
 
         add( new AbstractAjaxBehavior(){
@@ -148,7 +148,7 @@ public class YuiDataTable extends Panel {
                 scriptBuilder.append( ", '" );
                 scriptBuilder.append( sortProperty );
                 scriptBuilder.append( "', '");
-                scriptBuilder.append( sortAscending ? "asc" : "desc" );
+                scriptBuilder.append( sortAscending ? "yui-dt-asc" : "yui-dt-desc" );
                 scriptBuilder.append( "', " );
                 scriptBuilder.append( buttons );
                 scriptBuilder.append( ", '" );
@@ -193,32 +193,38 @@ public class YuiDataTable extends Panel {
                                 if ( sort != null ) {
                                     provider.getSortState().setPropertySortOrder( sort, dir ? ISortState.ASCENDING : ISortState.DESCENDING );
                                 }
-                                List<Model> data = new ArrayList<Model>(results);
-                                Iterator iter = provider.iterator( startIndex, results );
-                                while ( iter.hasNext() ) {
-                                    data.add(new Model((Serializable)iter.next()));
-                                }
-
-                                JSONPage page = new JSONPage( data, provider.size(), startIndex, sortRaw, dir );
-
-                                // Add JSON script to the response
-                                JSON json = new JSON();
-                                json.addConvertor( JSONPage.class, new PageConvertor() );
-                                json.addConvertor( Model.class, new PropertyModelConvertor() );
-
-                                StringBuffer dataBuffer = new StringBuffer(2048);
-                                json.append(dataBuffer, page);
+                                String data = buildResultsPage(startIndex, results, sortRaw, dir);
 
                                 requestCycle.getResponse().setContentType("application/json");
-                                requestCycle.getResponse().write(dataBuffer);
+                                requestCycle.getResponse().write(data);
                             }
                         }
-                });
+                    });
                 } finally {
                      page.setVersioned(isPageVersioned);
                 }
             }
         } );
+    }
+
+    private String buildResultsPage(int startIndex, int results, String sortRaw, boolean dir) {
+        List<Model> data = new ArrayList<Model>(results);
+        Iterator iter = provider.iterator( startIndex, results );
+        while ( iter.hasNext() ) {
+            data.add(new Model((Serializable)iter.next()));
+        }
+
+        JSONPage page = new JSONPage( data, provider.size(), startIndex, sortRaw, dir );
+
+        // Add JSON script to the response
+        JSON json = new JSON();
+        json.addConvertor( JSONPage.class, new PageConvertor() );
+        json.addConvertor( Model.class, new PropertyModelConvertor() );
+
+        StringBuffer dataBuffer = new StringBuffer(2048);
+        json.append(dataBuffer, page);
+
+        return dataBuffer.toString();
     }
 
     public void detachModels() {

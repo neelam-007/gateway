@@ -12,4 +12,7 @@ public class MockSetupManager implements SetupManager {
     public void performInitialSetup(String licenseXml, String initialAdminUsername, String initialAdminPassword) throws SetupException {
         throw new SetupException("Mock setup not supported");
     }
+
+    public void deleteLicense() {
+    }
 }

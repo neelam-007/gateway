@@ -2,6 +2,7 @@ package com.l7tech.server.ems;
 
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.Handler;
+import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.Context;
@@ -33,6 +34,7 @@ import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,12 +43,14 @@ import java.io.File;
 import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.security.GeneralSecurityException;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.ServerConfig;
@@ -70,9 +74,6 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
     private final ServerConfig serverConfig;
     private final DefaultKey defaultKey;
     private final long instanceId;
-    private final String addr;
-    private final int httpPort;
-    private final int httpsPort;
     private final File temp;
     private ApplicationContext applicationContext;
     private Server server;
@@ -86,10 +87,6 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<EmsServletContainer>(this));
 
-        this.addr = this.serverConfig.getProperty("em.server.listenaddr");
-        this.httpPort = this.serverConfig.getIntProperty("em.server.listenportdev", 8181);
-        this.httpsPort = this.serverConfig.getIntProperty("em.server.listenport", 8182);
-
         File temp;
         File var = new File("var");
         if ( !var.exists() ) {
@@ -102,27 +99,9 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
     }
 
     private void initializeServletEngine() throws Exception {
-        logger.info("Starting HTTPS listener '"+addr+":"+httpsPort+"'.");
-
         server = new Server();
 
-        final SSLContext ctx = SSLContext.getInstance("SSL");
-        ctx.init( defaultKey.getSslKeyManagers(), null, null );
-
-        SslSocketConnector sslConnector = new SslSocketConnector(){
-            @Override
-            protected SSLServerSocketFactory createFactory() throws Exception {
-                return ctx.getServerSocketFactory();
-            }
-        };
-        sslConnector.setPort( httpsPort );
-        sslConnector.setHost( addr );
-        server.addConnector( sslConnector );
-
-        SocketConnector connector = new SocketConnector();
-        connector.setPort( httpPort );
-        connector.setHost( addr );
-        server.addConnector( connector );
+        rebuildConnectors();
 
         final Context root = new Context(server, "/", Context.SESSIONS);
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources")); //TODO [steve] map root elsewhere and add other mappings for css/images/etc
@@ -208,33 +187,125 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         root.addServlet(defaultHolder, "/");
 
         server.start();
-        if ( audit != null ) {
-            audit.logAndAudit( SystemMessages.HTTPSERVER_START, "HTTPS Port: " + httpsPort);
-        }
-
-        List<SsgConnector> connectors = new ArrayList<SsgConnector>();
-        SsgConnector rc = new SsgConnector();
-        rc.setPort(httpsPort);
-        connectors.add(rc);
-        SsgConnector rc2 = new SsgConnector();
-        rc2.setPort(httpPort);
-        connectors.add(rc2);
-        FirewallUtils.openFirewallForConnectors( temp, connectors );
     }
 
     private void shutdownServletEngine() throws Exception {
         server.stop();
         server.destroy();
-
-        if ( audit != null ) {
-            audit.logAndAudit( SystemMessages.HTTPSERVER_STOP, "HTTPS Port: " + httpPort);            
-        }
-
+        
         FirewallUtils.closeFirewallForConnectors( temp );
     }
 
     public void afterPropertiesSet() throws Exception {
         initializeServletEngine();
+    }
+
+    public void rebuildConnectors() {
+        String addr = this.serverConfig.getProperty("em.server.listenaddr");
+        int httpPort = this.serverConfig.getIntProperty("em.server.listenportdev", 8181);
+        int httpsPort = this.serverConfig.getIntProperty("em.server.listenport", 8182);
+
+        logger.info("Building HTTPS listener '"+addr+":"+httpsPort+"'.");
+
+        boolean enableHttp = SyspropUtil.getBoolean("com.l7tech.ems.enableHttpListener");
+
+        //
+        // Create new connectors
+        //
+        Collection<SocketConnector> connectors = new ArrayList<SocketConnector>();
+        try {
+            final SSLContext ctx = SSLContext.getInstance("SSL");
+            ctx.init( defaultKey.getSslKeyManagers(), null, null );
+
+            SslSocketConnector sslConnector = new SslSocketConnector(){
+                @Override
+                protected SSLServerSocketFactory createFactory() throws Exception {
+                    return ctx.getServerSocketFactory();
+                }
+            };
+            sslConnector.setPort( httpsPort );
+            sslConnector.setHost( addr );
+            connectors.add( sslConnector );
+
+            if (enableHttp) {
+                SocketConnector connector = new SocketConnector();
+                connector.setPort( httpPort );
+                connector.setHost( addr );
+                connectors.add( connector );
+            }
+        } catch ( GeneralSecurityException gse ) {
+            logger.log( Level.WARNING, "Error when rebuilding HTTP(S) connector(s).", gse );
+        }
+
+
+        //
+        // Audit stop old
+        //
+        Connector[] currentConnectors = server.getConnectors();
+        if ( currentConnectors != null ) {
+            for ( Connector connector : currentConnectors ) {
+                if ( connector != null ) {
+                    if ( audit != null ) {
+                        if ( connector instanceof SslSocketConnector ) {
+                            audit.logAndAudit( SystemMessages.HTTPSERVER_STOP, "HTTPS Port: " + connector.getPort());
+                        } else {
+                            audit.logAndAudit( SystemMessages.HTTPSERVER_STOP, "HTTP Port: " + connector.getPort());
+                        }
+                    }
+                }
+            }
+        }
+
+        //
+        // Audit start new
+        //
+        List<SsgConnector> fireWallConnectors = new ArrayList<SsgConnector>();
+        for ( SocketConnector connector : connectors ) {
+            if ( audit != null ) {
+                if ( connector instanceof SslSocketConnector ) {
+                    audit.logAndAudit( SystemMessages.HTTPSERVER_START, "HTTPS Port: " + connector.getPort());
+                } else {
+                    audit.logAndAudit( SystemMessages.HTTPSERVER_START, "HTTP Port: " + connector.getPort());                    
+                }
+            }
+
+            SsgConnector ssgConnector = new SsgConnector();
+            ssgConnector.setPort(connector.getPort());
+            fireWallConnectors.add(ssgConnector);
+        }
+        
+        server.setConnectors( connectors.toArray( new Connector[connectors.size()] ) );        
+
+        //
+        // Stop old
+        //
+        if ( currentConnectors != null ) {
+            for ( Connector connector : currentConnectors ) {
+                if ( connector.isStarted() ) {
+                    try {
+                        connector.stop();
+                    } catch ( Exception e ) {
+                        logger.log( Level.WARNING, "Error stopping HTTP(S) connector.", e);                    
+                    }
+                }
+            }
+        }
+
+        //
+        // Start new
+        //
+        currentConnectors = server.getConnectors();
+        if ( currentConnectors != null ) {
+            for ( Connector connector : currentConnectors ) {
+                try {
+                    connector.start();
+                } catch ( Exception e ) {
+                    logger.log( Level.WARNING, "Error starting HTTP(S) connector.", e);                    
+                }
+            }
+        }
+
+        FirewallUtils.openFirewallForConnectors( temp, fireWallConnectors );  // closes for old ports also
     }
 
     public void destroy() throws Exception {

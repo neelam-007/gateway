@@ -250,7 +250,6 @@
     </bean>
     <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" scope="prototype">
         <property name="clientCertManager" ref="clientCertManager"/>
-        <property name="keystore" ref="defaultKey"/>
         <property name="certificateAuthenticator" ref="certificateAuthenticator"/>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager" ref="internalGroupManager"/>
@@ -274,7 +273,6 @@
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="trustedCertManager" ref="cachingTrustedCertManager"/>
         <property name="trustedCertServices" ref="trustedCertServices"/>
-        <property name="keystore" ref="defaultKey"/>
         <property name="certValidationProcessor" ref="certValidationProcessor"/>
         <property name="userManager" ref="federatedUserManager"/>
         <property name="groupManager" ref="federatedGroupManager"/>

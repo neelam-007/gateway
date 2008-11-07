@@ -1,9 +1,10 @@
 package com.l7tech.server.ems;
 
 import org.springframework.transaction.annotation.Transactional;
+import com.l7tech.objectmodel.DeleteException;
 
 /**
- * Encapsulates behavior for initial setup of a new EMS instance.
+ * Encapsulates behavior for setup of an EMS instance.
  */
 public interface SetupManager {
 
@@ -31,4 +32,10 @@ public interface SetupManager {
      */
     @Transactional(propagation= org.springframework.transaction.annotation.Propagation.REQUIRED, rollbackFor=Throwable.class)
     void performInitialSetup(String licenseXml, String initialAdminUsername, String initialAdminPassword) throws SetupException;
+
+    /**
+     *
+     */
+    @Transactional(propagation= org.springframework.transaction.annotation.Propagation.REQUIRED, rollbackFor=Throwable.class)
+    void deleteLicense() throws DeleteException;
 }

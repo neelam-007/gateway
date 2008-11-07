@@ -15,7 +15,6 @@ import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.server.DefaultKey;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -32,7 +31,6 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
 {
     protected ApplicationContext applicationContext;
     protected ClientCertManager clientCertManager;
-    protected DefaultKey keystore;
 
     /**
      * searches for users and groups whose name (cn) match the pattern described in searchString
@@ -66,10 +64,6 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
 
     public void setClientCertManager(ClientCertManager clientCertManager) {
         this.clientCertManager = clientCertManager;
-    }
-
-    public void setKeystore(DefaultKey keystore) {
-        this.keystore = keystore;
     }
 
     /**

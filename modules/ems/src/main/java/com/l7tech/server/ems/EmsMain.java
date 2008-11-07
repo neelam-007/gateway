@@ -35,6 +35,7 @@ public class EmsMain {
 
         if ( SyspropUtil.getBoolean("com.l7tech.ems.development") ) {
             System.setProperty("com.l7tech.ems.showExceptions", "true");
+            System.setProperty("com.l7tech.ems.enableHttpListener", "true");
             ServerConfig serverConfig = ServerConfig.getInstance();
             if ( serverConfig.getProperty("em.admin.user") == null ) {
                 logger.info("Creating default administration account on startup.");

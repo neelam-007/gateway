@@ -27,4 +27,7 @@
     <!-- User Properties Manager Mock -->
     <bean name="userPropertyManager" class="com.l7tech.server.ems.MockUserPropertyManager"/>
     
+    <!-- License Manager -->
+    <bean id="clusterPropertyManager" class="com.l7tech.server.MockClusterPropertyManager"/>
+
 </beans>

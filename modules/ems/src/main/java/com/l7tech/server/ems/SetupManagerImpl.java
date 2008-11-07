@@ -1,6 +1,7 @@
 package com.l7tech.server.ems;
 
 import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -9,6 +10,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.UpdatableLicenseManager;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.ems.enterprise.EnterpriseFolder;
 import com.l7tech.server.ems.enterprise.EnterpriseFolderManager;
@@ -24,6 +26,7 @@ import org.springframework.core.io.Resource;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import javax.security.auth.Subject;
 import javax.sql.DataSource;
@@ -54,6 +57,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
     private final EnterpriseFolderManager enterpriseFolderManager;
     private final AuditContext auditContext;
     private final KeystoreFileManager keystoreFileManager;
+    private final ClusterPropertyManager clusterPropertyManager;
 
     public SetupManagerImpl(final ServerConfig serverConfig,
                             final UpdatableLicenseManager licenseManager,
@@ -62,7 +66,8 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                             final RoleManager roleManager,
                             final EnterpriseFolderManager enterpriseFolderManager,
                             final AuditContext context,
-                            final KeystoreFileManager keystoreFileManager
+                            final KeystoreFileManager keystoreFileManager,
+                            final ClusterPropertyManager clusterPropertyManager
     ) {
         this.serverConfig = serverConfig;
         this.licenseManager = licenseManager;
@@ -72,6 +77,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         this.enterpriseFolderManager = enterpriseFolderManager;
         this.auditContext = context;
         this.keystoreFileManager = keystoreFileManager;
+        this.clusterPropertyManager = clusterPropertyManager;
     }
 
     /**
@@ -103,6 +109,17 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         return setup;
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
+    public void deleteLicense() throws DeleteException {
+        try {
+            ClusterProperty licProp = clusterPropertyManager.findByUniqueName("license");
+            if (licProp != null) {
+                clusterPropertyManager.delete(licProp);
+            }
+         } catch (FindException ex) {
+            logger.log( Level.WARNING, "Error accessing license for deletion.", ex );
+         }
+    }
 
     /**
      * Perform initial setup of this EMS instance.
@@ -294,9 +311,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             auditContext.setSystem(true);
             id = roleManager.save(role);
             logger.info("Created configuration for administration role with identifier '" + id + "'.");
-
-            logger.info("Creating root folder with name \"" + EnterpriseFolder.DEFAULT_ROOT_FOLDER_NAME + "\".");
-            enterpriseFolderManager.create(EnterpriseFolder.DEFAULT_ROOT_FOLDER_NAME, (EnterpriseFolder)null);
         }
 
         InternalUserManager internalUserManager = getInternalUserManager();
@@ -338,6 +352,11 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             } finally {
                 auditContext.setSystem(wasSystem);
             }
+        }
+
+        if ( enterpriseFolderManager.findAll().isEmpty() ) {
+            logger.info("Creating root folder with name \"" + EnterpriseFolder.DEFAULT_ROOT_FOLDER_NAME + "\".");
+            enterpriseFolderManager.create(EnterpriseFolder.DEFAULT_ROOT_FOLDER_NAME, (EnterpriseFolder)null);
         }
     }
 
