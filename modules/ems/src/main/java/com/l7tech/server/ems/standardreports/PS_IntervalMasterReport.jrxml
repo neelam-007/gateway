@@ -912,13 +912,12 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
 				</frame>				<frame>					<reportElement
-						style="FrameTableBottom"
+						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
 						y="18"
 						width="564"
 						height="207"
-						backcolor="#F8F8F8"
 						key="frame-5"
 						isPrintRepeatedValues="false"/>
 					<box></box>

@@ -10,13 +10,15 @@
     <property name="ems.dependency.dir" value="../../../../../../../../modules/ems/build/dependency" />
 
     <property name="jasper.jrxml_files" value="../../../../../../../../modules/ems/src/main/java/com/l7tech/server/ems/standardreports" />
-    <property name="canned_usage.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Canned_Usage_Report.jrxml" />
-    <property name="canned_usage_interval_master.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_IntervalMasterReport.jrxml" />
-    <property name="canned_usage_interval_subreport_1.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_SubIntervalMasterReport.jrxml" />
-    <property name="canned_usage_interval_subreport_2.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_SubIntervalMasterReport_subreport0.jrxml" />
+    <!--<property name="canned_usage.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Canned_Usage_Report.jrxml" />-->
+    <!--<property name="canned_usage_interval_master.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_IntervalMasterReport.jrxml" />-->
+    <!--<property name="canned_usage_interval_subreport_1.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_SubIntervalMasterReport.jrxml" />-->
+    <!--<property name="canned_usage_interval_subreport_2.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_SubIntervalMasterReport_subreport0.jrxml" />-->
 
     <path id="jrc.classpath">
         <file file="${lib}/repository/jasperreports/jasperreports-3.0.0.jar"/>
+        <file file="${lib}/repository/jfree/jcommon-1.0.0.jar"/>
+        <file file="${lib}/repository/jfree/jfreechart-1.0.2.jar"/>
         <fileset dir="${lib}/repository/org.apache.tomcat">
             <include name="*.jar"/>
         </fileset>
@@ -55,10 +57,10 @@
                 <fileset dir=".">
                     <include name="*.jrxml"/>
                 </fileset>
-                <fileset file="${canned_usage.jrxml_file}" />
-                <fileset file="${canned_usage_interval_master.jrxml_file}" />
-                <fileset file="${canned_usage_interval_subreport_1.jrxml_file}" />
-                <fileset file="${canned_usage_interval_subreport_2.jrxml_file}" />
+                <!--<fileset file="${canned_usage.jrxml_file}" />-->
+                <!--<fileset file="${canned_usage_interval_master.jrxml_file}" />-->
+                <!--<fileset file="${canned_usage_interval_subreport_1.jrxml_file}" />-->
+                <!--<fileset file="${canned_usage_interval_subreport_2.jrxml_file}" />-->
             </src>
 			<classpath refid="classpath"/>
 		</jrc>

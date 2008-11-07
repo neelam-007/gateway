@@ -13,6 +13,8 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
+import java.awt.*;
 
 import com.l7tech.common.io.XmlUtil;
 
@@ -1903,6 +1905,25 @@ Value is included in all or none, comment is just illustrative
         return sb.toString();
     }
 
+    private static final int [] hexColours = new int []{0xFFDC5A, 0xD6D6D6, 0xE8EDB4};
+
+    /**
+     * Some class implementing JRChartCustomizer will call this method from customize() in order to find out what
+     * color the chart series should be. The chart can't access configuration, so it's assumed for the moment that
+     * this class can. It specifies how many series colours it wants, and it should get back a list of strings, each
+     * representing a unique html color code
+     * @param howMany
+     * @return
+     */
+    public static List<Color> getSeriesColours(int howMany){
+        List<Color> colours = new ArrayList<Color>();
+        for (int i = 0; i < hexColours.length && i < howMany; i++) {
+            int l = hexColours[i];
+            Color c = new Color(l);
+            colours.add(c);
+        }
+        return colours;
+    }
     /**
      *         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                    hyperlinkType="None" hyperlinkTarget="Self">

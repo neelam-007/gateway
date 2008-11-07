@@ -8,10 +8,7 @@ package com.l7tech.server.ems.standardreports;
 
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.base.JRBaseStyle;
-import net.sf.jasperreports.engine.fill.JRFillParameter;
-import net.sf.jasperreports.engine.fill.JRFillField;
-import net.sf.jasperreports.engine.fill.JRFillGroup;
-import net.sf.jasperreports.engine.fill.JRFillFrame;
+import net.sf.jasperreports.engine.fill.*;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +26,7 @@ public class ScripletHelper extends JRDefaultScriptlet {
     private final static String SERVICE_ID_GROUP = "SERVICE_ID_GROUP";
     private final static String SERVICE_OPERATION_VALUE = "SERVICE_OPERATION_VALUE";
     private final static String FRAME_DETAIL_TABLE_ROW = "FrameDetailTableRow";
-
+    private final static String TABLE_CELL = "TableCell";
 
     @Override
     public void beforeGroupInit(String s) throws JRScriptletException {
@@ -39,8 +36,13 @@ public class ScripletHelper extends JRDefaultScriptlet {
             if(!styleMap.containsKey(FRAME_DETAIL_TABLE_ROW)){
                 throw new IllegalStateException(FRAME_DETAIL_TABLE_ROW + " style not found");
             }
+
+            if(!styleMap.containsKey(TABLE_CELL)){
+                throw new IllegalStateException(TABLE_CELL+ " style not found");
+            }
             
             JRStyle nonDetailStyle = (JRStyle) styleMap.get(FRAME_DETAIL_TABLE_ROW);
+            JRStyle tableStyle = (JRStyle) styleMap.get(TABLE_CELL);
 
             if(nonDetailStyle == null) throw new IllegalStateException(FRAME_DETAIL_TABLE_ROW+" not found");
 
@@ -64,6 +66,16 @@ public class ScripletHelper extends JRDefaultScriptlet {
                     if(o instanceof JRFillFrame){
                         JRFillFrame jrFillFrame = (JRFillFrame) o;
                         jrFillFrame.setStyle(nonDetailStyle);
+                        List frameChildren = jrFillFrame.getChildren();
+                        for(Object o1: frameChildren){
+                            if(o1 instanceof JRFillTextField){
+                                JRFillTextField field = (JRFillTextField) o1;
+                                //JRStyle style = field.getStyle();
+                                //if(style.getName().equals("")) continue;//don't process the static text field
+                                field.setStyle(tableStyle);
+                            }
+                        }
+
                         break;
                     }
                 }

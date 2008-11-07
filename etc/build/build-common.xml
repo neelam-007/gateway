@@ -57,6 +57,9 @@
     -->
     <path id="jasperreports.classpath">
         <file file="${src.root}/lib/repository/jasperreports/jasperreports-3.0.0.jar"/>
+        <file file="${src.root}/lib/repository/jfree/jcommon-1.0.0.jar"/>
+        <file file="${src.root}/lib/repository/jfree/jfreechart-1.0.2.jar"/>
+        
         <fileset dir="${src.root}/lib/repository/org.apache.tomcat">
             <include name="*.jar"/>
         </fileset>
