@@ -179,6 +179,12 @@
                                 <value>ioMailInTimeout</value>
                             </list>
                         </entry>
+                        <entry key="ldapIdentityProvider">
+                            <list>
+                                <value>ldapReadTimeout</value>
+                                <value>ldapConnectionTimeout</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>

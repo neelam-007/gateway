@@ -53,6 +53,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * Server-side implementation of the LDAP provider.
@@ -65,7 +67,7 @@ import java.util.logging.Logger;
  * Date: Jan 21, 2004<br/>
  */
 public class LdapIdentityProviderImpl
-        implements LdapIdentityProvider, InitializingBean, DisposableBean, ApplicationContextAware, ConfigurableIdentityProvider
+        implements LdapIdentityProvider, InitializingBean, DisposableBean, ApplicationContextAware, ConfigurableIdentityProvider, PropertyChangeListener
 {
     private Auditor auditor;
     private final static long DEFAULT_INDEX_REBUILD_INTERVAL = 1000*60*10; // 10 minutes
@@ -73,6 +75,7 @@ public class LdapIdentityProviderImpl
     private final static long DEFAULT_CACHED_CERT_ENTRY_LIFE = 1000*60*10; // 10 minutes
     private static final long MIN_INDEX_REBUILD_TIME = 10000; //10 seconds
     private static final long MIN_CERT_CACHE_LIFETIME = 10000; //10 seconds
+    private static final long MAX_CACHE_AGE_VALUE = 30000;
 
     private final AtomicLong rebuildTimerLength = new AtomicLong(DEFAULT_INDEX_REBUILD_INTERVAL);
     private final AtomicLong cleanupTimerLength = new AtomicLong(DEFAULT_CACHE_CLEANUP_INTERVAL);
@@ -85,6 +88,8 @@ public class LdapIdentityProviderImpl
     private ManagedTimerTask cleanupTask;
 
     public LdapIdentityProviderImpl() {
+        ldapConnectionTimeout = DEFAULT_LDAP_CONNECTION_TIMEOUT;
+        ldapReadTimeout = DEFAULT_LDAP_READ_TIMEOUT;
     }
 
     public void setIdentityProviderConfig(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException {
@@ -114,6 +119,11 @@ public class LdapIdentityProviderImpl
         groupManager.configure( this );
 
         initializeFallbackMechanism();
+
+        if (serverConfig != null) { //should be injected
+            ldapConnectionTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
+            ldapReadTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_READ_TIMEOUT, DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
+        }
     }
 
     /**
@@ -967,9 +977,8 @@ public class LdapIdentityProviderImpl
             // when getting javax.naming.CommunicationException at
             env.put(Context.PROVIDER_URL, ldapurl);
             env.put("com.sun.jndi.ldap.connect.pool", "true");
-            env.put("com.sun.jndi.ldap.connect.timeout", Integer.toString(LDAP_CONNECT_TIMEOUT));
-            env.put("com.sun.jndi.ldap.read.timeout", Integer.toString(LDAP_READ_TIMEOUT));
-            env.put("com.sun.jndi.ldap.connect.pool.timeout", Integer.toString(LDAP_POOL_IDLE_TIMEOUT));
+            env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(ldapConnectionTimeout));
+            env.put("com.sun.jndi.ldap.read.timeout", Long.toString(ldapReadTimeout));
             env.put( Context.REFERRAL, "follow" );
             String dn = config.getBindDN();
             if (dn != null && dn.length() > 0) {
@@ -1451,7 +1460,24 @@ public class LdapIdentityProviderImpl
             throw new ValidationException("IdentityProvider User " + u.getLogin()+" not found");
         }
     }
-    
+
+    public long getLdapConnectionTimeout() {
+        return ldapConnectionTimeout;
+    }
+
+    public long getLdapReadTimeout() {
+        return ldapReadTimeout;
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        String propertyName = evt.getPropertyName();
+        if (ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT.equals(propertyName)) {
+            ldapConnectionTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
+        } else if (ServerConfig.PARAM_LDAP_READ_TIMEOUT.equals(propertyName)) {
+            ldapReadTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_READ_TIMEOUT, DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
+        }
+    }
+
     private static final Logger logger = Logger.getLogger(LdapIdentityProviderImpl.class.getName());
 
     private ServerConfig serverConfig;
@@ -1467,6 +1493,8 @@ public class LdapIdentityProviderImpl
     private final ReadWriteLock fallbackLock = new WriterPreferenceReadWriteLock();
     private String[] ldapUrls;
     private Long[] urlStatus;
+    private long ldapConnectionTimeout;
+    private long ldapReadTimeout;
 
     private final BigInteger fileTimeConversionfactor = new BigInteger("116444736000000000");
     private final BigInteger fileTimeConversionfactor2 = new BigInteger("10000");

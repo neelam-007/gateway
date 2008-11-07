@@ -12,7 +12,6 @@ import com.l7tech.util.ExceptionUtils;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import java.util.Collection;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -274,7 +273,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
         while (ldapurl != null) {
             DirContext userCtx;
             try {
-                userCtx = LdapUtils.getLdapContext(ldapurl, dn, passwd, LdapIdentityProvider.LDAP_CONNECT_TIMEOUT, LdapIdentityProvider.LDAP_POOL_IDLE_TIMEOUT);
+                userCtx = LdapUtils.getLdapContext(ldapurl, dn, passwd, identityProvider.getLdapConnectionTimeout(), identityProvider.getLdapReadTimeout());
                 // Close the context when we're done
                 userCtx.close();
                 logger.info("User: " + dn + " authenticated successfully in provider " + ldapIdentityProviderConfig.getName());

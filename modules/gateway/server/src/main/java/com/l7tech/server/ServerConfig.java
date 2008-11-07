@@ -185,6 +185,8 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public static final String PARAM_LDAPCERTINDEX_REBUILD_INTERVAL="ldapCertIndexInterval";
     public static final String PARAM_LDAPCERT_CACHE_LIFETIME="ldapCertCacheLifetime";
+    public static final String PARAM_LDAP_CONNECTION_TIMEOUT = "ldapConnectionTimeout";
+    public static final String PARAM_LDAP_READ_TIMEOUT = "ldapReadTimeout";
 
     public static final String PARAM_TIMESTAMP_CREATED_FUTURE_GRACE = "timestampCreatedFutureGrace";
     public static final String PARAM_TIMESTAMP_EXPIRES_PAST_GRACE = "timestampExpiresPastGrace";

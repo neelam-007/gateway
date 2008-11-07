@@ -13,6 +13,7 @@ import com.l7tech.util.*;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.util.ServerCertUtils;
 import com.whirlycott.cache.Cache;
@@ -51,6 +52,7 @@ public class CrlCacheImpl implements CrlCache {
     private final LdapUrlObjectCache<X509CRL> ldapUrlObjectCache;
     private final HttpObjectCache<X509CRL> httpObjectCache;
     private final ServerConfig serverConfig;
+    private static final long MAX_CACHE_AGE_VALUE = 30000;
 
     public CrlCacheImpl(HttpClientFactory httpClientFactory, ServerConfig serverConfig) throws Exception {
         this.crlCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".crlCache", 100, 1800, WhirlycacheFactory.POLICY_LRU);
@@ -59,7 +61,9 @@ public class CrlCacheImpl implements CrlCache {
         // TODO support configuration of login, password and LDAP timeouts
         this.serverConfig = serverConfig;
 
-        ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>(300000, AbstractUrlObjectCache.WAIT_LATEST, null, null, 5000, 30000, true);
+        long connectTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
+        long readTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
+        ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>(300000, AbstractUrlObjectCache.WAIT_LATEST, null, null, connectTimeout, readTimeout, true);
         httpObjectCache = new HttpObjectCache<X509CRL>(300000, 30000, httpClientFactory, new CrlHttpObjectFactory(), AbstractUrlObjectCache.WAIT_INITIAL);
     }
 

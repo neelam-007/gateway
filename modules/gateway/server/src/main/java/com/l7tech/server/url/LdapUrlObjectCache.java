@@ -31,8 +31,8 @@ import java.util.regex.Matcher;
 public class LdapUrlObjectCache<PT> extends AbstractUrlObjectCache<LdapUrlObjectCache.LdapCacheEntry<PT>> {
     private final String bindDn;
     private final String bindPassword;
-    private final int connectTimeout;
-    private final int poolTimeout;
+    private final long connectTimeout;
+    private final long readTimeout;
     private final boolean binary;
 
     private final Cache cache = WhirlycacheFactory.createCache(this.getClass().getSimpleName() + ".cache", 100, 1800, WhirlycacheFactory.POLICY_LRU);
@@ -43,13 +43,15 @@ public class LdapUrlObjectCache<PT> extends AbstractUrlObjectCache<LdapUrlObject
      * @param maxCacheAge
      * @param defaultWaitMode
      * @param interestingAttributeIsBinary
+     * @param readTimeout
      */
-    public LdapUrlObjectCache(long maxCacheAge, WaitMode defaultWaitMode, String login, String pass, int connectTimeout, int poolTimeout, boolean interestingAttributeIsBinary) {
+    public LdapUrlObjectCache(long maxCacheAge, WaitMode defaultWaitMode, String login, String pass,
+                              long connectTimeout, long readTimeout, boolean interestingAttributeIsBinary) {
         super(maxCacheAge, defaultWaitMode);
         this.bindDn = login;
         this.bindPassword = pass;
         this.connectTimeout = connectTimeout;
-        this.poolTimeout = poolTimeout;
+        this.readTimeout = readTimeout;
         this.binary = interestingAttributeIsBinary;
     }
 
@@ -86,7 +88,7 @@ public class LdapUrlObjectCache<PT> extends AbstractUrlObjectCache<LdapUrlObject
 
             DirContext context = null;
             try {
-                context = LdapUtils.getLdapContext(urlStr, bindDn, bindPassword, connectTimeout, poolTimeout);
+                context = LdapUtils.getLdapContext(urlStr, bindDn, bindPassword, connectTimeout, readTimeout);
                 Attributes attrs = context.getAttributes("");
                 return new DatedUserObject<LdapCacheEntry<PT>>(new LdapCacheEntry<PT>(attrs, query, binary), Long.toString(System.currentTimeMillis()));
             } finally {
