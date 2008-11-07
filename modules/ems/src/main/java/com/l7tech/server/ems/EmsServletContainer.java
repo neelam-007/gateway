@@ -292,15 +292,17 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         }
 
         //
-        // Start new
+        // Start new if server is running (else will be started later).
         //
-        currentConnectors = server.getConnectors();
-        if ( currentConnectors != null ) {
-            for ( Connector connector : currentConnectors ) {
-                try {
-                    connector.start();
-                } catch ( Exception e ) {
-                    logger.log( Level.WARNING, "Error starting HTTP(S) connector.", e);                    
+        if ( server.isStarted() ) {
+            currentConnectors = server.getConnectors();
+            if ( currentConnectors != null ) {
+                for ( Connector connector : currentConnectors ) {
+                    try {
+                        connector.start();
+                    } catch ( Exception e ) {
+                        logger.log( Level.WARNING, "Error starting HTTP(S) connector.", e);
+                    }
                 }
             }
         }
