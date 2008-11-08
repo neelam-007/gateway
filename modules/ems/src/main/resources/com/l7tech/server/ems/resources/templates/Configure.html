@@ -332,13 +332,14 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                 var callback = {
                     success : function(o) {
                         l7.Dialog.hideWaitDialog();
-                        var result = l7.Dialog.showExceptionDialogIfJSONException(
+                        var result = l7.Dialog.parseJSON(
                                 o.responseText,
                                 localizedStrings.ERROR,
                                 '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_START_SSG_NODE) + '</p>',
                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                 localizedStrings.OK);
-                        if (typeof result != 'boolean') {
+                        if (!l7.Util.isException(result)) {
+                            // No return object expected.
                             loadEnterpriseTreeTable();  // TODO should instead just update the status icon
                         }
                     },
@@ -358,13 +359,14 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                 var callback = {
                     success : function(o) {
                         l7.Dialog.hideWaitDialog();
-                        var result = l7.Dialog.showExceptionDialogIfJSONException(
+                        var result = l7.Dialog.parseJSON(
                                 o.responseText,
                                 localizedStrings.ERROR,
                                 '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_STOP_SSG_NODE) + '</p>',
                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                 localizedStrings.OK);
-                        if (typeof result != 'boolean') {
+                        if (!l7.Util.isException(result)) {
+                            // No return object expected.
                             loadEnterpriseTreeTable();  // TODO should instead just update the status icon
                         }
                     },
@@ -505,13 +507,15 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 addFolderDialog.render();
                 addFolderDialog.callback.success = function(o) {
-                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                    var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
                             '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_ADD_FOLDER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
-                    if (typeof result != 'boolean') {
+                    if (typeof result == 'object' && !l7.Util.isException(result)) {
+                        // A return object containing the ID of the new folder is expected.
+                        var id = result.id; // Not used now but may be I'll think of something.
                         loadEnterpriseTreeTable();  // Reloads to show new folder.
                     }
                 }
@@ -547,13 +551,14 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 renameFolderDialog.render();
                 renameFolderDialog.callback.success = function(o) {
-                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                    var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
                             '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_RENAME_FOLDER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
-                    if (typeof result != 'boolean') {
+                    if (!l7.Util.isException(result)) {
+                        // No return object expected.
                         loadEnterpriseTreeTable();  // Reloads to show new folder name.
                     }
                 }
@@ -589,13 +594,14 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 deleteFolderDialog.render();
                 deleteFolderDialog.callback.success = function(o) {
-                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                    var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
                             '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_FOLDER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
-                    if (typeof result != 'boolean') {
+                    if (!l7.Util.isException(result)) {
+                        // No return object expected.
                         loadEnterpriseTreeTable();  // Reloads to show folder gone.
                     }
                 }
@@ -631,13 +637,15 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 addSSGClusterDialog.render();
                 addSSGClusterDialog.callback.success = function(o) {
-                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                    var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
                             '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_ADD_SSG_CLUSTER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
-                    if (typeof result != 'boolean') {
+                    if (typeof result == 'object' && !l7.Util.isException(result)) {
+                        // A return object containing the ID of the new cluster is expected.
+                        var id = result.id; // Not used now but may be I'll think of something.
                         loadEnterpriseTreeTable();  // Reloads to show new SSG Cluster.
                     }
                 }
@@ -673,13 +681,14 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 renameSSGClusterDialog.render();
                 renameSSGClusterDialog.callback.success = function(o) {
-                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                    var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
                             '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_RENAME_SSG_CLUSTER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
-                    if (typeof result != 'boolean') {
+                    if (!l7.Util.isException(result)) {
+                        // No return object expected.
                         loadEnterpriseTreeTable();  // Reloads to show new SSG Cluster name.
                     }
                 }
@@ -715,13 +724,14 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 });
                 deleteSSGClusterDialog.render();
                 deleteSSGClusterDialog.callback.success = function(o) {
-                    var result = l7.Dialog.showExceptionDialogIfJSONException(
+                    var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
                             '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_SSG_CLUSTER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
-                    if (typeof result != 'boolean') {
+                    if (!l7.Util.isException(result)) {
+                        // No return object expected.
                         loadEnterpriseTreeTable();  // Reloads to show SSG Cluster gone.
                     }
                 }
@@ -1085,9 +1095,9 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
             </table>
             <div style="width: 40em;">
                 When you click OK, you will be redirected to the specified SSG Cluster where
-                you will authenticate using an administrator account on that SSG Cluster,
+                you can authenticate using an administrator account on that SSG Cluster,
                 create a trust relationship  between the SSG Cluster and this Enterprise Service Manager,
-                and map the supplied account to your Enterprise Service Manager account.
+                and map that account to your Enterprise Service Manager account.
                 When completed, you will be returned to this page.
             </div>
         </form>

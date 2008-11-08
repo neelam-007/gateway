@@ -68,8 +68,8 @@ public class Configure extends EmsPage  {
                     String parentGuid = addFolderDialogInputParentId.getModelObjectAsString();
                     logger.info("Adding folder \"" + newFolderName + "\" (parent folder GUID = " + parentGuid + ").");
 
-                    enterpriseFolderManager.create(newFolderName, parentGuid);
-                    return SUCCESS_ACK;
+                    final EnterpriseFolder newFolder = enterpriseFolderManager.create(newFolderName, parentGuid);
+                    return newFolder;
                 } catch (Exception e) {
                     logger.warning(e.toString());
                     return new JSONException(e);
@@ -88,7 +88,7 @@ public class Configure extends EmsPage  {
                     logger.info("Deleting folder (GUID = "+ deletedFolderGuid + ").");
 
                     enterpriseFolderManager.deleteByGuid(deletedFolderGuid);
-                    return SUCCESS_ACK;
+                    return null;    // No response object expected if successful.
                 } catch (Exception e) {
                     logger.warning(e.toString());
                     return new JSONException(e);
@@ -106,12 +106,12 @@ public class Configure extends EmsPage  {
             protected Object getJsonResponseData() {
                 try {
                     logger.info("Adding SSG Cluster \""+ addSSGClusterInputName.getModelObjectAsString() + "\" (parent folder GUID = "+ addSSGClusterDialogInputParentId.getModelObjectAsString() + ").");
-                    ssgClusterManager.create(
+                    final SsgCluster newCluster = ssgClusterManager.create(
                             addSSGClusterInputName.getModelObjectAsString(),
                             addSSGClusterInputHostName.getModelObjectAsString(),
                             Integer.parseInt(addSSGClusterInputPort.getModelObjectAsString()),
                             addSSGClusterDialogInputParentId.getModelObjectAsString());
-                    return SUCCESS_ACK;
+                    return newCluster;
                 } catch (Exception e) {
                     logger.warning(e.toString());
                     return new JSONException(e);

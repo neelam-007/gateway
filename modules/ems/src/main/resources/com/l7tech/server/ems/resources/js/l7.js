@@ -399,7 +399,8 @@ if (!l7.Util) {
     })();
 
     /**
-     * Tests if an object literal is an Layer 7 exception object
+     * Tests if an object literal is an l7-style exception object.
+     * See http://sarek/mediawiki/index.php?title=Enterprise_Organization_LLD#JSON_format_for_exception.
      *
      * @param {object} o    the object literal
      * @return {boolean} true if it is an Layer 7 exception object
@@ -765,12 +766,12 @@ if (!l7.Dialog) {
             for (var e = exception; e != null || e != undefined; e = e.cause) {
                 if (e !== exception) body += '<div>Caused By:</div>';
                 body += '<table class="spaced" style="border: 1px solid #000000; margin: 6px 0 6px 0; width: 50em;">';
-                body += '<tr><th>Exception:</th><td>' + l7.Util.escapeAsText(e.exception) + '</td></tr>';
+                body += '<tr><th class="top">Exception:</th><td>' + l7.Util.escapeAsText(e.exception) + '</td></tr>';
                 if (e.message) {
-                    body += '<tr><th>Message:</th><td class="wrap">' + l7.Util.escapeAsText(e.message) + '</td></tr>';
+                    body += '<tr><th class="top">Message:</th><td class="wrap">' + l7.Util.escapeAsText(e.message) + '</td></tr>';
                 }
                 if (e.localizedMessage) {
-                    body += '<tr><th>Localized Message:</th><td class="wrap">' + l7.Util.escapeAsText(e.localizedMessage) + '</td></tr>';
+                    body += '<tr><th class="top">Localized Message:</th><td class="wrap">' + l7.Util.escapeAsText(e.localizedMessage) + '</td></tr>';
                 }
                 body += '</table>';
             }
@@ -795,24 +796,40 @@ if (!l7.Dialog) {
             return result;
         }
 
-        l7.Dialog.showExceptionDialogIfJSONException = function(s, header, beginBodyIfException, bodyIfJSONParseException, okText) {
-            if (s.search(/\S/) == -1) {
-                return null;
+        /**
+         * Parses JSON text and displays a simple error dialog if the JSON is malformed
+         * or if it is parsed into a l7-style exception object.
+         *
+         * @public
+         * @param {string} s                 the text to parse as JSON
+         * @param {string} errHeader         header text to use as header of error dialog
+         * @param {string} htmlIfException   HTML to display at the top of the error dialog if the JSON
+         *                                   text is parsed into a l7-style exception
+         * @param {string} htmlIfBadJSON     HTML to display in error dialog if the JSON text is malformed
+         * @param {string} errOk             text to label the button in error dialog
+         * @return {string|object} the input string if it contains white spaces only;
+         *                         or the resulting object literal if parsed successfully
+         *                         which can be a l7-style exception object;
+         *                         or the input string if it cannot be parsed as JSON
+         */
+        l7.Dialog.parseJSON = function(s, errHeader, htmlIfException, htmlIfBadJSON, errOk) {
+            if (s.search(/\S/) == -1) { // white spaces only
+                return s;
             } else {
                 try {
                     var o = YAHOO.lang.JSON.parse(s);
                     var isException = l7.Util.isException(o);
                     if (isException) {
-                        l7.Dialog.showExceptionDialog(o, header, beginBodyIfException, okText);
-                        return true;
+                        l7.Dialog.showExceptionDialog(o, errHeader, htmlIfException, errOk);
+                        return o;
                     } else {
                         return o;
                     }
-                    var isException = l7.Dialog.showExceptionDialogIfException(o, header, beginBodyIfException, okText);
+                    var isException = l7.Dialog.showExceptionDialogIfException(o, errHeader, htmlIfException, errOk);
                     return o;
                 } catch (e) {
-                    l7.Dialog.showErrorDialog(header, bodyIfJSONParseException + ': ' + e, okText);
-                    return false;
+                    l7.Dialog.showErrorDialog(errHeader, htmlIfBadJSON + ': ' + e, errOk);
+                    return s;
                 }
             }
         }
