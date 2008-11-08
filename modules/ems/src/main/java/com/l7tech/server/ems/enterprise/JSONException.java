@@ -23,7 +23,7 @@ public class JSONException implements JSON.Convertible {
         for (Throwable t = this.t; t != null; t = t.getCause()) {
             output.add(JSONConstants.Exception.EXCEPTION, t.getClass().getName());
             if (t.getMessage() != null) output.add(JSONConstants.Exception.MESSAGE, t.getMessage());
-            if (t.getLocalizedMessage() != null) output.add(JSONConstants.Exception.LOCALIZED_MESSAGE, t.getMessage());
+            if (t.getLocalizedMessage() != null) output.add(JSONConstants.Exception.LOCALIZED_MESSAGE, t.getLocalizedMessage());
             if (t.getCause() != null) output.add(JSONConstants.Exception.CAUSE, new JSONException(t.getCause()));
         }
     }

@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 public class Configure extends EmsPage  {
 
     private static final Logger logger = Logger.getLogger(Configure.class.getName());
+    private static final Object SUCCESS_ACK = new Object();
 
     @SpringBean
     private EnterpriseFolderManager enterpriseFolderManager;
@@ -59,15 +60,19 @@ public class Configure extends EmsPage  {
 
         final HiddenField addFolderDialogInputParentId = new HiddenField("addFolderDialog_parentId", new Model(""));
         final RequiredTextField addFolderInputName = new RequiredTextField("addFolderDialog_name", new Model(""));
-        Form addFolderForm = new Form("addFolderForm"){
+        Form addFolderForm = new JsonDataResponseForm("addFolderForm"){
             @Override
-            protected void onSubmit() {
-                logger.info("Adding folder \""+ addFolderInputName.getModelObjectAsString() + "\" (parent folder GUID = "+ addFolderDialogInputParentId.getModelObjectAsString() + ").");
+            protected Object getJsonResponseData() {
                 try {
-                    enterpriseFolderManager.create(addFolderInputName.getModelObjectAsString(), addFolderDialogInputParentId.getModelObjectAsString());
+                    String newFolderName = addFolderInputName.getModelObjectAsString();
+                    String parentGuid = addFolderDialogInputParentId.getModelObjectAsString();
+                    logger.info("Adding folder \"" + newFolderName + "\" (parent folder GUID = " + parentGuid + ").");
+
+                    enterpriseFolderManager.create(newFolderName, parentGuid);
+                    return SUCCESS_ACK;
                 } catch (Exception e) {
-                    // TODO send back exception in JSON notaion
                     logger.warning(e.toString());
+                    return new JSONException(e);
                 }
             }
         };
@@ -75,15 +80,18 @@ public class Configure extends EmsPage  {
         addFolderForm.add(addFolderInputName);
 
         final HiddenField deleteFolderDialogInputId = new HiddenField("deleteFolderDialog_id", new Model(""));
-        Form deleteFolderForm = new Form("deleteFolderForm"){
+        Form deleteFolderForm = new JsonDataResponseForm("deleteFolderForm"){
             @Override
-            protected void onSubmit() {
-                logger.info("Deleting folder (GUID = "+ deleteFolderDialogInputId.getModelObjectAsString() + ").");
+            protected Object getJsonResponseData() {
                 try {
-                    enterpriseFolderManager.deleteByGuid(deleteFolderDialogInputId.getModelObjectAsString());
+                    String deletedFolderGuid = deleteFolderDialogInputId.getModelObjectAsString();
+                    logger.info("Deleting folder (GUID = "+ deletedFolderGuid + ").");
+
+                    enterpriseFolderManager.deleteByGuid(deletedFolderGuid);
+                    return SUCCESS_ACK;
                 } catch (Exception e) {
-                    // TODO send back exception in JSON notaion
                     logger.warning(e.toString());
+                    return new JSONException(e);
                 }
             }
         };
@@ -93,20 +101,20 @@ public class Configure extends EmsPage  {
         final RequiredTextField addSSGClusterInputName = new RequiredTextField("addSSGClusterDialog_name", new Model(""));
         final RequiredTextField addSSGClusterInputHostName = new RequiredTextField("addSSGClusterDialog_hostName", new Model(""));
         final RequiredTextField addSSGClusterInputPort = new RequiredTextField("addSSGClusterDialog_port", new Model(""));
-        Form addSSGClusterForm = new Form("addSSGClusterForm"){
+        Form addSSGClusterForm = new JsonDataResponseForm("addSSGClusterForm"){
             @Override
-            protected void onSubmit() {
-                logger.info("Adding SSG Cluster \""+ addSSGClusterInputName.getModelObjectAsString() + "\" (parent folder GUID = "+ addSSGClusterDialogInputParentId.getModelObjectAsString() + ").");
+            protected Object getJsonResponseData() {
                 try {
+                    logger.info("Adding SSG Cluster \""+ addSSGClusterInputName.getModelObjectAsString() + "\" (parent folder GUID = "+ addSSGClusterDialogInputParentId.getModelObjectAsString() + ").");
                     ssgClusterManager.create(
                             addSSGClusterInputName.getModelObjectAsString(),
                             addSSGClusterInputHostName.getModelObjectAsString(),
                             Integer.parseInt(addSSGClusterInputPort.getModelObjectAsString()),
                             addSSGClusterDialogInputParentId.getModelObjectAsString());
+                    return SUCCESS_ACK;
                 } catch (Exception e) {
-                    // TODO send back exception in JSON notaion
-                    e.printStackTrace();
                     logger.warning(e.toString());
+                    return new JSONException(e);
                 }
             }
         };
