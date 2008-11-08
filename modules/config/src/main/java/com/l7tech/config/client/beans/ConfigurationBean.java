@@ -86,6 +86,7 @@ public class ConfigurationBean<T> {
         return deletable;
     }
 
+    @Override
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -102,6 +103,7 @@ public class ConfigurationBean<T> {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = (id != null ? id.hashCode() : 0);
@@ -112,6 +114,7 @@ public class ConfigurationBean<T> {
         return result;
     }
 
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("ConfigurationBean[");

@@ -26,6 +26,7 @@ public class JsonInteraction extends Panel {
         this.provider = provider;
 
         add( new AbstractAjaxBehavior(){
+            @Override
             public void renderHead( final IHeaderResponse iHeaderResponse ) {
                 super.renderHead( iHeaderResponse );
                 iHeaderResponse.renderJavascriptReference(WicketEventReference.INSTANCE);
@@ -33,6 +34,7 @@ public class JsonInteraction extends Panel {
                 iHeaderResponse.renderJavascript("var " +jsonUrlVariable+ " = '/"+getCallbackUrl(true)+"';", null);
             }
 
+            @Override
             public void onRequest() {
                 boolean isPageVersioned = true;
                 Page page = getComponent().getPage();
@@ -41,7 +43,9 @@ public class JsonInteraction extends Panel {
                     page.setVersioned(false);
 
                     RequestCycle.get().setRequestTarget(new IRequestTarget() {
+                        @Override
                         public void detach(RequestCycle requestCycle) {}
+                        @Override
                         public void respond(RequestCycle requestCycle) {
                             logger.info("Processing JSON request for enterprise tree.");
                             JsonInteraction.this.onRequest( requestCycle.getRequest(), requestCycle.getResponse() );

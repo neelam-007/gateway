@@ -59,6 +59,7 @@ public class Login extends WebPage {
         LoginForm form = new LoginForm("loginForm");
         form.add(
             new YuiAjaxButton("submit", form){
+                @Override
                 protected void onSubmit(AjaxRequestTarget target, Form form) {}
                 @Override
                 protected void onError(AjaxRequestTarget target, Form form) {
@@ -99,6 +100,7 @@ public class Login extends WebPage {
             add(new PasswordTextField("password", new PropertyModel(model, "password")).setRequired(true));
         }        
 
+        @Override
         public final void onSubmit() {
             if ( login( model.username, model.password ) ) {
                 setResponsePage(getApplication().getHomePage());

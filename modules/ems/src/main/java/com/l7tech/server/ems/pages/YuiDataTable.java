@@ -121,6 +121,7 @@ public class YuiDataTable extends Panel {
         add( jsContainer );
 
         add( new AbstractAjaxBehavior(){
+            @Override
             public void renderHead( final IHeaderResponse iHeaderResponse ) {
                 super.renderHead( iHeaderResponse );
 
@@ -162,6 +163,7 @@ public class YuiDataTable extends Panel {
                 iHeaderResponse.renderJavascript(scriptBuilder.toString(), null);
             }
 
+            @Override
             public void onRequest() {
 
                 boolean isPageVersioned = true;
@@ -171,8 +173,10 @@ public class YuiDataTable extends Panel {
                     page.setVersioned(false);
 
                     RequestCycle.get().setRequestTarget(new IRequestTarget() {
+                        @Override
                         public void detach(RequestCycle requestCycle) {}
 
+                        @Override
                         public void respond(RequestCycle requestCycle) {
                             if ( requestCycle.getRequest().getParameter("selection") != null ) {
                                 WebApplication app = (WebApplication)getComponent().getApplication();
@@ -227,6 +231,7 @@ public class YuiDataTable extends Panel {
         return dataBuffer.toString();
     }
 
+    @Override
     public void detachModels() {
         super.detachModels();
         provider.detach();            
@@ -327,6 +332,7 @@ public class YuiDataTable extends Panel {
             this.hiddenColumn = hiddenColumnName;    
         }
 
+        @Override
         public void toJSON(Object o, JSON.Output output) {
             PropertyColumn column = (PropertyColumn) o;
             output.add( "key", column.getPropertyExpression() );
@@ -339,6 +345,7 @@ public class YuiDataTable extends Panel {
             }
         }
 
+        @Override
         public Object fromJSON(Map map) {
            throw new UnsupportedOperationException("Mapping fom JSON not supported.");
         }
@@ -348,6 +355,7 @@ public class YuiDataTable extends Panel {
      *
      */
     private static final class PageConvertor implements JSON.Convertor {
+        @Override
         public void toJSON(Object o, JSON.Output output) {
             JSONPage page = (JSONPage) o;            
             output.add( "records", page.getRecords() );
@@ -358,12 +366,14 @@ public class YuiDataTable extends Panel {
             output.add( "dir", page.getDir() );
         }
 
+        @Override
         public Object fromJSON(Map map) {
            throw new UnsupportedOperationException("Mapping fom JSON not supported.");
         }
     }
 
     private class PropertyModelConvertor implements JSON.Convertor {
+        @Override
         public void toJSON(Object o, JSON.Output output) {
             Model data = (Model) o;
 
@@ -377,6 +387,7 @@ public class YuiDataTable extends Panel {
             }
         }
 
+        @Override
         public Object fromJSON(Map map) {
            throw new UnsupportedOperationException("Mapping fom JSON not supported.");
         }

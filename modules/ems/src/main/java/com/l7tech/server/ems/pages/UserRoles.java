@@ -92,6 +92,7 @@ public class UserRoles extends EmsPage {
         // Step 2: create components to unassign assigned users from a role.
         HiddenField hiddenFieldForAssignedUser = new HiddenField("assignedUserId", new Model(""));
         YuiAjaxButton buttonToUnassignRole = new YuiAjaxButton("button.unassignRole") {
+            @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, Form form) {
                 final String userId = (String) form.get("assignedUserId").getModelObject();
                 try {
@@ -131,6 +132,7 @@ public class UserRoles extends EmsPage {
         // Step 3: create components to assign a role to unassigned users
         HiddenField hiddenFieldForUnassignedUser = new HiddenField("unassignedUserId", new Model(""));
         YuiAjaxButton buttonToAssignRole = new YuiAjaxButton("button.assignRole") {
+            @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 final String userId = (String) form.get("unassignedUserId").getModelObject();
                 try {
@@ -237,6 +239,7 @@ public class UserRoles extends EmsPage {
                 );
 
                 listChoice.add(new AjaxFormComponentUpdatingBehavior("onchange") {
+                    @Override
                     protected void onUpdate(AjaxRequestTarget target) {
                         // Update the visibility of the role management container
                         if (roleModel.getSelectedRole() == null) {
@@ -272,6 +275,7 @@ public class UserRoles extends EmsPage {
         String panelId = "panel." + (usersAssigned? "" : "un") + "assignedUsers";
         return new YuiDataTable(panelId, columns, "login", true, new UserDataProvider("login", true, usersAssigned), hidden,
             "login", false, new Button[]{button}) {
+            @Override
             @SuppressWarnings({"UnusedDeclaration"})
             protected void onSelect(AjaxRequestTarget ajaxRequestTarget, String value) {
                 boolean enabled = value != null && value.length() > 0;
@@ -289,6 +293,7 @@ public class UserRoles extends EmsPage {
             this.assigned = assigned;
         }
 
+        @Override
         public Iterator iterator(int first, int count) {
             try {
                 Collection<InternalUser> users =
@@ -314,6 +319,7 @@ public class UserRoles extends EmsPage {
             }
         }
 
+        @Override
         public int size() {
             if (roleModel.selectedRole == null) {
                 return 0;
@@ -328,8 +334,10 @@ public class UserRoles extends EmsPage {
             }
         }
 
+        @Override
         public IModel model(final Object userObject) {
             return new AbstractReadOnlyModel() {
+                @Override
                 public Object getObject() {
                     return userObject;
                 }

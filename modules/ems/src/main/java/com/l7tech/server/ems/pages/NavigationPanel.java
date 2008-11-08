@@ -144,6 +144,7 @@ public class NavigationPanel extends Panel {
             super(s, iModel);
         }
 
+        @Override
         protected String newValue(String s, String s1) {
             return s + s1;
         }

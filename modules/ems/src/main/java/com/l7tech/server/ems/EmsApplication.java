@@ -40,6 +40,7 @@ public class EmsApplication extends WebApplication {
     /**
      *
      */
+    @Override
     public Class getHomePage() {
         return SystemSettings.class;
     }
@@ -47,10 +48,12 @@ public class EmsApplication extends WebApplication {
     /**
      * 
      */
+    @Override
     public String getConfigurationType() {
         return SyspropUtil.getBoolean("com.l7tech.ems.development") ? WebApplication.DEVELOPMENT : WebApplication.DEPLOYMENT;
     }
 
+    @Override
     public Session newSession(Request request, Response response) {
         return new EmsSession( request );
     }
@@ -83,6 +86,7 @@ public class EmsApplication extends WebApplication {
         IResourceSettings resourceSettings = getResourceSettings();
         resourceSettings.setResourceStreamLocator(new ResourceLocator());
         resourceSettings.setPackageResourceGuard(new PackageResourceGuard(){
+            @Override
             protected boolean acceptAbsolutePath( final String resourcePath ) {
                 boolean accept = false;
                 if ( resourcePath.startsWith("org/apache/wicket") ||
@@ -106,6 +110,7 @@ public class EmsApplication extends WebApplication {
 
         ISecuritySettings securitySettings = getSecuritySettings();
         securitySettings.setAuthorizationStrategy( new IAuthorizationStrategy() {
+            @Override
             public boolean isInstantiationAuthorized(Class aClass) {
                 if (logger.isLoggable(Level.FINER))
                     logger.finer("Instantiation authorized check for component : " +aClass);
@@ -116,6 +121,7 @@ public class EmsApplication extends WebApplication {
                        EmsSecurityManagerImpl.isAuthenticated();
             }
 
+            @Override
             public boolean isActionAuthorized(Component component, Action action) {
                 if (logger.isLoggable(Level.FINER))
                     logger.finer("Action authorized check for component : " + component.getId() + ", " + action.getName());
@@ -135,6 +141,7 @@ public class EmsApplication extends WebApplication {
                 return new SimpleDateFormat(formatPattern);
             }
 
+            @Override
             public Object convertToObject(String s, Locale locale) {
                 Date value = new Date(0);
                 try {
@@ -145,6 +152,7 @@ public class EmsApplication extends WebApplication {
                 return value;
             }
 
+            @Override
             public String convertToString(Object o, Locale locale) {
                 return getDateFormat().format((Date)o);
             }
@@ -244,6 +252,7 @@ public class EmsApplication extends WebApplication {
      * ResourceStreamLocator that understands our resource structure
      */
     private static class ResourceLocator extends ResourceStreamLocator {
+        @Override
         public IResourceStream locate(final Class clazz, final String path) {
             //logger.info("Processing locate call for path '"+path+"'.");
             return super.locate(clazz, path.replace("pages", "resources/templates"));

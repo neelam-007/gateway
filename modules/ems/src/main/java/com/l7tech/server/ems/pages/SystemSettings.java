@@ -205,6 +205,7 @@ public class SystemSettings extends EmsPage {
         final Component[] refreshComponents = new Component[]{licenseDetailsContainer, licenseDeleteContainer};
         Form licenseDeleteForm = new Form("licenseDeleteForm");
         licenseDeleteForm.add( new YuiAjaxButton("deleteLicenseButton", licenseDeleteForm) {
+            @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 licenseDelete();
                 licenseModel.detach();
@@ -372,6 +373,7 @@ public class SystemSettings extends EmsPage {
             return currentLicense;
         }
 
+        @Override
         public void detach() {
             license = null;
         }
@@ -400,6 +402,7 @@ public class SystemSettings extends EmsPage {
             setMaxSize(Bytes.bytes(MAX_LICENSE_FILE_UPLOAD_BYTES));
         }
 
+        @Override
         public final void onSubmit() {
             final FileUpload upload = fileUpload.getFileUpload();
             if ( upload != null ) {
@@ -408,6 +411,7 @@ public class SystemSettings extends EmsPage {
                     EulaPanel eula = new EulaPanel( YuiDialog.getContentId(), new Model(new License(license, null, null)) );
 
                     YuiDialog dialog = new YuiDialog("eula.holder.content", "License Agreement", YuiDialog.Style.OK_CANCEL, eula, new YuiDialog.OkCancelCallback(){
+                        @Override
                         public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
                             if ( button == YuiDialog.Button.OK ) {
                                 logger.info("License installation confirmed.");

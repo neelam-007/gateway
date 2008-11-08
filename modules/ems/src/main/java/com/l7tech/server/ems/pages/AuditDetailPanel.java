@@ -209,16 +209,20 @@ public class AuditDetailPanel extends Panel {
             return files;
         }
 
+        @Override
         public Iterator iterator( int first, int count ) {
             return newAuditIter( details, first, first+count, getSort().getProperty(), getSort().isAscending() );
         }
 
+        @Override
         public int size() {
             return details.size();
         }
 
+        @Override
         public IModel model(final Object auditObject) {
              return new AbstractReadOnlyModel() {
+                @Override
                 public Object getObject() {
                     return auditObject;
                 }
@@ -233,6 +237,7 @@ public class AuditDetailPanel extends Panel {
             List<AuditDetailModel> list = new ArrayList<AuditDetailModel>( audits );
 
             Collections.sort(list, new Comparator<AuditDetailModel>(){
+                @Override
                 @SuppressWarnings({"unchecked"})
                 public int compare(AuditDetailModel detail1, AuditDetailModel detail2) {
                     Comparable v1 = detail1.getDate();

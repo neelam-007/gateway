@@ -40,6 +40,7 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
         add( passwordForm );
 
         add( new YuiAjaxButton( "submit", passwordForm ){
+            @Override
             protected void onSubmit( final AjaxRequestTarget target, final Form form ) {
                 target.addComponent( feedback );
             }
@@ -129,6 +130,7 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
             add( new EqualPasswordInputValidator(pass1, pass2) );
         }
 
+        @Override
         public final void onSubmit() {
             updateUser( (UserModel)getModelObject(), this );
         }

@@ -27,6 +27,7 @@ public abstract class EmsPage extends WebPage {
         HttpServletRequest request = servletWebRequest.getHttpServletRequest();
         final EmsSecurityManager.LoginInfo info = securityManager.getLoginInfo( request.getSession(true) );
         final StringResourceModel sinceResourceModel = new StringResourceModel( "page.since", this, null, new Object[]{new Model(){
+            @Override
             public Object getObject() {
                 return new SimpleDateFormat(getSession().getDateTimeFormatPattern()).format(info.getDate());
             }
@@ -50,6 +51,7 @@ public abstract class EmsPage extends WebPage {
         return name;
     }
 
+    @Override
     public EmsSession getSession() {
         return (EmsSession) super.getSession();
     }

@@ -115,6 +115,7 @@ public class Main {
 
     private static final ConfigurationType[] configurationTypes = {
         new ConfigurationType( "ems", "configTemplates/EmsConfiguration.xml", true ){
+            @Override
             public ConfigurationBeanProvider getProvider() {
                 return new EmsConfigurationBeanProvider();
             }

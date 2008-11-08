@@ -144,6 +144,7 @@ public class Option implements Comparable {
         this.confirmed = confirmed;
     }        
     
+    @Override
     public int compareTo(Object o) {
         int value = Integer.valueOf(order).compareTo( ((Option) o).order );
         if ( value==0 ) {
@@ -152,6 +153,7 @@ public class Option implements Comparable {
         return value;
     }        
     
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("Option[");

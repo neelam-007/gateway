@@ -72,6 +72,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
      * @param password Password for login
      * @return True if logged in
      */
+    @Override
     public boolean login( final HttpSession session, final String username, final String password ) {
         LoginCredentials creds = new LoginCredentials(username, password.toCharArray(), null);
         User user = null;
@@ -103,6 +104,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
      * @param session  The HttpSession to log out
      * @return True if session was logged out
      */
+    @Override
     public boolean logout( final HttpSession session ) {
         boolean loggedOut = false;
 
@@ -123,6 +125,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
      * @param newPassword The new password
      * @return True if the password was updated
      */
+    @Override
     public boolean changePassword( HttpSession session, String password, String newPassword ) {
         boolean passwordChanged = false;
 
@@ -164,6 +167,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
      * @param request The HttpServletRequest being attempted
      * @return True if access is permitted
      */
+    @Override
     @SuppressWarnings({"unchecked"})
     public boolean canAccess(  final HttpSession session, final HttpServletRequest request ) {
         // TODO Clean this up (use secured and unsecured sections?)
@@ -192,10 +196,12 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
      * @param ao The attempted operation
      * @return true if permitted
      */
+    @Override
     public boolean hasPermission( final AttemptedOperation ao ) {
         return authorizer.hasPermission( ao );
     }
 
+    @Override
     public LoginInfo getLoginInfo( final HttpSession session ) {
         final User user = (User) session.getAttribute(ATTR_ID);
         final Date date = (Date) session.getAttribute(ATTR_DATE);
@@ -207,6 +213,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
 
     //- PROTECTED
     
+    @Override
     protected Set<IdentityProvider> getAdminIdentityProviders() {
         Set<IdentityProvider> providers = new LinkedHashSet<IdentityProvider>();
 
@@ -237,6 +244,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     private final SessionAuthorizer authorizer = new SessionAuthorizer();
 
     private final class SessionAuthorizer extends Authorizer {
+        @Override
         public Collection<Permission> getUserPermissions() {
             Set<Permission> perms = new HashSet<Permission>();
 

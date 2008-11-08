@@ -34,6 +34,7 @@ public class Logs extends EmsPage {
 
         final WebMarkupContainer detailsContainer = new WebMarkupContainer("log.details");
         Button viewButton = new YuiAjaxButton("viewLogButton") {
+            @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 String logIdentifier = (String)form.get("logId").getModel().getObject();
                 if ( logIdentifier != null && logIdentifier.length() > 0 ) {
@@ -48,6 +49,7 @@ public class Logs extends EmsPage {
         };
 
         Button downloadButton = new YuiAjaxButton("downloadLogButton") {
+            @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 String logIdentifier = (String)form.get("logId").getModel().getObject();
                 if ( logIdentifier != null && logIdentifier.length() > 0 ) {
@@ -90,16 +92,20 @@ public class Logs extends EmsPage {
             setSort("name", true);
         }
 
+        @Override
         public Iterator iterator(int first, int count) {
             return newLogIter( files, first, first+count, getSort().getProperty(), getSort().isAscending() );
         }
 
+        @Override
         public int size() {
             return files.size();
         }
 
+        @Override
         public IModel model(final Object auditObject) {
              return new AbstractReadOnlyModel() {
+                @Override
                 public Object getObject() {
                     return auditObject;
                 }
@@ -124,6 +130,7 @@ public class Logs extends EmsPage {
             List<FileModel> list = new ArrayList<FileModel>( files );
 
             Collections.sort(list, new Comparator<FileModel>(){
+                @Override
                 @SuppressWarnings({"unchecked"})
                 public int compare(FileModel file1, FileModel file2) {
                     Comparable v1 = file1.name.toLowerCase();

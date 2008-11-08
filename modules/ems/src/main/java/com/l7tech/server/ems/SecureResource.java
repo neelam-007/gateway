@@ -19,6 +19,7 @@ public abstract class SecureResource extends WebResource {
      *
      * @return The stream or null.
      */
+    @Override
     public final IResourceStream getResourceStream() {
         IResourceStream stream;
 

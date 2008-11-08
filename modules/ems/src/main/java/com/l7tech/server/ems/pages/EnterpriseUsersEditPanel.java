@@ -38,6 +38,7 @@ public class EnterpriseUsersEditPanel extends Panel {
         add( feedback.setOutputMarkupId(true) );
         add( editForm );
         add( new YuiAjaxButton( "submit", editForm ){
+            @Override
             protected void onSubmit( final AjaxRequestTarget target, final Form form ) {
                 target.addComponent( feedback );
                 for ( Component component : refreshComponents ) {
@@ -137,6 +138,7 @@ public class EnterpriseUsersEditPanel extends Panel {
             add(new TextField("description").add(new StringValidator.LengthBetweenValidator(1, 255)));
         }
 
+        @Override
         public final void onSubmit() {
             updateUser( (UserModel) getModelObject(), this );
         }

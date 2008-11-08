@@ -46,10 +46,12 @@ public class Audits extends EmsPage {
         detailsContainer.setOutputMarkupId(true);
 
         Button downloadButton = new YuiAjaxButton("downloadAuditsButton") {
+            @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 final Model downloadModel = new Model();
                 AuditDownloadPanel download = new AuditDownloadPanel( YuiDialog.getContentId(), downloadModel );
                 YuiDialog dialog = new YuiDialog("audit.holder.content", "Audit Download", YuiDialog.Style.OK_CANCEL, download, new YuiDialog.OkCancelCallback(){
+                    @Override
                     public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
                         if ( button == YuiDialog.Button.OK ) {
                             String url = (String)downloadModel.getObject();
@@ -63,6 +65,7 @@ public class Audits extends EmsPage {
         };
 
         Button deleteButton = new YuiAjaxButton("deleteAuditsButton") {
+            @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 AuditDeletePanel delete = new AuditDeletePanel( YuiDialog.getContentId() );
                 YuiDialog dialog = new YuiDialog("audit.holder.content", "Audit Deletion", YuiDialog.Style.OK_CANCEL, delete);
@@ -92,14 +95,17 @@ public class Audits extends EmsPage {
         auditSelectionForm.add( startDate );
         auditSelectionForm.add( endDate );
         auditSelectionForm.add( new DropDownChoice( "audittype", typeModel, Arrays.asList(values), new IChoiceRenderer(){
+            @Override
             public Object getDisplayValue( final Object key ) {
                 return new StringResourceModel( "audit.type."+key, Audits.this, null ).getString();
             }
+            @Override
             public String getIdValue( final Object value, final int index ) {
                 return values[index];
             }
         } ) );
         auditSelectionForm.add( new YuiAjaxButton("audit.select.button"){
+            @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 // Rebuild the data table
                 tableContainer.removeAll();
@@ -223,11 +229,13 @@ public class Audits extends EmsPage {
             setSort( sort, asc );
         }
 
+        @Override
         public Iterator iterator(int first, int count) {
             try {
                 AuditRecordManager.SortProperty sort = AuditRecordManager.SortProperty.valueOf(getSort().getProperty());
                 Iterator<AuditRecord> iter = auditRecordManager.findPage(sort, getSort().isAscending(), first, count, auditSearchCriteria).iterator();
                 return Functions.map( iter, new Functions.Unary<AuditModel, AuditRecord>(){
+                    @Override
                     public AuditModel call(AuditRecord auditRecord) {
                         return new AuditModel( auditRecord );
                     }
@@ -238,6 +246,7 @@ public class Audits extends EmsPage {
             }
         }
 
+        @Override
         public int size() {
             try {
                 return auditRecordManager.findCount(auditSearchCriteria);
@@ -247,8 +256,10 @@ public class Audits extends EmsPage {
             }
         }
 
+        @Override
         public IModel model(final Object auditObject) {
              return new AbstractReadOnlyModel() {
+                @Override
                 public Object getObject() {
                     return auditObject;
                 }

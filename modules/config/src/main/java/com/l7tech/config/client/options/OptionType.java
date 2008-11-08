@@ -107,10 +107,12 @@ public enum OptionType {
     }
 
     private static final class BooleanFormat extends Format {
+        @Override
         public StringBuffer format( final Object obj, final StringBuffer toAppendTo, final FieldPosition pos) {
             return toAppendTo.append(((Boolean)obj).booleanValue() ? "Yes" : "No");
         }
 
+        @Override
         public Object parseObject( final String source, final ParsePosition pos) {
             Boolean result = Boolean.FALSE;
 

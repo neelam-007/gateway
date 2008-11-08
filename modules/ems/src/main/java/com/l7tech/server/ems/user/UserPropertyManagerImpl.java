@@ -27,23 +27,28 @@ public class UserPropertyManagerImpl
         extends HibernateEntityManager<UserProperty, EntityHeader>
         implements UserPropertyManager {
 
+    @Override
     public Class<UserProperty> getImpClass() {
         return UserProperty.class;
     }
 
+    @Override
     public Class<UserProperty> getInterfaceClass() {
         return UserProperty.class;
     }
 
+    @Override
     public String getTableName() {
         return "user_property";
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     @Transactional(readOnly=true)
     public Map<String, String> getUserProperties( final User user ) throws FindException {
         try {
             return (Map<String, String>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 @SuppressWarnings({"unchecked"})
                 public Object doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
                     // Prevent reentrant ClusterProperty lookups from flushing in-progress writes
@@ -65,9 +70,11 @@ public class UserPropertyManagerImpl
         }
     }
 
+    @Override
     public void saveUserProperties( final User user, final Map<String, String> properties ) throws UpdateException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 @SuppressWarnings({"unchecked"})
                 public Object doInHibernate( final Session session ) throws HibernateException, SQLException {
                     Criteria criteria = session.createCriteria(UserProperty.class);

@@ -53,6 +53,7 @@ public class ConfigurationFactory {
             JAXBContext context = JAXBContext.newInstance("com.l7tech.config.client.options");
             final DOMResult result = new DOMResult();
             context.generateSchema( new SchemaOutputResolver(){
+                @Override
                 public Result createOutput(String namespaceUri, String suggestedFileName) throws IOException {
                     result.setSystemId( suggestedFileName );
                     return result;

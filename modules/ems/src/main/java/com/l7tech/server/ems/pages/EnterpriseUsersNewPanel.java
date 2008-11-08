@@ -42,6 +42,7 @@ public class EnterpriseUsersNewPanel extends Panel {
         add( feedback.setOutputMarkupId(true) );
         add( userForm );
         add( new YuiAjaxButton( "submit", userForm ){
+            @Override
             protected void onSubmit( final AjaxRequestTarget target, final Form form ) {
                 target.addComponent( feedback );
                 for ( Component component : refreshComponents ) {
@@ -100,6 +101,7 @@ public class EnterpriseUsersNewPanel extends Panel {
             add( new EqualPasswordInputValidator(pass1, pass2) );
         }
 
+        @Override
         public final void onSubmit() {
             UserModel model = (UserModel) getModelObject();
             try {

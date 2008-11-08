@@ -70,6 +70,7 @@ public class UserSettings extends EmsPage {
         add( passwordFeedback.setOutputMarkupId(true) );
         add( passwordForm );
         add( new YuiAjaxButton("password.submit", passwordForm){
+            @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) { target.addComponent(passwordFeedback); }
             @Override
             protected void onError(AjaxRequestTarget target, Form form) { target.addComponent(passwordFeedback); }
@@ -81,6 +82,7 @@ public class UserSettings extends EmsPage {
         add( accountFeedback.setOutputMarkupId(true) );
         add( accountForm );
         add( new YuiAjaxButton("account.submit", accountForm){
+            @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) { target.addComponent(accountFeedback); }
             @Override
             protected void onError(AjaxRequestTarget target, Form form) { target.addComponent(accountFeedback); }
@@ -158,6 +160,7 @@ public class UserSettings extends EmsPage {
             add( new EqualPasswordInputValidator(pass2, pass3) );
         }
 
+        @Override
         public final void onSubmit() {
             if ( model.newPassword.equals(model.newPasswordConfirm) ) {
                 if ( changePassword( model.password, model.newPassword ) ) {
@@ -176,10 +179,12 @@ public class UserSettings extends EmsPage {
             this.isDate = isDate;
         }
 
+        @Override
         public String getIdValue(Object o, int i) {
             return o.toString();
         }
 
+        @Override
         public Object getDisplayValue(Object o) {
             return isDate ? EmsApplication.getDateFormatExample(o.toString()) : EmsApplication.getTimeFormatExample(o.toString());
         }
@@ -202,6 +207,7 @@ public class UserSettings extends EmsPage {
             add( new DropDownChoice( "startview", Arrays.asList("[Last Visited]") ) ); // TODO [steve] list for navigation model
         }
 
+        @Override
         @SuppressWarnings({"unchecked"})
         public final void onSubmit() {
             if ( storePreferences( (Map<String,String>) this.getModelObject() ) ) {
