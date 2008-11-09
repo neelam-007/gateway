@@ -826,6 +826,7 @@
             <arg value="${test.perf.reports.dir}/4.3_final.xml"/>
             <arg value="${test.perf.reports.dir}/4.4_final.xml"/>
             <arg value="${test.perf.reports.dir}/4.5_final.xml"/>
+            <arg value="${test.perf.reports.dir}/4.6_final.xml"/>
         </java>
         <echo level="info">Performance trend complete.</echo>
     </target>
