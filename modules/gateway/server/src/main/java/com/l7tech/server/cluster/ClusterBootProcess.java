@@ -26,6 +26,8 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
     public ClusterBootProcess( final ClusterInfoManager clusterInfoManager,
                                final DistributedMessageIdManager distributedMessageIdManager,
                                final ServerConfig serverConfig ) {
+        if ( clusterInfoManager instanceof ClusterInfoManagerImpl ) throw new IllegalArgumentException("cim autoproxy failure");
+
         this.clusterInfoManager = clusterInfoManager;
         this.distributedMessageIdManager = distributedMessageIdManager;
 

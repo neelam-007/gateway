@@ -7,14 +7,14 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.ResourceUtils;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.hibernate.jdbc.Work;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -22,8 +22,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,6 +41,7 @@ import java.util.regex.Pattern;
  * $Id$
  *
  */
+@Transactional(propagation= Propagation.REQUIRED)
 public class ClusterInfoManagerImpl extends HibernateDaoSupport implements ClusterInfoManager {
 
     //- PUBLIC
@@ -55,6 +54,8 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         this.serverConfig = serverConfig;
     }
 
+    @Override
+    @Transactional(readOnly=true)
     public String thisNodeId() {
         return nodeid;
     }
@@ -64,6 +65,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      *
      * @param avgLoad the average load for the last minute
      */
+    @Override
     public void updateSelfStatus(double avgLoad) throws UpdateException {
         long now = System.currentTimeMillis();
         ClusterNodeInfo selfCI = getSelfNodeInf();
@@ -87,24 +89,17 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     /**
      * Updates the specified {@link ClusterNodeInfo} to the database.
      */
+    @Override
     public void updateSelfStatus( final ClusterNodeInfo selfCI ) throws UpdateException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 public Object doInHibernate(final Session session) throws HibernateException, SQLException {
                     // Use a bulk delete to ensure that a replicable SQL statement is run
                     // even if there is nothing in the table (see bug 4615)
-                    session.doWork(new Work(){
-                        public void execute(final Connection connection) throws SQLException {
-                            PreparedStatement statement = null;
-                            try {
-                                statement = connection.prepareStatement(SQL_DELETE_BY_ID);
-                                statement.setString( 1, selfCI.getNodeIdentifier() );
-                                statement.executeUpdate();
-                            } finally {
-                                ResourceUtils.closeQuietly(statement);
-                            }
-                        }
-                    });
+                    session.createQuery( HQL_DELETE_BY_ID )
+                            .setString("nodeid", selfCI.getNodeIdentifier() )
+                            .executeUpdate();
                     if ( session.contains( selfCI ) ) {
                         session.evict( selfCI );
                     }
@@ -119,6 +114,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         }
     }
 
+    @Override
     public void deleteNode(String nodeid) throws DeleteException {
         ClusterNodeInfo node = getNodeStatusFromDB(nodeid);
         if (node == null) {
@@ -144,6 +140,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         }
     }
 
+    @Override
     public void renameNode(String nodeid, String newnodename) throws UpdateException {
         ClusterNodeInfo node = getNodeStatusFromDB(nodeid);
         if (node == null) {
@@ -166,6 +163,8 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * when the server boots. it updates the boot time and update time in the cluster_status
      * table.
      */
+    @Override
+    @Transactional(propagation= Propagation.REQUIRED)
     public void updateSelfUptime() throws UpdateException {
         ClusterNodeInfo selfCI = getSelfNodeInf();
         if (selfCI != null) {
@@ -181,11 +180,14 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * @return a collection containing ClusterNodeInfo objects. if the collection is empty, it means that
      * the SSG operated by itself outsides a cluster.
      */
+    @Override
+    @Transactional(readOnly=true)
     public Collection<ClusterNodeInfo> retrieveClusterStatus() throws FindException {
         // get all objects from that table
         try {
             //noinspection unchecked
             return (List<ClusterNodeInfo>) getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     return session.createQuery(HQL_FIND_ALL).list();
                 }
@@ -200,6 +202,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     /**
      * determines this node's nodeid value
      */
+    @Override
     public synchronized ClusterNodeInfo getSelfNodeInf() {
         ClusterNodeInfo clusterNodeInfo;
 
@@ -261,8 +264,9 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     " in class " + ClusterNodeInfo.class.getName() +
                     " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = ?";
 
-    private static final String SQL_DELETE_BY_ID =
-            "delete from cluster_info where nodeid = ?";
+    private static final String HQL_DELETE_BY_ID =
+            "delete from " + ClusterNodeInfo.class.getName() + " as " + TABLE_NAME +
+                    " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = :nodeid";
 
     private static final Logger logger = Logger.getLogger(ClusterInfoManagerImpl.class.getName());
     private static final long rememberedBootTime = System.currentTimeMillis();
@@ -342,6 +346,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     private ClusterNodeInfo getNodeStatusFromDB(final String nodeIdentifer) {
         try {
             return (ClusterNodeInfo) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_ID);
                     q.setString(0, nodeIdentifer);
