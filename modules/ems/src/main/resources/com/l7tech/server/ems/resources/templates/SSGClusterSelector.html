@@ -18,12 +18,12 @@
     <script type="text/javascript" src="../yui/logger/logger-min.js"></script>
 
     <script type="text/javascript" src="../js/l7.js"></script>
-    <script type="text/javascript" src="../js/enterpriseTreeTable.js"></script>
+    <script type="text/javascript" src="../js/entityTreeTable.js"></script>
     <script type="text/javascript">
         // TODO generate these variables dynamically on the server according to user's langauge preference
 
-        /** Localized strings for passing into l7.EnterpriseTreeTable constructor. */
-        var enterpriseTreeTableLocalizedStrings = {
+        /** Localized strings for passing into l7.EntityTreeTable constructor. */
+        var entityTreeTableLocalizedStrings = {
             SSG_CLUSTER_STATE_UP : 'Up',
             SSG_CLUSTER_STATE_PARTIAL : 'Partial',
             SSG_CLUSTER_STATE_DOWN : 'Down',
@@ -40,7 +40,7 @@
             ENTERPRISE_FOLDER : 'folder',
             SSG_CLUSTER : 'SSG Cluster',
             SSG_NODE : 'SSG Node',
-            SSG_FOLDER : 'folder',
+            SERVICE_FOLDER : 'folder',
             PUBLISHED_SERVICE : 'published service',
             POLICY_FRAGMENT : 'policy fragment',
             SSL_HOST_NAME : 'SSL host name',
@@ -63,9 +63,9 @@
     <script type="text/javascript">
         /**
          * The enterpries tree table object.
-         * @type l7.EnterpriseTreeTable
+         * @type l7.EntityTreeTable
          */
-        var enterpriseTreeTable;
+        var entityTreeTable;
 
         var callbackId;
 
@@ -90,14 +90,14 @@
         /**
          * Fetches entities data from server and then populates table body.
          */
-        function initEnterpriseTreeTable() {
-            var tbody = document.getElementById('enterpriseTreeTableBody');
+        function initEntityTreeTable() {
+            var tbody = document.getElementById('entityTreeTableBody');
             var config = {
-                localizedStrings : enterpriseTreeTableLocalizedStrings,
+                localizedStrings : entityTreeTableLocalizedStrings,
                 columns : [
-                    l7.EnterpriseTreeTable.COLUMN.NAME,
-                    l7.EnterpriseTreeTable.COLUMN.ONLINE_STATUS,
-                    l7.EnterpriseTreeTable.COLUMN.ACCESS_STATUS
+                    l7.EntityTreeTable.COLUMN.NAME,
+                    l7.EntityTreeTable.COLUMN.ONLINE_STATUS,
+                    l7.EntityTreeTable.COLUMN.ACCESS_STATUS
                 ],
                 entitySelectable : false,
                 onClickAccessDialogButton : function(event, entity) {
@@ -105,11 +105,11 @@
 alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
                 },
                 entitiesWithRadioButton : [
-                    l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER
+                    l7.EntityTreeTable.ENTITY.SSG_CLUSTER
                 ],
                 onClickEntityRadioButton : onClickEntityRadioButton
             };
-            enterpriseTreeTable = new l7.EnterpriseTreeTable(tbody, [], '../images', config);
+            entityTreeTable = new l7.EntityTreeTable(tbody, [], '../images', config);
 
             function displayError() {
                 var tr = tbody.insertRow(-1);
@@ -128,7 +128,7 @@ alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type =
                         l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_PARSE_ENTITY_DATA + e, localizedStrings.OK);
                         return;
                     }
-                    enterpriseTreeTable.load(entities);
+                    entityTreeTable.load(entities);
                 },
                 failure : function(o) {
                     displayError();
@@ -144,7 +144,7 @@ alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type =
         }
 
         function init() {
-            initEnterpriseTreeTable();
+            initEntityTreeTable();
             initDialogs();
         }
 
@@ -160,7 +160,7 @@ alert('onClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type =
             <th><img src="../images/accessAccount.png" title="Access Account" alt="" /></th>
         </tr>
     </thead>
-    <tbody id="enterpriseTreeTableBody">
+    <tbody id="entityTreeTableBody">
     </tbody>
 </table>
 </body>

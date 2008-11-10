@@ -24,12 +24,12 @@
 
     <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css"> <!-- modifies YUI sam skin; must come after YUI CSS files -->
     <script type="text/javascript" src="../js/l7.js"></script>
-    <script type="text/javascript" src="../js/enterpriseTreeTable.js"></script>
+    <script type="text/javascript" src="../js/entityTreeTable.js"></script>
     <script type="text/javascript">
         // TODO generate these variables dynamically on the server according to user's langauge preference
 
-        /** Localized strings for passing into l7.EnterpriseTreeTable constructor. */
-        var enterpriseTreeTableLocalizedStrings = {
+        /** Localized strings for passing into l7.EntityTreeTable constructor. */
+        var entityTreeTableLocalizedStrings = {
             SSG_CLUSTER_STATE_UP : 'Up',
             SSG_CLUSTER_STATE_PARTIAL : 'Partial',
             SSG_CLUSTER_STATE_DOWN : 'Down',
@@ -46,7 +46,7 @@
             ENTERPRISE_FOLDER : 'folder',
             SSG_CLUSTER : 'SSG Cluster',
             SSG_NODE : 'SSG Node',
-            SSG_FOLDER : 'folder',
+            SERVICE_FOLDER : 'folder',
             PUBLISHED_SERVICE : 'published service',
             POLICY_FRAGMENT : 'policy fragment',
             SSL_HOST_NAME : 'SSL host name',
@@ -68,9 +68,9 @@
     <script type="text/javascript">
         /**
          * The enterpries tree table object.
-         * @type l7.EnterpriseTreeTable
+         * @type l7.EntityTreeTable
          */
-        var enterpriseTreeTable;
+        var entityTreeTable;
 
         var callbackId;
 
@@ -111,7 +111,7 @@
         function loadSSGClusterContent(ssgClusterId) {
 
             function displayError() {
-                var tbody = document.getElementById('enterpriseTreeTableBody');
+                var tbody = document.getElementById('entityTreeTableBody');
                 var tr = tbody.insertRow(-1);
                 var td = tr.insertCell(-1);
                 td.colSpan = 4;
@@ -124,16 +124,16 @@
                     try {
                         entities = YAHOO.lang.JSON.parse(o.responseText);
                     } catch (e) {
-                        enterpriseTreeTable.clear();
+                        entityTreeTable.clear();
                         displayError();
                         l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_PARSE_ENTITY_DATA + e);
                         return;
                     }
-                    enterpriseTreeTable.load(entities);
+                    entityTreeTable.load(entities);
                     currentSSGClusterId = ssgClusterId;
                 },
                 failure : function(o) {
-                    enterpriseTreeTable.clear();
+                    entityTreeTable.clear();
                     displayError();
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText);
                 }
@@ -145,31 +145,31 @@
         /**
          * Initializes the enterprise tree table instance; with no entity data.
          */
-        function initEnterpriseTreeTable() {
-            var tbody = document.getElementById('enterpriseTreeTableBody');
+        function initEntityTreeTable() {
+            var tbody = document.getElementById('entityTreeTableBody');
             var config = {
-                localizedStrings : enterpriseTreeTableLocalizedStrings,
+                localizedStrings : entityTreeTableLocalizedStrings,
                 columns : [
-                    l7.EnterpriseTreeTable.COLUMN.NAME,
-                    l7.EnterpriseTreeTable.COLUMN.ZOOM,
-                    l7.EnterpriseTreeTable.COLUMN.VERSION,
-                    l7.EnterpriseTreeTable.COLUMN.TYPE
+                    l7.EntityTreeTable.COLUMN.NAME,
+                    l7.EntityTreeTable.COLUMN.ZOOM,
+                    l7.EntityTreeTable.COLUMN.VERSION,
+                    l7.EntityTreeTable.COLUMN.TYPE
                 ],
                 entitiesWithZoomIcon : [
-                    l7.EnterpriseTreeTable.ENTITY.PUBLISHED_SERVICE,
-                    l7.EnterpriseTreeTable.ENTITY.POLICY_FRAGMENT
+                    l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
+                    l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT
                 ],
                 onClickZoomIcon : onClickZoomIcon,
                 entitiesWithRadioButton : [
-                    l7.EnterpriseTreeTable.ENTITY.SSG_FOLDER
+                    l7.EntityTreeTable.ENTITY.SERVICE_FOLDER
                 ],
                 entitySelectable : false
             };
-            enterpriseTreeTable = new l7.EnterpriseTreeTable(tbody, [] /* no entities initially */, '../images', config);
+            entityTreeTable = new l7.EntityTreeTable(tbody, [] /* no entities initially */, '../images', config);
         }
 
         function init() {
-            initEnterpriseTreeTable();
+            initEntityTreeTable();
         }
 
         YAHOO.util.Event.onDOMReady(init);
@@ -185,7 +185,7 @@
             <th width="100%">Type</th>
         </tr>
     </thead>
-    <tbody id="enterpriseTreeTableBody">
+    <tbody id="entityTreeTableBody">
     </tbody>
 </table>
 </body>

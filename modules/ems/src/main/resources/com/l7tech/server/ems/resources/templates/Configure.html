@@ -23,12 +23,12 @@
         <script type="text/javascript" src="../yui/json/json-min.js"></script>
         <script type="text/javascript" src="../yui/logger/logger-min.js"></script>
 
-        <script type="text/javascript" src="../js/enterpriseTreeTable.js"></script>
+        <script type="text/javascript" src="../js/entityTreeTable.js"></script>
         <script type="text/javascript">
             // TODO generate these variables dynamically on the server according to user's langauge preference
 
-            /** Localized strings for passing into l7.EnterpriseTreeTable constructor. */
-            var enterpriseTreeTableLocalizedStrings = {
+            /** Localized strings for passing into l7.EntityTreeTable constructor. */
+            var entityTreeTableLocalizedStrings = {
                 SSG_CLUSTER_STATE_UP : 'Up',
                 SSG_CLUSTER_STATE_PARTIAL : 'Partial',
                 SSG_CLUSTER_STATE_DOWN : 'Down',
@@ -45,7 +45,7 @@
                 ENTERPRISE_FOLDER : 'folder',
                 SSG_CLUSTER : 'SSG Cluster',
                 SSG_NODE : 'SSG Node',
-                SSG_FOLDER : 'folder',
+                SERVICE_FOLDER : 'folder',
                 PUBLISHED_SERVICE : 'published service',
                 POLICY_FRAGMENT : 'policy fragment',
                 SSL_HOST_NAME : 'SSL host name',
@@ -92,9 +92,9 @@
         <script type="text/javascript">
             /**
              * The enterpries tree table object.
-             * @type l7.EnterpriseTreeTable
+             * @type l7.EntityTreeTable
              */
-            var enterpriseTreeTable;
+            var entityTreeTable;
 
             var addFolderButton;
             var addSSGClusterButton;
@@ -131,6 +131,40 @@
             }
 
             /**
+             * @param {object} entity   the entity object literal
+             * @param {string} action
+             */
+            function isPermitted(entity, action) {
+                var result = false;
+                if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                    var isRootFolder = entity.parentId == null;
+                    if (action == 'addFolder') result = entity.rbacCUD;
+                    if (action == 'rename') result = entity.rbacCUD;
+                    if (action == 'move') result = !isRootFolder && entity.rbacCUD;
+                    if (action == 'delete') result = !isRootFolder && entity.rbacCUD;
+                    if (action == 'addSSGCluster') result = entity.rbacCUD;
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                    if (action == 'rename') result = entity.rbacCUD;
+                    if (action == 'move') result = entity.rbacCUD;
+                    if (action == 'delete') result = entity.rbacCUD;
+                    if (action == 'launchSSM') result = entity.accessStatus;
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
+                    if (action == 'start') result = entity.accessStatus;
+                    if (action == 'stop') result = entity.accessStatus;
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SERVICE_FOLDER) {
+                    if (action == 'addFolder') result = entity.rbacCUD;
+                    if (action == 'rename') result = entity.rbacCUD;
+                    if (action == 'move') result = entity.rbacCUD;
+                    if (action == 'delete') result = entity.rbacCUD;
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                    if (action == 'launchSSM') result = entity.rbacCUD;
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT) {
+                    if (action == 'launchSSM') result = entity.rbacCUD;
+                }
+                return result;
+            }
+
+            /**
              * Enables/Disables all toolbar buttons.
              * @param {boolean} enabled     true to enable; false to disable
              */
@@ -147,44 +181,25 @@
 
             function onEntitySelected(entity) {
                 enableToolbarButtons(false);
-                var movable = entity.movable == undefined || entity.movable;
-                if (!entity.accessStatus) {
-                    // Disables all.
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.ENTERPRISE_FOLDER) {
-                    addFolderButton.set('disabled', false);
-                    renameButton.set('disabled', false);
-                    moveButton.set('disabled', !movable);
-                    deleteButton.set('disabled', !movable);
-                    addSSGClusterButton.set('disabled', false);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
-                    renameButton.set('disabled', false);
-                    moveButton.set('disabled', !movable);
-                    deleteButton.set('disabled', !movable);
-                    launchSSMButton.set('disabled', false);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_NODE) {
-                    startButton.set('disabled', false);
-                    stopButton.set('disabled', false);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_FOLDER) {
-                    addFolderButton.set('disabled', false);
-                    renameButton.set('disabled', false);
-                    moveButton.set('disabled', !movable);
-                    deleteButton.set('disabled', !movable);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.PUBLISHED_SERVICE) {
-                    launchSSMButton.set('disabled', false);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.POLICY_FRAGMENT) {
-                    launchSSMButton.set('disabled', false);
-                }
+                addFolderButton.set('disabled', !isPermitted(entity, 'addFolder'));
+                renameButton.set('disabled', !isPermitted(entity, 'rename'));
+                moveButton.set('disabled', !isPermitted(entity, 'move'));
+                deleteButton.set('disabled', !isPermitted(entity, 'delete'));
+                addSSGClusterButton.set('disabled', !isPermitted(entity, 'addSSGCluster'));
+                startButton.set('disabled', !isPermitted(entity, 'start'));
+                stopButton.set('disabled', !isPermitted(entity, 'stop'));
+                launchSSMButton.set('disabled', !isPermitted(entity, 'launchSSM'));
             }
 
-            function loadEnterpriseTreeTable() {
-                enterpriseTreeTable.clear();
+            function loadEntityTreeTable() {
+                entityTreeTable.clear();
                 enableToolbarButtons(false);    // because no entity is selected now
 
                 function displayError() {
-                    var tbody = document.getElementById('enterpriseTreeTableBody');
+                    var tbody = document.getElementById('entityTreeTableBody');
                     var tr = tbody.insertRow(-1);
                     var td = tr.insertCell(-1);
-                    td.colSpan = enterpriseTreeTable._config.columns.length;
+                    td.colSpan = entityTreeTable._config.columns.length;
                     td.innerHTML = localizedStrings.ENTITY_DATA_ERROR;
                 }
 
@@ -198,7 +213,7 @@
                             l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_PARSE_ENTITY_DATA + e, localizedStrings.OK);
                             return;
                         }
-                        enterpriseTreeTable.load(entities);
+                        entityTreeTable.load(entities);
                     },
                     failure : function(o) {
                         displayError();
@@ -211,17 +226,17 @@
             /**
              * Fetches entities data from server and then populates table body.
              */
-            function initEnterpriseTreeTable() {
-                var tbody = document.getElementById('enterpriseTreeTableBody');
+            function initEntityTreeTable() {
+                var tbody = document.getElementById('entityTreeTableBody');
                 var config = {
-                    localizedStrings : enterpriseTreeTableLocalizedStrings,
+                    localizedStrings : entityTreeTableLocalizedStrings,
                     columns : [
-                        l7.EnterpriseTreeTable.COLUMN.NAME,
-                        l7.EnterpriseTreeTable.COLUMN.ONLINE_STATUS,
-                        l7.EnterpriseTreeTable.COLUMN.ACCESS_STATUS,
-                        l7.EnterpriseTreeTable.COLUMN.TYPE,
-                        l7.EnterpriseTreeTable.COLUMN.VERSION,
-                        l7.EnterpriseTreeTable.COLUMN.DETAILS
+                        l7.EntityTreeTable.COLUMN.NAME,
+                        l7.EntityTreeTable.COLUMN.ONLINE_STATUS,
+                        l7.EntityTreeTable.COLUMN.ACCESS_STATUS,
+                        l7.EntityTreeTable.COLUMN.TYPE,
+                        l7.EntityTreeTable.COLUMN.VERSION,
+                        l7.EntityTreeTable.COLUMN.DETAILS
                     ],
                     entitySelectable : true,
                     onEntitySelected : onEntitySelected,
@@ -230,9 +245,9 @@
 alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
                     }
                 };
-                enterpriseTreeTable = new l7.EnterpriseTreeTable(tbody, [], '../images', config);
+                entityTreeTable = new l7.EntityTreeTable(tbody, [], '../images', config);
 
-                loadEnterpriseTreeTable();
+                loadEntityTreeTable();
             }
 
             /**
@@ -252,7 +267,7 @@ alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + enti
             }
 
             function onClickAddFolder(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getSelectedEntity();
                 document.getElementById('addFolderDialog_parentId').value = entity.id;
                 document.getElementById('addFolderDialog_name').value = '';
                 validateAddFolderDialog();
@@ -260,7 +275,7 @@ alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + enti
             }
 
             function onClickRenameFolder(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getSelectedEntity();
                 document.getElementById('renameFolderDialog_id').value = entity.id;
                 document.getElementById('renameFolderDialog_name').value = entity.name;
                 validateRenameFolderDialog();
@@ -268,7 +283,7 @@ alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + enti
             }
 
             function onClickRenameSSGCluster(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getSelectedEntity();
                 document.getElementById('renameSSGClusterDialog_id').value = entity.id;
                 document.getElementById('renameSSGClusterDialog_name').value = entity.name;
                 validateRenameSSGClusterDialog();
@@ -276,10 +291,10 @@ alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + enti
             }
 
             function onClickRename(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
-                if (entity.type == l7.EnterpriseTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                var entity = entityTreeTable.getSelectedEntity();
+                if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
                     onClickRenameFolder(event);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
                     onClickRenameSSGCluster(event);
                 } else {
                     YAHOO.log('No rename handler for entity type: ' + entity.type, 'error', 'Configure.html');
@@ -287,30 +302,30 @@ alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + enti
             }
 
             function onClickMove(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getSelectedEntity();
                 // TODO
 alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             }
 
             function onClickDeleteFolder(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getSelectedEntity();
                 document.getElementById('deleteFolderDialog_id').value = entity.id;
                 document.getElementById('deleteFolderDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
                 deleteFolderDialog.show();
             }
 
             function onClickDeleteSSGCluster(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getSelectedEntity();
                 document.getElementById('deleteSSGClusterDialog_id').value = entity.id;
                 document.getElementById('deleteSSGClusterDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
                 deleteSSGClusterDialog.show();
             }
 
             function onClickDelete(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
-                if (entity.type == l7.EnterpriseTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                var entity = entityTreeTable.getSelectedEntity();
+                if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
                     onClickDeleteFolder(event);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
                     onClickDeleteSSGCluster(event);
                 } else {
                     YAHOO.log('No delete handler for entity type: ' + entity.type, 'error', 'Configure.html');
@@ -318,7 +333,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             }
 
             function onClickAddSSGCluster(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getSelectedEntity();
                 document.getElementById('addSSGClusterDialog_parentId').value = entity.id;
                 document.getElementById('addSSGClusterDialog_name').value = '';
                 document.getElementById('addSSGClusterDialog_hostName').value = '';
@@ -328,7 +343,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             }
 
             function onClickStart(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getSelectedEntity();
                 var callback = {
                     success : function(o) {
                         l7.Dialog.hideWaitDialog();
@@ -340,7 +355,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                                 localizedStrings.OK);
                         if (!l7.Util.isException(result)) {
                             // No return object expected.
-                            loadEnterpriseTreeTable();  // TODO should instead just update the status icon
+                            loadEntityTreeTable();  // TODO should instead just update the status icon
                         }
                     },
                     failure : function(o) {
@@ -355,7 +370,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             }
 
             function onClickStop(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getSelectedEntity();
                 var callback = {
                     success : function(o) {
                         l7.Dialog.hideWaitDialog();
@@ -367,7 +382,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                                 localizedStrings.OK);
                         if (!l7.Util.isException(result)) {
                             // No return object expected.
-                            loadEnterpriseTreeTable();  // TODO should instead just update the status icon
+                            loadEntityTreeTable();  // TODO should instead just update the status icon
                         }
                     },
                     failure : function(o) {
@@ -382,7 +397,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             }
 
             function onClickLaunchSSM(event) {
-                var entity = enterpriseTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getSelectedEntity();
                 // TODO
 alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
             }
@@ -516,7 +531,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     if (typeof result == 'object' && !l7.Util.isException(result)) {
                         // A return object containing the ID of the new folder is expected.
                         var id = result.id; // Not used now but may be I'll think of something.
-                        loadEnterpriseTreeTable();  // Reloads to show new folder.
+                        loadEntityTreeTable();  // Reloads to show new folder.
                     }
                 }
                 addFolderDialog.callback.failure = function(o) {
@@ -559,7 +574,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
                         // No return object expected.
-                        loadEnterpriseTreeTable();  // Reloads to show new folder name.
+                        loadEntityTreeTable();  // Reloads to show new folder name.
                     }
                 }
                 renameFolderDialog.callback.failure = function(o) {
@@ -602,7 +617,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
                         // No return object expected.
-                        loadEnterpriseTreeTable();  // Reloads to show folder gone.
+                        loadEntityTreeTable();  // Reloads to show folder gone.
                     }
                 }
                 deleteFolderDialog.callback.failure = function(o) {
@@ -646,7 +661,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     if (typeof result == 'object' && !l7.Util.isException(result)) {
                         // A return object containing the ID of the new cluster is expected.
                         var id = result.id; // Not used now but may be I'll think of something.
-                        loadEnterpriseTreeTable();  // Reloads to show new SSG Cluster.
+                        loadEntityTreeTable();  // Reloads to show new SSG Cluster.
                     }
                 }
                 addSSGClusterDialog.callback.failure = function(o) {
@@ -689,7 +704,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
                         // No return object expected.
-                        loadEnterpriseTreeTable();  // Reloads to show new SSG Cluster name.
+                        loadEntityTreeTable();  // Reloads to show new SSG Cluster name.
                     }
                 }
                 renameSSGClusterDialog.callback.failure = function(o) {
@@ -732,7 +747,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
                         // No return object expected.
-                        loadEnterpriseTreeTable();  // Reloads to show SSG Cluster gone.
+                        loadEntityTreeTable();  // Reloads to show SSG Cluster gone.
                     }
                 }
                 deleteSSGClusterDialog.callback.failure = function(o) {
@@ -796,42 +811,26 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
              *                              second array element is the target of the event if it was a MenuItem instance
              */
             function onContextMenuBeforeShow(eventName, args) {
-                var entity = enterpriseTreeTable.findEntityFromContextEventTarget(this.contextEventTarget);
-                enterpriseTreeTable.selectEntity(entity, true);
+                var entity = entityTreeTable.findEntityFromContextEventTarget(this.contextEventTarget);
+                entityTreeTable.selectEntity(entity, true);
 
                 this.clearContent();
-                initContextMenuItemsEventHandler(); // Alas, clearContent destroys the onclick handler of menu items.
+                initContextMenuItemsEventHandler(); // Need to do this because, strangely, clearContent destroys the onclick handler of menu items.
 
-                var movable = entity.movable == undefined || entity.movable;
-                moveMenuItem.cfg.setProperty('disabled', !movable);
-                deleteMenuItem.cfg.setProperty('disabled', !movable);
+                if (isPermitted(entity, 'addFolder')) this.addItem(addFolderMenuItem);
+                if (isPermitted(entity, 'rename')) this.addItem(renameMenuItem);
+                if (isPermitted(entity, 'move')) this.addItem(moveMenuItem);
+                if (isPermitted(entity, 'delete')) this.addItem(deleteMenuItem);
+                if (isPermitted(entity, 'addSSGCluster')) this.addItem(addSSGClusterMenuItem);
+                if (isPermitted(entity, 'start')) this.addItem(startMenuItem);
+                if (isPermitted(entity, 'stop')) this.addItem(stopMenuItem);
+                if (isPermitted(entity, 'launchSSM')) this.addItem(launchSSMMenuItem);
 
-                if (!entity.accessStatus) {
+                if (this.getItems().length == 0) {
+                    // So we don't have a blank context menu.
                     this.addItem({text : localizedStrings.NO_ACCESS, disabled : true});
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.ENTERPRISE_FOLDER) {
-                    this.addItem(addFolderMenuItem);
-                    this.addItem(renameMenuItem);
-                    this.addItem(moveMenuItem);
-                    this.addItem(deleteMenuItem);
-                    this.addItem(addSSGClusterMenuItem);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
-                    this.addItem(renameMenuItem);
-                    this.addItem(moveMenuItem);
-                    this.addItem(deleteMenuItem);
-                    this.addItem(launchSSMMenuItem);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_NODE) {
-                    this.addItem(startMenuItem);
-                    this.addItem(stopMenuItem);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_FOLDER) {
-                    this.addItem(addFolderMenuItem);
-                    this.addItem(renameMenuItem);
-                    this.addItem(moveMenuItem);
-                    this.addItem(deleteMenuItem);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.PUBLISHED_SERVICE) {
-                    this.addItem(launchSSMMenuItem);
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.POLICY_FRAGMENT) {
-                    this.addItem(launchSSMMenuItem);
                 }
+
                 this.render();
             }
 
@@ -843,7 +842,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
              *                              second array element is the target of the event if it was a MenuItem instance
              */
             function onContextMenuHide(eventName, args) {
-                enterpriseTreeTable.selectEntity(null, true);
+                entityTreeTable.selectEntity(null, true);
             }
 
             function initContextMenuItemsEventHandler() {
@@ -874,7 +873,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
             function initContextMenu() {
                 initContextMenuItems();
 
-                var tbody = document.getElementById('enterpriseTreeTableBody');
+                var tbody = document.getElementById('entityTreeTableBody');
                 var contextMenu = new YAHOO.widget.ContextMenu('contextMenu', {
                     trigger: tbody,
                     lazyload: true
@@ -892,7 +891,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 initDialogs();
                 initToolbar();
                 initContextMenu();
-                initEnterpriseTreeTable();
+                initEntityTreeTable();
             }
 
             YAHOO.util.Event.onDOMReady(init);
@@ -1000,7 +999,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
             <div class="content">
                 <wicket:extend>
                     <div class="panel">
-                        <div class="panelTitle">Enterprise Gateways <img class="refresh clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="loadEnterpriseTreeTable();" /></div>
+                        <div class="panelTitle">Enterprise Gateways <img class="refresh clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="loadEntityTreeTable();" /></div>
                         <div id="enterpriseTree">
                             <div class="panelToolbar">
                                 <button id="addFolderButton" type="submit" name="addFolderButton" value="addFolder"></button>
@@ -1013,7 +1012,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                                 <button id="launchSSMButton" type="submit" name="launchSSMButton" value="ssm"></button>
                             </div>
                             <div class="panelContent">
-                                <table id="enterpriseTreeTable" class="dataTable" width="100%">
+                                <table id="entityTreeTable" class="dataTable" width="100%">
                                     <thead>
                                         <tr>
                                             <th class="name">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
@@ -1024,14 +1023,14 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                                             <th width="100%">Details</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="enterpriseTreeTableBody">
+                                    <tbody id="entityTreeTableBody">
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
 
-<div wicket:id="actiondiv"/>                    
+<div wicket:id="actiondiv"/>
 
 
 <div id="addFolderDialog">
@@ -1128,7 +1127,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
             <br/>This will not destroy the SSG Cluster itself.
         </form>
     </div>
-</div>                    
+</div>
 
                 </wicket:extend>
             </div>

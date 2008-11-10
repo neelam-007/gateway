@@ -692,7 +692,6 @@ if (!l7.Dialog) {
                 l7.Dialog._waitDialog = new YAHOO.widget.Panel('l7_Dialog_waitDialog', {
                     close       : false,
                     draggable   : false,
-                    fixedcenter : true,
                     modal       : true,
                     visible     : false,
                     zindex      : 999
@@ -702,6 +701,7 @@ if (!l7.Dialog) {
             l7.Dialog._waitDialog.setHeader(header);
             l7.Dialog._waitDialog.render(document.body);
             l7.Dialog._waitDialog.show();
+            l7.Dialog._waitDialog.center();
         }
 
         /**
@@ -738,7 +738,6 @@ if (!l7.Dialog) {
                     ],
                     close       : true,
                     draggable   : false,
-                    fixedcenter : true,
                     icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
                     modal       : true,
                     visible     : false,
@@ -750,6 +749,7 @@ if (!l7.Dialog) {
             l7.Dialog._errorDialog.render(document.body);
             l7.Dialog._errorDialog.getButtons()[0].set('label', okText == null ? 'OK' : okText);
             l7.Dialog._errorDialog.show();
+            l7.Dialog._errorDialog.center();
         }
 
         /**

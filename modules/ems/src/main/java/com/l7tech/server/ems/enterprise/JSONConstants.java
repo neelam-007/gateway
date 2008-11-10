@@ -19,7 +19,7 @@ public final class JSONConstants {
 
     /**
      * Monitoring property names for SSG Cluster entities.
-     * Defined as l7.EnterpriseTreeTable.SSG_CLUSTER_MONITORING_PROPERTY in enterpriseTreeTable.js.
+     * Defined as l7.EntityTreeTable.SSG_CLUSTER_MONITORING_PROPERTY in entityTreeTable.js.
      */
     public final class SsgClusterMonitoringProperty {
         public static final String AUDIT_SIZE = "auditSize";
@@ -27,7 +27,7 @@ public final class JSONConstants {
 
     /**
      * Monitoring property names for SSG Node entities.
-     * Defined as l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY in enterpriseTreeTable.js.
+     * Defined as l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY in entityTreeTable.js.
      */
     public final class SsgNodeMonitoringProperty {
         public static final String LOG_SIZE    = "logSize";
@@ -41,7 +41,7 @@ public final class JSONConstants {
 
     /**
      * Entity types.
-     * Defined as l7.EnterpriseTreeTable.ENTITY in enterpriseTreeTable.js.
+     * Defined as l7.EntityTreeTable.ENTITY in entityTreeTable.js.
      */
     public final class Entity {
         public static final String ENTERPRISE_FOLDER = "enterpriseFolder";
@@ -57,7 +57,6 @@ public final class JSONConstants {
     public static final String PARENT_ID = "parentId";
     public static final String TYPE      = "type";
     public static final String NAME      = "name";
-    public static final String MOVABLE   = "movable";
 
     // Additional properties for SSG Cluster entities.
     public static final String ANCESTORS     = "ancestors";
@@ -76,6 +75,9 @@ public final class JSONConstants {
     public static final String TRUST_STATUS         = "trustStatus";
     public static final String IP_ADDRESS           = "ipAddress";
     public static final String MONITORED_PROPERTIES = "monitoredProperties";
+
+    // Additional properties for enterprise folders, SSG Clusters, service folders, published services or policy fragments.
+    public static final String RBAC_CUD = "rbacCUD";
 
     // Properties within a monitored property.
     public static final String MONITORED = "monitored";

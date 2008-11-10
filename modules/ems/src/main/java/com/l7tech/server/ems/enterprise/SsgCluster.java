@@ -118,7 +118,7 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         output.add(JSONConstants.PARENT_ID, parentFolder.getGuid());
         output.add(JSONConstants.TYPE, JSONConstants.Entity.SSG_CLUSTER);
         output.add(JSONConstants.NAME, _name);
-        output.add(JSONConstants.MOVABLE, true);
+        output.add(JSONConstants.RBAC_CUD, true); // TODO Should be true only for user with administrator role.
 // TODO       output.add(JSONConstants.ANCESTORS, );
         output.add(JSONConstants.TRUST_STATUS, trustStatus);
         output.add(JSONConstants.ACCESS_STATUS, false); // TODO

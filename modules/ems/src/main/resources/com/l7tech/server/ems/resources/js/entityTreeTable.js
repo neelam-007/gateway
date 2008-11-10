@@ -1,6 +1,6 @@
 /**
- * @module enterpriseTreeTable
- * @namespace l7.EnterpriseTreeTable
+ * @module entityTreeTable
+ * @namespace l7.EntityTreeTable
  * @requires l7.js
  * @requires YUI module "connection"
  * @requires YUI module "dom"
@@ -10,7 +10,7 @@
  * @requires YUI module "menu"
  */
 
-if (!l7.EnterpriseTreeTable) {
+if (!l7.EntityTreeTable) {
     (function() {
 
         // --------------------------------------------------------------------------------
@@ -36,7 +36,7 @@ if (!l7.EnterpriseTreeTable) {
         /** CSS style class that when applied to a checked checkbox, symbolizes a tri-state checkbox with mixed state. */
         var TRISTATE_CHECKBOX_MIXED_CSS = 'mixedStateCheckbox';
 
-        /** Values of l7.EnterpriseTreeTable.COLUMN has this prefix if it is a column for monitored property. */
+        /** Values of l7.EntityTreeTable.COLUMN has this prefix if it is a column for monitored property. */
         var MONITORING_COLUMN_PREFIX = 'monitoring-';
 
         var MONITORING_COLUMN_PREFIX_REGEXP = new RegExp('^' + MONITORING_COLUMN_PREFIX);
@@ -56,7 +56,7 @@ if (!l7.EnterpriseTreeTable) {
                    imgName == TOGGLER_NONE_IMG_NAME;
         }
         /**
-         * @param {string} columnId     an l7.EnterpriseTreeTable.COLUMN enum value
+         * @param {string} columnId     an l7.EntityTreeTable.COLUMN enum value
          * @return {boolean} true if a column for monitored property
          */
         function isMonitoringColumn(columnId) {
@@ -64,7 +64,7 @@ if (!l7.EnterpriseTreeTable) {
         }
 
         /**
-         * @param {string} columnId     an l7.EnterpriseTreeTable.COLUMN enum value
+         * @param {string} columnId     an l7.EntityTreeTable.COLUMN enum value
          * @return {string} the property name portion of columnId; null if not a column for monitored property
          */
         function getMonitoredPropertyNameInColumn(columnId) {
@@ -83,37 +83,42 @@ if (!l7.EnterpriseTreeTable) {
          * Constructs the rows of a table body using given entity data.
          *
          * Configurations are passed in as an object literal with properties:
-         *   localizedStrings {object} {optional) - object literal with properties to override those of l7.EnterpriseTreeTable.DEFAULT_LOCALIZED_STRINGS
-         *   columns {array} - array of l7.EnterpriseTreeTable.COLUMN values, from left to right
+         *   localizedStrings {object} {optional) - object literal with properties to override those of l7.EntityTreeTable.DEFAULT_LOCALIZED_STRINGS
+         *   columns {array} - array of l7.EntityTreeTable.COLUMN values, from left to right
          *   entitySelectable {boolean} - true if entities are (single-)selectable and highlighted by clicking; default is false
          *   onEntitySelected {function(entity)} - callback method upon an entity selected and highlighted
-         *   entitiesWithTristateCheckbox {array} (optional) - array of l7.EnterpriseTreeTable.ENTITY values that should get tri-state multi-selection checkbox
-         *   entitiesWithRadioButton {array} (optional) - array of l7.EnterpriseTreeTable.ENTITY values that should get mono-selection radio button
-         *   entitiesWithZoomIcon {array} - array of l7.EnterpriseTreeTable.ENTITY values that should have zoom icon; optional if columns contains l7.EnterpriseTreeTable.COLUMN.ZOOM; default is all types
-         *   onClickAccessDialogButton {function(event, entity)} - required if columns contains l7.EnterpriseTreeTable.COLUMN.ACCESS_STATUS
+         *   entitiesWithTristateCheckbox {array} (optional) - array of l7.EntityTreeTable.ENTITY values that should get tri-state multi-selection checkbox
+         *   entitiesWithRadioButton {array} (optional) - array of l7.EntityTreeTable.ENTITY values that should get mono-selection radio button
+         *   entitiesWithZoomIcon {array} - array of l7.EntityTreeTable.ENTITY values that should have zoom icon; optional if columns contains l7.EntityTreeTable.COLUMN.ZOOM; default is all types
+         *   onClickAccessDialogButton {function(event, entity)} - required if columns contains l7.EntityTreeTable.COLUMN.ACCESS_STATUS
          *   onClickEntityRadioButton {function(event, entity)} - callback method upon click of an entity radio button; optional if entitiesWithRadioButton array is used
-         *   onClickDashboardCheckbox {function(event, entity)} - callback method upon state change of Dashboard checkboxes; required if columns contains l7.EnterpriseTreeTable.COLUMN.DASHBOARD
-         *   onClickZoomIcon {function(event, entity)} - callback method upon click of an entity zoom icon; required if columns contain l7.EnterpriseTreeTable.COLUMN.ZOOM
-         *   onClickMonitoringPropertyDialogButton {function(event, params)} - callback method upon clicking a monitoring property dialog button; required if columns contains l7.EnterpriseTreeTable.COLUMN.MONITORING_*
+         *   onClickDashboardCheckbox {function(event, entity)} - callback method upon state change of Dashboard checkboxes; required if columns contains l7.EntityTreeTable.COLUMN.DASHBOARD
+         *   onClickZoomIcon {function(event, entity)} - callback method upon click of an entity zoom icon; required if columns contain l7.EntityTreeTable.COLUMN.ZOOM
+         *   onClickMonitoringPropertyDialogButton {function(event, params)} - callback method upon clicking a monitoring property dialog button; required if columns contains l7.EntityTreeTable.COLUMN.MONITORING_*
          *
          * Entity data are passed in as an array of entity object literals, with these properties (as applicable):
          *   id {string} (always required)
          *   parentId {string} (always required) - null if no parent, i.e., this is root
-         *   type {string} (always required) - an l7.EnterpriseTreeTable.ENTITY value
+         *   type {string} (always required) - an l7.EntityTreeTable.ENTITY value
          *   name {string} (always required)
          *   ancestors {array} - array of ancestor's names, ordered from topmost to immediate parent
-         *   movable {boolean} - true if movable and deletable; default is true
+         *   rbacCUD {boolean} (always required) - applicable to enterprise folders, SSG Clusters, service folders, published services or policy fragments;
+         *                       whether the current user has RBAC permission to create/update/delete an entity;
+         *                       for an enterprise folder, this means rename, move, delete or add children
+         *                       (Exception: root folder cannot be moved or deleted by anyone);
+         *                       for an SSG Cluster, this means rename, move or delete
          *   version {string} - applicable to an SSG Cluster/Node or a service policy
-         *   onlineStatus {string} - an l7.EnterpriseTreeTable.SSG_CLUSTER_ONLINE_STATE value for an SSG Cluster; an l7.EnterpriseTreeTable.SSG_NODE_ONLINE_STATE for an SSG Node
+         *   onlineStatus {string} - an l7.EntityTreeTable.SSG_CLUSTER_ONLINE_STATE value for an SSG Cluster; an l7.EntityTreeTable.SSG_NODE_ONLINE_STATE for an SSG Node
          *   trustStatus {boolean} - true if trust has been established
-         *   accessStatus {boolean} (always required) - true if access account has been set for an SSG Cluster; true if access role has been granted for an SSG Node
-         *   sslHostName {string} - applicable to an SSG Cluster
-         *   adminPort {string} - applicable to an SSG Cluster
-         *   ipAddress {string} - applicable to an SSG Cluster or SSG Node
-         *   dbHosts {array} - array of database host names; applicable to an SSG Cluster
-         *   selfHostName {string} - applicable to an SSG Node
-         *   monitoredProperties {object} - for an SSG Cluster the possible properties are l7.EnterpriseTreeTable.SSG_CLUSTER_MONITORING_PROPERTY values;
-         *                                  for an SSG Node the possible properties are l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY values;
+         *   accessStatus {boolean} - applicable to SSG Clusters or SSG Nodes; true if access account has been set for an SSG Cluster; true if access role has been granted for an SSG Node
+         *   sslHostName {string} - applicable to SSG Clusters
+         *   adminPort {string} - applicable to SSG Clusters
+         *   ipAddress {string} - applicable to SSG Clusters or SSG Nodes
+         *   dbHosts {array} - applicable to SSG Clusters; array of database host names
+         *   selfHostName {string} - applicable to SSG Nodes
+         *   monitoredProperties {object} - applicable to SSG Clusters or SSG Nodes;
+         *                                  for an SSG Cluster the possible properties are l7.EntityTreeTable.SSG_CLUSTER_MONITORING_PROPERTY values;
+         *                                  for an SSG Node the possible properties are l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY values;
          *                                  their property values are object literals with 3 properties:
          *                                    monitored {boolean} (required) -
          *                                    value {string} (optional) - in displayable format
@@ -125,23 +130,23 @@ if (!l7.EnterpriseTreeTable) {
          * @param {array} entities                  entity data for populating the table rows
          * @param {string} imgFolder                folder location of image icons
          * @param {object} config                   object literal of configuration values
-         * @return {l7.EnterpriseTreeTable} an l7.EnterpriseTreeTable instance or null if error
+         * @return {l7.EntityTreeTable} an l7.EntityTreeTable instance or null if error
          */
-        l7.EnterpriseTreeTable = function(tbody, entities, imgFolder, config) {
+        l7.EntityTreeTable = function(tbody, entities, imgFolder, config) {
             if (tbody == null || tbody.nodeName == undefined || tbody.nodeName.toLowerCase() != 'tbody') {
-                YAHOO.log('Cannot instantiate EnterpriseTreeTable: tbody must be an HTMLTableSectionElement', 'error', 'l7.EnterpriseTreeTable constructor');
+                YAHOO.log('Cannot instantiate EntityTreeTable: tbody must be an HTMLTableSectionElement', 'error', 'l7.EntityTreeTable constructor');
                 return;
             }
             if (!(entities instanceof Array)) {
-                YAHOO.log('Cannot instantiate EnterpriseTreeTable: entities must be an array', 'error', 'l7.EnterpriseTreeTable constructor');
+                YAHOO.log('Cannot instantiate EntityTreeTable: entities must be an array', 'error', 'l7.EntityTreeTable constructor');
                 return;
             }
             if (typeof imgFolder != 'string') {
-                YAHOO.log('Cannot instantiate EnterpriseTreeTable: imgFolder must be a string', 'error', 'l7.EnterpriseTreeTable constructor');
+                YAHOO.log('Cannot instantiate EntityTreeTable: imgFolder must be a string', 'error', 'l7.EntityTreeTable constructor');
                 return;
             }
             if (typeof config != 'object') {
-                YAHOO.log('Cannot instantiate EnterpriseTreeTable: config must be an object', 'error', 'l7.EnterpriseTreeTable constructor');
+                YAHOO.log('Cannot instantiate EntityTreeTable: config must be an object', 'error', 'l7.EntityTreeTable constructor');
                 return;
             }
 
@@ -209,7 +214,7 @@ if (!l7.EnterpriseTreeTable) {
             /**
              * Onclick event handler for the table body.
              * @param {MouseEvent} event    the click event
-             * Expected execution scope is the l7.EnterpriseTreeTable instance.
+             * Expected execution scope is the l7.EntityTreeTable instance.
              */
             function onClickTBody(event) {
                 var target = YAHOO.util.Event.getTarget(event);
@@ -396,7 +401,7 @@ if (!l7.EnterpriseTreeTable) {
                     for (var i = index + 1; i < entities.length; ++i) {
                         var entity = entities[i];
                         if (l7.Util.arrayContains(idsToCheck, entity.parentId)) {
-                            if (entity.accessStatus) {
+                            if (entity.rbacCUD) {
                                 setState(entity, checked ? TRISTATE_CHECKBOX_CHECKED : TRISTATE_CHECKBOX_UNCHECKED);
                             }
                             if (entity._children.length > 0) {
@@ -433,7 +438,7 @@ if (!l7.EnterpriseTreeTable) {
                     }
                 }
                 if (index == null) {
-                    YAHOO.log('Entity ID (' + entityId + ') not found in entities array.', 'error', 'l7.EnterpriseTreeTable onEntityCheckboxClicked');
+                    YAHOO.log('Entity ID (' + entityId + ') not found in entities array.', 'error', 'l7.EntityTreeTable onEntityCheckboxClicked');
                     return;
                 }
 
@@ -449,7 +454,7 @@ if (!l7.EnterpriseTreeTable) {
             /**
              * Finds the index position of a column in the table.
              * @private
-             * @param {string} column   an l7.EnterpriseTreeTable.COLUMN value
+             * @param {string} column   an l7.EntityTreeTable.COLUMN value
              * @return column index if found; null if not column is not in table
              */
             this._getColumnIndex = function(column) {
@@ -469,8 +474,8 @@ if (!l7.EnterpriseTreeTable) {
             this._setLocalizedStrings = function(strings) {
                 var i;
                 // Initializes with default values.
-                for (i in l7.EnterpriseTreeTable.DEFAULT_LOCALIZED_STRINGS) {
-                    this._localizedStrings[i] = l7.EnterpriseTreeTable.DEFAULT_LOCALIZED_STRINGS[i];
+                for (i in l7.EntityTreeTable.DEFAULT_LOCALIZED_STRINGS) {
+                    this._localizedStrings[i] = l7.EntityTreeTable.DEFAULT_LOCALIZED_STRINGS[i];
                 }
                 // Then customizes with passed values.
                 for (i in strings) {
@@ -512,7 +517,7 @@ if (!l7.EnterpriseTreeTable) {
                     if (l7.Util.arrayContains(this._config.entitiesWithTristateCheckbox, entity.type)) {
                         var checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
-                        checkbox.disabled = !entity.accessStatus;
+                        checkbox.disabled = !entity.rbacCUD;
                         YAHOO.util.Event.addListener(checkbox, 'click', onEntityCheckboxClicked, {entities : this._entities, entityId : entity.id});
                         td.appendChild(checkbox);
                         entity._tristateCheckbox = checkbox;
@@ -524,7 +529,7 @@ if (!l7.EnterpriseTreeTable) {
                 if (this._config.entitiesWithRadioButton != undefined) {
                     if (l7.Util.arrayContains(this._config.entitiesWithRadioButton, entity.type)) {
                             var radioButton = l7.Widget.createInputRadio(this._radioButtonsName);
-                            radioButton.disabled = !entity.accessStatus;
+                            radioButton.disabled = !entity.rbacCUD;
                             if (this._config.onClickEntityRadioButton != undefined) {
                                 YAHOO.util.Event.addListener(radioButton, 'click', this._config.onClickEntityRadioButton, entity);
                             }
@@ -535,20 +540,20 @@ if (!l7.EnterpriseTreeTable) {
 
                 // Followed by an entity icon.
                 var icon = document.createElement('img');
-                if (entity.type == l7.EnterpriseTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
                     icon.src = this._imgFolder + '/folder.png';
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
                     icon.src = this._imgFolder + '/SSGCluster.png';
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_NODE) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
                     icon.src = this._imgFolder + '/SSGNode.png';
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_FOLDER) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SERVICE_FOLDER) {
                     icon.src = this._imgFolder + '/folder.png';
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
                     icon.src = this._imgFolder + '/publishedService.png';
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.POLICY_FRAGMENT) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT) {
                     icon.src = this._imgFolder + '/policyFragment.png';
                 } else {
-                    YAHOO.log('Using blank entity icon because entity type is unrecognized: ' + entity.type, 'warning', 'l7.EnterpriseTreeTable.initNameTD');
+                    YAHOO.log('Using blank entity icon because entity type is unrecognized: ' + entity.type, 'warning', 'l7.EntityTreeTable.initNameTD');
                     icon.src = this._imgFolder + '/spacer16.png';
                 }
                 td.appendChild(icon);
@@ -602,7 +607,7 @@ if (!l7.EnterpriseTreeTable) {
             this._initDashboardCell = function(td, entity) {
                 td.className = 'dashboard'; // CSS style class
                 // Only SSG Clusters can have dashboard.
-                if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
                     var checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.title = this._localizedStrings.DASHBOARD_CHECKBOX_TOOLTIP;
@@ -623,17 +628,17 @@ if (!l7.EnterpriseTreeTable) {
              * @param {object} entity
              */
             this._initTypeCell = function(td, entity) {
-                if (entity.type == l7.EnterpriseTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
                     td.innerHTML = this._localizedStrings.ENTERPRISE_FOLDER;
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
                     td.innerHTML = this._localizedStrings.SSG_CLUSTER;
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_NODE) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
                     td.innerHTML = this._localizedStrings.SSG_NODE;
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_FOLDER) {
-                    td.innerHTML = this._localizedStrings.SSG_FOLDER;
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SERVICE_FOLDER) {
+                    td.innerHTML = this._localizedStrings.SERVICE_FOLDER;
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
                     td.innerHTML = this._localizedStrings.PUBLISHED_SERVICE;
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.POLICY_FRAGMENT) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT) {
                     td.innerHTML = this._localizedStrings.POLICY_FRAGMENT;
                 }
             }
@@ -659,12 +664,12 @@ if (!l7.EnterpriseTreeTable) {
              */
             this._initDetailsCell = function(td, entity) {
                 td.className = 'details'; // CSS style class.
-                if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
                     td.innerHTML = '<span class="hasTooltip" title="' + this._localizedStrings.SSL_HOST_NAME + '">' + entity.sslHostName + '</span>'
                                  + ':<span class="hasTooltip" title="' + this._localizedStrings.ADMINISTRATIVE_PORT_NUMBER + '">' + entity.adminPort + '</span>'
                                  + ' (<span class="hasTooltip" title="' + this._localizedStrings.IP_ADDRESS + '">' + entity.ipAddress + '</span>)'
                                  + ' [<span class="hasTooltip" title="' + this._localizedStrings.DATABASE_HOSTS + '">' + entity.dbHosts.join(',') + '</span>]';
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_NODE) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
                     td.innerHTML = '<span class="hasTooltip" title="' + this._localizedStrings.SELF_HOST_NAME + '">' + entity.selfHostName + '</span>'
                                  + ' (<span class="hasTooltip" title="' + this._localizedStrings.IP_ADDRESS + '">' + entity.ipAddress + '</span>)';
                 } else {
@@ -684,7 +689,7 @@ if (!l7.EnterpriseTreeTable) {
                     l7.Util.arrayContains(this._config.entitiesWithZoomIcon, entity.type)) {
                     var zoomIcon = document.createElement('img');
                     zoomIcon.src = this._imgFolder + '/zoom.png';
-                    if (entity.accessStatus) {
+                    if (entity.rbacCUD) {
                         zoomIcon.className = 'clickable'; // CSS style class.
                         zoomIcon.title = this._localizedStrings.ZOOM_ICON_TOOLTIP;
                         if (this._config.onClickZoomIcon != undefined) {
@@ -709,14 +714,14 @@ if (!l7.EnterpriseTreeTable) {
 
                 /**
                  * @param {string} propertyName
-                 * @param {string} entityType       an l7.EnterpriseTreeTable.ENTITY enum value
+                 * @param {string} entityType       an l7.EntityTreeTable.ENTITY enum value
                  * @return {boolean}
                  */
                 function isMonitoringPropertyApplicableToEntity(propertyName, entityType) {
-                    if (entityType == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
-                        return l7.Util.hasPropertyValue(l7.EnterpriseTreeTable.SSG_CLUSTER_MONITORING_PROPERTY, propertyName);
-                    } else if (entityType == l7.EnterpriseTreeTable.ENTITY.SSG_NODE) {
-                        return l7.Util.hasPropertyValue(l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY, propertyName);
+                    if (entityType == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                        return l7.Util.hasPropertyValue(l7.EntityTreeTable.SSG_CLUSTER_MONITORING_PROPERTY, propertyName);
+                    } else if (entityType == l7.EntityTreeTable.ENTITY.SSG_NODE) {
+                        return l7.Util.hasPropertyValue(l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY, propertyName);
                     } else {
                         return false;
                     }
@@ -877,6 +882,21 @@ if (!l7.EnterpriseTreeTable) {
             }
 
             /**
+             * Sets the state of the dashboard checkbox of one SSG Cluster entity.
+             * This will not trigger the onClickDashboardCheckbox callback.
+             *
+             * @public
+             * @param {string} id           the entity ID
+             * @param {boolean} checked     true if checkbox should be checked; false otherwise
+             */
+            this.setDashboardCheckBoxState = function(id, checked) {
+                var entity = this._entitiesById[id];
+                if (entity && entity._dashboardCheckbox) {
+                    entity._dashboardCheckbox.checked = checked;
+                }
+            }
+
+            /**
              * @public
              * @return {array} array of entity IDs whose checkbox is selected; may be empty but never null
              */
@@ -939,35 +959,35 @@ if (!l7.EnterpriseTreeTable) {
                 if (state == undefined || state == null) {
                     icon.src = this._imgFolder + '/spacer.png';
                     icon.title = null;
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
-                    if (state == l7.EnterpriseTreeTable.SSG_CLUSTER_ONLINE_STATE.UP) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                    if (state == l7.EntityTreeTable.SSG_CLUSTER_ONLINE_STATE.UP) {
                         icon.src = this._imgFolder + '/SSGClusterStateUp.png';
                         icon.title = this._localizedStrings.SSG_CLUSTER_STATE_UP;
-                    } else if (state == l7.EnterpriseTreeTable.SSG_CLUSTER_ONLINE_STATE.PARTIAL) {
+                    } else if (state == l7.EntityTreeTable.SSG_CLUSTER_ONLINE_STATE.PARTIAL) {
                         icon.src = this._imgFolder + '/SSGClusterStatePartial.png';
                         icon.title = this._localizedStrings.SSG_CLUSTER_STATE_PARTIAL;
-                    } else if (state == l7.EnterpriseTreeTable.SSG_CLUSTER_ONLINE_STATE.DOWN) {
+                    } else if (state == l7.EntityTreeTable.SSG_CLUSTER_ONLINE_STATE.DOWN) {
                         icon.src = this._imgFolder + '/SSGClusterStateDown.png';
                         icon.title = this._localizedStrings.SSG_CLUSTER_STATE_DOWN;
                     } else {
-                        YAHOO.log('Unrecognized online status for entity type=\"' + entity.type + '\": ' + state, 'warning', 'l7.EnterpriseTreeTable.setEntityOnlineStatus');
+                        YAHOO.log('Unrecognized online status for entity type=\"' + entity.type + '\": ' + state, 'warning', 'l7.EntityTreeTable.setEntityOnlineStatus');
                         return false;
                     }
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_NODE) {
-                    if (state == l7.EnterpriseTreeTable.SSG_NODE_ONLINE_STATE.ON) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
+                    if (state == l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.ON) {
                         icon.src = this._imgFolder + '/SSGNodeStateOn.png';
                         icon.title = this._localizedStrings.SSG_NODE_STATE_ON;
-                    } else if (state == l7.EnterpriseTreeTable.SSG_NODE_ONLINE_STATE.OFF) {
+                    } else if (state == l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.OFF) {
                         icon.src = this._imgFolder + '/SSGNodeStateOff.png';
                         icon.title = this._localizedStrings.SSG_NODE_STATE_OFF;
-                    } else if (state == l7.EnterpriseTreeTable.SSG_NODE_ONLINE_STATE.DOWN) {
+                    } else if (state == l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.DOWN) {
                         icon.src = this._imgFolder + '/SSGNodeStateDown.png';
                         icon.title = this._localizedStrings.SSG_NODE_STATE_DOWN;
-                    } else if (state == l7.EnterpriseTreeTable.SSG_NODE_ONLINE_STATE.OFFLINE) {
+                    } else if (state == l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.OFFLINE) {
                         icon.src = this._imgFolder + '/SSGNodeStateOffline.png';
                         icon.title = this._localizedStrings.SSG_NODE_STATE_OFFLINE;
                     } else {
-                        YAHOO.log('Unrecognized online status for entity type \"' + entity.type + '\": ' + state, 'warning', 'l7.EnterpriseTreeTable.setEntityOnlineStatus');
+                        YAHOO.log('Unrecognized online status for entity type \"' + entity.type + '\": ' + state, 'warning', 'l7.EntityTreeTable.setEntityOnlineStatus');
                         return false;
                     }
                 } else {
@@ -999,7 +1019,7 @@ if (!l7.EnterpriseTreeTable) {
             this.setEntityAccessStatus = function(entityId, state) {
                 var entity = this._entitiesById[entityId];
                 var icon = entity._accessStatusIcon;
-                if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_CLUSTER) {
+                if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
                     if (state == undefined || state == null) {
                         icon.src = this._imgFolder + '/spacer.png';
                         icon.title = null;
@@ -1014,7 +1034,7 @@ if (!l7.EnterpriseTreeTable) {
                         icon.className = 'clickableImg';
                         YAHOO.util.Event.addListener(icon, 'click', this._config.onClickAccessDialogButton, entity);
                     }
-                } else if (entity.type == l7.EnterpriseTreeTable.ENTITY.SSG_NODE) {
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
                     if (state == undefined || state == null) {
                         icon.src = this._imgFolder + '/spacer.png';
                         icon.title = null;
@@ -1039,8 +1059,8 @@ if (!l7.EnterpriseTreeTable) {
              * @public
              * @param {string} entityId         ID of an entity
              * @param {string} propertyName     name of monitored property;
-             *                                  an l7.EnterpriseTreeTable.SSG_CLUSTER_MONITORING_PROPERTY or
-             *                                  l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY enum value;
+             *                                  an l7.EntityTreeTable.SSG_CLUSTER_MONITORING_PROPERTY or
+             *                                  l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY enum value;
              *                                  must be applicable to the entity's type
              * @param {object} property         the property object literal
              * @return {boolean} true if successfully applied; false if unchanged because of error
@@ -1050,7 +1070,7 @@ if (!l7.EnterpriseTreeTable) {
                 var td = entity._monitoredPropertyTds[propertyName];
                 var span = entity._monitoredPropertySpans[propertyName];
                 if (!td || !span) {
-                    YAHOO.log('Unable to set value of monitored property \"' + propertyName + '\" for entity \"' + entity.name + '\": ' + (td ? 'span' : 'td') + ' element not found', 'warning', 'l7.EnterpriseTreeTable.setMonitoredProperty');
+                    YAHOO.log('Unable to set value of monitored property \"' + propertyName + '\" for entity \"' + entity.name + '\": ' + (td ? 'span' : 'td') + ' element not found', 'warning', 'l7.EntityTreeTable.setMonitoredProperty');
                     return false;
                 }
                 if (property.monitored) {
@@ -1134,26 +1154,26 @@ if (!l7.EnterpriseTreeTable) {
                             td = tr.insertCell(-1);
                             entity._tds[column] = td;
 
-                            if (column == l7.EnterpriseTreeTable.COLUMN.NAME) {
+                            if (column == l7.EntityTreeTable.COLUMN.NAME) {
                                 this._initNameCell(td, entity);
-                            } else if (column == l7.EnterpriseTreeTable.COLUMN.ONLINE_STATUS) {
+                            } else if (column == l7.EntityTreeTable.COLUMN.ONLINE_STATUS) {
                                 this._initOnlineStatusCell(td, entity);
-                            } else if (column == l7.EnterpriseTreeTable.COLUMN.ACCESS_STATUS) {
+                            } else if (column == l7.EntityTreeTable.COLUMN.ACCESS_STATUS) {
                                 this._initAccessStatusCell(td, entity);
-                            } else if (column == l7.EnterpriseTreeTable.COLUMN.DASHBOARD) {
+                            } else if (column == l7.EntityTreeTable.COLUMN.DASHBOARD) {
                                 this._initDashboardCell(td, entity);
-                            } else if (column == l7.EnterpriseTreeTable.COLUMN.TYPE) {
+                            } else if (column == l7.EntityTreeTable.COLUMN.TYPE) {
                                 this._initTypeCell(td, entity);
-                            } else if (column == l7.EnterpriseTreeTable.COLUMN.VERSION) {
+                            } else if (column == l7.EntityTreeTable.COLUMN.VERSION) {
                                 this._initVersionCell(td, entity);
-                            } else if (column == l7.EnterpriseTreeTable.COLUMN.DETAILS) {
+                            } else if (column == l7.EntityTreeTable.COLUMN.DETAILS) {
                                 this._initDetailsCell(td, entity);
-                            } else if (column == l7.EnterpriseTreeTable.COLUMN.ZOOM) {
+                            } else if (column == l7.EntityTreeTable.COLUMN.ZOOM) {
                                 this._initZoomCell(td, entity);
                             } else if (isMonitoringColumn(column)) {
                                 this._initMonitoredPropertyCell(td, entity, column);
                             } else {
-                                YAHOO.log('Cannot populate cell because column is unrecognized: ' + column, 'warning', 'l7.EnterpriseTreeTable.load()');
+                                YAHOO.log('Cannot populate cell because column is unrecognized: ' + column, 'warning', 'l7.EntityTreeTable.load()');
                             }
                         }
                     }
@@ -1176,7 +1196,7 @@ if (!l7.EnterpriseTreeTable) {
          * @public
          * @final
          */
-        l7.EnterpriseTreeTable.SSG_CLUSTER_MONITORING_PROPERTY = {
+        l7.EntityTreeTable.SSG_CLUSTER_MONITORING_PROPERTY = {
             AUDIT_SIZE  : 'auditSize'
         }
 
@@ -1185,7 +1205,7 @@ if (!l7.EnterpriseTreeTable) {
          * @public
          * @final
          */
-        l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY = {
+        l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY = {
             LOG_SIZE    : 'logSize',
             DISK_USED   : 'diskUsed',
             DISK_FREE   : 'diskFree',
@@ -1200,7 +1220,7 @@ if (!l7.EnterpriseTreeTable) {
          * @public
          * @final
          */
-        l7.EnterpriseTreeTable.COLUMN = {
+        l7.EntityTreeTable.COLUMN = {
             NAME                   : 'name',
             ONLINE_STATUS          : 'onlineStatus',
             ACCESS_STATUS          : 'accessStatus',
@@ -1209,14 +1229,14 @@ if (!l7.EnterpriseTreeTable) {
             DASHBOARD              : 'dashboard',
             DETAILS                : 'details',
             ZOOM                   : 'zoom',
-            MONITORING_AUDIT_SIZE  : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE,
-            MONITORING_LOG_SIZE    : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.LOG_SIZE,
-            MONITORING_DISK_USED   : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.DISK_USED,
-            MONITORING_DISK_FREE   : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.DISK_FREE,
-            MONITORING_RAID_STATUS : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.RAID_STATUS,
-            MONITORING_CPU_TEMP    : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.CPU_TEMP,
-            MONITORING_CPU_USAGE   : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.CPU_USAGE,
-            MONITORING_CLOCK_DRIFT : MONITORING_COLUMN_PREFIX + l7.EnterpriseTreeTable.SSG_NODE_MONITORING_PROPERTY.CLOCK_DRIFT
+            MONITORING_AUDIT_SIZE  : MONITORING_COLUMN_PREFIX + l7.EntityTreeTable.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE,
+            MONITORING_LOG_SIZE    : MONITORING_COLUMN_PREFIX + l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY.LOG_SIZE,
+            MONITORING_DISK_USED   : MONITORING_COLUMN_PREFIX + l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY.DISK_USED,
+            MONITORING_DISK_FREE   : MONITORING_COLUMN_PREFIX + l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY.DISK_FREE,
+            MONITORING_RAID_STATUS : MONITORING_COLUMN_PREFIX + l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY.RAID_STATUS,
+            MONITORING_CPU_TEMP    : MONITORING_COLUMN_PREFIX + l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY.CPU_TEMP,
+            MONITORING_CPU_USAGE   : MONITORING_COLUMN_PREFIX + l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY.CPU_USAGE,
+            MONITORING_CLOCK_DRIFT : MONITORING_COLUMN_PREFIX + l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY.CLOCK_DRIFT
         };
 
         /**
@@ -1224,11 +1244,11 @@ if (!l7.EnterpriseTreeTable) {
          * @public
          * @final
          */
-        l7.EnterpriseTreeTable.ENTITY = {
+        l7.EntityTreeTable.ENTITY = {
             ENTERPRISE_FOLDER : 'enterpriseFolder',
             SSG_CLUSTER       : 'ssgCluster',
             SSG_NODE          : 'ssgNode',
-            SSG_FOLDER        : 'ssgFolder',
+            SERVICE_FOLDER        : 'serviceFolder',
             PUBLISHED_SERVICE : 'publishedService',
             POLICY_FRAGMENT   : 'policyFragment'
         };
@@ -1238,7 +1258,7 @@ if (!l7.EnterpriseTreeTable) {
          * @public
          * @final
          */
-        l7.EnterpriseTreeTable.SSG_CLUSTER_ONLINE_STATE = {
+        l7.EntityTreeTable.SSG_CLUSTER_ONLINE_STATE = {
             UP      : 'up',
             PARTIAL : 'partial',
             DOWN    : 'down'
@@ -1249,7 +1269,7 @@ if (!l7.EnterpriseTreeTable) {
          * @public
          * @final
          */
-        l7.EnterpriseTreeTable.SSG_NODE_ONLINE_STATE = {
+        l7.EntityTreeTable.SSG_NODE_ONLINE_STATE = {
             ON      : 'on',
             OFF     : 'off',
             DOWN    : 'down',
@@ -1261,7 +1281,7 @@ if (!l7.EnterpriseTreeTable) {
          * @public
          * @final
          */
-        l7.EnterpriseTreeTable.MONITORING_PROPERTY_STATE = {
+        l7.EntityTreeTable.MONITORING_PROPERTY_STATE = {
             NOT_APPLICABLE : 'notApplicable',
             NOT_MONITORED  : 'notMonitored',
             CRITICAL       : 'critical'
@@ -1273,7 +1293,7 @@ if (!l7.EnterpriseTreeTable) {
          * @public
          * @final
          */
-        l7.EnterpriseTreeTable.DEFAULT_LOCALIZED_STRINGS = {
+        l7.EntityTreeTable.DEFAULT_LOCALIZED_STRINGS = {
             SSG_CLUSTER_STATE_UP : 'Up',
             SSG_CLUSTER_STATE_PARTIAL : 'Partial',
             SSG_CLUSTER_STATE_DOWN : 'Down',
@@ -1290,7 +1310,7 @@ if (!l7.EnterpriseTreeTable) {
             ENTERPRISE_FOLDER : 'folder',
             SSG_CLUSTER : 'SSG Cluster',
             SSG_NODE : 'SSG Node',
-            SSG_FOLDER : 'folder',
+            SERVICE_FOLDER : 'folder',
             PUBLISHED_SERVICE : 'published service',
             POLICY_FRAGMENT : 'policy fragment',
             SSL_HOST_NAME : 'SSL host name',

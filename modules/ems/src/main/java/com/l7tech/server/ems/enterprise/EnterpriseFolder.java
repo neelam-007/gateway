@@ -117,8 +117,7 @@ public class EnterpriseFolder extends NamedEntityImp implements JSON.Convertible
         output.add(JSONConstants.PARENT_ID, parentFolder == null ? null : parentFolder.getGuid());
         output.add(JSONConstants.TYPE, JSONConstants.Entity.ENTERPRISE_FOLDER);
         output.add(JSONConstants.NAME, _name);
-        output.add(JSONConstants.MOVABLE, !isRoot());
-        output.add(JSONConstants.ACCESS_STATUS, true); // Hard-coded to true until we have folder RBAC.
+        output.add(JSONConstants.RBAC_CUD, true); // TODO Should be true only for user with administrator role.
     }
 
     // Implements JSON.Convertible
