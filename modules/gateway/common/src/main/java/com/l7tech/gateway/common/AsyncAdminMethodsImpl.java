@@ -148,7 +148,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
             if (t != null && logger.isLoggable(Level.WARNING)) {
                 // Log as FINE, since the exception will be made available to whoever picks up the job result
                 // (it isn't our job to handle this here)  (Bug #3981)
-                logger.log(Level.FINE, "Asynchronous job " + jobId + " threw an exception: " + ExceptionUtils.getMessage(t), t);
+                logger.log(Level.INFO, "Asynchronous job " + jobId + " threw an exception: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
             }
         } else {
             // Can't happen
@@ -157,7 +157,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
         }
 
         String tclass = t == null ? null : t.getClass().getName();
-        String tmess = t == null ? null : t.getMessage();
+        String tmess = t == null ? null : ExceptionUtils.getMessage(t);
         jobs.remove(jobId);
         return new JobResult<OUT>(status, result, tclass, tmess);
     }

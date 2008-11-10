@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  * resume an admin session as that user; thus, the cookies must be sent over SSL, never written to disk by
  * either client or server, and not kept longer than necessary.</p>
  */
-public class AdminSessionManager extends RoleManagerIdentitySourceSupport implements InitializingBean {
+public class AdminSessionManager extends RoleManagerIdentitySourceSupport {
 
     //- PUBLIC
 
@@ -64,10 +64,6 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         this.passwordEnforcerManager = passwordEnforcerManager;
     }
 
-    public void afterPropertiesSet() throws Exception {
-        setupAdminProviders();
-    }
-
     /**
      * Reloads IdentityProviders on change.
      */
@@ -75,11 +71,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         if (event instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
             if (eie.getEntityClass() == IdentityProviderConfig.class) {
-                try {
-                    setupAdminProviders();
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Couldn't setup admin providers", e);
-                }
+                setupAdminProviders();
             }
         }
     }
@@ -93,10 +85,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      */
     public User authenticate( final LoginCredentials creds ) throws ObjectModelException, LoginException, FailAttemptsExceededException {
         // Try internal first (internal accounts with the same credentials should hide externals)
-        Set<IdentityProvider> providers;
-        synchronized(providerSync) {
-            providers = adminProviders;
-        }
+        Set<IdentityProvider> providers = getAdminIdentityProviders();
         User user = null;
 
         boolean needsClientCert = false;
@@ -188,10 +177,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      */
     public boolean changePassword(final String username, final String password, final String newPassword) throws ObjectModelException {
         //try the internal first (internal accounts with the same credentials should hide externals)
-        Set<IdentityProvider> providers;
-        synchronized(providerSync) {
-            providers = adminProviders;
-        }
+        Set<IdentityProvider> providers = getAdminIdentityProviders();
 
         //find the user based on the username
         User user = null;
@@ -223,10 +209,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         boolean passwordUpdated = false;
 
         // Try internal first (internal accounts with the same credentials should hide externals)
-        Set<IdentityProvider> providers;
-        synchronized(providerSync) {
-            providers = adminProviders;
-        }
+        Set<IdentityProvider> providers = getAdminIdentityProviders();
 
         IdentityProvider identityProvider = null;
         for (IdentityProvider provider : providers) {
@@ -351,14 +334,12 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * <p>If our cache is old the user is revalidated and so is all of it's associated
      * group headers.</p>
      */
+    @Override
     public Set<IdentityHeader> getGroups( final User u ) throws FindException {
         Long pId = u.getProviderId();
 
         // Try internal first (internal accounts with the same credentials should hide externals)
-        Set<IdentityProvider> providers;
-        synchronized(providerSync) {
-            providers = adminProviders;
-        }
+        Set<IdentityProvider> providers = getAdminIdentityProviders();
 
         //find the identity provider
         Set<IdentityHeader> pSet = new HashSet<IdentityHeader>();
@@ -383,11 +364,16 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         return Collections.emptySet();
     }
 
+    @Override
     protected Set<IdentityProvider> getAdminIdentityProviders(){
         Set<IdentityProvider> providers;
         synchronized( providerSync ) {
+            if ( adminProviders == null ) {
+                setupAdminProviders();
+            }
             providers = adminProviders;
         }
+
         return providers;
     }
 
@@ -415,6 +401,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     {
         Background.scheduleRepeated(new TimerTask() {
+            @Override
             public void run() {
                 synchronized (AdminSessionManager.this) {
                     Collection values = sessionMap.values();
@@ -452,20 +439,24 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         }
     }
 
-    private void setupAdminProviders() throws FindException {
-        // Find any non-internal providers that support admin
-        SortedSet<IdentityProvider> adminProviders = new TreeSet<IdentityProvider>(INTERNAL_FIRST_COMPARATOR);
+    private void setupAdminProviders() {
+        try {
+            // Find any non-internal providers that support admin
+            SortedSet<IdentityProvider> adminProviders = new TreeSet<IdentityProvider>(INTERNAL_FIRST_COMPARATOR);
 
-        for (IdentityProvider provider : identityProviderFactory.findAllIdentityProviders()) {
-            IdentityProviderConfig config = provider.getConfig();
-            if (config.isAdminEnabled()) {
-                logger.info("Enabling " + config.getName() + " for admin logins");
-                adminProviders.add(provider);
+            for (IdentityProvider provider : identityProviderFactory.findAllIdentityProviders()) {
+                IdentityProviderConfig config = provider.getConfig();
+                if (config.isAdminEnabled()) {
+                    logger.info("Enabling " + config.getName() + " for admin logins");
+                    adminProviders.add(provider);
+                }
             }
-        }
 
-        synchronized(providerSync) {
-            this.adminProviders = Collections.unmodifiableSet(adminProviders);
+            synchronized(providerSync) {
+                this.adminProviders = Collections.unmodifiableSet(adminProviders);
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Couldn't setup admin providers", e);
         }
     }
 
@@ -474,6 +465,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * non-internal providers.
      */
     private static class InternalFirstComparator implements Comparator<IdentityProvider> {
+        @Override
         public int compare(IdentityProvider o1, IdentityProvider o2) {
             IdentityProviderConfig config1 = o1.getConfig();
             IdentityProviderConfig config2 = o2.getConfig();

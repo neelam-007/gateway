@@ -632,7 +632,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 activeKeypairJob = null;
                 if (result.throwableClassname != null) {
                     final String mess;
-                    if (result.throwableMessage.indexOf("com.l7tech.common.io.DuplicateAliasException") >= 0) {
+                    if (result.throwableMessage != null && result.throwableMessage.indexOf("com.l7tech.common.io.DuplicateAliasException") >= 0) {
                         // More friendly error message for one common, foreseeable problem (Bug #3923)
                         mess = "Unable to generate key pair: the specified alias is already in use.";
                     } else {
