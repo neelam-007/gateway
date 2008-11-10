@@ -561,8 +561,8 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
             File file = fc.getSelectedFile();
             if(file!=null) {
 
-                //if user defined their own file name, make sure to append the '.ssga' file type.
-                if (!suggestedName.equals(file.getName())) {
+                //if user did not append .ssga extension, we'll append to it
+                if (!file.getName().endsWith(".ssga")){
                     file = new File(file.toString() + ".ssga");
                 }
 
