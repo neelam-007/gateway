@@ -22,7 +22,8 @@ public class JSONException implements JSON.Convertible {
     public void toJSON(JSON.Output output) {
         output.add(JSONConstants.Exception.EXCEPTION, t.getClass().getName());
         if (t.getMessage() != null) output.add(JSONConstants.Exception.MESSAGE, t.getMessage());
-        if (t.getLocalizedMessage() != null) output.add(JSONConstants.Exception.LOCALIZED_MESSAGE, t.getLocalizedMessage());
+        if (t.getLocalizedMessage() != null && !t.getLocalizedMessage().equals(t.getMessage())) output.add(JSONConstants.Exception.LOCALIZED_MESSAGE, t.getLocalizedMessage());
+        if (t.getStackTrace() != null) output.add(JSONConstants.Exception.STACK_TRACE, t.getStackTrace());
         if (t.getCause() != null) output.add(JSONConstants.Exception.CAUSE, new JSONException(t.getCause()));
     }
 

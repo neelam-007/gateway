@@ -79,14 +79,14 @@
                 SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
                 STARTING_SSG_NODE : 'Starting SSG Node ',
                 STOPPING_SSG_NODE : 'Stopping SSG Node ',
-                CANNOT_ADD_FOLDER : 'Failed to add folder: ',
-                CANNOT_RENAME_FOLDER : 'Failed to rename folder: ',
-                CANNOT_DELETE_FOLDER : 'Failed to delete folder: ',
-                CANNOT_ADD_SSG_CLUSTER : 'Failed to add SSG Cluster: ',
-                CANNOT_RENAME_SSG_CLUSTER : 'Failed to rename SSG Cluster: ',
-                CANNOT_DELETE_SSG_CLUSTER : 'Failed to delete SSG Cluster: ',
-                CANNOT_START_SSG_NODE : 'Failed to start SSG Node: ',
-                CANNOT_STOP_SSG_NODE : 'Failed to stop SSG Node: '
+                CANNOT_ADD_FOLDER : 'Failed to add folder.',
+                CANNOT_RENAME_FOLDER : 'Failed to rename folder.',
+                CANNOT_DELETE_FOLDER : 'Failed to delete folder.',
+                CANNOT_ADD_SSG_CLUSTER : 'Failed to add SSG Cluster.',
+                CANNOT_RENAME_SSG_CLUSTER : 'Failed to rename SSG Cluster.',
+                CANNOT_DELETE_SSG_CLUSTER : 'Failed to delete SSG Cluster.',
+                CANNOT_START_SSG_NODE : 'Failed to start SSG Node.',
+                CANNOT_STOP_SSG_NODE : 'Failed to stop SSG Node.'
             };
         </script>
         <script type="text/javascript">
@@ -271,6 +271,7 @@ alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + enti
                 document.getElementById('addFolderDialog_parentId').value = entity.id;
                 document.getElementById('addFolderDialog_name').value = '';
                 validateAddFolderDialog();
+                addFolderDialog.center();
                 addFolderDialog.show();
             }
 
@@ -279,6 +280,7 @@ alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + enti
                 document.getElementById('renameFolderDialog_id').value = entity.id;
                 document.getElementById('renameFolderDialog_name').value = entity.name;
                 validateRenameFolderDialog();
+                renameFolderDialog.center();
                 renameFolderDialog.show();
             }
 
@@ -287,6 +289,7 @@ alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + enti
                 document.getElementById('renameSSGClusterDialog_id').value = entity.id;
                 document.getElementById('renameSSGClusterDialog_name').value = entity.name;
                 validateRenameSSGClusterDialog();
+                renameSSGClusterDialog.center();
                 renameSSGClusterDialog.show();
             }
 
@@ -311,6 +314,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                 var entity = entityTreeTable.getSelectedEntity();
                 document.getElementById('deleteFolderDialog_id').value = entity.id;
                 document.getElementById('deleteFolderDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
+                deleteFolderDialog.center();
                 deleteFolderDialog.show();
             }
 
@@ -318,6 +322,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                 var entity = entityTreeTable.getSelectedEntity();
                 document.getElementById('deleteSSGClusterDialog_id').value = entity.id;
                 document.getElementById('deleteSSGClusterDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
+                deleteSSGClusterDialog.center();
                 deleteSSGClusterDialog.show();
             }
 
@@ -339,6 +344,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                 document.getElementById('addSSGClusterDialog_hostName').value = '';
                 document.getElementById('addSSGClusterDialog_port').value = '';
                 validateAddSSGClusterDialog();
+                addSSGClusterDialog.center();
                 addSSGClusterDialog.show();
             }
 
@@ -514,7 +520,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     ],
                     close       : true,
                     draggable   : true,
-                    fixedcenter : true,
                     icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
                     modal       : true,
                     postmethod  : 'async',
@@ -558,7 +563,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     ],
                     close       : true,
                     draggable   : true,
-                    fixedcenter : true,
                     icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
                     modal       : true,
                     postmethod  : 'async',
@@ -601,7 +605,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     ],
                     close       : true,
                     draggable   : true,
-                    fixedcenter : true,
                     icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
                     modal       : true,
                     postmethod  : 'async',
@@ -644,7 +647,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     ],
                     close       : true,
                     draggable   : true,
-                    fixedcenter : true,
                     icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
                     modal       : true,
                     postmethod  : 'async',
@@ -688,7 +690,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     ],
                     close       : true,
                     draggable   : true,
-                    fixedcenter : true,
                     icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
                     modal       : true,
                     postmethod  : 'async',
@@ -731,7 +732,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     ],
                     close       : true,
                     draggable   : true,
-                    fixedcenter : true,
                     icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
                     modal       : true,
                     postmethod  : 'async',

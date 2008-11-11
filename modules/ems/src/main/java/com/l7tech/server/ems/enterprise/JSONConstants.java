@@ -14,6 +14,7 @@ public final class JSONConstants {
         public static final String EXCEPTION         = "exception";
         public static final String MESSAGE           = "message";
         public static final String LOCALIZED_MESSAGE = "localizedMessage";
+        public static final String STACK_TRACE       = "stackTrace";
         public static final String CAUSE             = "cause";
     }
 

@@ -1,6 +1,7 @@
 /**
  * @module l7
  * @namespace l7
+ * @requires l7.css
  * @requires YUI module "animation" if using l7.Resize
  * @requires YUI modules "button", "container" if using l7.Dialog
  */
@@ -396,18 +397,49 @@ if (!l7.Util) {
             var x = parseFloat(s);
             return x - s == 0;
         }
-    })();
 
-    /**
-     * Tests if an object literal is an l7-style exception object.
-     * See http://sarek/mediawiki/index.php?title=Enterprise_Organization_LLD#JSON_format_for_exception.
-     *
-     * @param {object} o    the object literal
-     * @return {boolean} true if it is an Layer 7 exception object
-     */
-    l7.Util.isException = function(o) {
-        return o != null && o.exception != undefined && o.exception != null;
-    }
+        /**
+         * Tests if an object literal is an l7-style exception object.
+         * See http://sarek/mediawiki/index.php?title=Enterprise_Organization_LLD#JSON_format_for_exception.
+         *
+         * @static
+         * @param {object} o    the object literal
+         * @return {boolean} true if it is an Layer 7 exception object
+         */
+        l7.Util.isException = function(o) {
+            return o != null && o.exception != undefined && o.exception != null;
+        }
+
+        /**
+         * Show selected elements by making their "display" style default.
+         *
+         * @static
+         * @param {string} idPattern            regexp pattern of IDs
+         * @param {HTMLElement} startElement    element to start searching; null for document body
+         * @param {string} tagName              name of tags to restrict search; null for all tags
+         */
+        l7.Util.showElements = function(idPattern, startElement, tagName) {
+            var elements = l7.Util.getElementsById(idPattern, startElement, tagName);
+            for (var i in elements) {
+                elements[i].style.display = '';
+            }
+        }
+
+        /**
+         * Hide selected elements by making their "display" style "none".
+         *
+         * @static
+         * @param {string} idPattern            regexp pattern of IDs
+         * @param {HTMLElement} startElement    element to start searching; null for document body
+         * @param {string} tagName              name of tags to restrict search; null for all tags
+         */
+        l7.Util.hideElements = function(idPattern, startElement, tagName) {
+            var elements = l7.Util.getElementsById(idPattern, startElement, tagName);
+            for (var i in elements) {
+                elements[i].style.display = 'none';
+            }
+        }
+    })();
 };
 
 // -----------------------------------------------------------------------------
@@ -692,6 +724,7 @@ if (!l7.Dialog) {
                 l7.Dialog._waitDialog = new YAHOO.widget.Panel('l7_Dialog_waitDialog', {
                     close       : false,
                     draggable   : false,
+                    fixedcenter : true,
                     modal       : true,
                     visible     : false,
                     zindex      : 999
@@ -701,7 +734,6 @@ if (!l7.Dialog) {
             l7.Dialog._waitDialog.setHeader(header);
             l7.Dialog._waitDialog.render(document.body);
             l7.Dialog._waitDialog.show();
-            l7.Dialog._waitDialog.center();
         }
 
         /**
@@ -737,7 +769,7 @@ if (!l7.Dialog) {
                         }
                     ],
                     close       : true,
-                    draggable   : false,
+                    draggable   : true,
                     icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
                     modal       : true,
                     visible     : false,
@@ -748,34 +780,60 @@ if (!l7.Dialog) {
             l7.Dialog._errorDialog.setBody(body);
             l7.Dialog._errorDialog.render(document.body);
             l7.Dialog._errorDialog.getButtons()[0].set('label', okText == null ? 'OK' : okText);
-            l7.Dialog._errorDialog.show();
             l7.Dialog._errorDialog.center();
+            l7.Dialog._errorDialog.show();
         }
 
         /**
          * Displays the given l7-style exception object literal in a simple error dialog.
          *
          * @public
-         * @param {object} ex       an l7-style exception object literal
+         * @param {object} o        an l7-style exception object literal
          * @param {string} header   localized header text; defaults to 'Error' if null
          * @param {html} beginBody  beginning HTML content
          * @param {string} okText   localized text label for the OK button; defaults to 'OK' if null
          */
-        l7.Dialog.showExceptionDialog = function(exception, header, beginBody, okText) {
-            var body = beginBody;
-            for (var e = exception; e != null || e != undefined; e = e.cause) {
-                if (e !== exception) body += '<div>Caused By:</div>';
-                body += '<table class="spaced" style="border: 1px solid #000000; margin: 6px 0 6px 0; width: 50em;">';
-                body += '<tr><th class="top">Exception:</th><td>' + l7.Util.escapeAsText(e.exception) + '</td></tr>';
+        l7.Dialog.showExceptionDialog = function(o, header, beginBody, okText) {
+            var divId = 'l7_Dialog_exceptionDiv';
+            var tippyId = divId + '_tippy';
+            var stackTraceTrIdPrefix = 'l7_Dialog_stackTrace_';
+            var body = beginBody
+                     + '<div class="tippy" style="margin: 10px 0 4px 0; width: 600px;">'
+                     +     '<img id="' + tippyId + '" class="tippy" src="../images/tippyCollapsed.png" alt="" onclick="l7.Tippy.toggleTippy(this, \'' + divId + '\')" />'
+                     +     '<span class="clickable" onclick="l7.Tippy.toggleTippy(\'' + tippyId + '\', \'' + divId + '\')">Details</span>'
+                     + '</div>'
+                     + '<div id="' + divId + '" style="display: none; margin-left: 17px">'
+                     +     '<table class="spaced" style="border: 1px solid #000000; margin: 3px 0 3px 0; width: 583px;">'
+                     +         '<tr>'
+                     +             '<th colspan="2" style="background-color: #000000; color: #ffffff;">'
+                     +                 '<span class="clickable" onclick="l7.Util.showElements(\'' + stackTraceTrIdPrefix + '.+\');">Show</span>'
+                     +                 ' / '
+                     +                 '<span class="clickable" onclick="l7.Util.hideElements(\'' + stackTraceTrIdPrefix + '.+\');">Hide</span>'
+                     +                 ' Stack Trace'
+                     +             '</th>'
+                     +         '</tr>';
+            for (var e = o, i = 0; e != null || e != undefined; e = e.cause, ++i) {
+                if (e !== o) body += '<tr><th colspan="2" style="background-color: #d0d0d0;">Caused By:</th></tr>';
+                body += '<tr><th class="top">Exception:</th><td width="100%">' + l7.Util.escapeAsText(e.exception) + '</td></tr>';
                 if (e.message) {
                     body += '<tr><th class="top">Message:</th><td class="wrap">' + l7.Util.escapeAsText(e.message) + '</td></tr>';
                 }
-                if (e.localizedMessage) {
+                if (e.localizedMessage && e.localizedMessage != e.message) {
                     body += '<tr><th class="top">Localized Message:</th><td class="wrap">' + l7.Util.escapeAsText(e.localizedMessage) + '</td></tr>';
                 }
-                body += '</table>';
+                var stackTraceTrId = stackTraceTrIdPrefix + i;
+                body += '<tr id="' + stackTraceTrId + '" style="display: none;"><th class="top">Stack Trace:</th><td>';
+                if (e.stackTrace) {
+                    for (var j in e.stackTrace) {
+                        body += '<div>' + l7.Util.escapeAsText(e.stackTrace[j]) + '</div>';
+                    }
+                } else {
+                    body += '(none)';
+                }
+                body += '</td></tr>';
             }
-            body += '</div>';
+            body +=     '</table>'
+                  + '</div>';
             l7.Dialog.showErrorDialog(header, body, okText);
         }
 
@@ -786,7 +844,7 @@ if (!l7.Dialog) {
          * @param {string} header   localized header text; defaults to 'Error' if null
          * @param {html} beginBody  beginning HTML content
          * @param {string} okText   localized text label for the OK button; defaults to 'OK' if null
-         * @return {boolean} true if it was an exception.
+         * @return {boolean} true if it was an exception
          */
         l7.Dialog.showExceptionDialogIfException = function(o, header, beginBody, okText) {
             var result = l7.Util.isException(o);
