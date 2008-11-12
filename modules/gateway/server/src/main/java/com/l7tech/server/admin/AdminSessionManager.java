@@ -1,6 +1,7 @@
 package com.l7tech.server.admin;
 
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.beans.factory.InitializingBean;
 import org.apache.commons.collections.map.LRUMap;
 import com.l7tech.util.HexUtils;
@@ -43,7 +44,7 @@ import java.util.logging.Logger;
  * resume an admin session as that user; thus, the cookies must be sent over SSL, never written to disk by
  * either client or server, and not kept longer than necessary.</p>
  */
-public class AdminSessionManager extends RoleManagerIdentitySourceSupport {
+public class AdminSessionManager extends RoleManagerIdentitySourceSupport implements ApplicationListener {
 
     //- PUBLIC
 
@@ -101,9 +102,9 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport {
                 //for internal identity provider
                 boolean useSTIG = serverConfig.getBooleanProperty("security.stig.enabled", true);
                 if (useSTIG) {
-                    if (creds.getFormat() == CredentialFormat.CLEARTEXT && hasClientCert(creds, provider)) {
+                    if (creds.getFormat() == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds)) {
                         needsClientCert = true;
-                        throw new LoginRequireClientCertificateException();
+                        throw new BadCredentialsException("User '" + creds.getLogin() + "' did not use certificate as login credentials.");
                     }
                 }
 
@@ -116,7 +117,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport {
                         logger.info("Authenticated on " + provider.getConfig().getName());
 
                         //Ensure password not expired, ignore password expire checking if have certificate
-                        if (passwordEnforcerManager.isPasswordExpired(authdUser) && !hasClientCert(creds, provider)) {
+                        if (passwordEnforcerManager.isPasswordExpired(authdUser) && !provider.hasClientCert(creds)) {
                             throw new CredentialExpiredException("Password expired.");
                         }
 
