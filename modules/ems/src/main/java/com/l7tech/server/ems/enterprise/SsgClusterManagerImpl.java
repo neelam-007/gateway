@@ -1,9 +1,6 @@
 package com.l7tech.server.ems.enterprise;
 
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
@@ -59,7 +56,26 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         return create(name, sslHostName, adminPort, parentFolder);
     }
 
-    public List<SsgCluster> findChildrenOfFolder(final EnterpriseFolder parentFolder) throws FindException {
+    public SsgCluster findByGuid(final String guid) throws FindException {
+        try {
+            return (SsgCluster)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
+                protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    final Criteria crit = session.createCriteria(getImpClass());
+                    if (guid == null) {
+                        crit.add(Restrictions.isNull("guid"));
+                    } else {
+                        crit.add(Restrictions.eq("guid", guid));
+                    }
+                    return crit.uniqueResult();
+                }
+            });
+        } catch (DataAccessException e) {
+            throw new FindException("Cannot find SSG Cluster by GUID: " + guid, e);
+        }
+    }
+
+    public List<SsgCluster> findChildSsgClusters(final EnterpriseFolder parentFolder) throws FindException {
         try {
             //noinspection unchecked
             return (List<SsgCluster>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
@@ -74,5 +90,10 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         } catch (DataAccessException e) {
             throw new FindException("Cannot find child SSG Clusters of " + parentFolder, e);
         }
+    }
+
+    public void deleteByGuid(String guid) throws FindException, DeleteException {
+        final SsgCluster ssgCluster = findByGuid(guid);
+        super.delete(ssgCluster);
     }
 }

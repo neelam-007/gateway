@@ -34,7 +34,7 @@ public interface EnterpriseFolderManager extends EntityManager<EnterpriseFolder,
     EnterpriseFolder create(String name, String parentFolderGuid) throws FindException, InvalidNameException, SaveException;
 
     /**
-     * Deletes a folder with the given GUID.
+     * Deletes a folder and its descendents with the given GUID.
      *
      * @param guid      GUID of the folder
      * @throws FindException if no folder with such GUID

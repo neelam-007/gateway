@@ -9,6 +9,7 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
+import org.springframework.orm.hibernate3.HibernateCallback;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.logging.Logger;
 
 /**
  * Entity manager for {@link EnterpriseFolder}.
+ * TODO RBAC
  *
  * @since Enterprise Manager 1.0
  * @author rmak
@@ -70,7 +72,40 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
 
     public void deleteByGuid(String guid) throws FindException, DeleteException {
         final EnterpriseFolder folder = findByGuid(guid);
-        super.delete(folder);
+        try {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                private void deleteChildSsgClusters(final Session session, final EnterpriseFolder folder) {
+                    final Criteria crit = session.createCriteria(SsgCluster.class);
+                    crit.add(Restrictions.eq("parentFolder", folder));
+                    crit.addOrder(Order.asc("name"));
+                    for (Object childSsgCluster : crit.list()) {
+                        session.delete(childSsgCluster);
+                    }
+                }
+
+                private void deleteChildFolders(final Session session, final EnterpriseFolder folder) {
+                    final Criteria crit = session.createCriteria(getImpClass());
+                    crit.add(Restrictions.eq("parentFolder", folder));
+                    crit.addOrder(Order.asc("name"));
+                    for (Object childFolder : crit.list()) {
+                        deleteFolder(session, (EnterpriseFolder)childFolder);
+                    }
+                }
+
+                private void deleteFolder(final Session session, final EnterpriseFolder folder) {
+                    deleteChildSsgClusters(session, folder);
+                    deleteChildFolders(session, folder);
+                    session.delete(folder);
+                }
+
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    deleteFolder(session, folder);
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+            throw new DeleteException("Cannot delete folder " + folder.getName(), e);
+        }
     }
 
     public EnterpriseFolder findRootFolder() throws FindException {

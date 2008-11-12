@@ -52,7 +52,7 @@ public class Configure extends EmsPage  {
                     addChildren(nodes, childFolder);
                 }
 
-                for (SsgCluster childCluster : ssgClusterManager.findChildrenOfFolder(folder)) {
+                for (SsgCluster childCluster : ssgClusterManager.findChildSsgClusters(folder)) {
                     nodes.add(childCluster);
                 }
             }
@@ -123,9 +123,28 @@ public class Configure extends EmsPage  {
         addSSGClusterForm.add(addSSGClusterInputHostName);
         addSSGClusterForm.add(addSSGClusterInputPort);
 
+        final HiddenField deleteSSGClusterDialogInputId = new HiddenField("deleteSSGClusterDialog_id", new Model(""));
+        Form deleteSSGClusterForm = new JsonDataResponseForm("deleteSSGClusterForm"){
+            @Override
+            protected Object getJsonResponseData() {
+                try {
+                    String guid = deleteSSGClusterDialogInputId.getModelObjectAsString();
+                    logger.info("Deleting SSG Cluster (GUID = "+ guid + ").");
+
+                    ssgClusterManager.deleteByGuid(guid);
+                    return null;    // No response object expected if successful.
+                } catch (Exception e) {
+                    logger.warning(e.toString());
+                    return new JSONException(e);
+                }
+            }
+        };
+        deleteSSGClusterForm.add(deleteSSGClusterDialogInputId );
+
         add(addFolderForm);
         add(deleteFolderForm);
         add(addSSGClusterForm);
+        add(deleteSSGClusterForm);
         add(interaction);
     }
 }

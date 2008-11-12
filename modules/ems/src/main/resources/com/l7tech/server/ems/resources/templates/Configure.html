@@ -1121,8 +1121,8 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
 <div id="deleteSSGClusterDialog">
     <div class="hd">Delete SSG Cluster</div>
     <div class="bd">
-        <form name="deleteSSGClusterForm" action="action/deleteSSGCluster">
-            <input id="deleteSSGClusterDialog_id" type="hidden" name="id" />
+        <form name="deleteSSGClusterForm" wicket:id="deleteSSGClusterForm" method="POST">
+            <input id="deleteSSGClusterDialog_id" wicket:id="deleteSSGClusterDialog_id" type="hidden" name="id" />
             Delete SSG Cluster &ldquo;<span id="deleteSSGClusterDialog_name"></span>&rdquo; from the enterprise tree?
             <br/>This will not destroy the SSG Cluster itself.
         </form>
