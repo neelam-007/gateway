@@ -16,6 +16,8 @@ import org.junit.Test;
 import org.junit.Assert;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.SAXException;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 
@@ -2393,6 +2395,11 @@ public class UtilitiesTest{
     private Document getStringAsDocument(String xml) throws Exception{
         DocumentBuilderFactory builderF = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = builderF.newDocumentBuilder();
+        builder.setEntityResolver( new EntityResolver() {
+            public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+                return new InputSource( UtilitiesTest.class.getResourceAsStream("jasperreport.dtd")  );
+            }
+        } );
         InputSource is = new InputSource(new StringReader(xml));
         return builder.parse(is);
     }
