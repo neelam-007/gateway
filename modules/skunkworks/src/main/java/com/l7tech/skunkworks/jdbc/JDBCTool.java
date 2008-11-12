@@ -19,6 +19,9 @@ import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.ResultSetMetaData;
+import java.sql.Clob;
+import java.io.Reader;
+import java.io.IOException;
 
 /**
  * Tool to run JDBC query
@@ -157,6 +160,22 @@ public class JDBCTool {
                     continue;
                 }
                 Object value = results.getObject( i );
+                if ( value instanceof Clob) {
+                    Clob clobValue = (Clob) value;
+                    Reader reader = null;
+                    try {
+                        reader = clobValue.getCharacterStream();
+                        char[] string = new char[8192];
+                        int read = reader.read(string);
+                        if ( read > -1 ) {
+                            value = new String( string, 0, read );
+                        }
+                    } catch( IOException ioe ) {
+                        ioe.printStackTrace();
+                    } finally {
+                        ResourceUtils.closeQuietly(reader);
+                    }
+                }
                 columnValues.add( value );
             }
 
