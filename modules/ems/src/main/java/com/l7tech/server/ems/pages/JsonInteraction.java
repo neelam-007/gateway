@@ -8,11 +8,9 @@ import org.apache.wicket.ajax.WicketAjaxReference;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.IRequestTarget;
-import org.apache.wicket.Response;
-import org.apache.wicket.Request;
+import org.apache.wicket.protocol.http.WebResponse;
+import org.apache.wicket.protocol.http.WebRequest;
 import org.mortbay.util.ajax.JSON;
-
-import java.util.logging.Logger;
 
 /**
  * JSON interaction is a component that provides a JavaScript URL for JSON data access.
@@ -47,8 +45,13 @@ public class JsonInteraction extends Panel {
                         public void detach(RequestCycle requestCycle) {}
                         @Override
                         public void respond(RequestCycle requestCycle) {
-                            logger.info("Processing JSON request for enterprise tree.");
-                            JsonInteraction.this.onRequest( requestCycle.getRequest(), requestCycle.getResponse() );
+                            final WebRequest request = (WebRequest)requestCycle.getRequest();
+                            final WebResponse response = (WebResponse)requestCycle.getResponse();
+                            response.setContentType("application/json");
+                            response.setHeader("Expires", "Mon, 26 Jul 1997 05:00:00 GMT");
+                            response.setHeader("Cache-Control", "no-cache, must-revalidate");
+                            response.setHeader("Pragma", "no-cache");
+                            JsonInteraction.this.onRequest( request, response );
                         }
                 });
                 } finally {
@@ -61,24 +64,21 @@ public class JsonInteraction extends Panel {
     //- PROTECTED
 
     @SuppressWarnings({"UnusedDeclaration"})
-    protected void onRequest( final Request request, final Response response ) {
+    protected void onRequest( final WebRequest request, final WebResponse response ) {
         writeJsonResponse( response, provider.getData() );
     }
 
-    protected void writeJsonResponse( final Response response, final Object data ) {
+    protected void writeJsonResponse( final WebResponse response, final Object data ) {
         // Add JSON script to the response
         JSON json = new JSON();
 
         StringBuffer dataBuffer = new StringBuffer(2048);
         json.append(dataBuffer, data);
 
-        response.setContentType("application/json");
         response.write(dataBuffer);        
     }
 
     //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(JsonInteraction.class.getName());
 
     private final JsonDataProvider provider;
 }

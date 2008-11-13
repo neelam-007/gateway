@@ -3,6 +3,7 @@ package com.l7tech.server.ems.pages;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.IRequestTarget;
+import org.apache.wicket.protocol.http.WebResponse;
 import org.mortbay.util.ajax.JSON;
 
 /**
@@ -22,6 +23,7 @@ public abstract class JsonDataResponseForm extends Form {
     /**
      * Submit a json response with json data.
      */
+    @Override
     protected final void onSubmit() {
         Object data = getJsonResponseData();
         sendResponse(data);
@@ -39,8 +41,10 @@ public abstract class JsonDataResponseForm extends Form {
      */
     protected void sendResponse(final Object data) {
         RequestCycle.get().setRequestTarget(new IRequestTarget() {
+            @Override
             public void detach(RequestCycle requestCycle) {}
 
+            @Override
             public void respond(RequestCycle requestCycle) {
                 // Processing JSON request
                 JSON json = new JSON();
@@ -48,8 +52,12 @@ public abstract class JsonDataResponseForm extends Form {
                 StringBuffer dataBuffer = new StringBuffer(2048);
                 json.append(dataBuffer, data);
 
-                requestCycle.getResponse().setContentType("application/json");
-                requestCycle.getResponse().write(dataBuffer);
+                final WebResponse response = (WebResponse)requestCycle.getResponse();
+                response.setContentType("application/json");
+                response.setHeader("Expires", "Mon, 26 Jul 1997 05:00:00 GMT");
+                response.setHeader("Cache-Control", "no-cache, must-revalidate");
+                response.setHeader("Pragma", "no-cache");
+                response.write(dataBuffer);
             }
         });
     }
