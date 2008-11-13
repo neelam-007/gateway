@@ -108,12 +108,14 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        timer.schedule(new TimerTask(){
-            @Override
-            public void run() {
-                rebuildConnectors();
-            }
-        }, 500);
+        if ( server.isStarted() ) {
+            timer.schedule(new TimerTask(){
+                @Override
+                public void run() {
+                    rebuildConnectors();
+                }
+            }, 500);
+        }
     }
 
     private void initializeServletEngine() throws Exception {

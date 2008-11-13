@@ -400,7 +400,18 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                         id = roleManager.save(role);
                         logger.info("Created configuration for administration role with identifier '" + id + "'.");
                     }
+                } catch ( Exception e ) {
+                    transactionStatus.setRollbackOnly();
+                    throw new RuntimeException( "Error during initial setup.", e );
+                }
+            }
+        });
 
+        // separate transaction since we want the provider / role to be persisted before we run this.
+        template.execute( new TransactionCallbackWithoutResult(){
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                try {
                     InternalUserManager internalUserManager = getInternalUserManager();
                     if ( internalUserManager != null ) {
                         String initialAdminUsername = serverConfig.getProperty("em.admin.user");
