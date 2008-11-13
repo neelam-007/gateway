@@ -36,18 +36,22 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
     private RoleManager roleManager;
 
 
+    @Override
     public Class<? extends Entity> getImpClass() {
         return TrustedEmsUser.class;
     }
 
+    @Override
     public Class<? extends Entity> getInterfaceClass() {
         return TrustedEmsUser.class;
     }
 
+    @Override
     protected UniqueType getUniqueType() {
         return UniqueType.NONE;
     }
 
+    @Override
     public String getTableName() {
         return "trusted_ems_user";
     }
@@ -58,6 +62,7 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
     }
 
 
+    @Override
     public TrustedEmsUser configureUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername)
             throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException, MappingAlreadyExistsException
     {
@@ -91,6 +96,7 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         return trustedEmsUser;
     }
 
+    @Override
     public boolean deleteMappingsForUser(User user) throws FindException, DeleteException {
         Map<String, Object> map = new HashMap<String, Object>();        
         map.put("ssgUserId", user.getId());
@@ -109,6 +115,7 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         return didDelete;
     }
 
+    @Override
     public boolean deleteMappingsForIdentityProvider(long identityProviderOid) throws FindException, DeleteException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("providerOid", identityProviderOid);
@@ -125,10 +132,28 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         return didDelete;
     }
 
+    @Override
     public Collection<TrustedEmsUser> findByEmsId(long trustedEmsOid) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("trustedEms.oid", trustedEmsOid);
         return findMatching(Arrays.asList(map));
+    }
+
+    @Override
+    public TrustedEmsUser findByEmsIdAndUserUUID(final long trustedEmsOid, final String emsUuid) throws FindException {
+        TrustedEmsUser user = null;
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("trustedEms.oid", trustedEmsOid);
+        map.put("emsUserId", emsUuid);
+        Collection<TrustedEmsUser> users = findMatching(Arrays.asList(map));
+        if ( users.size()==1 ) {
+            user = users.iterator().next();
+        } else if ( users.size() > 1 ) {
+            logger.warning("Multiple users are mapped with identity '"+emsUuid+"', for esm '"+trustedEmsOid+"'.");            
+        }
+
+        return user;
     }
 
     private TrustedEmsUser findByEmsUsername(TrustedEms trustedEms, String emsUsername) throws FindException {

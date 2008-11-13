@@ -25,6 +25,8 @@
     <!-- enable automatic proxy generation for any class or superclass annotated with @Transactional -->
     <tx:annotation-driven order="20000"/>
 
+    <context:annotation-config/>
+
     <!-- export beans to JMX -->
     <context:mbean-export/>
 
@@ -1137,11 +1139,14 @@
     <bean id="trustedEmsUserManager" class="com.l7tech.server.TrustedEmsUserManagerImpl" parent="hibernateBean">
     </bean>
 
-    <context:annotation-config/>
-
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
 
     <bean id="processControllerEventProxy" class="com.l7tech.server.ProcessControllerEventProxyImpl" depends-on="cxf"/>
+
+    <bean id="gatewayApiImpl" class="com.l7tech.server.cluster.GatewayApiImpl">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterInfoManager"/>
+    </bean>
 
     <bean id="systemClassLoader" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetClass" value="java.lang.ClassLoader"/>

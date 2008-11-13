@@ -36,5 +36,18 @@
     <!-- Process Controller -->
     <jaxws:endpoint id="processControllerNodeApiEndpoint" implementor="#processControllerNodeApiImpl"
                     address="/processControllerNodeApi" depends-on="processControllerNodeApiImpl"/>
+
+    <!-- EMS Api -->
+    <jaxws:endpoint id="gatewayApiEndpoint" implementor="#gatewayApiImpl"
+                    address="/gatewayApi" depends-on="gatewayApiImpl">
+        <jaxws:inInterceptors>
+            <bean class="com.l7tech.server.admin.ws.EsmApiInterceptor">
+                <constructor-arg index="0" ref="licenseManager"/>
+                <constructor-arg index="1" ref="trustedEmsManager"/>
+                <constructor-arg index="2" ref="trustedEmsUserManager"/>     
+                <constructor-arg index="3" ref="adminSessionManager"/>
+            </bean>
+        </jaxws:inInterceptors>
+    </jaxws:endpoint>
 </beans>
 

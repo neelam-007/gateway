@@ -105,6 +105,11 @@
     </filter-mapping>
 
     <filter-mapping>
+        <filter-name>remotingFilter</filter-name>
+        <url-pattern>/ssg/services/*</url-pattern>
+    </filter-mapping>
+
+    <filter-mapping>
         <filter-name>managerAppletFilter</filter-name>
         <servlet-name>managerAppletServlet</servlet-name>
     </filter-mapping>

@@ -68,6 +68,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_HTTP_MESSAGE_INPUT = "service:HttpMessageInput";
     public static final String SERVICE_JMS_MESSAGE_INPUT = "service:JmsMessageInput";
     public static final String SERVICE_ADMIN = "service:Admin";
+    public static final String SERVICE_REMOTE_MANAGEMENT = "service:RemoteManagement";
     public static final String SERVICE_POLICYDISCO = "service:Policy";
     public static final String SERVICE_STS = "service:TokenService";
     public static final String SERVICE_CSRHANDLER = "service:CSRHandler";
@@ -113,7 +114,8 @@ public class GatewayFeatureSets {
         GatewayFeatureSet admin =
         fsr("set:admin", "All admin APIs, over all admin API transports",
             "Everything that used to be enabled by the catchall Feature.ADMIN",
-            misc(SERVICE_ADMIN, "All admin APIs, over all admin API transports", null));
+            misc(SERVICE_ADMIN, "All admin APIs, over all admin API transports", null),
+            misc(SERVICE_REMOTE_MANAGEMENT, "Gateway Remote Management", null));
 
         GatewayFeatureSet branching =
         fsr("set:policy:branching", "Support for branching policies",

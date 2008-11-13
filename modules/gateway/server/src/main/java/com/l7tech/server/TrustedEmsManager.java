@@ -5,6 +5,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.FindException;
 
 import java.security.AccessControlException;
 import java.security.cert.CertificateException;
@@ -14,6 +15,16 @@ import java.security.cert.X509Certificate;
  * Entity manager for {@link TrustedEms}.
  */
 public interface TrustedEmsManager extends EntityManager<TrustedEms, EntityHeader> {
+
+    /**
+     * Find TrustedEms by ID.
+     *
+     * @param emsId The unique EMS identifier.
+     * @return The TrustedEms or null if not found.
+     * @throws FindException if an error occurs during lookup
+     */
+    TrustedEms findEmsById(String emsId) throws FindException;
+
     /**
      * Look up or add a TrustedEms entry allowing the specified EMS instance to manage this Gateway cluster
      * when authenticated by the specified EMS certificate.

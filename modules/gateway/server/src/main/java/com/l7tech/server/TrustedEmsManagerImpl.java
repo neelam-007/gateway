@@ -11,6 +11,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -35,14 +36,17 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
     @Resource(name="trustedCertManager")
     private TrustedCertManager trustedCertManager;
 
+    @Override
     public Class<? extends Entity> getImpClass() {
         return TrustedEms.class;
     }
 
+    @Override
     public Class<? extends Entity> getInterfaceClass() {
         return TrustedEms.class;
     }
 
+    @Override
     public String getTableName() {
         return "trusted_ems";
     }
@@ -58,6 +62,12 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
         return tc != null && tc.size() > 0 ? (TrustedCert) tc.get(0) : null;
     }
 
+    @Override
+    public TrustedEms findEmsById( final String emsId ) throws FindException {
+        return findByUniqueName(emsId);
+    }
+
+    @Override
     public TrustedEms getOrCreateEmsAssociation(User user, String emsId, X509Certificate emsCert) throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException {
         if (user == null)
             throw new IllegalArgumentException("Missing authenticated user");

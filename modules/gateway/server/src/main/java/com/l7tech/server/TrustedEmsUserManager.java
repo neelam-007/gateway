@@ -95,4 +95,14 @@ public interface TrustedEmsUserManager extends EntityManager<TrustedEmsUser, Ent
      * @throws com.l7tech.objectmodel.FindException if DB problem
      */
     Collection<TrustedEmsUser> findByEmsId(long trustedEmsOid) throws FindException;
+
+    /**
+     * Find a user mapping for the specified Trusted EMS, identified by its OIDs.
+     *
+     * @param trustedEmsOid OID of the EMS instance whose mapping to find.
+     * @param emsUsername UUID of the EMS user whose mapping to find.
+     * @return a Collection of all TrustedEmsUser instances associated with this TrustedEms.  May be empty but never null.
+     * @throws com.l7tech.objectmodel.FindException if DB problem
+     */
+    TrustedEmsUser findByEmsIdAndUserUUID(long trustedEmsOid, String emsUsername) throws FindException;
 }

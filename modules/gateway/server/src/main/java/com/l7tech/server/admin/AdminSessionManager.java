@@ -2,7 +2,6 @@ package com.l7tech.server.admin;
 
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.beans.factory.InitializingBean;
 import org.apache.commons.collections.map.LRUMap;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Background;
@@ -68,6 +67,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     /**
      * Reloads IdentityProviders on change.
      */
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
@@ -75,6 +75,40 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 setupAdminProviders();
             }
         }
+    }
+
+    /**
+     * Authorize an administrative user against admin enabled identity providers.
+     *
+     * @param providerId The users identity provider
+     * @param userId The users id
+     * @return The user or null if not authenticated.
+     * @throws ObjectModelException If an error occurs during authorization.
+     */
+    public User authorize( final long providerId, final String userId ) throws ObjectModelException {
+        Set<IdentityProvider> providers = getAdminIdentityProviders();
+        User user = null;
+
+        for ( IdentityProvider provider : providers ) {
+            if ( provider.getConfig().getOid() == providerId ) {
+                try {
+                    User authdUser = provider.getUserManager().findByPrimaryKey( userId );
+                    if ( authdUser != null ) {
+                        //Validate the user , now authenticated so that we know all of their group roles
+                        checkPerms(authdUser);
+                        logger.fine("Authorized on " + provider.getConfig().getName());
+
+                        user = authdUser;
+                    }
+                } catch ( AuthenticationException ae ) {
+                    logger.warning("Authorization failed for user '"+userId+"', due to '"+ExceptionUtils.getMessage(ae)+"'.");
+                }
+
+                break;
+            }
+        }
+
+        return user;
     }
 
     /**
@@ -151,19 +185,6 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         }
 
         return user;
-    }
-
-    /**
-     * Method to verify that a given login credentials already has a client certificate associated to the user already
-     * under the internal identity provider only.
-     *
-     * @param lc    The login credentials
-     * @param provider  The internal identity provider
-     * @return  TRUE if user has client certificate already
-     * @throws AuthenticationException
-     */
-    private boolean hasClientCert(LoginCredentials lc, IdentityProvider provider) throws AuthenticationException {
-        return provider.hasClientCert(lc);
     }
 
     /**
