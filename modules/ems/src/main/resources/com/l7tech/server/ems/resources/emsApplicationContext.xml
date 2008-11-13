@@ -262,7 +262,7 @@
         <property name="targetId" value="auditContextImpl"/>
     </bean>
 
-    <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="singleton">
+    <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="prototype">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
         <property name="keystore" ref="defaultKey"/>

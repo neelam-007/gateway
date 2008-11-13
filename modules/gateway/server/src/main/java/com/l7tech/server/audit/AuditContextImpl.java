@@ -59,19 +59,22 @@ public class AuditContextImpl implements AuditContext {
     /**
      * Sets the current {@link AuditRecord} for this context.
      */
+    @Override
     public void setCurrentRecord(AuditRecord record) {
         if (record == null) throw new NullPointerException();
         if (currentRecord != null) {
-            throw new IllegalStateException("Only one audit record can be active at one time");
+            throw new IllegalStateException("Only one audit record can be active at one time (existing is '"+currentRecord.getMessage()+"', new is '"+record.getMessage()+"')");
         }
         if (record.getLevel().intValue() > highestLevelYetSeen.intValue()) highestLevelYetSeen = record.getLevel();
         currentRecord = record;
     }
 
+    @Override
     public void addDetail(AuditDetail detail, Object source) {
         addDetail(detail, source, null);
     }
 
+    @Override
     public void addDetail(AuditDetail detail, Object source, Throwable thrown) {
         if (detail == null) throw new NullPointerException();
 
@@ -86,18 +89,22 @@ public class AuditContextImpl implements AuditContext {
         }
     }
 
+    @Override
     public boolean isUpdate() {
         return update;
     }
 
+    @Override
     public void setUpdate(boolean update) {
         this.update = update;
     }
 
+    @Override
     public boolean isSystem() {
         return system;
     }
 
+    @Override
     public void setSystem(boolean system) {
         this.system = system;
     }
@@ -124,6 +131,7 @@ public class AuditContextImpl implements AuditContext {
      *
      * @return the Set of AuditDetailMessage.Hint's
      */
+    @Override
     public Set getHints() {
         Set<AuditDetailMessage.Hint> hints = new HashSet<AuditDetailMessage.Hint>();
         for (List<AuditDetailWithInfo> list : details.values()) {
@@ -138,6 +146,7 @@ public class AuditContextImpl implements AuditContext {
         return Collections.unmodifiableSet(hints);
     }
 
+    @Override
     public void flush() {
         if (currentRecord == null) {
             if (!details.isEmpty()) {
@@ -283,11 +292,12 @@ public class AuditContextImpl implements AuditContext {
         }
     }
 
+    @Override
     public Map<Object, List<AuditDetail>> getDetails() {
-        Map<Object,List<AuditDetail>> ads = new HashMap();
+        Map<Object,List<AuditDetail>> ads = new HashMap<Object,List<AuditDetail>>();
 
         for ( Map.Entry<Object,List<AuditDetailWithInfo>> entry : details.entrySet() ) {
-            List<AuditDetail> ds = new ArrayList();
+            List<AuditDetail> ds = new ArrayList<AuditDetail>();
             for ( AuditDetailWithInfo detailWithInfo : entry.getValue() ) {
                 ds.add( detailWithInfo.detail );
             }
@@ -349,7 +359,7 @@ public class AuditContextImpl implements AuditContext {
             }
             currentUseAssociatedLogsThreshold = configValue;
         }
-        return currentUseAssociatedLogsThreshold.booleanValue();
+        return currentUseAssociatedLogsThreshold;
     }
 
     private Level getSystemAdminThreshold() {
@@ -404,7 +414,7 @@ public class AuditContextImpl implements AuditContext {
             }
             currentSignAuditSetting = configValue;
         }
-        return currentSignAuditSetting.booleanValue();
+        return currentSignAuditSetting;
     }
 
     /**

@@ -5,6 +5,7 @@ import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.Component;
+import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.WicketAjaxReference;
 import org.apache.wicket.behavior.AbstractAjaxBehavior;
@@ -382,7 +383,11 @@ public class YuiDataTable extends Panel {
                 if ( object == null ) {
                     output.add( column.getPropertyExpression(), null);
                 } else {
-                    output.add( column.getPropertyExpression(), getConverter(object.getClass()).convertToString(object, null));
+                    String dataString = getConverter(object.getClass()).convertToString(object, null);
+                    if ( dataString != null ) {
+                        dataString = Strings.escapeMarkup(dataString, false, false).toString();
+                    }
+                    output.add( column.getPropertyExpression(), dataString);
                 }
             }
         }
