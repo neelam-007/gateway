@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server;
 
@@ -236,6 +236,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         } catch (IOException e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_CREATE_IMAGE, e, nodeName);
             respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
+            //noinspection ResultOfMethodCallIgnored
             tmpFile.delete();
             return;
         }
@@ -268,8 +269,8 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             out = response.getOutputStream();
             IOUtils.copyStream(in, out);
         } finally {
-            if (in != null) in.close();
-            if (out != null) out.close();
+            ResourceUtils.closeQuietly(in, out);
+            //noinspection ResultOfMethodCallIgnored
             tmpFile.delete();
         }
 
@@ -325,7 +326,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             params.setPreemptiveAuthentication(true);
             params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HEADER_ORIGINAL_HOST, request.getRemoteHost()));
             params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HEADER_ORIGINAL_ADDR, request.getRemoteAddr()));
-            routedRequest = _httpClientFactory.createHttpClient().createRequest(GenericHttpClient.GET, params);
+            routedRequest = _httpClientFactory.createHttpClient().createRequest(HttpMethod.GET, params);
 
             // Copies over response headers.
             routedResponse = routedRequest.getResponse();

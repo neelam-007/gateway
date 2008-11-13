@@ -1,17 +1,12 @@
 /*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.message;
 
-import com.l7tech.common.http.CookieUtils;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.ParameterizedString;
-import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.*;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.IteratorEnumeration;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.common.io.IOUtils;
 import com.l7tech.xml.soap.SoapUtil;
 
 import javax.servlet.http.Cookie;
@@ -39,6 +34,14 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     private Map<String, String[]> allParams;
 
     private final HttpServletRequest request;
+    private final HttpMethod method;
+
+    private static final Map<String, HttpMethod> nameMap = Collections.unmodifiableMap(new TreeMap<String, HttpMethod>(String.CASE_INSENSITIVE_ORDER) {{
+        for (HttpMethod httpMethod : HttpMethod.values()) {
+            put(httpMethod.name(), httpMethod);
+        }
+    }});
+
     private final URL url;
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
     private static final String SERVLET_REQUEST_ATTR_CONNECTION_ID = "com.l7tech.server.connectionIdentifierObject";
@@ -46,6 +49,9 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     public HttpServletRequestKnob(HttpServletRequest request) {
         this.request = request;
+        HttpMethod method = nameMap.get(request.getMethod());
+        if (method == null) method = HttpMethod.OTHER;
+        this.method = method;
         try {
             this.url = new URL(request.getRequestURL().toString());
         } catch (MalformedURLException e) {
@@ -64,7 +70,12 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         return out.toArray(new HttpCookie[out.size()]);
     }
 
-    public String getMethod() {
+    public HttpMethod getMethod() {
+        return method;
+    }
+
+    @Override
+    public String getMethodAsString() {
         return request.getMethod();
     }
 
@@ -94,17 +105,18 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             this.queryParams = Collections.unmodifiableMap(newmap);
         }
 
-        // Check for PUT or POST; otherwise there can't be body params
-        int len = request.getContentLength();
-        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Length = {0} bytes)", Integer.valueOf(len)));
-        if (len == -1 || !("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod()))) {
+        // If it's not an HTTP form post, don't go looking for trouble
+        ContentTypeHeader ctype = ContentTypeHeader.parseValue(request.getHeader("Content-Type"));
+        if (!ctype.matches(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED)) {
+            // This stanza is copied because we don't want to parse the Content-Type unnecessarily
             nobody();
             return;
         }
 
-        ContentTypeHeader ctype = ContentTypeHeader.parseValue(request.getHeader("Content-Type"));
-        if (!ctype.matches(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED)) {
-            // This stanza is copied because we don't want to parse the Content-Type unnecessarily
+        // Check for PUT or POST; otherwise there can't be body params
+        int len = request.getContentLength();
+        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Length = {0} bytes)", Integer.valueOf(len)));
+        if (len == -1 || !("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod()))) {
             nobody();
             return;
         }

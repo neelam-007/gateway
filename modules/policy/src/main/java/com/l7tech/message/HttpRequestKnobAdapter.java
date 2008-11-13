@@ -4,7 +4,7 @@
 package com.l7tech.message;
 
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.xml.soap.SoapUtil;
 
 import java.io.IOException;
@@ -39,7 +39,9 @@ public class HttpRequestKnobAdapter implements HttpRequestKnob {
 
     public HttpCookie[] getCookies() {return new HttpCookie[0];}
 
-    public String getMethod() {return "POST";}
+    public HttpMethod getMethod() {return HttpMethod.POST;}
+
+    public String getMethodAsString() { return getMethod().name(); }
 
     public String getRequestUri() {return null;}
 

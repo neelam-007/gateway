@@ -1,6 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -48,14 +48,12 @@ public class ServerHttpFormPost extends AbstractServerAssertion implements Serve
         if (reqHttp == null) {
             auditor.logAndAudit(AssertionMessages.HTTPFORM_NON_HTTP);
             return AssertionStatus.NOT_APPLICABLE;
-        } else if (GenericHttpClient.METHOD_POST.equalsIgnoreCase(reqHttp.getMethod()) &&
-                    ctype.isApplication() && HttpFormPost.X_WWW_FORM_URLENCODED.equals(ctype.getSubtype())) {
+        } else if (HttpMethod.POST == reqHttp.getMethod() && ctype.isApplication() && HttpFormPost.X_WWW_FORM_URLENCODED.equals(ctype.getSubtype())) {
             logger.fine("Received POST form");
-        } else if (GenericHttpClient.METHOD_GET.equalsIgnoreCase(reqHttp.getMethod()) &&
-                           reqHttp.getQueryString() != null && reqHttp.getQueryString().length() > 0) {
+        } else if (HttpMethod.GET == reqHttp.getMethod() && reqHttp.getQueryString() != null && reqHttp.getQueryString().length() > 0) {
             logger.fine("Received GET form");
         } else {
-            auditor.logAndAudit(AssertionMessages.HTTPFORM_WRONG_TYPE, new String[] { "Content-Type was " + ctype.getFullValue() });
+            auditor.logAndAudit(AssertionMessages.HTTPFORM_WRONG_TYPE, "Content-Type was " + ctype.getFullValue());
             return AssertionStatus.NOT_APPLICABLE;
         }
 
@@ -69,17 +67,17 @@ public class ServerHttpFormPost extends AbstractServerAssertion implements Serve
             String[] partValues = reqHttp.getParameterValues(partFieldname);
 
             if (partValues == null) {
-                auditor.logAndAudit(AssertionMessages.HTTPFORM_NO_SUCH_FIELD, new String[] { partFieldname });
+                auditor.logAndAudit(AssertionMessages.HTTPFORM_NO_SUCH_FIELD, partFieldname);
                 return AssertionStatus.FAILED;
             } else if (partValues.length > 1) {
-                auditor.logAndAudit(AssertionMessages.HTTPFORM_MULTIVALUE, new String[] { partFieldname });
+                auditor.logAndAudit(AssertionMessages.HTTPFORM_MULTIVALUE, partFieldname);
                 continue;
             }
 
             String partValue = partValues[0];
             if (partValue.length() >= 512 * 1024) {
                 // TODO do we care about bytes vs. chars?
-                auditor.logAndAudit(AssertionMessages.HTTPFORM_TOO_BIG, new String[] {partFieldname});
+                auditor.logAndAudit(AssertionMessages.HTTPFORM_TOO_BIG, partFieldname);
                 return AssertionStatus.FAILED;
             }
 

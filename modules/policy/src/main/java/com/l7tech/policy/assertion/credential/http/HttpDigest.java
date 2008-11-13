@@ -1,17 +1,11 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.policy.assertion.credential.http;
 
 /**
  * Gathers HTTP Digest Authentication info from the request.  Implementations are
  * responsible for filling in the correct values in the <code>Authorization</code> header.
- *
- * @author alex
- * @version $Revision$
  */
 public class HttpDigest extends HttpCredentialSourceAssertion {
 
@@ -47,10 +41,6 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
      */
     public static final int DEFAULT_NONCE_MAXUSES = 30;
 
-
-    public String scheme() {
-        return SCHEME;
-    }
 
     /**
      * The maximum number of times (default 30) that a nonce can be used.

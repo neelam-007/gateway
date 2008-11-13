@@ -1,21 +1,18 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.message.Message;
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.util.HexUtils;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.util.HexUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -23,12 +20,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Logger;
 
-/**
- * @author alex
- * @version $Revision$
- */
-public class ServerHttpBasic extends ServerHttpCredentialSource implements ServerAssertion {
+public class ServerHttpBasic extends ServerHttpCredentialSource<HttpBasic> {
     private static final Logger logger = Logger.getLogger(ServerHttpBasic.class.getName());
+    private final Auditor auditor;
 
     public static final String ENCODING = "ISO-8859-1";//"UTF-8"; http client will not encode this with utf-8, see bugzilla #2733
     public static final String SCHEME = "Basic";
@@ -36,78 +30,64 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
 
     public ServerHttpBasic(HttpBasic data, ApplicationContext springContext) {
         super(data, springContext);
+        this.auditor = new Auditor(this, springContext, logger);
     }
 
-    protected Map challengeParams(Message request, Map authParams) {
-        return Collections.EMPTY_MAP;
+    protected Map<String, String> challengeParams(Message request, Map<String, String> authParams) {
+        return Collections.emptyMap();
     }
 
     protected String scheme() {
         return SCHEME;
     }
 
-    public LoginCredentials findCredentials(Message request, Map authParams) throws IOException, CredentialFinderException {
-        String wwwAuthorize = request.getHttpRequestKnob().getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
-        return findCredentials( wwwAuthorize );
+    public LoginCredentials findCredentials(Message request, Map<String, String> authParams) throws IOException, CredentialFinderException {
+        String authnHeader = request.getHttpRequestKnob().getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
+        return findCredentials(authnHeader);
     }
 
-    public LoginCredentials findCredentials( String wwwAuthorize ) throws IOException {
-        if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
-            logger.fine("No wwwAuthorize");
+    public LoginCredentials findCredentials( String authnHeader) throws IOException {
+        if (authnHeader == null || authnHeader.length() == 0) {
+            auditor.logAndAudit(AssertionMessages.HTTPCREDS_NO_AUTHN_HEADER);
             return null;
         }
 
-        int spos = wwwAuthorize.indexOf(" ");
+        int spos = authnHeader.indexOf(" ");
         if ( spos < 0 ) {
-            logger.fine( "WWW-Authorize header contains no space; ignoring");
+            auditor.logAndAudit(AssertionMessages.HTTPCREDS_BAD_AUTHN_HEADER, "no space");
             return null;
         }
 
-        String scheme = wwwAuthorize.substring( 0, spos );
-        String base64 = wwwAuthorize.substring( spos + 1 );
+        final String scheme = authnHeader.substring( 0, spos );
+        final String base64 = authnHeader.substring( spos + 1 );
         if ( !scheme().equals(scheme) ) {
-            logger.fine( "WWW-Authorize scheme not Basic; ignoring");
+            auditor.logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
             return null;
         }
 
-        String userPassRealm = new String(HexUtils.decodeBase64( base64, true ), ENCODING);
-        String login = null;
-        String pass = null;
-
-        int cpos = userPassRealm.indexOf(":");
+        final String userPassRealm = new String(HexUtils.decodeBase64( base64, true ), ENCODING);
+        final int cpos = userPassRealm.indexOf(":");
         if ( cpos >= 0 ) {
-            login = userPassRealm.substring( 0, cpos );
-            pass = userPassRealm.substring( cpos + 1 );
+            final String login = userPassRealm.substring(0, cpos);
+            final String pass = userPassRealm.substring(cpos + 1);
 
-            logger.fine("Found HTTP Basic credentials for user " + login);
+            auditor.logAndAudit(AssertionMessages.HTTPCREDS_FOUND_USER, login);
 
-            return new LoginCredentials( login, pass.toCharArray(), CredentialFormat.CLEARTEXT,
-                                         _data.getClass(), null );
+            return new LoginCredentials(login, pass.toCharArray(), CredentialFormat.CLEARTEXT, assertion.getClass(), null);
         } else {
             // No colons
-            String err = "Invalid HTTP Basic format (no colon(s))";
-            logger.warning(err);
+            auditor.logAndAudit(AssertionMessages.HTTPCREDS_BAD_AUTHN_HEADER, "no colon");
             return null;
         }
-    }
-
-    /**
-     * Configures the response to send an HTTP Basic challenge.
-     *
-     * @param context  context containing the request being challenged and
-     *                 the response that will be used to send back the challenge.  May not be null.
-     */
-    public void challenge(PolicyEnforcementContext context) {
-        super.challenge(context, Collections.EMPTY_MAP);
     }
 
     protected String realm() {
-        String realm = _data.getRealm();
+        String realm = assertion.getRealm();
         if ( realm == null ) realm = REALM;
         return realm;
     }
 
-    protected AssertionStatus checkAuthParams(Map authParams) {
+    protected AssertionStatus checkAuthParams(Map<String, String> authParams) {
         return AssertionStatus.NONE;
     }
 }

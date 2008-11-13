@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.communityschemas;
 
@@ -250,7 +250,7 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
 
             private GenericHttpClient wrapHttpClient(final GenericHttpClient httpClient) {
                 return new GenericHttpClient() {
-                    public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
+                    public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
                         return wrapHttpRequest(httpClient.createRequest(method, params));
                     }
                 };

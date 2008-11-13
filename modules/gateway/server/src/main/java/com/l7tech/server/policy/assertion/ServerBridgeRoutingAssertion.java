@@ -1,8 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.*;
@@ -476,7 +474,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         params.setMaxTotalConnections(tmax);
         connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
         GenericHttpClient client = new CommonsHttpClient(connectionManager, getConnectionTimeout(), getTimeout()) {
-            public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
+            public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
                 // override params to match server config
                 if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpUseExpectContinue")) ) {
                     params.setUseExpectContinue(true);
@@ -636,7 +634,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             this.hh = hh;
         }
 
-        public GenericHttpRequest createRequest(final GenericHttpMethod method, final GenericHttpRequestParams params)  {
+        public GenericHttpRequest createRequest(final HttpMethod method, final GenericHttpRequestParams params)  {
             // enforce http outgoing rules here
             HttpForwardingRuleEnforcer.handleRequestHeaders(params, context, assertion.getRequestHeaderRules(),
                                                             auditor, null, varNames);

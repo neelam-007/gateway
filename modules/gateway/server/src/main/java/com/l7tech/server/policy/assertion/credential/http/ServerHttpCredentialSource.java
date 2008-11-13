@@ -1,13 +1,9 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
@@ -16,6 +12,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
@@ -24,26 +21,19 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * @author alex
- * @version $Revision$
- */
-public abstract class ServerHttpCredentialSource extends ServerCredentialSourceAssertion implements ServerAssertion {
+public abstract class ServerHttpCredentialSource<AT extends HttpCredentialSourceAssertion> extends ServerCredentialSourceAssertion<AT> implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerHttpCredentialSource.class.getName());
 
     private final Auditor auditor;
 
-    protected ServerHttpCredentialSource(HttpCredentialSourceAssertion data, ApplicationContext springContext) {
+    protected ServerHttpCredentialSource(AT data, ApplicationContext springContext) {
         super(data, springContext);
-
-        _data = data;
         this.auditor = new Auditor(this, springContext, logger);
     }
 
-    public AssertionStatus checkCredentials( LoginCredentials pc, Map authParams ) throws CredentialFinderException {
+    public AssertionStatus checkCredentials(LoginCredentials pc, Map<String, String> authParams) throws CredentialFinderException {
         if ( pc == null ) return AssertionStatus.AUTH_REQUIRED;
         String requestRealm = pc.getRealm();
         String assertRealm = realm();
@@ -57,16 +47,7 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
         }
     }
 
-    protected void throwError( String err ) throws CredentialFinderException {
-        throwError( Level.SEVERE, err );
-    }
-
-    protected void throwError( Level level, String err ) throws CredentialFinderException {
-        logger.log( level, err );
-        throw new CredentialFinderException( err );
-    }
-
-    protected void challenge(PolicyEnforcementContext context, Map authParams) {
+    protected void challenge(PolicyEnforcementContext context, Map<String, String> authParams) {
         String scheme = scheme();
         StringBuffer challengeHeader = new StringBuffer( scheme );
         challengeHeader.append( " " );
@@ -77,14 +58,14 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
             challengeHeader.append( quoted( realm ) );
         }
 
-        Map challengeParams = challengeParams(context.getRequest(), authParams);
+        Map<String, String> challengeParams = challengeParams(context.getRequest(), authParams);
         String name, value;
-        Iterator i = challengeParams.keySet().iterator();
+        Iterator<String> i = challengeParams.keySet().iterator();
         if ( i.hasNext() ) challengeHeader.append( ", " );
 
         while ( i.hasNext() ) {
-            name = (String)i.next();
-            value = (String)challengeParams.get(name);
+            name = i.next();
+            value = challengeParams.get(name);
             if ( name != null && value != null ) {
                 challengeHeader.append( name );
                 challengeHeader.append( "=" );
@@ -95,7 +76,7 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
 
         String challenge = challengeHeader.toString();
 
-        logger.fine( "Sending WWW-Authenticate: " + challenge );
+        auditor.logAndAudit(AssertionMessages.HTTPCREDS_CHALLENGING, challenge);
         HttpResponseKnob httpResponse = context.getResponse().getHttpResponseKnob();
         httpResponse.addChallenge(challenge);
     }
@@ -114,11 +95,9 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
             return '"' + value + '"';
     }
 
-    protected abstract AssertionStatus checkAuthParams(Map authParams);
-    protected abstract Map challengeParams(Message request, Map authParams);
+    protected abstract AssertionStatus checkAuthParams(Map<String, String> authParams);
+    protected abstract Map<String, String> challengeParams(Message request, Map<String, String> authParams);
     protected abstract String scheme();
-
-    protected HttpCredentialSourceAssertion _data;
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 

@@ -3,11 +3,7 @@ package com.l7tech.skunkworks.gclient;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.io.AliasNotFoundException;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.IOUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.PermissiveX509TrustManager;
+import com.l7tech.common.io.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gui.util.GuiCertUtil;
 import com.l7tech.gui.util.GuiPasswordCallbackHandler;
@@ -27,14 +23,17 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.wsdl.PrettyGoodWSDLLocator;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.*;
@@ -64,10 +63,10 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 import java.util.*;
-import java.util.zip.GZIPOutputStream;
-import java.util.zip.GZIPInputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Generic Client for SOAP.
@@ -111,6 +110,24 @@ public class GClient {
 
     //- PRIVATE
 
+    private final Functions.UnaryThrows<InputSource, URL, IOException> permissiveUrlGetter = new Functions.UnaryThrows<InputSource, URL, IOException>() {
+        @Override
+        public InputSource call(URL url) throws IOException {
+            URLConnection conn = url.openConnection();
+            if (conn instanceof HttpsURLConnection) {
+                HttpsURLConnection httpsURLConnection = (HttpsURLConnection)conn;
+                try {
+                    httpsURLConnection.setSSLSocketFactory(getSSLSocketFactory());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                httpsURLConnection.setHostnameVerifier(new PermissiveHostnameVerifier());
+            }
+            return new InputSource(conn.getInputStream());
+        }
+    };
+
+
     //
     private static final String[] CONTENT_TYPES = new String[]{"text/xml", "application/soap+xml", "text/plain", "application/fastinfoset", "application/soap+fastinfoset", "application/octet-stream", "application/x-www-form-urlencoded"};
     private static final Color ERROR_COLOR = new Color(255, 192, 192);
@@ -147,6 +164,7 @@ public class GClient {
     private JButton stripDecorationButton;
     private JButton serverCertButton;
     private JLabel serverCertLabel;
+    @SuppressWarnings({ "UnusedDeclaration" })
     private JRadioButton textMessageRadioButton;
     private JRadioButton bytesMessageRadioButton;
     private JCheckBox gzipCheckBox;
@@ -580,17 +598,11 @@ public class GClient {
         if(locationChooser.wasOk()) {
             String uri = locationChooser.getOpenLocation();
 
-            InputStream is = null;
             try {
-                URL url = new URL(uri);
-                is = new URL(uri).openStream();
-                setWsdl(Wsdl.newInstance(url.toString(), new InputStreamReader(is, "UTF-8")));
-            }
-            catch(Exception e) {
+                final URL baseUrl = new URL(uri);
+                setWsdl(Wsdl.newInstance(new PrettyGoodWSDLLocator(baseUrl, permissiveUrlGetter)));
+            } catch(Exception e) {
                 e.printStackTrace();
-            }
-            finally {
-                ResourceUtils.closeQuietly(is);
             }
         }
     }
@@ -719,14 +731,13 @@ public class GClient {
     private SSLSocketFactory getSSLSocketFactory() throws Exception {
         if (sslSocketFactory == null) {
             SSLContext sslContext = SSLContext.getInstance("SSL");
-            X509TrustManager trustManager = new PermissiveX509TrustManager();
             KeyManager[] keyManagers = null;
             if (clientPrivateKey != null) {
                 keyManagers = new KeyManager[] {
                     getKeyManager(clientPrivateKey, clientCertificate)
                 };
             }
-            sslContext.init(keyManagers, new X509TrustManager[] {trustManager}, null);
+            sslContext.init(keyManagers, new X509TrustManager[] { new PermissiveX509TrustManager() }, null);
             sslSocketFactory = sslContext.getSocketFactory();
         }
         return sslSocketFactory;
@@ -920,7 +931,7 @@ public class GClient {
             if (loginField.getText() != null && loginField.getText().length() > 0) {
                 credentials = new PasswordAuthentication(loginField.getText(), passwordField.getPassword());
             }
-            
+
             boolean isBytes = bytesMessageRadioButton.isSelected();
             JmsClient client = new JmsClient(new URI(targetUrl), credentials, isBytes);
             String response = client.getResponse(new String(requestBytes), true);
@@ -1002,12 +1013,17 @@ public class GClient {
                 params.setExtraHeaders(headers.toArray(new GenericHttpHeader[0]));
 
             if(params.getTargetUrl().getProtocol().equals("https")) {
+                params.setHostnameVerifier(new HostnameVerifier() {
+                    public boolean verify(String s, SSLSession sslSession) {
+                        return true;
+                    }
+                });
                 params.setSslSocketFactory(getSSLSocketFactory());
             }
 
             params.setContentLength((long)requestBytes.length);
 
-            request = client.createRequest(GenericHttpClient.POST, params);
+            request = client.createRequest(HttpMethod.POST, params);
             if (request instanceof RerunnableHttpRequest) {
                 RerunnableHttpRequest reRequest = (RerunnableHttpRequest) request;
                 reRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory(){

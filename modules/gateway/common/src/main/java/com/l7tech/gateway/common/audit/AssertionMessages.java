@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.gateway.common.audit;
 
 import java.util.logging.Level;
@@ -5,8 +8,6 @@ import java.util.logging.Level;
 /**
  * Message catalog for messages audited by policy assertions.
  * The ID range 4000-7999 inclusive is reserved for these messages.
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
- * <p> @author fpang </p>
  */
 public class AssertionMessages extends Messages {
 
@@ -42,8 +43,8 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_RESPONSE_STATUS_HANDLED = m(4025, Level.INFO, "Protected service ({0}) responded with status {1}; retrying");
     public static final M HTTPROUTE_BAD_STRATEGY_NAME       = m(4026, Level.WARNING, "Invalid routing failover strategy name: {0}; using default strategy");
     public static final M HTTPROUTE_FAILOVER_FROM_TO        = m(4027, Level.WARNING, "Routing failed to host = {0}, retrying to host = {1}");
-    public static final M HTTP_UNKNOWN_HOST                 = m(4028, Level.WARNING, "Routing failed, unable to resolve IP for host = {0}");
-    public static final M HTTP_SOCKET_EXCEPTION             = m(4029, Level.WARNING, "Routing failed, connection error: {0}");
+    public static final M HTTPROUTE_UNKNOWN_HOST            = m(4028, Level.WARNING, "Routing failed, unable to resolve IP for host = {0}");
+    public static final M HTTPROUTE_SOCKET_EXCEPTION        = m(4029, Level.WARNING, "Routing failed, connection error: {0}");
     public static final M HTTPROUTE_PASSTHROUGH_REQUEST     = m(4030, Level.INFO, "Passthrough selected; adding request credentials to routed request");
     public static final M HTTPROUTE_PASSTHROUGH_REQUEST_NC  = m(4031, Level.FINE, "Passthrough selected but no credentials in SSG request to pass along");
     public static final M HTTPROUTE_PASSTHROUGH_RESPONSE    = m(4032, Level.INFO, "Passthrough selected; adding challenge to SSG response");
@@ -56,30 +57,47 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_CTYPEWOUTPAYLOAD        = m(4039, Level.INFO, "Downstream service returned an empty response but still included a content-type of ({0}).");
     public static final M BRIDGEROUTE_REQUEST_NOT_SOAP      = m(4040, Level.WARNING, "Bridge routing failed because request is not SOAP.  Bridge Routing Assertion does not currently support non-SOAP requests.");
     public static final M HTTPROUTE_SOCKET_TIMEOUT          = m(4041, Level.WARNING, "Remote network connection timed out.");
-    public static final M GENERIC_ROUTING_PROBLEM           = m(4042, Level.WARNING, "Problem routing to {0}. Error msg: {1}");
+    public static final M HTTPROUTE_GENERIC_PROBLEM         = m(4042, Level.WARNING, "Problem routing to {0}. Error msg: {1}");
     public static final M HTTPROUTE_USING_KERBEROS_ERROR    = m(4043, Level.WARNING, "Routing with Kerberos ticket failed with: {0}");
     public static final M HTTPROUTE_BAD_GZIP_STREAM         = m(4044, Level.WARNING, "Bad GZip input stream.  A compressed request resulted in an uncompressed response.");
+    public static final M HTTPROUTE_UNEXPECTED_METHOD       = m(4045, Level.WARNING, "Unexpected request HTTP method {0}; using POST");
+    public static final M HTTPROUTE_DEFAULT_METHOD_NON_HTTP = m(4046, Level.INFO, "Request was not HTTP; using POST");
+    public static final M HTTPROUTE_DEFAULT_METHOD_VAR      = m(4047, Level.INFO, "Request is a context variable; using POST");
 
     // ServerCredentialSourceAssertion messages
-    public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication required");
+    public static final M HTTPCREDS_AUTH_REQUIRED    = m(4100, Level.INFO, "Authentication required");
+    public static final M HTTPCREDS_NO_AUTHN_HEADER  = m(4101, Level.INFO, "No Authorization header");
+    public static final M HTTPCREDS_BAD_AUTHN_HEADER = m(4102, Level.WARNING, "Bad Authorization header: {0}");
+    public static final M HTTPCREDS_NA_AUTHN_HEADER  = m(4103, Level.FINE, "Authorization header not applicable for this assertion");
+    public static final M HTTPCREDS_FOUND_USER       = m(4104, Level.INFO, "Found user: {0}");
+    public static final M HTTPCREDS_CHALLENGING      = m(4105, Level.FINE, "Sending WWW-Authenticate: {0}");
+    public static final M HTTPDIGEST_NONCE_VALID     = m(4106, Level.FINE, "Nonce {0} for user {1} still valid");
+    public static final M HTTPDIGEST_NONCE_EXPIRED   = m(4107, Level.INFO, "Nonce {0} for user {1} expired");
+    public static final M HTTPDIGEST_NONCE_GENERATED = m(4108, Level.FINE, "Generated new nonce {0}");
+    public static final M HTTPNEGOTIATE_USING_CONN_CREDS = m(4109, Level.FINE, "Using connection credentials");
+    public static final M HTTPCOOKIE_FOUND               = m(4110, Level.FINE, "Found cookie with the name: {0}");
+    public static final M HTTPCOOKIE_NOT_FOUND           = m(4111, Level.FINE, "No cookie found with the name: {0}");
+    public static final M HTTPCLIENTCERT_NOT_HTTP        = m(4112, Level.INFO, "Request not received over HTTP; cannot check for client certificate");
+    public static final M HTTPCLIENTCERT_NO_CERT         = m(4113, Level.INFO, "No Client Certificate was present in the request.");
+    public static final M HTTPCLIENTCERT_FOUND           = m(4114, Level.INFO, "Found client certificate for {0}");
 
     // ServerIdentityAssertion
-    public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4200, Level.WARNING, "Request is authenticated but request has no login credentials!");
-    public static final M CREDENTIALS_NOT_FOUND                   = m(4201, Level.WARNING, "No credentials found!");
-    public static final M ALREADY_AUTHENTICATED                   = m(4202, Level.FINEST, "Request already authenticated");
-    public static final M ID_PROVIDER_ID_NOT_SET                  = m(4203, Level.WARNING, "Cannot call checkRequest() when no valid identity provider OID has been set!");
-    public static final M ID_PROVIDER_NOT_FOUND                   = m(4204, Level.WARNING, "Could not find identity provider! ");
-    public static final M ID_PROVIDER_NOT_EXIST                   = m(4205, Level.WARNING, "Identity assertion refers to a non-existent identity provider");
-    public static final M AUTHENTICATED                           = m(4206, Level.FINE, "Authentication success {0}");
-    public static final M INVALID_CERT                            = m(4207, Level.INFO, "Invalid client certificate for {0}");
-    public static final M AUTHENTICATION_FAILED                   = m(4208, Level.INFO, "Authentication failed for {0}");
-    public static final M IDASS_NOLOGIN_NOOID                     = m(4209, Level.WARNING, "Assertion not configure properly: both login and UID are null");
-    public static final M IDPROV_MISMATCH                         = m(4210, Level.FINE, "Authentication failed because ID of provider did not match ({0} instead of {1})");
-    public static final M USERID_MISMATCH                         = m(4211, Level.FINE, "Authentication failed because the user ID did not match");
-    public static final M LOGIN_MISMATCH                          = m(4212, Level.FINE, "Authentication failed because the login did not match");
-    public static final M GROUP_NOTEXIST                          = m(4213, Level.WARNING, "Assertions refer to a nonexistent group; policy may be corrupted");
-    public static final M USER_NOT_IN_GROUP                       = m(4214, Level.FINE, "User not member of group");
-    public static final M CACHED_GROUP_MEMBERSHIP_FAILURE         = m(4215, Level.FINE, "Reusing cached group membership failure");
+    public static final M IDENTITY_AUTHENTICATED_NO_CREDS = m(4200, Level.WARNING, "Request is authenticated but request has no login credentials!");
+    public static final M IDENTITY_NO_CREDS               = m(4201, Level.WARNING, "No credentials found!");
+    public static final M IDENTITY_ALREADY_AUTHENTICATED  = m(4202, Level.FINEST, "Request already authenticated");
+    public static final M IDENTITY_PROVIDER_NOT_SET       = m(4203, Level.WARNING, "Cannot call checkRequest() when no valid identity provider OID has been set!");
+    public static final M IDENTITY_PROVIDER_NOT_FOUND     = m(4204, Level.WARNING, "Could not find identity provider! ");
+    public static final M IDENTITY_PROVIDER_NOT_EXIST     = m(4205, Level.WARNING, "Identity assertion refers to a non-existent identity provider");
+    public static final M IDENTITY_AUTHENTICATED          = m(4206, Level.FINE, "Authentication success {0}");
+    public static final M IDENTITY_INVALID_CERT           = m(4207, Level.INFO, "Invalid client certificate for {0}");
+    public static final M IDENTITY_AUTHENTICATION_FAILED  = m(4208, Level.INFO, "Authentication failed for {0}");
+    public static final M SPECIFICUSER_NOLOGIN_NOOID      = m(4209, Level.WARNING, "Assertion not configure properly: both login and UID are null");
+    public static final M SPECIFICUSER_PROVIDER_MISMATCH  = m(4210, Level.FINE, "Authentication failed because ID of provider did not match ({0} instead of {1})");
+    public static final M SPECIFICUSER_USERID_MISMATCH    = m(4211, Level.FINE, "Authentication failed because the user ID did not match");
+    public static final M SPECIFICUSER_LOGIN_MISMATCH     = m(4212, Level.FINE, "Authentication failed because the login did not match");
+    public static final M MEMBEROFGROUP_GROUP_NOT_EXIST   = m(4213, Level.WARNING, "Assertions refer to a nonexistent group; policy may be corrupted");
+    public static final M MEMBEROFGROUP_USER_NOT_MEMBER   = m(4214, Level.FINE, "User not member of group");
+    public static final M MEMBEROFGROUP_USING_CACHED_FAIL = m(4215, Level.FINE, "Reusing cached group membership failure");
 
     // ServerRequestWssOperation messages
     public static final M REQUESTWSS_NOT_FOR_US  = m(4300, Level.FINE, "Intended for another recipient; nothing to validate");
@@ -429,12 +447,19 @@ public class AssertionMessages extends Messages {
     public static final M COMPARISON_NOT_COMPARABLE = m(7106, Level.INFO, "{0} Value for binary predicate ''{1}'' is not Comparable; using value.toString() instead");
 
     // CodeInjectionProtectionAssertion
-    public static final M CODEINJECTIONPROTECTION_NOT_HTTP = m(7150, Level.FINE, "Request is not HTTP.");
-    public static final M CODEINJECTIONPROTECTION_SKIP_RESPONSE_NOT_ROUTED = m(7151, Level.FINE, "No response body to checked because request has not been routed yet.");
-    public static final M CODEINJECTIONPROTECTION_CANNOT_PARSE = m(7152, Level.WARNING, "Cannot parse {0} as {1}.");
-    public static final M CODEINJECTIONPROTECTION_DETECTED_PARAM = m(7153, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
-    public static final M CODEINJECTIONPROTECTION_DETECTED = m(7154, Level.WARNING, "{2} detected in {0}: {1}");
+    public static final M CODEINJECTIONPROTECTION_NOT_HTTP                  = m(7150, Level.FINE, "Request is not HTTP.");
+    public static final M CODEINJECTIONPROTECTION_SKIP_RESPONSE_NOT_ROUTED  = m(7151, Level.FINE, "No response body to checked because request has not been routed yet.");
+    public static final M CODEINJECTIONPROTECTION_CANNOT_PARSE              = m(7152, Level.WARNING, "Cannot parse {0} as {1}.");
+    public static final M CODEINJECTIONPROTECTION_DETECTED_PARAM            = m(7153, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
+    public static final M CODEINJECTIONPROTECTION_DETECTED                  = m(7154, Level.WARNING, "{2} detected in {0}: {1}");
     public static final M CODEINJECTIONPROJECTION_CANNOT_PARSE_CONTENT_TYPE = m(7155, Level.WARNING, "Message is not HTTP, cannot parse content type ''{0}''");
+    public static final M CODEINJECTIONPROJECTION_SCANNING_URL              = m(7156, Level.FINE, "Scanning request URL.");
+    public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_URLENCODED  = m(7157, Level.FINE, "Scanning request message body as application/x-www-form-urlencoded.");
+    public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_FORMDATA    = m(7158, Level.FINE, "Scanning {0} message body as multipart/form-data.");
+    public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_XML         = m(7159, Level.FINE, "Scanning {0} message body as text/xml.");
+    public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT        = m(7160, Level.FINE, "Scanning {0} message body as text.");
+    public static final M CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_XML   = m(7161, Level.FINE, "Scanning {0} as text/xml.");
+    public static final M CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_TEXT  = m(7162, Level.FINE, "Scanning {0} as text/xml.");
 
     // SqlAttackAssertion
     public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");

@@ -1,11 +1,9 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion.credential.http;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -13,11 +11,10 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
-import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 import sun.security.x509.X500Name;
 
@@ -26,7 +23,6 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -38,81 +34,68 @@ import java.util.logging.Logger;
  * class is not a subclass of <code>ServerHttpCredentialSource</code> because it
  * works at a lower level without stuff like <code>WWW-Authenticate</code> and
  * <code>Authorization</code> headers.
- *
- * @author alex
- * @version $Revision$
  */
-public class ServerHttpClientCert extends ServerCredentialSourceAssertion implements ServerAssertion {
+public class ServerHttpClientCert extends ServerCredentialSourceAssertion<HttpClientCert> {
     public static final String PARAM_HTTP_X509CERT = "javax.servlet.request.X509Certificate";
+    private static final Logger logger = Logger.getLogger(ServerHttpClientCert.class.getName());
+    private final Auditor auditor;
 
-    public ServerHttpClientCert(ApplicationContext springContext) {
-     super(new HttpCredentialSourceAssertion() {
-            public String scheme() {
-                return SCHEME;
-            }
-            public static final String SCHEME = "ClientCert";
-        }, springContext);
+    public ServerHttpClientCert(HttpClientCert assertion, ApplicationContext springContext) {
+        super(assertion, springContext);
+        this.auditor = new Auditor(this, springContext, logger);
     }
 
-    protected LoginCredentials findCredentials(Message request, Map authParams)
+    protected LoginCredentials findCredentials(Message request, Map<String, String> authParams)
             throws IOException, CredentialFinderException
     {
         HttpRequestKnob httpReq = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
         if (httpReq == null) {
-            logger.info("Request not received over HTTP; cannot check for client certificate");
+            auditor.logAndAudit(AssertionMessages.HTTPCLIENTCERT_NOT_HTTP);
             return null;
         }
 
         X509Certificate[] certChain = httpReq.getClientCertificate();
 
         if ( certChain == null || certChain.length < 1 ) {
-            String err = "No Client Certificate was present in the request.";
-            logger.log(Level.INFO, err);
+            auditor.logAndAudit(AssertionMessages.HTTPCLIENTCERT_NO_CERT);
             return null;
         }
 
         X509Certificate clientCert = certChain[0];
-        if (clientCert == null) {
-            logger.log( Level.WARNING, "Cert chain contained null certificate -- ignoring" );
-            return null;
-        }
+        if (clientCert == null) throw new CredentialFinderException("Null cert in chain");
 
         try {
             clientCert.checkValidity();
         } catch (CertificateExpiredException cee) {
-            logger.log( Level.WARNING, "Client Certificate has expired: {0}", new String[] {ExceptionUtils.getMessage(cee)} );
             throw new CredentialFinderException( "Client Certificate has expired", cee, AssertionStatus.AUTH_FAILED );
         } catch (CertificateNotYetValidException cnyve ) {
-            logger.log( Level.WARNING, "Client Certificate is not yet valid: {0}", new String[] {ExceptionUtils.getMessage(cnyve)} );
             throw new CredentialFinderException( "Client Certificate is not yet valid", cnyve, AssertionStatus.AUTH_FAILED );
         }
 
         // Get DN from cert, ie "CN=testuser, OU=ssg.example.com"
         // String certCN = getCachedClientCert.getSubjectDN().getName();
         // fla changed this to:
-        String certCN = null;
+        final String certDn;
+        final String certCN;
         try {
-            X500Name x500name = new X500Name( clientCert.getSubjectX500Principal().getName() );
+            certDn = clientCert.getSubjectX500Principal().getName();
+            X500Name x500name = new X500Name(certDn);
             certCN = x500name.getCommonName();
         } catch (IOException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new CredentialFinderException("cannot extract name from cert", e, AssertionStatus.AUTH_FAILED);
+            throw new CredentialFinderException("Unable to extract name from cert", e, AssertionStatus.AUTH_FAILED);
         }
 
-        logger.fine("cert found for user " + certCN);
+        auditor.logAndAudit(AssertionMessages.HTTPCLIENTCERT_FOUND, certCN == null ? certDn : certCN);
 
         // TODO where's the chain?
         return new LoginCredentials( certCN, null, CredentialFormat.CLIENTCERT, SslAssertion.class, null, clientCert );
     }
 
-    protected AssertionStatus checkCredentials(LoginCredentials pc, Map authParams) throws CredentialFinderException {
+    protected AssertionStatus checkCredentials(LoginCredentials pc, Map<String, String> authParams) throws CredentialFinderException {
         return AssertionStatus.NONE;
     }
 
-    protected void challenge(PolicyEnforcementContext context, Map authParams) {
+    protected void challenge(PolicyEnforcementContext context, Map<String, String> authParams) {
         // HOW DO I CHALLENGED X.509
     }
-
-
-    protected final Logger logger = Logger.getLogger(getClass().getName());
 }

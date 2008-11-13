@@ -1,41 +1,35 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.message.Message;
-import com.l7tech.util.HexUtils;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
+import com.l7tech.util.HexUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * @author alex
- * @version $Revision$
- */
-public class ServerHttpDigest extends ServerHttpCredentialSource implements ServerAssertion {
+public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
     private static final Logger logger = Logger.getLogger(ServerHttpDigest.class.getName());
+    private final Auditor auditor;
 
     public ServerHttpDigest(HttpDigest data, ApplicationContext springContext) {
         super(data, springContext);
-        _data = data;
+        this.auditor = new Auditor(this, springContext, logger);
     }
 
     /**
@@ -72,32 +66,32 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         DigestSessions sessions = DigestSessions.getInstance();
 
         if ( sessions.use( nonce ) ) {
-            logger.fine( "Nonce " + nonce + " for user " + userName + " still valid" );
+            auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_VALID, nonce, userName);
             return AssertionStatus.NONE;
         } else {
-            logger.info( "Nonce " + nonce + " for user " + userName + " expired" );
+            auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_EXPIRED, nonce, userName);
             sessions.invalidate( nonce );
             return AssertionStatus.AUTH_FAILED;
         }
     }
 
-    protected LoginCredentials doFindCredentials( Message request, Map authParams )
+    protected LoginCredentials doFindCredentials( Message request, Map<String, String> authParams )
             throws CredentialFinderException
     {
         if ( authParams == null ) return null;
 
-        String userName = (String)authParams.get( HttpDigest.PARAM_USERNAME );
-        String realmName = (String)authParams.get( HttpDigest.PARAM_REALM );
-        String digestResponse = (String)authParams.get( HttpDigest.PARAM_RESPONSE );
+        String userName = authParams.get( HttpDigest.PARAM_USERNAME );
+        String realmName = authParams.get( HttpDigest.PARAM_REALM );
+        String digestResponse = authParams.get( HttpDigest.PARAM_RESPONSE );
 
         authParams.put( HttpDigest.PARAM_URI, request.getHttpRequestKnob().getRequestUri() );
-        authParams.put( HttpDigest.PARAM_METHOD, request.getHttpRequestKnob().getMethod() );
+        authParams.put( HttpDigest.PARAM_METHOD, request.getHttpRequestKnob().getMethod().name() );
 
         if ( (userName == null) || (realmName == null) || ( digestResponse == null) )
             return null;
 
         return new LoginCredentials( userName, digestResponse.toCharArray(),
-                                     CredentialFormat.DIGEST, _data.getClass(), realmName, authParams );
+                                     CredentialFormat.DIGEST, assertion.getClass(), realmName, authParams );
     }
 
     @Override
@@ -117,28 +111,25 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         return params;
     }
 
-    protected Map challengeParams( Message request, Map requestAuthParams ) {
+    protected Map challengeParams( Message request, Map<String, String> requestAuthParams ) {
         DigestSessions sessions = DigestSessions.getInstance();
 
-        String nonce;
-        if ( requestAuthParams == null )
-            nonce = null;
-        else
-            nonce = (String)requestAuthParams.get( HttpDigest.PARAM_NONCE );
+        String nonce = requestAuthParams == null ? null : requestAuthParams.get(HttpDigest.PARAM_NONCE);
 
         if ( nonce == null || nonce.length() == 0 ) {
             // New session
-            String newNonce = sessions.generate( request, _data.getNonceTimeout(), _data.getMaxNonceCount() );
-            logger.fine( "Generated new nonce " + newNonce );
+            String newNonce = sessions.generate( request, assertion.getNonceTimeout(), assertion.getMaxNonceCount() );
+            auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_GENERATED, newNonce);
             return myChallengeParams( newNonce );
         } else {
             // Existing digest session
             if ( !sessions.use( nonce ) ) {
                 // Nonce has been invalidated or is expired
-                logger.info( "Nonce " + nonce + " is invalid or expired" );
+                final String username = requestAuthParams.get(HttpDigest.PARAM_USERNAME);
+                auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_EXPIRED, nonce, username == null ? "<unknown>" : username);
                 sessions.invalidate( nonce );
-                nonce = sessions.generate( request, _data.getNonceTimeout(), _data.getMaxNonceCount() );
-                logger.fine( "Generated new nonce " + nonce );
+                nonce = sessions.generate( request, assertion.getNonceTimeout(), assertion.getMaxNonceCount() );
+                auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_GENERATED, nonce);
             }
             return myChallengeParams( nonce );
         }
@@ -148,7 +139,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         return HttpDigest.SCHEME;
     }
 
-    protected LoginCredentials findCredentials( Message request, Map authParams )
+    protected LoginCredentials findCredentials( Message request, Map<String, String> authParams )
             throws IOException, CredentialFinderException
     {
         String authorization = request.getHttpRequestKnob().getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
@@ -185,9 +176,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
                             valueBuffer.append( " " );
                         }
                         if ( value == null ) {
-                            CredentialFinderException cfe = new CredentialFinderException( "Unterminated quoted string in WWW-Authorize header" );
-                            logger.log( Level.WARNING, cfe.toString(), cfe );
-                            throw cfe;
+                            throw new CredentialFinderException( "Unterminated quoted string in WWW-Authorize header" );
                         }
                     }
                 }
@@ -198,13 +187,11 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
                     scheme = token;
                     authParams.put( HttpCredentialSourceAssertion.PARAM_SCHEME, scheme );
                 } else {
-                    CredentialFinderException cfe = new CredentialFinderException( "Unexpected value '" + token + "' in WWW-Authorize header" );
-                    logger.log( Level.WARNING, cfe.toString(), cfe );
-                    throw cfe;
+                    throw new CredentialFinderException( "Unexpected value '" + token + "' in WWW-Authorize header" );
                 }
 
                 if ( !scheme().equals(scheme) ) {
-                    logger.info("Invalid scheme '" + scheme + "' in WWW-Authorize header");
+                    auditor.logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
                     return null;
                 }
             }
@@ -212,7 +199,4 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
 
         return doFindCredentials( request, authParams );
     }
-
-    protected HttpDigest _data;
-    protected Map _nonceTokens = new HashMap(37);
 }

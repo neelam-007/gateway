@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.message;
 
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -315,10 +315,8 @@ public final class Message {
      */
     public boolean isSoap(boolean preferDOM) throws IOException, SAXException {
         HttpRequestKnob hrk = (HttpRequestKnob) getKnob(HttpRequestKnob.class);
-        if (hrk != null && !"post".equalsIgnoreCase(hrk.getMethod())) {
+        if (hrk != null && hrk.getMethod() != HttpMethod.POST)
             return false;
-        }
-
         if (getKnob(SoapKnob.class) != null)
             return true;
         if (!isXml())

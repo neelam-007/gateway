@@ -1,14 +1,8 @@
 package com.l7tech.security;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.util.HexUtils;
 import com.l7tech.common.io.IOUtils;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
+import com.l7tech.common.http.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -53,7 +47,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
      * @param params
      * @throws com.l7tech.common.http.GenericHttpException
      */
-    public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
+    public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
         this.method = method;
         this.params = params;
         return new MockGenericHttpRequest();
@@ -63,7 +57,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
         return requestBody;
     }
 
-    public GenericHttpMethod getMethod() {
+    public HttpMethod getMethod() {
         return method;
     }
 
@@ -144,7 +138,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
     private HttpHeaders headers;
     private ContentTypeHeader contentTypeHeader;
     private Long contentLength;
-    private GenericHttpMethod method;
+    private HttpMethod method;
     private GenericHttpRequestParams params;
     private int responseCount = 0;
     private Object identity;

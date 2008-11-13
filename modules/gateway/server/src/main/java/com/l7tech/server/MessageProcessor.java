@@ -1,9 +1,10 @@
 /*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server;
 
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -75,6 +76,7 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
+@SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 public class MessageProcessor extends ApplicationObjectSupport implements InitializingBean {
     private static final int SETTINGS_RECHECK_MILLIS = 7937;
     private final ServiceCache serviceCache;
@@ -229,10 +231,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
 
                 // Check the request method
-                String requestMethod = httpRequestKnob.getMethod();
+                final HttpMethod requestMethod = httpRequestKnob.getMethod();
                 if (requestMethod != null && !service.isMethodAllowed(requestMethod)) {
-                    String[] auditArgs = new String[] { requestMethod, service.getName() };
-                    Object[] faultArgs = new Object[] { requestMethod };
+                    String[] auditArgs = new String[] { requestMethod.name(), service.getName() };
+                    Object[] faultArgs = new Object[] { requestMethod.name() };
                     auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, auditArgs);
                     throw new MethodNotAllowedException(
                             MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED_FAULT.getMessage(), faultArgs));

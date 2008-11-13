@@ -3,6 +3,7 @@ package com.l7tech.server.policy;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.message.AbstractHttpResponseKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
@@ -347,8 +348,13 @@ public class ExpandVariablesTest extends TestCase {
             return new HttpCookie[0];
         }
 
-        public String getMethod() {
-            return "POST";
+        public HttpMethod getMethod() {
+            return HttpMethod.POST;
+        }
+
+        @Override
+        public String getMethodAsString() {
+            return getMethod().name();
         }
 
         public String getRequestUri() {

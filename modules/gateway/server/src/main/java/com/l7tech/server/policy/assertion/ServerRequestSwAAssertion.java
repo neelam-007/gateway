@@ -46,12 +46,11 @@ import java.util.logging.Level;
  *
  * @author fpang
  */
-public class ServerRequestSwAAssertion extends AbstractServerAssertion implements ServerAssertion {
+public class ServerRequestSwAAssertion extends AbstractServerAssertion<RequestSwAAssertion> {
 
     private static final Logger logger = Logger.getLogger(ServerRequestSwAAssertion.class.getName());
     private static final long KB_TO_B_MULT = 1024;
 
-    private final RequestSwAAssertion _data;
     private final Auditor auditor;
 
     /**
@@ -64,7 +63,6 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
         if (data == null)
             throw new IllegalArgumentException("must provide assertion");
 
-        _data = data;
         auditor = new Auditor(this, applicationContext, logger);
     }
 
@@ -117,7 +115,7 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
     private DOMXPath getDOMXpath(final String pattern) throws JaxenException {
         DOMXPath domXpath = null;
 
-        Map namespaceMap = _data.getNamespaceMap();
+        Map namespaceMap = assertion.getNamespaceMap();
 
         if (pattern != null) {
             domXpath = new DOMXPath(pattern);
@@ -141,15 +139,15 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
     private void processAttachments(final PolicyEnforcementContext context,
                                     final Document doc)
             throws JaxenException, IOException, NoSuchPartException, SAXException, AttachmentProcessingException {
-        Map bindings = _data.getBindings();
+        Map bindings = assertion.getBindings();
 
         // process bindings for assertion
         for (String bindingName : (Set<String>) bindings.keySet()) {
             BindingInfo binding = (BindingInfo)bindings.get(bindingName);
 
             // for each operation of the binding found in assertion
-            for (String boName : (Set<String>) binding.getBindingOperations().keySet()) {
-                BindingOperationInfo bo = (BindingOperationInfo)binding.getBindingOperations().get(boName);
+            for (String boName : binding.getBindingOperations().keySet()) {
+                BindingOperationInfo bo = binding.getBindingOperations().get(boName);
 
                 DOMXPath operationXPath = getDOMXpath(bo.getXpath());
                 List result = operationXPath.selectNodes(doc);
@@ -348,7 +346,7 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
      */
     private void processExtraAttachments(final PolicyEnforcementContext context, final BindingOperationInfo bo)
             throws JaxenException, IOException, NoSuchPartException, SAXException, AttachmentProcessingException {
-        int extraAttachmentPolicy = _data.getUnboundAttachmentPolicy();
+        int extraAttachmentPolicy = assertion.getUnboundAttachmentPolicy();
         Map<String,long[]> permittedExtras = getPermittedExtrasForBindingOperation(bo);
         Set<PartInfo> dropAttachments = new HashSet();
 

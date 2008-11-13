@@ -112,7 +112,7 @@ public class TestHttpHeaderQuoting implements Closeable {
         params.addExtraHeader(new GenericHttpHeader("X-Already-Quoted", MimeUtility.encodeText("test value that was already pre-quoted: \u0436\u2665\u0152", "utf-8", "Q")));
         params.addExtraHeader(new GenericHttpHeader("X-Like-Content-Type", "text/xml; charset=utf-8"));
         params.setContentType(ContentTypeHeader.XML_DEFAULT);
-        httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);
+        httpRequest = httpClient.createRequest(HttpMethod.POST, params);
         httpRequest.setInputStream(new ByteArrayInputStream("<test>blah blah blah</test>".getBytes()));
         httpResponse = httpRequest.getResponse();
         IOUtils.slurpStream(httpResponse.getInputStream());

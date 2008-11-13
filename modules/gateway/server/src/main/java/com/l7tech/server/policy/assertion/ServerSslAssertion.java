@@ -1,20 +1,18 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
-import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpClientCert;
 import org.springframework.context.ApplicationContext;
@@ -23,20 +21,13 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-/**
- * @author alex
- * @version $Revision$
- */
-public class ServerSslAssertion extends AbstractServerAssertion implements ServerAssertion {
+public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> implements ServerAssertion {
     private final Auditor auditor;
-    private ApplicationContext springContext;
 
     public ServerSslAssertion(SslAssertion data, ApplicationContext springContext) {
         super(data);
-        _data = data;
-        this.springContext = springContext;
         auditor = new Auditor(this, springContext, logger);
-        serverHttpClientCert = new ServerHttpClientCert(springContext);
+        serverHttpClientCert = new ServerHttpClientCert(new HttpClientCert(), springContext);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
@@ -51,21 +42,22 @@ public class ServerSslAssertion extends AbstractServerAssertion implements Serve
         boolean ssl = httpServletRequest!=null ? httpServletRequest.isSecure() : ftpRequestKnob.isSecure();
         AssertionStatus status;
 
-        SslAssertion.Option option = _data.getOption();
+        SslAssertion.Option option = assertion.getOption();
 
         if ( option == SslAssertion.REQUIRED) {
+            final boolean iscred = assertion.isCredentialSource();
             if (ssl) {
                 status = AssertionStatus.NONE;
                 auditor.logAndAudit(AssertionMessages.SSL_REQUIRED_PRESENT);
-                if (_data.isCredentialSource() && httpServletRequest!=null) {
+                if (iscred && httpServletRequest!=null) {
                     status = processAsCredentialSourceAssertion(context, auditor);
-                } else if (_data.isCredentialSource()) {
+                } else if (iscred) {
                     status = AssertionStatus.FALSIFIED;
                 }
             } else {
-                if (_data.isCredentialSource()) {
+                if (iscred) {
                     status = AssertionStatus.AUTH_REQUIRED;
-                    auditor.logAndAudit(AssertionMessages.AUTH_REQUIRED);
+                    auditor.logAndAudit(AssertionMessages.HTTPCREDS_AUTH_REQUIRED);
                 } else {
                     status = AssertionStatus.FALSIFIED;
                     auditor.logAndAudit(AssertionMessages.SSL_REQUIRED_ABSENT);
@@ -108,11 +100,10 @@ public class ServerSslAssertion extends AbstractServerAssertion implements Serve
         // add SSL support for different protocols
         logger.info("Request not received over HTTP; cannot check for client certificate");
         context.setAuthenticationMissing();
-        auditor.logAndAudit(AssertionMessages.AUTH_REQUIRED);
+        auditor.logAndAudit(AssertionMessages.HTTPCREDS_AUTH_REQUIRED);
         return AssertionStatus.AUTH_REQUIRED;
     }
 
-    protected SslAssertion _data;
     private final ServerHttpClientCert serverHttpClientCert;
     protected final Logger logger = Logger.getLogger(getClass().getName());
 }

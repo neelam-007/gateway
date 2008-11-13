@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.Socket;
 
 /**
  * Utility class for working with resources.
@@ -153,6 +154,17 @@ public final class ResourceUtils {
             logger.log(Level.INFO, "IO error when releasing FileLock.", e);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unexpected error when releasing FileLock.", e);
+        }
+    }
+
+    public static void closeQuietly(Socket socket) {
+        if (socket == null) return;
+        try {
+            socket.close();
+        } catch (IOException e) {
+            logger.log(Level.INFO, "IOException when closing Socket", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unexpected error when closing Socket", e);
         }
     }
 

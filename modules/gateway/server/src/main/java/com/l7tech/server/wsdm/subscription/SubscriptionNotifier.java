@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.server.wsdm.subscription;
 
 import com.l7tech.common.io.ByteLimitInputStream;
@@ -54,13 +57,8 @@ import java.util.logging.Logger;
 
 /**
  * Manages ESM subscriptions
- * <p/>
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Nov 5, 2007<br/>
  */
+@SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(SubscriptionNotifier.class.getName());
 
@@ -519,7 +517,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
 
             final byte[] requestBody = message.getBytes(ContentTypeHeader.XML_DEFAULT.getEncoding());
             requestParams.setContentLength( (long)requestBody.length );
-            request = client.createRequest(GenericHttpClient.POST, requestParams);
+            request = client.createRequest(HttpMethod.POST, requestParams);
             if ( request instanceof RerunnableHttpRequest ) {
                 RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) request;
                 rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
@@ -555,8 +553,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                     new String[]{urltarget.toString(), "N/A", ExceptionUtils.getMessage(ioe)},
                     ExceptionUtils.getDebugException(ioe) );
         } finally {
-            ResourceUtils.closeQuietly(request);
-            ResourceUtils.closeQuietly(response);
+            ResourceUtils.closeQuietly(request, response);
             context.routingFinished();
         }
 

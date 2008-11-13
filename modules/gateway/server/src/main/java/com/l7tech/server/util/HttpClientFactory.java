@@ -1,7 +1,6 @@
 /*
- * Copyright (C) 2005-2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.util;
 
 import com.l7tech.common.http.*;
@@ -59,7 +58,7 @@ public class HttpClientFactory implements GenericHttpClientFactory {
      */
     public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
         return new CommonsHttpClient(connectionManager, connectTimeout, timeout) {
-            public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
+            public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
                 final String proto = params.getTargetUrl().getProtocol();
                 if ("https".equalsIgnoreCase(proto)) {
                     try {

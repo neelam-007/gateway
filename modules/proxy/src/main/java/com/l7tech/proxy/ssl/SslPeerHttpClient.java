@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.proxy.ssl;
 
 import com.l7tech.common.http.*;
@@ -53,22 +50,20 @@ public class SslPeerHttpClient implements GenericHttpClient {
         this.hostnameVerifier = hostnameVerifier;
     }
 
-    public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params)
+    public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params)
             throws GenericHttpException
     {
-        GenericHttpRequestParams p = params;
-
         final String proto = params.getTargetUrl().getProtocol();
         if ("https".equalsIgnoreCase(proto)) {
             CurrentSslPeer.set(sslPeer);
-            p.setSslSocketFactory(socketFactory);
+            params.setSslSocketFactory(socketFactory);
             if (socketFactory instanceof SslPeerLazyDelegateSocketFactory) {
                 ((SslPeerLazyDelegateSocketFactory)socketFactory).initialize();
             }
-            p.setHostnameVerifier(hostnameVerifier);            
+            params.setHostnameVerifier(hostnameVerifier);
         }
 
-        final GenericHttpRequest request = client.createRequest(method, p);
+        final GenericHttpRequest request = client.createRequest(method, params);
         return new RerunnableHttpRequest() {
             public void setInputStream(InputStream bodyInputStream) {
                 request.setInputStream(bodyInputStream);

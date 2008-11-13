@@ -1,29 +1,29 @@
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.Message;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.kerberos.KerberosClient;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.kerberos.KerberosServiceTicket;
-import com.l7tech.util.HexUtils;
+import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.Pair;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  * @author $Author$
  * @version $Revision$
  */
-public class ServerHttpNegotiate extends ServerHttpCredentialSource implements ServerAssertion {
+public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiate> {
 
     //- PUBLIC
 
@@ -59,8 +59,8 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
     //- PROTECTED
 
     @Override
-    protected Map challengeParams(Message request, Map authParams) {
-        return Collections.EMPTY_MAP;
+    protected Map<String, String> challengeParams(Message request, Map<String, String> authParams) {
+        return Collections.emptyMap();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
     }
 
     @Override
-    protected LoginCredentials findCredentials(Message request, Map authParams) throws IOException, CredentialFinderException {
+    protected LoginCredentials findCredentials(Message request, Map<String, String> authParams) throws IOException, CredentialFinderException {
         HttpRequestKnob httpRequestKnob = request.getHttpRequestKnob();
         String wwwAuthorize = httpRequestKnob.getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
         Object connectionId = httpRequestKnob.getConnectionIdentifier();
@@ -90,32 +90,31 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
 
     private static final Logger logger = Logger.getLogger(ServerHttpNegotiate.class.getName());
     private static final String SCHEME = "Negotiate";
-    private final ThreadLocal connectionCredentials = new ThreadLocal(); // stores Object[] = id, LoginCredentials
+    private final ThreadLocal<Pair<Object, LoginCredentials>> connectionCredentials = new ThreadLocal<Pair<Object, LoginCredentials>>(); // stores Object[] = id, LoginCredentials
     private final Auditor auditor;
 
-    @SuppressWarnings( { "RedundantArrayCreation" } )
+    @SuppressWarnings({ "RedundantArrayCreation", "ThrowableResultOfMethodCallIgnored" })
     private LoginCredentials findCredentials( String wwwAuthorize, Object connectionId ) throws IOException {
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
             LoginCredentials loginCreds = getConnectionCredentials(connectionId);
             if (loginCreds != null) {
-                logger.fine("Using connection credentials.");
-            }
-            else {
-                logger.fine("No wwwAuthorize");
+                auditor.logAndAudit(AssertionMessages.HTTPNEGOTIATE_USING_CONN_CREDS);
+            } else {
+                auditor.logAndAudit(AssertionMessages.HTTPCREDS_NO_AUTHN_HEADER);
             }
             return loginCreds;
         }
 
         int spos = wwwAuthorize.indexOf(" ");
         if ( spos < 0 ) {
-            logger.fine( "WWW-Authorize header contains no space; ignoring");
+            auditor.logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
             return null;
         }
 
         String scheme = wwwAuthorize.substring( 0, spos );
         String base64 = wwwAuthorize.substring( spos + 1 );
         if ( !scheme().equals(scheme) ) {
-            logger.fine( "WWW-Authorize scheme not Negotiate; ignoring");
+            auditor.logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
             return null;
         }
 
@@ -147,31 +146,23 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
             return loginCreds;
         }
         catch(KerberosException ke) {
-            if (logger.isLoggable(Level.FINE)) {
-                // then include the exception stack
-                auditor.logAndAudit(AssertionMessages.HTTPNEGOTIATE_WARNING, new String[]{ke.getMessage()}, ke);
-            } else {
-                auditor.logAndAudit(AssertionMessages.HTTPNEGOTIATE_WARNING, new String[]{ke.getMessage()});
-            }
+            auditor.logAndAudit(AssertionMessages.HTTPNEGOTIATE_WARNING, new String[]{ke.getMessage()}, ExceptionUtils.getDebugException(ke));
             return null;
         }
     }
 
-    @SuppressWarnings( { "unchecked" } )
     private void setConnectionCredentials(Object id, LoginCredentials credentials) {
-        connectionCredentials.set(new Object[]{id,credentials});
+        connectionCredentials.set(new Pair<Object, LoginCredentials>(id,credentials));
     }
 
-    @SuppressWarnings( { "unchecked" } )
     private LoginCredentials getConnectionCredentials(Object id) {
         LoginCredentials credentials = null;
-        Object[] threadCachedCreds = (Object[]) connectionCredentials.get();
+        Pair<Object, LoginCredentials> threadCachedCreds = connectionCredentials.get();
 
         if (threadCachedCreds != null) {
-            if (threadCachedCreds[0].equals(id)) {
-                credentials = (LoginCredentials) threadCachedCreds[1];
-            }
-            else {
+            if (threadCachedCreds.left.equals(id)) {
+                credentials = threadCachedCreds.right;
+            } else {
                 connectionCredentials.set(null); // reset
             }
         }

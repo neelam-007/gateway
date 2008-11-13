@@ -1,17 +1,11 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.policy.assertion.credential.http;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
-/**
- * @author alex
- * @version $Revision$
- */
 @ProcessesRequest
 public abstract class HttpCredentialSourceAssertion extends Assertion {
     public String getRealm() {
@@ -30,8 +24,6 @@ public abstract class HttpCredentialSourceAssertion extends Assertion {
     public boolean isCredentialSource() {
         return true;
     }
-
-    public abstract String scheme();
 
     protected String _realm;
 

@@ -1,7 +1,6 @@
 /*
- * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server;
 
 import com.l7tech.server.cluster.ClusterInfoManager;
@@ -56,7 +55,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
     private static final String MODE_PROP_NAME = "pingServletMode";
 
     /** Available operating modes. */
-    private enum Mode { OFF, REQUIRE_CREDS, OPEN };
+    private enum Mode { OFF, REQUIRE_CREDS, OPEN }
 
     /** Default operating mode. */
     private static final Mode DEFAULT_MODE = Mode.REQUIRE_CREDS;
@@ -154,7 +153,6 @@ public class PingServlet extends AuthenticatableHttpServlet {
 
         if (mode == Mode.OFF) {
             respondNone(request, "mode=" + mode);
-            return;
         } else if (mode == Mode.REQUIRE_CREDS) {
             if (!secure) {
                 respondNone(request, "mode=" + mode + ", protocol=" + protocol + ", port=" + port);
@@ -265,7 +263,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
 
         if (! request.isSecure()) return false;
 
-        AuthenticationResult[] results = null;
+        AuthenticationResult[] results;
         try {
             results = authenticateRequestBasic(request);
         } catch (BadCredentialsException e) {
@@ -363,7 +361,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
             //
             final File scriptFile = new File(_ssgApplianceBinDir, SYSTEM_INFO_SCRIPT_NAME);
             if (scriptFile.exists()) {
-                String scriptOutput = null;
+                String scriptOutput;
                 try {
                     if (_logger.isLoggable(Level.FINE)) {
                         _logger.fine("Running system info script: " + scriptFile.getAbsolutePath());
@@ -440,7 +438,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
                 params.setPreemptiveAuthentication(true);
                 params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HEADER_ORIGINAL_HOST, request.getRemoteHost()));
                 params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HEADER_ORIGINAL_ADDR, request.getRemoteAddr()));
-                final GenericHttpRequest routedRequest = _httpClientFactory.createHttpClient().createRequest(GenericHttpClient.GET, params);
+                final GenericHttpRequest routedRequest = _httpClientFactory.createHttpClient().createRequest(HttpMethod.GET, params);
 
                 final GenericHttpResponse routedResponse = routedRequest.getResponse();
                 for (HttpHeader header : routedResponse.getHeaders().toArray()) {
@@ -472,12 +470,10 @@ public class PingServlet extends AuthenticatableHttpServlet {
             } catch (IOException e) {
                 _logger.log(Level.WARNING, "Failed to routed system info request to " + nodeName + " at " + nodeAddress, e);
                 respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to route");
-                return;
             }
         } catch (FindException e) {
             _logger.log(Level.WARNING, "Failed to obtain cluster node information when routing system info request.", e);
             respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Cannot find node");
-            return;
         }
     }
 
@@ -535,7 +531,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         response.setContentType("text/html");
         final PrintWriter out = response.getWriter();
         try {
-            Collection<ClusterNodeInfo> nodeInfos = null;
+            Collection<ClusterNodeInfo> nodeInfos;
             try {
                 //noinspection unchecked
                 nodeInfos = _clusterInfoManager.retrieveClusterStatus();

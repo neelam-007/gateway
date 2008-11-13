@@ -1,9 +1,6 @@
 package com.l7tech.skunkworks.gclient;
 
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
+import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.NullOutputStream;
@@ -200,7 +197,7 @@ public class HugeEchoClient {
         params.setContentType(ctype);
         params.setContentLength(size);
 
-        GenericHttpRequest request = client.createRequest(GenericHttpClient.POST, params);
+        GenericHttpRequest request = client.createRequest(HttpMethod.POST, params);
         request.setInputStream(new TeeInputStream(createGenerator(size), logreq));
 
         GenericHttpResponse resp = request.getResponse();

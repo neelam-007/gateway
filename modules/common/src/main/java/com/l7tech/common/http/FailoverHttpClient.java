@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.http;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
@@ -11,6 +8,7 @@ import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -18,7 +16,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,7 +52,7 @@ public class FailoverHttpClient implements GenericHttpClient {
         this.logger = logger;
     }
 
-    public GenericHttpRequest createRequest(final GenericHttpMethod method, final GenericHttpRequestParams params)
+    public GenericHttpRequest createRequest(final HttpMethod method, final GenericHttpRequestParams params)
             throws GenericHttpException
     {
         return new FailoverHttpRequest(client, failoverStrategy, maxFailoverAttempts, logger, method, params);
@@ -71,7 +68,7 @@ public class FailoverHttpClient implements GenericHttpClient {
      * @param params
      * @throws GenericHttpException
      */
-    public FailoverHttpRequest createFailoverRequest(final GenericHttpMethod method, final GenericHttpRequestParams params)
+    public FailoverHttpRequest createFailoverRequest(final HttpMethod method, final GenericHttpRequestParams params)
             throws GenericHttpException
     {
         return new FailoverHttpRequest(client, failoverStrategy, maxFailoverAttempts, logger, method, params);
@@ -86,19 +83,19 @@ public class FailoverHttpClient implements GenericHttpClient {
         private final FailoverStrategy failoverStrategy;
         private final int maxFailoverAttempts;
         private final Logger logger;
-        private final GenericHttpMethod method;
+        private final HttpMethod method;
         private final GenericHttpRequestParams origParams;
 
         private RerunnableHttpRequest.InputStreamFactory inputStreamFactory = null;
         private InputStream inputStream = null;
         private String host = null;
-        private List paramList = new ArrayList();
+        private List<String[]> paramList = new ArrayList<String[]>();
 
         private FailoverHttpRequest(GenericHttpClient client,
                             FailoverStrategy failoverStrategy,
                             int maxFailoverAttempts,
                             Logger logger,
-                            GenericHttpMethod method,
+                            HttpMethod method,
                             GenericHttpRequestParams params)
         {
             this.client = client;
@@ -118,6 +115,7 @@ public class FailoverHttpClient implements GenericHttpClient {
             this.inputStream = bodyInputStream;
         }
 
+        @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
         public GenericHttpResponse getResponse() throws GenericHttpException {
             URL u = this.origParams.getTargetUrl();
             GenericHttpRequestParams params = origParams;
@@ -135,8 +133,7 @@ public class FailoverHttpClient implements GenericHttpClient {
 
                     if (method.needsRequestBody()) {
                         if (paramList != null && paramList.size() > 0) {
-                            for (Iterator iterator = paramList.iterator(); iterator.hasNext();) {
-                                String[] strings = (String[])iterator.next();
+                            for (String[] strings : paramList) {
                                 request.addParameter(strings[0], strings[1]);
                             }
 
@@ -220,8 +217,7 @@ public class FailoverHttpClient implements GenericHttpClient {
                     lastFailure = e;
                     /* FALLTHROUGH and try again */
                 } finally {
-                    if (request != null) try { request.close(); } catch (Throwable t) {}
-                    if (response != null) try { response.close(); } catch (Throwable t) {}
+                    ResourceUtils.closeQuietly(request, response);
                 }
             }
 

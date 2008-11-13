@@ -1,32 +1,26 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion.identity;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
-import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
-/**
- * @author alex
- */
-public class ServerMemberOfGroup extends ServerIdentityAssertion implements ServerAssertion {
+public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> {
     public ServerMemberOfGroup( MemberOfGroup data, ApplicationContext applicationContext ) {
         super( data, applicationContext);
-        _data = data;
     }
 
     /**
@@ -38,24 +32,20 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
      * @param context The PEC to use
      * @throws com.l7tech.objectmodel.FindException If an error occurs loading the group
      */
-    protected Group getGroup(final PolicyEnforcementContext context) throws FindException {
+    @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
+    protected Group getGroup(final PolicyEnforcementContext context) throws FindException, ObjectNotFoundException {
         Group group = null;
         CachedGroup cg = cachedGroup.get();
 
         if (cg != null && !isStale(cg.cacheTime)) {
             group = cg.group;
         } else {
-            GroupManager gman = null;
-            try {
-                gman = getIdentityProvider().getGroupManager();
-            } catch (ObjectNotFoundException e) {
-                auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
-            }
-            if (_data.getGroupId() != null) {
-                group = gman.findByPrimaryKey(_data.getGroupId());
-            }
-            else {
-                String groupName = _data.getGroupName();
+            GroupManager gman = getIdentityProvider().getGroupManager();
+
+            if (assertion.getGroupId() != null) {
+                group = gman.findByPrimaryKey(assertion.getGroupId());
+            } else {
+                String groupName = assertion.getGroupName();
                 if ( groupName != null) {
                     group = gman.findByName(groupName);
                 }
@@ -71,15 +61,16 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
      * Returns <code>AssertionStatus.NONE</code> if the authenticated <code>User</code>
      * is a member of the <code>Group</code> with which this assertion was initialized.
      */
+    @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
     public AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
         GroupManager gman;
         try {
             gman = getIdentityProvider().getGroupManager();
         } catch (ObjectNotFoundException e) {
-            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_EXIST, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.UNAUTHORIZED;
         } catch (FindException e) {
-            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_FOUND, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.UNAUTHORIZED;
         }
 
@@ -87,14 +78,14 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
 
             Group targetGroup = getGroup(context);
             if (targetGroup == null) {
-                auditor.logAndAudit(AssertionMessages.GROUP_NOTEXIST);
+                auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_GROUP_NOT_EXIST);
                 return AssertionStatus.UNAUTHORIZED;
             }
 
             Boolean wasMember = authResult.getCachedGroupMembership(targetGroup);
             if (wasMember == null) {
                 if (authResult.getUser() != null &&
-                    authResult.getUser().getProviderId() == identityAssertion.getIdentityProviderOid()) {
+                    authResult.getUser().getProviderId() == assertion.getIdentityProviderOid()) {
                     // Cache miss
                     if (gman.isMember(authResult.getUser(), targetGroup)) {
                         authResult.setCachedGroupMembership(targetGroup, true);
@@ -103,7 +94,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
                     }
                 }
                 authResult.setCachedGroupMembership(targetGroup, false);
-                auditor.logAndAudit(AssertionMessages.USER_NOT_IN_GROUP);
+                auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_USER_NOT_MEMBER);
                 return AssertionStatus.UNAUTHORIZED;
             }
 
@@ -112,15 +103,17 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
                 logger.finest("Reusing cached group membership success");
                 return AssertionStatus.NONE;
             }
-            auditor.logAndAudit(AssertionMessages.CACHED_GROUP_MEMBERSHIP_FAILURE);
+            auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_USING_CACHED_FAIL);
             return AssertionStatus.UNAUTHORIZED;
         } catch (FindException fe) {
-            auditor.logAndAudit(AssertionMessages.GROUP_NOTEXIST);
+            auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_GROUP_NOT_EXIST);
+            return AssertionStatus.UNAUTHORIZED;
+        } catch (ObjectNotFoundException e) {
+            auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_EXIST);
             return AssertionStatus.UNAUTHORIZED;
         }
     }
 
-    protected MemberOfGroup _data;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private static final long MAX_CACHED_GROUP_AGE = 1000; // cache for very short time only (1 second)
     private final AtomicReference<CachedGroup> cachedGroup = new AtomicReference();

@@ -1,8 +1,6 @@
 /*
- * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.util.BuildInfo;
@@ -41,6 +39,7 @@ import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosServiceTicket;
+import com.l7tech.kerberos.KerberosClient;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -333,7 +332,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             } else if (data.isKrbUseGatewayKeytab()) {
                 // obtain a service ticket using the gateway's keytab
                 KerberosRoutingClient client = new KerberosRoutingClient();
-                String svcPrincipal = client.getServicePrincipalName(url.getProtocol(), url.getHost());
+                String svcPrincipal = KerberosClient.getServicePrincipalName(url.getProtocol(), url.getHost());
                 addKerberosServiceTicketToRequestParam(
                         client.getKerberosServiceTicket(svcPrincipal, true), routedRequestParams);
 
@@ -348,24 +347,24 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             return reallyTryUrl(context, routedRequestParams, url, true, vars);
         } catch (MalformedURLException mfe) {
             thrown = mfe;
-            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (IOException ioe) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
             thrown = ioe;
-            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (SAXException e) {
             thrown = e;
-            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (SignatureException e) {
             thrown = e;
-            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (CertificateException e) {
             thrown = e;
-            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (KerberosException kex) {
             thrown = kex;
@@ -380,35 +379,36 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         return AssertionStatus.FAILED;
     }
 
-    private GenericHttpClient.GenericHttpMethod methodFromRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams) {
-        if (assertion.getRequestMsgSrc() == null) { // This means use the default request.
-            if (context.getRequest().isHttpRequest()) {
-                HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
-                // Check the request method
-                String requestMethod = httpRequestKnob.getMethod();
-                if (requestMethod.equals("GET")) {
-                    routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
-                    return GenericHttpClient.GET;
-                } else if (requestMethod.equals("POST")) {
-                    // redirects not supported under POST
-                    return GenericHttpClient.POST;
-                } else if (requestMethod.equals("PUT")) {
-                    // redirects not supported under PUT
-                    return GenericHttpClient.PUT;
-                }  else if (requestMethod.equals("DELETE")) {
-                    routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
-                    return GenericHttpClient.DELETE;
-                } else {
-                    logger.severe("Unexpected method " + requestMethod);
-                }
-            } else {
-                logger.info("assuming http method for downstream service (POST) because " +
-                            "there is no incoming http method to base this on");
-            }
-        } else { // This means use a context variable.
-            logger.info("assuming http method for downstream service (POST) when request message source is a context variable");
+    private HttpMethod methodFromRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams) {
+        if (assertion.getRequestMsgSrc() != null) {
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_VAR);
+            return HttpMethod.POST;
         }
-        return GenericHttpClient.POST;
+
+        if (!context.getRequest().isHttpRequest()) {
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_NON_HTTP);
+            return HttpMethod.POST;
+        }
+
+        final HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
+        final HttpMethod requestMethod = httpRequestKnob.getMethod();
+        switch (requestMethod) {
+            case GET:
+                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
+                return HttpMethod.GET;
+            case POST:
+                // redirects not supported under POST
+                return HttpMethod.POST;
+            case PUT:
+                // redirects not supported under PUT
+                return HttpMethod.PUT;
+            case DELETE:
+                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
+                return HttpMethod.DELETE;
+            default:
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_UNEXPECTED_METHOD, requestMethod.name());
+                return HttpMethod.POST;
+        }
     }
 
     class GZipOutput {
@@ -483,10 +483,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             HttpForwardingRuleEnforcer.handleRequestHeaders(routedRequestParams, context, url.getHost(),
                                                             data.getRequestHeaderRules(), auditor, vars, varNames);
 
-            GenericHttpClient.GenericHttpMethod method = methodFromRequest(context, routedRequestParams);
+            final HttpMethod method = methodFromRequest(context, routedRequestParams);
 
             // dont add content-type for get and deletes
-            if (method == GenericHttpClient.PUT || method == GenericHttpClient.POST) {
+            if (method == HttpMethod.PUT || method == HttpMethod.POST) {
                 routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, reqMime.getOuterContentType().getFullValue()));
             }
             if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpUseExpectContinue")) ) {
@@ -520,7 +520,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             } else {
                 // only include payload if the method is POST or PUT
-                if (method == GenericHttpClient.POST || method == GenericHttpClient.PUT) {
+                if (method == HttpMethod.POST || method == HttpMethod.PUT) {
                     if (routedRequest instanceof RerunnableHttpRequest) {
                         RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) routedRequest;
                         rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
@@ -629,20 +629,20 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             return AssertionStatus.NONE;
         } catch (MalformedURLException mfe) {
-            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, url.toString(), ExceptionUtils.getMessage(mfe));
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(mfe));
             logger.log(Level.FINEST, "Problem routing: " + mfe.getMessage(), mfe);
         } catch (UnknownHostException uhe) {
-            auditor.logAndAudit(AssertionMessages.HTTP_UNKNOWN_HOST, ExceptionUtils.getMessage(uhe));
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_UNKNOWN_HOST, ExceptionUtils.getMessage(uhe));
             return AssertionStatus.FAILED;
         } catch (SocketException se) {
-            auditor.logAndAudit(AssertionMessages.HTTP_SOCKET_EXCEPTION, ExceptionUtils.getMessage(se));
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SOCKET_EXCEPTION, ExceptionUtils.getMessage(se));
             return AssertionStatus.FAILED;
         } catch (IOException ioe) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, url.toString(), ExceptionUtils.getMessage(ioe));
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(ioe));
             logger.log(Level.FINEST, "Problem routing: " + ioe.getMessage(), ioe);
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.GENERIC_ROUTING_PROBLEM, url.toString(), ExceptionUtils.getMessage(e));
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(e));
             logger.log(Level.FINEST, "Problem routing: " + e.getMessage(), e);
         } finally {
             if (routedRequest != null || routedResponse != null) {
@@ -666,7 +666,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
      * @return a request message object as configured by this assertion
      */
     protected Message getRequestMessage(final PolicyEnforcementContext context) {
-        Message msg = null;
+        Message msg;
         if (assertion.getRequestMsgSrc() == null) {
             msg = context.getRequest();
         } else {
@@ -694,46 +694,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return msg;
-    }
-
-    /**
-     * Read the routing response and copy into the SSG response.
-     *
-     * @return true if a valid response is read
-     */
-    private boolean readResponse(PolicyEnforcementContext context, GenericHttpResponse routedResponse, int status) {
-        boolean responseOk = true;
-        try {
-            InputStream responseStream = routedResponse.getInputStream();
-            String ctype = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_TYPE);
-            ContentTypeHeader outerContentType = ctype !=null ? ContentTypeHeader.parseValue(ctype) : null;
-            boolean passthroughSoapFault = false;
-            if (status == 500 && context.getService() != null && context.getService().isSoap() &&
-                outerContentType != null && outerContentType.isXml()) {
-                passthroughSoapFault = true;
-            }
-            // Handle missing content type error
-            if (status == HttpConstants.STATUS_OK && outerContentType == null) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, Integer.toString(status));
-                responseOk = false;
-            } else if (data.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
-                context.getResponse().initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
-                responseOk = false;
-            } else if (status >= 400 && data.isFailOnErrorStatus() && !passthroughSoapFault) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
-                responseOk = false;
-            } else if (outerContentType != null) { // response OK
-                if (responseStream == null) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CTYPEWOUTPAYLOAD, outerContentType.getFullValue());
-                } else {
-                    StashManager stashManager = stashManagerFactory.createStashManager();
-                    context.getResponse().initialize(stashManager, outerContentType, responseStream);
-                }
-            }
-        } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
-        }
-        return responseOk;
     }
 
     /**

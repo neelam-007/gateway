@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.message;
 
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.HttpMethod;
 
 import java.io.IOException;
 import java.net.URL;
@@ -25,9 +25,15 @@ public interface HttpRequestKnob extends TcpKnob, HasSoapAction, HasHeaders {
     HttpCookie[] getCookies();
 
     /**
-     * @return the method (e.g. GET, PUT, POST, DELETE) used in this request. Never null or empty.
+     * @return the method (e.g. GET, PUT, POST, DELETE) used in this request. Never null, but may be
+     * {@link HttpMethod#OTHER}, in which case {@link #getMethodAsString()} will return the actual method from the request. 
      */
-    String getMethod();
+    HttpMethod getMethod();
+
+    /**
+     * @return the HTTP method as a String.  Never null or empty.
+     */
+    String getMethodAsString();
 
     /**
      * @return the URI part of the URL for this request (e.g. /ssg/soap). Never null or empty.

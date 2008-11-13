@@ -1,7 +1,6 @@
 /*
- * Copyright (C) 2005-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.url;
 
 import com.l7tech.common.http.*;
@@ -27,7 +26,7 @@ import java.net.URL;
 public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
     private static final Logger logger = Logger.getLogger(HttpObjectCache.class.getName());
     private static final String SYSPROP_MAX_CRL_SIZE = "com.l7tech.server.pkix.crlMaxSize"; 
-    private static final int DEFAULT_MAX_CRL_SIZE = 1024 * 1024 * 1;
+    private static final int DEFAULT_MAX_CRL_SIZE = 1024 * 1024;
 
     protected final GenericHttpClientFactory httpClientFactory;
     protected final UserObjectFactory<UT> userObjectFactory;
@@ -106,7 +105,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
             if ( ifModSince != null )
                 params.replaceExtraHeader(ifModSince);
 
-            req = httpClientFactory.createHttpClient().createRequest(GenericHttpClient.GET, params);
+            req = httpClientFactory.createHttpClient().createRequest(HttpMethod.GET, params);
             resp = req.getResponse();
 
             if (resp.getStatus() == HttpConstants.STATUS_NOT_MODIFIED) {

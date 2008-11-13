@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.http;
 
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -58,7 +55,7 @@ public class SimpleHttpClient implements GenericHttpClient {
     /**
      *
      */
-    public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
+    public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
         return client.createRequest(method, params);
     }
 
@@ -73,7 +70,7 @@ public class SimpleHttpClient implements GenericHttpClient {
         GenericHttpRequest request = null;
         GenericHttpResponse response = null;
         try {
-            request = createRequest(GenericHttpClient.GET, params);
+            request = createRequest(HttpMethod.GET, params);
             response = request.getResponse();
             byte[] bodyBytes = IOUtils.slurpStream(response.getInputStream());
             return new SimpleHttpResponseImpl(response, bodyBytes);
@@ -95,7 +92,7 @@ public class SimpleHttpClient implements GenericHttpClient {
      * @throws GenericHttpException if there is a configuration, network or HTTP problem.
      */
     public GenericHttpRequest post(GenericHttpRequestParams params) throws GenericHttpException {
-        return createRequest(GenericHttpClient.POST, params);
+        return createRequest(HttpMethod.POST, params);
     }
 
     /**
@@ -126,7 +123,7 @@ public class SimpleHttpClient implements GenericHttpClient {
         GenericHttpRequest request = null;
         GenericHttpResponse response = null;
         try {
-            request = createRequest(GenericHttpClient.POST, params);
+            request = createRequest(HttpMethod.POST, params);
             request.setInputStream(new ByteArrayInputStream(requestBody));
             response = request.getResponse();
             byte[] bodyBytes = IOUtils.slurpStream(response.getInputStream());
@@ -157,7 +154,7 @@ public class SimpleHttpClient implements GenericHttpClient {
             params.setContentType(ContentTypeHeader.XML_DEFAULT);
         try {
             byte[] requestBody = XmlUtil.nodeToString(doc).getBytes(params.getContentType().getEncoding());
-            request = createRequest(GenericHttpClient.POST, params);
+            request = createRequest(HttpMethod.POST, params);
             request.setInputStream(new ByteArrayInputStream(requestBody));
             response = request.getResponse();
             final ContentTypeHeader contentType = response.getContentType();

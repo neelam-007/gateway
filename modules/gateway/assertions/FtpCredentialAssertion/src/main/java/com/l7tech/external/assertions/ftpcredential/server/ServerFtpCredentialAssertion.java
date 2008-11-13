@@ -89,7 +89,7 @@ public class ServerFtpCredentialAssertion extends ServerCredentialSourceAssertio
                 passwordAuthentication.getUserName(),
                 passwordAuthentication.getPassword(),
                 CredentialFormat.CLEARTEXT,
-                _data.getClass(),
+                assertion.getClass(),
                 null,
                 null,
                 SecurityTokenType.FTP_CREDENTIAL);

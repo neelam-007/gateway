@@ -1,16 +1,16 @@
 /**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.mime.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
-import com.l7tech.common.mime.*;
-import com.l7tech.common.io.IOUtils;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -60,12 +60,10 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
     }
 
     private static final Logger _logger = Logger.getLogger(ServerHtmlFormDataAssertion.class.getName());
-    private final HtmlFormDataAssertion _assertion;
     private final Auditor _auditor;
 
     public ServerHtmlFormDataAssertion(final HtmlFormDataAssertion assertion, final ApplicationContext springContext) {
         super(assertion);
-        _assertion = assertion;
         _auditor = new Auditor(this, springContext, _logger);
     }
 
@@ -81,25 +79,23 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         }
 
         // Skips if HTTP POST's content type is not for HTML Form data.
-        final String httpMethod = httpRequestKnob.getMethod();
+        final HttpMethod httpMethod = httpRequestKnob.getMethod();
         final ContentTypeHeader outerContentType = mimeKnob.getOuterContentType();
-        if (httpMethod.equalsIgnoreCase(GenericHttpClient.METHOD_POST)) {
+        if (httpMethod == HttpMethod.POST) {
             if (!(   outerContentType.matches("application", "x-www-form-urlencoded")
                   || outerContentType.matches("multipart", "form-data"))) {
-                _auditor.logAndAudit(AssertionMessages.HTTP_POST_NOT_FORM_DATA,
-                        new String[]{outerContentType.getMainValue()});
+                _auditor.logAndAudit(AssertionMessages.HTTP_POST_NOT_FORM_DATA, outerContentType.getMainValue());
                 return AssertionStatus.NOT_APPLICABLE;
             }
         }
 
         // Enforces HTTP method(s) allowed:
-        if (   httpMethod.equalsIgnoreCase(GenericHttpClient.METHOD_GET)  && _assertion.isAllowGet()
-            || httpMethod.equalsIgnoreCase(GenericHttpClient.METHOD_POST) && _assertion.isAllowPost()) {
+        if ( httpMethod == HttpMethod.GET  && assertion.isAllowGet() || httpMethod == HttpMethod.POST && assertion.isAllowPost()) {
             if (_logger.isLoggable(Level.FINER)) {
                 _logger.finer("Verified: HTTP request method (" + httpMethod + ")");
             }
         } else {
-            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_METHOD_NOT_ALLOWED, new String[]{httpMethod});
+            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_METHOD_NOT_ALLOWED, httpMethod.name());
             return AssertionStatus.FALSIFIED;
         }
 
@@ -108,12 +104,12 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
 
         // Parses for fields in request URI.
         final HttpServletRequestKnob httpServletRequestKnob = (HttpServletRequestKnob) requestMessage.getKnob(HttpServletRequestKnob.class);
-        paramsToFields((Map<String, String[]>) httpServletRequestKnob.getQueryParameterMap(), fields, true);
+        paramsToFields(httpServletRequestKnob.getQueryParameterMap(), fields, true);
 
         // Parses for fields in request body.
-        if (httpMethod.equalsIgnoreCase(GenericHttpClient.METHOD_POST)) {
+        if (httpMethod == HttpMethod.POST) {
             if (outerContentType.matches("application", "x-www-form-urlencoded")) {
-                paramsToFields((Map<String, String[]>) httpServletRequestKnob.getRequestBodyParameterMap(), fields, false);
+                paramsToFields(httpServletRequestKnob.getRequestBodyParameterMap(), fields, false);
             } else if (outerContentType.matches("multipart", "form-data")) {
                 parseMultipartFormData(fields, mimeKnob);
             } else {
@@ -124,14 +120,14 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
 
         // Converts array of allowed fields into a map for faster lookup.
         final Map<String, HtmlFormDataAssertion.FieldSpec> fieldSpecs = new HashMap<String, HtmlFormDataAssertion.FieldSpec>();
-        for (HtmlFormDataAssertion.FieldSpec fieldSpec : _assertion.getFieldSpecs()){
+        for (HtmlFormDataAssertion.FieldSpec fieldSpec : assertion.getFieldSpecs()){
             fieldSpecs.put(fieldSpec.getName(), fieldSpec);
         }
 
         // Enforces existence of specified fields:
         for (HtmlFormDataAssertion.FieldSpec required : fieldSpecs.values()) {
             if (required.getMinOccurs() > 0 && !fields.containsKey(required.getName())) {
-                _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FIELD_NOT_FOUND, new String[]{required.getName()});
+                _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FIELD_NOT_FOUND, required.getName());
                 return AssertionStatus.FALSIFIED;
             }
         }
@@ -150,12 +146,12 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                         try {
                             Double.valueOf(fieldValue.value);
                         } catch (NumberFormatException e) {
-                            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, new String[]{field.name, fieldValue.value, allowedDataType.getWspName()});
+                            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, field.name, fieldValue.value, allowedDataType.getWspName());
                             return AssertionStatus.FALSIFIED;
                         }
                     } else if (allowedDataType == HtmlFormDataType.FILE) {
                         if (!fieldValue.isFile) {
-                            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, new String[]{field.name, fieldValue.value, allowedDataType.getWspName()});
+                            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, field.name, fieldValue.value, allowedDataType.getWspName());
                         }
                     } else {
                         throw new IllegalArgumentException("Internal Error: Missing handler for data type " + allowedDataType);
@@ -167,11 +163,11 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
 
                 // Enforces min. and max. occurrences:
                 if (field.fieldValues.size() < fieldSpec.getMinOccurs()) {
-                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_MINOCCURS, new String[]{field.name, Integer.toString(field.fieldValues.size()), Integer.toString(fieldSpec.getMinOccurs())});
+                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_MINOCCURS, field.name, Integer.toString(field.fieldValues.size()), Integer.toString(fieldSpec.getMinOccurs()));
                     return AssertionStatus.FALSIFIED;
                 }
                 if (field.fieldValues.size() > fieldSpec.getMaxOccurs()) {
-                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_MAXOCCURS, new String[]{field.name, Integer.toString(field.fieldValues.size()), Integer.toString(fieldSpec.getMaxOccurs())});
+                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_MAXOCCURS, field.name, Integer.toString(field.fieldValues.size()), Integer.toString(fieldSpec.getMaxOccurs()));
                     return AssertionStatus.FALSIFIED;
                 }
                 if (_logger.isLoggable(Level.FINER)) {
@@ -184,11 +180,11 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                     // No need to check anything.
                 } else {
                     if (field.inUri && allowedLocation != HtmlFormDataLocation.URL) {
-                        _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, new String[]{field.name, HtmlFormDataLocation.URL.toString()});
+                        _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, field.name, HtmlFormDataLocation.URL.toString());
                         return AssertionStatus.FALSIFIED;
                     }
                     if (field.inBody && allowedLocation != HtmlFormDataLocation.BODY) {
-                        _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, new String[]{field.name, HtmlFormDataLocation.BODY.toString()});
+                        _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, field.name, HtmlFormDataLocation.BODY.toString());
                         return AssertionStatus.FALSIFIED;
                     }
                 }
@@ -197,11 +193,11 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                 }
 
             } else {
-                if (_assertion.isDisallowOtherFields()) {
-                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_NOT_ALLOWED, new String[]{field.name});
+                if (assertion.isDisallowOtherFields()) {
+                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_NOT_ALLOWED, field.name);
                     return AssertionStatus.FALSIFIED;
                 } else {
-                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_ALLOWED, new String[]{field.name});
+                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_ALLOWED, field.name);
                 }
             }
         }
@@ -246,7 +242,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         try {
             final PartIterator itor = mimeKnob.getParts();
             for (int partPosition = 0; itor.hasNext(); ++ partPosition) {
-                PartInfo partInfo = null;
+                PartInfo partInfo;
                 try {
                     partInfo = itor.next();
                 } catch (NoSuchElementException e) {
@@ -285,7 +281,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                     // This is a multipart/mixed subpart embedded within a multipart/form-data.
                     parseMultipartMixed(field, partInfo.getInputStream(false), partContentType);
                 } else {
-                    String value = null;
+                    String value;
                     final String filename = contentDisposition.getParameter("filename");
                     final boolean isFile = filename != null;
                     if (isFile) {
@@ -320,7 +316,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
             final MimeBody mimeBody = new MimeBody(new ByteArrayStashManager(), outerContentType, is);
             final PartIterator itor = mimeBody.iterator();
             for (int subpartPosition = 0; itor.hasNext(); ++ subpartPosition) {
-                PartInfo subpartInfo = null;
+                PartInfo subpartInfo;
                 try {
                     subpartInfo = itor.next();
                 } catch (NoSuchElementException e) {

@@ -1,47 +1,33 @@
 package com.l7tech.server.security.cert;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.IOException;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.NoSuchProviderException;
-import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
-import java.util.Random;
-import java.util.Vector;
-import java.util.Date;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import com.l7tech.common.http.*;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.security.types.CertificateValidationResult;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.ocsp.BasicOCSPResp;
-import org.bouncycastle.ocsp.CertificateID;
-import org.bouncycastle.ocsp.OCSPException;
-import org.bouncycastle.ocsp.OCSPReq;
-import org.bouncycastle.ocsp.OCSPReqGenerator;
-import org.bouncycastle.ocsp.OCSPResp;
-import org.bouncycastle.ocsp.SingleResp;
-import org.bouncycastle.ocsp.RevokedStatus;
-import org.bouncycastle.ocsp.UnknownStatus;
+import org.bouncycastle.ocsp.*;
 
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.RerunnableHttpRequest;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.security.types.CertificateValidationResult;
-import com.l7tech.common.io.CertUtils;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.cert.X509Certificate;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * OCSP client implementation using Bouncy Castle.
@@ -326,7 +312,7 @@ public class OCSPClient {
             params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_ACCEPT, CONTENT_TYPE_OCSP_RESPONSE));
             params.setFollowRedirects(false);
             params.setContentLength(Long.valueOf(array.length));
-            httpRequest = (RerunnableHttpRequest) httpClient.createRequest(GenericHttpClient.POST, params);
+            httpRequest = (RerunnableHttpRequest) httpClient.createRequest(HttpMethod.POST, params);
             httpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory(){
                 public InputStream getInputStream() {
                     return new ByteArrayInputStream(array);

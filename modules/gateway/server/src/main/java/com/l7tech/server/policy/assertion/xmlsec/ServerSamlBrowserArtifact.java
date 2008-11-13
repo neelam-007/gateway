@@ -1,13 +1,11 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.util.HtmlConstants;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -15,9 +13,12 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.util.HtmlConstants;
+import com.l7tech.util.ResourceUtils;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.HttpState;
 import org.cyberneko.html.parsers.DOMParser;
@@ -142,7 +143,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
 
             if (AuthenticationProperties.METHOD_BASIC.equals(ap.getMethod())) {
                 loginParams.setPasswordAuthentication(new PasswordAuthentication(creds.getLogin(), creds.getCredentials()));
-                loginRequest = httpClient.createRequest(GenericHttpClient.GET, loginParams);
+                loginRequest = httpClient.createRequest(HttpMethod.GET, loginParams);
             } else if (AuthenticationProperties.METHOD_FORM.equals(ap.getMethod())) {
 
                 if(ap.isEnableCookies() && passCookies) {
@@ -153,12 +154,12 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
                 if(usingCache) {
                     // then just request the page
                     if(logger.isLoggable(Level.FINER)) logger.finer("Using cached HttpState when processing '" + context.getRequestId() + "'.");
-                    loginRequest = httpClient.createRequest(GenericHttpClient.GET, loginParams);
+                    loginRequest = httpClient.createRequest(HttpMethod.GET, loginParams);
                 }
                 else {
                     String usernameFieldname = ap.getUsernameFieldname();
                     String passwordFieldname = ap.getPasswordFieldname();
-                    Map formPostParams = new HashMap();
+                    Map<String, String> formPostParams = new HashMap<String, String>();
 
                     if(ap.isRequestForm()) {
                         // request and (if necessary) process form
@@ -180,7 +181,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
                     if(logger.isLoggable(Level.FINER)) logger.finer("Full post params for request '"+context.getRequestId()+"' are: " + formPostParams);
 
                     loginParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
-                    loginRequest = httpClient.createRequest(GenericHttpClient.POST, loginParams);
+                    loginRequest = httpClient.createRequest(HttpMethod.POST, loginParams);
                     loginRequest.setInputStream(new ByteArrayInputStream(getFormPostParameters(formPostParams).getBytes("UTF-8")));
 
                     if(ap.isRedirectAfterSubmit()) {
@@ -192,10 +193,9 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
                             loginParams.setTargetUrl(targetUrl);
                             loginParams.setContentType(null);
 
-                            loginRequest = httpClient.createRequest(GenericHttpClient.GET, loginParams);
-                        }
-                        finally {
-                            if (redirectRequest != null) try { redirectRequest.close(); } catch (Throwable t) { }
+                            loginRequest = httpClient.createRequest(HttpMethod.GET, loginParams);
+                        } finally {
+                            ResourceUtils.closeQuietly(redirectRequest);
                         }
                     }
                 }
@@ -263,8 +263,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
             auditor.logAndAudit(ae.getAssertionMessage(), null, ae.getCause());
             return ae.getAssertionStatus();
         } finally {
-            if (loginRequest != null) try { loginRequest.close(); } catch (Throwable t) { }
-            if (loginResponse != null) try { loginResponse.close(); } catch (Throwable t) { }
+            ResourceUtils.closeQuietly(loginRequest, loginResponse);
         }
     }
 
@@ -273,21 +272,20 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
      */
     private boolean addCookies(PolicyEnforcementContext context, HttpState state, String cookieDomain, Collection added) {
         boolean addedCookies = false;
-        Set cookies = context.getCookies();
-        for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
-            HttpCookie cookie = (HttpCookie) iterator.next();
-            if(cookie.getCookieName().startsWith(COOKIE_PREFIX)) {
+        Set<HttpCookie> cookies = context.getCookies();
+        for (HttpCookie cookie : cookies) {
+            if (cookie.getCookieName().startsWith(COOKIE_PREFIX)) {
                 // Get and fixup HTTP Client cookie
                 Cookie httpClientCookie = CookieUtils.toHttpClientCookie(cookie);
                 String cookieName = cookie.getCookieName().substring(COOKIE_PREFIX.length());
                 String cookiePath = cookie.getPath();
-                if(cookiePath==null) cookiePath = "/";
+                if (cookiePath == null) cookiePath = "/";
                 httpClientCookie.setName(cookieName);
                 httpClientCookie.setPath(cookiePath);
                 httpClientCookie.setDomain(cookieDomain);
 
                 // Loggit
-                if(logger.isLoggable(Level.FINE)){
+                if (logger.isLoggable(Level.FINE)) {
                     logger.fine("Adding a cookie to Login Form request '" + httpClientCookie.getName() + "'.");
                 }
 
@@ -308,15 +306,13 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
 
         Cookie[] cookies = state.getCookies();
 
-        Set newCookies = new LinkedHashSet(Arrays.asList(cookies));
+        Set<Cookie> newCookies = new LinkedHashSet(Arrays.asList(cookies));
         newCookies.removeAll(originalCookies);
 
-        for (Iterator iterator = newCookies.iterator(); iterator.hasNext();) {
-            Cookie cookie = (Cookie) iterator.next();
-
+        for (Cookie cookie : newCookies) {
             // loggit
-            if(logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "New cookie from SSO endpoint, name='"+cookie.getName()+"'.");
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "New cookie from SSO endpoint, name='" + cookie.getName() + "'.");
             }
 
             // modify for client
@@ -340,7 +336,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
             getLoginFormParams.setSslSocketFactory(sslContext.getSocketFactory());
             getLoginFormParams.setHostnameVerifier(hostnameVerifier);
             getLoginFormParams.setFollowRedirects(false);
-            loginFormRequest = httpClient.createRequest(GenericHttpClient.GET, getLoginFormParams);
+            loginFormRequest = httpClient.createRequest(HttpMethod.GET, getLoginFormParams);
             loginFormResponse = loginFormRequest.getResponse();
             int status = loginFormResponse.getStatus();
             if (status != HttpConstants.STATUS_OK) {
@@ -361,8 +357,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
         } catch (IOException e) {
             throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSER_LOGINFORM_IOEXCEPTION, e);
         } finally {
-            if (loginFormRequest != null) try { loginFormRequest.close(); } catch (Throwable t) { }
-            if (loginFormResponse != null) try { loginFormResponse.close(); } catch (Throwable t) { }
+            ResourceUtils.closeQuietly(loginFormRequest, loginFormResponse);
         }
     }
 
@@ -486,16 +481,15 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
                 throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSERARTIFACT_RESPONSE_NON_302);
             }
         } finally {
-            if (formRedirectResponse != null) try { formRedirectResponse.close(); } catch (Throwable t) { }
+            ResourceUtils.closeQuietly(formRedirectResponse);
         }
     }
 
-    private String getFormPostParameters(Map formPostParams) throws UnsupportedEncodingException {
+    private String getFormPostParameters(Map<String, String> formPostParams) throws UnsupportedEncodingException {
         StringBuffer fieldsBuf = new StringBuffer();
-        for (Iterator i = formPostParams.entrySet().iterator(); i.hasNext();) {
-            Map.Entry fieldEntry = (Map.Entry) i.next();
-            String name = (String) fieldEntry.getKey();
-            String value = (String) fieldEntry.getValue();
+        for (Map.Entry<String, String> fieldEntry : formPostParams.entrySet()) {
+            String name = fieldEntry.getKey();
+            String value = fieldEntry.getValue();
             addPostField(fieldsBuf, name, value);
         }
 

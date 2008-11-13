@@ -1,20 +1,17 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.http.prov.jdk;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.mail.internet.MimeUtility;
+import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -22,7 +19,6 @@ import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -35,7 +31,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
     public UrlConnectionHttpClient() {
     }
 
-    public GenericHttpRequest createRequest(final GenericHttpMethod method, GenericHttpRequestParams params)
+    public GenericHttpRequest createRequest(final HttpMethod method, GenericHttpRequestParams params)
             throws GenericHttpException
     {
         try {
@@ -44,8 +40,8 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                 throw new GenericHttpException("URLConnection was not an HttpURLConnection");
             final HttpURLConnection httpConn = (HttpURLConnection)conn;
             httpConn.setInstanceFollowRedirects(params.isFollowRedirects());
-            final HttpsURLConnection httpsConn;
             if (conn instanceof HttpsURLConnection) {
+                final HttpsURLConnection httpsConn;
                 httpsConn = (HttpsURLConnection)conn;
                 if (params.getSslSocketFactory() != null)
                     httpsConn.setSSLSocketFactory(params.getSslSocketFactory());
@@ -54,7 +50,6 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
             } else {
                 if (params.getTargetUrl().getProtocol().equalsIgnoreCase("https"))
                     throw new GenericHttpException("HttpURLConnection was using SSL but was not an HttpsURLConnection");
-                httpsConn = null;
             }
 
             if (method.needsRequestBody())
@@ -63,9 +58,8 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
             conn.setDefaultUseCaches(false);
 
             // Set headers
-            List extraHeaders = params.getExtraHeaders();
-            for (Iterator i = extraHeaders.iterator(); i.hasNext();) {
-                HttpHeader extraHeader = (HttpHeader)i.next();
+            List<HttpHeader> extraHeaders = params.getExtraHeaders();
+            for (HttpHeader extraHeader: extraHeaders) {
                 try {
                     conn.setRequestProperty(extraHeader.getName(), MimeUtility.encodeText(extraHeader.getFullValue(), "utf-8", "Q"));
                 } catch (UnsupportedEncodingException e) {
@@ -112,7 +106,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                                 ctval != null ? ContentTypeHeader.parseValue(ctval) : null;
                         final List headers = new ArrayList();
                         int n = 0;
-                        String value = null;
+                        String value;
                         do {
                             String key = httpConn.getHeaderFieldKey(n);
                             value = httpConn.getHeaderField(n);
@@ -173,7 +167,6 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
             };
         } catch (IOException e) {
             throw new GenericHttpException(e);
-        } finally {
         }
     }
 }

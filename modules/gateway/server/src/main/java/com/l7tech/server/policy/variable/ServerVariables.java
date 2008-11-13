@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.policy.variable;
 
@@ -32,9 +32,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.cert.CertificateEncodingException;
 
-/**
- * @author alex
- */
 public class ServerVariables {
     private static final Logger logger = Logger.getLogger(ServerVariables.class.getName());
     private static final String CLIENT_ID_UNKNOWN = "ClientId:Unknown";
@@ -150,7 +147,7 @@ public class ServerVariables {
         new Variable("request.http.method", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
-                return hrk == null ? null : hrk.getMethod();
+                return hrk == null ? null : hrk.getMethod().name();
             }
         }),
         new Variable("request.http.uri", new Getter() {

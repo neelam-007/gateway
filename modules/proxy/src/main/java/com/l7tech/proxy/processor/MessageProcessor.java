@@ -29,8 +29,8 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.util.CertificateDownloader;
-import com.l7tech.proxy.util.SslUtils;
 import com.l7tech.proxy.util.DomainIdInjector;
+import com.l7tech.proxy.util.SslUtils;
 import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.SecurityActor;
@@ -41,8 +41,10 @@ import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.*;
-import com.l7tech.util.*;
-import com.l7tech.xml.MessageNotSoapException;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
@@ -67,7 +69,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -727,7 +728,7 @@ public class MessageProcessor {
                 interceptor.onBackEndRequest(context, params.getExtraHeaders());
 
 
-            httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);
+            httpRequest = httpClient.createRequest(HttpMethod.POST, params);
 
             configureRequestFailover(ssg, request, httpRequest, zippedInputStream, iscompressed);
 

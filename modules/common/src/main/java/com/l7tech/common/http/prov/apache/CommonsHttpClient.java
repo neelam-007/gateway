@@ -1,18 +1,17 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.http.prov.apache;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
@@ -68,7 +67,6 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     }
 
     private final HttpConnectionManager cman;
-    private final int connectionTimeout;
     private final int timeout;
     private final Object identity;
     private final boolean isBindingManager;
@@ -87,13 +85,13 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
     public CommonsHttpClient(HttpConnectionManager cman, int connectTimeout, int timeout, Object identity) {
         this.cman = cman;
-        this.connectionTimeout = connectTimeout <= 0 ? DEFAULT_CONNECT_TIMEOUT : connectTimeout;
+        int connectionTimeout = connectTimeout <= 0 ? DEFAULT_CONNECT_TIMEOUT : connectTimeout;
         this.timeout = timeout <= 0 ? DEFAULT_READ_TIMEOUT : timeout;
         this.identity = identity;
         this.isBindingManager = cman instanceof IdentityBindingHttpConnectionManager;
 
         HttpConnectionManagerParams params = cman.getParams();
-        params.setConnectionTimeout(this.connectionTimeout);
+        params.setConnectionTimeout(connectionTimeout);
         params.setSoTimeout(this.timeout);
     }
 
@@ -112,21 +110,18 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     }
 
     public static int getDefaultMaxConnectionsPerHost() {
-        int maxConnPerHost = SyspropUtil.getInteger(PROP_MAX_CONN_PER_HOST, 200);
-        return maxConnPerHost;
+        return SyspropUtil.getInteger(PROP_MAX_CONN_PER_HOST, 200);
     }
 
     public static int getDefaultMaxTotalConnections() {
-        int maxTotalConnections = SyspropUtil.getInteger(PROP_MAX_TOTAL_CONN, 2000);
-        return maxTotalConnections;
+        return SyspropUtil.getInteger(PROP_MAX_TOTAL_CONN, 2000);
     }
 
     public static int getDefaultStaleCheckCount() {
-        int maxTotalConnections = SyspropUtil.getInteger(PROP_STALE_CHECKS, 1);
-        return maxTotalConnections;
+        return SyspropUtil.getInteger(PROP_STALE_CHECKS, 1);
     }
 
-    public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params)
+    public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params)
             throws GenericHttpException
     {
         stampBindingIdentity();
@@ -168,17 +163,22 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
         // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
         //       we end up with the default socket factory for the protocol
-        HttpMethod httpMethod = null;
-        if (method == POST) {
-            httpMethod = new PostMethod(targetUrl.getFile());
-        } else if (method == GET) {
-            httpMethod = new GetMethod(targetUrl.getFile());
-        } else if (method == PUT) {
-            httpMethod = new PutMethod(targetUrl.getFile());
-        } else if (method == DELETE) {
-            httpMethod = new DeleteMethod(targetUrl.getFile());
-        } else {
-            throw new IllegalStateException("Method " + method + " not supported");
+        final org.apache.commons.httpclient.HttpMethod httpMethod;
+        switch (method) {
+            case POST:
+                httpMethod = new PostMethod(targetUrl.getFile());
+                break;
+            case GET:
+                httpMethod = new GetMethod(targetUrl.getFile());
+                break;
+            case PUT:
+                httpMethod = new PutMethod(targetUrl.getFile());
+                break;
+            case DELETE:
+                httpMethod = new DeleteMethod(targetUrl.getFile());
+                break;
+            default:
+                throw new IllegalStateException("Method " + method + " not supported");
         }
 
         httpMethod.setFollowRedirects(params.isFollowRedirects());
@@ -216,9 +216,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 throw new GenericHttpException("Content-Length is too long -- maximum supported is " + Integer.MAX_VALUE);
         }
 
-        List headers = params.getExtraHeaders();
-        for (Iterator i = headers.iterator(); i.hasNext();) {
-            HttpHeader header = (HttpHeader)i.next();
+        List<HttpHeader> headers = params.getExtraHeaders();
+        for (HttpHeader header : headers) {
             doBinding(header);
             httpMethod.addRequestHeader(header.getName(), header.getFullValue());
         }
@@ -228,9 +227,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             httpMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, rct.getFullValue());
         }
 
-        final HttpMethod fmtd = httpMethod;
         return new RerunnableHttpRequest() {
-            private HttpMethod method = fmtd;
+            private org.apache.commons.httpclient.HttpMethod method = httpMethod;
             private boolean requestEntitySet = false;
 
             public void setInputStream(final InputStream bodyInputStream) {
@@ -394,7 +392,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 }
 
                 final GenericHttpResponse genericHttpResponse = new GenericHttpResponse() {
-                    private HttpMethod response = method; { method = null; } // Take ownership of the HttpMethod
+                    private org.apache.commons.httpclient.HttpMethod response = method; { method = null; } // Take ownership of the HttpMethod
 
                     public InputStream getInputStream() throws GenericHttpException {
                         if (response == null)
@@ -415,8 +413,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                             throw new IllegalStateException("This response has already been closed");
                         Header[] in = response.getResponseHeaders();
                         List out = new ArrayList();
-                        for (int i = 0; i < in.length; i++) {
-                            Header header = in[i];
+                        for (Header header : in) {
                             out.add(new GenericHttpHeader(header.getName(), header.getValue()));
                         }
                         return new GenericHttpHeaders((HttpHeader[])out.toArray(new HttpHeader[0]));
@@ -547,10 +544,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                         // getSession() is called
                         sslSocket.startHandshake();
 
-                        if(!hostVerifier.verify(host, sslSocket.getSession())) {
-                            try{
-                                socket.close(); // close socket since we're not returning it
-                            } catch (IOException ioe) { }
+                        if (!hostVerifier.verify(host, sslSocket.getSession())) {
+                            ResourceUtils.closeQuietly(socket);
                             throw new CausedIOException("Host name does not match certificate '" + host + "'.");
                         }
                     }

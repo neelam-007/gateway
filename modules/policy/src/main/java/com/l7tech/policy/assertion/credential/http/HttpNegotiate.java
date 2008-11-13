@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.policy.assertion.credential.http;
 
 import com.l7tech.policy.assertion.SetsVariables;
@@ -12,13 +15,8 @@ import com.l7tech.policy.variable.DataType;
  * <p>For background see http://en.wikipedia.org/wiki/SPNEGO</p>
  *
  * @author $Author$
- * @version $Revision$
  */
 public class HttpNegotiate extends HttpCredentialSourceAssertion implements SetsVariables {
-    @Override
-    public String scheme() {
-        return HttpNegotiate.SCHEME;
-    }
 
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {

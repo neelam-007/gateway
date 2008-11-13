@@ -1,8 +1,6 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.policy.Policy;
@@ -12,6 +10,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.common.http.HttpMethod;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
@@ -145,11 +144,9 @@ public class PublishedService extends NamedEntityImp implements HasFolder
                      while ( eels.hasNext() ) {
                          ee = (ExtensibilityElement)eels.next();
                          if ( ee instanceof SOAPOperation) {
-                             SOAPOperation sop = (SOAPOperation)ee;
                              _soapVersion = SoapVersion.SOAP_1_1;
                              break;
                          } else if( ee instanceof SOAP12Operation) {
-                             SOAP12Operation sop = (SOAP12Operation)ee;
                              _soapVersion = SoapVersion.SOAP_1_2;
                              break;
                          }
@@ -160,7 +157,8 @@ public class PublishedService extends NamedEntityImp implements HasFolder
                      }
                  }
              }
-         } catch(WSDLException e) {
+         } catch (WSDLException e) {
+             throw new RuntimeException(e); // WSDL should have already been parsed by now
          }
     }
 
@@ -492,6 +490,10 @@ public class PublishedService extends NamedEntityImp implements HasFolder
 
     public void setFolderOid(Long policyFolderOid) {
         this.folderOid = policyFolderOid;
+    }
+
+    public boolean isMethodAllowed(HttpMethod requestMethod) {
+        return getHttpMethods().contains(requestMethod.name()); // Relies on the fact that the enum names are already upper-case
     }
 
     /**
