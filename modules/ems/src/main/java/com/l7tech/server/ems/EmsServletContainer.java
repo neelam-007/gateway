@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,6 +46,8 @@ import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import java.security.GeneralSecurityException;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -60,8 +64,9 @@ import com.l7tech.server.DefaultKey;
  * An embedded servlet container that the EMS uses to host itself.
  *
  * TODO [steve] This needs cleanup
+ * TODO [steve] HTTP Cookies are not secure, needs to be configured here
  */
-public class EmsServletContainer implements ApplicationContextAware, InitializingBean, DisposableBean {
+public class EmsServletContainer implements ApplicationContextAware, InitializingBean, DisposableBean, PropertyChangeListener {
     public static final String RESOURCE_PREFIX = "com/l7tech/server/ems/resources/";
     public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
 
@@ -73,6 +78,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
 
     private final ServerConfig serverConfig;
     private final DefaultKey defaultKey;
+    private final Timer timer;
     private final long instanceId;
     private final File temp;
     private ApplicationContext applicationContext;
@@ -80,9 +86,11 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
     private Audit audit;
 
     public EmsServletContainer( final ServerConfig serverConfig,
-                                final DefaultKey defaultKey ) {
+                                final DefaultKey defaultKey,
+                                final Timer timer ) {
         this.serverConfig = serverConfig;
         this.defaultKey = defaultKey;
+        this.timer = timer;
         this.instanceId = nextInstanceId.getAndIncrement();
         //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<EmsServletContainer>(this));
@@ -96,6 +104,16 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
             temp.mkdir();
         }
         this.temp = temp;
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        timer.schedule(new TimerTask(){
+            @Override
+            public void run() {
+                rebuildConnectors();
+            }
+        }, 500);
     }
 
     private void initializeServletEngine() throws Exception {
@@ -119,18 +137,22 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         final Filter securityFilter = new Filter(){
             private EmsSecurityManager securityManager;
             private ServletContext context;
+            @Override
             public void init(final FilterConfig filterConfig) throws ServletException {
                 context = filterConfig.getServletContext();
                 securityManager = (EmsSecurityManager) context.getAttribute("securityManager");
             }
+            @Override
             public void destroy() {}
 
+            @Override
             public void doFilter(final ServletRequest servletRequest, final ServletResponse servletResponse, final FilterChain filterChain) throws IOException, ServletException {
                 final HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
                 final HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
                 final IOException[] ioeHolder = new IOException[1];
                 final ServletException[] seHolder = new ServletException[1];
                 RemoteUtils.runWithConnectionInfo(servletRequest.getRemoteAddr(), httpServletRequest, new Runnable(){
+                    @Override
                     public void run() {
                         try {
                             if ( securityManager.canAccess( httpServletRequest.getSession(true), httpServletRequest ) ) {
@@ -142,6 +164,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
                                     subject.getPrincipals().add( info.getUser() );
                                 }
                                 Subject.doAs(subject, new PrivilegedExceptionAction<Object>(){
+                                    @Override
                                     public Object run() throws Exception {
                                         filterChain.doFilter( servletRequest, servletResponse );
                                         return null;
@@ -196,6 +219,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         FirewallUtils.closeFirewallForConnectors( temp );
     }
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         initializeServletEngine();
     }
@@ -310,6 +334,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         FirewallUtils.openFirewallForConnectors( temp, fireWallConnectors );  // closes for old ports also
     }
 
+    @Override
     public void destroy() throws Exception {
         shutdownServletEngine();
     }
@@ -318,6 +343,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         return applicationContext;
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
         this.audit = new Auditor(this, applicationContext, logger);

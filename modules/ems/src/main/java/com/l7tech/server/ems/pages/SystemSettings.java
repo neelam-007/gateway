@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.License;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.UpdatableLicenseManager;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.EmsApplication;
@@ -66,15 +67,29 @@ public class SystemSettings extends EmsPage {
     @SpringBean(name="setupManager")
     private SetupManager setupManager;
 
+    @SuppressWarnings({"UnusedDeclaration"})
+    @SpringBean(name="defaultKey")
+    private DefaultKey defaultKey;
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @SpringBean(name="serverConfig")
+    private Config config;
+
     /**
      * Create system settings page
      */
     public SystemSettings() {
+        final WebMarkupContainer dynamicDialogHolder = new WebMarkupContainer("dynamic.holder");
+        dynamicDialogHolder.add( new EmptyPanel("dynamic.holder.content") );
+        dynamicDialogHolder.setOutputMarkupId(true);
+
+        add(dynamicDialogHolder);
+
         initComponentsForProductInfo();
 
-        initComponentsForSystemInfo();
+        initComponentsForSystemInfo(dynamicDialogHolder);
 
-        initComponentsForLicense();
+        initComponentsForLicense(dynamicDialogHolder);
     }
 
     /**
@@ -101,7 +116,7 @@ public class SystemSettings extends EmsPage {
     /**
      * Initialize components that display system information
      */
-    private void initComponentsForSystemInfo() {
+    private void initComponentsForSystemInfo( final WebMarkupContainer dynamicDialogHolder ) {
         // Host Name
         HttpServletRequest request = ((ServletWebRequest) getRequest()).getHttpServletRequest();
         String hostName;
@@ -154,12 +169,84 @@ public class SystemSettings extends EmsPage {
         SimpleDateFormat dateFormat = new SimpleDateFormat(getSession().getDateTimeFormatPattern());
         Label timeStartedLabel = new Label("time.ems.process.started", dateFormat.format(new Date(timeStarted)));
         add(timeStartedLabel);
+
+        final ListenerModel listenerModel = new ListenerModel();
+
+        final Label listenerAddr = new Label("listener.addr", new PropertyModel(listenerModel, "listenerAddr"));
+        add(listenerAddr.setOutputMarkupId(true));
+
+        final Label listenerPort = new Label("listener.port", new PropertyModel(listenerModel, "listenerPort"));
+        add(listenerPort.setOutputMarkupId(true));
+
+        Form listenerChangeForm = new Form("listenerForm");
+        listenerChangeForm.add( new YuiAjaxButton("listenerChangeButton", listenerChangeForm) {
+            @Override
+            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
+                ListenerEditPanel listenerEditPanel = new ListenerEditPanel( YuiDialog.getContentId() );
+                YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Change Listener Settings", YuiDialog.Style.OK_CANCEL, listenerEditPanel, new YuiDialog.OkCancelCallback(){
+                    @Override
+                    public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
+                        if ( button == YuiDialog.Button.OK ) {
+                            listenerModel.detach();
+                            target.addComponent( listenerAddr );
+                            target.addComponent( listenerPort );
+                        }
+                    }
+                } );
+                dynamicDialogHolder.replace(dialog);
+                if ( ajaxRequestTarget != null ) {
+                    ajaxRequestTarget.addComponent(dynamicDialogHolder);
+                }
+            }
+        } );
+        add(listenerChangeForm);
+
+        final SslModel sslModel = new SslModel();
+
+        final Label sslIssuerLabel = new Label("ssl.cert.issuer", new PropertyModel(sslModel, "issuerDn"));
+        add(sslIssuerLabel.setOutputMarkupId(true));
+
+        final Label sslSerialNumberLabel = new Label("ssl.cert.serialNumber", new PropertyModel(sslModel, "serialNumber"));
+        add(sslSerialNumberLabel.setOutputMarkupId(true));
+
+        final Label sslSubjectLabel = new Label("ssl.cert.subject", new PropertyModel(sslModel, "subjectDn"));
+        add(sslSubjectLabel.setOutputMarkupId(true));
+
+        Form sslChangeForm = new Form("sslForm");
+        sslChangeForm.add( new YuiAjaxButton("sslChangeButton", sslChangeForm) {
+            @Override
+            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
+                SslEditPanel sslEditPanel = new SslEditPanel( YuiDialog.getContentId() ){
+                    @Override
+                    @SuppressWarnings({"UnusedDeclaration"})
+                    protected void onSubmit(final AjaxRequestTarget target) {
+                        sslModel.detach();
+
+                        target.addComponent( sslIssuerLabel );
+                        target.addComponent( sslSerialNumberLabel );
+                        target.addComponent( sslSubjectLabel );
+                    }
+                };
+                YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Change SSL Settings", YuiDialog.Style.OK_CANCEL, sslEditPanel, new YuiDialog.OkCancelCallback(){
+                    @Override
+                    public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button ) {
+                        //NOTE, due to YUI AJAX form submission for file upload this action is not run.
+                    }
+                } );
+                sslEditPanel.setSuccessScript( dialog.getSuccessScript() );
+                dynamicDialogHolder.replace(dialog);
+                if ( ajaxRequestTarget != null ) {
+                    ajaxRequestTarget.addComponent(dynamicDialogHolder);
+                }
+            }
+        } );
+        add(sslChangeForm);
     }
 
     /**
      * Initialize components that display licnese information.
      */
-    private void initComponentsForLicense() {
+    private void initComponentsForLicense( final WebMarkupContainer dynamicDialogHolder ) {
         final LicenseModel licenseModel = new LicenseModel();
 
         // Feedback
@@ -188,38 +275,42 @@ public class SystemSettings extends EmsPage {
         // text area
         licenseDetailsContainer.add(new TextArea("licenseGrants", new PropertyModel(licenseModel, "grants")));
 
-        final WebMarkupContainer eulaDialogHolder = new WebMarkupContainer("eula.holder");
-        eulaDialogHolder.add( new EmptyPanel("eula.holder.content") );
-        eulaDialogHolder.setOutputMarkupId(true);
-
-        add(eulaDialogHolder);
-
-        WebMarkupContainer licenseDeleteContainer = new WebMarkupContainer("delete.license.container");
-        licenseDeleteContainer.setOutputMarkupId(true);
-        licenseDeleteContainer.setOutputMarkupPlaceholderTag(true);
-        add(licenseDeleteContainer);
-        if ( licenseModel.getLicense() == null ) {
-            licenseDeleteContainer.setVisible(false);
-        }
-
-        final Component[] refreshComponents = new Component[]{licenseDetailsContainer, licenseDeleteContainer};
+        final Component[] refreshComponents = new Component[]{licenseDetailsContainer};
         Form licenseDeleteForm = new Form("licenseDeleteForm");
         licenseDeleteForm.add( new YuiAjaxButton("deleteLicenseButton", licenseDeleteForm) {
             @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
-                licenseDelete();
-                licenseModel.detach();
-                for ( Component component : refreshComponents ) {
-                    component.setVisible(false);
-                    ajaxRequestTarget.addComponent(component);
+                String warningText =
+                    "<p>This will irrevocably destroy the existing license and cannot be undone.</p><br/>" +
+                    "<p>Really delete the existing license?</p>";
+                Label label = new Label(YuiDialog.getContentId(), warningText);
+                label.setEscapeModelStrings(false);
+                YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Confirm License Deletion", YuiDialog.Style.OK_CANCEL, label, new YuiDialog.OkCancelCallback(){
+                    @Override
+                    public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
+                        if ( button == YuiDialog.Button.OK ) {
+                            licenseDelete();
+                            licenseModel.detach();
+                            for ( Component component : refreshComponents ) {
+                                component.setVisible(false);
+                                target.addComponent(component);
+                            }
+                            info( new StringResourceModel("license.message.deleted", SystemSettings.this, null).getString() );
+                            target.addComponent(feedback);
+                        }
+                        dynamicDialogHolder.replace( new EmptyPanel("dynamic.holder.content") );
+                        target.addComponent( dynamicDialogHolder );
+                    }
+                } );
+                dynamicDialogHolder.replace(dialog);
+                if ( ajaxRequestTarget != null ) {
+                    ajaxRequestTarget.addComponent(dynamicDialogHolder);
                 }
-                info( new StringResourceModel("license.message.deleted", this, null).getString() );
-                ajaxRequestTarget.addComponent(feedback);
             }
         } );
-        licenseDeleteContainer.add(licenseDeleteForm);
+        licenseDetailsContainer.add(licenseDeleteForm);
 
-        add(new LicenseForm("licenseForm", refreshComponents, eulaDialogHolder, feedback));
+        add(new LicenseForm("licenseForm", refreshComponents, dynamicDialogHolder, feedback));
     }
 
     /**
@@ -382,18 +473,18 @@ public class SystemSettings extends EmsPage {
     /**
      * License update form
      */
-    private final class LicenseForm extends Form {
+    private final class LicenseForm extends YuiFileUploadForm {
 
         private final FileUploadField fileUpload = new FileUploadField("license");
         private final Component[] components;
-        private final WebMarkupContainer eulaDialogHolder;
+        private final WebMarkupContainer dynamicDialogHolder;
         private final FeedbackPanel formFeedback;
 
-        public LicenseForm(final String componentName, final Component[] components, final WebMarkupContainer eulaDialogHolder, final FeedbackPanel formFeedback ) {
+        public LicenseForm(final String componentName, final Component[] components, final WebMarkupContainer dynamicDialogHolder, final FeedbackPanel formFeedback ) {
             super(componentName);
 
             this.components = components;
-            this.eulaDialogHolder = eulaDialogHolder;
+            this.dynamicDialogHolder = dynamicDialogHolder;
             this.formFeedback = formFeedback;
 
             add(fileUpload);
@@ -403,16 +494,16 @@ public class SystemSettings extends EmsPage {
         }
 
         @Override
-        public final void onSubmit() {
+        public final void onSubmit( final AjaxRequestTarget target ) {
             final FileUpload upload = fileUpload.getFileUpload();
             if ( upload != null ) {
                 try {
                     final String license = XmlUtil.nodeToString(XmlUtil.parse(upload.getInputStream(), false));
                     EulaPanel eula = new EulaPanel( YuiDialog.getContentId(), new Model(new License(license, null, null)) );
 
-                    YuiDialog dialog = new YuiDialog("eula.holder.content", "License Agreement", YuiDialog.Style.OK_CANCEL, eula, new YuiDialog.OkCancelCallback(){
+                    YuiDialog dialog = new YuiDialog("dynamic.holder.content", "License Agreement", YuiDialog.Style.OK_CANCEL, eula, new YuiDialog.OkCancelCallback(){
                         @Override
-                        public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
+                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
                             if ( button == YuiDialog.Button.OK ) {
                                 logger.info("License installation confirmed.");
                                 licenseSetup( license );
@@ -420,17 +511,19 @@ public class SystemSettings extends EmsPage {
                                     component.setVisible(true);
                                     target.addComponent(component);                                    
                                 }
-                                target.addComponent(formFeedback);
                             } else {
                                 logger.info("License installation cancelled.");
                                 info( new StringResourceModel("license.message.cancel", SystemSettings.this, null).getString() );
-                                target.addComponent(formFeedback);
                             }
-                            eulaDialogHolder.replace( new EmptyPanel("eula.holder.content") );
+                            dynamicDialogHolder.replace( new EmptyPanel("dynamic.holder.content") );
+                            target.addComponent(formFeedback);
+                            target.addComponent(dynamicDialogHolder);
                         }
-                    }, "51em");
-                    eulaDialogHolder.replace(dialog);
-
+                    }, "600px");
+                    dynamicDialogHolder.replace(dialog);
+                    if ( target != null ) {
+                        target.addComponent(dynamicDialogHolder);
+                    }
                 } catch ( IOException e ) {
                     error( ExceptionUtils.getMessage(e) );
                     logger.log( Level.WARNING, "Error accessing license '"+ExceptionUtils.getMessage(e)+"'." );
@@ -456,5 +549,85 @@ public class SystemSettings extends EmsPage {
                 logger.log( Level.INFO, "License not found in upload." );
             }
         }
+    }
+
+    private final class ListenerModel implements IDetachable {
+        private String listenerAddr;
+        private String listenerPort;
+
+        private void init() {
+            if ( listenerAddr==null || listenerPort==null ) {
+                listenerAddr = config.getProperty("em.server.listenaddr", "*");
+                if ( "0.0.0.0".equals(listenerAddr) ) {
+                    listenerAddr = "*";
+                }
+
+                listenerPort = config.getProperty("em.server.listenport", "8182");
+            }
+        }
+
+        public String getListenerAddr() {
+            init();
+            return listenerAddr;
+        }
+
+        public String getListenerPort() {
+            init();
+            return listenerPort;
+        }
+
+        @Override
+        public void detach() {
+            listenerAddr = null;
+            listenerPort = null;
+        }
+    }
+
+    private final class SslModel implements IDetachable {
+        private X509Certificate certificate;
+
+        private void init() {
+            if ( certificate == null ) {
+                try {
+                    certificate = defaultKey.getSslInfo().getCertificate();
+                } catch (IOException ioe) {
+                    logger.log( Level.WARNING, "Error getting SSL information.", ioe);
+                }
+            }
+        }
+
+        public String getIssuerDn() {
+            init();
+            return certificate==null ? "" : certificate.getIssuerDN().getName();
+        }
+
+        public String getSerialNumber() {
+            init();
+            return certificate==null ? "" : hexFormat(certificate.getSerialNumber().toByteArray());
+        }
+
+        public String getSubjectDn() {
+            init();
+            return certificate==null ? "" : certificate.getSubjectDN().getName();    
+        }
+
+        @Override
+        public void detach() {
+            certificate = null;
+        }
+    }
+
+    private String hexFormat( final byte[] bytes ) {
+        StringBuilder builder = new StringBuilder();
+
+        for ( int i=0; i<bytes.length; i++ ) {
+            String byteHex = HexUtils.hexDump(new byte[]{bytes[i]});
+            builder.append(byteHex.toUpperCase());
+            if ( i<bytes.length-1 ) {
+                builder.append(':');
+            }
+        }
+
+        return builder.toString();
     }
 }

@@ -1,11 +1,16 @@
 package com.l7tech.server.ems;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import com.l7tech.objectmodel.DeleteException;
+
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 
 /**
  * Encapsulates behavior for setup of an EMS instance.
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public interface SetupManager {
 
     /**
@@ -18,7 +23,7 @@ public interface SetupManager {
      * @return true if initial setup has been performed per the above.
      * @throws com.l7tech.server.ems.SetupException if there is a problem checking whether any internal users exist
      */
-    @Transactional(propagation= org.springframework.transaction.annotation.Propagation.SUPPORTS, readOnly=true)
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     boolean isSetupPerformed() throws SetupException;
 
     /**
@@ -30,12 +35,30 @@ public interface SetupManager {
      * @param initialAdminPassword  password for iniital administrator user.  Required.
      * @throws com.l7tech.server.ems.SetupException if this EMS instance has already been set up.
      */
-    @Transactional(propagation= org.springframework.transaction.annotation.Propagation.REQUIRED, rollbackFor=Throwable.class)
     void performInitialSetup(String licenseXml, String initialAdminUsername, String initialAdminPassword) throws SetupException;
 
     /**
      *
      */
-    @Transactional(propagation= org.springframework.transaction.annotation.Propagation.REQUIRED, rollbackFor=Throwable.class)
     void deleteLicense() throws DeleteException;
+
+    /**
+     *
+     */
+    void configureListener( String ipaddress, int port ) throws SetupException;
+
+    /**
+     *
+     */
+    String saveSsl( PrivateKey key, X509Certificate[] certificateChain ) throws SetupException;
+
+    /**
+     *
+     */
+    String generateSsl( String hostname ) throws SetupException;
+
+    /**
+     *
+     */
+    void setSslAlias( String alias ) throws SetupException;
 }

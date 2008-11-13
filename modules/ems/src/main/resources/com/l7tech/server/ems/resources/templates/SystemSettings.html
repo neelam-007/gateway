@@ -242,6 +242,46 @@
                                     </td>
                                 </tr>
                                 <tr>
+                                    <th class="top"><wicket:message key="label.listener"/>:</th>
+                                    <td class="top">
+                                        <table>
+                                            <tr>
+                                                <td><wicket:message key="label.listener.addr"/>:</td>
+                                                <td wicket:id="listener.addr"></td>
+                                            </tr>
+                                            <tr>
+                                                <td><wicket:message key="label.listener.port"/>:</td>
+                                                <td wicket:id="listener.port"></td>
+                                            </tr>
+                                        </table>
+                                        <form method="post" action="SystemSettings.html" wicket:id="listenerForm">
+                                            <button type="button" wicket:id="listenerChangeButton"><wicket:message key="label.change">Change</wicket:message></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="top"><wicket:message key="label.ssl.info"/>:</th>
+                                    <td class="top">
+                                        <table>
+                                            <tr>
+                                                <td><wicket:message key="label.ssl.cert.issuer"/>:</td>
+                                                <td wicket:id="ssl.cert.issuer"></td>
+                                            </tr>
+                                            <tr>
+                                                <td><wicket:message key="label.ssl.cert.serialNumber"/>:</td>
+                                                <td wicket:id="ssl.cert.serialNumber"></td>
+                                            </tr>
+                                            <tr>
+                                                <td><wicket:message key="label.ssl.cert.subject"/>:</td>
+                                                <td wicket:id="ssl.cert.subject"></td>
+                                            </tr>
+                                        </table>
+                                        <form method="post" action="SystemSettings.html" wicket:id="sslForm">
+                                            <button type="button" wicket:id="sslChangeButton"><wicket:message key="label.change">Change</wicket:message></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <tr>
                                     <th><wicket:message key="label.started"/>:</th>
                                     <td wicket:id="time.ems.process.started"/>
                                 </tr>
@@ -298,8 +338,16 @@
                                         <th class="top"><wicket:message key="label.grants"/>:</th>
                                         <td><textarea rows="3" cols="80" wicket:id="licenseGrants" readonly="true"></textarea></td>
                                     </tr>
+                                    <tr>
+                                        <th></th>
+                                        <td>
+                                            <form method="post" action="SystemSettings.html" wicket:id="licenseDeleteForm">
+                                                <button type="button" wicket:id="deleteLicenseButton"><wicket:message key="label.delete">Delete</wicket:message></button>
+                                            </form>
+                                        </td>
+                                    </tr>
                                 </table>
-                            </div>                                
+                            </div>
                             <h4><wicket:message key="label.change.license"/></h4>
                             <form method="post" action="SystemSettings.html" enctype="multipart/form-data"  wicket:id="licenseForm">
                                 <table class="indent spaced">
@@ -310,21 +358,10 @@
                                     </tr>
                                 </table>
                             </form>
-                            <div wicket:id="delete.license.container">
-                                <form method="post" action="SystemSettings.html" wicket:id="licenseDeleteForm">
-                                    <table class="indent spaced">
-                                        <tr>
-                                            <th class="middle"><wicket:message key="label.delete.license"/>:</th>
-                                            <td class="middle"><button type="button" wicket:id="deleteLicenseButton"><wicket:message key="label.delete">Delete</wicket:message></button></td>
-                                            <td class="middle"></td>
-                                        </tr>
-                                    </table>
-                                </form>
-                            </div>
                         </div>
                     </div>
-                    <div wicket:id="eula.holder">
-                        <div wicket:id="eula.holder.content"/>
+                    <div wicket:id="dynamic.holder">
+                        <div wicket:id="dynamic.holder.content"/>
                     </div>
                 </wicket:extend>
             </div>

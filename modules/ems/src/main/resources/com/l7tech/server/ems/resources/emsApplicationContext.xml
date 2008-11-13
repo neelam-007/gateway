@@ -146,6 +146,19 @@
             <bean class="com.l7tech.server.util.LazyPropertyChangeDispatcher">
                 <constructor-arg>
                     <map>
+                        <entry key="defaultKey">
+                            <list>
+                                <value>keyStoreDefaultSslKey</value>
+                                <value>keyStoreDefaultCaKey</value>
+                                <value>keyStoreSearchForAlias</value>
+                            </list>
+                        </entry>
+                        <entry key="servletContainer">
+                            <list>
+                                <value>keyStoreDefaultSslKey</value>
+                                <value>em.server.listenaddr</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -355,14 +368,16 @@
     <!-- Initial setup manager -->
     <bean id="setupManager" class="com.l7tech.server.ems.SetupManagerImpl" depends-on="internalIdentityProvider">
         <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="licenseManager"/>
-        <constructor-arg index="2" ref="identityProviderFactory"/>
-        <constructor-arg index="3" ref="identityProviderConfigManager"/>
-        <constructor-arg index="4" ref="roleManager"/>
-        <constructor-arg index="5" ref="enterpriseFolderManager" />
-        <constructor-arg index="6" ref="auditContext"/>
-        <constructor-arg index="7" ref="keystoreFileManager"/>
-        <constructor-arg index="8" ref="clusterPropertyManager"/>
+        <constructor-arg index="1" ref="transactionManager"/>
+        <constructor-arg index="2" ref="licenseManager"/>
+        <constructor-arg index="3" ref="identityProviderFactory"/>
+        <constructor-arg index="4" ref="identityProviderConfigManager"/>
+        <constructor-arg index="5" ref="roleManager"/>
+        <constructor-arg index="6" ref="enterpriseFolderManager" />
+        <constructor-arg index="7" ref="auditContext"/>
+        <constructor-arg index="8" ref="keystoreFileManager"/>
+        <constructor-arg index="9" ref="clusterPropertyManager"/>
+        <property name="keyStoreManager" ref="ssgKeyStoreManager"/>
     </bean>
 
     <!-- Security Manager -->
@@ -374,6 +389,7 @@
     <bean id="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="defaultKey"/>
+        <constructor-arg index="2" ref="managedBackgroundTimer"/>
     </bean>
 
     <bean id="userPropertyManager" class="com.l7tech.server.ems.user.UserPropertyManagerImpl" parent="hibernateBean"/>
@@ -418,5 +434,7 @@
         <constructor-arg index="3" ref="ssgKeyStoreManager"/>
         <constructor-arg index="4" ref="transactionManager"/>
     </bean>
+
+    <bean id="keystoreMutatorSwitch" class="com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore$StartupListener"/>
 
 </beans>

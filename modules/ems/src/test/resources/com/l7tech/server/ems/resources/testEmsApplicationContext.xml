@@ -30,4 +30,13 @@
     <!-- License Manager -->
     <bean id="clusterPropertyManager" class="com.l7tech.server.MockClusterPropertyManager"/>
 
+    <!-- Mock test key -->
+    <bean id="defaultKey" class="com.l7tech.server.TestDefaultKey"/>
+
+    <bean id="serverConfig" class="com.l7tech.util.MockConfig">
+        <constructor-arg>
+            <props>                
+            </props>
+        </constructor-arg>
+    </bean>
 </beans>

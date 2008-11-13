@@ -10,6 +10,7 @@ import com.l7tech.server.cluster.ClusterPropertyListener;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.util.Config;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -34,7 +35,7 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public class ServerConfig implements ClusterPropertyListener {
+public class ServerConfig implements ClusterPropertyListener, Config {
 
     //- PUBLIC
 
@@ -262,10 +263,12 @@ public class ServerConfig implements ClusterPropertyListener {
         prepopulateSystemProperties();
     }
 
+    @Override
     public void clusterPropertyChanged(final ClusterProperty clusterPropertyOld, final ClusterProperty clusterPropertyNew) {
         clusterPropertyEvent(clusterPropertyNew, clusterPropertyOld);
     }
 
+    @Override
     public void clusterPropertyDeleted(final ClusterProperty clusterProperty) {
         clusterPropertyEvent(clusterProperty, clusterProperty);
     }
@@ -276,6 +279,21 @@ public class ServerConfig implements ClusterPropertyListener {
      */
     public String getProperty(String propName) {
         return NO_CACHE_BY_DEFAULT_VALUE ? getPropertyUncached(propName) : getPropertyCached(propName);
+    }
+
+    /**
+     * @return the requested property, possibly with caching at this layer only
+     * unless the system property {@link #NO_CACHE_BY_DEFAULT} is true.
+     */
+    @Override
+    public String getProperty(String propName, String emergencyDefault) {
+        String value = getProperty(propName);
+
+        if ( value == null ) {
+            value = emergencyDefault;            
+        }
+
+        return value;
     }
 
     /**
@@ -669,6 +687,7 @@ public class ServerConfig implements ClusterPropertyListener {
         return dir;
     }
 
+    @Override
     public int getIntProperty(String propName, int emergencyDefault) {
         String strval = getProperty(propName);
         int val;
@@ -693,6 +712,7 @@ public class ServerConfig implements ClusterPropertyListener {
         return val;
     }
 
+    @Override
     public long getLongProperty(String propName, long emergencyDefault) {
         String strval = getProperty(propName);
         long val;
@@ -717,6 +737,7 @@ public class ServerConfig implements ClusterPropertyListener {
         return val;
     }
 
+    @Override
     public boolean getBooleanProperty(String propName, boolean emergencyDefault) {
         String strval = getProperty(propName);
         return strval == null ? emergencyDefault : Boolean.parseBoolean(strval);
@@ -762,8 +783,27 @@ public class ServerConfig implements ClusterPropertyListener {
      */
     public boolean putProperty(String propName, String value) {
         if (!isMutable(propName)) return false;
-        _properties.put(propName, value);
+        String oldValue = (String) _properties.put(propName, value);
         valueCache.remove(propName);
+
+        PropertyChangeListener pcl;
+        propLock.readLock().lock();
+        try {
+            pcl = propertyChangeListener;
+        } finally {
+            propLock.readLock().unlock();
+        }
+
+        if (pcl != null) {
+            if (oldValue==null || value==null || !oldValue.equals(value)) {
+                PropertyChangeEvent pce = new PropertyChangeEvent(this, propName, oldValue, value);
+                try {
+                    pcl.propertyChange(pce);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Unexpected exception during property change event dispatch.", e);
+                }
+            }
+        }
 
         return true;
     }

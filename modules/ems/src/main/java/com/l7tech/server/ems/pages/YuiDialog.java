@@ -158,13 +158,17 @@ public class YuiDialog extends Panel {
         if ( content instanceof MarkupContainer ) {
             MarkupContainer container = (MarkupContainer) content;
             targetForm = (Form) container.visitChildren(Form.class, new Component.IVisitor(){
+                @Override
                 public Object component(Component component) { return component; }
             });
         }
+        boolean isFileUpload = false;
         if ( targetForm == null ) {
             targetForm = defaultForm;
+        } else if ( targetForm instanceof YuiFileUploadForm ) {
+            isFileUpload = true;
         }
-        AjaxButton[] ajaxButtons = buildButtons( targetForm, feedback );
+        org.apache.wicket.markup.html.form.Button[] ajaxButtons = buildButtons( targetForm, feedback, isFileUpload );
 
         String initScript = buildInitJavascript(dialog.getMarkupId(), ajaxButtons, defaultButton, buttons, width);
         Component script = new Label("javascript", initScript).setEscapeModelStrings(false);
@@ -172,7 +176,7 @@ public class YuiDialog extends Panel {
         add( dialog );
         add( defaultForm );
         add( script );
-        for ( AjaxButton ajaxButton : ajaxButtons ) {
+        for ( Component ajaxButton : ajaxButtons ) {
             add( ajaxButton );
         }
     }
@@ -195,40 +199,57 @@ public class YuiDialog extends Panel {
         ((WebMarkupContainer)get("dialog")).replace(component);
     }
 
+    public String getSuccessScript() {
+        return successScript;
+    }
+
     /**
      * Create a listener for dialog actions.
      */
     public interface OkCancelCallback extends Serializable {
         void onAction( YuiDialog dialog, AjaxRequestTarget target, Button button );
-    }    
-    
+    }
+
     //- PRIVATE
     
     private final OkCancelCallback callback;
+    private String successScript;
 
     /**
      * Create the wicket buttons, note that this creates all buttons even though some will not be used. 
      */
-    private AjaxButton[] buildButtons( final Form targetForm, final Component feedback ) {
-        Collection<AjaxButton> ajaxButtons = new ArrayList<AjaxButton>();
+    private org.apache.wicket.markup.html.form.Button[] buildButtons( final Form targetForm, final Component feedback, final boolean isFileUpload ) {
+        Collection<org.apache.wicket.markup.html.form.Button> ajaxButtons = new ArrayList<org.apache.wicket.markup.html.form.Button>();
         
         for ( Button button : Button.values() ) {
             final Button result = button;
             final String buttonId = button.getComponentId();
-            AjaxButton ajaxButton;
+            org.apache.wicket.markup.html.form.Button ajaxButton;
             if ( button.isFormSubmit() ) {
-                ajaxButton = new AjaxButton(buttonId, targetForm){
-                    @Override
-                    protected void onSubmit(AjaxRequestTarget target, Form form) {
-                        if ( callback != null ) callback.onAction(YuiDialog.this, target, result);
-                        String script = "{var button = document.getElementById('"+getMarkupId()+"'); if (button.wicketSuccessCallback) button.wicketSuccessCallback();}";
-                        target.appendJavascript(script);                
-                    }
-                    @Override
-                    protected void onError(AjaxRequestTarget target, Form form) {
-                        target.addComponent(feedback);               
-                    }
-                };
+                if ( isFileUpload ) {
+                    ajaxButton = new org.apache.wicket.markup.html.form.Button(buttonId){
+                        @Override
+                        protected String getOnClickScript() {
+                            return ((YuiFileUploadForm)targetForm).getSubmitJavascript();
+                        }
+                    };
+                } else {
+                    ajaxButton = new AjaxButton(buttonId, targetForm){
+                        @Override
+                        protected void onSubmit(AjaxRequestTarget target, Form form) {
+                            if ( callback != null ) callback.onAction(YuiDialog.this, target, result);
+                            String script = "{var button = document.getElementById('"+getMarkupId()+"'); if (button.wicketSuccessCallback) button.wicketSuccessCallback();}";
+                            target.prependJavascript(script);
+                        }
+                        @Override
+                        protected void onError(AjaxRequestTarget target, Form form) {
+                            target.addComponent(feedback);
+                        }
+                    };
+                }
+                if ( successScript == null ) {
+                    successScript = "{var button = document.getElementById('"+ajaxButton.getMarkupId()+"'); if (button.wicketSuccessCallback) button.wicketSuccessCallback();}";
+                }
             } else {
                 ajaxButton = new AjaxButton(buttonId, targetForm){
                     @Override
@@ -243,14 +264,14 @@ public class YuiDialog extends Panel {
             ajaxButtons.add(ajaxButton);
         }
 
-        return ajaxButtons.toArray(new AjaxButton[ajaxButtons.size()]);
+        return ajaxButtons.toArray(new org.apache.wicket.markup.html.form.Button[ajaxButtons.size()]);
     }
 
     /**
      * Generate the component specific javascript. 
      */
     private String buildInitJavascript( final String dialogId, 
-                                        final AjaxButton[] ajaxButtons, 
+                                        final org.apache.wicket.markup.html.form.Button[] ajaxButtons,
                                         final Button defaultButton,
                                         final Button[] buttons,
                                         final String width ) {
@@ -278,11 +299,11 @@ public class YuiDialog extends Panel {
         return scriptBuilder.toString();
     }
     
-    private String getButtonMarkupId( final AjaxButton[] ajaxButtons,
+    private String getButtonMarkupId( final org.apache.wicket.markup.html.form.Button[] ajaxButtons,
                                       final Button button ) {
         String id = "";
         
-        for ( AjaxButton ajaxButton : ajaxButtons ) {
+        for ( Component ajaxButton : ajaxButtons ) {
             if ( ajaxButton.getId().equals(button.getComponentId()) ) {
                 id = ajaxButton.getMarkupId();
                 break;
