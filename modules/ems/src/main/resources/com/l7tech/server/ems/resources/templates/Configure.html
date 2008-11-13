@@ -1106,12 +1106,12 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
 <div id="renameSSGClusterDialog">
     <div class="hd">Rename SSG Cluster</div>
     <div class="bd">
-        <form name="renameSSGClusterForm" action="action/renameSSGCluster">
-            <input id="renameSSGClusterDialog_id" type="hidden" name="id" />
+        <form name="renameSSGClusterForm" wicket:id="renameSSGClusterForm" method="POST">
+            <input id="renameSSGClusterDialog_id" wicket:id="renameSSGClusterDialog_id" type="hidden" name="id" />
             <table class="spaced">
                 <tr>
                     <th>New Name:</th>
-                    <td><input type="text" id="renameSSGClusterDialog_name" name="name" size="40" maxlength="128" onkeyup="validateRenameSSGClusterDialog();" /> <span id="renameSSGClusterDialog_name_hint" class="red"></span></td>
+                    <td><input type="text" id="renameSSGClusterDialog_name" wicket:id="renameSSGClusterDialog_name" name="name" size="40" maxlength="128" onkeyup="validateRenameSSGClusterDialog();" /> <span id="renameSSGClusterDialog_name_hint" class="red"></span></td>
                 </tr>
             </table>
         </form>

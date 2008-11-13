@@ -67,7 +67,7 @@ public class Configure extends EmsPage  {
                     String newFolderName = addFolderInputName.getModelObjectAsString();
                     String parentGuid = addFolderDialogInputParentId.getModelObjectAsString();
                     logger.info("Adding folder \"" + newFolderName + "\" (parent folder GUID = " + parentGuid + ").");
-
+                    //noinspection UnnecessaryLocalVariable
                     final EnterpriseFolder newFolder = enterpriseFolderManager.create(newFolderName, parentGuid);
                     return newFolder;
                 } catch (Exception e) {
@@ -127,6 +127,7 @@ public class Configure extends EmsPage  {
             protected Object getJsonResponseData() {
                 try {
                     logger.info("Adding SSG Cluster \""+ addSSGClusterInputName.getModelObjectAsString() + "\" (parent folder GUID = "+ addSSGClusterDialogInputParentId.getModelObjectAsString() + ").");
+                    //noinspection UnnecessaryLocalVariable
                     final SsgCluster newCluster = ssgClusterManager.create(
                             addSSGClusterInputName.getModelObjectAsString(),
                             addSSGClusterInputHostName.getModelObjectAsString(),
@@ -143,6 +144,27 @@ public class Configure extends EmsPage  {
         addSSGClusterForm.add(addSSGClusterInputName);
         addSSGClusterForm.add(addSSGClusterInputHostName);
         addSSGClusterForm.add(addSSGClusterInputPort);
+
+        final HiddenField renameSSGClusterDialogInputId = new HiddenField("renameSSGClusterDialog_id", new Model(""));
+        final RequiredTextField renameSSGClusterInputName = new RequiredTextField("renameSSGClusterDialog_name", new Model(""));
+        Form renameSSGClusterForm = new JsonDataResponseForm("renameSSGClusterForm"){
+            @Override
+            protected Object getJsonResponseData() {
+                try {
+                    String renamedSSGClusterGuid = renameSSGClusterDialogInputId.getModelObjectAsString();
+                    String newName = renameSSGClusterInputName.getModelObjectAsString();
+                    logger.info("Renaming SSG Cluster (GUID = "+ renamedSSGClusterGuid + ") with a new name, " + newName);
+
+                    ssgClusterManager.renameByGuid(newName, renamedSSGClusterGuid);
+                    return null;    // No response object expected if successful.
+                } catch (Exception e) {
+                    logger.warning(e.toString());
+                    return new JSONException(e);
+                }
+            }
+        };
+        renameSSGClusterForm.add(renameSSGClusterDialogInputId);
+        renameSSGClusterForm.add(renameSSGClusterInputName);
 
         final HiddenField deleteSSGClusterDialogInputId = new HiddenField("deleteSSGClusterDialog_id", new Model(""));
         Form deleteSSGClusterForm = new JsonDataResponseForm("deleteSSGClusterForm"){
@@ -166,6 +188,7 @@ public class Configure extends EmsPage  {
         add(renameFolderForm);
         add(deleteFolderForm);
         add(addSSGClusterForm);
+        add(renameSSGClusterForm);
         add(deleteSSGClusterForm);
         add(interaction);
     }

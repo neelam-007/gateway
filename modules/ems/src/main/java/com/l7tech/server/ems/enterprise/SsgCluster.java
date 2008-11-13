@@ -32,12 +32,6 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
 
     private EnterpriseFolder parentFolder;
 
-    public static void verifyLegalName(String name) throws InvalidNameException {
-        if (name.length() == 0) throw new InvalidNameException("Name must not be empty.");
-        if (name.length() > MAX_NAME_LENGTH) throw new InvalidNameException("Name must not exceed " + MAX_NAME_LENGTH + " characters");
-        if (name.matches(ILLEGAL_CHARACTERS)) throw new InvalidNameException("Name must not contain these characters: " + ILLEGAL_CHARACTERS);
-    }
-
     @Deprecated // For serialization and persistence only
     public SsgCluster() {
     }
@@ -48,13 +42,6 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         this.sslHostName = sslHostName;
         this.adminPort = adminPort;
         this.parentFolder = parentFolder;
-    }
-
-    @Override
-    public void setName(String name) throws InvalidNameException {
-        verifyLegalName(name);
-        // TODO verify unique name amongst siblings
-        super.setName(name);
     }
 
     @Column(name="admin_port", nullable=false)
@@ -85,7 +72,6 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
      * @param parentFolder   the parent folder; must not be null
      */
     public void setParentFolder(EnterpriseFolder parentFolder) {
-        // TODO verify unique name amongst siblings
         this.parentFolder = parentFolder;
     }
 
