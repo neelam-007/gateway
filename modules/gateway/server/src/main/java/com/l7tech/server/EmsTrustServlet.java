@@ -63,6 +63,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
     private static final String FORM_HTML = "/com/l7tech/server/resources/emstrustform.html";
     private static final String FORM_CSS = "/com/l7tech/server/resources/emstrust.css";
     private static final String FORM_JS = "/com/l7tech/server/resources/emstrust.js";
+    private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
 
     private static final String[] FIELDS = {
             "message",             // 2
@@ -140,6 +141,13 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         FormParams param = new FormParams(req.getHttpRequestKnob().getParameterMap());
 
         if (isInitialRequest(param)) {
+            String returnCookie = createReturnCookie();
+            Cookie cook = new Cookie("returncookie", returnCookie);
+            cook.setSecure(true);
+            hresp.addCookie(cook);
+            String intro = param.get("emscertpem") == null ? "Enter" : "Confirm";
+            param.put("message", intro + " details about the Enterprise Manager Server that you wish to use to manage this Gateway.");
+            param.put("returncookiehash", computeReturnCookieHash(returnCookie));
             sendForm(hresp, param);
             return;
         }
@@ -200,23 +208,26 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         }
     }
 
+    private X509Certificate[] getClientCertificateChain(HttpServletRequest hreq) throws IOException {
+        Object param = hreq.getAttribute(SERVLET_REQUEST_ATTR_X509CERTIFICATE);
+        if (param == null)
+            return null;
+        if (param instanceof X509Certificate)
+            return new X509Certificate[] { (X509Certificate)param };
+        if (param instanceof X509Certificate[])
+            return (X509Certificate[])param;
+        throw new IOException("Request X509Certificate was unsupported type " + param.getClass());
+    }
+
     private void doHandleTrustRequest(HttpServletRequest hreq, HttpServletResponse hresp, FormParams inParam) throws Exception {
         FormParams param = new FormParams();
         for (Map.Entry<String, String> entry : inParam.entrySet())
             param.put(entry.getKey(), stripchars(entry.getValue()));
 
-
         String emsId = param.get("emsid");
         X509Certificate emsCert = decodePemCert(param, "emscertpem");
         String emsUsername = param.get("emsusername");
-        String username = param.get("username");
-        String password = param.get("password");        
-
-        // TODO support client cert auth
-        //X509Certificate[] clientCertChain = req.getHttpRequestKnob().getClientCertificate();
-
-        AdminLoginResult result = adminLogin.login(username, password);
-        User user = result.getUser();
+        User user = authenticateUser(hreq, param);
 
         try {
             configureUserMapping(hreq, emsId, emsCert, emsUsername, user);
@@ -234,6 +245,24 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         }
 
         sendHtml(hresp, "<p>The specified user mapping has been configured.</p>");
+    }
+
+    // Throws LoginException if user can't authenticate.  Supports either password (via the form) or client cert auth
+    private User authenticateUser(HttpServletRequest hreq, FormParams param) throws IOException, LoginException {
+        X509Certificate[] clientCertChain = getClientCertificateChain(hreq);
+
+        AdminLoginResult result;
+        if (clientCertChain != null && clientCertChain[0] != null) {
+            // Authenticate with client cert
+            result = adminLogin.login(clientCertChain[0]);
+        } else {
+            // Authenticate with username/password
+            String username = param.get("username");
+            String password = param.get("password");
+            result = adminLogin.login(username, password);
+        }
+
+        return result.getUser();
     }
 
     private void configureUserMapping(final HttpServletRequest hreq,
