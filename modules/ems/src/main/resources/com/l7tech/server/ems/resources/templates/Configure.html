@@ -74,6 +74,7 @@
                 CANNOT_DOWNLOAD_ENTITY_DATA : 'Failed to get array of enterprise entities from server: ',
                 CANNOT_PARSE_ENTITY_DATA : 'Failed to parse array of enterprise entities downloaded from server: ',
                 ENTITY_DATA_ERROR : 'Data error.',
+                CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Failed to get data from server for establishing trust by SSG Cluster: ',
                 FOLDER_NAME_HINT : 'must be &le; 128 characters, no slash "/"',
                 SSG_CLUSTER_NAME_HINT : 'must be &le; 128 characters, no slash "/"',
                 SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
@@ -120,6 +121,7 @@
             var addSSGClusterDialog;
             var renameSSGClusterDialog;
             var deleteSSGClusterDialog;
+            var ssgClusterTrustDialog;
 
             function showHideLogReader() {
                 var debugLogReader = document.getElementById('debugLogReader');
@@ -662,8 +664,15 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                             localizedStrings.OK);
                     if (typeof result == 'object' && !l7.Util.isException(result)) {
                         // A return object containing the ID of the new cluster is expected.
-                        var id = result.id; // Not used now but may be I'll think of something.
+                        var id = result.id;
                         loadEntityTreeTable();  // Reloads to show new SSG Cluster.
+
+                        // Note: loadEntityTreeTable() is asynchronous, so we cannot
+                        // call entityTreeTable.getEntityById(id).name etc. here.
+                        var name = document.getElementById('addSSGClusterDialog_name').value;
+                        var hostName = document.getElementById('addSSGClusterDialog_hostName').value;
+                        var port = document.getElementById('addSSGClusterDialog_port').value;
+                        launchSSGClusterTrustDialog(id, name, hostName, port);
                     }
                 }
                 addSSGClusterDialog.callback.failure = function(o) {
@@ -755,6 +764,74 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 }
             }
 
+            function initSSGClusterTrustDialog() {
+                ssgClusterTrustDialog = new YAHOO.widget.Dialog('ssgClusterTrustDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                // TODO ? test gateway is available
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'form',
+                    visible     : false
+                });
+                ssgClusterTrustDialog.render();
+            }
+
+            /**
+             * @param {string} id   SSG Cluster ID
+             */
+            function launchSSGClusterTrustDialog(id, name, hostName, port) {
+                var callback = {
+                    success : function(o) {
+                        var result = l7.Dialog.parseJSON(
+                                o.responseText,
+                                localizedStrings.ERROR,
+                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_GET_DATA_TO_ESTABLISH_TRUST) + '</p>',
+                                localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                localizedStrings.OK);
+                        if (typeof result == 'object' && !l7.Util.isException(result)) {
+                            document.getElementById('ssgClusterTrustForm_emsid').value = result.serverId;
+                            document.getElementById('ssgClusterTrustForm_emscertpem').value = result.sslCertPem;
+                            document.getElementById('ssgClusterTrustForm_emsusername').value = result.userName;
+                            document.getElementById('ssgClusterTrustForm_returnurl').value = document.URL;
+                            document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/emstrust';
+                            document.getElementById('ssgClusterTrustDialog_name').innerHTML = o.argument.name;
+                            ssgClusterTrustDialog.center();
+                            ssgClusterTrustDialog.show();
+                        }
+                    },
+                    failure : function(o) {
+                        l7.Dialog.showErrorDialog(
+                                localizedStrings.ERROR,
+                                localizedStrings.CANNOT_GET_DATA_TO_ESTABLISH_TRUST + o.statusText,
+                                localizedStrings.OK);
+                    },
+                    argument : {
+                        id       : id,
+                        name     : name,
+                        hostName : hostName,
+                        port     : port
+                    }
+                };
+                var url = document.forms['getGatewayTrustServletInputsForm'].action;
+                YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
+            }
+
             function initDialogs() {
                 initAddFolderDialog();
                 initRenameFolderDialog();
@@ -762,6 +839,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 initAddSSGClusterDialog();
                 initRenameSSGClusterDialog();
                 initDeleteSSGClusterDialog();
+                initSSGClusterTrustDialog();
                 // TODO access account dialog
             }
 
@@ -1092,15 +1170,31 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     <td><input type="text" id="addSSGClusterDialog_port" wicket:id="addSSGClusterDialog_port" name="port" size="10" onkeyup="validateAddSSGClusterDialog();" /> <span id="addSSGClusterDialog_port_hint" class="red"></span></td>
                 </tr>
             </table>
-            <div style="width: 40em;">
-                When you click OK, you will be redirected to the specified SSG Cluster where
-                you can authenticate using an administrator account on that SSG Cluster,
-                create a trust relationship  between the SSG Cluster and this Enterprise Service Manager,
-                and map that account to your Enterprise Service Manager account.
-                When completed, you will be returned to this page.
-            </div>
         </form>
     </div>
+</div>
+
+<div id="ssgClusterTrustDialog">
+    <div class="hd">Establish Trust by SSG Cluster</div>
+    <div class="bd" style="width: 40em;">
+        <form id="ssgClusterTrustForm" method="POST">
+            <input id="ssgClusterTrustForm_emsid" type="hidden" name="emsid" />
+            <input id="ssgClusterTrustForm_emscertpem" type="hidden" name="emscertpem" />
+            <input id="ssgClusterTrustForm_emsusername" type="hidden" name="emsusername" />
+            <input id="ssgClusterTrustForm_returnurl" type="hidden" name="returnurl" />
+        </form>
+        To establish trust of this Enterprise Service Manager by the SSG Cluster
+        &ldquo;<span id="ssgClusterTrustDialog_name"></span>&rdquo;,
+        you will now be redirected to the cluster server where
+        you can authenticate using a gateway administrator account.
+        That account will also be mapped to your Enterprise Service Manager account.
+        When completed, you will be returned to this page.
+    </div>
+</div>
+
+<div style="display: none;">
+    <form name="getGatewayTrustServletInputsForm" wicket:id="getGatewayTrustServletInputsForm" method="POST">
+    </form>
 </div>
 
 <div id="renameSSGClusterDialog">

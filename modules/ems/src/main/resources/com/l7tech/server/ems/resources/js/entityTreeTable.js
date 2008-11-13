@@ -801,10 +801,20 @@ if (!l7.EntityTreeTable) {
             }
 
             /**
+             * @public
              * @return {array} the current entity list; as an array of entity object literals
              */
             this.getEntities = function() {
                 return this._entities;
+            }
+
+            /**
+             * @public
+             * @param {string} id   entity ID
+             * @return {object} the entity object literal; undefined if not found
+             */
+            this.getEntityById = function() {
+                return this._entitiesById[entityId];
             }
 
             /**
