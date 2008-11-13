@@ -59,8 +59,7 @@ public class GatewayContext {
     private String buildCookie( final String esmId, final String userId ) {
         String cookie =  "EM-UUID=" + esmId;
         if ( userId != null ) {
-            //TODO [steve] fix separator (should be cookie style, not query string)
-            cookie += "&EM-USER-UUID=" + userId;
+            cookie += "; EM-USER-UUID=" + userId;
         }
         return cookie;
     }

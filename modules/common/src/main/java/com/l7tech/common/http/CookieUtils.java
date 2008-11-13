@@ -21,15 +21,6 @@ public class CookieUtils {
      */
     public static final String PREFIX_GATEWAY_MANAGED = "l7-gmc-";
 
-
-    //Pattern is thread safe
-    private static final Pattern netscapeDatePattern;
-    private static final Pattern rfc850DatePattern;
-    private static final Pattern rfc1123DatePattern;
-    private static final Pattern rfc1036AndRfc822DatePattern;
-    private static final Pattern ansiCDatePattern;
-    private static final Pattern amazonDatePattern;
-    
     private static final Map<Pattern, String> datePatternToFormat;
 
     /*NETSCAPE_RFC850_DATEFORMAT matches both netscape and rfc1123 date formats for parsing dates*/
@@ -60,31 +51,30 @@ public class CookieUtils {
         //This could live somewhere else, or driven from configuration. Either way compile the patterns once and reuse
         datePatternToFormat = new HashMap<Pattern, String>();
         datePatterns = new ArrayList<Pattern>();
-        
-        netscapeDatePattern = Pattern.compile(NETSCAPE_PATTERN);
+
+        Pattern netscapeDatePattern = Pattern.compile(NETSCAPE_PATTERN);
         datePatterns.add(netscapeDatePattern);
         datePatternToFormat.put(netscapeDatePattern, NETSCAPE_RFC850_DATEFORMAT);
 
-        rfc850DatePattern = Pattern.compile(RFC850_PATTERN);
+        Pattern rfc850DatePattern = Pattern.compile(RFC850_PATTERN);
         datePatterns.add(rfc850DatePattern);
         datePatternToFormat.put(rfc850DatePattern, NETSCAPE_RFC850_DATEFORMAT);
 
-        rfc1123DatePattern = Pattern.compile(RFC1123_PATTERN);
+        Pattern rfc1123DatePattern = Pattern.compile(RFC1123_PATTERN);
         datePatterns.add(rfc1123DatePattern);
         datePatternToFormat.put(rfc1123DatePattern, RFC1123_RFC1036_RFC822_DATEFORMAT);
 
-        rfc1036AndRfc822DatePattern = Pattern.compile(RFC1036_RFC822_PATTERN);
+        Pattern rfc1036AndRfc822DatePattern = Pattern.compile(RFC1036_RFC822_PATTERN);
         datePatterns.add(rfc1036AndRfc822DatePattern);
         datePatternToFormat.put(rfc1036AndRfc822DatePattern, RFC1123_RFC1036_RFC822_DATEFORMAT);
 
-        ansiCDatePattern = Pattern.compile(ANSI_C_PATTERN);
+        Pattern ansiCDatePattern = Pattern.compile(ANSI_C_PATTERN);
         datePatterns.add(ansiCDatePattern);
         datePatternToFormat.put(ansiCDatePattern, ANSI_C_DATEFORMAT);
-        
-        amazonDatePattern = Pattern.compile(AMAZON_PATTERN);
+
+        Pattern amazonDatePattern = Pattern.compile(AMAZON_PATTERN);
         datePatterns.add(amazonDatePattern);
-        datePatternToFormat.put(amazonDatePattern, AMAZON_DATEFORMAT);
-        
+        datePatternToFormat.put(amazonDatePattern, AMAZON_DATEFORMAT);        
     }
 
     /*
@@ -158,7 +148,7 @@ public class CookieUtils {
      * @return true if passed though
      */
     public static boolean isPassThroughCookie(HttpCookie cookie) {
-        boolean passthrough = false;
+        boolean passthrough;
 
         passthrough = !isGatewayManagedCookie(cookie);
 
@@ -231,7 +221,7 @@ public class CookieUtils {
      * @return the HttpCookie.
      */
     public static HttpCookie fromHttpClientCookie(org.apache.commons.httpclient.Cookie httpClientCookie, boolean isNew) {
-        HttpCookie cookie = null;
+        HttpCookie cookie;
 
         if(isNew) {
             cookie = new HttpCookie(httpClientCookie.getName()
@@ -283,7 +273,7 @@ public class CookieUtils {
      * @return the HttpCookie.
      */
     public static HttpCookie fromServletCookie(javax.servlet.http.Cookie servletCookie, boolean isNew) {
-        HttpCookie cookie = null;
+        HttpCookie cookie;
 
         if(isNew) {
             cookie = new HttpCookie(servletCookie.getName()
@@ -304,6 +294,25 @@ public class CookieUtils {
         }
 
         return cookie;
+    }
+
+    /**
+     * <p>Creates HttpCookies from the given Servlet cookies.</p>
+     *
+     * @param servletCookies the Servlet cookies (may be null).
+     * @param isNew true if these are "new" cookies (as though from a Set-Cookie header)
+     * @return the HttpCookies (may be empty, never null).
+     */
+    public static HttpCookie[] fromServletCookies(javax.servlet.http.Cookie[] servletCookies, boolean isNew) {
+        List<HttpCookie> out = new ArrayList<HttpCookie>();
+
+        if(servletCookies!=null) {
+            for (javax.servlet.http.Cookie servletCookie : servletCookies) {
+                out.add(CookieUtils.fromServletCookie(servletCookie, isNew));
+            }
+        }
+
+        return out.toArray(new HttpCookie[out.size()]);
     }
 
     /**

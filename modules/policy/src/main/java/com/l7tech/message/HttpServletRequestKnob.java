@@ -60,14 +60,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     }
 
     public HttpCookie[] getCookies() {
-        Cookie[] cookies = request.getCookies();
-        List<HttpCookie> out = new ArrayList<HttpCookie>();
-        if(cookies!=null) {
-            for (Cookie cookie : cookies) {
-                out.add(CookieUtils.fromServletCookie(cookie, false));
-            }
-        }
-        return out.toArray(new HttpCookie[out.size()]);
+        return CookieUtils.fromServletCookies(request.getCookies(), false);
     }
 
     public HttpMethod getMethod() {
