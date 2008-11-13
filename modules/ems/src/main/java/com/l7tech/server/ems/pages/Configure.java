@@ -1,8 +1,10 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.enterprise.*;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
@@ -63,16 +65,27 @@ public class Configure extends EmsPage  {
         Form addFolderForm = new JsonDataResponseForm("addFolderForm"){
             @Override
             protected Object getJsonResponseData() {
+                String newFolderName = addFolderInputName.getModelObjectAsString();
+                String parentFolderGuid = addFolderDialogInputParentId.getModelObjectAsString();
                 try {
-                    String newFolderName = addFolderInputName.getModelObjectAsString();
-                    String parentGuid = addFolderDialogInputParentId.getModelObjectAsString();
-                    logger.info("Adding folder \"" + newFolderName + "\" (parent folder GUID = " + parentGuid + ").");
+                    logger.info("Adding folder \"" + newFolderName + "\" (parent folder GUID = " + parentFolderGuid + ").");
                     //noinspection UnnecessaryLocalVariable
-                    final EnterpriseFolder newFolder = enterpriseFolderManager.create(newFolderName, parentGuid);
+                    final EnterpriseFolder newFolder = enterpriseFolderManager.create(newFolderName, parentFolderGuid);
                     return newFolder;
                 } catch (Exception e) {
                     logger.warning(e.toString());
-                    return new JSONException(e);
+                    if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                        try {
+                            EnterpriseFolder parentFolder = enterpriseFolderManager.findByGuid(parentFolderGuid);
+                            String errorMsg = "A child folder must be unique in a parent folder. The folder '"
+                                + newFolderName + "' has already existed in the folder '" + parentFolder.getName() + "'.";
+                            return new JSONException(new DuplicateObjectException(errorMsg, e));
+                        } catch (FindException e1) {
+                            return new JSONException(e1);
+                        }
+                    } else {
+                        return new JSONException(e);
+                    }
                 }
             }
         };
@@ -84,16 +97,28 @@ public class Configure extends EmsPage  {
         Form renameFolderForm = new JsonDataResponseForm("renameFolderForm"){
             @Override
             protected Object getJsonResponseData() {
+                String renamedFolderGuid = renameFolderDialogInputId.getModelObjectAsString();
+                String newFolderName = renameFolderInputName.getModelObjectAsString();
                 try {
-                    String renamedFolderGuid = renameFolderDialogInputId.getModelObjectAsString();
-                    String newName = renameFolderInputName.getModelObjectAsString();
-                    logger.info("Renaming folder (GUID = "+ renamedFolderGuid + ") with a new name, " + newName);
+                    logger.info("Renaming folder (GUID = "+ renamedFolderGuid + ") with a new name, " + newFolderName);
 
-                    enterpriseFolderManager.renameByGuid(newName, renamedFolderGuid);
+                    enterpriseFolderManager.renameByGuid(newFolderName, renamedFolderGuid);
                     return null;    // No response object expected if successful.
                 } catch (Exception e) {
                     logger.warning(e.toString());
-                    return new JSONException(e);
+                    if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                        try {
+                            EnterpriseFolder renamedFolder = enterpriseFolderManager.findByGuid(renamedFolderGuid);
+                            EnterpriseFolder parentFolder = renamedFolder.getParentFolder();
+                            String errorMsg = "A child folder must be unique in a parent folder. The folder '"
+                                + newFolderName + "' has already existed in the folder '" + parentFolder.getName() + "'.";
+                            return new JSONException(new DuplicateObjectException(errorMsg, e));
+                        } catch (FindException e1) {
+                            return new JSONException(e1);
+                        }
+                    } else {
+                        return new JSONException(e);
+                    }
                 }
             }
         };
@@ -125,18 +150,32 @@ public class Configure extends EmsPage  {
         Form addSSGClusterForm = new JsonDataResponseForm("addSSGClusterForm"){
             @Override
             protected Object getJsonResponseData() {
+                String newClusterName = addSSGClusterInputName.getModelObjectAsString();
+                String parentFolderGuid = addSSGClusterDialogInputParentId.getModelObjectAsString();
                 try {
-                    logger.info("Adding SSG Cluster \""+ addSSGClusterInputName.getModelObjectAsString() + "\" (parent folder GUID = "+ addSSGClusterDialogInputParentId.getModelObjectAsString() + ").");
+                    logger.info("Adding SSG Cluster \""+ addSSGClusterInputName.getModelObjectAsString() +
+                        "\" (parent folder GUID = "+ addSSGClusterDialogInputParentId.getModelObjectAsString() + ").");
                     //noinspection UnnecessaryLocalVariable
                     final SsgCluster newCluster = ssgClusterManager.create(
-                            addSSGClusterInputName.getModelObjectAsString(),
+                            newClusterName,
                             addSSGClusterInputHostName.getModelObjectAsString(),
                             Integer.parseInt(addSSGClusterInputPort.getModelObjectAsString()),
-                            addSSGClusterDialogInputParentId.getModelObjectAsString());
+                            parentFolderGuid);
                     return newCluster;
                 } catch (Exception e) {
                     logger.warning(e.toString());
-                    return new JSONException(e);
+                    if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                        try {
+                            EnterpriseFolder parentFolder = enterpriseFolderManager.findByGuid(parentFolderGuid);
+                            String errorMsg = "A cluster must be unique in a folder. The cluster '"
+                                + newClusterName + "' has already existed in the folder '" + parentFolder.getName() + "'.";
+                            return new JSONException(new DuplicateObjectException(errorMsg, e));
+                        } catch (FindException e1) {
+                            return new JSONException(e1);
+                        }
+                    } else {
+                        return new JSONException(e);
+                    }
                 }
             }
         };
@@ -150,16 +189,28 @@ public class Configure extends EmsPage  {
         Form renameSSGClusterForm = new JsonDataResponseForm("renameSSGClusterForm"){
             @Override
             protected Object getJsonResponseData() {
+                String renamedSSGClusterGuid = renameSSGClusterDialogInputId.getModelObjectAsString();
+                String newClusterName = renameSSGClusterInputName.getModelObjectAsString();
                 try {
-                    String renamedSSGClusterGuid = renameSSGClusterDialogInputId.getModelObjectAsString();
-                    String newName = renameSSGClusterInputName.getModelObjectAsString();
-                    logger.info("Renaming SSG Cluster (GUID = "+ renamedSSGClusterGuid + ") with a new name, " + newName);
+                    logger.info("Renaming SSG Cluster (GUID = "+ renamedSSGClusterGuid + ") with a new name, " + newClusterName);
 
-                    ssgClusterManager.renameByGuid(newName, renamedSSGClusterGuid);
+                    ssgClusterManager.renameByGuid(newClusterName, renamedSSGClusterGuid);
                     return null;    // No response object expected if successful.
                 } catch (Exception e) {
                     logger.warning(e.toString());
-                    return new JSONException(e);
+                    if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                        try {
+                            SsgCluster renamedCluster = ssgClusterManager.findByGuid(renamedSSGClusterGuid);
+                            EnterpriseFolder parentFolder = renamedCluster.getParentFolder();
+                            String errorMsg = "A cluster must be unique in a folder. The cluster '"
+                                + newClusterName + "' has already existed in the folder '" + parentFolder.getName() + "'.";
+                            return new JSONException(new DuplicateObjectException(errorMsg, e));
+                        } catch (FindException e1) {
+                            return new JSONException(e1);
+                        }
+                    } else {
+                        return new JSONException(e);
+                    }
                 }
             }
         };

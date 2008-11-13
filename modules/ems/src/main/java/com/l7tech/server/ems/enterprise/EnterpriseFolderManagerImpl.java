@@ -49,7 +49,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
 
     public EnterpriseFolder create(String name, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException {
         verifyParentFolder(parentFolder);
-        verifyLegalFolerName(name);
+        verifyLegalFolderName(name);
 
         final EnterpriseFolder result = new EnterpriseFolder(name, parentFolder);
         super.save(result);
@@ -75,7 +75,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
 
     public void renameByGuid(String name, String guid) throws FindException, UpdateException {
         final EnterpriseFolder folder = findByGuid(guid);
-        verifyLegalFolerName(name);
+        verifyLegalFolderName(name);
         folder.setName(name);
         super.update(folder);
     }
@@ -193,7 +193,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
      * @param name
      * @throws FindException
      */
-    private void verifyLegalFolerName(String name) throws FindException {
+    private void verifyLegalFolderName(String name) throws FindException {
         if (name == null)
             throw new InvalidNameException("Name must not be null.");
         if (name.length() == 0)

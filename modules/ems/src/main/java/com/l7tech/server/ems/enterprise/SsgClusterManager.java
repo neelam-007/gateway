@@ -13,6 +13,15 @@ public interface SsgClusterManager extends EntityManager<SsgCluster, EntityHeade
     SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException;
     SsgCluster create(String name, String sslHostName, int adminPort, String parentFolderGuid) throws FindException, InvalidNameException, SaveException;
 
+
+    /**
+     * Find the cluster with the given guid.
+     * @param guid: the guid of the cluster
+     * @return the cluster with the given guid.
+     * @throws FindException
+     */
+    SsgCluster findByGuid(final String guid) throws FindException;
+
     /**
      * Rename the name of the cluster with the guid.
      * @param name: the new name of the cluster

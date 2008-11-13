@@ -798,6 +798,7 @@ if (!l7.Dialog) {
             var tippyId = divId + '_tippy';
             var stackTraceTrIdPrefix = 'l7_Dialog_stackTrace_';
             var body = beginBody
+                     + '<div>' + l7.Util.escapeAsText(o.localizedMessage == null ? o.message : o.localizedMessage) + '</div>'
                      + '<div class="tippy" style="margin: 10px 0 4px 0; width: 600px;">'
                      +     '<img id="' + tippyId + '" class="tippy" src="../images/tippyCollapsed.png" alt="" onclick="l7.Tippy.toggleTippy(this, \'' + divId + '\')" />'
                      +     '<span class="clickable" onclick="l7.Tippy.toggleTippy(\'' + tippyId + '\', \'' + divId + '\')">Details</span>'
