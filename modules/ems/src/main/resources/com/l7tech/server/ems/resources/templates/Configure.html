@@ -1051,12 +1051,12 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
 <div id="renameFolderDialog">
     <div class="hd">Rename Folder</div>
     <div class="bd">
-        <form name="renameFolderForm" action="action/renameEnterpriseFolder">
-            <input id="renameFolderDialog_id" type="hidden" name="id" />
+        <form name="renameFolderForm" wicket:id="renameFolderForm" method="POST">
+            <input id="renameFolderDialog_id" wicket:id="renameFolderDialog_id" type="hidden" name="id" />
             <table class="spaced">
                 <tr>
                     <th>New Name:</th>
-                    <td><input type="text" id="renameFolderDialog_name" name="name" size="40" maxlength="128" onkeyup="validateRenameFolderDialog();" /> <span id="renameFolderDialog_name_hint" class="red"></span></td>
+                    <td><input type="text" id="renameFolderDialog_name" wicket:id="renameFolderDialog_name" name="name" size="40" maxlength="128" onkeyup="validateRenameFolderDialog();" /> <span id="renameFolderDialog_name_hint" class="red"></span></td>
                 </tr>
             </table>
         </form>

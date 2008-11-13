@@ -12,7 +12,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 
 import java.sql.SQLException;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -47,7 +47,10 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         return "enterprise_folder";
     }
 
-    public EnterpriseFolder create(String name, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException {
+    public EnterpriseFolder create(String name, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException {
+        verifyParentFolder(parentFolder);
+        verifyLegalFolerName(name);
+
         final EnterpriseFolder result = new EnterpriseFolder(name, parentFolder);
         super.save(result);
         return result;
@@ -68,6 +71,13 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
             }
         }
         return create(name, parentFolder);
+    }
+
+    public void renameByGuid(String name, String guid) throws FindException, UpdateException {
+        final EnterpriseFolder folder = findByGuid(guid);
+        verifyLegalFolerName(name);
+        folder.setName(name);
+        super.update(folder);
     }
 
     public void deleteByGuid(String guid) throws FindException, DeleteException {
@@ -160,6 +170,54 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
             });
         } catch (DataAccessException e) {
             throw new FindException("Cannot find child folders of " + parentFolder, e);
+        }
+    }
+
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
+    }
+
+    @Override
+    /**
+     * Gets the folder uniquess constraints to check if there exists a duplicate folder name.
+     */
+    protected Collection<Map<String, Object>> getUniqueConstraints(EnterpriseFolder entity) {
+        Map<String, Object> attrs = new HashMap<String, Object>();
+        attrs.put("parentFolder", entity.getParentFolder());
+        attrs.put("name", entity.getName());
+        return Arrays.asList(attrs);
+    }
+
+    /**
+     * Verify if the name of a folder is legal or not.
+     * @param name
+     * @throws FindException
+     */
+    private void verifyLegalFolerName(String name) throws FindException {
+        if (name == null)
+            throw new InvalidNameException("Name must not be null.");
+        if (name.length() == 0)
+            throw new InvalidNameException("Name must not be empty.");
+        if (name.length() > EnterpriseFolder.MAX_NAME_LENGTH)
+            throw new InvalidNameException("Name must not exceed " + EnterpriseFolder.MAX_NAME_LENGTH + " characters");
+        if (name.matches(EnterpriseFolder.ILLEGAL_CHARACTERS))
+            throw new InvalidNameException("Name must not contain these characters: " + EnterpriseFolder.ILLEGAL_CHARACTERS);
+    }
+
+    /**
+     * Verify if the parent folder is validate or not.
+     * @param parentFolder
+     * @throws FindException
+     */
+    private void verifyParentFolder(EnterpriseFolder parentFolder) throws FindException {
+        EnterpriseFolder root = findRootFolder();
+        if (root == null) {
+            if (parentFolder != null)
+                throw new IllegalArgumentException("Cannot create any folder without a root folder existing first.");
+
+        } else {
+            if (parentFolder == null)
+                throw new IllegalArgumentException("Cannot create a second root folder, since the root folder exists already.");
         }
     }
 }

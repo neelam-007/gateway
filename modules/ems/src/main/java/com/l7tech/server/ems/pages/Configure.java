@@ -79,6 +79,27 @@ public class Configure extends EmsPage  {
         addFolderForm.add(addFolderDialogInputParentId);
         addFolderForm.add(addFolderInputName);
 
+        final HiddenField renameFolderDialogInputId = new HiddenField("renameFolderDialog_id", new Model(""));
+        final RequiredTextField renameFolderInputName = new RequiredTextField("renameFolderDialog_name", new Model(""));
+        Form renameFolderForm = new JsonDataResponseForm("renameFolderForm"){
+            @Override
+            protected Object getJsonResponseData() {
+                try {
+                    String renamedFolderGuid = renameFolderDialogInputId.getModelObjectAsString();
+                    String newName = renameFolderInputName.getModelObjectAsString();
+                    logger.info("Renaming folder (GUID = "+ renamedFolderGuid + ") with a new name, " + newName);
+
+                    enterpriseFolderManager.renameByGuid(newName, renamedFolderGuid);
+                    return null;    // No response object expected if successful.
+                } catch (Exception e) {
+                    logger.warning(e.toString());
+                    return new JSONException(e);
+                }
+            }
+        };
+        renameFolderForm.add(renameFolderDialogInputId);
+        renameFolderForm.add(renameFolderInputName);
+
         final HiddenField deleteFolderDialogInputId = new HiddenField("deleteFolderDialog_id", new Model(""));
         Form deleteFolderForm = new JsonDataResponseForm("deleteFolderForm"){
             @Override
@@ -142,6 +163,7 @@ public class Configure extends EmsPage  {
         deleteSSGClusterForm.add(deleteSSGClusterDialogInputId );
 
         add(addFolderForm);
+        add(renameFolderForm);
         add(deleteFolderForm);
         add(addSSGClusterForm);
         add(deleteSSGClusterForm);

@@ -19,7 +19,7 @@ public interface EnterpriseFolderManager extends EntityManager<EnterpriseFolder,
      * @throws InvalidNameException if <code>name</code> does not conform to name rules
      * @throws SaveException if the new folder cannot be persisted
      */
-    EnterpriseFolder create(String name, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException;
+    EnterpriseFolder create(String name, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException;
 
     /**
      * Creates an enterprise folder.
@@ -32,6 +32,16 @@ public interface EnterpriseFolderManager extends EntityManager<EnterpriseFolder,
      * @throws SaveException if the new folder cannot be persisted
      */
     EnterpriseFolder create(String name, String parentFolderGuid) throws FindException, InvalidNameException, SaveException;
+
+    /**
+     * Rename the name of the folder with the guid.
+     * @param name: the new name of the folder
+     * @param guid: the guid of the folder
+     * @throws FindException if failed to determine if a folder with <code>parentFolderGuid</code> exists
+     * @throws InvalidNameException if <code>name</code> does not conform to name rules
+     * @throws SaveException if the new folder cannot be persisted
+     */
+    void renameByGuid(String name, String guid) throws FindException, UpdateException;
 
     /**
      * Deletes a folder and its descendents with the given GUID.
