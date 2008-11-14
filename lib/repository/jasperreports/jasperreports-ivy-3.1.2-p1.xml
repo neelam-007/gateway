@@ -2,7 +2,7 @@
 <ivy-module version="1.0" xmlns:m="http://ant.apache.org/ivy/maven">
 	<info organisation="jasperreports"
 		module="jasperreports"
-		revision="3.0.0"
+		revision="3.1.2-p1"
 		status="integration"
 		publication="20080522105345"
 	/>

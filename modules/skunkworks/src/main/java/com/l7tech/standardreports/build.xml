@@ -16,7 +16,7 @@
     <!--<property name="canned_usage_interval_subreport_2.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_SubIntervalMasterReport_subreport0.jrxml" />-->
 
     <path id="jrc.classpath">
-        <file file="${lib}/repository/jasperreports/jasperreports-3.0.0.jar"/>
+        <file file="${lib}/repository/jasperreports/jasperreports-3.1.2-p1.jar"/>
         <file file="${lib}/repository/jfree/jcommon-1.0.0.jar"/>
         <file file="${lib}/repository/jfree/jfreechart-1.0.2.jar"/>
         <fileset dir="${lib}/repository/org.apache.tomcat">

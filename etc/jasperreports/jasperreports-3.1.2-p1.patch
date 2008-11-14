@@ -1,0 +1,79 @@
+Index: src/net/sf/jasperreports/engine/fill/JRCalculator.java
+===================================================================
+--- src/net/sf/jasperreports/engine/fill/JRCalculator.java	(revision 2462)
++++ src/net/sf/jasperreports/engine/fill/JRCalculator.java	Thu Nov 13 16:29:56 PST 2008
+@@ -140,23 +140,44 @@
+ 			}
+ 		}
+ 
++//		if (datasets != null && datasets.length > 0)
++//		{
++//			for(int i = 0; i < datasets.length; i++)
++//			{
++//				JRFillElementDataset elementDataset = datasets[i];
++//				elementDataset.evaluate(this);
++//
++//				if (elementDataset.getIncrementType() == JRVariable.RESET_TYPE_NONE)
++//				{
++//					elementDataset.increment();
++//				}
++//			}
++//		}
++	}
++
++    /**
++     * New method to calculate datasets after return variables have been returned from subreport
++     * @throws JRException
++     */
++    public void calculateDataSets() throws JRException{
++
+-		if (datasets != null && datasets.length > 0)
+-		{
+-			for(int i = 0; i < datasets.length; i++)
+-			{
+-				JRFillElementDataset elementDataset = datasets[i];
+-				elementDataset.evaluate(this);
++        if (datasets != null && datasets.length > 0)
++        {
++            for(int i = 0; i < datasets.length; i++)
++            {
++                JRFillElementDataset elementDataset = datasets[i];
++                elementDataset.evaluate(this);
+ 
+-				if (elementDataset.getIncrementType() == JRVariable.RESET_TYPE_NONE)
+-				{
+-					elementDataset.increment();
+-				}
+-			}
+-		}
++                if (elementDataset.getIncrementType() == JRVariable.RESET_TYPE_NONE)
++                {
++                    elementDataset.increment();
++                }
++            }
++        }
++
+-	}
++    }
+ 
+-
+-	/**
++    /**
+ 	 *
+ 	 */
+ 	public void estimateVariables() throws JRException
+Index: src/net/sf/jasperreports/engine/fill/JRVerticalFiller.java
+===================================================================
+--- src/net/sf/jasperreports/engine/fill/JRVerticalFiller.java	(revision 2462)
++++ src/net/sf/jasperreports/engine/fill/JRVerticalFiller.java	Thu Nov 13 16:31:06 PST 2008
+@@ -692,7 +692,9 @@
+ 			fillColumnBand(detail, JRExpression.EVALUATION_DEFAULT);
+ 		}
+ 
++        calculator.calculateDataSets();
++        
+-		isNewPage = false;
++        isNewPage = false;
+ 		isNewColumn = false;
+ 		isNewGroup = false;
+ 		isFirstPageBand = false;
