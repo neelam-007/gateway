@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.gateway;
 
 import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.SyspropUtil;
 
@@ -18,7 +19,6 @@ import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
-import org.apache.cxf.interceptor.LoggingInInterceptor;
 
 /**
  * GatewayContext provides access to a Gateway from the ESM.
@@ -44,19 +44,27 @@ public class GatewayContext {
         if ( esmId == null ) throw new IllegalArgumentException("esmId is required"); 
         this.cookie = buildCookie( esmId, userId );
         this.api = initApi( GatewayApi.class, defaultKey, MessageFormat.format(GATEWAY_URL, host, Integer.toString(port)));
+        this.managementApi = initApi( NodeManagementApi.class, defaultKey, MessageFormat.format(CONTROLLER_URL, host, 8765)); //TODO this should be passed in
     }
 
     public GatewayApi getApi() {
         return api;
     }
 
+    public NodeManagementApi getManagementApi() {
+        return managementApi;
+    }
+
     //- PRIVATE
 
-    private static final String PROP_GATEWAYAPI_URL = "com.l7tech.esm.gatewayUrl";
-    private static final String GATEWAY_URL = SyspropUtil.getString(PROP_GATEWAYAPI_URL, "https://{0}:{1}/ssg/services/gatewayApi");    
+    private static final String PROP_GATEWAY_URL = "com.l7tech.esm.gatewayUrl";
+    private static final String PROP_CONTROLLER_URL = "com.l7tech.esm.controllerUrl";
+    private static final String GATEWAY_URL = SyspropUtil.getString(PROP_GATEWAY_URL, "https://{0}:{1}/ssg/services/gatewayApi");    
+    private static final String CONTROLLER_URL = SyspropUtil.getString(PROP_CONTROLLER_URL, "https://{0}:{1}/services/nodeManagementApi");
 
     private final String cookie;
     private final GatewayApi api;
+    private final NodeManagementApi managementApi;
 
     private String buildCookie( final String esmId, final String userId ) {
         String cookie =  "EM-UUID=" + esmId;
