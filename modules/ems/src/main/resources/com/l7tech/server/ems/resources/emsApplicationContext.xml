@@ -226,7 +226,7 @@
         <constructor-arg index="0" ref="sharedKeyManager"/>
         <constructor-arg index="1" ref="keystoreFileManager"/>
         <constructor-arg index="2" ref="serverConfig"/>
-        <constructor-arg index="3" value=" "/>
+        <constructor-arg index="3" value=" "/>  <!-- This is for SCA, and we don't have one -->
     </bean>
 
     <!-- server side log manager -->
@@ -436,5 +436,17 @@
     </bean>
 
     <bean id="keystoreMutatorSwitch" class="com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore$StartupListener"/>
+
+    <bean id="trustTokenFactory" class="com.l7tech.server.ems.gateway.GatewayTrustTokenFactoryImpl">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="userPropertyManager" />
+        <constructor-arg index="2" ref="defaultKey" />
+    </bean>
+
+    <bean id="gatewayContextFactory" class="com.l7tech.server.ems.gateway.GatewayContextFactory">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="defaultKey" />
+        <constructor-arg index="2" ref="userPropertyManager" />
+    </bean>
 
 </beans>
