@@ -2,12 +2,8 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.emstrust.TrustedEms;
 import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import static com.l7tech.gateway.common.security.rbac.OperationType.CREATE;
-import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.EntityType.TRUSTED_EMS_USER;
 import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,12 +52,6 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         return "trusted_ems_user";
     }
 
-    private void require(User user, OperationType op, EntityType ent) throws ObjectModelException, AccessControlException {
-        if (!roleManager.isPermittedForAnyEntityOfType(user, op, ent))
-            throw new AccessControlException("Permission denied: " + op + " " + ent);
-    }
-
-
     @Override
     public TrustedEmsUser configureUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername)
             throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException, MappingAlreadyExistsException
@@ -77,7 +67,6 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
 
         TrustedEms trustedEms = trustedEmsManager.getOrCreateEmsAssociation(user, emsId, emsCert);
 
-        require(user, READ, TRUSTED_EMS_USER);
         TrustedEmsUser trustedEmsUser = findByEmsUsername(trustedEms, emsUsername);
         if (trustedEmsUser != null) {
             // Another local user -- possible the same one -- already mapped as this EMS user
@@ -90,7 +79,6 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         trustedEmsUser.setProviderOid(user.getProviderId());
         trustedEmsUser.setEmsUserId(emsUsername);
 
-        require(user, CREATE, TRUSTED_EMS_USER);
         long oid = save(trustedEmsUser);
         trustedEmsUser.setOid(oid);
         return trustedEmsUser;

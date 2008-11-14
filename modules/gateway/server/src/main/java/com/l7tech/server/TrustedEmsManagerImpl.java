@@ -33,7 +33,7 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
     @Resource
     private RoleManager roleManager;
 
-    @Resource(name="trustedCertManager")
+    @Resource
     private TrustedCertManager trustedCertManager;
 
     @Override
@@ -76,9 +76,8 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
         if (emsCert == null)
             throw new IllegalArgumentException("Missing EMS certificate");
 
-        require(user, READ, TRUSTED_EMS);
         TrustedEms trustedEms = findByUniqueName(emsId);
-
+        
         if (trustedEms != null) {
             if (!CertUtils.certsAreEqual(trustedEms.getTrustedCert().getCertificate(), emsCert)) {
                 // It is NOT safe to just replace the cert -- this could allow an admin user to instantly

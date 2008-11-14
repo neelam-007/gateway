@@ -288,8 +288,13 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
 
     private void doHandleTrustRequest(HttpServletRequest hreq, HttpServletResponse hresp, FormParams inParam) throws Exception {
         FormParams param = new FormParams();
-        for (Map.Entry<String, String> entry : inParam.entrySet())
-            param.put(entry.getKey(), stripchars(entry.getValue()));
+        for (Map.Entry<String, String> entry : inParam.entrySet()) {
+            if ( "password".equals(entry.getKey()) ) { // this is the "whitelist" of fields that are not stripped
+                param.put(entry.getKey(), entry.getValue());
+            } else {
+                param.put(entry.getKey(), stripchars(entry.getValue()));
+            }
+        }
 
         String emsId = param.get("emsid");
         X509Certificate emsCert = decodePemCert(param, "emscertpem");
@@ -305,9 +310,18 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         String returnurl = param.get("returnurl");
         URL url;
         if (returnurl != null && ((url = parseUrl(returnurl)) != null)) {
+            String redirectUrl = url.toExternalForm();
+            String mappingInfo = "username=" + param.get("username");
+            if ( redirectUrl.indexOf('?') > -1 ) {
+                mappingInfo = "&" + mappingInfo;
+            } else {
+                mappingInfo = "?" + mappingInfo;                                    
+            }
+            redirectUrl += mappingInfo;
+
             hresp.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
-            hresp.addHeader("Location", url.toExternalForm());
-            sendHtml(hresp, "<a href=\"" + url.toExternalForm() + "\">Click here to continue</a>");
+            hresp.addHeader("Location", redirectUrl);
+            sendHtml(hresp, "<a href=\"" + redirectUrl + "\">Click here to continue</a>");
             return;
         }
 

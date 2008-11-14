@@ -18,6 +18,12 @@
                 <entry key="securityManager">
                     <ref bean="securityManager"/>
                 </entry>
+                <entry key="ssgClusterManager">
+                    <ref bean="ssgClusterManager"/>
+                </entry>
+                <entry key="userPropertyManager">
+                    <ref bean="userPropertyManager"/>
+                </entry>
             </map>
         </property>
     </bean>
