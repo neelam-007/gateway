@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.objectmodel.UpdateException;
@@ -36,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.security.SignatureException;
+import java.security.GeneralSecurityException;
 import java.util.Date;
 import java.util.Set;
 import java.util.logging.Level;
@@ -212,6 +214,9 @@ public class SystemSettings extends EmsPage {
         final Label sslSubjectLabel = new Label("ssl.cert.subject", new PropertyModel(sslModel, "subjectDn"));
         add(sslSubjectLabel.setOutputMarkupId(true));
 
+        final Label sslThumbprint = new Label("ssl.cert.thumbprint", new PropertyModel(sslModel, "thumbprint"));
+        add(sslThumbprint.setOutputMarkupId(true));
+
         Form sslChangeForm = new Form("sslForm");
         sslChangeForm.add( new YuiAjaxButton("sslChangeButton", sslChangeForm) {
             @Override
@@ -225,6 +230,7 @@ public class SystemSettings extends EmsPage {
                         target.addComponent( sslIssuerLabel );
                         target.addComponent( sslSerialNumberLabel );
                         target.addComponent( sslSubjectLabel );
+                        target.addComponent( sslThumbprint );
                     }
                 };
                 YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Change SSL Settings", YuiDialog.Style.OK_CANCEL, sslEditPanel, new YuiDialog.OkCancelCallback(){
@@ -609,6 +615,15 @@ public class SystemSettings extends EmsPage {
         public String getSubjectDn() {
             init();
             return certificate==null ? "" : certificate.getSubjectDN().getName();    
+        }
+
+        public String getThumbprint() {
+            init();
+            try {
+                return certificate==null ? "" : CertUtils.getCertificateFingerprint(certificate, "SHA1").substring(5);
+            } catch ( GeneralSecurityException gse ) {
+                return "";
+            }
         }
 
         @Override
