@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  *
  */
 @SuppressWarnings({"UnusedDeclaration"})
-@NavigationPage(page="Configure",pageIndex=100,section="ManageGateways",pageUrl="Configure.html")
+@NavigationPage(page="Configure",pageIndex=100,section="ManageGateways",sectionPage="Configure",pageUrl="Configure.html")
 public class Configure extends EmsPage  {
 
     private static final Logger logger = Logger.getLogger(Configure.class.getName());

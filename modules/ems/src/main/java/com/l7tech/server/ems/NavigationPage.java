@@ -14,6 +14,7 @@ import java.lang.annotation.Target;
 public @interface NavigationPage {
     String section();
     int sectionIndex() default 0;
+    String sectionPage() default "";
     String page();
     int pageIndex() default 0;
     String pageUrl() default "";         

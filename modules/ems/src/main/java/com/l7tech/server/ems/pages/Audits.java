@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 /**
  * 
  */
-@NavigationPage(page="Audits",pageIndex=100,section="Tools",sectionIndex=100,pageUrl="Audits.html")
+@NavigationPage(page="Audits",pageIndex=100,section="Tools",sectionIndex=100,sectionPage="Audits",pageUrl="Audits.html")
 public class Audits extends EmsPage {
     
     //- PUBLIC    

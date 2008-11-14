@@ -165,10 +165,21 @@ public class NavigationModel implements Serializable {
     public String getPageUrlForSection( final String section ) {
         String pageUrl = null;
 
+        // see if there is a specified default
         for ( NavigationPageHolder holder : pages  ) {
             if ( holder.page.section().equals(section) ) {
-                pageUrl = holder.page.pageUrl();
+                pageUrl = getPageUrlForPage( holder.page.sectionPage() );
                 break;
+            }
+        }
+
+        if ( pageUrl == null ) {
+            // find URL for first page in section
+            for ( NavigationPageHolder holder : pages  ) {
+                if ( holder.page.section().equals(section) ) {
+                    pageUrl = holder.page.pageUrl();
+                    break;
+                }
             }
         }
 
