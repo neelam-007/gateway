@@ -235,6 +235,7 @@
                     columns : [
                         l7.EntityTreeTable.COLUMN.NAME,
                         l7.EntityTreeTable.COLUMN.ONLINE_STATUS,
+                        l7.EntityTreeTable.COLUMN.TRUST_STATUS,
                         l7.EntityTreeTable.COLUMN.ACCESS_STATUS,
                         l7.EntityTreeTable.COLUMN.TYPE,
                         l7.EntityTreeTable.COLUMN.VERSION,
@@ -242,6 +243,9 @@
                     ],
                     entitySelectable : true,
                     onEntitySelected : onEntitySelected,
+                    onClickTrustDialogButton : function(event, entity) {
+                        launchSSGClusterTrustDialog(entity.id, entity.name, entity.sslHostName, entity.adminPort);
+                    },
                     onClickAccessDialogButton : function(event, entity) {
                         // TODO
 alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
@@ -1095,6 +1099,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                                         <tr>
                                             <th class="name">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
                                             <th><img src="../images/status.png" title="Status" alt="" /></th>
+                                            <th><img src="../images/trust.png" title="Trust Status" alt="" /></th>
                                             <th><img src="../images/accessAccount.png" title="Access Status" alt="" /></th>
                                             <th>Type</th>
                                             <th>Version</th>

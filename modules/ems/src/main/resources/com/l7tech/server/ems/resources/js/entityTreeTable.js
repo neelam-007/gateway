@@ -90,6 +90,7 @@ if (!l7.EntityTreeTable) {
          *   entitiesWithTristateCheckbox {array} (optional) - array of l7.EntityTreeTable.ENTITY values that should get tri-state multi-selection checkbox
          *   entitiesWithRadioButton {array} (optional) - array of l7.EntityTreeTable.ENTITY values that should get mono-selection radio button
          *   entitiesWithZoomIcon {array} - array of l7.EntityTreeTable.ENTITY values that should have zoom icon; optional if columns contains l7.EntityTreeTable.COLUMN.ZOOM; default is all types
+         *   onClickTrustDialogButton {function(event, entity)} - required if columns contains l7.EntityTreeTable.COLUMN.TRUST_STATUS
          *   onClickAccessDialogButton {function(event, entity)} - required if columns contains l7.EntityTreeTable.COLUMN.ACCESS_STATUS
          *   onClickEntityRadioButton {function(event, entity)} - callback method upon click of an entity radio button; optional if entitiesWithRadioButton array is used
          *   onClickDashboardCheckbox {function(event, entity)} - callback method upon state change of Dashboard checkboxes; required if columns contains l7.EntityTreeTable.COLUMN.DASHBOARD
@@ -584,6 +585,20 @@ if (!l7.EntityTreeTable) {
             }
 
             /**
+             * Initializes a TD in the trust status column for an entity.
+             *
+             * @private
+             * @param {HTMLTableCellElement} td
+             * @param {object} entity
+             */
+            this._initTrustStatusCell = function(td, entity) {
+                var icon = document.createElement('img');
+                entity._trustStatusIcon = icon;
+                this.setEntityTrustStatus(entity.id, entity.trustStatus);
+                td.appendChild(icon);
+            }
+
+            /**
              * Initializes a TD in the access status column for an entity.
              *
              * @private
@@ -1015,7 +1030,41 @@ if (!l7.EntityTreeTable) {
              * @return {boolean} true if successfully applied; false if error, e.g., entity with given ID not found
              */
             this.setEntityTrustStatus = function(entityId, trusted) {
-                // TODO
+                var entity = this._entitiesById[entityId];
+                var icon = entity._trustStatusIcon;
+                if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                    if (trusted == undefined || trusted == null) {
+                        icon.src = this._imgFolder + '/spacer.png';
+                        icon.title = null;
+                    } else if (trusted) {
+                        icon.src = this._imgFolder + '/trust.png';
+                        icon.title = this._localizedStrings.TRUST_ESTABLISHED;
+                    } else {
+                        icon.src = this._imgFolder + '/noTrust.png';
+                        icon.title = this._localizedStrings.TRUST_NOT_ESTABLISHED;
+                    }
+                    if (this._config.onClickTrustDialogButton != undefined) {
+                        icon.className = 'clickableImg';
+                        YAHOO.util.Event.addListener(icon, 'click', this._config.onClickTrustDialogButton, entity);
+                    }
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
+                    if (trusted == undefined || trusted == null) {
+                        icon.src = this._imgFolder + '/spacer.png';
+                        icon.title = null;
+                    } else if (trusted) {
+                        icon.src = this._imgFolder + '/trust.png';
+                        icon.title = this._localizedStrings.TRUST_ESTABLISHED;
+                    } else {
+                        icon.src = this._imgFolder + '/noTrust.png';
+                        icon.title = this._localizedStrings.TRUST_NOT_ESTABLISHED;
+                    }
+                } else {
+                    // No trust status for other entity types.
+                    icon.src = this._imgFolder + '/spacer.png';
+                    icon.title = null;
+                    return false;
+                }
+                return true;
             };
 
             /**
@@ -1168,6 +1217,8 @@ if (!l7.EntityTreeTable) {
                                 this._initNameCell(td, entity);
                             } else if (column == l7.EntityTreeTable.COLUMN.ONLINE_STATUS) {
                                 this._initOnlineStatusCell(td, entity);
+                            } else if (column == l7.EntityTreeTable.COLUMN.TRUST_STATUS) {
+                                this._initTrustStatusCell(td, entity);
                             } else if (column == l7.EntityTreeTable.COLUMN.ACCESS_STATUS) {
                                 this._initAccessStatusCell(td, entity);
                             } else if (column == l7.EntityTreeTable.COLUMN.DASHBOARD) {
@@ -1233,6 +1284,7 @@ if (!l7.EntityTreeTable) {
         l7.EntityTreeTable.COLUMN = {
             NAME                   : 'name',
             ONLINE_STATUS          : 'onlineStatus',
+            TRUST_STATUS           : 'trustStatus',
             ACCESS_STATUS          : 'accessStatus',
             TYPE                   : 'type',
             VERSION                : 'version',
@@ -1311,6 +1363,8 @@ if (!l7.EntityTreeTable) {
             SSG_NODE_STATE_OFF : 'Off',
             SSG_NODE_STATE_DOWN : 'Down',
             SSG_NODE_STATE_OFFLINE : 'Offline',
+            TRUST_ESTABLISHED : 'Trust has been established. Click to re-establish.',
+            TRUST_NOT_ESTABLISHED : 'Trust has not been established. Click to establish.',
             ACCESS_ACCOUNT_IS_SET : 'Access account is set. Click to change access account.',
             ACCESS_ACCOUNT_NOT_SET : 'No access account. Click to enter access account.',
             ACCESS_GRANTED : 'Access granted',
