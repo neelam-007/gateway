@@ -42,7 +42,8 @@ exclude     public *.^* and
             *.* protected *(*) and
             *.* + implements java.io.Serializable and
             *.* implements java.io.Serializable * and
-            *.* implements java.io.Serializable *(*);
+            *.* implements java.io.Serializable *(*) and
+            *.* @javax.annotation.Resource *;
 
 existingSerializedClasses *.* implements java.io.Serializable;
 
