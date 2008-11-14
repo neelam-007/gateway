@@ -1310,7 +1310,7 @@ if (!l7.EntityTreeTable) {
             ENTERPRISE_FOLDER : 'enterpriseFolder',
             SSG_CLUSTER       : 'ssgCluster',
             SSG_NODE          : 'ssgNode',
-            SERVICE_FOLDER        : 'serviceFolder',
+            SERVICE_FOLDER    : 'serviceFolder',
             PUBLISHED_SERVICE : 'publishedService',
             POLICY_FRAGMENT   : 'policyFragment'
         };

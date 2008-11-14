@@ -41,6 +41,37 @@ public final class JSONConstants {
     }
 
     /**
+     * Enum of monitoring property states.
+     * Defined as l7.EntityTreeTable.MONITORING_PROPERTY_STATE in entityTreeTable.js.
+     */
+    public final class MonitoringPropertyState {
+        public static final String NOT_APPLICABLE = "notApplicable";
+        public static final String NOT_MONITORED  = "notMonitored";
+        public static final String CRITICAL       = "critical";
+    }
+
+    /**
+     * Enum of SSG Cluster online states.
+     * Defined as l7.EntityTreeTable.SSG_CLUSTER_ONLINE_STATE in entityTreeTable.js.
+     */
+    public final class SsgClusterOnlineState {
+        public static final String UP      = "up";
+        public static final String PARTIAL = "partial";
+        public static final String DOWN    = "down";
+    }
+
+    /**
+     * Enum of SSG Node online states.
+     * Defined as l7.EntityTreeTable.SSG_NODE_ONLINE_STATE in entityTreeTable.js.
+     */
+    public final class SsgNodeOnlineState {
+        public static final String ON      = "on";
+        public static final String OFF     = "off";
+        public static final String DOWN    = "down";
+        public static final String OFFLINE = "offline";
+    }
+
+    /**
      * Entity types.
      * Defined as l7.EntityTreeTable.ENTITY in entityTreeTable.js.
      */
