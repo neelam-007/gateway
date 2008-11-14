@@ -2,6 +2,7 @@ package com.l7tech.server.cluster;
 
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.util.Config;
+import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.objectmodel.FindException;
 
@@ -58,6 +59,8 @@ public class GatewayApiImpl implements GatewayApi {
                     GatewayInfo gatewayInfo = new GatewayInfo();
                     gatewayInfo.setId( info.getNodeIdentifier() );
                     gatewayInfo.setName( info.getName() );
+                    gatewayInfo.setIpAddress( info.getAddress() );
+                    gatewayInfo.setSoftwareVersion( BuildInfo.getProductVersion() );
                     gatewayInfo.setStatusTimestamp( info.getLastUpdateTimeStamp() );
                     gateways.add(gatewayInfo);
                 }

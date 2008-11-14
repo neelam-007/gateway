@@ -97,6 +97,8 @@ public interface GatewayApi {
     static final class GatewayInfo implements Serializable {
         private String id;
         private String name;
+        private String softwareVersion;
+        private String ipAddress;
         private long statusTimestamp;
 
         @XmlAttribute
@@ -118,6 +120,24 @@ public interface GatewayApi {
         }
 
         @XmlAttribute
+        public String getSoftwareVersion() {
+            return softwareVersion;
+        }
+
+        public void setSoftwareVersion(String softwareVersion) {
+            this.softwareVersion = softwareVersion;
+        }
+
+        @XmlAttribute
+        public String getIpAddress() {
+            return ipAddress;
+        }
+
+        public void setIpAddress(String ipAddress) {
+            this.ipAddress = ipAddress;
+        }
+
+        @XmlAttribute
         public long getStatusTimestamp() {
             return statusTimestamp;
         }
@@ -135,7 +155,10 @@ public interface GatewayApi {
             GatewayInfo that = (GatewayInfo) o;
 
             if (id != null ? !id.equals(that.id) : that.id != null) return false;
+            if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) return false;
             if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            if (softwareVersion != null ? !softwareVersion.equals(that.softwareVersion) : that.softwareVersion != null)
+                return false;
 
             return true;
         }
@@ -145,6 +168,8 @@ public interface GatewayApi {
             int result;
             result = (id != null ? id.hashCode() : 0);
             result = 31 * result + (name != null ? name.hashCode() : 0);
+            result = 31 * result + (softwareVersion != null ? softwareVersion.hashCode() : 0);
+            result = 31 * result + (ipAddress != null ? ipAddress.hashCode() : 0);
             return result;
         }
     }
