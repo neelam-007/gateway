@@ -75,6 +75,7 @@
                 CANNOT_PARSE_ENTITY_DATA : 'Failed to parse array of enterprise entities downloaded from server: ',
                 ENTITY_DATA_ERROR : 'Data error.',
                 CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Failed to get data from server for establishing trust by SSG Cluster: ',
+                CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Failed to get data from server for mapping access account: ',
                 FOLDER_NAME_HINT : 'must be &le; 128 characters, no slash "/"',
                 SSG_CLUSTER_NAME_HINT : 'must be &le; 128 characters, no slash "/"',
                 SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
@@ -122,6 +123,8 @@
             var renameSSGClusterDialog;
             var deleteSSGClusterDialog;
             var ssgClusterTrustDialog;
+            var mapAccessAccountDialog;
+            var changeAccessAccountDialog;
 
             function showHideLogReader() {
                 var debugLogReader = document.getElementById('debugLogReader');
@@ -243,13 +246,8 @@
                     ],
                     entitySelectable : true,
                     onEntitySelected : onEntitySelected,
-                    onClickTrustDialogButton : function(event, entity) {
-                        launchSSGClusterTrustDialog(entity.id, entity.name, entity.sslHostName, entity.adminPort);
-                    },
-                    onClickAccessDialogButton : function(event, entity) {
-                        // TODO
-alert('Not implemented yet!\n\nonClickAccessDialogButton\n\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
-                    }
+                    onClickTrustDialogButton : onClickTrustDialogButton,
+                    onClickAccessDialogButton : onClickAccessDialogButton
                 };
                 entityTreeTable = new l7.EntityTreeTable(tbody, [], '../images', config);
 
@@ -353,6 +351,29 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
                 addSSGClusterDialog.center();
                 addSSGClusterDialog.show();
             }
+
+            function onClickTrustDialogButton(event, entity) {
+                if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                    launchSSGClusterTrustDialog(entity.id, entity.name, entity.sslHostName, entity.adminPort);
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
+                    // TODO
+alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
+                } else {
+                    YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'Configure.html');
+                }
+            };
+
+            function onClickAccessDialogButton(event, entity) {
+                if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                    if (entity.accessStatus) {
+                        launchChangeAccessAccountDialog(entity);
+                    } else {
+                        launchMapAccessAccountDialog(entity);
+                    }
+                } else {
+                    YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'Configure.html');
+                }
+            };
 
             function onClickStart(event) {
                 var entity = entityTreeTable.getSelectedEntity();
@@ -774,7 +795,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                         {
                             text      : localizedStrings.OK,
                             handler   : function() {
-                                // TODO ? test gateway is available
                                 this.submit();
                             },
                             isDefault : true
@@ -796,6 +816,60 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 ssgClusterTrustDialog.render();
             }
 
+            function initMapAccessAccountDialog() {
+                mapAccessAccountDialog = new YAHOO.widget.Dialog('mapAccessAccountDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'form',
+                    visible     : false
+                });
+                mapAccessAccountDialog.render();
+            }
+
+            function initChangeAccessAccountDialog() {
+                changeAccessAccountDialog = new YAHOO.widget.Dialog('changeAccessAccountDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'form',
+                    visible     : false
+                });
+                changeAccessAccountDialog.render();
+            }
+
             /**
              * @param {string} id   SSG Cluster ID
              */
@@ -809,6 +883,9 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                 localizedStrings.OK);
                         if (typeof result == 'object' && !l7.Util.isException(result)) {
+                            // The response object is expected to have these properties:
+                            // token {string} - an opague token for use as input to the gateway trust servlet
+                            // mappedUserName {string} - user name of the gateway account mapped; null if not mapped yet
                             document.getElementById('ssgClusterTrustForm_emstoken').value = result.token;
                             document.getElementById('ssgClusterTrustForm_returnurl').value = document.URL;
                             document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/emstrust';
@@ -834,6 +911,81 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
             }
 
+            /**
+             * @param {object} entity   the SSG Cluster entity object literal
+             */
+            function launchMapAccessAccountDialog(entity) {
+                var callback = {
+                    success : function(o) {
+                        var result = l7.Dialog.parseJSON(
+                                o.responseText,
+                                localizedStrings.ERROR,
+                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT) + '</p>',
+                                localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                localizedStrings.OK);
+                        if (typeof result == 'object' && !l7.Util.isException(result)) {
+                            // The response object is expected to have these properties:
+                            // token {string} - an opague token for use as input to the gateway trust servlet
+                            // mappedUserName {string} - user name of the gateway account mapped; null if not mapped yet
+                            var entity = o.argument;
+                            document.getElementById('mapAccessAccountForm_emstoken').value = result.token;
+                            document.getElementById('mapAccessAccountForm_returnurl').value = document.URL;
+                            document.getElementById('mapAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/emstrust';
+                            document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
+                            mapAccessAccountDialog.center();
+                            mapAccessAccountDialog.show();
+                        }
+                    },
+                    failure : function(o) {
+                        l7.Dialog.showErrorDialog(
+                                localizedStrings.ERROR,
+                                localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT + o.statusText,
+                                localizedStrings.OK);
+                    },
+                    argument : entity
+                };
+                var url = document.forms['getGatewayTrustServletInputsForm'].action;
+                YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
+            }
+
+            /**
+             * @param {object} entity   the SSG Cluster entity object literal
+             */
+            function launchChangeAccessAccountDialog(entity) {
+                var callback = {
+                    success : function(o) {
+                        var result = l7.Dialog.parseJSON(
+                                o.responseText,
+                                localizedStrings.ERROR,
+                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT) + '</p>',
+                                localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                localizedStrings.OK);
+                        if (typeof result == 'object' && !l7.Util.isException(result)) {
+                            // The response object is expected to have these properties:
+                            // token {string} - an opague token for use as input to the gateway trust servlet
+                            // mappedUserName {string} - user name of the gateway account mapped; null if not mapped yet
+                            var entity = o.argument;
+                            document.getElementById('changeAccessAccountForm_emstoken').value = result.token;
+                            document.getElementById('changeAccessAccountForm_returnurl').value = document.URL;
+                            document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/emstrust';
+                            document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
+                            document.getElementById('changeAccessAccountDialog_mappedUserName').innerHTML = result.mappedUserName;
+                            changeAccessAccountDialog.center();
+                            changeAccessAccountDialog.show();
+                        }
+                    },
+                    failure : function(o) {
+                        l7.Dialog.showErrorDialog(
+                                localizedStrings.ERROR,
+                                localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT + o.statusText,
+                                localizedStrings.OK);
+                    },
+                    argument : entity
+                };
+                var url = document.forms['getGatewayTrustServletInputsForm'].action;
+                YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
+            }
+
             function initDialogs() {
                 initAddFolderDialog();
                 initRenameFolderDialog();
@@ -842,7 +994,8 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                 initRenameSSGClusterDialog();
                 initDeleteSSGClusterDialog();
                 initSSGClusterTrustDialog();
-                // TODO access account dialog
+                initMapAccessAccountDialog();
+                initChangeAccessAccountDialog();
             }
 
             function initToolbar() {
@@ -1196,6 +1349,38 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
 <div style="display: none;">
     <form name="getGatewayTrustServletInputsForm" wicket:id="getGatewayTrustServletInputsForm" method="POST">
     </form>
+</div>
+
+<div id="mapAccessAccountDialog">
+    <div class="hd">Map Access Account</div>
+    <div class="bd" style="width: 40em;">
+        <form id="mapAccessAccountForm" method="POST">
+            <input id="mapAccessAccountForm_emstoken" type="hidden" name="token" />
+            <input id="mapAccessAccountForm_returnurl" type="hidden" name="returnurl" />
+        </form>
+        To enable access to the SSG Cluster
+        &ldquo;<span id="mapAccessAccountDialog_ssgClusterName"></span>&rdquo;,
+        you will now be redirected to the cluster server where
+        you can map a gateway user account to your Enterprise Service Manager account.
+        When completed, you will be returned to this page.
+    </div>
+</div>
+
+<div id="changeAccessAccountDialog">
+    <div class="hd">Change Access Account</div>
+    <div class="bd" style="width: 40em;">
+        <form id="changeAccessAccountForm" method="POST">
+            <input id="changeAccessAccountForm_emstoken" type="hidden" name="token" />
+            <input id="changeAccessAccountForm_returnurl" type="hidden" name="returnurl" />
+        </form>
+        Your Enterprise Service Manager account is currently mapped to the user account
+        &ldquo;<span id="changeAccessAccountDialog_mappedUserName"></span>&rdquo;,
+        on the SSG Cluster
+        &ldquo;<span id="changeAccessAccountDialog_ssgClusterName"></span>&rdquo;.
+        To change that,  you will now be redirected to the cluster server where
+        you can map a different gateway user account.
+        When completed, you will be returned to this page.
+    </div>
 </div>
 
 <div id="renameSSGClusterDialog">

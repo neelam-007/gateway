@@ -107,10 +107,11 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         output.add(JSONConstants.RBAC_CUD, true); // TODO Should be true only for user with administrator role.
 // TODO       output.add(JSONConstants.ANCESTORS, );
         output.add(JSONConstants.TRUST_STATUS, trustStatus);
-        output.add(JSONConstants.ACCESS_STATUS, false); // TODO
+        output.add(JSONConstants.ACCESS_STATUS, true); // TODO Get the actual access status for the current user.
         output.add(JSONConstants.SSL_HOST_NAME, sslHostName);
         output.add(JSONConstants.ADMIN_PORT, Integer.toString(adminPort));
-        output.add(JSONConstants.DB_HOSTS, new String[]{"X"}); // TODO
+// TODO       output.add(JSONConstants.DB_HOSTS, ...);
+// TODO       output.add(JSONConstants.IP_ADDRESS, ...);
     }
 
     // Implements JSON.Convertible

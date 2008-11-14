@@ -681,9 +681,13 @@ if (!l7.EntityTreeTable) {
                 td.className = 'details'; // CSS style class.
                 if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
                     td.innerHTML = '<span class="hasTooltip" title="' + this._localizedStrings.SSL_HOST_NAME + '">' + entity.sslHostName + '</span>'
-                                 + ':<span class="hasTooltip" title="' + this._localizedStrings.ADMINISTRATIVE_PORT_NUMBER + '">' + entity.adminPort + '</span>'
-                                 + ' (<span class="hasTooltip" title="' + this._localizedStrings.IP_ADDRESS + '">' + entity.ipAddress + '</span>)'
-                                 + ' [<span class="hasTooltip" title="' + this._localizedStrings.DATABASE_HOSTS + '">' + entity.dbHosts.join(',') + '</span>]';
+                                 + ':<span class="hasTooltip" title="' + this._localizedStrings.ADMINISTRATIVE_PORT_NUMBER + '">' + entity.adminPort + '</span>';
+                    if (entity.ipAddress) {
+                        td.innerHTML += ' (<span class="hasTooltip" title="' + this._localizedStrings.IP_ADDRESS + '">' + entity.ipAddress + '</span>)';
+                    }
+                    if (entity.dbHosts) {
+                        td.innerHTML += ' [<span class="hasTooltip" title="' + this._localizedStrings.DATABASE_HOSTS + '">' + entity.dbHosts.join(',') + '</span>]';
+                    }
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
                     td.innerHTML = '<span class="hasTooltip" title="' + this._localizedStrings.SELF_HOST_NAME + '">' + entity.selfHostName + '</span>'
                                  + ' (<span class="hasTooltip" title="' + this._localizedStrings.IP_ADDRESS + '">' + entity.ipAddress + '</span>)';
