@@ -1,11 +1,9 @@
 package com.l7tech.server.ems.pages;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
@@ -13,11 +11,9 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.mortbay.util.ajax.JSON;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +33,7 @@ public class Configure extends EmsPage  {
     private Config config;
 
     @SpringBean
-    DefaultKey defaultKey;
-
-    @SpringBean
-    private EmsSecurityManager securityManager;
+    GatewayTrustTokenFactory gatewayTrustTokenFactory;
 
     @SpringBean
     private EnterpriseFolderManager enterpriseFolderManager;
@@ -50,6 +43,7 @@ public class Configure extends EmsPage  {
 
     public Configure() {
         JsonInteraction interaction = new JsonInteraction("actiondiv", "jsonUrl", new JsonDataProvider(){
+            @Override
             public Object getData() {
                 try {
                     final List<JSON.Convertible> entities = new ArrayList<JSON.Convertible>();
@@ -255,19 +249,15 @@ public class Configure extends EmsPage  {
             @Override
             protected Object getJsonResponseData() {
                 try {
-                    logger.info("Responding to request for server ID, SSL cert PEM and current user name.");
-                    final String serverId = config.getProperty("em.server.id", null);
-                    final String pem = CertUtils.encodeAsPEM(defaultKey.getSslInfo().getCertificate());
-                    final ServletWebRequest servletWebRequest = (ServletWebRequest)getRequest();
-                    final HttpServletRequest request = servletWebRequest.getHttpServletRequest();
-                    final EmsSecurityManager.LoginInfo loginInfo = securityManager.getLoginInfo(request.getSession(true));
+                    logger.info("Responding to request for trust token.");
+                    final String token = gatewayTrustTokenFactory.getTrustToken();
                     return new JSON.Convertible() {
+                        @Override
                         public void toJSON(JSON.Output output) {
-                            output.add("serverId", serverId);
-                            output.add("sslCertPem", pem);
-                            output.add("userName", loginInfo.getLogin());
+                            output.add("token", token);
                         }
 
+                        @Override
                         public void fromJSON(Map map) {
                             throw new UnsupportedOperationException("Mapping from JSON not supported.");
                         }

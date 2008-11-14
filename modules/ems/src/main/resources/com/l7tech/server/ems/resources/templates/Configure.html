@@ -809,9 +809,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                 localizedStrings.OK);
                         if (typeof result == 'object' && !l7.Util.isException(result)) {
-                            document.getElementById('ssgClusterTrustForm_emsid').value = result.serverId;
-                            document.getElementById('ssgClusterTrustForm_emscertpem').value = result.sslCertPem;
-                            document.getElementById('ssgClusterTrustForm_emsusername').value = result.userName;
+                            document.getElementById('ssgClusterTrustForm_emstoken').value = result.token;
                             document.getElementById('ssgClusterTrustForm_returnurl').value = document.URL;
                             document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/emstrust';
                             document.getElementById('ssgClusterTrustDialog_name').innerHTML = o.argument.name;
@@ -1183,9 +1181,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
     <div class="hd">Establish Trust by SSG Cluster</div>
     <div class="bd" style="width: 40em;">
         <form id="ssgClusterTrustForm" method="POST">
-            <input id="ssgClusterTrustForm_emsid" type="hidden" name="emsid" />
-            <input id="ssgClusterTrustForm_emscertpem" type="hidden" name="emscertpem" />
-            <input id="ssgClusterTrustForm_emsusername" type="hidden" name="emsusername" />
+            <input id="ssgClusterTrustForm_emstoken" type="hidden" name="token" />
             <input id="ssgClusterTrustForm_returnurl" type="hidden" name="returnurl" />
         </form>
         To establish trust of this Enterprise Service Manager by the SSG Cluster

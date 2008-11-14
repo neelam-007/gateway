@@ -439,8 +439,9 @@
 
     <bean id="trustTokenFactory" class="com.l7tech.server.ems.gateway.GatewayTrustTokenFactoryImpl">
         <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="userPropertyManager" />
-        <constructor-arg index="2" ref="defaultKey" />
+        <constructor-arg index="1" ref="securityManager"/>
+        <constructor-arg index="2" ref="userPropertyManager" />
+        <constructor-arg index="3" ref="defaultKey" />
     </bean>
 
     <bean id="gatewayContextFactory" class="com.l7tech.server.ems.gateway.GatewayContextFactory">

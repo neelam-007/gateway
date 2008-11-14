@@ -13,3 +13,18 @@ function readCookie(cookieName) {
 function copyCookie() {
     document.forms["emstrustform"].elements["returncookie"].value = readCookie("returncookie");
 }
+
+function init() {
+    if ( document.getElementById('emsinfo').value == '' ) {
+        document.getElementById('emsinforow').style.visibility="collapse";
+        document.getElementById('emsuserdescrow').style.visibility="collapse";
+    } else {
+        document.getElementById('emsidrow').style.visibility="collapse";
+        document.getElementById('emspemrow').style.visibility="collapse";
+        document.getElementById('emsusernamerow').style.visibility="collapse";
+    }
+
+    if ( document.getElementById('returnurl').value == '' ) {
+        document.getElementById('cancel').style.visibility="collapse";
+    }
+}

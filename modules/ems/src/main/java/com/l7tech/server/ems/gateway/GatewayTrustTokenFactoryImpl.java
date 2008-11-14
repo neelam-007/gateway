@@ -3,6 +3,7 @@ package com.l7tech.server.ems.gateway;
 import com.l7tech.identity.User;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ems.user.UserPropertyManager;
+import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
@@ -22,6 +23,10 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 
 import org.w3c.dom.Document;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.protocol.http.WebRequest;
+
+import javax.servlet.http.HttpSession;
 
 /**
  * 
@@ -31,11 +36,24 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
     //- PUBLIC
 
     public GatewayTrustTokenFactoryImpl( final Config config,
-                                     final UserPropertyManager userPropertyManager,
-                                     final DefaultKey defaultKey ) {
+                                         final EmsSecurityManager emsSecurityManager,
+                                         final UserPropertyManager userPropertyManager,
+                                         final DefaultKey defaultKey ) {
         this.config = config;
+        this.emsSecurityManager = emsSecurityManager;
         this.userPropertyManager = userPropertyManager;            
         this.defaultKey = defaultKey;            
+    }
+
+    @Override
+    public String getTrustToken() throws GatewayException {
+        HttpSession session = ((WebRequest)RequestCycle.get().getRequest()).getHttpServletRequest().getSession(true);
+        EmsSecurityManager.LoginInfo info = emsSecurityManager.getLoginInfo(session);
+        User user = info == null ?  null : info.getUser();
+        if ( user == null ) {
+            throw new GatewayException("Not authenticated.");            
+        }
+        return getTrustToken( user );
     }
 
     /**
@@ -63,7 +81,6 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
             options.setSignAssertion(true);
             options.setExpiryMinutes(5);
             options.setBeforeOffsetMinutes(1);
-            options.setId(UUID.randomUUID().toString());
             options.setProofOfPosessionRequired(false);
             options.setIssuerKeyInfoType(KeyInfoInclusionType.CERT);
 
@@ -78,7 +95,7 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
                     SubjectStatement.BEARER,
                     attributes,
                     KeyInfoInclusionType.CERT,
-                    NameIdentifierInclusionType.NONE,
+                    NameIdentifierInclusionType.SPECIFIED,
                     null, null, null);
             Document assertionDocument = generator.createAssertion(statement, options);
             return XmlUtil.nodeToString(assertionDocument);
@@ -101,7 +118,8 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
 
     private static final Logger logger = Logger.getLogger( GatewayTrustTokenFactoryImpl.class.getName() );
 
-    private Config config;
-    private UserPropertyManager userPropertyManager;
-    private DefaultKey defaultKey;
+    private final Config config;
+    private final EmsSecurityManager emsSecurityManager;
+    private final UserPropertyManager userPropertyManager;
+    private final DefaultKey defaultKey;
 }

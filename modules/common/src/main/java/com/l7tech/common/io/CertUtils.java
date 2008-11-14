@@ -215,7 +215,7 @@ public class CertUtils {
      */
     public static boolean looksLikePem(byte[] bytes) {
         try {
-            String prefix = new String(bytes, 0, 200, "ISO-8859-1");
+            String prefix = new String(bytes, 0, Math.min(200,bytes.length), "ISO-8859-1");
             return prefix.indexOf(PEM_CERT_BEGIN_MARKER) >= 0;
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e); // can't happen

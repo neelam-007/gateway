@@ -59,3 +59,13 @@ body {
 .emssubmit {
     text-align: right;
 }
+
+
+.pre {
+    border: 1pt solid black;
+    white-space: pre;
+    font-family: "Courier New", monospace;
+    font-size: 10pt;
+    overflow: auto;
+    padding: 1em 0;
+}

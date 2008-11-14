@@ -4,6 +4,7 @@ import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.admin.AdminLogin;
@@ -18,8 +19,11 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.xml.saml.SamlAssertion;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlCursor;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
@@ -31,12 +35,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.SecureRandom;
+import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
@@ -44,6 +50,10 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import x0Assertion.oasisNamesTcSAML2.AssertionType;
+import x0Assertion.oasisNamesTcSAML2.AttributeStatementType;
+import x0Assertion.oasisNamesTcSAML2.AttributeType;
 
 /**
  * Servlet used to handle trust bootstrapping for the EMS.
@@ -72,14 +82,21 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             "emsusername",         // 5
             "username",            // 6
             "returncookiehash",    // 7
-            "returnurl"            // 8
+            "returnurl",           // 8
+            "emsinfo",             // 9
+            "emsuserdesc",         // 10
     };
+
+    private static final String ATTR_EM_UUID = "EM-UUID";
+    private static final String ATTR_EM_USER_UUID = "EM-USER-UUID";
+    private static final String ATTR_EM_USER_DESC = "EM-USER-DESC";
 
     private TrustedEmsUserManager trustedEmsUserManager;
     private AdminLogin adminLogin;
     private Random random;
     private byte[] secretData;
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         WebApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(config.getServletContext());
@@ -126,10 +143,10 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         hresp.getOutputStream().write(html.getBytes("utf8"));
     }
 
-
-    protected void doPost(HttpServletRequest hreq, HttpServletResponse hresp) throws ServletException, IOException {
+    @Override
+    protected void doPost( final HttpServletRequest hreq, final HttpServletResponse hresp) throws ServletException, IOException {
         if (!hreq.isSecure()) {
-            hresp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            hresp.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
@@ -141,11 +158,61 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         FormParams param = new FormParams(req.getHttpRequestKnob().getParameterMap());
 
         if (isInitialRequest(param)) {
+            // kick out any untrusted params
+            param.remove("emsid");
+            param.remove("emsinfo");
+            param.remove("emscertpem");
+            param.remove("emsusername");
+            param.remove("emsuserdesc");
+
             String returnCookie = createReturnCookie();
             Cookie cook = new Cookie("returncookie", returnCookie);
             cook.setSecure(true);
             hresp.addCookie(cook);
-            String intro = param.get("emscertpem") == null ? "Enter" : "Confirm";
+
+            String intro = "Enter";
+            String token = param.get("token");
+            if ( token != null) {
+                try {
+                    SamlAssertion assertion = SamlAssertion.newInstance(XmlUtil.parse( new StringReader(token), false ).getDocumentElement());
+                    if ( assertion.hasEmbeddedIssuerSignature() ) {
+                        assertion.verifyEmbeddedIssuerSignature();
+                        XmlObject xmlObject = assertion.getXmlBeansAssertionType();
+                        if (xmlObject instanceof AssertionType) {
+                            AssertionType assertionType = (AssertionType) xmlObject;
+
+                            if ( assertionType.getConditions() != null ) {
+                                Calendar now = Calendar.getInstance();
+                                Calendar notBefore = assertionType.getConditions().getNotBefore();
+                                Calendar notOnOrAfter = assertionType.getConditions().getNotOnOrAfter();
+
+                                if ( now.after(notBefore) && now.before(notOnOrAfter)) {
+                                    String emsid = getAttributeValue( assertionType, ATTR_EM_UUID );
+                                    String emsuserid = getAttributeValue( assertionType, ATTR_EM_USER_UUID );
+                                    String emsuserdesc = getAttributeValue( assertionType, ATTR_EM_USER_DESC );
+
+                                    if ( emsid == null || emsuserid == null || emsuserdesc == null ) {
+                                        logger.warning("Ignoring SAML assertion with missing attributes.");
+                                    } else {
+                                        intro = "Confirm";
+                                        X509Certificate cert = assertion.getIssuerCertificate();
+                                        param.put("emsid", emsid);
+                                        param.put("emsinfo", formatCertInfo(cert));
+                                        param.put("emscertpem", CertUtils.encodeAsPEM(cert));
+                                        param.put("emsusername", emsuserid);
+                                        param.put("emsuserdesc", emsuserdesc);                                        
+                                    }
+                                } else {
+                                    logger.warning("Ignoring SAML assertion that is expired or not yet valid ('"+notBefore+"'/'"+notOnOrAfter+"')");
+                                }
+                            }
+                        }
+                    }
+                } catch ( Exception e ) {
+                    logger.log( Level.WARNING, "Error processing SAML assertion '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                }
+            }
+
             param.put("message", intro + " details about the Enterprise Manager Server that you wish to use to manage this Gateway.");
             param.put("returncookiehash", computeReturnCookieHash(returnCookie));
             sendForm(hresp, param);
@@ -199,7 +266,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
 
     private X509Certificate decodePemCert(FormParams param, String paramName) throws CertificateException {
         String pem = param.get(paramName);
-        if (pem == null)
+        if (pem == null || !CertUtils.looksLikePem(pem.getBytes()))
             throw new CertificateException("No PEM Certificate found in field " + paramName);
         try {
             return CertUtils.decodeFromPEM(pem);
@@ -275,8 +342,10 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         Subject subject = new Subject();
         subject.getPrincipals().add(user);
         Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
+            @Override
             public Object run() throws Exception {
                 RemoteUtils.callWithConnectionInfo(null, hreq, new Callable<Object>() {
+                    @Override
                     public Object call() throws Exception {
                         trustedEmsUserManager.configureUserMapping(user, emsId, emsCert, emsUsername);
                         return null;
@@ -355,6 +424,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         return HexUtils.hexDump(HexUtils.getSha512Digest(new byte[][] { secretData, returnCookie.getBytes() })).toLowerCase();
     }
 
+    @Override
     protected void doGet(HttpServletRequest hreq, HttpServletResponse hresp) throws ServletException, IOException {
         if (!hreq.isSecure()) {
             hresp.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -405,11 +475,79 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         return new String(IOUtils.slurpUrl(url), "UTF-8");
     }
 
+    @Override
     protected String getFeature() {
         return GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR;
     }
 
+    @Override
     protected SsgConnector.Endpoint getRequiredEndpoint() {
         return SsgConnector.Endpoint.ADMIN_REMOTE;
+    }
+
+    private String formatCertInfo( final X509Certificate cert ) throws GeneralSecurityException {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("Issuer       : ");
+        builder.append( cert.getIssuerDN().toString() );
+        builder.append('\n');
+        builder.append("Serial Number: ");
+        builder.append( hexFormat(cert.getSerialNumber().toByteArray()) );
+        builder.append('\n');
+        builder.append("Subject      : ");
+        builder.append( cert.getSubjectDN().toString() );
+        builder.append('\n');
+        builder.append("Thumbprint   : ");
+        builder.append( CertUtils.getCertificateFingerprint(cert, "SHA1").substring(5) );
+
+        return builder.toString();
+    }
+
+    private String hexFormat( final byte[] bytes ) {
+        StringBuilder builder = new StringBuilder();
+
+        for ( int i=0; i<bytes.length; i++ ) {
+            String byteHex = HexUtils.hexDump(new byte[]{bytes[i]});
+            builder.append(byteHex.toUpperCase());
+            if ( i<bytes.length-1 ) {
+                builder.append(':');
+            }
+        }
+
+        return builder.toString();
+    }    
+
+    private static String getAttributeValue( final AssertionType assertionType, final String attributeName ) {
+        String value = null;
+
+        if ( assertionType.getAttributeStatementArray() != null ) {
+            out:
+            for ( AttributeStatementType statement : assertionType.getAttributeStatementArray() ) {
+                if ( statement != null && statement.getAttributeArray() != null ) {
+                    for ( AttributeType attribute : statement.getAttributeArray() ) {
+                        if ( attribute != null ) {
+                            if ( attributeName.equals( attribute.getName() ) ) {                            
+                                XmlObject[] values = attribute.getAttributeValueArray();
+                                for ( XmlObject presentedValue : values ) {
+                                    XmlCursor cursor = presentedValue.newCursor();
+                                    try {
+                                        if ( value == null ) {
+                                            value = cursor.getTextValue();
+                                        } else { // we only expect one value, anything else is invalid
+                                            value = null;
+                                            break out;
+                                        }
+                                    } finally {
+                                        cursor.dispose();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return value;
     }
 }

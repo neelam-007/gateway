@@ -16,4 +16,11 @@ public interface GatewayTrustTokenFactory {
      * @return The trust token
      */
     String getTrustToken( User user ) throws GatewayException;
+
+    /**
+     * Get a trust token for use by the authenticated user.
+     *
+     * @return The trust token
+     */
+    String getTrustToken() throws GatewayException;
 }
