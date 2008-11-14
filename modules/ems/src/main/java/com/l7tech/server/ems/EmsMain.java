@@ -18,6 +18,7 @@ public class EmsMain {
 
     public static void main(String[] args) {
         BuildInfo.setProduct( EmsMain.class.getPackage(), "Layer 7 Enterprise Service Manager" );
+        System.setProperty("org.apache.cxf.nofastinfoset", "true");
 
         // initialize config location
         //TODO [steve] rename the ems_config.properties file to emconfig.properties for consistency

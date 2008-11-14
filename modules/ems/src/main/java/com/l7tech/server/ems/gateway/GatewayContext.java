@@ -23,6 +23,8 @@ import org.apache.cxf.interceptor.LoggingInInterceptor;
 /**
  * GatewayContext provides access to a Gateway from the ESM.
  *
+ * //TODO [steve] should this be closable?
+ *
  * @author steve
  */
 public class GatewayContext {
@@ -71,8 +73,6 @@ public class GatewayContext {
         cfb.setAddress( url );
 
         Client c = cfb.create();
-
-        c.getInInterceptors().add( new LoggingInInterceptor() );
 
         HTTPConduit hc = (HTTPConduit) c.getConduit();
         HTTPClientPolicy policy = hc.getClient();

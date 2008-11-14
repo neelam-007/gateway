@@ -24,7 +24,7 @@ public class GatewayContextFactory {
     }
 
     public GatewayContext getGatewayContext( final User user, final String host, final int port ) throws GatewayException {
-        return new GatewayContext( defaultKey, host, port, config.getProperty("em.server.id", ""), getUserUuid(user) );
+        return new GatewayContext( defaultKey, host, port, config.getProperty("em.server.id", ""), user==null ? null : getUserUuid(user) );
     }
 
     //- PRIVATE

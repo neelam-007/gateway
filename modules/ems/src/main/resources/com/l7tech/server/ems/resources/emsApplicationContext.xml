@@ -450,4 +450,16 @@
         <constructor-arg index="2" ref="userPropertyManager" />
     </bean>
 
+    <bean id="gatewayPoller" class="com.l7tech.server.ems.gateway.GatewayPoller">
+        <constructor-arg index="0" ref="transactionManager"/>
+        <constructor-arg index="1">
+            <bean id="pollerTimer" class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Gateway poller timer"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="2" ref="auditContext" />
+        <constructor-arg index="3" ref="ssgClusterManager" />
+        <constructor-arg index="4" ref="gatewayContextFactory" />
+    </bean>
+
 </beans>
