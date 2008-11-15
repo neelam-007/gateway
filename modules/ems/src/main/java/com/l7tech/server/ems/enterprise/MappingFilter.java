@@ -1,22 +1,16 @@
 package com.l7tech.server.ems.enterprise;
 
-import com.l7tech.server.ems.user.UserPropertyManager;
-import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.user.UserPropertyManager;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletContext;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * TODO [steve] Add a "nonce" value using EM user login, sessionid and cluster guid
@@ -41,15 +35,15 @@ public class MappingFilter implements Filter {
         boolean handled = false;
         if ( "/Configure.html".equals(httpServletRequest.getRequestURI()) ) {
             String username = httpServletRequest.getParameter("username");
-            String cluster = httpServletRequest.getParameter("cluster");
+            String clusterGuid = httpServletRequest.getParameter("clusterguid");
 
             if ( username!=null && !username.isEmpty() &&
-                 cluster!=null && !cluster.isEmpty() ) {
+                 clusterGuid !=null && !clusterGuid.isEmpty() ) {
                 // attempt to add mapping
                 final EmsSecurityManager.LoginInfo info = emsSecurityManager.getLoginInfo( httpServletRequest.getSession(true) );
                 if ( info != null && info.getUser() != null ) {
                     try {
-                        SsgCluster ssgCluster = ssgClusterManager.findByGuid( cluster );
+                        SsgCluster ssgCluster = ssgClusterManager.findByGuid(clusterGuid);
                         if ( ssgCluster != null ) {
                             Map<String,String> props = userPropertyManager.getUserProperties( info.getUser() );
                             props.put("cluster." +  ssgCluster.getGuid() + ".trusteduser", username);

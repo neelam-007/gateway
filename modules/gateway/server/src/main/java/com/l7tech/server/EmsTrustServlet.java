@@ -20,10 +20,13 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.xml.saml.SamlAssertion;
+import org.apache.xmlbeans.XmlCursor;
+import org.apache.xmlbeans.XmlObject;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlCursor;
+import x0Assertion.oasisNamesTcSAML2.AssertionType;
+import x0Assertion.oasisNamesTcSAML2.AttributeStatementType;
+import x0Assertion.oasisNamesTcSAML2.AttributeType;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
@@ -39,10 +42,10 @@ import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.SecureRandom;
-import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
@@ -50,10 +53,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import x0Assertion.oasisNamesTcSAML2.AssertionType;
-import x0Assertion.oasisNamesTcSAML2.AttributeStatementType;
-import x0Assertion.oasisNamesTcSAML2.AttributeType;
 
 /**
  * Servlet used to handle trust bootstrapping for the EMS.
@@ -478,7 +477,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
     }
 
     private String stripchars(String string) {
-        return string == null ? "" : string.replaceAll("[^a-zA-Z0-9\\-\\r\\n +/=.,:;]", "");
+        return string == null ? "" : string.replaceAll("[^a-zA-Z0-9\\-\\r\\n +/=.,:;\\?]", "");
     }
 
     private String loadStringResource(String resourcePath) throws IOException {

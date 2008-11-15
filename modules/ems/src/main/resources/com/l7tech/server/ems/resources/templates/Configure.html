@@ -888,8 +888,13 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                             // The response object is expected to have these properties:
                             // token {string} - an opague token for use as input to the gateway trust servlet
                             // mappedUserName {string} - user name of the gateway account mapped; null if not mapped yet
+                            var baseURL = document.URL;
+                            var queryPos = baseURL.indexOf('?');
+                            if (queryPos > -1) {
+                                baseURL = baseURL.substr(0, queryPos);  // Strips off query part.
+                            }
+                            document.getElementById('ssgClusterTrustForm_returnurl').value = baseURL + '?clusterguid=' + o.argument.id;
                             document.getElementById('ssgClusterTrustForm_emstoken').value = result.token;
-                            document.getElementById('ssgClusterTrustForm_returnurl').value = document.URL;
                             document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/emstrust';
                             document.getElementById('ssgClusterTrustDialog_name').innerHTML = o.argument.name;
                             ssgClusterTrustDialog.center();
@@ -1338,6 +1343,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
         <form id="ssgClusterTrustForm" method="POST">
             <input id="ssgClusterTrustForm_emstoken" type="hidden" name="token" />
             <input id="ssgClusterTrustForm_returnurl" type="hidden" name="returnurl" />
+            <input id="ssgClusterTrustForm_returntoken" type="hidden" name="returntoken" />
         </form>
         To establish trust of this Enterprise Service Manager by the SSG Cluster
         &ldquo;<span id="ssgClusterTrustDialog_name"></span>&rdquo;,
