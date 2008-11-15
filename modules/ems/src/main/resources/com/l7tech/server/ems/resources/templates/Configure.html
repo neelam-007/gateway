@@ -976,7 +976,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                             document.getElementById('changeAccessAccountForm_returnurl').value = document.URL;
                             document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/emstrust';
                             document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
-                            document.getElementById('changeAccessAccountDialog_mappedUserName').innerHTML = result.mappedUserName;
                             changeAccessAccountDialog.center();
                             changeAccessAccountDialog.show();
                         }
@@ -1381,8 +1380,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
             <input id="changeAccessAccountForm_emstoken" type="hidden" name="token" />
             <input id="changeAccessAccountForm_returnurl" type="hidden" name="returnurl" />
         </form>
-        Your Enterprise Service Manager account is currently mapped to the user account
-        &ldquo;<span id="changeAccessAccountDialog_mappedUserName"></span>&rdquo;,
+        Your Enterprise Service Manager account is currently mapped to a user account
         on the SSG Cluster
         &ldquo;<span id="changeAccessAccountDialog_ssgClusterName"></span>&rdquo;.
         To change that,  you will now be redirected to the cluster server where
