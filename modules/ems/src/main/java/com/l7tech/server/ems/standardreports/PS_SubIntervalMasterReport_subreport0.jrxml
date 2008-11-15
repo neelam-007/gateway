@@ -5,10 +5,10 @@
 		 name="PS_SubIntervalMasterReport_subreport0"
 		 columnCount="1"
 		 printOrder="Vertical"
-		 orientation="Portrait"
-		 pageWidth="535"
-		 pageHeight="802"
-		 columnWidth="535"
+		 orientation="Landscape"
+		 pageWidth="710"
+		 pageHeight="535"
+		 columnWidth="710"
 		 columnSpacing="0"
 		 leftMargin="0"
 		 rightMargin="0"
@@ -73,6 +73,8 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 	<field name="BRTMX" class="java.lang.Integer"/>
 	<field name="BRTA" class="java.lang.Double"/>
 	<field name="AP" class="java.lang.Double"/>
+	<field name="POLICY_VIOLATIONS" class="java.lang.Long"/>
+	<field name="ROUTING_FAILURES" class="java.lang.Long"/>
 
 	<variable name="RESOLUTION" class="java.lang.Integer" resetType="Report" calculation="Nothing">
 		<variableExpression><![CDATA[($P{INTERVAL_UNIT_OF_TIME}.equals( "HOUR" ))?new Integer(1):new Integer(2)]]></variableExpression>
@@ -109,6 +111,14 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
 	</variable>
+	<variable name="POLICY_VIOLATIONS" class="java.lang.Long" resetType="None" calculation="Nothing">
+		<variableExpression><![CDATA[$F{POLICY_VIOLATIONS}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+	</variable>
+	<variable name="ROUTING_FAILURES" class="java.lang.Long" resetType="None" calculation="Nothing">
+		<variableExpression><![CDATA[$F{ROUTING_FAILURES}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+	</variable>
 		<background>
 			<band height="0"  isSplitAllowed="true" >
 			</band>
@@ -132,7 +142,7 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 						style="TableCell"
 						x="0"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="textField-1"/>
 					<box></box>
@@ -144,9 +154,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="57"
+						x="213"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="textField-2"/>
 					<box></box>
@@ -158,9 +168,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="114"
+						x="284"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="textField-3"/>
 					<box></box>
@@ -172,9 +182,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="171"
+						x="355"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="textField-4"/>
 					<box></box>
@@ -186,9 +196,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="228"
+						x="426"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="textField-5"/>
 					<box></box>
@@ -200,9 +210,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="285"
+						x="497"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="textField-6"/>
 					<box></box>
@@ -214,9 +224,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="342"
+						x="568"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="textField-7"/>
 					<box></box>
@@ -228,9 +238,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="399"
+						x="639"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="textField-8"/>
 					<box></box>
@@ -238,6 +248,34 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.Double"><![CDATA[$F{AP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="71"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-9"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{POLICY_VIOLATIONS}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="142"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-10"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{ROUTING_FAILURES}]]></textFieldExpression>
 				</textField>
 			</band>
 		</detail>
@@ -260,7 +298,7 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 						style="TableCell"
 						x="0"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="staticText-1"/>
 					<box></box>
@@ -272,9 +310,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="57"
+						x="213"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="staticText-2"/>
 					<box></box>
@@ -286,9 +324,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="114"
+						x="284"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="staticText-3"/>
 					<box></box>
@@ -300,9 +338,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="171"
+						x="355"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="staticText-4"/>
 					<box></box>
@@ -314,9 +352,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="228"
+						x="426"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="staticText-5"/>
 					<box></box>
@@ -328,9 +366,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="285"
+						x="497"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="staticText-6"/>
 					<box></box>
@@ -342,9 +380,9 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="342"
+						x="568"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="staticText-7"/>
 					<box></box>
@@ -356,11 +394,39 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="399"
+						x="639"
 						y="0"
-						width="57"
+						width="71"
 						height="18"
 						key="staticText-8"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[NA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						style="TableCell"
+						x="142"
+						y="0"
+						width="71"
+						height="18"
+						key="staticText-9"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[NA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						style="TableCell"
+						x="71"
+						y="0"
+						width="71"
+						height="18"
+						key="staticText-10"/>
 					<box></box>
 					<textElement>
 						<font/>

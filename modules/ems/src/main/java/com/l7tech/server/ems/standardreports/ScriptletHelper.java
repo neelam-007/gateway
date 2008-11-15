@@ -20,7 +20,7 @@ import java.awt.*;
  * Lifecycle class, called on report filling lifecycle events. Allows runtime modifications to be made to 
  * report. Initial use is to modify styles at runtime.
  */
-public class ScripletHelper extends JRDefaultScriptlet {
+public class ScriptletHelper extends JRDefaultScriptlet {
 
     private final static String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
     private final static String SERVICE_ID_GROUP = "SERVICE_ID_GROUP";
@@ -82,4 +82,8 @@ public class ScripletHelper extends JRDefaultScriptlet {
             }
         }
     }
+
+    private Long throughputSum;
+
+
 }

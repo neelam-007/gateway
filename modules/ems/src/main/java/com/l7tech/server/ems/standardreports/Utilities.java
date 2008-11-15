@@ -37,6 +37,13 @@ public class Utilities {
     public static final String SQL_PLACE_HOLDER =  ";";
     public static final String ROW_TOTAL_STYLE = "UsageRowTotal";
     public static final String USAGE_TABLE_HEADING_STYLE = "UsageTableHeading";
+    private static final String IS_CONTEXT_MAPPING = "isContextMapping";
+    private static final String CHART_LEGEND = "chartLegend";
+    private static final String CHART_HEIGHT = "chartHeight";
+    private static final String CHART_LEGEND_YPOS = "chartLegendYPos";
+    private static final String CHART_LEGEND_HEIGHT = "chartLegendHeight";
+    private static final String BAND_HEIGHT = "bandHeight";
+    private static final String CHART_FRAME_HEIGHT = "chartFrameHeight";
 
     public static enum UNIT_OF_TIME {
         HOUR, DAY, WEEK, MONTH; 
@@ -1570,7 +1577,85 @@ Value is included in all or none, comment is just illustrative
         }
         return sb.toString();
     }
-    
+
+
+    /**
+     * Get the runtime doc for performance statistics reports. Need to know what size to make the chart, create data
+     * for it's legend and remove unnecessary chart elements
+     * @param isContextMapping are mapping keys being used or not
+     * @param displayStringToMappingValue a map of a shortened string to the string representing a set of mapping values
+     * to display as the category value in a chart e.g. group 1 instead of IpAddress=...Customer=...
+     * @return
+     */
+    public static Document getPerfStatIntervalMasterRuntimeDoc(boolean isContextMapping,
+                                                               LinkedHashMap<String,String> displayStringToMappingValue){
+        Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
+        Node rootNode = doc.getFirstChild();
+        //Create variables element
+        Element isCtxMapElement = doc.createElement(IS_CONTEXT_MAPPING);
+        rootNode.appendChild(isCtxMapElement);
+        if(isContextMapping){
+            isCtxMapElement.setTextContent("1");
+        }else{
+            isCtxMapElement.setTextContent("0");
+        }
+
+        //Create all the text fields for the chart legend
+        Element chartLegend = doc.createElement(CHART_LEGEND);
+        rootNode.appendChild(chartLegend);
+        int x = 0;
+        int y = 0;
+        int vSpace = 5;
+        int height = 18;
+        int frameWidth = 820;
+
+        int index = 0;
+        for (Map.Entry<String, String> me : displayStringToMappingValue.entrySet()) {
+            addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey"+(index+1), "java.lang.String",
+                    me.getKey()+": " + me.getValue(), "TableCell", false);
+
+            y += height + vSpace;
+            index++;
+        }
+
+        //Chart height is minimum 130, if there are more than 2 mapping value sets then increase it
+        int chartHeight = 130;
+        int numMappingSets = displayStringToMappingValue.size();
+        if(numMappingSets > 2){
+            chartHeight += 30 * (numMappingSets -2);            
+        }
+
+        Element chartHeightElement = doc.createElement(CHART_HEIGHT);
+        rootNode.appendChild(chartHeightElement);
+        chartHeightElement.setTextContent(String.valueOf(chartHeight));
+
+        int chartFrameHeight = chartHeight + 18;
+        Element chartFrameHeightElement = doc.createElement(CHART_FRAME_HEIGHT);
+        rootNode.appendChild(chartFrameHeightElement);
+        chartFrameHeightElement.setTextContent(String.valueOf(chartFrameHeight));
+
+        //start of chart legend = chart height + 18 for the title of the chart frame
+        int chartLegendYPos = 18 + chartFrameHeight;
+        Element chartLegendYPosElement = doc.createElement(CHART_LEGEND_YPOS);
+        rootNode.appendChild(chartLegendYPosElement);
+        chartLegendYPosElement.setTextContent(String.valueOf(chartLegendYPos));
+
+        //height of chart legend = num mapping sets * height + vSpace
+        int chartLegendHeight = numMappingSets * (height + vSpace);
+        Element chartLegendHeightElement = doc.createElement(CHART_LEGEND_HEIGHT);
+        rootNode.appendChild(chartLegendHeightElement);
+        chartLegendHeightElement.setTextContent(String.valueOf(chartLegendHeight));
+
+        //Calculate the height of the band
+        int bandHeight = chartLegendYPos + chartLegendHeight;
+        Element bandHeightElement = doc.createElement(BAND_HEIGHT);
+        rootNode.appendChild(bandHeightElement);
+        bandHeightElement.setTextContent(String.valueOf(bandHeight));
+
+
+        return doc;
+    }
+
     /**
      * Create a document, given the input properties, which will be used to transform the
      * template usgae report.
@@ -1931,6 +2016,7 @@ Value is included in all or none, comment is just illustrative
         }
         return colours;
     }
+
     /**
      *         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                    hyperlinkType="None" hyperlinkTarget="Self">

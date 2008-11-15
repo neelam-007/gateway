@@ -24,7 +24,7 @@ import java.text.SimpleDateFormat;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JRException;
-import com.l7tech.server.ems.standardreports.ScripletHelper;
+import com.l7tech.server.ems.standardreports.ScriptletHelper;
 import com.l7tech.server.ems.standardreports.Utilities;
 
 public class FillReportHandler extends AbstractHandler {
@@ -189,7 +189,7 @@ public class FillReportHandler extends AbstractHandler {
 
         reportProps.put(STYLES_FROM_TEMPLATE, sMap);
 
-        ScripletHelper sh = new ScripletHelper();
+        ScriptletHelper sh = new ScriptletHelper();
         reportProps.put(REPORT_SCRIPTLET, sh);
 
         final Connection conn =getConnection(dbProps);

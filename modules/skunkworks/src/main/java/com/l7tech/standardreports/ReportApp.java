@@ -17,6 +17,8 @@ import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.view.JasperViewer;
 import com.l7tech.server.ems.standardreports.UsageReportHelper;
 import com.l7tech.server.ems.standardreports.Utilities;
+import com.l7tech.server.ems.standardreports.SubIntervalScriptletHelper;
+import com.l7tech.server.ems.standardreports.ScriptletHelper;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.IOUtils;
 import org.w3c.dom.Document;
@@ -90,6 +92,8 @@ public class ReportApp
     private static final String REPORT_SCRIPTLET = "REPORT_SCRIPTLET";
     private static final String SUB_INTERVAL_SUB_REPORT = "SUB_INTERVAL_SUB_REPORT";
     private static final String SUB_REPORT = "SUB_REPORT";
+    private static final String SUBINTERVAL_REPORT_SCRIPTLET = "SUBINTERVAL_REPORT_SCRIPTLET";
+    private static final String PRINT_CHART = "PRINT_CHART";
 
     public ReportApp() {
     }
@@ -630,6 +634,10 @@ public class ReportApp
         Boolean b = Boolean.parseBoolean(prop.getProperty(IS_CONTEXT_MAPPING));
         parameters.put(IS_CONTEXT_MAPPING, b);
 
+        Boolean printChart = Boolean.parseBoolean(prop.getProperty(PRINT_CHART));
+        parameters.put(PRINT_CHART, printChart); 
+
+
         Boolean isDetail = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
         parameters.put(IS_DETAIL, isDetail);
 
@@ -694,6 +702,9 @@ public class ReportApp
         //Only required because jasper reports for some reason ignores the value of scriptletClass from the
         //jasperreport element attribute, so specifying it as a parameter explicitly fixes this issue
         parameters.put(REPORT_SCRIPTLET, scriplet);
+        SubIntervalScriptletHelper sH = new SubIntervalScriptletHelper();
+        sH.setScriptletHelper((ScriptletHelper)scriplet);
+        parameters.put(SUBINTERVAL_REPORT_SCRIPTLET, sH);
 
         return parameters;
     }

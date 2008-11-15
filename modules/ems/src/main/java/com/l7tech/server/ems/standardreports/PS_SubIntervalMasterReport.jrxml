@@ -5,10 +5,10 @@
 		 name="PS_SubIntervalMasterReport"
 		 columnCount="1"
 		 printOrder="Vertical"
-		 orientation="Portrait"
-		 pageWidth="535"
-		 pageHeight="802"
-		 columnWidth="535"
+		 orientation="Landscape"
+		 pageWidth="820"
+		 pageHeight="564"
+		 columnWidth="820"
 		 columnSpacing="0"
 		 leftMargin="0"
 		 rightMargin="0"
@@ -74,6 +74,10 @@
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
 	</variable>
+	<variable name="POLICY_VIOLATIONS_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+	</variable>
+	<variable name="ROUTING_FAILURES_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+	</variable>
 		<background>
 			<band height="0"  isSplitAllowed="true" >
 			</band>
@@ -92,12 +96,12 @@
 		</columnHeader>
 		<detail>
 			<band height="18"  isSplitAllowed="true" >
-				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="true" evaluationTime="Band" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="RowTotalHeading"
 						x="0"
 						y="0"
-						width="108"
+						width="110"
 						height="18"
 						key="textField"
 						isPrintWhenDetailOverflows="true"/>
@@ -109,14 +113,15 @@
 					<textElement>
 						<font fontName="Times-Roman" size="10"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME})]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.
+getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME})]]></textFieldExpression>
 				</textField>
 				<subreport  isUsingCache="false">
 					<reportElement
 						style="DefaultText"
-						x="108"
+						x="110"
 						y="0"
-						width="468"
+						width="710"
 						height="18"
 						key="subreport-1"/>
 					<subreportParameter  name="INTERVAL_START">
@@ -179,6 +184,8 @@
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX" calculation="Highest"/>
 					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG" calculation="Average"/>
+					<returnValue subreportVariable="POLICY_VIOLATIONS" toVariable="POLICY_VIOLATIONS_SUM" calculation="Sum"/>
+					<returnValue subreportVariable="ROUTING_FAILURES" toVariable="ROUTING_FAILURES_SUM" calculation="Sum"/>
 					<subreportExpression  class="java.lang.String"><![CDATA[$P{SUBREPORT_DIRECTORY}+"/PS_SubIntervalMasterReport_subreport0.jasper"]]></subreportExpression>
 				</subreport>
 			</band>
