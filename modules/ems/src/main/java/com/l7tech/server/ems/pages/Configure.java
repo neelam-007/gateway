@@ -17,6 +17,7 @@ import org.mortbay.util.ajax.JSON;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 /**
@@ -27,7 +28,6 @@ import java.util.logging.Logger;
 public class Configure extends EmsPage  {
 
     private static final Logger logger = Logger.getLogger(Configure.class.getName());
-    private static final Object SUCCESS_ACK = new Object();
 
     @SpringBean(name="serverConfig")
     private Config config;
@@ -66,6 +66,11 @@ public class Configure extends EmsPage  {
 
                 for (SsgCluster childCluster : ssgClusterManager.findChildSsgClusters(folder)) {
                     nodes.add(childCluster);
+
+                    // Add SSG nodes
+                    for (SsgNode node: new TreeSet<SsgNode>(childCluster.getNodes())) {
+                        nodes.add(node);
+                    }
                 }
             }
         });

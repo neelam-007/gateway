@@ -1,11 +1,15 @@
 package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.server.management.api.node.GatewayApi;
 import org.mortbay.util.ajax.JSON;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
-import java.util.Map;
-import java.util.UUID;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.CascadeType;
+import java.util.*;
 
 /**
  * Encapsulates info of an SSG Cluster as known to the Enterprise Manager.
@@ -25,12 +29,18 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
     /** The cluster's SSL host name; same as the cluster host name or the load balancer in front. */
     private String sslHostName;
 
+    private String ipAddress;
+
     /** Port number of the administrative interface. */
     private int adminPort;
 
     private boolean trustStatus;
 
+    private String dbHosts;
+
     private EnterpriseFolder parentFolder;
+
+    private Set<SsgNode> nodes = new HashSet<SsgNode>();
 
     @Deprecated // For serialization and persistence only
     public SsgCluster() {
@@ -75,6 +85,19 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         this.parentFolder = parentFolder;
     }
 
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="ssgCluster")
+    @Fetch(FetchMode.SUBSELECT)
+    @Cascade({org.hibernate.annotations.CascadeType.DELETE_ORPHAN, org.hibernate.annotations.CascadeType.ALL})
+    @OnDelete(action= OnDeleteAction.CASCADE)
+    @BatchSize(size=50)
+    public Set<SsgNode> getNodes() {
+        return nodes;
+    }
+
+    public void setNodes(Set<SsgNode> nodes) {
+        this.nodes = nodes;
+    }
+
     @Column(name="ssl_host_name", length=128, nullable=false)
     public String getSslHostName() {
         return sslHostName;
@@ -84,6 +107,24 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         this.sslHostName = sslHostName;
     }
 
+    @Column(name="ip_address", length=15)
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    @Column(name="db_hosts", length=128)
+    public String getDbHosts() {
+        return dbHosts;
+    }
+
+    public void setDbHosts(String dbHosts) {
+        this.dbHosts = dbHosts;
+    }
+
     @Column(name="trust_status", nullable=false)
     public boolean getTrustStatus() {
         return trustStatus;
@@ -91,6 +132,21 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
 
     public void setTrustStatus(boolean trustStatus) {
         this.trustStatus = trustStatus;
+    }
+
+    public Set<GatewayApi.GatewayInfo> obtainGatewayInfoSet() {
+        Set<GatewayApi.GatewayInfo> infoSet = new HashSet<GatewayApi.GatewayInfo>();
+        for (SsgNode node: nodes) {
+            GatewayApi.GatewayInfo info = new GatewayApi.GatewayInfo();
+            info.setId(node.getGuid());
+            info.setIpAddress(node.getIpAddress());
+            info.setName(node.getName());
+            info.setSoftwareVersion(node.getSoftwareVersion());
+
+            infoSet.add(info);
+        }
+
+        return infoSet;
     }
 
     @Override

@@ -84,6 +84,7 @@
                 <!-- Enterprise Organization Entities -->
                 <value>com.l7tech.server.ems.enterprise.EnterpriseFolder</value>
                 <value>com.l7tech.server.ems.enterprise.SsgCluster</value>
+                <value>com.l7tech.server.ems.enterprise.SsgNode</value>
 
                 <!-- General -->                
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
@@ -424,6 +425,10 @@
     <!-- SSG Cluster Manager -->
     <bean id="ssgClusterManager" class="com.l7tech.server.ems.enterprise.SsgClusterManagerImpl" parent="hibernateBean">
         <property name="enterpriseFolderManager" ref="enterpriseFolderManager"/>
+    </bean>
+
+    <!-- SSG Node Manager -->
+    <bean id="ssgNodeManager" class="com.l7tech.server.ems.enterprise.SsgNodeManagerImpl" parent="hibernateBean">
     </bean>
 
     <!-- keystore root cert and ssl config  -->

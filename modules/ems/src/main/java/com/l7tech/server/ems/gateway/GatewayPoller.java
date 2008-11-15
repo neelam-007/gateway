@@ -7,15 +7,14 @@ import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.beans.factory.InitializingBean;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.xml.ws.soap.SOAPFaultException;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Collection;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.net.ConnectException;
@@ -90,12 +89,34 @@ public class GatewayPoller implements InitializingBean {
                                         ssgClusterManager.update( cluster );
                                     }
                                 }
+
+                                // Periodically update SSG Nodes.
+                                Set<GatewayApi.GatewayInfo> currInfoSet = cluster.obtainGatewayInfoSet();
+                                Set<GatewayApi.GatewayInfo> newInfoSet = new HashSet(api.getGatewayInfo());
+                                if (! newInfoSet.equals(currInfoSet)) {
+                                    Set<SsgNode> nodes = new HashSet<SsgNode>();
+
+                                    for (GatewayApi.GatewayInfo newInfo: newInfoSet) {
+                                        SsgNode node = new SsgNode();
+                                        node.setGuid(newInfo.getId());
+                                        node.setName(newInfo.getName());
+                                        node.setSoftwareVersion(newInfo.getSoftwareVersion());
+                                        node.setIpAddress(newInfo.getIpAddress());
+                                        node.setOnlineStatus("xxx"); // todo: use real status later on
+                                        node.setTrustStatus(false);  // todo: use real status later on
+                                        node.setSsgCluster(cluster);
+                                        nodes.add(node);
+                                    }
+                                    cluster.getNodes().clear();
+                                    cluster.getNodes().addAll(nodes);
+                                    ssgClusterManager.update(cluster);
+                                }
                             } catch ( GatewayException ge ) {
                                 logger.log( Level.WARNING, "Gateway error when polling gateways", ge );
                             } catch ( SOAPFaultException sfe ) {
                                 // logger.log( Level.WARNING, "Gateway error when polling gateways", sfe );
                                 if ( ExceptionUtils.causedBy( sfe, ConnectException.class ) ) {
-                                    logger.log( Level.INFO, "Gateway connection failed for gateway '"+host+":"+port+"'.", sfe );
+                                    logger.log( Level.INFO, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                 } else if ( "Authentication Required".equals(sfe.getMessage()) ){
                                     if ( cluster.getTrustStatus() ) {
                                         logger.info("Trust lost for gateway cluster '"+host+":"+port+"'.");
