@@ -91,6 +91,7 @@ public final class ProcessControllerDaemon {
     private int stop(int exitCode) {
         logger.info("Shutting down");
         try {
+            processController.stopNodes();
             ctx.close();
             return exitCode;
         } catch (Throwable t) {

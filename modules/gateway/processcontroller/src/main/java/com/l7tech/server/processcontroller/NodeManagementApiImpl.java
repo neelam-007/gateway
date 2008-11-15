@@ -13,7 +13,6 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
 import org.apache.cxf.interceptor.InInterceptors;
 import org.apache.cxf.interceptor.OutFaultInterceptors;
 
@@ -139,8 +138,8 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         final List<NodeHeader> nodes = new ArrayList<NodeHeader>();
         for (NodeConfig config : configService.getHost().getNodes().values()) {
             final PCNodeConfig pcNodeConfig = (PCNodeConfig)config;
-            final Pair<NodeStateType,Date> state = processController.getNodeState(pcNodeConfig.getName());
-            nodes.add(new NodeHeader(pcNodeConfig.getId(), pcNodeConfig.getName(), pcNodeConfig.getSoftwareVersion(), pcNodeConfig.isEnabled(), state.left, state.right));
+            final ProcessController.NodeStateSample state = processController.getNodeState(pcNodeConfig.getName());
+            nodes.add(new NodeHeader(pcNodeConfig.getId(), pcNodeConfig.getName(), pcNodeConfig.getSoftwareVersion(), pcNodeConfig.isEnabled(), state.getType(), state.getStartTime(), state.getLastObservedTime()));
         }
         return nodes;
     }
@@ -201,7 +200,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         }
 
         // apply state change if required
-        NodeStateType currentState = processController.getNodeState(nodeName).left;
+        NodeStateType currentState = processController.getNodeState(nodeName).getType();
         if ( node.isEnabled() && NodeStateType.RUNNING != currentState ) {
             try {
                 processController.startNode( currentNodeConfig, false );
@@ -242,7 +241,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     @Override
     public NodeStateType startNode(String nodeName) throws FindException, StartupException {
         checkRequest();
-        NodeStateType tempState = processController.getNodeState(nodeName).left;
+        NodeStateType tempState = processController.getNodeState(nodeName).getType();
         if (tempState == null) tempState = NodeStateType.UNKNOWN;
         switch(tempState) {
             case RUNNING:

@@ -1,36 +1,35 @@
 package com.l7tech.gateway.config.client.beans;
 
-import com.l7tech.server.management.api.node.NodeManagementApi;
-import com.l7tech.server.management.config.node.NodeConfig;
-import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.SoftwareVersion;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.gateway.config.manager.NodeConfigurationManager;
-import com.l7tech.util.Pair;
+import com.l7tech.server.management.api.node.NodeManagementApi;
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.BuildInfo;
+import com.l7tech.util.Pair;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
+import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
+import org.apache.cxf.transport.http.HTTPConduit;
 
+import javax.activation.DataHandler;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.activation.DataHandler;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Date;
-import java.io.IOException;
 import java.io.File;
-
-import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
-import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.transport.http.HTTPConduit;
-import org.apache.cxf.configuration.jsse.TLSClientParameters;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 
 /**
  *
@@ -113,7 +112,7 @@ public class NodeManagementApiFactory {
 
                 for ( Pair<NodeConfig, File> nodePair : nodes ) {
                     NodeConfig nc = nodePair.left;
-                    headers.add( new NodeHeader( nc.getGuid(), nc.getName(), SoftwareVersion.fromString(BuildInfo.getProductVersion()), true, NodeStateType.UNKNOWN, new Date()) );
+                    headers.add( new NodeHeader( nc.getGuid(), nc.getName(), SoftwareVersion.fromString(BuildInfo.getProductVersion()), true, NodeStateType.UNKNOWN, new Date(), new Date()) );
                 }
 
                 return headers;

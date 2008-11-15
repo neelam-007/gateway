@@ -20,7 +20,6 @@ import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
-import org.springframework.context.ApplicationContext;
 
 import javax.annotation.Resource;
 import javax.net.ssl.TrustManager;
@@ -42,11 +41,6 @@ public class ProcessController {
 
     @Resource
     private ConfigService configService;
-
-    @Resource
-    private ApplicationContext spring;
-
-    ProcessBuilder processBuilder;
 
     /** The maximum amount of time the PC should wait for a node to start */
     private static final int NODE_START_TIME_MAX = 30000;
@@ -101,11 +95,37 @@ public class ProcessController {
     /**
      * @return a Pair containing the node's state, and the time at which the state was last observed. Never null.
      */
-    public synchronized Pair<NodeStateType, Date> getNodeState(String nodeName) {
+    public synchronized NodeStateSample getNodeState(String nodeName) {
         final NodeState state = nodeStates.get(nodeName);
-        final NodeStateType type = state == null ? UNKNOWN : state.type;
-        final Date when = state == null ? new Date() : new Date(state.sinceWhen);
-        return new Pair<NodeStateType, Date>(type, when);
+        if (state != null) 
+            return new NodeStateSample(state.type, new Date(state.startTime), new Date(state.sinceWhen));
+
+        final Date now = new Date();
+        return new NodeStateSample(NodeStateType.UNKNOWN, now, now);
+    }
+
+    public static class NodeStateSample {
+        private final NodeStateType type;
+        private final Date startTime;
+        private final Date lastObservedTime;
+
+        private NodeStateSample(NodeStateType type, Date startTime, Date lastObservedTime) {
+            this.type = type;
+            this.startTime = startTime;
+            this.lastObservedTime = lastObservedTime;
+        }
+
+        public NodeStateType getType() {
+            return type;
+        }
+
+        public Date getStartTime() {
+            return startTime;
+        }
+
+        public Date getLastObservedTime() {
+            return lastObservedTime;
+        }
     }
 
     /**
@@ -185,6 +205,7 @@ public class ProcessController {
     private static abstract class NodeState {
         protected final PCNodeConfig node;
         protected final NodeStateType type;
+        protected final long startTime = System.currentTimeMillis();
         protected volatile long sinceWhen;
 
         public NodeState(PCNodeConfig node, NodeStateType type) {

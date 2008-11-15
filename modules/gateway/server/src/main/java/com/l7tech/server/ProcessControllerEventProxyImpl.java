@@ -3,6 +3,7 @@
  */
 package com.l7tech.server;
 
+import com.l7tech.common.io.PermissiveX509TrustManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -11,26 +12,24 @@ import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
-import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
-import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
-import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.beans.factory.InitializingBean;
+import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
+import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
+import org.apache.cxf.transport.http.HTTPConduit;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationEvent;
 
 import javax.annotation.Resource;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import javax.xml.ws.soap.SOAPFaultException;
-import java.util.TimerTask;
-import java.util.List;
+import java.net.ConnectException;
 import java.util.Arrays;
+import java.util.List;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
-import java.net.ConnectException;
 
 /** @author alex */
 public class ProcessControllerEventProxyImpl implements ProcessControllerEventProxy, InitializingBean, DisposableBean {
@@ -53,6 +52,24 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
         }
     };
 
+    private static final TLSClientParameters tlsClientParameters = new TLSClientParameters() {
+        private final PermissiveX509TrustManager trustManager = new PermissiveX509TrustManager();
+
+        @Override
+        public List<String> getCipherSuites() {
+            return Arrays.asList(SyspropUtil.getString(PROP_SSL_CIPHERS,DEFAULT_SSL_CIPHERS).split(","));
+        }
+
+        public boolean isDisableCNCheck() {
+            return true;
+        }
+
+        // TODO should we explicitly trust the PC cert?
+        public TrustManager[] getTrustManagers() {
+            return new TrustManager[] { trustManager };
+        }
+    };
+
     public void afterPropertiesSet() throws Exception {
         start();
     }
@@ -62,14 +79,6 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
     }
 
     private void start() {
-        try {
-            if (isProcessControllerPresent())
-                getProcessControllerApi(true); // Ping on startup to log as early as possible if PC is down
-        } catch ( Exception e ) {
-            // CXF throws RuntimeException
-            logger.log( Level.WARNING, "Error pinging process controller.", e);
-        }
-
         // Note that timer task is spawned unconditionally so that if the PC becomes enabled at runtime we'll know
         Background.scheduleRepeated(new Background.SafeTimerTask(task), 15634, 5339);
     }
@@ -118,25 +127,7 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
         pfb.setAddress(url);
         final Client c = pfb.getClientFactoryBean().create();
         final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
-        httpConduit.setTlsClientParameters(new TLSClientParameters() {
-            @Override
-            public List<String> getCipherSuites() {
-                return Arrays.asList(SyspropUtil.getString(PROP_SSL_CIPHERS,DEFAULT_SSL_CIPHERS).split(","));
-            }
-
-            public boolean isDisableCNCheck() {
-                return true;
-            }
-
-            // TODO should we explicitly trust the PC cert?
-            public TrustManager[] getTrustManagers() {
-                return new TrustManager[] { new X509TrustManager() {
-                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {}
-                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {}
-                    public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
-                }};
-            }
-        });
+        httpConduit.setTlsClientParameters(tlsClientParameters);
         return pfb;
     }
 
@@ -152,28 +143,36 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
                     long oid = oids[i];
                     switch (ops[i]) {
                         case EntityInvalidationEvent.CREATE:
-                            try {
-                                SsgConnector conn = ssgConnectorManager.findByPrimaryKey(oid);
-                                ProcessControllerApi api = getProcessControllerApi(false);
-                                if ( api != null ) {
-                                    api.connectorCreated(conn);
-                                }
-                            } catch (FindException e) {
-                                logger.log(Level.WARNING, "Unable to find recently created SsgConnector #" + oid, e);
-                            } catch (SOAPFaultException sfe) {
-                                if ( ExceptionUtils.causedBy( sfe, ConnectException.class ) ) {
-                                    logger.log(Level.WARNING, "Connection error while notifiying process controller of new connector " + oid);
-                                } else {
-                                    logger.log(Level.WARNING, "Error while notifiying process controller of new connector " + oid, sfe);
-                                }
-                            }
-                            break;
-                        case EntityInvalidationEvent.UPDATE: // TODO
+                        case EntityInvalidationEvent.UPDATE:
+                            notify(ops[i] == EntityInvalidationEvent.CREATE, oid);
                             break;
                         case EntityInvalidationEvent.DELETE: // TODO
                             break;
                     }
                 }
+            }
+        }
+    }
+
+    private void notify(boolean created, long oid) {
+        final String what = created ? "created" : "updated";
+        try {
+            SsgConnector conn = ssgConnectorManager.findByPrimaryKey(oid);
+            ProcessControllerApi api = getProcessControllerApi(false);
+            if ( api != null ) {
+                if (created) {
+                    api.connectorCreated(conn);
+                } else {
+                    api.connectorUpdated(conn);
+                }
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, String.format("Unable to find recently %s SsgConnector #%d", what, oid), e);
+        } catch (SOAPFaultException sfe) {
+            if ( ExceptionUtils.causedBy( sfe, ConnectException.class ) ) {
+                logger.log(Level.WARNING, String.format("Connection error while notifying process controller of %s connector %d", what, oid));
+            } else {
+                logger.log(Level.WARNING, String.format("Error while notifying process controller of %s connector %d", what, oid), sfe);
             }
         }
     }

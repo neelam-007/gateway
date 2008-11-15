@@ -83,15 +83,17 @@ public interface NodeManagementApi {
         private String version;
         private boolean enabled;
         private NodeStateType state;
+        private Date stateStartTime;
         private Date sinceWhen;
 
-        public NodeHeader(String id, String name, SoftwareVersion softwareVersion, boolean enabled, NodeStateType state, Date sinceWhen) {
+        public NodeHeader(String id, String name, SoftwareVersion softwareVersion, boolean enabled, NodeStateType state, Date stateStartTime, Date sinceWhen) {
             this.id = id;
             this.name = name;
             this.state = state;
             this.sinceWhen = sinceWhen;
             this.version = softwareVersion == null ? null : softwareVersion.toString();
             this.enabled = enabled;
+            this.stateStartTime = stateStartTime;
         }
 
         public NodeHeader() { }
@@ -144,6 +146,18 @@ public interface NodeManagementApi {
 
         public void setState(NodeStateType state) {
             this.state = state;
+        }
+
+        public void setStateStartTime(Date stateStartTime) {
+            this.stateStartTime = stateStartTime;
+        }
+
+        /**
+         * @return the time when this state was first detected
+         */
+        @XmlAttribute
+        public Date getStateStartTime() {
+            return stateStartTime;
         }
     }
 
