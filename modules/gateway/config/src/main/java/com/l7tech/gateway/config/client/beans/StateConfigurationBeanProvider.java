@@ -24,7 +24,7 @@ import java.util.logging.Level;
  *
  * @since 5.0
  */
-public class StateConfigurationBeanProvider extends NodeConfigurationBeanProviderSupport<NodeManagementApi.NodeHeader> implements ConfigurationBeanProvider {
+public class StateConfigurationBeanProvider extends NodeConfigurationBeanProviderSupport<NodeManagementApi.NodeHeader> implements ConfigurationBeanProvider, StatusCodeSource {
 
     //- PUBLIC
 
@@ -32,6 +32,7 @@ public class StateConfigurationBeanProvider extends NodeConfigurationBeanProvide
         this.nodeManagementApiFactory = new NodeManagementApiFactory( nodeManagementUrl );
     }
 
+    @Override
     public boolean isValid() {
         boolean valid = false;
 
@@ -48,20 +49,29 @@ public class StateConfigurationBeanProvider extends NodeConfigurationBeanProvide
         return valid;
     }
 
+    @Override
     public void storeConfiguration(Collection<ConfigurationBean> configuration) throws ConfigurationException {
         throw new ConfigurationException("This provider is read-only.");
     }
 
+    @Override
+    public int getStatusCode() {
+        return code;
+    }
+
     //- PACKAGE
 
+    @Override
     NodeManagementApi getManagementService() {
         return nodeManagementApiFactory.getManagementService();
     }
 
+    @Override
     NodeManagementApi.NodeHeader toConfig(NodeManagementApi.NodeHeader nodeHeader) throws FindException {
         return nodeHeader;
     }
 
+    @Override
     Collection<ConfigurationBean> toBeans( final NodeManagementApi.NodeHeader config ) {
         List<ConfigurationBean> configuration = new ArrayList<ConfigurationBean>();
 
@@ -69,22 +79,49 @@ public class StateConfigurationBeanProvider extends NodeConfigurationBeanProvide
         statusConfigBean.setConfigName( "status" );
         ConfigurationBean<Date> statusTimestampConfigBean = new ConfigurationBean<Date>();
         statusTimestampConfigBean.setConfigName( "status.time" );
+        ConfigurationBean<Date> statusSinceConfigBean = new ConfigurationBean<Date>();
+        statusSinceConfigBean.setConfigName( "status.since" );
 
         if ( config != null ) {
             statusConfigBean.setConfigValue( config.getState().toString() );
+            switch ( config.getState() ) {
+                case RUNNING:
+                case STARTING:
+                    code = CODE_RUNNING;
+                    break;
+                case CRASHED:
+                case WONT_START:
+                case STOPPING:
+                case STOPPED:
+                    code = CODE_STOPPED;
+                    break;
+                case UNKNOWN:
+                default:
+                    code = 0;
+                    break;
+            }
+
             if ( config.getSinceWhen() != null ) {
                 statusTimestampConfigBean.setConfigValue( config.getSinceWhen() );
             } else {
                 logger.warning("Received empty status timestamp.");
                 statusTimestampConfigBean.setConfigValue( new Date() );
             }
+            if ( config.getStateStartTime() != null ) {
+                statusSinceConfigBean.setConfigValue( config.getStateStartTime() );
+            } else {
+                logger.warning("Received empty status starttime.");
+                statusSinceConfigBean.setConfigValue( new Date() );
+            }
         } else {
             statusConfigBean.setConfigValue( "Node Not Configured" );
             statusTimestampConfigBean.setConfigValue( new Date() );
+            statusSinceConfigBean.setConfigValue( new Date() );
         }
 
         configuration.add(statusConfigBean);
         configuration.add(statusTimestampConfigBean);
+        configuration.add(statusSinceConfigBean);
 
         return configuration;
     }
@@ -93,6 +130,9 @@ public class StateConfigurationBeanProvider extends NodeConfigurationBeanProvide
 
     private static final Logger logger = Logger.getLogger( StateConfigurationBeanProvider.class.getName() );
 
-    private final NodeManagementApiFactory nodeManagementApiFactory;
+    private static final int CODE_RUNNING = 21;
+    private static final int CODE_STOPPED = 22;
 
+    private final NodeManagementApiFactory nodeManagementApiFactory;
+    private int code = 0;                                        
 }

@@ -67,6 +67,42 @@ doNetworkConfiguration() {
     done
 }
 
+doNodeLifecycle() {
+    clear
+    echo "SecureSpan Gateway status options:"
+    echo ""
+    if [ ${1} -eq 22 ] ; then
+        echo " 1) Start the SecureSpan Gateway"
+    else
+        echo " 1) Stop the SecureSpan Gateway"
+        echo " 2) Restart the SecureSpan Gateway"
+    fi
+    echo " X) Exit menu"
+
+    echo ""
+    echo -n "Please make a selection: "
+    read choice
+
+    case $choice in
+            1)
+                clear;
+                if [ ${1} -eq 22 ] ; then
+                    (${CONFWIZARD} -lifecycle start);
+                else
+                    (${CONFWIZARD} -lifecycle stop);
+                fi
+                confirmedMessage ""
+                clear;;
+            2)
+                clear;
+                (${CONFWIZARD} -lifecycle restart);
+                confirmedMessage ""
+                clear;;
+            *)
+                clear;;
+    esac
+}
+
 doConfiguration() {
     isMenuValid="n"
     while [ "$isMenuValid" != "y" ]
@@ -75,11 +111,13 @@ doConfiguration() {
             echo "This menu allows you to configure the SecureSpan Gateway application"
             echo "What would you like to do?"
             echo ""
-            echo " 1) Upgrade the SecureSpan Gateway database on this appliance"
-            echo " 2) Create a new SecureSpan Gateway database on this appliance"
-            echo " 3) Configure the SecureSpan Gateway application on this appliance"
-            echo " 4) Display the current SecureSpan Gateway configuration"
-            echo " 5) Display the current SecureSpan Gateway status"
+            echo " 1) Upgrade the SecureSpan Gateway database"
+            echo " 2) Create a new SecureSpan Gateway database"
+            echo " 3) Configure the SecureSpan Gateway"
+            echo " 4) Change the SecureSpan Gateway cluster password"
+            echo " 5) Delete the SecureSpan Gateway"
+            echo " 6) Display the current SecureSpan Gateway configuration"
+            echo " 7) Manage SecureSpan Gateway status"
             echo " X) Exit menu"
 
             echo ""
@@ -122,6 +160,14 @@ doConfiguration() {
                         clear;;
                     4)
                         clear;
+                        confirmedMessage "Not yet implemented."
+                        clear;;
+                    5)
+                        clear;
+                        confirmedMessage "Not yet implemented."
+                        clear;;
+                    6)
+                        clear;
                         (${CONFWIZARD} show);
                         STATUS=$?
                         if [ $STATUS -eq 2 ] ; then
@@ -134,7 +180,7 @@ doConfiguration() {
                           confirmedMessage ""
                         fi
                         clear;;
-                    5)
+                    7)
                         clear;
                         (${CONFWIZARD} show status);
                         STATUS=$?
@@ -144,6 +190,8 @@ doConfiguration() {
                           confirmedMessage "Configuration service not available (please reboot)"
                         elif [ $STATUS -eq 5 ] ; then
                           confirmedMessage "Unexpected error in status service."
+                        elif [ $STATUS -eq 21 ] || [ $STATUS -eq 22 ] ; then
+                            doNodeLifecycle $STATUS
                         fi
                         clear;;
                     *)
@@ -218,16 +266,16 @@ do
         echo "What would you like to do?"
         echo ""
         echo " 1) Configure networking"
-        echo " 2) SecureSpan Gateway settings"
+        echo " 2) Display SecureSpan Gateway configuration menu"
         echo " 3) Use a privileged shell (root)"
         echo " 4) Change the Master Passphrase"
-        echo " 5) Configure Remote Management"
+        echo " 5) Display Remote Management configuration menu"
         if [ "${SCA_PRESENT}" == "true" ] ; then
-            echo " 6) Back up the Master Key to USB flash drive"
+            echo " 6) Configure HSM"
         fi
 
         if [ "${EM_PRESENT}" == "true" ] ; then
-            echo " 7) Enterprise Service Manager settings"
+            echo " 7) Display Enterprise Service Manager configuration menu"
         fi
         echo " R) Reboot the SSG appliance (apply the new configuration)"
         echo " X) Exit (no reboot)"

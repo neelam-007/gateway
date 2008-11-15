@@ -30,8 +30,6 @@ import java.util.logging.Logger;
 
 /**
  * An embedded servlet container that the PC uses to host itself.
- *
- * TODO [steve] This needs cleanup
  */
 public class PCServletContainer implements ApplicationContextAware, InitializingBean, DisposableBean {
     public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
@@ -62,6 +60,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         Server server = new Server();
         Pair<X509Certificate[],RSAPrivateKey> keypair = configService.getSslKeypair();
         final SSLContext ctx = SSLContext.getInstance("SSL");
+        final boolean allowRemote = configService.getTrustedRemoteNodeManagementCerts() != null && !configService.getTrustedRemoteNodeManagementCerts().isEmpty();
         ctx.init(new KeyManager[] { new SingleCertX509KeyManager(keypair.left, keypair.right) }, null, null);
         final SslSocketConnector sslConnector = new SslSocketConnector() {
             @Override
@@ -76,7 +75,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
             @Override
             public String getHost() {
-                return "localhost"; // TODO make this configurable for when the EM comes calling
+                return allowRemote ? "0.0.0.0" : "localhost";
             }
         };
         server.addConnector(sslConnector);
@@ -84,7 +83,12 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         final Context root = new Context(server, "/", Context.SESSIONS);
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/processcontroller/resources/web"));
         root.setDisplayName("Layer 7 Process Controller");
-        root.setAttribute("javax.servlet.context.tempdir", new File("/tmp")); //TODO [steve] temp directory ?
+        File varTmp = new File("var/tmp");
+        if ( varTmp.getParentFile().exists() && (varTmp.exists() || varTmp.mkdir()) ) {
+            root.setAttribute("javax.servlet.context.tempdir", varTmp);            
+        } else {
+            root.setAttribute("javax.servlet.context.tempdir", new File("/tmp"));
+        }
         root.addEventListener(new PCContextLoaderListener());
         root.setClassLoader(Thread.currentThread().getContextClassLoader());
 
@@ -111,10 +115,12 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         server.destroy();
     }
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         initializeServletEngine();
     }
 
+    @Override
     public void destroy() throws Exception {
         shutdownServletEngine();
     }
@@ -123,6 +129,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         return applicationContext;
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }

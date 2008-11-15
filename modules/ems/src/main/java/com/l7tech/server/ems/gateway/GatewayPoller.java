@@ -102,8 +102,8 @@ public class GatewayPoller implements InitializingBean {
                                         node.setName(newInfo.getName());
                                         node.setSoftwareVersion(newInfo.getSoftwareVersion());
                                         node.setIpAddress(newInfo.getIpAddress());
-                                        node.setOnlineStatus("xxx"); // todo: use real status later on
-                                        node.setTrustStatus(false);  // todo: use real status later on
+                                        node.setOnlineStatus("on"); // todo: use real status later on
+                                        node.setTrustStatus(true);  // todo: use real status later on
                                         node.setSsgCluster(cluster);
                                         nodes.add(node);
                                     }

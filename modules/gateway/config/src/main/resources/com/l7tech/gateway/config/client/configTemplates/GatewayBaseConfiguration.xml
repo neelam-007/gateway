@@ -25,15 +25,15 @@ Press "&lt;" to go to the previous step.
 This step lets you create or set up a connection to the SSG database.</prompt>
     </optionGroup>
     <optionGroup id="admin">
-        <description>Administrative Account</description>
+        <description>SSM Administrative Account</description>
         <prompt>
 ----------------------------
-Set Up the SSG Administrator
+Set Up the SSM Administrator
 ----------------------------
 At any time type "quit" to quit.
 Press "&lt;" to go to the previous step.
 
-This step lets you create the administrative user account.</prompt>
+This step lets you create the SSM administrative user account.</prompt>
     </optionGroup>
     <optionGroup id="cluster">
         <description>Cluster Configuration</description>
@@ -95,15 +95,15 @@ This step lets you set up the SSG cluster.</prompt>
     <!--
       Options for Administrative user account configuration
     -->
-    <option id="admin-user" group="admin" type="USERNAME" order="200" updatable="false" name="Administrative Username">
+    <option id="admin-user" group="admin" type="USERNAME" order="200" updatable="false" name="SSM Username">
         <configName>admin.user</configName>
-        <description>Administrative Username</description>
-        <prompt>Enter the administrative user.</prompt>
+        <description>SSM Username</description>
+        <prompt>Enter the SSM administrative user.</prompt>
     </option>
-    <option id="admin-pass" group="admin" type="PASSWORD" order="201" updatable="false" confirmed="true" name="Administrative Password">
+    <option id="admin-pass" group="admin" type="PASSWORD" order="201" updatable="false" confirmed="true" name="SSM Password">
         <configName>admin.pass</configName>
-        <description>Administrative Password</description>
-        <prompt>Enter the administrative password.</prompt>
+        <description>SSM Password</description>
+        <prompt>Enter the SSM administrative password.</prompt>
     </option>
 
     <!--
