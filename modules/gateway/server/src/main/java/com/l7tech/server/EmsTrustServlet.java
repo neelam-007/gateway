@@ -42,6 +42,7 @@ import java.io.StringReader;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -199,7 +200,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
                                         param.put("emsinfo", formatCertInfo(cert));
                                         param.put("emscertpem", CertUtils.encodeAsPEM(cert));
                                         param.put("emsusername", emsuserid);
-                                        param.put("emsuserdesc", emsuserdesc);                                        
+                                        param.put("emsuserdesc", emsuserdesc);
                                     }
                                 } else {
                                     logger.warning("Ignoring SAML assertion that is expired or not yet valid ('"+notBefore+"'/'"+notOnOrAfter+"')");
@@ -237,15 +238,15 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             param.put("message", "Invalid EMS PEM certificate.");
             sendForm(hresponse, param);
         } catch (CertificateMismatchException e) {
-            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             param.put("message", "The specified EMS ID has already been registered with a different EMS certificate.");
             sendForm(hresponse, param);
         } catch (TrustedEmsUserManager.MappingAlreadyExistsException e) {
-            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.INFO, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             param.put("message", "The specified EMS username on that EMS instance has already been mapped on this Gateway.");
             sendForm(hresponse, param);
         } catch (LoginException e) {
-            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.INFO, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             param.put("message", "Unable to authenticate Gateway user: Invalid username or password.");
             sendForm(hresponse, param);
         } catch (PolicyAssertionException e) {
@@ -310,7 +311,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         URL url;
         if (returnurl != null && ((url = parseUrl(returnurl)) != null)) {
             String redirectUrl = url.toExternalForm();
-            String mappingInfo = "username=" + param.get("username");
+            String mappingInfo = "username=" +  URLEncoder.encode(param.get("username"), "UTF-8");
             if ( redirectUrl.indexOf('?') > -1 ) {
                 mappingInfo = "&" + mappingInfo;
             } else {
@@ -468,7 +469,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             vals.add(0, css);
             vals.add(1, js);
             for (String fields : FIELDS)
-                vals.add(stripchars(params.get(fields)));
+                vals.add(escapeMarkup(stripchars(params.get(fields))).toString());
 
             ps.print(MessageFormat.format(template, vals.toArray()));
         } finally {
@@ -477,7 +478,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
     }
 
     private String stripchars(String string) {
-        return string == null ? "" : string.replaceAll("[^a-zA-Z0-9\\-\\r\\n +/=.,:;\\?]", "");
+        return string == null ? "" : string.replaceAll("[^a-zA-Z0-9\\-\\r\\n +/=.,:;\\?@&!#$%\\^*\\(\\){}'~`]", "");
     }
 
     private String loadStringResource(String resourcePath) throws IOException {
@@ -563,4 +564,54 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
 
         return value;
     }
+
+    /**
+     * Escape any special chars for use in HTML 
+     */
+    public static CharSequence escapeMarkup( final String s )
+	{
+		if ( s == null ) {
+			return null;
+		} else {
+			int len = s.length();
+			final StringBuilder buffer = new StringBuilder((int)(len * 1.1));
+
+			for (int i = 0; i < len; i++)
+			{
+				final char c = s.charAt(i);
+				switch (c)
+				{
+					case '<' :
+						buffer.append("&lt;");
+						break;
+
+					case '>' :
+						buffer.append("&gt;");
+						break;
+
+					case '&' :
+						if ((i < len - 1) && (s.charAt(i + 1) == '#')) {
+							buffer.append(c);
+						} else {
+							buffer.append("&amp;");
+						}
+						break;
+
+					case '"' :
+						buffer.append("&quot;");
+						break;
+
+					case '\'' :
+						buffer.append("&#039;");
+						break;
+
+					default :
+    					buffer.append(c);
+						break;
+				}
+			}
+
+			return buffer;
+		}
+	}
 }

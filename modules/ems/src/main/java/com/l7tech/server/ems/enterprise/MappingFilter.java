@@ -33,7 +33,8 @@ public class MappingFilter implements Filter {
         final HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
 
         boolean handled = false;
-        if ( "/Configure.html".equals(httpServletRequest.getRequestURI()) ) {
+        if ( "/Configure.html".equals(httpServletRequest.getRequestURI()) &&
+             httpServletRequest.getMethod().equalsIgnoreCase("get") ) {
             String username = httpServletRequest.getParameter("username");
             String clusterGuid = httpServletRequest.getParameter("clusterguid");
 
@@ -48,12 +49,16 @@ public class MappingFilter implements Filter {
                             Map<String,String> props = userPropertyManager.getUserProperties( info.getUser() );
                             props.put("cluster." +  ssgCluster.getGuid() + ".trusteduser", username);
                             userPropertyManager.saveUserProperties( info.getUser(), props );
+                        } else {
+                            logger.warning("Cluster '"+clusterGuid+"' not found when adding user mapping.");
                         }
                     } catch (ObjectModelException ome) {
                         logger.log( Level.WARNING, "Error adding mapping for user.", ome );
                     }
                 }
+            }
 
+            if ( clusterGuid != null ) {
                 // redirect even if mapping not performed so user does not see URL params
                 handled = true;
                 httpServletResponse.sendRedirect( httpServletRequest.getRequestURI() );

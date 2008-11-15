@@ -92,7 +92,7 @@ public class GatewayPoller implements InitializingBean {
 
                                 // Periodically update SSG Nodes.
                                 Set<GatewayApi.GatewayInfo> currInfoSet = cluster.obtainGatewayInfoSet();
-                                Set<GatewayApi.GatewayInfo> newInfoSet = new HashSet(api.getGatewayInfo());
+                                Set<GatewayApi.GatewayInfo> newInfoSet = new HashSet<GatewayApi.GatewayInfo>(api.getGatewayInfo());
                                 if (! newInfoSet.equals(currInfoSet)) {
                                     Set<SsgNode> nodes = new HashSet<SsgNode>();
 
@@ -114,7 +114,6 @@ public class GatewayPoller implements InitializingBean {
                             } catch ( GatewayException ge ) {
                                 logger.log( Level.WARNING, "Gateway error when polling gateways", ge );
                             } catch ( SOAPFaultException sfe ) {
-                                // logger.log( Level.WARNING, "Gateway error when polling gateways", sfe );
                                 if ( ExceptionUtils.causedBy( sfe, ConnectException.class ) ) {
                                     logger.log( Level.INFO, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                 } else if ( "Authentication Required".equals(sfe.getMessage()) ){

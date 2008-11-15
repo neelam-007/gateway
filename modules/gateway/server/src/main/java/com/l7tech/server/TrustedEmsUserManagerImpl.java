@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import java.util.logging.Logger;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEmsUser, EntityHeader> implements TrustedEmsUserManager {
     private static final Logger logger = Logger.getLogger(TrustedEmsUserManagerImpl.class.getName());
+    private static final boolean PERMIT_MAPPING_UPDATE = SyspropUtil.getBoolean("com.l7tech.server.remotetrust.permitMappingUpdate", true);
 
     @Resource
     private TrustedEmsManager trustedEmsManager;
@@ -70,17 +72,24 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         TrustedEmsUser trustedEmsUser = findByEmsUsername(trustedEms, emsUsername);
         if (trustedEmsUser != null) {
             // Another local user -- possible the same one -- already mapped as this EMS user
-            throw new MappingAlreadyExistsException("A mapping already exists for the specified user on the specified EMS instance.");
+            if ( !PERMIT_MAPPING_UPDATE )
+                throw new MappingAlreadyExistsException("A mapping already exists for the specified user on the specified EMS instance.");
+
+            trustedEmsUser.setSsgUserId(user.getId());
+            trustedEmsUser.setProviderOid(user.getProviderId());
+
+            update(trustedEmsUser);            
+        } else {
+            trustedEmsUser = new TrustedEmsUser();
+            trustedEmsUser.setTrustedEms(trustedEms);
+            trustedEmsUser.setSsgUserId(user.getId());
+            trustedEmsUser.setProviderOid(user.getProviderId());
+            trustedEmsUser.setEmsUserId(emsUsername);
+
+            long oid = save(trustedEmsUser);
+            trustedEmsUser.setOid(oid);
         }
 
-        trustedEmsUser = new TrustedEmsUser();
-        trustedEmsUser.setTrustedEms(trustedEms);
-        trustedEmsUser.setSsgUserId(user.getId());
-        trustedEmsUser.setProviderOid(user.getProviderId());
-        trustedEmsUser.setEmsUserId(emsUsername);
-
-        long oid = save(trustedEmsUser);
-        trustedEmsUser.setOid(oid);
         return trustedEmsUser;
     }
 

@@ -936,7 +936,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                             // mappedUserName {string} - user name of the gateway account mapped; null if not mapped yet
                             var entity = o.argument;
                             document.getElementById('mapAccessAccountForm_emstoken').value = result.token;
-                            document.getElementById('mapAccessAccountForm_returnurl').value = document.URL;
+                            document.getElementById('mapAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
                             document.getElementById('mapAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/emstrust';
                             document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
                             mapAccessAccountDialog.center();
@@ -973,7 +973,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                             // mappedUserName {string} - user name of the gateway account mapped; null if not mapped yet
                             var entity = o.argument;
                             document.getElementById('changeAccessAccountForm_emstoken').value = result.token;
-                            document.getElementById('changeAccessAccountForm_returnurl').value = document.URL;
+                            document.getElementById('changeAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
                             document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/emstrust';
                             document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
                             changeAccessAccountDialog.center();

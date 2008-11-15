@@ -8,8 +8,10 @@ import com.l7tech.gateway.config.client.beans.ConfigResult;
 import com.l7tech.gateway.config.client.beans.ConfigurationContext;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.util.HexUtils;
+import com.l7tech.common.io.CertUtils;
 
 import java.security.cert.X509Certificate;
+import java.security.GeneralSecurityException;
 
 /** @author alex */
 public class ConfirmTrustedCert extends BooleanConfigurableBean {
@@ -25,14 +27,17 @@ public class ConfirmTrustedCert extends BooleanConfigurableBean {
        StringBuilder description = new StringBuilder();
 
         description.append("\n");
-        description.append("  Serial Number: ");
-        description.append(hexFormat(cert.getSerialNumber().toByteArray()));
-        description.append("\n");
         description.append("  Issuer       : ");
         description.append(cert.getIssuerDN().getName());
         description.append("\n");
+        description.append("  Serial Number: ");
+        description.append(hexFormat(cert.getSerialNumber().toByteArray()));
+        description.append("\n");
         description.append("  Subject      : ");
         description.append(cert.getSubjectDN().getName());
+        description.append("\n");
+        description.append("  Thumbprint   : ");
+        description.append(getCertificateThumbprint(cert));
         description.append("\n");
 
         return description.toString();
@@ -68,5 +73,17 @@ public class ConfirmTrustedCert extends BooleanConfigurableBean {
         }
 
         return builder.toString();
+    }
+
+    private String getCertificateThumbprint( final X509Certificate cert ) {
+        String thumbprint = "<Not Available>";
+
+        try {
+            thumbprint = CertUtils.getCertificateFingerprint( cert, "SHA1" ).substring(5);
+        } catch ( GeneralSecurityException gse ) {
+            // display <Not Available>
+        }
+
+        return thumbprint;
     }
 }
