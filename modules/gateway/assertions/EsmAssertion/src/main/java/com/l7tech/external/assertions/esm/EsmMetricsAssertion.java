@@ -43,7 +43,6 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "ESM Metrics");
-        meta.put(AssertionMetadata.LONG_NAME, "");
 
         // This is a pseudo-assertion and so should appear in no palette folders
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] {"audit"});

@@ -69,7 +69,7 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Message Context Assertion");
-        meta.put(AssertionMetadata.LONG_NAME, "");
+        meta.put(AssertionMetadata.LONG_NAME, "Message Context Assertion");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
