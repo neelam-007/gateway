@@ -1049,6 +1049,7 @@ if (!l7.EntityTreeTable) {
                     }
                     if (!trusted && this._config.onClickTrustDialogButton != undefined) {
                         icon.className = 'clickableImg';
+                        icon.title = this._localizedStrings.TRUST_TO_BE_ESTABLISHED;
                         YAHOO.util.Event.addListener(icon, 'click', this._config.onClickTrustDialogButton, entity);
                     }
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
@@ -1368,7 +1369,8 @@ if (!l7.EntityTreeTable) {
             SSG_NODE_STATE_DOWN : 'Down',
             SSG_NODE_STATE_OFFLINE : 'Offline',
             TRUST_ESTABLISHED : 'Trust has been established',
-            TRUST_NOT_ESTABLISHED : 'Trust has not been established. Click to establish.',
+            TRUST_NOT_ESTABLISHED : 'Trust has not been established',
+            TRUST_TO_BE_ESTABLISHED : 'Trust has not been established. Click to establish.',
             ACCESS_ACCOUNT_IS_SET : 'Access account is set. Click to change access account.',
             ACCESS_ACCOUNT_NOT_SET : 'No access account. Click to enter access account.',
             ACCESS_GRANTED : 'Access granted',

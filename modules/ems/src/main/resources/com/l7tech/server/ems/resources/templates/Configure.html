@@ -37,7 +37,8 @@
                 SSG_NODE_STATE_DOWN : 'Down',
                 SSG_NODE_STATE_OFFLINE : 'Offline',
                 TRUST_ESTABLISHED : 'Trust has been established',
-                TRUST_NOT_ESTABLISHED : 'Trust has not been established. Click to establish.',
+                TRUST_NOT_ESTABLISHED : 'Trust has not been established',
+                TRUST_TO_BE_ESTABLISHED : 'Trust has not been established. Click to establish.',
                 ACCESS_ACCOUNT_IS_SET : 'Access account is set. Click to change access account.',
                 ACCESS_ACCOUNT_NOT_SET : 'No access account. Click to enter access account.',
                 ACCESS_GRANTED : 'Access granted',
@@ -887,7 +888,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                         if (typeof result == 'object' && !l7.Util.isException(result)) {
                             // The response object is expected to have these properties:
                             // token {string} - an opague token for use as input to the gateway trust servlet
-                            // mappedUserName {string} - user name of the gateway account mapped; null if not mapped yet
                             var baseURL = document.URL;
                             var queryPos = baseURL.indexOf('?');
                             if (queryPos > -1) {
@@ -933,7 +933,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                         if (typeof result == 'object' && !l7.Util.isException(result)) {
                             // The response object is expected to have these properties:
                             // token {string} - an opague token for use as input to the gateway trust servlet
-                            // mappedUserName {string} - user name of the gateway account mapped; null if not mapped yet
                             var entity = o.argument;
                             document.getElementById('mapAccessAccountForm_emstoken').value = result.token;
                             document.getElementById('mapAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
@@ -970,7 +969,6 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                         if (typeof result == 'object' && !l7.Util.isException(result)) {
                             // The response object is expected to have these properties:
                             // token {string} - an opague token for use as input to the gateway trust servlet
-                            // mappedUserName {string} - user name of the gateway account mapped; null if not mapped yet
                             var entity = o.argument;
                             document.getElementById('changeAccessAccountForm_emstoken').value = result.token;
                             document.getElementById('changeAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
