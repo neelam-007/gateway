@@ -94,6 +94,7 @@ public class ReportApp
     private static final String SUB_REPORT = "SUB_REPORT";
     private static final String SUBINTERVAL_REPORT_SCRIPTLET = "SUBINTERVAL_REPORT_SCRIPTLET";
     private static final String PRINT_CHART = "PRINT_CHART";
+    private static final String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
 
     public ReportApp() {
     }
@@ -229,36 +230,49 @@ public class ReportApp
         Map<String, Object> parameters = getParameters();
         String type = parameters.get(REPORT_TYPE).toString();
 
+        int numRelativeTimeUnits = Integer.valueOf(parameters.get(RELATIVE_NUM_OF_TIME_UNITS).toString());
+        Utilities.UNIT_OF_TIME relUnitOfTime = Utilities.getUnitFromString(prop.getProperty(RELATIVE_TIME_UNIT));
+        long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime );
+        long endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime);
+
+        List<String> keys = (List<String>) parameters.get(MAPPING_KEYS);
+        List<String> values = (List<String>) parameters.get(MAPPING_VALUES);
+        List<String> useAnd = (List<String>) parameters.get(VALUE_EQUAL_OR_LIKE);
+        Collection<String> serviceIds = ((Map<String, String>) parameters.get(SERVICE_NAME_TO_ID_MAP)).values();
+        List<String> operations = (List<String>) parameters.get(OPERATIONS);
+
+        boolean useUser = Boolean.valueOf(parameters.get(USE_USER).toString());
+        List<String> authUsers = (List<String>) parameters.get(AUTHENTICATED_USERS);
+
+
+        boolean isDetail = Boolean.valueOf(parameters.get(IS_DETAIL).toString());
+        Object scriplet = parameters.get(REPORT_SCRIPTLET);
+
+        int resolution = Utilities.getResolutionFromTimePeriod(30, startTimeInPast, endTimeInPast);
+
+        boolean isContextMapping = Boolean.valueOf(parameters.get(IS_CONTEXT_MAPPING).toString()); 
+
+        String sql = null;
+        if(isContextMapping){
+            sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serviceIds, keys, values, useAnd, resolution, isDetail, operations, useUser, authUsers);
+        }else{
+            sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serviceIds, resolution);
+        }
+        System.out.println("Distinct sql: " + sql);
+        
         if(!type.equals("Usage") && !type.equals("Usage_Interval")){
-            //JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
-            Connection connection = getConnection(prop);
-            try{
-                JasperFillManager.fillReportToFile(fileName+".jasper", parameters, connection);
-            }finally{
-                connection.close();
+            if(type.equals("Performance_Interval")){
+                runPerfStatIntervalReport(isContextMapping, fileName, prop, parameters, sql, keys);                
+            }else{
+                //JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
+                Connection connection = getConnection(prop);
+                try{
+                    JasperFillManager.fillReportToFile(fileName+".jasper", parameters, connection);
+                }finally{
+                    connection.close();
+                }
             }
         }else{
-            int numRelativeTimeUnits = Integer.valueOf(parameters.get(RELATIVE_NUM_OF_TIME_UNITS).toString());
-            Utilities.UNIT_OF_TIME relUnitOfTime = Utilities.getUnitFromString(prop.getProperty(RELATIVE_TIME_UNIT));
-            long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime );
-            long endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime);
-
-            List<String> keys = (List<String>) parameters.get(MAPPING_KEYS);
-            List<String> values = (List<String>) parameters.get(MAPPING_VALUES);
-            List<String> useAnd = (List<String>) parameters.get(VALUE_EQUAL_OR_LIKE);
-            Collection<String> serviceIds = (Collection<String>) ((Map<String, String>) parameters.get(SERVICE_NAME_TO_ID_MAP)).values();
-            List<String> operations = (List<String>) parameters.get(OPERATIONS);
-
-            boolean useUser = Boolean.valueOf(parameters.get(USE_USER).toString());
-            List<String> authUsers = (List<String>) parameters.get(AUTHENTICATED_USERS);
-
-
-            boolean isDetail = Boolean.valueOf(parameters.get(IS_DETAIL).toString());
-            Object scriplet = parameters.get(REPORT_SCRIPTLET);
-
-            int resolution = Utilities.getResolutionFromTimePeriod(30, startTimeInPast, endTimeInPast);
-            String sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serviceIds, keys, values, useAnd, resolution, isDetail, operations, useUser, authUsers);
-            System.out.println("Distinct sql: " + sql);
 
             if(type.equals("Usage")){
                 runUsageReport(fileName, prop, parameters, scriplet, sql, keys, useUser);
@@ -314,6 +328,47 @@ public class ReportApp
         }
 
         return mappingValues;
+    }
+
+    private LinkedHashSet<String> getMappingDisplayStrings(Connection connection, String sql, List<String> keys) throws Exception{
+        try{
+            Statement stmt = connection.createStatement();
+            LinkedHashSet<String> set = new LinkedHashSet<String>();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while(rs.next()){
+                List<String> mappingStrings = new ArrayList<String>();
+                String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
+                for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
+                    mappingStrings.add(rs.getString("MAPPING_VALUE_"+(i+1)));
+                }
+                String mappingValue = Utilities.getMappingValueDisplayString(authUser, keys, mappingStrings.toArray(new String[]{}), false, null);
+                set.add(mappingValue);
+            }
+            return set;
+
+        }catch(Exception ex){
+            if(connection != null) connection.close();
+            throw(ex);
+        }
+    }
+
+    private LinkedHashSet<String> getServiceDisplayStrings(Connection connection, String sql) throws Exception{
+        try{
+            Statement stmt = connection.createStatement();
+            LinkedHashSet<String> set = new LinkedHashSet<String>();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while(rs.next()){
+                String service = rs.getString(Utilities.SERVICE_NAME) + "[" + rs.getString(Utilities.ROUTING_URI) +"]";
+                set.add(service);
+            }
+            return set;
+
+        }catch(Exception ex){
+            if(connection != null) connection.close();
+            throw(ex);
+        }
     }
 
     private LinkedHashMap<String, String> getKeyToColumnValues(LinkedHashSet<String> mappingValues) {
@@ -410,7 +465,7 @@ public class ReportApp
         }
 
         xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
-        xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+        xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
         params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -467,6 +522,110 @@ public class ReportApp
 
         JasperExportManager.exportReportToPdfFile(jp,"UsageInterval.pdf");
 
+    }
+
+    private void runPerfStatIntervalReport(boolean isContextMapping, String fileName, Properties prop, Map parameters,
+                                           String sql, List<String> keys) throws Exception{
+
+        //Compile both subreports and add to parameters
+        String subIntervalReport = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_SubIntervalMasterReport.jrxml");
+        ByteArrayInputStream bais = new ByteArrayInputStream(subIntervalReport.getBytes("UTF-8"));
+        JasperReport subIntervalCompiledReport = JasperCompileManager.compileReport(bais);
+
+        String subReport = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_SubIntervalMasterReport_subreport0.jrxml");
+        bais = new ByteArrayInputStream(subReport.getBytes("UTF-8"));
+        JasperReport subCompiledReport = JasperCompileManager.compileReport(bais);
+
+        parameters.put(SUB_INTERVAL_SUB_REPORT, subIntervalCompiledReport);
+        parameters.put(SUB_REPORT, subCompiledReport);
+
+        Connection connection = getConnection(prop);
+        Document transformDoc = null;
+        LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
+        LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
+        
+        if(isContextMapping){
+            LinkedHashSet<String> mappingValues = getMappingDisplayStrings(connection, sql, keys);
+            //We need to look up the mappingValues from both the group value and also the display string value
+
+            int index = 1;
+            for(String s: mappingValues){
+                String group = "Group "+index;
+                System.out.println("Group: " + group+" s: " + s);
+                groupToDisplayString.put(group, s);
+                displayStringToGroup.put(s, group);
+                index++;
+            }
+
+        }else{
+            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sql);
+            //We need to look up the mappingValues from both the group value and also the display string value
+            int index = 1;
+            for(String s: serviceValues){
+                String service = "Service "+index;
+                System.out.println("Service: " + service+" s: " + s);
+                groupToDisplayString.put(service, s);
+                displayStringToGroup.put(s, service);
+                index++;
+            }
+        }
+
+        parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
+        transformDoc = Utilities.getPerfStatIntervalMasterRuntimeDoc(isContextMapping, groupToDisplayString);
+
+        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_IntervalTransformDoc.xml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
+        }finally{
+            fos.close();
+        }
+
+
+        String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_IntervalMasterTransform.xsl");
+        String xmlSrc = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", transformDoc);
+
+        Document jasperDoc = transform(xslStr, xmlSrc, params);
+
+        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_IntervalRuntimeDoc.xml");
+        f.createNewFile();
+        fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
+        }finally{
+            fos.close();
+        }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(jasperDoc, baos);
+        bais = new ByteArrayInputStream(baos.toByteArray());
+
+        JasperReport intervalMasterReport = JasperCompileManager.compileReport(bais);
+
+        System.out.println("Report compiled");
+
+        JasperPrint jp = null;
+        try{
+            System.out.println("Filling intervalMasterReport");
+            jp = JasperFillManager.fillReport(intervalMasterReport, parameters, connection);
+            System.out.println("Report filled");
+        }finally{
+            connection.close();
+        }
+
+        System.out.println("Viewing...");
+        try{
+            JasperViewer.viewReport(jp, false);
+        }catch(Exception ex){
+            System.out.println("Exception: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        JasperExportManager.exportReportToPdfFile(jp,"PS_Interval.pdf");
     }
 
     private void runUsageReport(String fileName, Properties prop, Map parameters, Object scriplet, String sql,

@@ -788,7 +788,7 @@ public class UtilitiesTest{
     public void testGetMappingValueDisplayString(){
         boolean exception = false;
         try{
-            Utilities.getMappingValueDisplayString(null, null, null);
+            Utilities.getMappingValueDisplayString(null, null, null, false, null);
         }catch (NullPointerException e){
             exception = true;
         }
@@ -796,15 +796,15 @@ public class UtilitiesTest{
 
         exception = false;
         try{
-            Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, null, null);
+            Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, null, null, false, null);
         }catch (IllegalArgumentException e){
             exception = true;
         }
         Assert.assertTrue(exception);
 
-        
-        String val = Utilities.getMappingValueDisplayString("Donal", null, null);
-        Assert.assertTrue(val.equals("Group values: "+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal"));
+        String preFix = "Group values: ";
+        String val = Utilities.getMappingValueDisplayString("Donal", null, null, true, preFix);
+        Assert.assertTrue(val.equals(preFix+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal"));
 
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
@@ -814,16 +814,16 @@ public class UtilitiesTest{
         values.add("127.0.0.1");
         values.add("GOLD");
 
-        val = Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, keys, values.toArray(new String[]{}));
-        Assert.assertTrue(val.equals("Group values: "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
+        val = Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, keys, values.toArray(new String[]{}), true, preFix);
+        Assert.assertTrue(val.equals(preFix+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
 
-        val = Utilities.getMappingValueDisplayString("Donal", keys, values.toArray(new String[]{}));
-        Assert.assertTrue(val.equals("Group values: "+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal, "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
+        val = Utilities.getMappingValueDisplayString("Donal", keys, values.toArray(new String[]{}), true, preFix);
+        Assert.assertTrue(val.equals(preFix+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal, "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
         
         values.remove(1);
         exception = false;
         try{
-            Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, keys, values.toArray(new String[]{}));
+            Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, keys, values.toArray(new String[]{}), true, preFix);
         }catch (IllegalArgumentException e){
             exception = true;
         }

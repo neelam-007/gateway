@@ -18,7 +18,10 @@
 
     <xsl:template match="jasperReport">
         <xsl:element name="jasperReport">
-                <xsl:apply-templates select="node()|@*" />
+            <xsl:attribute name="pageHeight">
+                <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/pageHeight"/>
+            </xsl:attribute>
+            <xsl:apply-templates select="node()|@*[local-name()!='pageHeight']"/>
         </xsl:element>
     </xsl:template>
 
@@ -38,7 +41,10 @@
             </xsl:when>
             <xsl:otherwise>
                 <xsl:element name="band">
-                    <xsl:apply-templates select="node()|@*"/>
+                    <xsl:attribute name="height"><xsl:value-of
+                            select="$RuntimeDoc/JasperRuntimeTransformation/bandHeight" />
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='height']"/>
                 </xsl:element>
             </xsl:otherwise>
         </xsl:choose>
@@ -87,22 +93,76 @@
         </xsl:if>
     </xsl:template>
     
-    <xsl:template match="/jasperReport/group[@name='CONSTANT_MAPPING']/groupHeader/band/frame[3]/reportElement">
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_MAPPING']/groupHeader/band/frame[2]/frame/reportElement">
         <xsl:if test="$isContextMapping = 1">
             <xsl:element name="reportElement">
                 <xsl:attribute name="height"><xsl:value-of
                         select="$RuntimeDoc/JasperRuntimeTransformation/chartLegendHeight" />
                 </xsl:attribute>
                 <xsl:attribute name="y"><xsl:value-of
-                        select="$RuntimeDoc/JasperRuntimeTransformation/chartLegendYPos" />
+                        select="$RuntimeDoc/JasperRuntimeTransformation/chartLegendFrameYPos" />
                 </xsl:attribute>
                 <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='y']"/>
             </xsl:element>
         </xsl:if>
     </xsl:template>
 
-    <xsl:template match="/jasperReport/group[@name='CONSTANT_MAPPING']/groupHeader/band/frame[3]">
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_MAPPING']/groupHeader/band/frame[2]/frame/box">
         <xsl:if test="$isContextMapping = 1">
+            <xsl:copy>
+                <xsl:apply-templates select="node()|@*"/>
+            </xsl:copy>
+            <xsl:text>
+            </xsl:text>
+            <xsl:for-each select="$RuntimeDoc/JasperRuntimeTransformation/chartLegend/textField">
+                <xsl:element name="textField">
+                    <xsl:apply-templates select="node()|@*"/>
+                </xsl:element>
+                <xsl:text>
+                </xsl:text>
+            </xsl:for-each>
+        </xsl:if>
+    </xsl:template>
+
+    <!--CONSTANT_CHART chart height-->
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[2]/reportElement">
+        <xsl:if test="$isContextMapping = 0">
+            <xsl:element name="reportElement">
+                <xsl:attribute name="height"><xsl:value-of
+                        select="$RuntimeDoc/JasperRuntimeTransformation/chartFrameHeight" />
+                </xsl:attribute>
+                <xsl:apply-templates select="node()|@*[local-name()!='height']"/>
+            </xsl:element>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[2]/stackedBarChart/chart/reportElement">
+        <xsl:if test="$isContextMapping = 0">
+            <xsl:element name="reportElement">
+                <xsl:attribute name="height"><xsl:value-of
+                        select="$RuntimeDoc/JasperRuntimeTransformation/chartHeight" />
+                </xsl:attribute>
+                <xsl:apply-templates select="node()|@*[local-name()!='height']"/>
+            </xsl:element>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[2]/frame/reportElement">
+        <xsl:if test="$isContextMapping = 0">
+            <xsl:element name="reportElement">
+                <xsl:attribute name="height"><xsl:value-of
+                        select="$RuntimeDoc/JasperRuntimeTransformation/chartLegendHeight" />
+                </xsl:attribute>
+                <xsl:attribute name="y"><xsl:value-of
+                        select="$RuntimeDoc/JasperRuntimeTransformation/chartLegendFrameYPos" />
+                </xsl:attribute>
+                <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='y']"/>
+            </xsl:element>
+        </xsl:if>
+    </xsl:template>
+
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[2]/frame/box">
+        <xsl:if test="$isContextMapping = 0">
             <xsl:copy>
                 <xsl:apply-templates select="node()|@*"/>
             </xsl:copy>

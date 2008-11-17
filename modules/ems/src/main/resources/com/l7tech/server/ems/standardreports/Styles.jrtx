@@ -489,7 +489,17 @@
     >
 	</style>
 
-	<!--<style-->
+    <style
+        name="chartLegendTextField"
+        hAlign="Left"
+        vAlign="Middle"
+        isStyledText="false"
+        markup="html"
+    >
+        <box leftPadding="5" />
+    </style>
+    
+    <!--<style-->
 		<!--name="SubTableHeader"-->
         <!--vAlign="Middle"-->
     <!-->-->

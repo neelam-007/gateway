@@ -185,9 +185,9 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					<pieDataset>
 						<dataset resetType="Group" resetGroup="CONSTANT_CHART" incrementType="Group" incrementGroup="SERVICE_ID" >
 						</dataset>
-						<keyExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"]]></keyExpression>
+						<keyExpression><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></keyExpression>
 						<valueExpression><![CDATA[$V{SERVICE_ONLY_TOTAL}]]></valueExpression>
-						<labelExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"+
+						<labelExpression><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})+
 "("+String.valueOf($V{SERVICE_ONLY_TOTAL}.longValue())+")"]]></labelExpression>
 				<sectionHyperlink >
 				</sectionHyperlink>
@@ -329,7 +329,7 @@ isCircular="true" >
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -410,7 +410,7 @@ isCircular="true" >
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?$F{SERVICE_OPERATION_VALUE}:
-$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupFooter>

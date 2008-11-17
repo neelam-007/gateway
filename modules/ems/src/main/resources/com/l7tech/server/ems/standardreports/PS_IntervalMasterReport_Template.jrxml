@@ -16,7 +16,8 @@
 		 bottomMargin="20"
 		 whenNoDataType="NoDataSection"
 		 isTitleNewPage="false"
-		 isSummaryNewPage="false">
+		 isSummaryNewPage="false"
+		 isIgnorePagination="true">
 	<property name="ireport.scriptlethandling" value="0" />
 	<property name="ireport.encoding" value="UTF-8" />
 	<import value="java.util.*" />
@@ -68,7 +69,6 @@
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
@@ -117,6 +117,11 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 )]]></defaultValueExpression>
 	</parameter>
 	<parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
+	<parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
+	<parameter name="SUB_INTERVAL_SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
+	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport">
+		<parameterDescription><![CDATA[Subreport, for the 3rd level report. Not used directly by this report, but passes to its subreport]]></parameterDescription>
+	</parameter>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
 	<field name="SERVICE_ID" class="java.lang.Long"/>
@@ -236,14 +241,14 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 						style="FrameTitle"
 						x="0"
 						y="0"
-						width="105"
+						width="268"
 						height="18"
 						key="staticText-119"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
-				<text><![CDATA[Summary Chart]]></text>
+				<text><![CDATA[Service Summary Chart]]></text>
 				</staticText>
 				</frame>				<frame>					<reportElement
 						style="ChartFrame"
@@ -259,7 +264,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 						x="0"
 						y="0"
 						width="820"
-						height="182"
+						height="130"
 						key="element-1"/>
 					<box></box>
 						<chartTitle color="#000000" >
@@ -273,21 +278,27 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 						</dataset>
 						<categorySeries>
 							<seriesExpression><![CDATA["Throughput"]]></seriesExpression>
-							<categoryExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"]]></categoryExpression>
+							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue())?
+Utilities.getServiceFromDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
+$F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{THROUGHPUT_SUM}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
 						</categorySeries>
 						<categorySeries>
 							<seriesExpression><![CDATA["Policy Violations"]]></seriesExpression>
-							<categoryExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"]]></categoryExpression>
+							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue())?
+Utilities.getServiceFromDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
+$F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{POLICY_VIOLATIONS_SUM}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
 						</categorySeries>
 						<categorySeries>
 							<seriesExpression><![CDATA["Routing Failures"]]></seriesExpression>
-							<categoryExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"]]></categoryExpression>
+							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue())?
+Utilities.getServiceFromDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
+$F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{ROUTING_FAILURES_SUM}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -295,7 +306,6 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 					</categoryDataset>
 					<barPlot isShowLabels="true" >
 						<plot orientation="Horizontal" />
-					<categoryAxisLabelExpression><![CDATA["Services"]]></categoryAxisLabelExpression>
 						<categoryAxisFormat>
 							<axisFormat >
 							</axisFormat>
@@ -307,7 +317,15 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 						</valueAxisFormat>
 					</barPlot>
 				</stackedBarChart>
-				</frame>			</band>
+				<frame>					<reportElement
+						x="0"
+						y="147"
+						width="820"
+						height="34"
+						key="frame-35"
+						stretchType="RelativeToTallestObject"/>
+					<box></box>
+				</frame>				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
 			<band height="0"  isSplitAllowed="true" >
@@ -333,21 +351,21 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 						style="FrameTitle"
 						x="0"
 						y="0"
-						width="105"
+						width="268"
 						height="18"
 						key="staticText-120"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
-				<text><![CDATA[Summary Chart]]></text>
+				<text><![CDATA[Grouping Summary Chart]]></text>
 				</staticText>
 				</frame>				<frame>					<reportElement
 						style="ChartFrame"
 						x="0"
 						y="18"
 						width="820"
-						height="148"
+						height="181"
 						key="frame-33"
 						stretchType="RelativeToTallestObject"/>
 					<box></box>
@@ -358,8 +376,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 						y="0"
 						width="820"
 						height="130"
-						key="element-2"
-						stretchType="RelativeToTallestObject"/>
+						key="element-2"/>
 					<box></box>
 						<chartTitle color="#000000" >
 								<titleExpression><![CDATA["Performance Summary"]]></titleExpression>
@@ -373,9 +390,9 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 						<categorySeries>
 							<seriesExpression><![CDATA["Throughput"]]></seriesExpression>
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue())?
-String.valueOf((Utilities.getMappingValueDisplayString(
+(Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})).hashCode()):"1"]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{THROUGHPUT_SUM_MAPPING}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -383,9 +400,9 @@ $F{MAPPING_VALUE_5}})).hashCode()):"1"]]></categoryExpression>
 						<categorySeries>
 							<seriesExpression><![CDATA["Policy Violations"]]></seriesExpression>
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue())?
-String.valueOf((Utilities.getMappingValueDisplayString(
+(Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})).hashCode()):"1"]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{POLICY_VIOLATIONS_MAPPING}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -393,9 +410,9 @@ $F{MAPPING_VALUE_5}})).hashCode()):"1"]]></categoryExpression>
 						<categorySeries>
 							<seriesExpression><![CDATA["Routing Failures"]]></seriesExpression>
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue())?
-String.valueOf((Utilities.getMappingValueDisplayString(
+(Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})).hashCode()):"1"]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{ROUTING_FAILURES_MAPPING}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -403,7 +420,6 @@ $F{MAPPING_VALUE_5}})).hashCode()):"1"]]></categoryExpression>
 					</categoryDataset>
 					<barPlot isShowLabels="true" >
 						<plot orientation="Horizontal" />
-					<categoryAxisLabelExpression><![CDATA["Groupingns"]]></categoryAxisLabelExpression>
 						<categoryAxisFormat>
 							<axisFormat >
 							</axisFormat>
@@ -415,19 +431,15 @@ $F{MAPPING_VALUE_5}})).hashCode()):"1"]]></categoryExpression>
 						</valueAxisFormat>
 					</barPlot>
 				</stackedBarChart>
-				</frame>
-                <frame>
-                    <reportElement
-						style="ChartFrame"
+				<frame>					<reportElement
 						x="0"
-						y="166"
+						y="144"
 						width="820"
 						height="34"
 						key="frame-34"
 						stretchType="RelativeToTallestObject"/>
-                        <box></box>
-                </frame>
-            </band>
+					<box></box>
+				</frame>				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
 			<band height="0"  isSplitAllowed="true" >
@@ -463,7 +475,7 @@ $F{MAPPING_VALUE_5}})).hashCode()):"1"]]></categoryExpression>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingValueDisplayString(
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})]]></textFieldExpression>
+$F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -661,7 +673,7 @@ $F{MAPPING_VALUE_5}})]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="FrameHeaderTableRow"
@@ -1711,11 +1723,11 @@ Utilities.getMappingReportInfoDisplayString
 					<subreportParameter  name="IS_CONTEXT_MAPPING">
 						<subreportParameterExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></subreportParameterExpression>
 					</subreportParameter>
-					<subreportParameter  name="SUBREPORT_DIRECTORY">
-						<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIRECTORY}]]></subreportParameterExpression>
-					</subreportParameter>
 					<subreportParameter  name="TEMPLATE_FILE_ABSOLUTE">
 						<subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="SUB_REPORT">
+						<subreportParameterExpression><![CDATA[$P{SUB_REPORT}]]></subreportParameterExpression>
 					</subreportParameter>
 					<dataSourceExpression><![CDATA[$V{TIME_PERIOD_DS}]]></dataSourceExpression>
 					<returnValue subreportVariable="THROUGHPUT_SUM" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
@@ -1758,7 +1770,7 @@ Utilities.getMappingReportInfoDisplayString
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_OPERATION" calculation="Sum"/>
 					<returnValue subreportVariable="POLICY_VIOLATIONS_SUM" toVariable="POLICY_VIOLATIONS_REPORT" calculation="Sum"/>
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_REPORT" calculation="Sum"/>
-					<subreportExpression  class="java.lang.String"><![CDATA[$P{SUBREPORT_DIRECTORY}+"/PS_SubIntervalMasterReport.jasper"]]></subreportExpression>
+					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{SUB_INTERVAL_SUB_REPORT}]]></subreportExpression>
 				</subreport>
 				</frame>			</band>
 		</detail>

@@ -296,21 +296,21 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						</dataset>
 						<categorySeries>
 							<seriesExpression><![CDATA["Throughput"]]></seriesExpression>
-							<categoryExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"]]></categoryExpression>
+							<categoryExpression><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></categoryExpression>
 							<valueExpression><![CDATA[$F{THROUGHPUT}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
 						</categorySeries>
 						<categorySeries>
 							<seriesExpression><![CDATA["Policy Violations"]]></seriesExpression>
-							<categoryExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"]]></categoryExpression>
+							<categoryExpression><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></categoryExpression>
 							<valueExpression><![CDATA[$F{POLICY_VIOLATIONS}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
 						</categorySeries>
 						<categorySeries>
 							<seriesExpression><![CDATA["Routing Failures"]]></seriesExpression>
-							<categoryExpression><![CDATA[$F{SERVICE_NAME}+"["+$F{ROUTING_URI}+"]"]]></categoryExpression>
+							<categoryExpression><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></categoryExpression>
 							<valueExpression><![CDATA[$F{ROUTING_FAILURES}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -705,7 +705,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingValueDisplayString(
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})]]></textFieldExpression>
+$F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="FrameHeaderTableRow"
@@ -1043,7 +1043,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -1184,7 +1184,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[((Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))?$F{SERVICE_NAME}+ "["+$F{ROUTING_URI}+"]"
+				<textFieldExpression   class="java.lang.String"><![CDATA[((Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))?Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})
 :"Service Totals")]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
@@ -1915,7 +1915,7 @@ Utilities.getMappingReportInfoDisplayString
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 		</detail>

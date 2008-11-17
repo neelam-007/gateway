@@ -40,10 +40,11 @@ public class Utilities {
     private static final String IS_CONTEXT_MAPPING = "isContextMapping";
     private static final String CHART_LEGEND = "chartLegend";
     private static final String CHART_HEIGHT = "chartHeight";
-    private static final String CHART_LEGEND_YPOS = "chartLegendYPos";
+    private static final String CHART_LEGEND_FRAME_YPOS = "chartLegendFrameYPos";
     private static final String CHART_LEGEND_HEIGHT = "chartLegendHeight";
     private static final String BAND_HEIGHT = "bandHeight";
     private static final String CHART_FRAME_HEIGHT = "chartFrameHeight";
+    private static final String PAGE_HEIGHT = "pageHeight";
 
     public static enum UNIT_OF_TIME {
         HOUR, DAY, WEEK, MONTH; 
@@ -1277,6 +1278,46 @@ Value is included in all or none, comment is just illustrative
     }
 
     /**
+     * Calls getMappingValueDisplayString to get how the authUser, keys and keyValues are displayed as a string. Uses
+     * that string to look up the group from displayStringToMappingGroup, this is the value that will be shown as
+     * the category value on a chart.
+     * @see Utilities.getMappingValueDisplayString()
+     * @param displayStringToMappingGroup
+     * @param authUser
+     * @param keys
+     * @param keyValues
+     * @return
+     */
+    public static String getCategoryMappingDisplayString(Map<String, String> displayStringToMappingGroup, 
+                                                               String authUser, List<String> keys, String [] keyValues){
+
+        String displayString = getMappingValueDisplayString(authUser, keys, keyValues, false, null);
+        System.out.println("getCategoryMappingDisplayString: " + displayString);
+        if(!displayStringToMappingGroup.containsKey(displayString)) throw new IllegalArgumentException("Group for " +
+                "display string not found: " + displayString);
+
+        System.out.println("Found: " + displayStringToMappingGroup.get(displayString));
+        return displayStringToMappingGroup.get(displayString);
+    }
+
+    public static String getServiceDisplayString(String serviceName, String serviceRoutingURI){
+        return serviceName+"["+serviceRoutingURI+"]";
+    }
+
+    public static String getServiceFromDisplayString(Map<String, String> displayStringToService, String serviceName,
+                                                 String routingURI){
+
+        String displayString = getServiceDisplayString(serviceName, routingURI);
+        System.out.println("getServiceFromDisplayString: " + displayString);
+        if(!displayStringToService.containsKey(displayString)) throw new IllegalArgumentException("Service for " +
+                "display string not found: " + displayString);
+
+        System.out.println("Found: " + displayStringToService.get(displayString));
+        return displayStringToService.get(displayString);
+    }
+
+
+    /**
      * Creates a display string from the supplied parameters. Any values which are the place holder are ignored.
      * The display string starts with the authenticated user, if valid, then moves through the keys list and for each
      * key it will display its value.
@@ -1289,8 +1330,7 @@ Value is included in all or none, comment is just illustrative
      * @throws NullPointerException if any argument is null or empty for it's type
      * @throws IllegalStateException if keyValues ever has the place holder value for any value from keys
      */
-    public static String getMappingValueDisplayString(String authUser, List<String> keys, String [] keyValues){
-
+    public static String getMappingValueDisplayString(String authUser, List<String> keys, String[] keyValues, boolean includePreFix, String prefix) {
         if(authUser == null || authUser.equals(""))
             throw new NullPointerException("authUser must have a non null and non empty value. " +
                     "It can be the placeholder value");//as it always exists in select
@@ -1300,12 +1340,16 @@ Value is included in all or none, comment is just illustrative
             throw new IllegalArgumentException("authUser must be supplied (non null, emtpy and not a placeholder or" +
                     " valid keys and values must be supplied");
         }
+        if(includePreFix){
+            if(prefix == null || prefix.equals("")) throw new IllegalArgumentException("If includePreFix is true, prefix " +
+                    "cannot be null or the empty string");
+        }
 
         if(keyValues == null){
             keyValues = new String[]{};
         }
         if(keys == null){
-            keys = new ArrayList<String>();        
+            keys = new ArrayList<String>();
         }
         if(keyValues.length < keys.size()) throw new IllegalArgumentException("Length of keyValues must equal length of keys");
 
@@ -1334,7 +1378,7 @@ Value is included in all or none, comment is just illustrative
         if(sb.toString().equals("")){
             return "Detail Report";
         }else{
-            sb.insert(0, "Group values: ");
+            if(includePreFix) sb.insert(0, prefix);
             return sb.toString();
         }
     }
@@ -1583,12 +1627,13 @@ Value is included in all or none, comment is just illustrative
      * Get the runtime doc for performance statistics reports. Need to know what size to make the chart, create data
      * for it's legend and remove unnecessary chart elements
      * @param isContextMapping are mapping keys being used or not
-     * @param displayStringToMappingValue a map of a shortened string to the string representing a set of mapping values
-     * to display as the category value in a chart e.g. group 1 instead of IpAddress=...Customer=...
+     * @param groupToMappingValue a map of a shortened string to the string representing a set of mapping values
+     * to display as the category value in a chart e.g. group 1 instead of IpAddress=...Customer=..., or service 1
+     * instead of Warehouse [routing uri].....
      * @return
      */
     public static Document getPerfStatIntervalMasterRuntimeDoc(boolean isContextMapping,
-                                                               LinkedHashMap<String,String> displayStringToMappingValue){
+                                                               LinkedHashMap<String,String> groupToMappingValue){
         Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
         Node rootNode = doc.getFirstChild();
         //Create variables element
@@ -1605,14 +1650,14 @@ Value is included in all or none, comment is just illustrative
         rootNode.appendChild(chartLegend);
         int x = 0;
         int y = 0;
-        int vSpace = 5;
+        int vSpace = 2;
         int height = 18;
         int frameWidth = 820;
 
         int index = 0;
-        for (Map.Entry<String, String> me : displayStringToMappingValue.entrySet()) {
+        for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
             addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey"+(index+1), "java.lang.String",
-                    me.getKey()+": " + me.getValue(), "TableCell", false);
+                    "<b>"+me.getKey()+":</b> " + me.getValue(), "chartLegendTextField", false);
 
             y += height + vSpace;
             index++;
@@ -1620,7 +1665,7 @@ Value is included in all or none, comment is just illustrative
 
         //Chart height is minimum 130, if there are more than 2 mapping value sets then increase it
         int chartHeight = 130;
-        int numMappingSets = displayStringToMappingValue.size();
+        int numMappingSets = groupToMappingValue.size();
         if(numMappingSets > 2){
             chartHeight += 30 * (numMappingSets -2);            
         }
@@ -1629,16 +1674,11 @@ Value is included in all or none, comment is just illustrative
         rootNode.appendChild(chartHeightElement);
         chartHeightElement.setTextContent(String.valueOf(chartHeight));
 
-        int chartFrameHeight = chartHeight + 18;
-        Element chartFrameHeightElement = doc.createElement(CHART_FRAME_HEIGHT);
-        rootNode.appendChild(chartFrameHeightElement);
-        chartFrameHeightElement.setTextContent(String.valueOf(chartFrameHeight));
-
         //start of chart legend = chart height + 18 for the title of the chart frame
-        int chartLegendYPos = 18 + chartFrameHeight;
-        Element chartLegendYPosElement = doc.createElement(CHART_LEGEND_YPOS);
+        int chartLegendFrameYPos = chartHeight;// + height;
+        Element chartLegendYPosElement = doc.createElement(CHART_LEGEND_FRAME_YPOS);
         rootNode.appendChild(chartLegendYPosElement);
-        chartLegendYPosElement.setTextContent(String.valueOf(chartLegendYPos));
+        chartLegendYPosElement.setTextContent(String.valueOf(chartLegendFrameYPos));
 
         //height of chart legend = num mapping sets * height + vSpace
         int chartLegendHeight = numMappingSets * (height + vSpace);
@@ -1646,12 +1686,26 @@ Value is included in all or none, comment is just illustrative
         rootNode.appendChild(chartLegendHeightElement);
         chartLegendHeightElement.setTextContent(String.valueOf(chartLegendHeight));
 
+        int chartFrameHeight = chartHeight + 18 + chartLegendHeight;
+        Element chartFrameHeightElement = doc.createElement(CHART_FRAME_HEIGHT);
+        rootNode.appendChild(chartFrameHeightElement);
+        chartFrameHeightElement.setTextContent(String.valueOf(chartFrameHeight));
+
         //Calculate the height of the band
-        int bandHeight = chartLegendYPos + chartLegendHeight;
+        int bandHeight = chartFrameHeight + height + height;//18 from the summary frame + 18 for a gap
         Element bandHeightElement = doc.createElement(BAND_HEIGHT);
         rootNode.appendChild(bandHeightElement);
         bandHeightElement.setTextContent(String.valueOf(bandHeight));
 
+        int titleHeight = 186;
+        int margins = 20 + 20;
+        int totalFirstPageHeight = titleHeight + margins + bandHeight;
+        int normalHeight = 595;
+        if(totalFirstPageHeight < normalHeight) totalFirstPageHeight = normalHeight;
+
+        Element pageHeightElement = doc.createElement(PAGE_HEIGHT);
+        rootNode.appendChild(pageHeightElement);
+        pageHeightElement.setTextContent(String.valueOf(totalFirstPageHeight));
 
         return doc;
     }

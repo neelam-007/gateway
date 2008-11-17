@@ -472,7 +472,7 @@ public class ReportTransformTests {
     }
 
     @Test
-    public void testGetPerfStatRuntimeDoc() throws Exception{
+    public void testGetPerfStatRuntimeDoc_Mapping() throws Exception{
 
         LinkedHashMap linkedHashMap = new LinkedHashMap();
         linkedHashMap.put("Group 1", "IP_ADDRESS: 127.0.0.1, CUSTOMER: GOLD");
@@ -493,7 +493,7 @@ public class ReportTransformTests {
         }
         
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_IntervalMasterTransform.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/PS_IntervalMasterReport_Template.jrxml");
+        String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_IntervalMasterReport_Template.jrxml");
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
@@ -518,5 +518,51 @@ public class ReportTransformTests {
         
     }
     
+    @Test
+    public void testGetPerfStatRuntimeDoc_NoMapping() throws Exception{
+
+        LinkedHashMap linkedHashMap = new LinkedHashMap();
+        linkedHashMap.put("Service 1", "Warehouse [w1]");
+        linkedHashMap.put("Service 2", "Warehouse [w2]");
+        linkedHashMap.put("Service 3", "Warehouse [w3]");
+        linkedHashMap.put("Service 4", "Warehouse [w4]");
+
+        Document transformDoc = Utilities.getPerfStatIntervalMasterRuntimeDoc(false, linkedHashMap);
+        Assert.assertTrue(transformDoc != null);
+
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PerfStatIntervalRuntimeDoc.xml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
+        }finally{
+            fos.close();
+        }
+
+        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_IntervalMasterTransform.xsl");
+        String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_IntervalMasterReport_Template.jrxml");
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", transformDoc);
+
+        Document jasperDoc = transform(xslStr, xmlSrc, params);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(jasperDoc, baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+        f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_IntervalMasterReport.xml");
+        f.createNewFile();
+        fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
+        }finally{
+            fos.close();
+        }
+
+        JasperReport report = JasperCompileManager.compileReport(bais);
+        Assert.assertTrue(report != null);
+
+    }
 
 }

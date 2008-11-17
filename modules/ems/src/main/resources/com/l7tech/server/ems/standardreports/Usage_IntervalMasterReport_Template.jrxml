@@ -192,7 +192,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="FrameDetailTableRow"
