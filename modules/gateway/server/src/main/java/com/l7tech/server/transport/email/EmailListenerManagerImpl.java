@@ -7,6 +7,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.gateway.common.transport.email.EmailListenerState;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationListener;
@@ -41,9 +42,10 @@ public class EmailListenerManagerImpl
     private static final String COLUMN_NODEID = "ownerNodeId";
     private static final String COLUMN_OID = "oid";
     private static final String COLUMN_LAST_POLL_TIME = "lastPollTime";
+    private static final String COLUMN_EMAIL_LISTENER_ID = "email_listener_id";
 
-    private static final String HQL_UPDATE_TIME_BY_ID = "UPDATE " + EmailListener.class.getName() +
-                    " set " + COLUMN_LAST_POLL_TIME + " = :"+COLUMN_LAST_POLL_TIME+" where " + COLUMN_OID + " = :"+COLUMN_OID;
+    private static final String HQL_UPDATE_TIME_BY_ID = "UPDATE VERSIONED " + EmailListenerState.class.getName() +
+                    " set " + COLUMN_LAST_POLL_TIME + " = :"+COLUMN_LAST_POLL_TIME+" where " + COLUMN_EMAIL_LISTENER_ID + " = :"+ COLUMN_EMAIL_LISTENER_ID;
 
     public EmailListenerManagerImpl(ServerConfig serverConfig, ApplicationEventProxy eventProxy) {
         this.serverConfig = serverConfig;
@@ -117,13 +119,29 @@ public class EmailListenerManagerImpl
         }
     }
 
+    public void updateState(final EmailListenerState state) throws UpdateException {
+        long emailListenerOid = state.getEmailListener().getOid();
+        try {
+            EmailListener emailListener = findByPrimaryKey(emailListenerOid);
+            if (emailListener != null) {
+                EmailListenerState updateState = emailListener.getEmailListenerState();
+                updateState.copyTo(state);
+                getHibernateTemplate().update(updateState);
+            }
+        } catch (FindException fe) {
+            logger.log(Level.WARNING, "Unable to update email listener state for listener '" + emailListenerOid + "'");
+            throw new UpdateException("Unable to update email listener state for listener '" + emailListenerOid + "'");
+        }
+    }
+
     public List<EmailListener> getEmailListenersForNode(final String clusterNodeId) throws FindException {
         final List<EmailListener> emailListeners;
         try {
             emailListeners = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Criteria crit = session.createCriteria(EmailListener.class);
-                    crit.add(Restrictions.eq(COLUMN_NODEID, clusterNodeId));                   // This node is the one responsible for notifying this subscription
+                    Criteria crit = session.createCriteria(EmailListener.class, "el");
+                    crit.createCriteria("el.emailListenerState", "state");
+                    crit.add(Restrictions.eq("state." + COLUMN_NODEID, clusterNodeId));                   // This node is the one responsible for notifying this subscription
                     return crit.list();
                 }
             });
@@ -142,10 +160,23 @@ public class EmailListenerManagerImpl
         try {
             staleEmailListeners = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Criteria crit = session.createCriteria(EmailListener.class);
-                    crit.add(Restrictions.ne(COLUMN_NODEID, clusterNodeId));       // It's someone else's subscription
-                    crit.add(Restrictions.sqlRestriction(Long.toString(System.currentTimeMillis()) + " - {alias}.poll_interval * 5 * 1000 > {alias}.last_poll_time"));
-                    return crit.list();
+                    Criteria crit = session.createCriteria(EmailListener.class, "el");
+                    crit.createCriteria("el.emailListenerState", "state");
+                    crit.add(Restrictions.ne("state." + COLUMN_NODEID, clusterNodeId));       // It's someone else's subscription
+
+                    long now = System.currentTimeMillis();
+                    List<EmailListener> results = crit.list();
+                    if (results != null || results.size() > 0) {
+                        List<EmailListener> newResults = new ArrayList<EmailListener>();
+                        for (EmailListener emailListener : results) {
+                            if (emailListener.getEmailListenerState() != null && now - emailListener.getPollInterval() * 5 * 1000 > emailListener.getEmailListenerState().getLastPollTime()) {
+                                newResults.add(emailListener);
+                            }
+                        }
+                        return newResults;
+                    } else {
+                        return results;
+                    }
                 }
             });
         } catch (DataAccessException e) {
@@ -155,10 +186,11 @@ public class EmailListenerManagerImpl
 
         List<EmailListener> stolenEmailListeners = new ArrayList<EmailListener>(staleEmailListeners.size());
         for (EmailListener emailListener : staleEmailListeners) {
-            logger.log(Level.INFO, MessageFormat.format("Assuming control of stale email listener {0} (belonged to node {1} that is presumed dead)", emailListener.getName(), emailListener.getOwnerNodeId()));
-            emailListener.setOwnerNodeId(clusterNodeId);
+            logger.log(Level.INFO, MessageFormat.format("Assuming control of stale email listener {0} (belonged to node {1} that is presumed dead)", emailListener.getName(), emailListener.getEmailListenerState().getOwnerNodeId()));
+            emailListener.getEmailListenerState().setOwnerNodeId(clusterNodeId);
             try {
-                update(emailListener);
+                updateState(emailListener.getEmailListenerState());
+                emailListener.lock();
                 stolenEmailListeners.add(emailListener);
             } catch (UpdateException e) {
                 logger.log(Level.WARNING, "Unable to reset owner ID for " + emailListener.getName());
@@ -174,7 +206,7 @@ public class EmailListenerManagerImpl
             public Object doInHibernate( final Session session ) throws HibernateException, SQLException {
                 session.createQuery( HQL_UPDATE_TIME_BY_ID )
                         .setLong(COLUMN_LAST_POLL_TIME, now )
-                        .setLong(COLUMN_OID, emailListenerOid )
+                        .setLong(COLUMN_EMAIL_LISTENER_ID, emailListenerOid )
                         .executeUpdate();
                 return null;
             }

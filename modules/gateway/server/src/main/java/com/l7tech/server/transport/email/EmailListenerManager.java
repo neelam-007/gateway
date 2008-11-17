@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.gateway.common.transport.email.EmailListenerState;
 
 import java.util.List;
 
@@ -17,4 +18,12 @@ public interface EmailListenerManager extends EntityManager<EmailListener, Entit
     public List<EmailListener> stealSubscriptionsFromDeadNodes(final String clusterNodeId);
 
     public void updateLastPolled( final long emailListenerOid ) throws UpdateException;
+
+    /**
+     * Update email listener's state.
+     *
+     * @param state Email Listener state
+     * @throws UpdateException  Failed to update state
+     */
+    public void updateState(final EmailListenerState state) throws UpdateException;
 }

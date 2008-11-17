@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Cascade;
+
 /**
  * An email listener configuration.
  */
@@ -22,18 +24,18 @@ public class EmailListener extends NamedEntityImp {
     private String folder;
     private int pollInterval = 60;
     private boolean active;
-    private String ownerNodeId;
-    private long lastPollTime;
-    private Long lastMessageId;
+    private transient EmailListenerState emailListenerState;    //transient because don't need state information when editing email listener in GUI
 
     public EmailListener() {
         super();
+        emailListenerState = new EmailListenerState(this);
     }
 
     public EmailListener(final EmailServerType serverType) {
         super();
         this.serverType = serverType;
         this.port = serverType.getDefaultClearPort();
+        this.emailListenerState = new EmailListenerState(this);
     }
 
     public EmailListener(final EmailListener emailListener) {
@@ -48,15 +50,13 @@ public class EmailListener extends NamedEntityImp {
         folder = emailListener.getFolder();
         pollInterval = emailListener.getPollInterval();
         active = emailListener.isActive();
-        ownerNodeId = emailListener.getOwnerNodeId();
-        lastPollTime = emailListener.getLastPollTime();
-        lastMessageId = emailListener.getLastMessageId();
+        createEmailListenerState(emailListener.getEmailListenerState());
+
     }
 
     public EmailListener(long oid, String name, String host, int port, EmailServerType serverType, boolean useSsl,
                          boolean deleteOnReceive, String username, String password, String folder, int pollInterval,
-                         boolean active, String ownerNodeId, long lastPollTime, Long lastMessageId)
-    {
+                         boolean active, String ownerNodeId, long lastPollTime, Long lastMessageId) {
         super();
         setOid(oid);
         setName(name);
@@ -70,9 +70,62 @@ public class EmailListener extends NamedEntityImp {
         this.folder = folder;
         this.pollInterval = pollInterval;
         this.active = active;
-        this.ownerNodeId = ownerNodeId;
-        this.lastPollTime = lastPollTime;
-        this.lastMessageId = lastMessageId;
+        createEmailListenerState(ownerNodeId, lastPollTime, lastMessageId);
+    }
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "emailListener")
+    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
+    public EmailListenerState getEmailListenerState() {
+        return emailListenerState;
+    }
+
+    public void setEmailListenerState(EmailListenerState emailListenerState) {
+        this.emailListenerState = emailListenerState;
+    }
+
+    /**
+     * Creates a new email listener state
+     *
+     * @param emailListenerState    The email listener state values should be copied over.  It will not copy the email listener instance
+     *                              because it may not be the actual email listener it wants to refer to.
+     */
+    public void createEmailListenerState(EmailListenerState emailListenerState) {
+        if (this.emailListenerState != null) {
+            this.emailListenerState = new EmailListenerState(this);
+        }
+
+        if (emailListenerState == null) return;
+        this.emailListenerState.setOwnerNodeId(emailListenerState.getOwnerNodeId());
+        this.emailListenerState.setLastPollTime(emailListenerState.getLastPollTime());
+        this.emailListenerState.setLastMessageId(emailListenerState.getLastMessageId());
+    }
+
+    /**
+     * Creates a new email listener state.
+     *
+     * @param ownerNodeId   owner node id
+     * @param lastPollTime  last poll time
+     * @param lastMessageId last message id
+     */
+    public void createEmailListenerState(String ownerNodeId, long lastPollTime, long lastMessageId) {
+        if (emailListenerState == null) {
+            emailListenerState = new EmailListenerState(this, ownerNodeId, lastPollTime, lastMessageId);
+        } else {
+            updateEmailListenerState(ownerNodeId, lastPollTime, lastMessageId);
+        }
+    }
+
+    /**
+     * Updates the email listener state.
+     *
+     * @param ownerNodeId   owner node id
+     * @param lastPollTime  last poll time
+     * @param lastMessageId last message id
+     */
+    public void updateEmailListenerState(String ownerNodeId, long lastPollTime, long lastMessageId) {
+        emailListenerState.setOwnerNodeId(ownerNodeId);
+        emailListenerState.setLastPollTime(lastPollTime);
+        emailListenerState.setLastMessageId(lastMessageId);
     }
 
     @Column(name="host", length=128, nullable=false)
@@ -166,30 +219,8 @@ public class EmailListener extends NamedEntityImp {
         this.active = active;
     }
 
-    @Column(name="owner_node_id", length=36)
-    public String getOwnerNodeId() {
-        return ownerNodeId;
-    }
-
-    public void setOwnerNodeId(String ownerNodeId) {
-        this.ownerNodeId = ownerNodeId;
-    }
-
-    @Column(name="last_poll_time")
-    public long getLastPollTime() {
-        return lastPollTime;
-    }
-
-    public void setLastPollTime(long lastPollTime) {
-        this.lastPollTime = lastPollTime;
-    }
-
-    @Column(name="last_message_id")
-    public Long getLastMessageId() {
-        return lastMessageId;
-    }
-
-    public void setLastMessageId(Long lastMessageId) {
-        this.lastMessageId = lastMessageId;
+    @Override
+    public void lock() {
+        super.lock();
     }
 }

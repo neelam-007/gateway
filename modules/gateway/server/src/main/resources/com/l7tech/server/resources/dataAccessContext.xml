@@ -111,6 +111,7 @@
             <list>
                 <!-- Transports -->
                 <value>com.l7tech.gateway.common.transport.email.EmailListener</value>
+                <value>com.l7tech.gateway.common.transport.email.EmailListenerState</value>
                 <value>com.l7tech.gateway.common.transport.SsgConnector</value>
                 <value>com.l7tech.gateway.common.transport.SsgConnectorProperty</value>
                 <value>com.l7tech.gateway.common.transport.jms.JmsConnection</value>

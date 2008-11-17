@@ -325,8 +325,8 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                         PooledPollingEmailListenerImpl.this.ensureConnectionStarted();
 
                         messages = emailFolder.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
-                        emailListenerManager.updateLastPolled(emailListenerCfg.getEmailListener().getOid());
-                        long minMessageId = emailListenerCfg.getEmailListener().getLastMessageId() == null ? 0 : emailListenerCfg.getEmailListener().getLastMessageId();
+                       emailListenerManager.updateLastPolled(emailListenerCfg.getEmailListener().getOid());
+                        long minMessageId = emailListenerCfg.getEmailListener().getEmailListenerState().getLastMessageId() == null ? 0 : emailListenerCfg.getEmailListener().getEmailListenerState().getLastMessageId();
                         for(Message m : messages) {
                             try {
                                 message = (MimeMessage)m;
@@ -373,13 +373,13 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                         }
 
                         // Update the last polling time and the last message id
-                        emailListenerCfg.getEmailListener().setLastPollTime(System.currentTimeMillis());
+                        emailListenerCfg.getEmailListener().getEmailListenerState().setLastPollTime(System.currentTimeMillis());
                         if(emailListenerCfg.getEmailListener().isDeleteOnReceive()) { // Message IDs can change on expunge
-                            emailListenerCfg.getEmailListener().setLastMessageId(new Long(0));
+                            emailListenerCfg.getEmailListener().getEmailListenerState().setLastMessageId(new Long(0));
                         } else if(lastMessageId > 0) { // At least one message was found
-                            emailListenerCfg.getEmailListener().setLastMessageId(new Long(lastMessageId));
+                            emailListenerCfg.getEmailListener().getEmailListenerState().setLastMessageId(new Long(lastMessageId));
                         }
-                        emailListenerManager.update(emailListenerCfg.getEmailListener());
+                        emailListenerManager.updateState(emailListenerCfg.getEmailListener().getEmailListenerState());
 
                         long now = System.currentTimeMillis();
                         if(now - startTime < emailListenerCfg.getEmailListener().getPollInterval() * 1000) {

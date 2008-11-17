@@ -45,9 +45,7 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
 
     public long saveEmailListener(EmailListener emailListener) throws SaveException, UpdateException {
         if (emailListener.getOid() == EmailListener.DEFAULT_OID) {
-            emailListener.setOwnerNodeId(clusterNodeId);
-            emailListener.setLastPollTime(System.currentTimeMillis());
-            emailListener.setVersion(1);
+            emailListener.createEmailListenerState(clusterNodeId, System.currentTimeMillis(), 0);
             return emailListenerManager.save(emailListener);
         } else {
             emailListenerManager.update(emailListener);

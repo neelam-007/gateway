@@ -1153,10 +1153,18 @@ CREATE TABLE email_listener (
   folder varchar(255) NOT NULL,
   poll_interval int(8) NOT NULL,
   active tinyint(1) NOT NULL default 1,
+  PRIMARY KEY  (objectid)
+) TYPe=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS email_listener_state;
+CREATE TABLE email_listener_state (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
   owner_node_id varchar(36),
   last_poll_time bigint(20),
   last_message_id bigint(20),
+  email_listener_id bigint(20) NOT NULL,
   PRIMARY KEY  (objectid)
-) TYPe=InnoDB DEFAULT CHARACTER SET utf8;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;

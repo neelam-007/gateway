@@ -252,6 +252,30 @@ DROP TABLE IF EXISTS config_data;
 delete from keystore_file;
 
 --
+-- Bug 5884: Moved email listener state information out of the email_listener table and into the email_listener_state table
+-- 1) Create the new email_listener_state table
+-- 2) Copy any email listener state information from the old table to the new table
+-- 3) Drop the columns from email_listener table
+--
+DROP TABLE IF EXISTS email_listener_state;
+CREATE TABLE email_listener_state (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  owner_node_id varchar(36),
+  last_poll_time bigint(20),
+  last_message_id bigint(20),
+  email_listener_id bigint(20) NOT NULL,
+  PRIMARY KEY  (objectid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+INSERT INTO email_listener_state (objectid, version, owner_node_id, last_poll_time, last_message_id, email_listener_id)
+    SELECT objectid, 0, owner_node_id, last_poll_time, last_message_id, objectid FROM email_listener;
+
+ALTER TABLE email_listener DROP COLUMN owner_node_id;
+ALTER TABLE email_listener DROP COLUMN last_poll_time;
+ALTER TABLE email_listener DROP COLUMN last_message_id;
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

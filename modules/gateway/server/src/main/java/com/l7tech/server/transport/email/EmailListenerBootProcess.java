@@ -272,7 +272,7 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
         // Stop any existing PollingEmailListener objects for this email listener configuration.
         emailListenerDeleted( updatedEmailListener.getOid() );
 
-        if (!updatedEmailListener.isActive() || !clusterNodeId.equals(updatedEmailListener.getOwnerNodeId())) return;
+        if (!updatedEmailListener.isActive() || !clusterNodeId.equals(updatedEmailListener.getEmailListenerState().getOwnerNodeId())) return;
         PollingEmailListener newListener = null;
         try {
             EmailListenerConfig newEmailListenerCfg = new EmailListenerConfig(updatedEmailListener, getApplicationContext());
