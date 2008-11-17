@@ -2111,9 +2111,10 @@ public class LogPanel extends JPanel {
         ObjectInputStream ois = null;
         try {
             in = new FileInputStream(file);
-            byte[] header = IOUtils.slurpStream(in, FILE_TYPE.length);
-            if (header.length < FILE_TYPE.length ||
-                    !ArrayUtils.compareArrays(FILE_TYPE, 0, header, 0, FILE_TYPE.length)) {
+            byte[] header = new byte[FILE_TYPE.length];
+            int readCount = in.read(header);
+            if ( readCount != FILE_TYPE.length ||
+                 !ArrayUtils.compareArrays(FILE_TYPE, 0, header, 0, FILE_TYPE.length)) {
                 importError("Cannot import file, incorrect type.");
                 return false;
             }
