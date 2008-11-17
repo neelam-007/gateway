@@ -312,7 +312,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         fc.setDialogTitle("Open Certificate Signing Request");
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         fc.setMultiSelectionEnabled(false);
-        FileFilter pemFilter = FileChooserUtil.buildFilter(".pem", "(*.pem) BASE64 PEM PKCS#10 Ceriticate Signing Request");
+        FileFilter pemFilter = FileChooserUtil.buildFilter(".pem", "(*.pem) BASE64 PEM PKCS#10 Certificate Signing Request");
         fc.setFileFilter(pemFilter);
 
         int result = fc.showOpenDialog(this);
