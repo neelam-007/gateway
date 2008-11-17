@@ -573,18 +573,24 @@ public class PrivateKeyManagerWindow extends JDialog {
 
             return keyList;
 
-        } catch (Exception e) {
-            if (ExceptionUtils.causedBy(e, ConnectException.class)) {
-                logger.log(Level.WARNING, "the connection to the SecureSpan Gateway is lost.", e);
-                throw new RuntimeException(e);
-            } else {
-                String msg = "Unable to load private keys";
-                String logMsg = msg + ": "  + ExceptionUtils.getMessage(e);
-                logger.log(Level.WARNING, logMsg , e);
-                DialogDisplayer.showMessageDialog(PrivateKeyManagerWindow.this, null, msg, e);
-            }
-            return Collections.emptyList();
+        } catch ( FindException fe) {
+            displayError( fe );
+        } catch ( IOException ioe ) {
+            displayError( ioe );
+        } catch ( KeyStoreException kse ) {
+            displayError( kse );
+        } catch ( CertificateException ce) {
+            displayError( ce );
         }
+        
+        return Collections.emptyList();
+    }
+
+    private void displayError( final Exception e ) {
+        String msg = "Unable to load private keys";
+        String logMsg = msg + ": "  + ExceptionUtils.getMessage(e);
+        logger.log(Level.WARNING, logMsg , e);
+        DialogDisplayer.showMessageDialog(PrivateKeyManagerWindow.this, null, msg, e);
     }
 
     /**
