@@ -2101,6 +2101,15 @@
             </manifest>
         </jar>
 
+        <jar jarfile="${build.dir}/configwizard/ConfigClusterPassphrase.jar">
+            <manifest>
+                <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
+                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
+                <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.manager.ClusterPassphraseChanger"/>
+            </manifest>
+        </jar>
+
         <jar jarfile="${build.dir}/configwizard/ConfigProcessController.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>

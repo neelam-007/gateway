@@ -160,11 +160,22 @@ doConfiguration() {
                         clear;;
                     4)
                         clear;
-                        confirmedMessage "Not yet implemented."
+                        (${CONFWIZARD} -changeClusterPassphrase);
+                        confirmedMessage ""
                         clear;;
                     5)
                         clear;
-                        confirmedMessage "Not yet implemented."
+                        (${CONFWIZARD} wizard appliance-delete);
+                        STATUS=$?
+                        if [ $STATUS -eq 2 ] ; then
+                          confirmedMessage "Node is not yet configured."
+                        elif [ $STATUS -eq 3 ] ; then
+                          confirmedMessage "Configuration service not available (please reboot)"
+                        elif [ $STATUS -eq 5 ] ; then
+                          confirmedMessage "Unexpected error in configuration service."
+                        elif [ $STATUS -ne 0 ] ; then
+                          confirmedMessage ""
+                        fi
                         clear;;
                     6)
                         clear;

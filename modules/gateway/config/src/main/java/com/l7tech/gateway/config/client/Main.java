@@ -5,6 +5,7 @@ import com.l7tech.gateway.config.client.beans.NodeConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.StateConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.NodeManagementApiFactory;
 import com.l7tech.gateway.config.client.beans.StatusCodeSource;
+import com.l7tech.gateway.config.client.beans.NodeDeleteConfigurationBeanProvider;
 import com.l7tech.config.client.options.OptionSet;
 import com.l7tech.config.client.options.Option;
 import com.l7tech.config.client.ConfigurationException;
@@ -202,6 +203,12 @@ public class Main {
             @Override
             public ConfigurationBeanProvider getProvider() {
                 return new NodeConfigurationBeanProvider( new NodeManagementApiFactory( pcUrl ) );
+            }
+        },
+        new ConfigurationType( "appliance-delete", "configTemplates/GatewayApplianceDeleteConfiguration.xml", true ){
+            @Override
+            public ConfigurationBeanProvider getProvider() {
+                return new NodeDeleteConfigurationBeanProvider( new NodeManagementApiFactory( pcUrl ) );
             }
         },
         new ConfigurationType( "software", "configTemplates/GatewaySoftwareConfiguration.xml", true ){

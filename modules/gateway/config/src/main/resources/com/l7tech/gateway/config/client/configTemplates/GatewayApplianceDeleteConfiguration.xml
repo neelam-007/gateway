@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<optionSet id="appliance-delete">
+    <description>
+----------------------------------------------------------------------
+Delete SecureSpan Gateway Configuration
+----------------------------------------------------------------------</description>
+    <prompt>
+----------------------------------------------------------------------
+Delete SecureSpan Gateway Configuration
+----------------------------------------------------------------------
+At any time type "quit" to quit.</prompt>
+
+    <!--
+      Options for node
+    -->
+    <option id="node-delete" type="BOOLEAN" order="400" name="Delete node">
+        <configName>node.delete</configName>
+        <configValue>false</configValue>
+        <description>Delete node</description>
+        <prompt>Delete the configuration for the node. If the node hosts a database
+then this will also be deleted.</prompt>
+    </option>
+
+</optionSet>
