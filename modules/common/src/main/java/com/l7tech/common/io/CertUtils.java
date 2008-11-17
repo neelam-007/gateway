@@ -575,7 +575,7 @@ public class CertUtils {
             String formattedDn = princ.getName(X500Principal.RFC2253);
 
             Set<String> rawDNSet = dnToAttributeMap(dn).keySet();
-            Set<String> formattedDNSet = dnToAttributeMap(formattedDn).keySet();
+            Set<String> formattedDNSet = new HashSet<String>(dnToAttributeMap(formattedDn).keySet());
             for ( Map.Entry<String,String> entry : DN_MAP.entrySet() ) {
                 if ( formattedDNSet.contains(entry.getKey()) ) {
                     formattedDNSet.remove(entry.getKey());
