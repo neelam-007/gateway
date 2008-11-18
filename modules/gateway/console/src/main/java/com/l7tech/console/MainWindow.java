@@ -736,7 +736,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         //Add tree filter menu items
         menu.addSeparator();
-        JMenu filterMenu = new JMenu("Filter tree");
+        JMenu filterMenu = new JMenu("Filter Tree");
         filterMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL, getFilterStatusLabel()));
         filterMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES, getFilterStatusLabel()));
         filterMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, getFilterStatusLabel()));
@@ -744,7 +744,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         menu.add(filterMenu);
         //Add tree sort filter menu items
         menu.addSeparator();
-        JMenu sortMenu = new JMenu("Sort tree");
+        JMenu sortMenu = new JMenu("Sort Tree");
         sortMenu.add(AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.NAME));
         sortMenu.add(AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.TYPE));
         menu.add(sortMenu);
