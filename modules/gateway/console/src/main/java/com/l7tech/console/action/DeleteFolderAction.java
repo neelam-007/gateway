@@ -58,8 +58,8 @@ public class DeleteFolderAction extends SecureAction {
             JOptionPane.showMessageDialog(f, "Cannot delete non-empty folders.", "Delete Error", JOptionPane.ERROR_MESSAGE);
         } else {
             int result = JOptionPane.showConfirmDialog(f,
-                                                       "Delete the folder \"" + folderToDelete.getName() + "\"",
-                                                       "Delete Folder",
+                                                       getUserConfirmationMessage(),
+                                                       getUserConfirmationTitle(),
                                                        JOptionPane.YES_NO_OPTION,
                                                        JOptionPane.QUESTION_MESSAGE);
 
@@ -77,5 +77,13 @@ public class DeleteFolderAction extends SecureAction {
                 }
             }
         }
+    }
+
+    public String getUserConfirmationMessage() {
+        return "Are you sure you want to delete the " + folderToDelete.getName() + " folder?";
+    }
+
+    public String getUserConfirmationTitle() {
+        return "Delete Folder";
     }
 }
