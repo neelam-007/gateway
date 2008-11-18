@@ -2,12 +2,8 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.EntityTypeRegistry;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Entity;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -18,6 +14,9 @@ import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.Assert;
 
 import java.util.*;
 import java.lang.reflect.Method;
@@ -27,7 +26,7 @@ import java.lang.reflect.Method;
  *
  * @author Steve Jones
  */
-public class ApplicationContextTest  extends TestCase {
+public class ApplicationContextTest  {
 
     private static final String[] CONTEXTS = {
         "com/l7tech/server/resources/adminContext.xml",
@@ -41,22 +40,11 @@ public class ApplicationContextTest  extends TestCase {
     private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin" ) );
     private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionsAdmin" ) );
 
-    public ApplicationContextTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ApplicationContextTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
     /**
      * Loading the definitions in this way will check the syntax and that all the
      * bean classes exist.
      */
+    @Test
     public void testApplicationContextSyntaxAndBeanClasses() {
         // 
         DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
@@ -71,6 +59,7 @@ public class ApplicationContextTest  extends TestCase {
      * Ensure that bean references are valid (constructor args and properties)
      */
     @SuppressWarnings({"unchecked"})
+    @Test
     public void testApplicationContextReferences() {
         //
         DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
@@ -93,7 +82,7 @@ public class ApplicationContextTest  extends TestCase {
                     if (value instanceof RuntimeBeanReference) {
                         RuntimeBeanReference rbr = (RuntimeBeanReference) value;
                         String name = rbr.getBeanName();
-                        assertTrue("Application context uses bean with name '"+name+"', but no such bean exists (referenced from bean '"+beanId+"' as constructor-arg) ", 
+                        Assert.assertTrue("Application context uses bean with name '"+name+"', but no such bean exists (referenced from bean '"+beanId+"' as constructor-arg) ",
                                    dlbf.containsBean(name));
                     }
                 }
@@ -106,7 +95,7 @@ public class ApplicationContextTest  extends TestCase {
                     if (value instanceof RuntimeBeanReference) {
                         RuntimeBeanReference rbr = (RuntimeBeanReference) value;
                         String name = rbr.getBeanName();
-                        assertTrue("Application context uses bean with name '"+name+"', but no such bean exists (referenced from bean '"+beanId+"' as property) ", 
+                        Assert.assertTrue("Application context uses bean with name '"+name+"', but no such bean exists (referenced from bean '"+beanId+"' as property) ",
                                    dlbf.containsBean(name));
                     }
                 }
@@ -118,6 +107,7 @@ public class ApplicationContextTest  extends TestCase {
      * Test that all HTTP exported admin interfaces are marked as administrative
      */
     @SuppressWarnings({"unchecked"})
+    @Test
     public void testAdministrativeExports() throws Exception {
         //
         DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
@@ -136,19 +126,20 @@ public class ApplicationContextTest  extends TestCase {
                     PropertyValues props = beanDef.getPropertyValues();
                     Class serviceInterface = Class.forName(((TypedStringValue)props.getPropertyValue("serviceInterface").getValue()).getValue());
                     if ( serviceInterface.getAnnotation(Administrative.class) == null ) {
-                        fail( "Administrative HTTP exported bean '"+beanId+"' service interface '"+serviceInterface.getName()+"', is not annotated as '"+Administrative.class.getName()+"'." );
+                        Assert.fail( "Administrative HTTP exported bean '"+beanId+"' service interface '"+serviceInterface.getName()+"', is not annotated as '"+Administrative.class.getName()+"'." );
                     }
                 }
             }
         }
 
-        if (testedcount==0) fail("Failed to find any http exported admin beans.");
+        if (testedcount==0) Assert.fail("Failed to find any http exported admin beans.");
     }
 
     /*
      * Ensure that all Administration bean interfaces in the application context are annotated with @Administrative
      */
     @SuppressWarnings({"unchecked"})
+    @Test
     public void testAdministrativeAutoProxy() throws Exception {
         //
         DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
@@ -174,7 +165,7 @@ public class ApplicationContextTest  extends TestCase {
             Class adminClass = Class.forName(className);
 
             if ( adminClass.getAnnotation(Administrative.class) != null ) {
-                fail( "Administrative bean '"+beanId+"', annotated with '"+Administrative.class.getName()+"' annotation, this should be on the interface." );
+                Assert.fail( "Administrative bean '"+beanId+"', annotated with '"+Administrative.class.getName()+"' annotation, this should be on the interface." );
             }
 
             boolean admin = false;
@@ -189,11 +180,11 @@ public class ApplicationContextTest  extends TestCase {
             }
 
             if ( !admin ) {
-                fail( "Administrative bean '"+beanId+"', has no interface with the '"+Administrative.class.getName()+"' annotation." );
+                Assert.fail( "Administrative bean '"+beanId+"', has no interface with the '"+Administrative.class.getName()+"' annotation." );
             }
 
             if ( !secured && !NON_SECURED_BEANS.contains(beanId) ) {
-                fail( "Administrative bean '"+beanId+"', has no interface with the '"+Secured.class.getName()+"' annotation." );
+                Assert.fail( "Administrative bean '"+beanId+"', has no interface with the '"+Secured.class.getName()+"' annotation." );
             }
         }
     }
@@ -202,6 +193,7 @@ public class ApplicationContextTest  extends TestCase {
      * Using the secured annotation on an instance is incorrect, it only works on an interface
      */
     @SuppressWarnings({"unchecked"})
+    @Test
     public void testNoSecuredImplementations() throws Exception {
         //
         DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
@@ -217,26 +209,30 @@ public class ApplicationContextTest  extends TestCase {
             if ( className != null && className.startsWith("com.l7tech" ) ) {
                 Class beanClass = Class.forName(className);
                 if ( beanClass.getAnnotation(Secured.class) != null ) {
-                    fail( "Implementation bean '"+beanId+"', is annotated with the '"+Secured.class.getName()+"' annotation, this should only be used on interfaces." );
+                    Assert.fail( "Implementation bean '"+beanId+"', is annotated with the '"+Secured.class.getName()+"' annotation, this should only be used on interfaces." );
                 }
 
                 for ( Method method : beanClass.getDeclaredMethods() ) {
                     if ( method.getAnnotation(Secured.class) != null ) {
-                        fail( "Implementation bean '"+beanId+"' method '"+method.getName()+"', is annotated with the '"+Secured.class.getName()+"' annotation, this should only be used on interfaces." );
+                        Assert.fail( "Implementation bean '"+beanId+"' method '"+method.getName()+"', is annotated with the '"+Secured.class.getName()+"' annotation, this should only be used on interfaces." );
                     }
                 }
             }
         }
     }
 
+    @Ignore("This test does not work when using more than one product.")
+    @Test
     public void testEntityTypesDeclarations() throws Exception {
         EntityType typeAny = EntityType.findTypeByEntity( Entity.class );
-        assertEquals("Any entity", EntityType.ANY, typeAny);
+        Assert.assertEquals("Any entity", EntityType.ANY, typeAny);
 
         for ( EntityType type : EntityType.values() ) {
             Class<? extends Entity> clazz = type.getEntityClass();
+            Assert.assertNotNull( "EntityType class must not be null.", clazz );
+
             EntityType foundType = EntityType.findTypeByEntity( clazz );
-            assertEquals(type, foundType);
+            Assert.assertEquals(type, foundType);
         }
     }
 }
