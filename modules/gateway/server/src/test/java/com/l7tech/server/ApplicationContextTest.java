@@ -14,7 +14,6 @@ import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.Assert;
 
@@ -39,6 +38,7 @@ public class ApplicationContextTest  {
     private static final Set<String> NON_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "genericLogAdmin" ));
     private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin" ) );
     private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionsAdmin" ) );
+    private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>( Arrays.asList( EntityType.ESM_SSG_CLUSTER) );
 
     /**
      * Loading the definitions in this way will check the syntax and that all the
@@ -221,13 +221,14 @@ public class ApplicationContextTest  {
         }
     }
 
-    @Ignore("This test does not work when using more than one product.")
     @Test
     public void testEntityTypesDeclarations() throws Exception {
         EntityType typeAny = EntityType.findTypeByEntity( Entity.class );
         Assert.assertEquals("Any entity", EntityType.ANY, typeAny);
 
         for ( EntityType type : EntityType.values() ) {
+            if ( IGNORE_ENTITY_TYPES.contains( type ) ) continue; 
+
             Class<? extends Entity> clazz = type.getEntityClass();
             Assert.assertNotNull( "EntityType class must not be null.", clazz );
 
