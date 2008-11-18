@@ -29,7 +29,7 @@ public class AlterFilterAction extends BaseAction {
     public static enum FilterType {
         ALL("Show All"),
         SERVICES("Services"),
-        POLICY_FRAGMENT("Policy Fragment"),
+        POLICY_FRAGMENT("Policy Fragments"),
         ;
 
         private FilterType(String name) {
