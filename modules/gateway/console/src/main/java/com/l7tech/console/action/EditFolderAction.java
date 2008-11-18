@@ -70,6 +70,7 @@ public class EditFolderAction extends SecureAction {
         dialog.setVisible(true);
 
         if(dialog.isConfirmed()) {
+            String prevFolderName = folder.getName();
             try {
                 folder.setName(dialog.getName());
                 folderAdmin.saveFolder(folder);
@@ -80,11 +81,13 @@ public class EditFolderAction extends SecureAction {
                     model.nodeChanged(folderToRename);
                 }
             } catch(ConstraintViolationException e) {
+                folder.setName(prevFolderName);
                 DialogDisplayer.showMessageDialog(dialog,
                                                  "Folder '"+dialog.getName()+"' already exists.",
                                                  "Folder Already Exists",
                                                  JOptionPane.WARNING_MESSAGE, null);
             } catch(UpdateException e) {
+                folder.setName(prevFolderName);
                 DialogDisplayer.showMessageDialog(dialog,
                                                  e.getMessage(),
                                                  "Failed Folder Update",
@@ -92,6 +95,7 @@ public class EditFolderAction extends SecureAction {
 
                 log.log(Level.WARNING, "Failed to update policy folder", e);
             } catch(SaveException e) {
+                folder.setName(prevFolderName);
                 DialogDisplayer.showMessageDialog(dialog,
                                                  e.getMessage(),
                                                  "Failed Folder Save",
