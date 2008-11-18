@@ -11,12 +11,10 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
+import javax.swing.event.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.text.MessageFormat;
@@ -249,6 +247,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
 
         // Interval must be an integer between greater than or equal to 1
         checkInterval.setModel(new SpinnerNumberModel(5, 1, Integer.MAX_VALUE, 1));
+        ((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().setFocusLostBehavior(JFormattedTextField.PERSIST);  //we'll do our own checking
     }
 
     public void setVisible(boolean b) {
@@ -289,9 +288,20 @@ public class EmailListenerPropertiesDialog extends JDialog {
     }
 
     private void onOk() {
-        viewToModel();
-        confirmed = true;
-        dispose();
+        try {
+            //check if edited value is invalid
+             Integer interval = new Integer(((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().getText());
+            if (interval > Integer.MAX_VALUE || interval <= 0) {
+                DialogDisplayer.showMessageDialog(this, "Interval value must be between 1 - " + Integer.MAX_VALUE,"Invalid value", JOptionPane.ERROR_MESSAGE, null);
+            } else {
+                checkInterval.commitEdit(); //commit the edited value into the spinner
+                viewToModel();
+                confirmed = true;
+                dispose();
+            }
+        } catch (Exception e) {
+            DialogDisplayer.showMessageDialog(this, "Interval value must be between 1 - " + Integer.MAX_VALUE,"Invalid value", JOptionPane.ERROR_MESSAGE, null);
+        }
     }
 
     private void onTest() {
