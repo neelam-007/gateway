@@ -20,6 +20,42 @@ public class OptionTypeTest {
         }
     }
 
+    public void testPortRegex() {
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "0"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "1"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "65535"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "12345"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "11"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "123"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "1239"));
+
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), "-1"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), "65536"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), "77777"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), "B"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), ""));
+    }
+
+    @Test
+    public void testIpRegex() {
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "*"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "localhost"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "0.0.0.0"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "255.255.255.255"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "1.2.3.4"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "11.22.33.44"));
+
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "256.255.255.255"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "255.256.255.255"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "255.255.256.255"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "255.255.255.256"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "300.255.255.255"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "**"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "l"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), "llocalhost"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.IP_ADDRESS.getDefaultRegex(), ""));
+    }
+
     @Test
     public void testTimeStampRegex() {
         Assert.assertTrue("Regex passes", Pattern.matches(OptionType.TIMESTAMP.getDefaultRegex(), "2001-01-31 00:00:00"));

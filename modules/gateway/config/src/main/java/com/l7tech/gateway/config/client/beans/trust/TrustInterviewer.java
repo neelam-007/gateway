@@ -5,8 +5,10 @@ package com.l7tech.gateway.config.client.beans.trust;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.config.client.options.OptionType;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.gateway.config.client.beans.ConfigInterviewer;
+import com.l7tech.gateway.config.client.beans.TypedConfigurableBean;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
@@ -36,6 +38,8 @@ public class TrustInterviewer {
     static String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_TYPE = "host.controller.remoteNodeManagement.truststore.type";
     static String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD = "host.controller.remoteNodeManagement.truststore.password";
     static String HOSTPROPERTIES_NODEMANAGEMENT_ENABLED = "host.controller.remoteNodeManagement.enabled";
+    static String HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS ="host.controller.sslIpAddress";
+    static String HOSTPROPERTIES_NODEMANAGEMENT_PORT ="host.controller.sslPort";
 
     private static final String DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME = "remoteNodeManagementTruststore.jks";
     public static void main(String[] args) {
@@ -62,12 +66,16 @@ public class TrustInterviewer {
             char[] trustStorePass = null;
 
             boolean enabled = "true".equalsIgnoreCase(hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_ENABLED));
+            String listenIpAddr = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS);
+            String listenPort = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_PORT);
 
             final MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(etcConfDirectory, "omp.dat") ) );
 
             List<ConfigurationBean> inBeans = new ArrayList<ConfigurationBean>();
             inBeans.add(new RemoteNodeManagementEnabled(enabled));
             inBeans.add(new NewTrustedCertFactory());
+            inBeans.add(new TypedConfigurableBean<String>( "host.controller.sslIpAddress", "Listener IP Address", "Valid inputs are any IP Address or * for all.", "localhost", listenIpAddr, OptionType.IP_ADDRESS ) );
+            inBeans.add(new TypedConfigurableBean<Integer>( "host.controller.sslPort", "Listener Port", "Valid inputs are integers in the range 1024-65535.", 8765, Integer.parseInt(listenPort), OptionType.PORT ) );
 
             Map<ConfiguredTrustedCert, String> inCertBeans = null;
             KeyStore trustStore = null;
@@ -150,6 +158,13 @@ public class TrustInterviewer {
                         hostProps.setProperty(HOSTPROPERTIES_NODEMANAGEMENT_ENABLED, newEnabled ? "true" : "false");
                         writeProps = true;
                     }
+                } else if ( bean instanceof TypedConfigurableBean ) {
+                    if ( bean.getConfigValue()!=null) {
+                        hostProps.setProperty( bean.getId(), bean.getConfigValue().toString() );
+                    } else {
+                        hostProps.remove( bean.getId() );
+                    }
+                    writeProps = true;
                 }
             }
 

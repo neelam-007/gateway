@@ -70,7 +70,7 @@ public class ConfigInterviewer {
                 if (selected instanceof EditableConfigurationBean) {
                     EditableConfigurationBean cb = (EditableConfigurationBean)selected;
                     Object dflt = cb.getDefaultValue();
-                    Object val = cb.getConfigValue();
+                    Object val = cb.getDisplayValue();
                     if (val == null) val = dflt;
 
                     System.out.println("Configuring " + cb.getConfigName());

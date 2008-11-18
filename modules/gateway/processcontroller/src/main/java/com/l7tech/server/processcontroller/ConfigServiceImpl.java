@@ -50,6 +50,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final Pair<X509Certificate[], RSAPrivateKey> sslKeypair;
     private final Set<X509Certificate> trustedRemoteNodeManagementCerts;
     private final int sslPort;
+    private final String sslIPAddress;
     private final File configDirectory;
     private final File javaBinary;
     private final Map<String, NodeInfo> nodeInfos;
@@ -107,6 +108,7 @@ public class ConfigServiceImpl implements ConfigService {
         logger.info("Using java binary: " + javaBinary.getPath());
 
         this.sslPort = Integer.valueOf(hostProps.getProperty(HOSTPROPERTIES_SSL_PORT, "8765"));
+        this.sslIPAddress = hostProps.getProperty(HOSTPROPERTIES_SSL_IPADDRESS, "localhost");
         this.sslKeypair = readSslKeypair(hostProps);
         this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts(hostProps);
 
@@ -142,6 +144,7 @@ public class ConfigServiceImpl implements ConfigService {
         }
     }
 
+    @Override
     public HostConfig getHost() {
         return host;
     }
@@ -334,19 +337,23 @@ public class ConfigServiceImpl implements ConfigService {
         }
     }
 
+    @Override
     public void addServiceNode(NodeConfig node) {
         host.getNodes().put(node.getName(), node);
     }
 
+    @Override
     public void updateServiceNode(NodeConfig node) {
         // TODO what kinds of NodeConfig changes might necessitate a restart?
         host.getNodes().put(node.getName(), node);
     }
 
+    @Override
     public File getNodeBaseDirectory() {
         return nodeBaseDirectory;
     }
 
+    @Override
     public Pair<X509Certificate[], RSAPrivateKey> getSslKeypair() {
         return sslKeypair;
     }
@@ -355,14 +362,22 @@ public class ConfigServiceImpl implements ConfigService {
         return processControllerHomeDirectory;
     }
 
+    @Override
     public int getSslPort() {
         return sslPort;
     }
 
+    @Override
+    public String getSslIPAddress() {
+        return sslIPAddress;
+    }
+
+    @Override
     public Set<X509Certificate> getTrustedRemoteNodeManagementCerts() {
         return trustedRemoteNodeManagementCerts;
     }
 
+    @Override
     public File getJavaBinary() {
         return javaBinary;
     }

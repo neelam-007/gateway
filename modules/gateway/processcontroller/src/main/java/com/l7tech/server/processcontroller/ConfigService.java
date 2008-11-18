@@ -17,6 +17,7 @@ import java.util.Set;
 /** @author alex */
 public interface ConfigService {
     String HOSTPROPERTIES_SSL_PORT = "host.controller.sslPort";
+    String HOSTPROPERTIES_SSL_IPADDRESS = "host.controller.sslIpAddress";
     String HOSTPROPERTIES_SSL_KEYSTOREFILE = "host.controller.keystore.file";
     String HOSTPROPERTIES_SSL_KEYSTOREPASSWORD = "host.controller.keystore.password";
     String HOSTPROPERTIES_SSL_KEYSTORETYPE = "host.controller.keystore.type";
@@ -44,6 +45,9 @@ public interface ConfigService {
 
     /** The PC's SSL port. */
     int getSslPort();
+
+    /** The PC's SSL ip address. */
+    String getSslIPAddress();
 
     /** The client certificates that will be accepted by the remote {@link com.l7tech.server.management.api.node.NodeManagementApi}. */
     Set<X509Certificate> getTrustedRemoteNodeManagementCerts();

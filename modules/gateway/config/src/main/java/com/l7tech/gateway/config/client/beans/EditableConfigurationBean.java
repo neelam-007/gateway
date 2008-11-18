@@ -27,6 +27,21 @@ public abstract class EditableConfigurationBean<T> extends DynamicConfigurationB
     }
 
     /**
+     * Get the value to display to the user.
+     *
+     * @return The value or null for none.
+     */
+    public String getDisplayValue() {
+        String value = null;
+
+        if ( getConfigValue() != null ) {
+            value = getConfigValue().toString();
+        }
+
+        return value;
+    }
+
+    /**
      * Called after a successfully {@link #parse parsed} value is entered so that implementations can
      * semantically validate the value.  If this method returns without throwing an exception, the value will be stored
      * in {@link #configValue}, and {@link #onConfiguration} will be called to find out how to proceed.

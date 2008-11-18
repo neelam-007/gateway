@@ -43,6 +43,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
     private final long instanceId;
     private final int httpPort;
+    private final String httpIPAddress;
     private ApplicationContext applicationContext;
     private Server server;
     private final ConfigService configService;
@@ -53,6 +54,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         instancesById.put(instanceId, new WeakReference<PCServletContainer>(this));
 
         this.httpPort = configService.getSslPort();
+        this.httpIPAddress = configService.getSslIPAddress();
         this.configService = configService;
     }
 
@@ -60,7 +62,6 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         Server server = new Server();
         Pair<X509Certificate[],RSAPrivateKey> keypair = configService.getSslKeypair();
         final SSLContext ctx = SSLContext.getInstance("SSL");
-        final boolean allowRemote = configService.getTrustedRemoteNodeManagementCerts() != null && !configService.getTrustedRemoteNodeManagementCerts().isEmpty();
         ctx.init(new KeyManager[] { new SingleCertX509KeyManager(keypair.left, keypair.right) }, null, null);
         final SslSocketConnector sslConnector = new SslSocketConnector() {
             @Override
@@ -75,10 +76,30 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
             @Override
             public String getHost() {
-                return allowRemote ? "0.0.0.0" : "localhost";
+                return httpIPAddress;
             }
         };
         server.addConnector(sslConnector);
+
+        if ( httpPort != 8765 || (!"0.0.0.0".equals(httpIPAddress) && !"127.0.0.1".equals(httpIPAddress)) ) {
+            final SslSocketConnector localSslConnector = new SslSocketConnector() {
+                @Override
+                protected SSLServerSocketFactory createFactory() throws Exception {
+                    return ctx.getServerSocketFactory();
+                }
+
+                @Override
+                public int getPort() {
+                    return 8765;
+                }
+
+                @Override
+                public String getHost() {
+                    return "127.0.0.1";
+                }
+            };
+            server.addConnector( localSslConnector );
+        }
 
         final Context root = new Context(server, "/", Context.SESSIONS);
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/processcontroller/resources/web"));

@@ -4,6 +4,8 @@ import java.text.Format;
 import java.text.FieldPosition;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.util.Date;
 
 /**
  * Type for a configuration option.
@@ -24,12 +26,12 @@ public enum OptionType {
     /**
      * A v4 IP address
      */
-    IP_ADDRESS("^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"),
+    IP_ADDRESS("^(?:(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|\\*|localhost)$", false, new WildcardIpFormat(), String.class),
 
     /**
      * A password (should not be displayed in UI or recorded in logs)
      */
-    PASSWORD("^[\\p{Graph}\\p{Blank}]{0,255}$", true, null),
+    PASSWORD("^[\\p{Graph}\\p{Blank}]{0,255}$", true, null, String.class),
 
     /**
      * A file path
@@ -39,7 +41,7 @@ public enum OptionType {
     /**
      * A port number
      */
-    PORT("^(?:6(?:[1-4]\\d{3}|(?:5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5]))))|[1-5]\\d{4}|(?!0)\\d{2,4}|[1-9])$"),   // 1 - 65535
+    PORT("^(?:6(?:[1-4]\\d{3}|(?:5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5]))))|[1-5]\\d{4}|(?!0)\\d{2,4}|[1-9])$", false, new DecimalFormat("#0"), Integer.class),   // 1 - 65535
 
     /**
      * Any text
@@ -54,12 +56,12 @@ public enum OptionType {
     /**
      * A true / false value
      */
-    BOOLEAN("^(?:[YyNn]|[Yy][Ee][Ss]|[Nn][Oo]|[TtFf]|[Tt][Rr][Uu][Ee]|[Ff][Aa][Ll][Ss][Ee])$", false, new BooleanFormat()),
+    BOOLEAN("^(?:[YyNn]|[Yy][Ee][Ss]|[Nn][Oo]|[TtFf]|[Tt][Rr][Uu][Ee]|[Ff][Aa][Ll][Ss][Ee])$", false, new BooleanFormat(), Boolean.class),
 
     /**
      * A date / time value (the regex could do with some tightening up)
      */
-    TIMESTAMP("^[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9]$", false, new DateTimeFormat());
+    TIMESTAMP("^[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9]$", false, new DateTimeFormat(), Date.class);
 
     /**
      * The default validation regex for this option type.
@@ -80,6 +82,15 @@ public enum OptionType {
     }
 
     /**
+     * Get the class associated with the type.
+     *
+     * @return The class.
+     */
+    public Class getTypeClass() {
+        return typeClass;
+    }
+
+    /**
      * True if this option should be hidden in the GUI.
      *
      * @return true if hidden
@@ -94,16 +105,18 @@ public enum OptionType {
 
     private String defaultPattern;
     private Format format;
+    private Class typeClass;
     private boolean hidden;
     
     private OptionType( String pattern ) {
-        this( pattern, false, null );
+        this( pattern, false, null, String.class );
     }
     
-    private OptionType( String pattern, boolean hidden, Format format ) {
+    private OptionType( String pattern, boolean hidden, Format format, Class typeClass ) {
         this.defaultPattern = pattern;
         this.hidden = hidden;
         this.format = format;
+        this.typeClass = typeClass;
     }
 
     private static final class BooleanFormat extends Format {
@@ -131,6 +144,38 @@ public enum OptionType {
     private static final class DateTimeFormat extends SimpleDateFormat {
         public DateTimeFormat() {
             super(DATE_FORMAT);
+        }
+    }
+
+    private static final class WildcardIpFormat extends Format {
+        @Override
+        public StringBuffer format( final Object obj, final StringBuffer toAppendTo, final FieldPosition pos) {
+            if ( "0.0.0.0".equals(obj) ) {
+                toAppendTo.append( "*" );
+            } else if ( "127.0.0.1".equals(obj) ) {
+                toAppendTo.append( "localhost" );            
+            } else {
+                toAppendTo.append( obj );
+            }
+            
+            return toAppendTo;
+        }
+
+        @Override
+        public Object parseObject( final String source, final ParsePosition pos) {
+            String result = source;
+
+            if ( source != null ) {
+                pos.setIndex(source.length());
+
+                if ( "*".equals(source) ) {
+                   result = "0.0.0.0";
+                } else if ( "localhost".equals(source) ) {
+                    result = "127.0.0.1";
+                }
+            }
+
+            return result;
         }
     }
 }

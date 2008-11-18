@@ -20,6 +20,9 @@ fi
 PID_FILE="sspcd"
 PC_USER="layer7"
 PC_SCRIPT="/opt/SecureSpan/Gateway/controller/bin/processcontroller.sh"
+PC_FIREWALL_CONTROL="/opt/SecureSpan/Appliance/libexec/update_firewall"
+PC_FIREWALL_RULES="/opt/SecureSpan/Gateway/controller/var/firewall_rules"
+PC_CONFIG="/opt/SecureSpan/Gateway/controller/etc/host.properties"
 
 start() {
         if [ ! -x "${PC_SCRIPT}" ] ; then
@@ -32,6 +35,22 @@ start() {
         RETVAL=$?
         echo
         [ $RETVAL -eq 0 ] && touch /var/lock/subsys/sspc
+        [ ! -f "${PC_FIREWALL_RULES}" ] || rm -f "${PC_FIREWALL_RULES}" &>/dev/null
+        if [ -f "${PC_CONFIG}" ] ; then
+            PC_ADDR=$(grep host.controller.sslIpAddress "${PC_CONFIG}" | sed 's/host.controller.sslIpAddress\s\{0,128\}=\s\{0,128\}//')
+            PC_PORT=$(grep host.controller.sslPort "${PC_CONFIG}" | sed 's/host.controller.sslPort\s\{0,128\}=\s\{0,128\}//')
+            if [ ! -z "${PC_ADDR}" ] && [ "${PC_ADDR}" != "127.0.0.1" ] ; then
+                if [ -z "${PC_PORT}" ] ; then
+                    PC_PORT="8765"
+                fi
+                if [ "${PC_ADDR}" != "0.0.0.0" ] ; then
+                    echo "[0:0] -A INPUT -p tcp -m tcp -d ${PC_ADDR} --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
+                else
+                    echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
+                fi
+            fi
+        fi
+        [ $RETVAL -eq 0 ] && [ -x "${PC_FIREWALL_CONTROL}" ] && [ -f "${PC_FIREWALL_RULES}" ] && "${PC_FIREWALL_CONTROL}" "${PC_FIREWALL_RULES}" start
         return $RETVAL
 }
 
@@ -41,6 +60,7 @@ stop() {
         RETVAL=$?
         echo
         [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/sspc
+        [ $RETVAL -eq 0 ] && [ -x "${PC_FIREWALL_CONTROL}" ] && [ -f "${PC_FIREWALL_RULES}" ] && "${PC_FIREWALL_CONTROL}" "${PC_FIREWALL_RULES}" stop
         return $RETVAL
 }
 
