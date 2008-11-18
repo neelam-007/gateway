@@ -1632,7 +1632,7 @@ Value is included in all or none, comment is just illustrative
      * instead of Warehouse [routing uri].....
      * @return
      */
-    public static Document getPerfStatIntervalMasterRuntimeDoc(boolean isContextMapping,
+    public static Document getPerfStatAnyRuntimeDoc(boolean isContextMapping,
                                                                LinkedHashMap<String,String> groupToMappingValue){
         Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
         Node rootNode = doc.getFirstChild();
@@ -1700,8 +1700,8 @@ Value is included in all or none, comment is just illustrative
         int titleHeight = 186;
         int margins = 20 + 20;
         int totalFirstPageHeight = titleHeight + margins + bandHeight;
-        int normalHeight = 595;
-        if(totalFirstPageHeight < normalHeight) totalFirstPageHeight = normalHeight;
+        int minPageHeight = 595;
+        if(totalFirstPageHeight < minPageHeight) totalFirstPageHeight = minPageHeight;
 
         Element pageHeightElement = doc.createElement(PAGE_HEIGHT);
         rootNode.appendChild(pageHeightElement);

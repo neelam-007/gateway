@@ -264,13 +264,7 @@ public class ReportApp
             if(type.equals("Performance_Interval")){
                 runPerfStatIntervalReport(isContextMapping, fileName, prop, parameters, sql, keys);                
             }else{
-                //JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
-                Connection connection = getConnection(prop);
-                try{
-                    JasperFillManager.fillReportToFile(fileName+".jasper", parameters, connection);
-                }finally{
-                    connection.close();
-                }
+                runPerfStatSummaryReport(isContextMapping, fileName, prop, parameters, sql, keys);
             }
         }else{
 
@@ -524,6 +518,98 @@ public class ReportApp
 
     }
 
+    private void runPerfStatSummaryReport(boolean isContextMapping, String fileName, Properties prop, Map parameters,
+                                           String sql, List<String> keys) throws Exception{
+        Connection connection = getConnection(prop);
+
+        LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
+        LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
+
+        if(isContextMapping){
+            LinkedHashSet<String> mappingValues = getMappingDisplayStrings(connection, sql, keys);
+            //We need to look up the mappingValues from both the group value and also the display string value
+
+            int index = 1;
+            for(String s: mappingValues){
+                String group = "Group "+index;
+                System.out.println("Group: " + group+" s: " + s);
+                groupToDisplayString.put(group, s);
+                displayStringToGroup.put(s, group);
+                index++;
+            }
+
+        }else{
+            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sql);
+            //We need to look up the mappingValues from both the group value and also the display string value
+            int index = 1;
+            for(String s: serviceValues){
+                String service = "Service "+index;
+                System.out.println("Service: " + service+" s: " + s);
+                groupToDisplayString.put(service, s);
+                displayStringToGroup.put(s, service);
+                index++;
+            }
+        }
+
+        parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
+        Document transformDoc = Utilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
+
+        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_SummaryTransformDoc.xml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
+        }finally{
+            fos.close();
+        }
+
+
+        String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_SummaryTransform.xsl");
+        String xmlSrc = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", transformDoc);
+
+        Document jasperDoc = transform(xslStr, xmlSrc, params);
+
+        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_SummaryRuntimeDoc.xml");
+        f.createNewFile();
+        fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
+        }finally{
+            fos.close();
+        }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(jasperDoc, baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+        JasperReport summaryReport = JasperCompileManager.compileReport(bais);
+        System.out.println("Report compiled");
+
+        JasperPrint jp = null;
+        try{
+            System.out.println("Filling summaryReport");
+            jp = JasperFillManager.fillReport(summaryReport, parameters, connection);
+            System.out.println("Report filled");
+        }finally{
+            connection.close();
+        }
+
+        System.out.println("Viewing...");
+        try{
+            JasperViewer.viewReport(jp, false);
+        }catch(Exception ex){
+            System.out.println("Exception: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+
+        JasperExportManager.exportReportToPdfFile(jp,"PS_Summary.pdf");
+
+    }
+
+
     private void runPerfStatIntervalReport(boolean isContextMapping, String fileName, Properties prop, Map parameters,
                                            String sql, List<String> keys) throws Exception{
 
@@ -571,7 +657,7 @@ public class ReportApp
         }
 
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
-        transformDoc = Utilities.getPerfStatIntervalMasterRuntimeDoc(isContextMapping, groupToDisplayString);
+        transformDoc = Utilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
 
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_IntervalTransformDoc.xml");
         f.createNewFile();

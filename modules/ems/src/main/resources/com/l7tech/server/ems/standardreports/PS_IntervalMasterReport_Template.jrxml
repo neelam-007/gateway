@@ -337,7 +337,8 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 			<groupHeader>
 			<band height="218"  isSplitAllowed="true" >
 				<printWhenExpression><![CDATA[new Boolean($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{PRINT_CHART}.booleanValue())]]></printWhenExpression>
-				<frame>					<reportElement
+				<frame>
+                    <reportElement
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
@@ -360,7 +361,8 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 					</textElement>
 				<text><![CDATA[Grouping Summary Chart]]></text>
 				</staticText>
-				</frame>				<frame>					<reportElement
+				</frame>
+                <frame>					<reportElement
 						style="ChartFrame"
 						x="0"
 						y="18"
@@ -439,7 +441,8 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 						key="frame-34"
 						stretchType="RelativeToTallestObject"/>
 					<box></box>
-				</frame>				</frame>			</band>
+				</frame>				</frame>
+            </band>
 			</groupHeader>
 			<groupFooter>
 			<band height="0"  isSplitAllowed="true" >
@@ -684,19 +687,47 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 						height="36"
 						key="frame-2"/>
 					<box></box>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableHeadingInterval"
+						x="0"
+						y="0"
+						width="110"
+						height="36"
+						key="textField-53"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Interval"]]></textFieldExpression>
+				</textField>
 				<staticText>
 					<reportElement
 						style="TableHeading"
-						x="749"
+						x="110"
 						y="0"
 						width="71"
 						height="36"
-						key="staticText-20"/>
+						key="staticText-22"/>
 					<box></box>
 					<textElement markup="html">
 						<font/>
 					</textElement>
-				<text><![CDATA[% Service<br>Availability]]></text>
+				<text><![CDATA[Throughput]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						style="TableHeading"
+						x="181"
+						y="0"
+						width="71"
+						height="36"
+						key="staticText-125"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<text><![CDATA[Policy<br>Violations]]></text>
 				</staticText>
 				<staticText>
 					<reportElement
@@ -711,20 +742,6 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 						<font/>
 					</textElement>
 				<text><![CDATA[Average]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableHeading"
-						x="110"
-						y="0"
-						width="71"
-						height="36"
-						key="staticText-22"/>
-					<box></box>
-					<textElement markup="html">
-						<font/>
-					</textElement>
-				<text><![CDATA[Throughput]]></text>
 				</staticText>
 				<staticText>
 					<reportElement
@@ -798,20 +815,6 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 				</staticText>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						style="TableHeadingInterval"
-						x="0"
-						y="0"
-						width="110"
-						height="36"
-						key="textField-53"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Interval"]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
 						style="TableHeading"
 						x="323"
 						y="0"
@@ -841,20 +844,6 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 				<staticText>
 					<reportElement
 						style="TableHeading"
-						x="181"
-						y="0"
-						width="71"
-						height="36"
-						key="staticText-125"/>
-					<box></box>
-					<textElement markup="html">
-						<font/>
-					</textElement>
-				<text><![CDATA[Policy<br>Violations]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableHeading"
 						x="252"
 						y="0"
 						width="71"
@@ -865,6 +854,20 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 						<font/>
 					</textElement>
 				<text><![CDATA[Routing<br>Failures]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						style="TableHeading"
+						x="749"
+						y="0"
+						width="71"
+						height="36"
+						key="staticText-20"/>
+					<box></box>
+					<textElement markup="html">
+						<font/>
+					</textElement>
+				<text><![CDATA[% Service<br>Availability]]></text>
 				</staticText>
 				</frame>			</band>
 			</groupHeader>
@@ -1058,7 +1061,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 						style="SummaryRowHeading"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="textField-154"/>
 					<box></box>

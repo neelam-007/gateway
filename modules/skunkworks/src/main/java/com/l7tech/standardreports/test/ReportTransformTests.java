@@ -480,7 +480,7 @@ public class ReportTransformTests {
         linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.3, CUSTOMER: GOLD");
         linkedHashMap.put("Group 4", "IP_ADDRESS: 127.0.0.4, CUSTOMER: GOLD");
 
-        Document transformDoc = Utilities.getPerfStatIntervalMasterRuntimeDoc(true, linkedHashMap);
+        Document transformDoc = Utilities.getPerfStatAnyRuntimeDoc(true, linkedHashMap);
         Assert.assertTrue(transformDoc != null);
 
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PerfStatIntervalMastereRuntimeDoc.xml");
@@ -527,7 +527,7 @@ public class ReportTransformTests {
         linkedHashMap.put("Service 3", "Warehouse [w3]");
         linkedHashMap.put("Service 4", "Warehouse [w4]");
 
-        Document transformDoc = Utilities.getPerfStatIntervalMasterRuntimeDoc(false, linkedHashMap);
+        Document transformDoc = Utilities.getPerfStatAnyRuntimeDoc(false, linkedHashMap);
         Assert.assertTrue(transformDoc != null);
 
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PerfStatIntervalRuntimeDoc.xml");

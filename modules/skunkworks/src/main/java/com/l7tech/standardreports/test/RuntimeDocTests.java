@@ -189,7 +189,7 @@ public class RuntimeDocTests {
         linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.3, CUSTOMER: GOLD");
         linkedHashMap.put("Group 4", "IP_ADDRESS: 127.0.0.4, CUSTOMER: GOLD");
 
-        Document doc = Utilities.getPerfStatIntervalMasterRuntimeDoc(true, linkedHashMap);
+        Document doc = Utilities.getPerfStatAnyRuntimeDoc(true, linkedHashMap);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
