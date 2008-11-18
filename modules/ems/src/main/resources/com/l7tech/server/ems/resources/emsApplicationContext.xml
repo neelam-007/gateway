@@ -424,7 +424,8 @@
 
     <!-- SSG Cluster Manager -->
     <bean id="ssgClusterManager" class="com.l7tech.server.ems.enterprise.SsgClusterManagerImpl" parent="hibernateBean">
-        <property name="enterpriseFolderManager" ref="enterpriseFolderManager"/>
+        <constructor-arg index="0" ref="enterpriseFolderManager"/>
+        <constructor-arg index="1" ref="roleManager"/>
     </bean>
 
     <!-- SSG Node Manager -->

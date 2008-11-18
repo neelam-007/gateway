@@ -5,6 +5,7 @@ import com.l7tech.server.ems.EmsAccountManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
+import com.l7tech.gateway.common.security.rbac.RbacUtilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.identity.internal.InternalUser;
@@ -204,7 +205,7 @@ public class UserRoles extends EmsPage {
         public void setSelectedRole(Role selectedRole) {
             this.selectedRole = selectedRole;
             if (selectedRole != null) {
-                setRoleDescription(MessageFormat.format(selectedRole.getDescription(), selectedRole.getName()));
+                setRoleDescription( RbacUtilities.getDescriptionString(selectedRole, false));
             }
         }
 
