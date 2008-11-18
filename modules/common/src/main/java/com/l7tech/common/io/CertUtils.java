@@ -686,7 +686,7 @@ public class CertUtils {
      * @throws CertificateEncodingException if the cert could not be decoded
      */
     public static String toString(X509Certificate cert) throws CertificateEncodingException {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         List<Pair<String, String>> p = getCertProperties(cert);
         for (Pair<String, String> prop : p) {
             String label = prop.left;
@@ -759,7 +759,7 @@ public class CertUtils {
      */
     private static String keyUsageToString(boolean[] ku) {
         if (ku == null) return "<Not present>";
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean first = true;
         for (int i = 0; i < ku.length; i++) {
             if (ku[i]) {
@@ -799,7 +799,7 @@ public class CertUtils {
         if (cert == null) {
             throw new NullPointerException("cert");
         }
-        StringBuffer buff = new StringBuffer();
+        StringBuilder buff = new StringBuilder();
         byte[] fingers = cert.getEncoded();
 
         MessageDigest md = MessageDigest.getInstance(algorithm);
