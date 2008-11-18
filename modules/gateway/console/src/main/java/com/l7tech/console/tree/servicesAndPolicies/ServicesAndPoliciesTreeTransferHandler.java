@@ -115,7 +115,15 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             FolderNode child = (FolderNode) transferNode;
                             Folder folder = new Folder(child.getName(), newParent.getOid());
                             folder.setOid(child.getOid());
-                            Registry.getDefault().getFolderAdmin().saveFolder(folder);
+                            try {
+                                Registry.getDefault().getFolderAdmin().saveFolder(folder);
+                            } catch(ConstraintViolationException e) {
+                                DialogDisplayer.showMessageDialog(tree,
+                                                 "Folder '"+folder.getName()+"' already exists.",
+                                                 "Folder Already Exists",
+                                                 JOptionPane.WARNING_MESSAGE, null);
+                                return false;
+                            }
                         }else if(transferNode instanceof EntityWithPolicyNode){
                             EntityWithPolicyNode childTransferNode = (EntityWithPolicyNode) transferNode;
                             Object childObj = childTransferNode.getUserObject();
