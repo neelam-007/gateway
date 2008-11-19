@@ -10,6 +10,7 @@ import org.apache.wicket.markup.html.form.validation.EqualPasswordInputValidator
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
+import org.apache.wicket.validation.validator.PatternValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.Component;
@@ -25,6 +26,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
 /**
  * Page for new user creation
@@ -59,7 +61,8 @@ public class EnterpriseUsersNewPanel extends Panel {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( EnterpriseUsersNewPanel.class.getName() );
-
+    private static int MIN_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.minPasswordLength", 6);
+    
     @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private EmsAccountManager emsAccountManager;
@@ -88,9 +91,9 @@ public class EnterpriseUsersNewPanel extends Panel {
             PasswordTextField pass1 = new PasswordTextField("password");
             PasswordTextField pass2 = new PasswordTextField("passwordConfirm");
 
-            pass1.add( new StringValidator.LengthBetweenValidator(6, 128) );
+            pass1.add( new StringValidator.LengthBetweenValidator(MIN_PASSWORD_LENGTH, 32) );
 
-            add(new RequiredTextField("userId").add(new StringValidator.LengthBetweenValidator(3, 128)));
+            add(new RequiredTextField("userId").add(new StringValidator.LengthBetweenValidator(3, 128)).add(new PatternValidator("^[^#,+\"\\\\<>;]{3,128}$")));
             add(new TextField("email").add(new StringValidator.LengthBetweenValidator(1, 128)));
             add(new TextField("lastName").add(new StringValidator.LengthBetweenValidator(1, 32)));
             add(new TextField("firstName").add(new StringValidator.LengthBetweenValidator(1, 32)));
@@ -105,8 +108,6 @@ public class EnterpriseUsersNewPanel extends Panel {
         public final void onSubmit() {
             UserModel model = (UserModel) getModelObject();
             try {
-                // TODO [steve] invalid login chars ->  # , + " \ < > ;
-
                 InternalUser user = new InternalUser();
                 user.setLogin( model.userId );
                 user.setEmail( model.email );

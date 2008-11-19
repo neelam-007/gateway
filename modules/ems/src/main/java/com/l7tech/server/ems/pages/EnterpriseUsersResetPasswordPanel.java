@@ -21,6 +21,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
 /**
  * Page for editing a user
@@ -50,6 +51,7 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( EnterpriseUsersResetPasswordPanel.class.getName() );
+    private static int MIN_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.minPasswordLength", 6);
 
     @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
@@ -102,7 +104,7 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
     /**
      * Model for user form
      */
-    public final class UserModel implements Serializable {
+    private static final class UserModel implements Serializable {
         final String userId;
         String password;
         String passwordConfirm;
@@ -115,14 +117,14 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
     /**
      * Password form
      */
-    public final class PasswordResetForm extends Form {
+    private  final class PasswordResetForm extends Form {
         public PasswordResetForm( final String componentName, final UserModel userModel ) {
             super(componentName, new CompoundPropertyModel(userModel));
 
             PasswordTextField pass1 = new PasswordTextField("password");
             PasswordTextField pass2 = new PasswordTextField("passwordConfirm");
 
-            pass1.add( new StringValidator.LengthBetweenValidator(6, 128) );
+            pass1.add( new StringValidator.LengthBetweenValidator(MIN_PASSWORD_LENGTH, 32) );
 
             add(pass1.setRequired(true));
             add(pass2.setRequired(true));

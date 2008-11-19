@@ -157,11 +157,16 @@ public class GatewayPoller implements InitializingBean {
         } );
     }
 
+    /**
+     * Update the trusted / online status of the given ssg node.
+     *
+     * @return true if updated
+     */
     private boolean refreshNodeStatus( final SsgNode node ) {
         boolean updated = false;
 
         final String host = node.getIpAddress();
-        boolean trusted = false;
+        Boolean trusted = null;
         String status = JSONConstants.SsgNodeOnlineState.OFFLINE;
         try {
             NodeManagementApi nodeApi = gatewayContextFactory.getGatewayContext( null, host, 0 ).getManagementApi();
@@ -190,21 +195,18 @@ public class GatewayPoller implements InitializingBean {
             if ( ExceptionUtils.causedBy( sfe, ConnectException.class ) ||
                  ExceptionUtils.causedBy( sfe, NoRouteToHostException.class )) {
                 logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+"'." );
-                trusted = true;
             } else if ( "Authentication Required".equals(sfe.getMessage()) ){
-                // Ignore
+                trusted = false;
             } else{
-                trusted = true;
                 logger.log( Level.WARNING, "Gateway error when polling gateways", sfe );
             }
         } catch (GatewayException e) {
             logger.log( Level.WARNING, "Error when polling gateways", e );
         } catch (FindException fe) {
-            trusted = true;
             logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(fe)+"'.", ExceptionUtils.getDebugException(fe));
         }
 
-        if ( trusted != node.isTrustStatus() ) {
+        if ( trusted != null && trusted != node.isTrustStatus() ) {
             updated = true;
             if ( !trusted ) {
                 logger.info("Trust lost for gateway node '"+host+"'.");
@@ -213,7 +215,6 @@ public class GatewayPoller implements InitializingBean {
             }
             node.setTrustStatus(trusted);
             node.setOnlineStatus( status );
-
         } else if ( !status.equals( node.getOnlineStatus() ) ) {
             updated = true;
             logger.info("Gateway node status changed, status is now '"+status+"' (was '"+node.getOnlineStatus()+"').");

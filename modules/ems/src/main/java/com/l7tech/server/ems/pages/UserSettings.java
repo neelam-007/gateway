@@ -22,6 +22,7 @@ import com.l7tech.server.ems.NavigationModel;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.util.SyspropUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -40,13 +41,7 @@ import java.util.logging.Level;
 @NavigationPage(page="UserSettings",section="Settings",sectionIndex=200,pageUrl="UserSettings.html")
 public class UserSettings extends EmsPage {
 
-    private static final Logger logger = Logger.getLogger( UserSettings.class.getName() );
-
-    @SpringBean
-    private EmsSecurityManager securityManager;
-
-    @SpringBean
-    private UserPropertyManager userPropertyManager;
+    //- PUBLIC
 
     /**
      * Create user settings page
@@ -88,6 +83,18 @@ public class UserSettings extends EmsPage {
             protected void onError(AjaxRequestTarget target, Form form) { target.addComponent(accountFeedback); }
         } );
     }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger( UserSettings.class.getName() );
+    private static int MIN_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.minPasswordLength", 6);
+
+    @SpringBean
+    private EmsSecurityManager securityManager;
+
+    @SpringBean
+    private UserPropertyManager userPropertyManager;
+
 
     /**
      * Change user passoword
@@ -132,7 +139,7 @@ public class UserSettings extends EmsPage {
     /**
      * Model for the user settings password form
      */
-    public static final class PasswordModel implements Serializable {
+    private static final class PasswordModel implements Serializable {
         String password;
         String newPassword;
         String newPasswordConfirm;
@@ -141,7 +148,7 @@ public class UserSettings extends EmsPage {
     /**
      * Change password form
      */
-    public final class PasswordForm extends Form {
+    private final class PasswordForm extends Form {
 
         private final PasswordModel model = new PasswordModel();
 
@@ -152,7 +159,7 @@ public class UserSettings extends EmsPage {
             PasswordTextField pass2 = new PasswordTextField("newPassword", new PropertyModel(model, "newPassword"));
             PasswordTextField pass3 = new PasswordTextField("newPasswordConfirm", new PropertyModel(model, "newPasswordConfirm"));
 
-            pass2.add( new StringValidator.LengthBetweenValidator(6, 256) );
+            pass2.add( new StringValidator.LengthBetweenValidator(MIN_PASSWORD_LENGTH, 32) );
 
             add(pass1.setRequired(true));
             add(pass2.setRequired(true));
@@ -194,7 +201,7 @@ public class UserSettings extends EmsPage {
     /**
      * Change password form
      */
-    public final class PreferencesForm extends Form {
+    private final class PreferencesForm extends Form {
 
         public PreferencesForm(final String componentName, final Map<String,String> preferences) {
             super(componentName, new CompoundPropertyModel(preferences));

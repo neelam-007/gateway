@@ -21,8 +21,7 @@ public class EmsMain {
         System.setProperty("org.apache.cxf.nofastinfoset", "true");
 
         // initialize config location
-        //TODO [steve] rename the ems_config.properties file to emconfig.properties for consistency
-        System.setProperty(ServerConfig.PROPS_RESOURCE_PROPERTY, "/com/l7tech/server/ems/resources/ems_config.properties");
+        System.setProperty(ServerConfig.PROPS_RESOURCE_PROPERTY, "/com/l7tech/server/ems/resources/emconfig.properties");
         if ( new File("var").exists() ) {
             System.setProperty(ServerConfig.PROPS_OVER_PATH_PROPERTY, "var/emconfig.properties");
         }
@@ -48,6 +47,7 @@ public class EmsMain {
         // add shutdown handler
         final Object shutdown = new Object();
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+            @Override
             public void run() {
                 synchronized(shutdown) {
                     shutdown.notify();

@@ -23,8 +23,6 @@ import org.apache.cxf.configuration.jsse.TLSClientParameters;
 /**
  * GatewayContext provides access to a Gateway from the ESM.
  *
- * //TODO [steve] should this be closable?
- *
  * @author steve
  */
 public class GatewayContext {
