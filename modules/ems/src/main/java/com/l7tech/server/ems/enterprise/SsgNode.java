@@ -25,7 +25,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
     private String guid;
     private String ipAddress;
     private SsgCluster ssgCluster;
-    private String onlineStatus = "off"; //todo: this is a temporary assignment.  After GatewayInfo has online status later on, we will remove the assignment "off".
+    private String onlineStatus;
     private boolean trustStatus;
     private String softwareVersion;
 

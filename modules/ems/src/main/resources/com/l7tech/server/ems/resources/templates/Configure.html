@@ -161,7 +161,8 @@
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
                     if (action == 'start') result = entity.trustStatus &&
                                                     entity.accessStatus &&
-                                                    entity.onlineStatus != l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.ON;
+                                                    entity.onlineStatus != l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.ON &&
+                                                    entity.onlineStatus != l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.OFFLINE;
                     if (action == 'stop') result = entity.trustStatus &&
                                                    entity.accessStatus &&
                                                    entity.onlineStatus == l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.ON;
