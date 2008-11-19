@@ -134,6 +134,23 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
         return licensed;
     }
 
+    @SuppressWarnings({"unchecked"})
+    @Override
+    public boolean isLicensed( final Class componentClass ) {
+        boolean licensed = false;
+
+        if ( licenseManager.isFeatureEnabled( "set:admin" ) ) {
+            licensed = true;
+        } else {
+            Administrative admin = (Administrative)componentClass.getAnnotation( Administrative.class );
+            if ( admin != null ) {
+                licensed = !admin.licensed(); // licensed if the component does not require license ...
+            }
+        }
+
+        return licensed;
+    }
+
     /**
      * Login the user
      *

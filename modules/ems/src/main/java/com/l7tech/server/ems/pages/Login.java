@@ -18,7 +18,6 @@ import com.l7tech.server.ems.EmsApplication;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.admin.Administrative;
 
 import javax.servlet.http.HttpServletRequest;
@@ -37,9 +36,6 @@ public class Login extends WebPage {
 
     @SpringBean
     private UserPropertyManager userPropertyManager;
-    
-    @SpringBean
-    private LicenseManager licenseManager;
     
     /**
      * Create login page
@@ -103,11 +99,7 @@ public class Login extends WebPage {
         public final void onSubmit() {
             try {
                 if ( login( model.username, model.password ) ) {
-                    if ( licenseManager.isFeatureEnabled( "set:admin" ) ) {
-                        setResponsePage( SystemSettings.class );
-                    } else {
-                        setResponsePage( getApplication().getHomePage() );                            
-                    }
+                    setResponsePage( getApplication().getHomePage() );
                 } else {
                     error( new StringResourceModel("message.invalid", this, null).getString() );
                 }

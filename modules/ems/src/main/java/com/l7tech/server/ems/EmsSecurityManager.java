@@ -71,6 +71,14 @@ public interface EmsSecurityManager {
     boolean isLicensed( final Component component );
 
     /**
+     * Check if the ESM is licensed for the given class.
+     *
+     * @param componentClass The component class to check.
+     * @return True if the component is licensed or does not require a license.
+     */
+    boolean isLicensed( final Class componentClass );
+
+    /**
      * Check if the user of the current session is permitted to access the given page.
      *
      * @param session The HttpSession for the request

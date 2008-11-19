@@ -9,7 +9,6 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.EmsApplication;
 import com.l7tech.server.ems.SetupManager;
@@ -57,25 +56,16 @@ public class SystemSettings extends EmsPage {
 
     private static final int MAX_LICENSE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.licenseFile.maxBytes", 1024 * 500);
     private static final Logger logger = Logger.getLogger(SystemSettings.class.getName());
-    private static final String COPYRIGHT = "Copyright (c) 2008 by Layer 7 Technologies, Inc. All rights reserved.";
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean(name="licenseManager")
     private UpdatableLicenseManager licenseManager;
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    @SpringBean(name="clusterPropertyManager")
-    private ClusterPropertyManager clusterPropertyManager;
-
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean(name="setupManager")
     private SetupManager setupManager;
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean(name="defaultKey")
     private DefaultKey defaultKey;
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean(name="serverConfig")
     private Config config;
 
@@ -84,7 +74,6 @@ public class SystemSettings extends EmsPage {
      */
     public SystemSettings() {
         final WebMarkupContainer dynamicDialogHolder = new WebMarkupContainer("dynamic.holder");
-        dynamicDialogHolder.add( new EmptyPanel("dynamic.holder.content") );
         dynamicDialogHolder.setOutputMarkupId(true);
 
         add(dynamicDialogHolder);
@@ -94,6 +83,16 @@ public class SystemSettings extends EmsPage {
         initComponentsForSystemInfo(dynamicDialogHolder);
 
         initComponentsForLicense(dynamicDialogHolder);
+
+        if ( isAdminEnabled() ) {
+            dynamicDialogHolder.add( new EmptyPanel("dynamic.holder.content") );
+        } else {
+            showLicenseWarningDialog( dynamicDialogHolder, null );
+        }
+    }
+
+    private boolean isAdminEnabled() {
+        return licenseManager.isFeatureEnabled( "set:admin");
     }
 
     /**
@@ -111,10 +110,6 @@ public class SystemSettings extends EmsPage {
         // Build Number
         Label buildNumberLabel = new Label("build.number", BuildInfo.getBuildNumber());
         add(buildNumberLabel);
-
-        // Copyright Notice
-        Label copyrightLabel = new Label("copyright", COPYRIGHT);
-        add(copyrightLabel);
     }
 
     /**
@@ -186,20 +181,24 @@ public class SystemSettings extends EmsPage {
         listenerChangeForm.add( new YuiAjaxButton("listenerChangeButton", listenerChangeForm) {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                ListenerEditPanel listenerEditPanel = new ListenerEditPanel( YuiDialog.getContentId() );
-                YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Change Listener Settings", YuiDialog.Style.OK_CANCEL, listenerEditPanel, new YuiDialog.OkCancelCallback(){
-                    @Override
-                    public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
-                        if ( button == YuiDialog.Button.OK ) {
-                            listenerModel.detach();
-                            target.addComponent( listenerAddr );
-                            target.addComponent( listenerPort );
+                if ( !isAdminEnabled() ) {
+                    showLicenseWarningDialog( dynamicDialogHolder, ajaxRequestTarget );
+                } else {
+                    ListenerEditPanel listenerEditPanel = new ListenerEditPanel( YuiDialog.getContentId() );
+                    YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Change Listener Settings", YuiDialog.Style.OK_CANCEL, listenerEditPanel, new YuiDialog.OkCancelCallback(){
+                        @Override
+                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
+                            if ( button == YuiDialog.Button.OK ) {
+                                listenerModel.detach();
+                                target.addComponent( listenerAddr );
+                                target.addComponent( listenerPort );
+                            }
                         }
+                    } );
+                    dynamicDialogHolder.replace(dialog);
+                    if ( ajaxRequestTarget != null ) {
+                        ajaxRequestTarget.addComponent(dynamicDialogHolder);
                     }
-                } );
-                dynamicDialogHolder.replace(dialog);
-                if ( ajaxRequestTarget != null ) {
-                    ajaxRequestTarget.addComponent(dynamicDialogHolder);
                 }
             }
         } );
@@ -223,28 +222,32 @@ public class SystemSettings extends EmsPage {
         sslChangeForm.add( new YuiAjaxButton("sslChangeButton", sslChangeForm) {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                SslEditPanel sslEditPanel = new SslEditPanel( YuiDialog.getContentId() ){
-                    @Override
-                    @SuppressWarnings({"UnusedDeclaration"})
-                    protected void onSubmit(final AjaxRequestTarget target) {
-                        sslModel.detach();
+                if ( !isAdminEnabled() ) {
+                    showLicenseWarningDialog( dynamicDialogHolder, ajaxRequestTarget );
+                } else {
+                    SslEditPanel sslEditPanel = new SslEditPanel( YuiDialog.getContentId() ){
+                        @Override
+                        @SuppressWarnings({"UnusedDeclaration"})
+                        protected void onSubmit(final AjaxRequestTarget target) {
+                            sslModel.detach();
 
-                        target.addComponent( sslIssuerLabel );
-                        target.addComponent( sslSerialNumberLabel );
-                        target.addComponent( sslSubjectLabel );
-                        target.addComponent( sslThumbprint );
+                            target.addComponent( sslIssuerLabel );
+                            target.addComponent( sslSerialNumberLabel );
+                            target.addComponent( sslSubjectLabel );
+                            target.addComponent( sslThumbprint );
+                        }
+                    };
+                    YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Change SSL Settings", YuiDialog.Style.OK_CANCEL, sslEditPanel, new YuiDialog.OkCancelCallback(){
+                        @Override
+                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button ) {
+                            //NOTE, due to YUI AJAX form submission for file upload this action is not run.
+                        }
+                    } );
+                    sslEditPanel.setSuccessScript( dialog.getSuccessScript() );
+                    dynamicDialogHolder.replace(dialog);
+                    if ( ajaxRequestTarget != null ) {
+                        ajaxRequestTarget.addComponent(dynamicDialogHolder);
                     }
-                };
-                YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Change SSL Settings", YuiDialog.Style.OK_CANCEL, sslEditPanel, new YuiDialog.OkCancelCallback(){
-                    @Override
-                    public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button ) {
-                        //NOTE, due to YUI AJAX form submission for file upload this action is not run.
-                    }
-                } );
-                sslEditPanel.setSuccessScript( dialog.getSuccessScript() );
-                dynamicDialogHolder.replace(dialog);
-                if ( ajaxRequestTarget != null ) {
-                    ajaxRequestTarget.addComponent(dynamicDialogHolder);
                 }
             }
         } );
@@ -319,6 +322,25 @@ public class SystemSettings extends EmsPage {
         licenseDetailsContainer.add(licenseDeleteForm);
 
         add(new LicenseForm("licenseForm", refreshComponents, dynamicDialogHolder, feedback));
+    }
+
+    /**
+     * Display unlicensed warning dialog. 
+     */
+    private void showLicenseWarningDialog( final WebMarkupContainer dynamicDialogHolder, final AjaxRequestTarget target ) {
+        String warningText =
+            "<p>Enterprise Service Manager is not licensed.</p><br/>" +
+            "<p>Please install a license to access Enterprise Service Manager functionality.</p>";
+        Label label = new Label(YuiDialog.getContentId(), warningText);
+        label.setEscapeModelStrings(false);
+        YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Enterprise Service Manager Not Licensed", YuiDialog.Style.CLOSE, label, null );
+
+        if ( target == null ) {
+            dynamicDialogHolder.add(dialog);
+        } else {
+            dynamicDialogHolder.replace(dialog);
+            target.addComponent(dynamicDialogHolder);
+        }
     }
 
     /**

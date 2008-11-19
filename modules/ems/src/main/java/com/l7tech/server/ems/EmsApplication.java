@@ -172,6 +172,11 @@ public class EmsApplication extends WebApplication {
 
             @Override
             public boolean isInstantiationAuthorized(Class aClass) {
+                if ( Page.class.isAssignableFrom(aClass) &&
+                     !getEmsSecurityManager().isLicensed( aClass ) ) {
+                    throw new RestartResponseAtInterceptPageException( SystemSettings.class );
+                }
+
                 boolean permitted =
                         !Page.class.isAssignableFrom(aClass) ||
                         getEmsSecurityManager().isAuthenticated( aClass );

@@ -60,6 +60,11 @@ public class MockEmsSecurityManager implements EmsSecurityManager {
     }
 
     @Override
+    public boolean isLicensed(Class componentClass) {
+        return true;
+    }
+
+    @Override
     public LoginInfo getLoginInfo(HttpSession session) {
         return loginInfo;
     }
