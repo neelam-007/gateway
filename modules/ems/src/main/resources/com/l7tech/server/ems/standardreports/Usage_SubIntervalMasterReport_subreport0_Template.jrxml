@@ -40,13 +40,14 @@
 	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
 	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getUsageQuery($P{INTERVAL_START},
+		<defaultValueExpression ><![CDATA[Utilities.getUsageQuery($P{INTERVAL_START},
 $P{INTERVAL_END},$P{SERVICE_ID}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
 $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
 ]]></defaultValueExpression>
 	</parameter>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
-	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
+    
+    <queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
 	<field name="SERVICE_ID" class="java.lang.Long"/>
 	<field name="SERVICE_NAME" class="java.lang.String"/>

@@ -115,7 +115,6 @@ $P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPP
 $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
 ]]></defaultValueExpression>
 	</parameter>
-	<parameter name="KEY_TO_COLUMN_NAME_MAP" isForPrompting="false" class="java.util.Map"/>
 	<parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
 	<parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
@@ -200,9 +199,9 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 							<categoryExpression><![CDATA[(Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}}))]]></categoryExpression>
-							<valueExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET}).getUsageChartCategoryValue( 
+							<valueExpression><![CDATA[((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET}).getUsageChartCategoryValue(
 $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, 
-$F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></valueExpression>
+$F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndSubReportHelper.COLUMN_MAPPING_TOTAL)]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
 						</categorySeries>
@@ -501,7 +500,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Usage Summary Report"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Group Usage Summary Report"]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -921,7 +920,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Usage Summary Report"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Group Usage Summary Report"]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement

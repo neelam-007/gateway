@@ -74,6 +74,13 @@
 		</java>
 	</target>
 
+    <target name="chart" description="Run a test jrxml with a chart">
+        <java classname="${class.name}" fork="true">
+            <arg value="chart"/>
+            <classpath refid="classpath"/>
+        </java>
+    </target>
+
     <target name="usage" description="Compiles and fills the canned usage report and produces the .jrprint file.">
         <copy file="../../../../../../../ems/src/main/resources/com/l7tech/server/ems/standardreports/Styles.jrtx" todir="."/>
         <java classname="${class.name}" fork="true">

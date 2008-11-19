@@ -48,6 +48,8 @@ public class Utilities {
     private static final String PAGE_HEIGHT = "pageHeight";
     private static final String CHART_ELEMENT = "chartElement";
     private static final int CONSTANT_HEADER_HEIGHT = 54;
+    private static final String CHART_KEY = "chartKey";
+    private static final int FRAME_MIN_WIDTH = 820;
 
     public static enum UNIT_OF_TIME {
         HOUR, DAY, WEEK, MONTH; 
@@ -147,6 +149,19 @@ public class Utilities {
     public static final int CONSTANT_HEADER_START_X = 113;
     public static final int SERVICE_HEADER_X_POS = 50;
 
+    public static final Map<String, UsageReportHelper> helperMap = new HashMap<String, UsageReportHelper>();
+
+    public static void addHelper(String uuid, UsageReportHelper helper){
+        helperMap.put(uuid, helper);
+    }
+
+    public static UsageReportHelper getHelper(String uuid){
+        if(!helperMap.containsKey(uuid)){
+            throw new IllegalArgumentException("String: " + uuid+" not found in map");
+        }
+
+        return helperMap.get(uuid);
+    }
 
     /**
      * Relative time is calculated to a fixed point of time depending on the unit of time supplied. For day, week
@@ -609,7 +624,6 @@ public class Utilities {
         //----SECTION M----
         addUsageMappingOrder(sb);
 
-        System.out.println(sb.toString());
         return sb.toString();
     }
 
@@ -891,7 +905,6 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         //----SECTION M----
         addMappingOrder(sb);
 
-        //System.out.println(sb.toString());
         return sb.toString();
     }
 
@@ -1295,11 +1308,11 @@ Value is included in all or none, comment is just illustrative
                                                                String authUser, List<String> keys, String [] keyValues){
 
         String displayString = getMappingValueDisplayString(authUser, keys, keyValues, false, null);
-        System.out.println("getCategoryMappingDisplayString: " + displayString);
+        //System.out.println("getCategoryMappingDisplayString: " + displayString);
         if(!displayStringToMappingGroup.containsKey(displayString)) throw new IllegalArgumentException("Group for " +
                 "display string not found: " + displayString);
 
-        System.out.println("Found: " + displayStringToMappingGroup.get(displayString));
+        //System.out.println("Found: " + displayStringToMappingGroup.get(displayString));
         return displayStringToMappingGroup.get(displayString);
     }
 
@@ -1311,11 +1324,11 @@ Value is included in all or none, comment is just illustrative
                                                  String routingURI){
 
         String displayString = getServiceDisplayString(serviceName, routingURI);
-        System.out.println("getServiceFromDisplayString: " + displayString);
+        //System.out.println("getServiceFromDisplayString: " + displayString);
         if(!displayStringToService.containsKey(displayString)) throw new IllegalArgumentException("Service for " +
                 "display string not found: " + displayString);
 
-        System.out.println("Found: " + displayStringToService.get(displayString));
+        //System.out.println("Found: " + displayStringToService.get(displayString));
         return displayStringToService.get(displayString);
     }
 
@@ -1655,7 +1668,7 @@ Value is included in all or none, comment is just illustrative
         int y = 0;
         int vSpace = 2;
         int height = 18;
-        int frameWidth = 820;
+        int frameWidth = FRAME_MIN_WIDTH;
 
         int index = 0;
         for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
@@ -1724,7 +1737,9 @@ Value is included in all or none, comment is just illustrative
      * @param useUser if true, then the report header will include a display item for 'Authenticated User'
      * @return the Document returned is not formatted
      */
-    public static Document getUsageIntervalMasterRuntimeDoc(boolean useUser, List<String> keys, LinkedHashSet<String> distinctMappingValues) {
+    public static Document getUsageIntervalMasterRuntimeDoc(boolean useUser, List<String> keys,
+                                                            LinkedHashSet<String> distinctMappingValues,
+                                                            LinkedHashMap<String,String> groupToMappingValue) {
         if((keys == null || keys.isEmpty()) && !useUser){
             throw new IllegalArgumentException("keys must not be null or empty if useUser is not true");
         }
@@ -1872,6 +1887,8 @@ Value is included in all or none, comment is just illustrative
         Element rightMarginElement = doc.createElement(RIGHT_MARGIN);
         rightMarginElement.setTextContent(String.valueOf(LEFT_MARGIN_WIDTH));
         rootNode.appendChild(rightMarginElement);
+
+        addChartXMLToDocument(doc, groupToMappingValue, frameWidth, 595);
         
         return doc;
     }
@@ -2047,6 +2064,7 @@ Value is included in all or none, comment is just illustrative
         int height = 18;
 
         int index = 0;
+        if(frameWidth < FRAME_MIN_WIDTH) frameWidth = FRAME_MIN_WIDTH;
         for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
             addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey"+(index+1), "java.lang.String",
                     "<b>"+me.getKey()+":</b> " + me.getValue(), "chartLegendTextField", false);
@@ -2097,6 +2115,12 @@ Value is included in all or none, comment is just illustrative
         Element pageHeightElement = doc.createElement(PAGE_HEIGHT);
         chartElement.appendChild(pageHeightElement);
         pageHeightElement.setTextContent(String.valueOf(totalFirstPageHeight));
+
+        //modify the chart's key, currently only used in interval usage reports
+        Element chartKeyElement = doc.createElement(CHART_KEY);
+        chartElement.appendChild(chartKeyElement);
+        UUID chartKey = UUID.randomUUID();
+        chartKeyElement.setTextContent(chartKey.toString());
     }
 
 
@@ -2308,7 +2332,7 @@ Value is included in all or none, comment is just illustrative
         newVariable.setAttribute("calculation", calc);
 
         Element variableExpression = doc.createElement("variableExpression");
-        String cData = "((UsageReportHelper)$P{REPORT_SCRIPTLET})."+functionName+"(\""+columnName+"\"," +
+        String cData = "((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET})."+functionName+"(\""+columnName+"\"," +
                 " $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}," +
                 "$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})";
         CDATASection cDataSection = doc.createCDATASection(cData);

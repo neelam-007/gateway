@@ -5,10 +5,10 @@
 		 name="Usage_IntervalMasterReport_Template"
 		 columnCount="1"
 		 printOrder="Vertical"
-		 orientation="Portrait"
-		 pageWidth="595"
-		 pageHeight="850"
-		 columnWidth="535"
+		 orientation="Landscape"
+		 pageWidth="850"
+		 pageHeight="595"
+		 columnWidth="820"
 		 columnSpacing="0"
 		 leftMargin="15"
 		 rightMargin="15"
@@ -113,6 +113,9 @@
 $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
 ]]></defaultValueExpression>
 	</parameter>
+	<parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
+	<parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
+	<parameter name="SUB_REPORT_HELPER" isForPrompting="false" class="com.l7tech.server.ems.standardreports.UsageSummaryAndSubReportHelper"/>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
 	<field name="SERVICE_ID" class="java.lang.Long"/>
@@ -133,6 +136,93 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 	<variable name="ROW_REPORT_TOTAL" class="java.lang.Long" resetType="Report" calculation="Sum">
 	</variable>
 
+		<group  name="CONSTANT_CHART" >
+			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
+			<groupHeader>
+			<band height="228"  isSplitAllowed="true" >
+				<printWhenExpression><![CDATA[$P{PRINT_CHART}]]></printWhenExpression>
+				<frame>					<reportElement
+						style="FrameTableTop"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="820"
+						height="18"
+						key="frame-40"/>
+					<box></box>
+				<staticText>
+					<reportElement
+						style="FrameTitle"
+						x="0"
+						y="0"
+						width="820"
+						height="18"
+						key="staticText-119"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Groupings Summary Chart]]></text>
+				</staticText>
+				</frame>				<frame>					<reportElement
+						style="ChartFrame"
+						x="0"
+						y="18"
+						width="820"
+						height="192"
+						key="frame-41"
+						stretchType="RelativeToTallestObject"/>
+					<box></box>
+				<barChart>
+					<chart evaluationTime="Report"  hyperlinkTarget="Self"  customizerClass="com.l7tech.server.ems.standardreports.UsageIntervalChartCustomizer"  renderType="image" >
+					<reportElement
+						x="0"
+						y="0"
+						width="820"
+						height="130"
+						key="element-1"/>
+					<box></box>
+						<chartLegend textColor="#000000" backgroundColor="#FFFFFF" >
+					</chartLegend>
+					</chart>
+					<categoryDataset>
+						<dataset incrementType="Group" incrementGroup="SERVICE" >
+						</dataset>
+						<categorySeries>
+							<seriesExpression><![CDATA["# Successful Requests"]]></seriesExpression>
+							<categoryExpression><![CDATA[$F{SERVICE_NAME}]]></categoryExpression>
+							<valueExpression><![CDATA[$F{SERVICE_ID}]]></valueExpression>
+				<itemHyperlink >
+				</itemHyperlink>
+						</categorySeries>
+					</categoryDataset>
+					<barPlot isShowLabels="true" >
+						<plot orientation="Horizontal" />
+						<categoryAxisFormat>
+							<axisFormat >
+							</axisFormat>
+						</categoryAxisFormat>
+						<valueAxisFormat>
+							<axisFormat >
+							</axisFormat>
+						</valueAxisFormat>
+					</barPlot>
+				</barChart>
+				<frame>					<reportElement
+						x="0"
+						y="147"
+						width="820"
+						height="34"
+						key="frame-42"
+						stretchType="RelativeToTallestObject"/>
+					<box></box>
+				</frame>				</frame>			</band>
+			</groupHeader>
+			<groupFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+			</groupFooter>
+		</group>
 		<group  name="CONSTANT" >
 			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
 			<groupHeader>
@@ -142,7 +232,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						mode="Opaque"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-32"/>
 					<box></box>
@@ -151,7 +241,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						style="FrameTitle"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="usageSummaryKey-1"/>
 					<box></box>
@@ -176,7 +266,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						mode="Opaque"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-15"/>
 					<box></box>
@@ -185,7 +275,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						style="SummaryRowHeading"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="textField-93"/>
 					<box></box>
@@ -199,7 +289,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						mode="Opaque"
 						x="0"
 						y="18"
-						width="564"
+						width="820"
 						height="36"
 						key="frame-2"/>
 					<box></box>
@@ -226,7 +316,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						mode="Opaque"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-16"/>
 					<box></box>
@@ -260,7 +350,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						mode="Opaque"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-18"/>
 					<box></box>
@@ -269,7 +359,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						style="SummaryRowHeading"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="textField-154"/>
 					<box></box>
@@ -290,7 +380,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						mode="Opaque"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-19"/>
 					<box></box>
@@ -317,13 +407,13 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 			</band>
 		</background>
 		<title>
-			<band height="243"  isSplitAllowed="true" >
+			<band height="186"  isSplitAllowed="true" >
 				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-6"/>
 					<box></box>
@@ -346,8 +436,8 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						mode="Opaque"
 						x="0"
 						y="18"
-						width="564"
-						height="211"
+						width="820"
+						height="150"
 						key="frame-5"
 						isPrintRepeatedValues="false"/>
 					<box></box>
@@ -355,7 +445,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						style="TableCell"
 						x="0"
 						y="4"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-20"
 						positionType="Float"/>
@@ -365,7 +455,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-107"/>
 					<box></box>
@@ -374,25 +464,55 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					</textElement>
 				<text><![CDATA[Report Type:]]></text>
 				</staticText>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="280"
 						height="18"
 						key="textField-142"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Usage Interval Report"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Group Usage Interval Report"]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						style="ReportInfo"
+						x="419"
+						y="0"
+						width="120"
+						height="18"
+						key="staticText-120"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Report Generated At:]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="yyyy/MM/dd hh:mm" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="540"
+						y="0"
+						width="280"
+						height="18"
+						key="textField-198"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.util.Date"><![CDATA[new Date()]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="24"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-21"
 						positionType="Float"/>
@@ -402,7 +522,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-108"/>
 					<box></box>
@@ -411,12 +531,12 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					</textElement>
 				<text><![CDATA[Timezone:]]></text>
 				</staticText>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="280"
 						height="18"
 						key="textField-143"/>
 					<box></box>
@@ -425,21 +545,51 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_TIME_ZONE}.getDisplayName()]]></textFieldExpression>
 				</textField>
+				<staticText>
+					<reportElement
+						style="ReportInfo"
+						x="419"
+						y="0"
+						width="120"
+						height="18"
+						key="staticText-121"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Report Ran By:]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="540"
+						y="0"
+						width="280"
+						height="18"
+						key="textField-199"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_RAN_BY}]]></textFieldExpression>
+				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="44"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-22"
 						positionType="Float"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="280"
 						height="18"
 						key="textField-144"/>
 					<box></box>
@@ -447,18 +597,18 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_RELATIVE}.booleanValue())?("Last " + $P{timePeriodAsString} +
-" (" + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
+" (" + Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
 :
-com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
+Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-109"/>
 					<box></box>
@@ -467,13 +617,41 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					</textElement>
 				<text><![CDATA[Time Period:]]></text>
 				</staticText>
+				<staticText>
+					<reportElement
+						style="ReportInfo"
+						x="419"
+						y="0"
+						width="120"
+						height="18"
+						key="staticText-122"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Detail Report:]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="540"
+						y="0"
+						width="280"
+						height="18"
+						key="textField-200"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?"Yes":"No"]]></textFieldExpression>
+				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="64"
-						width="564"
+						width="820"
 						height="18"
-						key="frame-19"
+						key="frame-23"
 						positionType="Float"/>
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
@@ -481,9 +659,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="280"
 						height="18"
-						key="textField-141"
+						key="textField-145"
 						positionType="Float"/>
 					<box></box>
 					<textElement>
@@ -496,9 +674,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
-						key="staticText-106"
+						key="staticText-110"
 						positionType="Float"/>
 					<box></box>
 					<textElement>
@@ -510,7 +688,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="TableCell"
 						x="0"
 						y="84"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-19"
 						positionType="Float"/>
@@ -520,7 +698,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="699"
 						height="18"
 						key="textField-141"
 						positionType="Float"/>
@@ -535,7 +713,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-106"
 						positionType="Float"/>
@@ -549,25 +727,25 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="TableCell"
 						x="0"
 						y="104"
-						width="564"
+						width="820"
 						height="18"
-						key="frame-31"
+						key="frame-25"
 						positionType="Float"/>
 					<box></box>
-				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="699"
 						height="18"
-						key="textField-173"
+						key="textField-147"
 						positionType="Float"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayString
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingReportInfoDisplayString
 ($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())]]></textFieldExpression>
 				</textField>
 				<staticText>
@@ -575,9 +753,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
-						key="staticText-119"
+						key="staticText-112"
 						positionType="Float"/>
 					<box></box>
 					<textElement>
@@ -589,157 +767,42 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="TableCell"
 						x="0"
 						y="124"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-26"
-						positionType="Float"/>
-					<box></box>
-				<textField isStretchWithOverflow="false" pattern="yyyy/MM/dd hh:mm" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="443"
-						height="18"
-						key="textField-148"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.util.Date"><![CDATA[new Date()]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement
-						style="ReportInfo"
-						x="0"
-						y="0"
-						width="121"
-						height="18"
-						key="staticText-113"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Report Generated At:]]></text>
-				</staticText>
-				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="144"
-						width="564"
-						height="18"
-						key="frame-27"
-						positionType="Float"/>
-					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="443"
-						height="18"
-						key="textField-149"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_RAN_BY}]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement
-						style="ReportInfo"
-						x="0"
-						y="0"
-						width="121"
-						height="18"
-						key="staticText-114"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Report Ran By:]]></text>
-				</staticText>
-				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="164"
-						width="564"
-						height="18"
-						key="frame-28"
-						positionType="Float"/>
-					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="443"
-						height="18"
-						key="textField-152"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?"Yes":"No"]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement
-						style="ReportInfo"
-						x="0"
-						y="0"
-						width="121"
-						height="18"
-						key="staticText-117"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Detail Report:]]></text>
-				</staticText>
-				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="184"
-						width="564"
-						height="18"
-						key="frame-29"
 						positionType="Float">
 							<printWhenExpression><![CDATA[new Boolean($P{IS_DETAIL}.booleanValue())]]></printWhenExpression>
 						</reportElement>
 					<box></box>
-				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="443"
-						height="18"
-						key="textField-153"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($P{OPERATIONS} == null || $P{OPERATIONS}.isEmpty())?"All"
-:com.l7tech.server.ems.standardreports.Utilities.getStringNamesFromCollection($P{OPERATIONS})]]></textFieldExpression>
-				</textField>
 				<staticText>
 					<reportElement
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
-						key="staticText-118"/>
+						key="staticText-123"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
 				<text><![CDATA[Operations:]]></text>
 				</staticText>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="121"
+						y="0"
+						width="699"
+						height="18"
+						key="textField-201"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{OPERATIONS} == null || $P{OPERATIONS}.isEmpty())?"All"
+:Utilities.getStringNamesFromCollection($P{OPERATIONS})]]></textFieldExpression>
+				</textField>
 				</frame>				</frame>			</band>
 		</title>
 		<pageHeader>
@@ -757,7 +820,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						mode="Opaque"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-3"/>
 					<box></box>
@@ -766,7 +829,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="TableCell"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="subreport-1"/>
 					<subreportParameter  name="SERVICE_ID">
@@ -811,8 +874,8 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<subreportParameter  name="VALUE_EQUAL_OR_LIKE">
 						<subreportParameterExpression><![CDATA[$P{VALUE_EQUAL_OR_LIKE}]]></subreportParameterExpression>
 					</subreportParameter>
-					<subreportParameter  name="REPORT_SCRIPTLET">
-						<subreportParameterExpression><![CDATA[$P{REPORT_SCRIPTLET}]]></subreportParameterExpression>
+					<subreportParameter  name="SUB_REPORT_HELPER">
+						<subreportParameterExpression><![CDATA[$P{SUB_REPORT_HELPER}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="TEMPLATE_FILE_ABSOLUTE">
 						<subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>
@@ -833,45 +896,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 			</band>
 		</columnFooter>
 		<pageFooter>
-			<band height="18"  isSplitAllowed="true" >
-				<textField isStretchWithOverflow="false" pattern="" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="0"
-						y="0"
-						width="170"
-						height="18"
-						forecolor="#000000"
-						key="textField-73"/>
-					<box>					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-</box>
-					<textElement textAlignment="Right">
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Page " + $V{PAGE_NUMBER} + " of"]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" pattern="" isBlankWhenNull="false" evaluationTime="Report" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						mode="Transparent"
-						x="170"
-						y="0"
-						width="36"
-						height="18"
-						forecolor="#000000"
-						backcolor="#FFFFFF"
-						key="textField-74"/>
-					<box>					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-</box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
-				</textField>
+			<band height="0"  isSplitAllowed="true" >
 			</band>
 		</pageFooter>
 		<summary>
@@ -881,7 +906,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						mode="Opaque"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-17"/>
 					<box></box>
@@ -909,7 +934,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						mode="Opaque"
 						x="0"
 						y="0"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-10"/>
 					<box></box>
@@ -927,12 +952,12 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
 				</frame>				<frame>					<reportElement
-						style="FrameTableBottomReportInfo"
+						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
 						y="18"
-						width="564"
-						height="211"
+						width="820"
+						height="150"
 						key="frame-5"
 						isPrintRepeatedValues="false"/>
 					<box></box>
@@ -940,7 +965,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="TableCell"
 						x="0"
 						y="4"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-20"
 						positionType="Float"/>
@@ -950,7 +975,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-107"/>
 					<box></box>
@@ -959,25 +984,55 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					</textElement>
 				<text><![CDATA[Report Type:]]></text>
 				</staticText>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="280"
 						height="18"
 						key="textField-142"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Usage Interval Report"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Group Usage Interval Report"]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						style="ReportInfo"
+						x="419"
+						y="0"
+						width="120"
+						height="18"
+						key="staticText-120"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Report Generated At:]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="yyyy/MM/dd hh:mm" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="540"
+						y="0"
+						width="280"
+						height="18"
+						key="textField-198"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.util.Date"><![CDATA[new Date()]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="24"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-21"
 						positionType="Float"/>
@@ -987,7 +1042,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-108"/>
 					<box></box>
@@ -996,12 +1051,12 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					</textElement>
 				<text><![CDATA[Timezone:]]></text>
 				</staticText>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="280"
 						height="18"
 						key="textField-143"/>
 					<box></box>
@@ -1010,21 +1065,51 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_TIME_ZONE}.getDisplayName()]]></textFieldExpression>
 				</textField>
+				<staticText>
+					<reportElement
+						style="ReportInfo"
+						x="419"
+						y="0"
+						width="120"
+						height="18"
+						key="staticText-121"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Report Ran By:]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="540"
+						y="0"
+						width="280"
+						height="18"
+						key="textField-199"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_RAN_BY}]]></textFieldExpression>
+				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="44"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-22"
 						positionType="Float"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="280"
 						height="18"
 						key="textField-144"/>
 					<box></box>
@@ -1032,18 +1117,18 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_RELATIVE}.booleanValue())?("Last " + $P{timePeriodAsString} +
-" (" + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
+" (" + Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
 :
-com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
+Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-109"/>
 					<box></box>
@@ -1052,13 +1137,41 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					</textElement>
 				<text><![CDATA[Time Period:]]></text>
 				</staticText>
+				<staticText>
+					<reportElement
+						style="ReportInfo"
+						x="419"
+						y="0"
+						width="120"
+						height="18"
+						key="staticText-122"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Detail Report:]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="540"
+						y="0"
+						width="280"
+						height="18"
+						key="textField-200"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?"Yes":"No"]]></textFieldExpression>
+				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="64"
-						width="564"
+						width="820"
 						height="18"
-						key="frame-19"
+						key="frame-23"
 						positionType="Float"/>
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
@@ -1066,9 +1179,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="280"
 						height="18"
-						key="textField-141"
+						key="textField-145"
 						positionType="Float"/>
 					<box></box>
 					<textElement>
@@ -1081,9 +1194,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
-						key="staticText-106"
+						key="staticText-110"
 						positionType="Float"/>
 					<box></box>
 					<textElement>
@@ -1095,7 +1208,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="TableCell"
 						x="0"
 						y="84"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-19"
 						positionType="Float"/>
@@ -1105,7 +1218,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="699"
 						height="18"
 						key="textField-141"
 						positionType="Float"/>
@@ -1120,7 +1233,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-106"
 						positionType="Float"/>
@@ -1134,25 +1247,25 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="TableCell"
 						x="0"
 						y="104"
-						width="564"
+						width="820"
 						height="18"
-						key="frame-31"
+						key="frame-25"
 						positionType="Float"/>
 					<box></box>
-				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="443"
+						width="699"
 						height="18"
-						key="textField-173"
+						key="textField-147"
 						positionType="Float"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getMappingReportInfoDisplayString
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingReportInfoDisplayString
 ($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())]]></textFieldExpression>
 				</textField>
 				<staticText>
@@ -1160,185 +1273,70 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
-						key="staticText-119"
+						key="staticText-112"
 						positionType="Float"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
-				<text><![CDATA[Context Mapping:]]></text>
+				<text><![CDATA[Groupings:]]></text>
 				</staticText>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="124"
-						width="564"
+						width="820"
 						height="18"
 						key="frame-26"
-						positionType="Float"/>
-					<box></box>
-				<textField isStretchWithOverflow="false" pattern="yyyy/MM/dd hh:mm" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="443"
-						height="18"
-						key="textField-148"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.util.Date"><![CDATA[new Date()]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement
-						style="ReportInfo"
-						x="0"
-						y="0"
-						width="121"
-						height="18"
-						key="staticText-113"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Report Generated At:]]></text>
-				</staticText>
-				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="144"
-						width="564"
-						height="18"
-						key="frame-27"
-						positionType="Float"/>
-					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="443"
-						height="18"
-						key="textField-149"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_RAN_BY}]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement
-						style="ReportInfo"
-						x="0"
-						y="0"
-						width="121"
-						height="18"
-						key="staticText-114"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Report Ran By:]]></text>
-				</staticText>
-				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="164"
-						width="564"
-						height="18"
-						key="frame-28"
-						positionType="Float"/>
-					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="443"
-						height="18"
-						key="textField-152"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?"Yes":"No"]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement
-						style="ReportInfo"
-						x="0"
-						y="0"
-						width="121"
-						height="18"
-						key="staticText-117"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Detail Report:]]></text>
-				</staticText>
-				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="184"
-						width="564"
-						height="18"
-						key="frame-29"
 						positionType="Float">
 							<printWhenExpression><![CDATA[new Boolean($P{IS_DETAIL}.booleanValue())]]></printWhenExpression>
 						</reportElement>
 					<box></box>
-				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="443"
-						height="18"
-						key="textField-153"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($P{OPERATIONS} == null || $P{OPERATIONS}.isEmpty())?"All"
-:com.l7tech.server.ems.standardreports.Utilities.getStringNamesFromCollection($P{OPERATIONS})]]></textFieldExpression>
-				</textField>
 				<staticText>
 					<reportElement
 						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
-						key="staticText-118"/>
+						key="staticText-123"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
 				<text><![CDATA[Operations:]]></text>
 				</staticText>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="121"
+						y="0"
+						width="699"
+						height="18"
+						key="textField-201"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{OPERATIONS} == null || $P{OPERATIONS}.isEmpty())?"All"
+:Utilities.getStringNamesFromCollection($P{OPERATIONS})]]></textFieldExpression>
+				</textField>
 				</frame>				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="225"
-						width="564"
-						height="273"
+						y="168"
+						width="820"
+						height="330"
 						key="frame-9"/>
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						x="0"
 						y="0"
-						width="534"
-						height="273"
+						width="820"
+						height="330"
 						key="textField-84"/>
 					<box></box>
 					<textElement>

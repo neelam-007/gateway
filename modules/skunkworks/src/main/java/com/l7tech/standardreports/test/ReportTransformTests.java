@@ -105,7 +105,7 @@ public class ReportTransformTests {
         mappingValues.add("127.0.0.1Gold");
         mappingValues.add("127.0.0.1Silver");
 
-        LinkedHashMap linkedHashMap = new LinkedHashMap();
+        LinkedHashMap<String, String> linkedHashMap = new LinkedHashMap<String, String>();
         linkedHashMap.put("Group 1", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze");
         linkedHashMap.put("Group 2", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold");
         linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.3, CUSTOMER: Silver");
@@ -223,7 +223,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, null);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 535);
@@ -274,16 +274,53 @@ public class ReportTransformTests {
         mappingValues.add("127.0.0.2Silver1");
 
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
+        String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String, String> linkedHashMap = new LinkedHashMap<String, String>();
+        linkedHashMap.put("Group 1", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze");
+        linkedHashMap.put("Group 2", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Gold");
+        linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Silver");
+        linkedHashMap.put("Group 4", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Bronze");
+        linkedHashMap.put("Group 5", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold");
+        linkedHashMap.put("Group 6", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Silver");
+        linkedHashMap.put("Group 7", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze1");
+        linkedHashMap.put("Group 8", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Gold1");
+        linkedHashMap.put("Group 9", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Silver1");
+        linkedHashMap.put("Group 10", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Bronze1");
+        linkedHashMap.put("Group 11", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold1");
+        linkedHashMap.put("Group 12", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Silver1");
+
+        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, linkedHashMap);
+
+        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestMasterTransformDoc.xml");
+        f.createNewFile();
+        FileOutputStream fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
+        }finally{
+            fos.close();
+        }
+
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
-        params.put("FrameMinWidth", 535);
-        params.put("PageMinWidth", 595);
+        params.put("FrameMinWidth", 820);
+        params.put("PageMinWidth", 850);
         params.put("ReportInfoStaticTextSize", 128);
+        int titleInnerFrameBuffer = 7;
+        params.put("TitleInnerFrameBuffer", titleInnerFrameBuffer);
+        
 
         Document jasperDoc = transform(xslStr, xmlSrc, params);
+
+        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestMasterRuntimeDoc.xml");
+        f.createNewFile();
+        fos = new FileOutputStream(f);
+        try{
+            XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
+        }finally{
+            fos.close();
+        }
+
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         XmlUtil.nodeToOutputStream(jasperDoc, baos);

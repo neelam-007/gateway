@@ -109,8 +109,13 @@ public class RuntimeDocTests {
         mappingValues.add("127.0.0.1Bronze");
         mappingValues.add("127.0.0.1Gold");
         mappingValues.add("127.0.0.1Silver");
-        
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues);
+
+        LinkedHashMap linkedHashMap = new LinkedHashMap();
+        linkedHashMap.put("Group 1", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze");
+        linkedHashMap.put("Group 2", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Gold");
+        linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Silver");
+
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, linkedHashMap);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);

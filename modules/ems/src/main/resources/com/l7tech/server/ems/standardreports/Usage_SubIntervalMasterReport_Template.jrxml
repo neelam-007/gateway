@@ -48,8 +48,9 @@
 	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
+    <parameter name="SUB_REPORT_HELPER" isForPrompting="false" class="com.l7tech.server.ems.standardreports.UsageSummaryAndSubReportHelper"/>
 
-	<field name="INTERVAL_START" class="java.lang.Long"/>
+    <field name="INTERVAL_START" class="java.lang.Long"/>
 	<field name="INTERVAL_END" class="java.lang.Long"/>
 
 	<variable name="TOTAL" class="java.lang.Long" resetType="Report" calculation="Sum">
@@ -131,7 +132,7 @@
 						<subreportParameterExpression><![CDATA[$P{VALUE_EQUAL_OR_LIKE}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="REPORT_SCRIPTLET">
-						<subreportParameterExpression><![CDATA[$P{REPORT_SCRIPTLET}]]></subreportParameterExpression>
+						<subreportParameterExpression><![CDATA[$P{SUB_REPORT_HELPER}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="TEMPLATE_FILE_ABSOLUTE">
 						<subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>

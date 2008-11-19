@@ -15,10 +15,7 @@ import java.util.*;
 
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.view.JasperViewer;
-import com.l7tech.server.ems.standardreports.UsageReportHelper;
-import com.l7tech.server.ems.standardreports.Utilities;
-import com.l7tech.server.ems.standardreports.SubIntervalScriptletHelper;
-import com.l7tech.server.ems.standardreports.ScriptletHelper;
+import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.IOUtils;
 import org.w3c.dom.Document;
@@ -30,6 +27,9 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
 
 
 public class ReportApp
@@ -96,6 +96,7 @@ public class ReportApp
     private static final String PRINT_CHART = "PRINT_CHART";
     private static final String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
     private static final String KEY_TO_COLUMN_NAME_MAP = "KEY_TO_COLUMN_NAME_MAP";
+    private static final String SUB_REPORT_HELPER = "SUB_REPORT_HELPER";
 
     public ReportApp() {
     }
@@ -127,8 +128,11 @@ public class ReportApp
             if (TASK_FILL.equals(taskName))
 			{
                 fill(fileName, start);
-			}
-			else if (TASK_PDF.equals(taskName))
+			}else if ("chart".equals(taskName)){
+                JasperPrint jrPrint = JasperFillManager.fillReport("chart.jasper", new HashMap(), new JREmptyDataSource());
+                JasperViewer.viewReport(jrPrint, false);
+            }
+            else if (TASK_PDF.equals(taskName))
 			{
                 JasperExportManager.exportReportToPdfFile(fileName+".jrprint");
 				System.err.println("PDF creation time : " + (System.currentTimeMillis() - start));
@@ -195,7 +199,7 @@ public class ReportApp
                     object = in.readObject();
                     JasperReport subReport = (JasperReport) object;
                     parameters.put(SUB_REPORT, subReport);
-                    System.out.println("All subreports loaded");
+                    //System.out.println("All subreports loaded");
                 }catch(Exception ex){
                     System.out.println("Could not load all subreports: " + ex.getMessage());
                     ex.printStackTrace();
@@ -259,7 +263,7 @@ public class ReportApp
         }else{
             sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serviceIds, resolution);
         }
-        System.out.println("Distinct sql: " + sql);
+        //System.out.println("Distinct sql: " + sql);
         
         if(!type.equals("Usage") && !type.equals("Usage_Interval")){
             if(type.equals("Performance_Interval")){
@@ -369,10 +373,10 @@ public class ReportApp
     private LinkedHashMap<String, String> getKeyToColumnValues(LinkedHashSet<String> mappingValues) {
         LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
         int count = 1;
-        System.out.println("Key to column map");
+        //System.out.println("Key to column map");
         for (String s : mappingValues) {
             keyToColumnName.put(s, "COLUMN_"+count);
-            System.out.println(s+" " + "COLUMN_"+count);
+            //System.out.println(s+" " + "COLUMN_"+count);
             count++;
         }
         return keyToColumnName;
@@ -387,8 +391,35 @@ public class ReportApp
         LinkedHashMap<String, String> keyToColumnName = getKeyToColumnValues(mappingValues);
         helper.setKeyToColumnMap(keyToColumnName);
 
+        UsageSummaryAndSubReportHelper summaryAndSubReportHelper = new UsageSummaryAndSubReportHelper();
+        summaryAndSubReportHelper.setKeyToColumnMap(keyToColumnName);
+
+        parameters.put(SUB_REPORT_HELPER, summaryAndSubReportHelper);
+
+        LinkedHashSet<String> mappingValuesDisplay = getMappingDisplayStrings(connection, sql, keys);
+        LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
+        LinkedHashMap<Integer, String> groupIndexToGroup = new LinkedHashMap<Integer, String>();
+
+        int index = 1;
+        for(String s: mappingValuesDisplay){
+            String group = "Group "+index;
+            //System.out.println("Group: " + group+" s: " + s);
+            groupToDisplayString.put(group, s);
+            groupIndexToGroup.put(index, group);
+            index++;
+        }
+
+        helper.setIndexToGroupMap(groupIndexToGroup);
+        
         //Master report first
-        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(useUser, keys, mappingValues);
+        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(useUser, keys, mappingValues, groupToDisplayString);
+
+        XPathFactory factory = XPathFactory.newInstance(XPathFactory.DEFAULT_OBJECT_MODEL_URI);
+        XPath xPath = factory.newXPath();
+        //COLUMN_MAPPING_TOTAL_
+        String chartkey = (String)xPath.evaluate("/JasperRuntimeTransformation/chartElement/chartKey/text()", transformDoc, XPathConstants.STRING);
+        helper.setChartKey(chartkey);
+
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageMasterTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
@@ -399,18 +430,18 @@ public class ReportApp
         }
 
         String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
-        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
+        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
-        params.put("FrameMinWidth", 535);
-        params.put("PageMinWidth", 595);
+        params.put("FrameMinWidth", 820);
+        params.put("PageMinWidth", 850);
         params.put("ReportInfoStaticTextSize", 128);
         params.put("TitleInnerFrameBuffer", 7);
 
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperMasterDoc = transform(xslStr, xmlFileName, params);
 
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/MasterJasperRuntimeDoc.xml");
+        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageMasterJasperRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
         try{
@@ -434,7 +465,7 @@ public class ReportApp
         xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
         params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
-        params.put("PageMinWidth", 535);
+        params.put("PageMinWidth", 820);
 
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperSubIntervalDoc = transform(xslStr, xmlFileName, params);
@@ -460,10 +491,10 @@ public class ReportApp
         }
 
         xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
-        xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
+        xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
         params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
-        params.put("PageMinWidth", 535);
+        params.put("PageMinWidth", 820);
 
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperSubReportDoc = transform(xslStr, xmlFileName, params);
@@ -533,7 +564,7 @@ public class ReportApp
             int index = 1;
             for(String s: mappingValues){
                 String group = "Group "+index;
-                System.out.println("Group: " + group+" s: " + s);
+                //System.out.println("Group: " + group+" s: " + s);
                 groupToDisplayString.put(group, s);
                 displayStringToGroup.put(s, group);
                 index++;
@@ -545,7 +576,7 @@ public class ReportApp
             int index = 1;
             for(String s: serviceValues){
                 String service = "Service "+index;
-                System.out.println("Service: " + service+" s: " + s);
+                //System.out.println("Service: " + service+" s: " + s);
                 groupToDisplayString.put(service, s);
                 displayStringToGroup.put(s, service);
                 index++;
@@ -628,7 +659,7 @@ public class ReportApp
             int index = 1;
             for(String s: mappingValues){
                 String group = "Group "+index;
-                System.out.println("Group: " + group+" s: " + s);
+                //System.out.println("Group: " + group+" s: " + s);
                 groupToDisplayString.put(group, s);
                 displayStringToGroup.put(s, group);
                 index++;
@@ -640,7 +671,7 @@ public class ReportApp
             int index = 1;
             for(String s: serviceValues){
                 String service = "Service "+index;
-                System.out.println("Service: " + service+" s: " + s);
+                //System.out.println("Service: " + service+" s: " + s);
                 groupToDisplayString.put(service, s);
                 displayStringToGroup.put(s, service);
                 index++;
@@ -708,13 +739,13 @@ public class ReportApp
     private void runUsageReport(String fileName, Properties prop, Map parameters, Object scriplet, String sql,
                                        List<String> keys, boolean useUser)
                                                                     throws Exception{
-        UsageReportHelper helper = (UsageReportHelper) scriplet;
+        UsageSummaryAndSubReportHelper helper = (UsageSummaryAndSubReportHelper) scriplet;
         Connection connection = getConnection(prop);
         LinkedHashSet<String> mappingValues = getMappingValues(connection, sql);
         LinkedHashMap<String, String> keyToColumnName = getKeyToColumnValues(mappingValues);
         helper.setKeyToColumnMap(keyToColumnName);
         //the report also needs access to this key to column map
-        parameters.put(KEY_TO_COLUMN_NAME_MAP, keyToColumnName);
+        //parameters.put(KEY_TO_COLUMN_NAME_MAP, keyToColumnName);
 
         LinkedHashSet<String> mappingValuesDisplay = getMappingDisplayStrings(connection, sql, keys);
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
@@ -723,7 +754,6 @@ public class ReportApp
         int index = 1;
         for(String s: mappingValuesDisplay){
             String group = "Group "+index;
-            System.out.println("Group: " + group+" s: " + s);
             groupToDisplayString.put(group, s);
             displayStringToGroup.put(s, group);
             index++;
