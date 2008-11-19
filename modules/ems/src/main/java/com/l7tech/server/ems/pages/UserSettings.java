@@ -22,7 +22,7 @@ import com.l7tech.server.ems.NavigationModel;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Config;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -87,7 +87,6 @@ public class UserSettings extends EmsPage {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( UserSettings.class.getName() );
-    private static int MIN_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.minPasswordLength", 6);
 
     @SpringBean
     private EmsSecurityManager securityManager;
@@ -95,6 +94,8 @@ public class UserSettings extends EmsPage {
     @SpringBean
     private UserPropertyManager userPropertyManager;
 
+    @SpringBean
+    private Config config;
 
     /**
      * Change user passoword
@@ -159,7 +160,7 @@ public class UserSettings extends EmsPage {
             PasswordTextField pass2 = new PasswordTextField("newPassword", new PropertyModel(model, "newPassword"));
             PasswordTextField pass3 = new PasswordTextField("newPasswordConfirm", new PropertyModel(model, "newPasswordConfirm"));
 
-            pass2.add( new StringValidator.LengthBetweenValidator(MIN_PASSWORD_LENGTH, 32) );
+            pass2.add( new StringValidator.LengthBetweenValidator(config.getIntProperty("password.length.min", 6), config.getIntProperty("password.length.max", 32) ));
 
             add(pass1.setRequired(true));
             add(pass2.setRequired(true));

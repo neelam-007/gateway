@@ -26,7 +26,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Config;
 
 /**
  * Page for new user creation
@@ -61,11 +61,12 @@ public class EnterpriseUsersNewPanel extends Panel {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( EnterpriseUsersNewPanel.class.getName() );
-    private static int MIN_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.minPasswordLength", 6);
-    
-    @SuppressWarnings({"UnusedDeclaration"})
+
     @SpringBean
     private EmsAccountManager emsAccountManager;
+
+    @SpringBean
+    private Config config;
 
     /**
      * Model for user form
@@ -91,7 +92,7 @@ public class EnterpriseUsersNewPanel extends Panel {
             PasswordTextField pass1 = new PasswordTextField("password");
             PasswordTextField pass2 = new PasswordTextField("passwordConfirm");
 
-            pass1.add( new StringValidator.LengthBetweenValidator(MIN_PASSWORD_LENGTH, 32) );
+            pass1.add( new StringValidator.LengthBetweenValidator(config.getIntProperty("password.length.min", 6), config.getIntProperty("password.length.max", 32)) );
 
             add(new RequiredTextField("userId").add(new StringValidator.LengthBetweenValidator(3, 128)).add(new PatternValidator("^[^#,+\"\\\\<>;]{3,128}$")));
             add(new TextField("email").add(new StringValidator.LengthBetweenValidator(1, 128)));

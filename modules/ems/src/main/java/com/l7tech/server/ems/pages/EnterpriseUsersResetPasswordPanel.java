@@ -21,7 +21,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Config;
 
 /**
  * Page for editing a user
@@ -45,17 +45,23 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
             protected void onSubmit( final AjaxRequestTarget target, final Form form ) {
                 target.addComponent( feedback );
             }
+
+            @Override
+            protected void onError(AjaxRequestTarget target, Form form) {
+                target.addComponent( feedback );
+            }
         });
     }
 
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( EnterpriseUsersResetPasswordPanel.class.getName() );
-    private static int MIN_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.minPasswordLength", 6);
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private EmsAccountManager emsAccountManager;
+
+    @SpringBean
+    private Config config;
 
     private UserModel buildUserModel( final String username ) {
         UserModel model = null;
@@ -124,7 +130,7 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
             PasswordTextField pass1 = new PasswordTextField("password");
             PasswordTextField pass2 = new PasswordTextField("passwordConfirm");
 
-            pass1.add( new StringValidator.LengthBetweenValidator(MIN_PASSWORD_LENGTH, 32) );
+            pass1.add( new StringValidator.LengthBetweenValidator(config.getIntProperty("password.length.min", 6), config.getIntProperty("password.length.max", 32)) );
 
             add(pass1.setRequired(true));
             add(pass2.setRequired(true));
