@@ -10,7 +10,10 @@ import static com.l7tech.policy.assertion.alert.EmailAlertAssertion.Protocol;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.transport.email.EmailTestException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -99,19 +102,52 @@ public class EmailAlertPropertiesDialog extends JDialog {
             }
         });
 
-//        sendTestEmailButton.addActionListener(new ActionListener(){
-//            public void actionPerformed(ActionEvent e) {
-//                DialogDisplayer.showConfirmDialog(sendTestEmailButton, "This will send an email to the current recipient list(s).\nSelect OK to send a test email.", "Confirm Email Test", JOptionPane.OK_CANCEL_OPTION, new DialogDisplayer.OptionListener(){
-//                    public void reportResult(int option) {
-//                        if ( option == JOptionPane.OK_OPTION ) {
-//                            EmailAlertAssertion assertion = new EmailAlertAssertion();
-//                            viewToModel(assertion);
-//                            Collection<String> messages = Registry.getDefault().getPolicyAdmin().test(assertion);
-//                        }
-//                    }
-//                });
-//            }
-//        });
+        sendTestEmailButton.addActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent e) {
+                DialogDisplayer.showConfirmDialog(sendTestEmailButton, constructRecipientEmailMessage(), "Confirm Email Test", JOptionPane.OK_CANCEL_OPTION, new DialogDisplayer.OptionListener(){
+                    public void reportResult(int option) {
+                        if ( option == JOptionPane.OK_OPTION ) {
+                            try{
+                                //collect email config and email content information
+                                final EmailAlertAssertion eaa = new EmailAlertAssertion();
+                                viewToModel(eaa);
+
+                                //execute email test
+                                Registry.getDefault().getEmailAdmin().testSendEmail(eaa);
+                                DialogDisplayer.showMessageDialog(sendTestEmailButton,
+                                                 "Email sent successfully.",
+                                                 "Email Test",
+                                                 JOptionPane.INFORMATION_MESSAGE, null);
+                            } catch (EmailTestException ete) {
+                                DialogDisplayer.showMessageDialog(sendTestEmailButton,
+                                                 "Failed to send email.\n" + ete.getMessage(),
+                                                 "Email Test",
+                                                 JOptionPane.ERROR_MESSAGE, null);
+                            }
+
+                        }
+                    }
+
+                });
+            }
+
+            private String constructRecipientEmailMessage() {
+                StringBuffer msg = new StringBuffer("This will send an email to the following recipients.\n");
+                if (!"".equals(toAddressesField.getText())) {
+                    msg.append("TO: " + toAddressesField.getText() + "\n");
+                }
+
+                if (!"".equals(ccAddressesField.getText())) {
+                    msg.append("CC: " + ccAddressesField.getText() + "\n");
+                }
+
+                if (!"".equals(bccAddressesField.getText())) {
+                    msg.append("BCC: " + bccAddressesField.getText() + "\n");    
+                }
+
+                return msg.toString();
+            }
+        });
 
         protocolCombo.setModel(new DefaultComboBoxModel(Protocol.values()));
         protocolCombo.addActionListener(new ActionListener() {

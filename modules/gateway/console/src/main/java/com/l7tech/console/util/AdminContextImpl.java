@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
+import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
@@ -107,6 +108,10 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
 
     public EmailListenerAdmin getEmailListenerAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(EmailListenerAdmin.class);
+    }
+
+    public EmailAdmin getEmailAdmin() throws SecurityException {
+        return this.getRemoteInterfaceForEndpoint(EmailAdmin.class);
     }
 
     //- PACKAGE

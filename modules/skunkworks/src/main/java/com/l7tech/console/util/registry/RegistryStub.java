@@ -9,9 +9,7 @@ import com.l7tech.common.log.LogSinkAdminStub;
 import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
-import com.l7tech.gateway.common.transport.email.EmailListener;
-import com.l7tech.gateway.common.transport.email.EmailServerType;
+import com.l7tech.gateway.common.transport.email.*;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.util.Pair;
@@ -23,6 +21,7 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.service.*;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
@@ -335,6 +334,20 @@ public class RegistryStub extends Registry {
 
     public LogSinkAdmin getLogSinkAdmin() {
         return logSinkAdmin;
+    }
+
+    public EmailAdmin getEmailAdmin() {
+        return new EmailAdmin() {
+            public void testSendEmail(EmailAlertAssertion eaa) throws EmailTestException {
+                return;
+            }
+
+            public void testSendEmail(String toAddr, String ccAddr, String bccAddr, String fromAddr, String subject,
+                                      String host, int port, String base64Message, EmailAlertAssertion.Protocol protocol,
+                                      boolean authenticate, String authUsername, String authPassword) throws EmailTestException {
+                return;
+            }
+        };
     }
 
     //StubDataStore dataStore = StubDataStore.defaultStore();

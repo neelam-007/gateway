@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
+import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
@@ -60,6 +61,7 @@ public final class RegistryImpl extends Registry
     private RbacAdmin rbacAdmin;
     private TransportAdmin transportAdmin;
     private EmailListenerAdmin emailListenerAdmin;
+    private EmailAdmin emailAdmin;
     private PolicyAdmin policyAdmin;
     private LogSinkAdmin logSinkAdmin;
     private PolicyValidator policyValidator;
@@ -238,6 +240,15 @@ public final class RegistryImpl extends Registry
         }
         emailListenerAdmin = adminContext.getEmailListenerAdmin();
         return emailListenerAdmin;
+    }
+
+    public EmailAdmin getEmailAdmin() {
+        checkAdminContext();
+        if (emailAdmin != null) {
+            return emailAdmin;
+        }
+        emailAdmin = adminContext.getEmailAdmin();
+        return emailAdmin;
     }
 
     public PolicyAdmin getPolicyAdmin() {

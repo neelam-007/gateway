@@ -97,4 +97,9 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailListenerAdmin"/>
     </bean>
 
+    <bean name="/EmailAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+        <property name="service" ref="emailAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailAdmin"/>
+    </bean>
+
 </beans>

@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
+import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
@@ -135,6 +136,11 @@ public abstract class Registry {
     public abstract EmailListenerAdmin getEmailListenerAdmin();
 
     /**
+     * @return the email admin interface implementation.
+     */
+    public abstract EmailAdmin getEmailAdmin();
+
+    /**
      * @return the Policy admin interface implementation.
      */
     public abstract PolicyAdmin getPolicyAdmin();
@@ -238,6 +244,10 @@ public abstract class Registry {
         }
 
         public EmailListenerAdmin getEmailListenerAdmin() {
+            return null;
+        }
+
+        public EmailAdmin getEmailAdmin() {
             return null;
         }
 

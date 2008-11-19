@@ -16,6 +16,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
+import com.l7tech.server.transport.email.EmailUtils;
 import com.l7tech.server.ServerConfig;
 import org.springframework.context.ApplicationContext;
 
@@ -44,12 +45,6 @@ import java.net.InetAddress;
  */
 public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAlertAssertion> {
     private static final Logger logger = Logger.getLogger(ServerEmailAlertAssertion.class.getName());
-
-    //
-    // We only support SSL without client cert, but allow configuration of SSL default key just in case.
-    //
-    private static final String PROP_SSL_DEFAULT_KEY = "com.l7tech.server.policy.emailalert.useDefaultSsl";
-    private static final boolean SSL_DEFAULT_KEY = SyspropUtil.getBoolean(PROP_SSL_DEFAULT_KEY, false);
 
     private final Auditor auditor;
     private final Map<String, String> propertyMap;
@@ -190,7 +185,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
 
         // SSL Config
         if ( protocol == EmailAlertAssertion.Protocol.STARTTLS ) {
-            props.put("mail." + protoVal + ".socketFactory.class", StartTlsSocketFactory.class.getName());
+            props.put("mail." + protoVal + ".socketFactory.class", EmailUtils.StartTlsSocketFactory.class.getName());
             props.put("mail." + protoVal + ".starttls.enable", "true");
         } else if ( protocol == EmailAlertAssertion.Protocol.SSL ) {
             props.put("mail." + protoVal + ".socketFactory.class", SOCKET_FACTORY_CLASSNAME);
@@ -280,67 +275,5 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         Transport tr = session.getTransport(assertion.getProtocol() == EmailAlertAssertion.Protocol.SSL ? "smtps" : "smtp");
         tr.connect(assertion.getSmtpHost(), assertion.getSmtpPort(), assertion.getAuthUsername(), assertion.getAuthPassword());
         tr.sendMessage(message, recipients);
-    }
-
-    /**
-     * This is a hack. For StartTLS, the initial connection must be unencrypted, but after the STARTTLS command
-     * is sent, the socket must be recreated as an SSL socket. Unfortunately both cases must be covered using
-     * the same SocketFactory.
-     */
-    public static class StartTlsSocketFactory extends SSLSocketFactory {
-        private SSLSocketFactory sslFactory = SSL_DEFAULT_KEY ?
-                SslClientSocketFactory.getDefault() :
-                AnonymousSslClientSocketFactory.getDefault();
-        private static StartTlsSocketFactory singleton = new StartTlsSocketFactory();
-
-        public static synchronized SSLSocketFactory getDefault() {
-            if(singleton == null) {
-                singleton = new StartTlsSocketFactory();
-            }
-            return singleton;
-        }
-
-        @Override
-        public String[] getDefaultCipherSuites() {
-            return sslFactory.getDefaultCipherSuites();
-        }
-
-        @Override
-        public String[] getSupportedCipherSuites() {
-            return sslFactory.getSupportedCipherSuites();
-        }
-
-        /**
-         * Wrap existing socket with SSL 
-         */
-        @Override
-        public Socket createSocket(Socket socket, String string, int i, boolean b) throws IOException {
-            return sslFactory.createSocket(socket, string, i, b);
-        }
-
-        @Override
-        public Socket createSocket() throws IOException {
-            return new Socket();
-        }
-
-        @Override
-        public Socket createSocket(String string, int i) throws IOException {
-            return new Socket(string, i);
-        }
-
-        @Override
-        public Socket createSocket(String string, int i, InetAddress inetAddress, int i1) throws IOException {
-            return new Socket(string, i, inetAddress, i1);
-        }
-
-        @Override
-        public Socket createSocket(InetAddress inetAddress, int i) throws IOException {
-            return new Socket(inetAddress, i);
-        }
-
-        @Override
-        public Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1) throws IOException {
-            return new Socket(inetAddress, i, inetAddress1, i1);
-        }
     }
 }

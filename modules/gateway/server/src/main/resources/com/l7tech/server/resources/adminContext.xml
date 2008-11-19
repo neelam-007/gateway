@@ -268,6 +268,10 @@
         <constructor-arg ref="clusterNodeId"/>
     </bean>
 
+    <bean id="emailAdmin" class="com.l7tech.server.transport.email.EmailAdminImpl">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
     <!-- custom assertions admin servant -->
     <bean id="customAssertionsAdmin" class="com.l7tech.server.admin.CustomAssertionsRegistrarImpl">
         <property name="delegate" ref="customAssertionRegistrar"/>
