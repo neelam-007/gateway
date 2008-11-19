@@ -7,7 +7,6 @@ import javax.persistence.*;
 import org.mortbay.util.ajax.JSON;
 
 import java.util.Map;
-import java.net.UnknownHostException;
 import java.net.InetAddress;
 
 /**
@@ -26,7 +25,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
     private String guid;
     private String ipAddress;
     private SsgCluster ssgCluster;
-    private String onlineStatus;
+    private String onlineStatus = "off"; //todo: this is a temporary assignment.  After GatewayInfo has online status later on, we will remove the assignment "off".
     private boolean trustStatus;
     private String softwareVersion;
 
@@ -94,7 +93,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         output.add(JSONConstants.RBAC_CUD, true); // TODO Should be true only for user with administrator role.
         output.add(JSONConstants.ONLINES_TATUS, getOnlineStatus());
         output.add(JSONConstants.TRUST_STATUS, isTrustStatus());
-        //output.add(JSONConstants.ACCESS_STATUS, false); // TODO get the real status later on
+        output.add(JSONConstants.ACCESS_STATUS, true); // TODO get the real status later on
         output.add(JSONConstants.SELF_HOST_NAME, obtainHostName());
         output.add(JSONConstants.IP_ADDRESS, getIpAddress());
     }
@@ -115,4 +114,11 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
      public int compareTo(Object o) {
          return _name.compareTo(((SsgNode)o).getName());
      }
+
+    public String toString() {
+        return
+            "SSG Node Name : " + getName() + "\n" +
+            "Self Host Name: " + obtainHostName() + "\n" +
+            "IP Address    : " + getIpAddress();
+    }
 }

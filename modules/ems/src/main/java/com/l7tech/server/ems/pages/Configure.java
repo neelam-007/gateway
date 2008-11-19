@@ -4,7 +4,10 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
+import com.l7tech.server.ems.gateway.GatewayContextFactory;
+import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.enterprise.*;
+import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.wicket.markup.html.form.Form;
@@ -36,10 +39,16 @@ public class Configure extends EmsPage  {
     GatewayTrustTokenFactory gatewayTrustTokenFactory;
 
     @SpringBean
+    GatewayContextFactory gatewayContextFactory;
+
+    @SpringBean
     private EnterpriseFolderManager enterpriseFolderManager;
 
     @SpringBean
     private SsgClusterManager ssgClusterManager;
+
+    @SpringBean
+    private SsgNodeManager ssgNodeManager;
 
     public Configure() {
         JsonInteraction interaction = new JsonInteraction("actiondiv", "jsonUrl", new JsonDataProvider(){
@@ -275,6 +284,68 @@ public class Configure extends EmsPage  {
         };
         deleteSSGClusterForm.add(deleteSSGClusterDialogInputId );
 
+        final HiddenField startSsgNodeInputId = new HiddenField("startSsgNode_id", new Model(""));
+        Form startSsgNodeForm = new JsonDataResponseForm("startSsgNodeForm") {
+            @Override
+            protected Object getJsonResponseData() {
+                String ssgNodeGuid = startSsgNodeInputId.getModelObjectAsString();
+                try {
+                    logger.info("Starting SSG Node (GUID = " + ssgNodeGuid + ").");
+                    
+                    SsgNode node = ssgNodeManager.findByGuid(ssgNodeGuid);
+                    SsgCluster cluster = node.getSsgCluster();
+                    GatewayContext gatewayContext = gatewayContextFactory.getGatewayContext(null, node.getIpAddress(), cluster.getAdminPort());
+                    NodeManagementApi nodeManagementApi = gatewayContext.getManagementApi();
+
+                    // Start the node
+                    nodeManagementApi.startNode("default");
+
+                    // Todo: the below updating node is for demo only.  We will remove the part later on, since GatewayPoller will update node status periodically.
+                    // Update the node online status
+                    node.setOnlineStatus("on");
+                    ssgNodeManager.update(node);
+
+                    // Return the response to the client
+                    return node;
+                } catch (Exception e) {
+                    logger.warning(e.toString());
+                    return new JSONException(e);
+                }
+            }
+        };
+        startSsgNodeForm.add(startSsgNodeInputId);
+
+        final HiddenField stopSsgNodeInputId = new HiddenField("stopSsgNode_id", new Model(""));
+        Form stopSsgNodeForm = new JsonDataResponseForm("stopSsgNodeForm") {
+            @Override
+            protected Object getJsonResponseData() {
+                String ssgNodeGuid = stopSsgNodeInputId.getModelObjectAsString();
+                try {
+                    logger.info("Stoping SSG Node (GUID = " + ssgNodeGuid + ").");
+
+                    SsgNode node = ssgNodeManager.findByGuid(ssgNodeGuid);
+                    SsgCluster cluster = node.getSsgCluster();
+                    GatewayContext gatewayContext = gatewayContextFactory.getGatewayContext(null, node.getIpAddress(), cluster.getAdminPort());
+                    NodeManagementApi nodeManagementApi = gatewayContext.getManagementApi();
+
+                    // Stop the node
+                    nodeManagementApi.stopNode("default", 10000);
+
+                    // Todo: the below updating node is for demo only.  We will remove this part later on, since GatewayPoller will update node status periodically.
+                    // Update the node online status
+                    node.setOnlineStatus("off");
+                    ssgNodeManager.update(node);
+
+                    // Return the response to the client
+                    return node;
+                } catch (Exception e) {
+                    logger.warning(e.toString());
+                    return new JSONException(e);
+                }
+            }
+        };
+        stopSsgNodeForm.add(stopSsgNodeInputId);
+
         add(addFolderForm);
         add(renameFolderForm);
         add(deleteFolderForm);
@@ -282,6 +353,8 @@ public class Configure extends EmsPage  {
         add(renameSSGClusterForm);
         add(deleteSSGClusterForm);
         add(getGatewayTrustServletInputsForm);
+        add(startSsgNodeForm);
+        add(stopSsgNodeForm);
         add(interaction);
     }
 }

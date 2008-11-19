@@ -104,7 +104,7 @@
             var addFolderButton;
             var addSSGClusterButton;
             var renameButton;
-            var moveButton;
+            //var moveButton;
             var deleteButton;
             var startButton;
             var stopButton;
@@ -155,10 +155,16 @@
                     if (action == 'rename') result = entity.rbacCUD;
                     if (action == 'move') result = entity.rbacCUD;
                     if (action == 'delete') result = entity.rbacCUD;
-                    if (action == 'launchSSM') result = entity.accessStatus;
+                    if (action == 'launchSSM') result = entity.trustStatus &&
+                                                        entity.accessStatus &&
+                                                        entity.onlineStatus != l7.EntityTreeTable.SSG_CLUSTER_ONLINE_STATE.DOWN;
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
-                    if (action == 'start') result = entity.accessStatus;
-                    if (action == 'stop') result = entity.accessStatus;
+                    if (action == 'start') result = entity.trustStatus &&
+                                                    entity.accessStatus &&
+                                                    entity.onlineStatus != l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.ON;
+                    if (action == 'stop') result = entity.trustStatus &&
+                                                   entity.accessStatus &&
+                                                   entity.onlineStatus == l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.ON;
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.SERVICE_FOLDER) {
                     if (action == 'addFolder') result = entity.rbacCUD;
                     if (action == 'rename') result = entity.rbacCUD;
@@ -180,7 +186,7 @@
                 addFolderButton.set('disabled', !enabled);
                 addSSGClusterButton.set('disabled', !enabled);
                 renameButton.set('disabled', !enabled);
-                moveButton.set('disabled', !enabled);
+                //moveButton.set('disabled', !enabled);
                 deleteButton.set('disabled', !enabled);
                 startButton.set('disabled', !enabled);
                 stopButton.set('disabled', !enabled);
@@ -191,7 +197,7 @@
                 enableToolbarButtons(false);
                 addFolderButton.set('disabled', !isPermitted(entity, 'addFolder'));
                 renameButton.set('disabled', !isPermitted(entity, 'rename'));
-                moveButton.set('disabled', !isPermitted(entity, 'move'));
+                //moveButton.set('disabled', !isPermitted(entity, 'move'));
                 deleteButton.set('disabled', !isPermitted(entity, 'delete'));
                 addSSGClusterButton.set('disabled', !isPermitted(entity, 'addSSGCluster'));
                 startButton.set('disabled', !isPermitted(entity, 'start'));
@@ -399,8 +405,8 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                         l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_START_SSG_NODE + o.statusText, localizedStrings.OK);
                     }
                 };
-                var url = 'action/startSSGNode';
-                var postData = 'id=' + encodeURIComponent(entity.id);
+                var url = document.forms['startSsgNodeForm'].action;
+                var postData = 'startSsgNode_id=' + encodeURIComponent(entity.id);
                 l7.Dialog.showWaitDialog(localizedStrings.STARTING_SSG_NODE + '&ldquo;' + entity.name + '&rdquo;...');
                 YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
             }
@@ -426,16 +432,16 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                         l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_STOP_SSG_NODE + o.statusText, localizedStrings.OK);
                     }
                 };
-                var url = 'action/stopSSGNode';
-                var postData = 'id=' + encodeURIComponent(entity.id);
-                l7.Dialog.showWaitDialog(localizedStrings.STARTING_SSG_NODE + '&ldquo;' + entity.name + '&rdquo;...');
+                var url = document.forms['stopSsgNodeForm'].action;
+                var postData = 'stopSsgNode_id=' + encodeURIComponent(entity.id);
+                l7.Dialog.showWaitDialog(localizedStrings.STOPPING_SSG_NODE + '&ldquo;' + entity.name + '&rdquo;...');
                 YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
             }
 
             function onClickLaunchSSM(event) {
                 var entity = entityTreeTable.getSelectedEntity();
-                // TODO
-alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
+                var url = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/webadmin';
+                window.open(url, '_blank');
             }
 
             function validateAddFolderDialog() {
@@ -1015,10 +1021,10 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                     label   : '<img src="../images/rename.png" alt="" />&nbsp;' + localizedStrings.RENAME,
                     onclick : {fn : onClickRename}
                 });
-                moveButton = new YAHOO.widget.Button('moveButton', {
+                /*moveButton = new YAHOO.widget.Button('moveButton', {
                     label   : '<img src="../images/move.png" alt="" />&nbsp;' + localizedStrings.MOVE,
                     onclick : {fn : onClickMove}
-                });
+                });*/
                 deleteButton = new YAHOO.widget.Button('deleteButton', {
                     label   : '<img src="../images/delete.png" alt="" />&nbsp;' + localizedStrings.DELETE,
                     onclick : {fn : onClickDelete}
@@ -1242,7 +1248,7 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
                                 <button id="addFolderButton" type="submit" name="addFolderButton" value="addFolder"></button>
                                 <button id="addSSGClusterButton" type="submit" name="addSSGClusterButton" value="addSSGCluster"></button>
                                 <button id="renameButton" type="submit" name="renameButton" value="rename"></button>
-                                <button id="moveButton" type="submit" name="moveButton" value="move"></button>
+                                <!--<button id="moveButton" type="submit" name="moveButton" value="move"></button>-->
                                 <button id="deleteButton" type="submit" name="deleteButton" value="delete"></button>
                                 <button id="startButton" type="submit" name="startButton" value="start"></button>
                                 <button id="stopButton" type="submit" name="stopButton" value="stop"></button>
@@ -1409,6 +1415,22 @@ alert('Not implemented yet!\n\nonClickLaunchSSM\nentity.name = ' + entity.name);
             <input id="deleteSSGClusterDialog_id" wicket:id="deleteSSGClusterDialog_id" type="hidden" name="id" />
             Delete SSG Cluster &ldquo;<span id="deleteSSGClusterDialog_name"></span>&rdquo; from the enterprise tree?
             <br/>This will not destroy the SSG Cluster itself.
+        </form>
+    </div>
+</div>
+
+<div style="display: none;">
+    <div class="bd">
+        <form name="startSsgNodeForm" wicket:id="startSsgNodeForm" method="POST">
+            <input id="startSsgNode_id" wicket:id="startSsgNode_id" type="hidden" name="id" />
+        </form>
+    </div>
+</div>
+
+<div style="display: none;">
+    <div class="bd">
+        <form name="stopSsgNodeForm" wicket:id="stopSsgNodeForm" method="POST">
+            <input id="stopSsgNode_id" wicket:id="stopSsgNode_id" type="hidden" name="id" />
         </form>
     </div>
 </div>

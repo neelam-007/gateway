@@ -44,7 +44,7 @@ public class GatewayContext {
         if ( esmId == null ) throw new IllegalArgumentException("esmId is required"); 
         this.cookie = buildCookie( esmId, userId );
         this.api = initApi( GatewayApi.class, defaultKey, MessageFormat.format(GATEWAY_URL, host, Integer.toString(port)));
-        this.managementApi = initApi( NodeManagementApi.class, defaultKey, MessageFormat.format(CONTROLLER_URL, host, 8765)); //TODO this should be passed in
+        this.managementApi = initApi( NodeManagementApi.class, defaultKey, MessageFormat.format(CONTROLLER_URL, host, "8765")); //TODO this should be passed in
     }
 
     public GatewayApi getApi() {
