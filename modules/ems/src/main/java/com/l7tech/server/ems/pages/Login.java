@@ -12,13 +12,14 @@ import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.behavior.HeaderContributor;
-import com.l7tech.server.ems.SetupManager;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.EmsSession;
 import com.l7tech.server.ems.EmsApplication;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.admin.Administrative;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -28,19 +29,17 @@ import java.util.TimeZone;
 /**
  * Login page
  */
+@Administrative(licensed=false,authenticated=false)
 public class Login extends WebPage {
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    @SpringBean
-    private SetupManager setupManager;
-
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private EmsSecurityManager securityManager;
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private UserPropertyManager userPropertyManager;
+    
+    @SpringBean
+    private LicenseManager licenseManager;
     
     /**
      * Create login page
@@ -102,10 +101,18 @@ public class Login extends WebPage {
 
         @Override
         public final void onSubmit() {
-            if ( login( model.username, model.password ) ) {
-                setResponsePage(getApplication().getHomePage());
-            } else {
-                error( new StringResourceModel("message.invalid", this, null).getString() );
+            try {
+                if ( login( model.username, model.password ) ) {
+                    if ( licenseManager.isFeatureEnabled( "set:admin" ) ) {
+                        setResponsePage( SystemSettings.class );
+                    } else {
+                        setResponsePage( getApplication().getHomePage() );                            
+                    }
+                } else {
+                    error( new StringResourceModel("message.invalid", this, null).getString() );
+                }
+            } catch ( EmsSecurityManager.NotLicensedException nle ) {
+                error( new StringResourceModel("message.licenseinvalid", this, null).getString() );
             }
         }
     }

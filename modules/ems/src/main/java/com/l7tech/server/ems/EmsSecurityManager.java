@@ -11,6 +11,7 @@ import java.io.Serializable;
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+import org.apache.wicket.Component;
 
 /**
  * Security for web application access
@@ -25,6 +26,7 @@ public interface EmsSecurityManager {
      * @param username Username for login
      * @param password Password for login
      * @return True if logged in
+     * @throws NotLicensedException if not licensed
      */
     boolean login( HttpSession session, String username, String password );
 
@@ -35,6 +37,38 @@ public interface EmsSecurityManager {
      * @return True if session was logged out
      */
     boolean logout( HttpSession session );
+
+    /**
+     * Check if the current request is authenticated.
+     *
+     * @return True if authenticated
+     */
+    boolean isAuthenticated();
+
+    /**
+     * Check if the current request is authenticated for the given component.
+     *
+     * @return True if authenticated
+     */
+    boolean isAuthenticated( final Component component );
+
+    /**
+     * Check if the current request is authenticated for the given class.
+     *
+     * @return True if authenticated
+     */
+    boolean isAuthenticated( final Class componentClass );
+
+    /**
+     * Check if the ESM is licensed or the component does not require a license.
+     *
+     * <p>If the given component does not specify any licensing requirement then
+     * parent components are checked until a definitive source is found.</p>
+     *
+     * @param component The component (heriarchy) to check. 
+     * @return True if the component is licensed or does not require a license.
+     */
+    boolean isLicensed( final Component component );
 
     /**
      * Check if the user of the current session is permitted to access the given page.
@@ -100,4 +134,6 @@ public interface EmsSecurityManager {
             return user;
         }
     }
+
+    public final class NotLicensedException extends RuntimeException{}
 }

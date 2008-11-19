@@ -19,6 +19,7 @@ import org.junit.Assert;
 
 import java.util.*;
 import java.lang.reflect.Method;
+import java.lang.annotation.Annotation;
 
 /**
  * Basic test for spring application context.
@@ -38,7 +39,7 @@ public class ApplicationContextTest  {
     private static final Set<String> NON_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "genericLogAdmin" ));
     private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin" ) );
     private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionsAdmin" ) );
-    private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>( Arrays.asList( EntityType.ESM_SSG_CLUSTER) );
+    private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>( Arrays.asList( EntityType.ESM_ENTERPRISE_FOLDER,  EntityType.ESM_SSG_CLUSTER,  EntityType.ESM_SSG_NODE) );
 
     /**
      * Loading the definitions in this way will check the syntax and that all the
@@ -135,6 +136,15 @@ public class ApplicationContextTest  {
         if (testedcount==0) Assert.fail("Failed to find any http exported admin beans.");
     }
 
+    /**
+     * Using the administrative annotation on an instance is incorrect, it should only be used on an interface
+     */
+    @SuppressWarnings({"unchecked"})
+    @Test
+    public void testNoAdministrativeImplementations() throws Exception {
+        checkForImplementationAnnotation( Administrative.class );
+    }
+
     /*
      * Ensure that all Administration bean interfaces in the application context are annotated with @Administrative
      */
@@ -195,30 +205,7 @@ public class ApplicationContextTest  {
     @SuppressWarnings({"unchecked"})
     @Test
     public void testNoSecuredImplementations() throws Exception {
-        //
-        DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
-        XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);
-
-        for ( String context : CONTEXTS ) {
-            xbdr.loadBeanDefinitions(new ClassPathResource(context));
-        }
-
-        for ( String beanId : dlbf.getBeanDefinitionNames() ) {
-            BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
-            String className = beanDef.getBeanClassName();
-            if ( className != null && className.startsWith("com.l7tech" ) ) {
-                Class beanClass = Class.forName(className);
-                if ( beanClass.getAnnotation(Secured.class) != null ) {
-                    Assert.fail( "Implementation bean '"+beanId+"', is annotated with the '"+Secured.class.getName()+"' annotation, this should only be used on interfaces." );
-                }
-
-                for ( Method method : beanClass.getDeclaredMethods() ) {
-                    if ( method.getAnnotation(Secured.class) != null ) {
-                        Assert.fail( "Implementation bean '"+beanId+"' method '"+method.getName()+"', is annotated with the '"+Secured.class.getName()+"' annotation, this should only be used on interfaces." );
-                    }
-                }
-            }
-        }
+        checkForImplementationAnnotation(Secured.class);
     }
 
     @Test
@@ -234,6 +221,34 @@ public class ApplicationContextTest  {
 
             EntityType foundType = EntityType.findTypeByEntity( clazz );
             Assert.assertEquals(type, foundType);
+        }
+    }
+
+    @SuppressWarnings({"unchecked"})
+    private void checkForImplementationAnnotation( final Class<? extends Annotation> annotation ) throws Exception {
+        //
+        DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
+        XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);
+
+        for ( String context : CONTEXTS ) {
+            xbdr.loadBeanDefinitions(new ClassPathResource(context));
+        }
+
+        for ( String beanId : dlbf.getBeanDefinitionNames() ) {
+            BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
+            String className = beanDef.getBeanClassName();
+            if ( className != null && className.startsWith("com.l7tech" ) ) {
+                Class beanClass = Class.forName(className);
+                if ( beanClass.getAnnotation(annotation) != null ) {
+                    Assert.fail( "Implementation bean '"+beanId+"', is annotated with the '"+annotation.getName()+"' annotation, this should only be used on interfaces." );
+                }
+
+                for ( Method method : beanClass.getDeclaredMethods() ) {
+                    if ( method.getAnnotation(annotation) != null ) {
+                        Assert.fail( "Implementation bean '"+beanId+"' method '"+method.getName()+"', is annotated with the '"+annotation.getName()+"' annotation, this should only be used on interfaces." );
+                    }
+                }
+            }
         }
     }
 }

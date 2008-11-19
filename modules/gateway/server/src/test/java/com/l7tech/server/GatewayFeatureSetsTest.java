@@ -153,6 +153,8 @@ public class GatewayFeatureSetsTest extends TestCase {
             "service:WsdlProxy",        GatewayFeatureSets.getFeatureSetNameForServlet(WsdlProxyServlet.class),
     };
     private static final String[] ALL_SERVICES = findStaticStringValuesWithPrefix("SERVICE_", EXTRA_SERVICES);
+    private static final String[] EXTRA_FEATURES = {};
+    private static final String[] ALL_FEATURES = findStaticStringValuesWithPrefix("FEATURE_", EXTRA_FEATURES);
     private static final String[] EXTRA_UI = {};
     private static final String[] ALL_UI = findStaticStringValuesWithPrefix("UI_", EXTRA_UI);
 
@@ -190,6 +192,20 @@ public class GatewayFeatureSetsTest extends TestCase {
         }
     }
 
+    /** Makes sure that all registered services are included in ALL_SERVICES.  Dual of testAllServicesMapped. */
+    public void testAllFeaturesKnown() throws Exception {
+        GatewayFeatureSet profileAll = GatewayFeatureSets.getBestProductProfile();
+
+        Set<String> allFeatures = new HashSet<String>(Arrays.asList(ALL_FEATURES));
+        Set<String> names = new HashSet<String>();
+        profileAll.collectAllFeatureNames(names);
+
+        for (String name : names) {
+            if (name.startsWith("feature:") && !allFeatures.contains(name))
+                throw new RuntimeException("Feature is registered as a feature but is not present in ALL_FEATURES: " + name);
+        }
+    }
+
     public void testAllUiKnown() throws Exception {
         GatewayFeatureSet profileAll = GatewayFeatureSets.getBestProductProfile();
 
@@ -211,6 +227,11 @@ public class GatewayFeatureSetsTest extends TestCase {
         for (String name : ALL_SERVICES) {
             if (!profileAll.contains(name))
                 throw new RuntimeException("Servlet is not enabled by the full-featured Product Profile: " + name);
+        }
+
+        for (String name : ALL_FEATURES) {
+            if (!profileAll.contains(name))
+                throw new RuntimeException("Feature is not enabled by the full-featured Product Profile: " + name);
         }
 
         for (String name : ALL_UI) {

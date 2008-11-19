@@ -18,6 +18,7 @@ import org.apache.wicket.feedback.ContainerFeedbackMessageFilter;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.EmsApplication;
 import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.NavigationModel;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.Arrays;
 import java.util.TimeZone;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -40,11 +42,9 @@ public class UserSettings extends EmsPage {
 
     private static final Logger logger = Logger.getLogger( UserSettings.class.getName() );
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private EmsSecurityManager securityManager;
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private UserPropertyManager userPropertyManager;
 
@@ -121,6 +121,7 @@ public class UserSettings extends EmsPage {
 
             getSession().setDateTimeFormatPattern( EmsApplication.getDateFormat(dateFormat, timeFormat) );
             getSession().setTimeZoneId( preferences.get("timezone") );
+            getSession().setPreferredPage( preferences.get("homepage") );
         } catch ( UpdateException ue ) {
             logger.log( Level.WARNING, "Error saving user preferences.", ue );       
         }
@@ -200,11 +201,23 @@ public class UserSettings extends EmsPage {
 
             List<String> zoneIds = Arrays.asList(TimeZone.getAvailableIDs());
             Collections.sort( zoneIds );
-            
+
+            final NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
+
             add( new DropDownChoice( "timezone", zoneIds ) );
             add( new DropDownChoice( "dateformat", EmsApplication.getDateFormatkeys(), new DateChoiceRenderer(true) ) );
             add( new DropDownChoice( "timeformat", EmsApplication.getTimeFormatkeys(), new DateChoiceRenderer(false) ) );
-            add( new DropDownChoice( "startview", Arrays.asList("[Last Visited]") ) ); // TODO [steve] list for navigation model
+            add( new GroupingDropDownChoice( "homepage", new ArrayList<String>(navigationModel.getNavigationPages()) ){
+                @Override
+                protected String getOptionGroupForChoice(final Object object) {
+                    return  new StringResourceModel("section."+navigationModel.getNavigationSectionForPage(object.toString())+".label", this, null).getString();
+                }
+
+                @Override
+                protected Object getOptionDisplayValue(final Object object) {
+                    return  new StringResourceModel("page."+super.getOptionDisplayValue(object)+".label", this, null).getString();
+                }
+            } );
         }
 
         @Override

@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.UpdatableLicenseManager;
@@ -50,6 +51,7 @@ import java.net.MalformedURLException;
 /**
  * Page for system settings
  */
+@Administrative(licensed=false)
 @NavigationPage(page="SystemSettings",pageIndex=100,section="Settings",sectionIndex=200,pageUrl="SystemSettings.html")
 public class SystemSettings extends EmsPage {
 

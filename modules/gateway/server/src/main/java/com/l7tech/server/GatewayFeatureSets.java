@@ -282,7 +282,7 @@ public class GatewayFeatureSets {
             ass(RequestWssTimestamp.class),
             ass(ResponseWssSecurityToken.class),
             ass(WssVersionAssertion.class),
-            misc(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments.", null));
+            feat(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments."));
 
         // Message Validation/Transform
         GatewayFeatureSet validationAccel =
@@ -605,6 +605,7 @@ public class GatewayFeatureSets {
     /** @return the FeatureSetExpander to use when parsing License files. */
     public static License.FeatureSetExpander getFeatureSetExpander() {
         return new License.FeatureSetExpander() {
+            @Override
             public Set getAllEnabledFeatures(Set inputSet) {
                 //noinspection unchecked
                 Set<String> ret = new HashSet<String>((Set<String>)inputSet);
@@ -763,6 +764,12 @@ public class GatewayFeatureSets {
         if (!name.startsWith("service:"))
             throw new IllegalArgumentException("Preferred feature name for service must start with \"service:\": " + name);
         return misc(name, desc, note);
+    }
+
+    private static GatewayFeatureSet feat(String name, String desc) {
+        if (!name.startsWith("feature:"))
+            throw new IllegalArgumentException("Preferred feature name for feature must start with \"feature:\": " + name);
+        return getOrMakeFeatureSet(name, desc);
     }
 
     private static GatewayFeatureSet ui(String name, String desc) {

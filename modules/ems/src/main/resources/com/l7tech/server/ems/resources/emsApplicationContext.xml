@@ -385,6 +385,7 @@
     <bean id="securityManager" class="com.l7tech.server.ems.EmsSecurityManagerImpl">
         <constructor-arg index="0" ref="identityProviderFactory"/>        
         <constructor-arg index="1" ref="roleManager"/>
+        <constructor-arg index="2" ref="licenseManager"/>
     </bean>
 
     <bean id="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">

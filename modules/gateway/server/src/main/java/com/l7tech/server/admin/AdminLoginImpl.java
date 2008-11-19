@@ -180,7 +180,6 @@ public class AdminLoginImpl
         }
     }
 
-    @Administrative(authenticated = false, licensed = false)
     public AdminLoginResult loginWithPasswordUpdate(String username, String oldPassword, String newPassword)
             throws AccessControlException, LoginException, InvalidPasswordException {
 

@@ -17,12 +17,16 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.Authorizer;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +38,8 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
+import org.apache.wicket.Component;
+
 /**
  * Manages which pages are secure and performs authentication
  */
@@ -42,9 +48,11 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     //- PUBLIC
 
     public EmsSecurityManagerImpl( final IdentityProviderFactory identityProviderFactory,
-                                   final RoleManager roleManager ) {
+                                   final RoleManager roleManager,
+                                   final LicenseManager licenseManager ) {
         this.identityProviderFactory = identityProviderFactory;
         this.roleManager = roleManager;
+        this.licenseManager = licenseManager;
     }
 
     /**
@@ -52,7 +60,8 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
      *
      * @return True if authenticated
      */
-    public static boolean isAuthenticated() {
+    @Override
+    public boolean isAuthenticated() {
         boolean authenticated = false;
 
         HttpServletRequest request = RemoteUtils.getHttpServletRequest();
@@ -62,6 +71,67 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
         }
 
         return authenticated;
+    }
+
+    @Override
+    public boolean isAuthenticated( final Component component ) {
+        boolean authenticated = isAuthenticated();
+
+        if ( !authenticated ) {
+            Component comp = component;
+            while ( comp != null ) {
+                Administrative admin = comp.getClass().getAnnotation( Administrative.class );
+                if ( admin != null ) {
+                    authenticated = !admin.authenticated(); // authenticated if the component does not require authentication ...
+                    break;
+                }
+                comp = comp.getParent();
+            }
+
+        }
+
+        return authenticated;
+    }
+
+    @SuppressWarnings({"unchecked"})
+    @Override
+    public boolean isAuthenticated( final Class componentClass ) {
+        boolean authenticated = isAuthenticated();
+
+        if ( !authenticated ) {
+            Administrative admin = (Administrative)componentClass.getAnnotation( Administrative.class );
+            if ( admin != null ) {
+                authenticated = !admin.authenticated(); // authenticated if the component does not require authentication ...
+            }
+        }
+
+        return authenticated;
+    }
+
+    /**
+     * Check if the ESM is licensed or the component does not require a license.
+     *
+     * @return True if authenticated
+     */
+    @Override
+    public boolean isLicensed( final Component component ) {
+        boolean licensed = false;
+
+        if ( licenseManager.isFeatureEnabled( "set:admin" ) ) {
+            licensed = true;
+        } else {
+            Component comp = component;
+            while ( comp != null ) {
+                Administrative admin = comp.getClass().getAnnotation( Administrative.class );
+                if ( admin != null ) {
+                    licensed = !admin.licensed(); // licensed if the component does not require a license ...
+                    break;
+                }
+                comp = comp.getParent();
+            }
+        }
+
+        return licensed;
     }
 
     /**
@@ -89,6 +159,13 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
 
         boolean authenticated = user != null;
         if ( authenticated ) {
+            if ( !new UserAuthorizer(user).hasPermission( new AttemptedDeleteAll(EntityType.ANY) ) ) {
+                // perform license check only if non-admin user
+                if ( !licenseManager.isFeatureEnabled( "set:admin" ) ) {
+                    throw new NotLicensedException();
+                }
+            }
+
             session.setAttribute(ATTR_ID, user);
             session.setAttribute(ATTR_DATE, new Date());
         }
@@ -241,6 +318,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     private static final String ATTR_DATE = "com.l7tech.logindate";
 
     private final IdentityProviderFactory identityProviderFactory;
+    private final LicenseManager licenseManager;
     private final SessionAuthorizer authorizer = new SessionAuthorizer();
 
     private final class SessionAuthorizer extends Authorizer {
@@ -264,6 +342,37 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
                 }
             }
             
+            return perms;
+        }
+    }
+
+    private final class UserAuthorizer extends Authorizer {
+        private final User user;
+
+        public UserAuthorizer( final User user ) {
+            this.user = user;
+        }
+
+        @Override
+        public Collection<Permission> getUserPermissions() {
+            Set<Permission> perms = new HashSet<Permission>();
+
+            User u = user;
+
+            if (u != null) {
+                try {
+                    final Collection<Role> assignedRoles = roleManager.getAssignedRoles(u);
+                    for (Role role : assignedRoles) {
+                        for (final Permission perm : role.getPermissions()) {
+                            Permission perm2 = perm.getAnonymousClone();
+                            perms.add(perm2);
+                        }
+                    }
+                } catch ( FindException fe ) {
+                    logger.log( Level.WARNING, "Error accessing roles for user '"+u.getId()+"'.", fe );
+                }
+            }
+
             return perms;
         }
     }

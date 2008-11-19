@@ -7,6 +7,7 @@ import com.l7tech.util.SyspropUtil;
 import org.apache.wicket.*;
 import org.apache.wicket.authorization.Action;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
+import org.apache.wicket.authorization.IUnauthorizedComponentInstantiationListener;
 import org.apache.wicket.markup.html.PackageResourceGuard;
 import org.apache.wicket.protocol.http.PageExpiredException;
 import org.apache.wicket.protocol.http.WebApplication;
@@ -20,6 +21,8 @@ import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.locator.ResourceStreamLocator;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.beans.factory.BeanFactory;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -27,6 +30,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Wicket WebApplication for Enterprise Manager.
@@ -42,7 +47,27 @@ public class EmsApplication extends WebApplication {
      */
     @Override
     public Class getHomePage() {
-        return SystemSettings.class;
+        Class homePage = SystemSettings.class;
+
+        RequestCycle cycle = RequestCycle.get();
+        if ( cycle != null ) {
+            Session session = cycle.getSession();
+            if ( session instanceof EmsSession ) {
+                EmsSession emsSession = (EmsSession) session;
+                if ( emsSession.getPreferredPage() != null &&
+                     !emsSession.getPreferredPage().isEmpty() ) {
+                    NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
+                    Class userHomePage = navigationModel.getPageClassForPage( emsSession.getPreferredPage() );
+                    if ( userHomePage != null ) {
+                        homePage = userHomePage;    
+                    } else {
+                        logger.warning("User home page not found '"+emsSession.getPreferredPage()+"'." );
+                    }
+                }
+            }
+        }
+
+        return homePage;
     }
 
     /**
@@ -109,25 +134,64 @@ public class EmsApplication extends WebApplication {
         markupSettings.setStripWicketTags(true);
 
         ISecuritySettings securitySettings = getSecuritySettings();
+        securitySettings.setUnauthorizedComponentInstantiationListener( new IUnauthorizedComponentInstantiationListener(){
+            @SuppressWarnings({"override"})
+            public void onUnauthorizedInstantiation( final Component component ) {
+                component.setEnabled( false );
+                component.setVisible( false );
+            }
+        } );
         securitySettings.setAuthorizationStrategy( new IAuthorizationStrategy() {
+            private Method method;
+
+            @SuppressWarnings({"ConstantConditions"})
+            private boolean isAuto( final Component component ) {
+                boolean isAuto = false;
+
+                Method method = this.method;
+                if ( method == null ) {
+                    try {
+                        method = Component.class.getDeclaredMethod("isAuto");
+                        method.setAccessible(true);
+                        this.method = method;
+                    } catch (NoSuchMethodException e) {
+                        // fails closed
+                    }
+                }
+
+                try {
+                    isAuto = (Boolean) method.invoke(component);
+                } catch (InvocationTargetException e) {
+                    // fails closed
+                } catch (IllegalAccessException e) {
+                    // fails closed
+                }
+
+                return isAuto;
+            }
+
             @Override
             public boolean isInstantiationAuthorized(Class aClass) {
-                if (logger.isLoggable(Level.FINER))
-                    logger.finer("Instantiation authorized check for component : " +aClass);
+                boolean permitted =
+                        !Page.class.isAssignableFrom(aClass) ||
+                        getEmsSecurityManager().isAuthenticated( aClass );
 
-                return EmsError.class.equals(aClass) ||
-                       Login.class.equals(aClass) ||
-                       !Page.class.isAssignableFrom(aClass) ||
-                       EmsSecurityManagerImpl.isAuthenticated();
+                if (logger.isLoggable(Level.FINER))
+                    logger.finer("Instantiation authorized check for component '" +aClass + "' is " + permitted + ".");
+
+                return permitted;
             }
 
             @Override
             public boolean isActionAuthorized(Component component, Action action) {
+                boolean permitted = isAuto(component) ||
+                        getEmsSecurityManager().isAuthenticated( component ) &&
+                        (component instanceof Page || getEmsSecurityManager().isLicensed( component ));
+
                 if (logger.isLoggable(Level.FINER))
-                    logger.finer("Action authorized check for component : " + component.getId() + ", " + action.getName());
-                return component.getPage() instanceof EmsError ||
-                       component.getPage() instanceof Login ||
-                       EmsSecurityManagerImpl.isAuthenticated();
+                    logger.finer("Action authorized check for component  '" + component.getId() + "', '" + action.getName() + " is " + permitted);
+
+                return permitted;
             }
         });
 
@@ -227,6 +291,7 @@ public class EmsApplication extends WebApplication {
     private static final Map<String,String> times;
 
     private long timeStarted; // The time when EMS process started.
+    private EmsSecurityManager emsSecurityManager;
 
     static {
         Map<String,String> dateMap = new LinkedHashMap<String,String>();
@@ -246,6 +311,19 @@ public class EmsApplication extends WebApplication {
      */
     private void mountTemplate( String templateName ) {
         mountSharedResource( templateName, new ResourceReference(EmsApplication.class, "resources/templates" + templateName).getSharedResourceKey());
+    }
+
+    /**
+     *
+     */
+    private EmsSecurityManager getEmsSecurityManager() {
+        EmsSecurityManager emsSecurityManager = this.emsSecurityManager;
+        if ( emsSecurityManager == null ) {
+            BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
+            emsSecurityManager = (EmsSecurityManager) beanFactory.getBean( "securityManager", EmsSecurityManager.class );
+            this.emsSecurityManager = emsSecurityManager;
+        }
+        return emsSecurityManager;        
     }
 
     /**

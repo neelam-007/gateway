@@ -2,7 +2,6 @@ package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.resources.CompressedResourceReference;
-import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
@@ -34,9 +33,9 @@ public abstract class EmsPage extends WebPage {
         }} );
 
         Model infoModel = new Model(info);
-        add( new Label("titleLabel", new StringResourceModel( "page.title", this, null, new Object[]{ new StringResourceModel( "page.${pageName}.title", this, new Model(this))} )) );
-        add( new Label("userLabel", new StringResourceModel( "page.user", this, infoModel )) );
-        add( new Label("sinceLabel", sinceResourceModel ));
+        add( new UnlicensedLabel("titleLabel", new StringResourceModel( "page.title", this, null, new Object[]{ new StringResourceModel( "page.${pageName}.title", this, new Model(this))} )) );
+        add( new UnlicensedLabel("userLabel", new StringResourceModel( "page.user", this, infoModel )) );
+        add( new UnlicensedLabel("sinceLabel", sinceResourceModel ));
         add( new NavigationPanel("navigation", new Model(this)) );
     }
 
@@ -69,7 +68,7 @@ public abstract class EmsPage extends WebPage {
         // component is added on before render so it is the last component in the page
         // this means that the CSS overrides any styles in any other components in the page
         if ( get("timeZoneLabel") == null ) {
-            add( new Label("timeZoneLabel", new StringResourceModel( "page.timeZone", this, null, new Object[]{getSession().getTimeZoneId()}) ).add(
+            add( new UnlicensedLabel("timeZoneLabel", new StringResourceModel( "page.timeZone", this, null, new Object[]{getSession().getTimeZoneId()}) ).add(
                 HeaderContributor.forCss( RES_CSS_SKIN )
             ) );
         }

@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.NavigationModel;
+import com.l7tech.gateway.common.admin.Administrative;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
@@ -15,6 +16,7 @@ import org.apache.wicket.model.StringResourceModel;
 /**
  * Panel for main navigation.
  */
+@Administrative(licensed=false)
 public class NavigationPanel extends Panel {
 
     /**

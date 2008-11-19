@@ -26,12 +26,21 @@ public class EmsSession extends WebSession {
         return timeZoneId;
     }
 
-    public void setTimeZoneId(String timeZoneId) {
+    public void setTimeZoneId( final String timeZoneId ) {
         this.timeZoneId = timeZoneId;
     }
-    
+
+    public String getPreferredPage() {
+        return preferredPage;
+    }
+
+    public void setPreferredPage( final String preferredPage ) {
+        this.preferredPage = preferredPage;
+    }
+
     //- PRIVATE
 
     private String dateTimeFormatPattern = EmsApplication.DEFAULT_DATE_FORMAT;
     private String timeZoneId;
+    private String preferredPage;
 }

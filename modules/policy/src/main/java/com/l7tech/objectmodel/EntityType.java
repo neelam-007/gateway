@@ -60,7 +60,9 @@ public enum EntityType implements Comparable<EntityType> {
     TRUSTED_EMS("Trusted EMS", true),
     TRUSTED_EMS_USER("Trusted EMS User", true),
 
+    ESM_ENTERPRISE_FOLDER("Folder", false),
     ESM_SSG_CLUSTER("Cluster", false),
+    ESM_SSG_NODE("Node", false),
     ;
 
     private final String name;
@@ -87,6 +89,7 @@ public enum EntityType implements Comparable<EntityType> {
     public static final NameComparator NAME_COMPARATOR = new NameComparator();
 
     private static class NameComparator implements Comparator<EntityType> {
+        @Override
         public int compare(EntityType o1, EntityType o2) {
             return o1.getName().compareTo(o2.getName());
         }

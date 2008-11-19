@@ -3,6 +3,7 @@ package com.l7tech.server.ems.pages;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.WebPage;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.gateway.common.admin.Administrative;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -10,6 +11,7 @@ import java.io.StringWriter;
 /**
  * Error page
  */
+@Administrative(licensed=false,authenticated=false)
 public class EmsError extends WebPage {
 
     //- PUBLIC
