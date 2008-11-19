@@ -1208,7 +1208,7 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_NullParams(){
         boolean exception = false;
         try{
-            Utilities.getUsageRuntimeDoc(false, null, null);
+            Utilities.getUsageRuntimeDoc(false, null, null, null);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
@@ -1219,8 +1219,9 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_NotNull(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         Assert.assertNotNull(doc);
     }
 
@@ -1247,12 +1248,23 @@ public class UtilitiesTest{
         mappingValues.add("notimportant4");
         return mappingValues;
     }
+
+    private LinkedHashMap<String,String> getTestGroupToMappingValue(){
+        LinkedHashMap<String,String> groupToMappingValue = new LinkedHashMap<String, String>();
+        groupToMappingValue.put("Group 1", "notimportant1");
+        groupToMappingValue.put("Group 2", "notimportant2");
+        groupToMappingValue.put("Group 3", "notimportant3");
+        groupToMappingValue.put("Group 4", "notimportant4");
+        return groupToMappingValue;
+    }
     
     @Test
     public void testGetUsageRuntimeDoc_FirstLevelElements(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         Assert.assertTrue(list.getLength() == 1);
@@ -1286,7 +1298,9 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_Variables(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
@@ -1304,7 +1318,9 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_VariablesNames(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
         String [] variableNames = new String[]{"COLUMN_","COLUMN_MAPPING_TOTAL_","COLUMN_SERVICE_TOTAL_"};
@@ -1362,7 +1378,9 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_ConstantHeader(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
@@ -1376,7 +1394,9 @@ public class UtilitiesTest{
     public void getUsageRuntimeDoc_ConstantHeader_CheckElements(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1448,7 +1468,9 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_ServiceOperationFooter(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
@@ -1461,7 +1483,9 @@ public class UtilitiesTest{
     public void getUsageRuntimeDoc_ServiceOperationFooter_CheckElements(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         printOutDocument(doc);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
@@ -1545,7 +1569,9 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_SerivceIdFooter(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
         list = list.item(0).getChildNodes();
@@ -1558,7 +1584,9 @@ public class UtilitiesTest{
     public void getUsageRuntimeDoc_ServiceIdFooter_CheckElements(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1637,7 +1665,9 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_ConstantFooter(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         list = list.item(0).getChildNodes();
@@ -1650,7 +1680,9 @@ public class UtilitiesTest{
     public void getUsageRuntimeDoc_ConstantFooter_CheckElements(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1728,7 +1760,9 @@ public class UtilitiesTest{
     public void getUsageRuntimeDoc_CheckWidths(){
         List<String> keys = getTestKeys();
         LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
         Element rootNode = doc.getDocumentElement();
         testWidths(rootNode, mappingValues.size());
     }
@@ -2473,13 +2507,13 @@ public class UtilitiesTest{
         nodeList = (NodeList) xPath.evaluate("/jasperReport/group[@name='SERVICE_AND_OPERATION']/groupFooter/band/frame/textField", transformedRuntimeDoc, XPathConstants.NODESET);
         Assert.assertTrue("There should be "+ (numColumns + 2)+ " SERVICE_AND_OPERATION group footer text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 2));
 
-        //serviceIdFooter 12 columns + 1 total + 2 display text fields 
+        //serviceIdFooter 12 columns + 1 total + 1 display text fields
         nodeList = (NodeList) xPath.evaluate("/jasperReport/group[@name='SERVICE_ID']/groupFooter/band/frame/textField", transformedRuntimeDoc, XPathConstants.NODESET);
-        Assert.assertTrue("There should be "+ (numColumns + 3)+ " SERVICE_ID group footer text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 3));
+        Assert.assertTrue("There should be "+ (numColumns + 2)+ " SERVICE_ID group footer text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 2));
 
-        //constantFooter - 12 columns and 1 total + 2 display text fields
+        //constantFooter - 12 columns and 1 total + 1 display text fields
         nodeList = (NodeList) xPath.evaluate("/jasperReport/group[@name='CONSTANT']/groupFooter/band/frame/textField", transformedRuntimeDoc, XPathConstants.NODESET);
-        Assert.assertTrue("There should be "+ numColumns+ " SERVICE_ID group footer text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 3));
+        Assert.assertTrue("There should be "+ (numColumns + 2)+ " CONSTANT group footer text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 2));
 
         //page widths should match the value from the transform doc
         Double expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/pageWidth/text()", runtimeDoc, XPathConstants.NUMBER);
@@ -2514,15 +2548,16 @@ public class UtilitiesTest{
         }
 
         //all dynamic text fields in title - two elements per frame, this is the rhs element
-        expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);
-        expectedWidth -= reportInfoStaticTextSize;
-        nodeList = (NodeList) xPath.evaluate("/jasperReport/title/band/frame[2]/frame/textField/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
-        for(int i = 0; i < nodeList.getLength(); i++){
-            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
-            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
-                    expectedWidth.intValue(), actualWidth.intValue()),
-                    expectedWidth.intValue() == actualWidth.intValue());
-        }
+        //removed as these are currently not dynamic, will see if current size and stretch attributes suffices
+//        expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);
+//        expectedWidth -= reportInfoStaticTextSize;
+//        nodeList = (NodeList) xPath.evaluate("/jasperReport/title/band/frame[2]/frame/textField/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
+//        for(int i = 0; i < nodeList.getLength(); i++){
+//            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
+//            Assert.assertTrue(MessageFormat.format("Frame width should be {0} actual width was {1}",
+//                    expectedWidth.intValue(), actualWidth.intValue()),
+//                    expectedWidth.intValue() == actualWidth.intValue());
+//        }
 
         //All group header and footer frames have the same frame width
         expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);

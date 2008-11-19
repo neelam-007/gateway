@@ -95,6 +95,7 @@ public class ReportApp
     private static final String SUBINTERVAL_REPORT_SCRIPTLET = "SUBINTERVAL_REPORT_SCRIPTLET";
     private static final String PRINT_CHART = "PRINT_CHART";
     private static final String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
+    private static final String KEY_TO_COLUMN_NAME_MAP = "KEY_TO_COLUMN_NAME_MAP";
 
     public ReportApp() {
     }
@@ -554,16 +555,6 @@ public class ReportApp
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
         Document transformDoc = Utilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
 
-        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_SummaryTransformDoc.xml");
-        f.createNewFile();
-        FileOutputStream fos = new FileOutputStream(f);
-        try{
-            XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
-            fos.close();
-        }
-
-
         String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_SummaryTransform.xsl");
         String xmlSrc = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
 
@@ -572,9 +563,9 @@ public class ReportApp
 
         Document jasperDoc = transform(xslStr, xmlSrc, params);
 
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_SummaryRuntimeDoc.xml");
+        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_SummaryRuntimeDoc.xml");
         f.createNewFile();
-        fos = new FileOutputStream(f);
+        FileOutputStream fos = new FileOutputStream(f);
         try{
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
         }finally{
@@ -722,10 +713,27 @@ public class ReportApp
         LinkedHashSet<String> mappingValues = getMappingValues(connection, sql);
         LinkedHashMap<String, String> keyToColumnName = getKeyToColumnValues(mappingValues);
         helper.setKeyToColumnMap(keyToColumnName);
+        //the report also needs access to this key to column map
+        parameters.put(KEY_TO_COLUMN_NAME_MAP, keyToColumnName);
+
+        LinkedHashSet<String> mappingValuesDisplay = getMappingDisplayStrings(connection, sql, keys);
+        LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
+        LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
+
+        int index = 1;
+        for(String s: mappingValuesDisplay){
+            String group = "Group "+index;
+            System.out.println("Group: " + group+" s: " + s);
+            groupToDisplayString.put(group, s);
+            displayStringToGroup.put(s, group);
+            index++;
+        }
+
+        parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
         //now generate the report to be compiled
         //todo [Donal] note - if there is no data this throws an exception. Need to create a canned report showing report info to return to user
-        Document transformDoc = Utilities.getUsageRuntimeDoc(useUser, keys, mappingValues);
+        Document transformDoc = Utilities.getUsageRuntimeDoc(useUser, keys, mappingValues, groupToDisplayString);
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
@@ -740,8 +748,8 @@ public class ReportApp
         String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
-        params.put("FrameMinWidth", 565);
-        params.put("PageMinWidth", 595);
+        params.put("FrameMinWidth", 820);
+        params.put("PageMinWidth", 850);
         params.put("ReportInfoStaticTextSize", 128);
         params.put("TitleInnerFrameBuffer", 7);
 
@@ -947,9 +955,6 @@ public class ReportApp
         //Only required because jasper reports for some reason ignores the value of scriptletClass from the
         //jasperreport element attribute, so specifying it as a parameter explicitly fixes this issue
         parameters.put(REPORT_SCRIPTLET, scriplet);
-        SubIntervalScriptletHelper sH = new SubIntervalScriptletHelper();
-        sH.setScriptletHelper((ScriptletHelper)scriplet);
-        parameters.put(SUBINTERVAL_REPORT_SCRIPTLET, sH);
 
         return parameters;
     }

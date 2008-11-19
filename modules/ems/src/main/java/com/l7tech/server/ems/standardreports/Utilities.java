@@ -17,6 +17,7 @@ import java.util.List;
 import java.awt.*;
 
 import com.l7tech.common.io.XmlUtil;
+import net.sf.jasperreports.engine.JRScriptletException;
 
 
 public class Utilities {
@@ -45,6 +46,8 @@ public class Utilities {
     private static final String BAND_HEIGHT = "bandHeight";
     private static final String CHART_FRAME_HEIGHT = "chartFrameHeight";
     private static final String PAGE_HEIGHT = "pageHeight";
+    private static final String CHART_ELEMENT = "chartElement";
+    private static final int CONSTANT_HEADER_HEIGHT = 54;
 
     public static enum UNIT_OF_TIME {
         HOUR, DAY, WEEK, MONTH; 
@@ -1882,9 +1885,12 @@ Value is included in all or none, comment is just illustrative
      * concatanated value of authenticated user, mapping1_value, mapping2_value, mapping3_value, mapping4_value
      * and mapping5_value.
      * @param useUser if true, then the report header will include a display item for 'Authenticated User'
+     * @param groupToMappingValue 
      * @return the Document returned is not formatted
      */
-    public static Document getUsageRuntimeDoc(boolean useUser, List<String> keys, LinkedHashSet<String> distinctMappingValues) {
+    public static Document getUsageRuntimeDoc(boolean useUser, List<String> keys,
+                                              LinkedHashSet<String> distinctMappingValues,
+                                              LinkedHashMap<String,String> groupToMappingValue) {
         if((keys == null || keys.isEmpty()) && !useUser){
             throw new IllegalArgumentException("keys must not be null or empty if useUser is not true");
         }
@@ -1894,6 +1900,7 @@ Value is included in all or none, comment is just illustrative
         }
         
         Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
+
         int numMappingValues = distinctMappingValues.size();
 
         Node rootNode = doc.getFirstChild();
@@ -2020,7 +2027,76 @@ Value is included in all or none, comment is just illustrative
         Element rightMarginElement = doc.createElement(RIGHT_MARGIN);
         rightMarginElement.setTextContent(String.valueOf(LEFT_MARGIN_WIDTH));
         rootNode.appendChild(rightMarginElement);
+
+        addChartXMLToDocument(doc, groupToMappingValue, frameWidth, 595);        
         return doc;
+    }
+
+    private static void addChartXMLToDocument(Document doc, LinkedHashMap<String,String> groupToMappingValue,
+                                              int frameWidth, int minPageHeight){
+        //Create all the text fields for the chart legend
+        Node rootNode = doc.getFirstChild();
+        Element chartElement = doc.createElement(CHART_ELEMENT);
+        rootNode.appendChild(chartElement);
+
+        Element chartLegend = doc.createElement(CHART_LEGEND);
+        chartElement.appendChild(chartLegend);
+        int x = 0;
+        int y = 0;
+        int vSpace = 2;
+        int height = 18;
+
+        int index = 0;
+        for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
+            addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey"+(index+1), "java.lang.String",
+                    "<b>"+me.getKey()+":</b> " + me.getValue(), "chartLegendTextField", false);
+
+            y += height + vSpace;
+            index++;
+        }
+
+        //Chart height is minimum 130, if there are more than 2 mapping value sets then increase it
+        int chartHeight = 130;
+        int numMappingSets = groupToMappingValue.size();
+        if(numMappingSets > 2){
+            chartHeight += 30 * (numMappingSets -2);
+        }
+
+        Element chartHeightElement = doc.createElement(CHART_HEIGHT);
+        chartElement.appendChild(chartHeightElement);
+        chartHeightElement.setTextContent(String.valueOf(chartHeight));
+
+        //start of chart legend = chart height + 18 for the title of the chart frame
+        int chartLegendFrameYPos = chartHeight;// + height;
+        Element chartLegendYPosElement = doc.createElement(CHART_LEGEND_FRAME_YPOS);
+        chartElement.appendChild(chartLegendYPosElement);
+        chartLegendYPosElement.setTextContent(String.valueOf(chartLegendFrameYPos));
+
+        //height of chart legend = num mapping sets * height + vSpace
+        int chartLegendHeight = numMappingSets * (height + vSpace);
+        Element chartLegendHeightElement = doc.createElement(CHART_LEGEND_HEIGHT);
+        chartElement.appendChild(chartLegendHeightElement);
+        chartLegendHeightElement.setTextContent(String.valueOf(chartLegendHeight));
+
+        int chartFrameHeight = chartHeight + 18 + chartLegendHeight;
+        Element chartFrameHeightElement = doc.createElement(CHART_FRAME_HEIGHT);
+        chartElement.appendChild(chartFrameHeightElement);
+        chartFrameHeightElement.setTextContent(String.valueOf(chartFrameHeight));
+
+        //Calculate the height of the band
+        int bandHeight = chartFrameHeight + height + height;//18 from the summary frame + 18 for a gap
+        Element bandHeightElement = doc.createElement(BAND_HEIGHT);
+        chartElement.appendChild(bandHeightElement);
+        bandHeightElement.setTextContent(String.valueOf(bandHeight));
+
+        int titleHeight = 243;
+        int margins = 20 + 20;
+        int totalFirstPageHeight = titleHeight + margins + bandHeight + CONSTANT_HEADER_HEIGHT;
+        if(totalFirstPageHeight < minPageHeight) totalFirstPageHeight = minPageHeight;
+
+        Element pageHeightElement = doc.createElement(PAGE_HEIGHT);
+        chartElement.appendChild(pageHeightElement);
+        pageHeightElement.setTextContent(String.valueOf(totalFirstPageHeight));
     }
 
 
@@ -2043,6 +2119,7 @@ Value is included in all or none, comment is just illustrative
 
         return sb.toString();
     }
+
 
     private static final int [] hexColours = new int []{0xFFDC5A, 0xD6D6D6, 0xE8EDB4};
 

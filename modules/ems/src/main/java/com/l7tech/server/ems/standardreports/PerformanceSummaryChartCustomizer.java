@@ -20,11 +20,11 @@ import java.awt.*;
 
 public class PerformanceSummaryChartCustomizer implements JRChartCustomizer {
     public void customize(JFreeChart jFreeChart, JRChart jrChart) {
-        System.out.println("customize");
-        List list = jFreeChart.getCategoryPlot().getRenderer().getPlot().getCategories();
-        for(Object o: list){
-            System.out.println("item: " + o);
-        }
+//        System.out.println("customize");
+//        List list = jFreeChart.getCategoryPlot().getRenderer().getPlot().getCategories();
+//        for(Object o: list){
+//            System.out.println("item: " + o);
+//        }
 
         CategoryItemRenderer renderer = jFreeChart.getCategoryPlot().getRenderer();
         List<Color> colours = Utilities.getSeriesColours(3);

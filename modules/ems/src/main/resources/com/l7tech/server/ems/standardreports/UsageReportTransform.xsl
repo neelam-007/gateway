@@ -48,13 +48,19 @@
                     <xsl:attribute name="rightMargin">
                         <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/rightMargin"/>
                     </xsl:attribute>
-                    <xsl:apply-templates select="node()|@*[local-name()!='columnWidth' and local-name()!='pageWidth' and local-name()!='leftMargin' and local-name()!='rightMargin']"/>
+                    <xsl:attribute name="pageHeight">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/pageHeight"/>
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='columnWidth' and local-name()!='pageWidth' and local-name()!='leftMargin' and local-name()!='rightMargin' and local-name()!='pageHeight']"/>
                 </xsl:when>
                 <xsl:otherwise>
-                    <xsl:apply-templates select="node()|@*" />
+                    <xsl:attribute name="pageHeight">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/pageHeight"/>
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='pageHeight']" />
                 </xsl:otherwise>
             </xsl:choose>
-
+            
         </xsl:element>
 
     </xsl:template>
@@ -108,22 +114,21 @@
         </xsl:copy>
     </xsl:template>
 
-    <xsl:template match="/jasperReport/title/band/frame[2]/frame/textField/reportElement">
-        <xsl:copy>
-            <xsl:choose>
-                <xsl:when test="$useDynamicWidths = 1" >
-                    <xsl:attribute name="width">
-                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth - $ReportInfoStaticTextSize" />
-                    </xsl:attribute>
-                    <xsl:apply-templates select="node()|@*[local-name()!='width']" />
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:apply-templates select="node()|@*" />
-                </xsl:otherwise>
-            </xsl:choose>
-            <xsl:apply-templates select="node()|@*[local-name()!='width']" />
-        </xsl:copy>
-    </xsl:template>
+    <!--<xsl:template match="/jasperReport/title/band/frame[2]/frame/textField/reportElement">-->
+        <!--<xsl:copy>-->
+            <!--<xsl:choose>-->
+                <!--<xsl:when test="$useDynamicWidths = 1 and position() > 7" >-->
+                    <!--<xsl:attribute name="width">-->
+                        <!--<xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth - $ReportInfoStaticTextSize" />-->
+                    <!--</xsl:attribute>-->
+                    <!--<xsl:apply-templates select="node()|@*[local-name()!='width']" />-->
+                <!--</xsl:when>-->
+                <!--<xsl:otherwise>-->
+                    <!--<xsl:apply-templates select="node()|@*" />-->
+                <!--</xsl:otherwise>-->
+            <!--</xsl:choose>-->
+        <!--</xsl:copy>-->
+    <!--</xsl:template>-->
     
     <xsl:template match="variable[@name='SERVICE_ONLY_TOTAL']">
         <xsl:copy>
@@ -323,6 +328,108 @@
             </xsl:choose>
         </xsl:element>
     </xsl:template>
-    
+
+    <!-- Chart transforms-->
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band">
+        <xsl:element name="band">
+            <xsl:attribute name="height"><xsl:value-of
+                    select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/bandHeight" />
+            </xsl:attribute>
+            <xsl:apply-templates select="node()|@*[local-name()!='height']"/>
+        </xsl:element>
+    </xsl:template>
+
+    <!--CONSTANT_MAPPING chart height-->
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[2]/reportElement">
+        <xsl:element name="reportElement">
+            <xsl:choose>
+                <xsl:when test="$useDynamicWidths = 1" >
+                    <xsl:attribute name="width">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
+                    </xsl:attribute>
+                    <xsl:attribute name="height"><xsl:value-of
+                            select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartFrameHeight" />
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='width' and local-name()!='height']" />
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:attribute name="height"><xsl:value-of
+                            select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartFrameHeight" />
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='height']"/>
+                </xsl:otherwise>
+            </xsl:choose>
+
+        </xsl:element>
+    </xsl:template>
+
+
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[2]/barChart/chart/reportElement">
+        <xsl:element name="reportElement">
+            <xsl:choose>
+                <xsl:when test="$useDynamicWidths = 1" >
+                    <xsl:attribute name="width">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
+                    </xsl:attribute>
+                    <xsl:attribute name="height"><xsl:value-of
+                            select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartHeight" />
+                    </xsl:attribute>
+
+                    <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='width']"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:attribute name="height"><xsl:value-of
+                            select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartHeight" />
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='height']"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[2]/frame/reportElement">
+        <xsl:element name="reportElement">
+            <xsl:choose>
+                <xsl:when test="$useDynamicWidths = 1" >
+                    <xsl:attribute name="width">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth" />
+                    </xsl:attribute>
+                    <xsl:attribute name="height"><xsl:value-of
+                            select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegendHeight" />
+                    </xsl:attribute>
+                    <xsl:attribute name="y"><xsl:value-of
+                            select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegendFrameYPos" />
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='y' and local-name()!='width']"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:attribute name="height"><xsl:value-of
+                            select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegendHeight" />
+                    </xsl:attribute>
+                    <xsl:attribute name="y"><xsl:value-of
+                            select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegendFrameYPos" />
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='y']"/>
+                </xsl:otherwise>
+            </xsl:choose>
+
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[2]/frame/box">
+        <xsl:copy>
+            <xsl:apply-templates select="node()|@*"/>
+        </xsl:copy>
+        <xsl:text>
+        </xsl:text>
+        <xsl:for-each select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegend/textField">
+            <xsl:element name="textField">
+                <xsl:apply-templates select="node()|@*"/>
+            </xsl:element>
+            <xsl:text>
+            </xsl:text>
+        </xsl:for-each>
+    </xsl:template>
+
 </xsl:transform>
 

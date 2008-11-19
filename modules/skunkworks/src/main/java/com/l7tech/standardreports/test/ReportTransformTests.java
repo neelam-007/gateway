@@ -105,7 +105,12 @@ public class ReportTransformTests {
         mappingValues.add("127.0.0.1Gold");
         mappingValues.add("127.0.0.1Silver");
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        LinkedHashMap linkedHashMap = new LinkedHashMap();
+        linkedHashMap.put("Group 1", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze");
+        linkedHashMap.put("Group 2", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold");
+        linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.3, CUSTOMER: Silver");
+
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, linkedHashMap);
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageRuntimeTransform.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
@@ -154,7 +159,7 @@ public class ReportTransformTests {
 //        mappingValues.add("127.0.0.2Gold");
 //        mappingValues.add("127.0.0.2Silver");
 
-        Document transformDoc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues);
+        Document transformDoc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, null);
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
         String xmlFileName = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
