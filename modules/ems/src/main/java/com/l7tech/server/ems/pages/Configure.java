@@ -329,7 +329,7 @@ public class Configure extends EmsPage  {
                     NodeManagementApi nodeManagementApi = gatewayContext.getManagementApi();
 
                     // Stop the node
-                    nodeManagementApi.stopNode("default", 10000);
+                    nodeManagementApi.stopNode("default", 20000);
 
                     // Todo: the below updating node is for demo only.  We will remove this part later on, since GatewayPoller will update node status periodically.
                     // Update the node online status

@@ -16,13 +16,14 @@ public class GatewayContextFactoryImpl implements GatewayContextFactory {
     //- PUBLIC
 
     public GatewayContextFactoryImpl( final Config config,
-                                  final DefaultKey defaultKey,
-                                  final UserPropertyManager propertyManager ) {
+                                      final DefaultKey defaultKey,
+                                      final UserPropertyManager propertyManager ) {
         this.config = config;
         this.defaultKey = defaultKey;
         this.propertyManager = propertyManager;
     }
 
+    @Override
     public GatewayContext getGatewayContext( final User user, final String host, final int port ) throws GatewayException {
         return new GatewayContext( defaultKey, host, port, config.getProperty("em.server.id", ""), user==null ? null : getUserUuid(user) );
     }

@@ -37,6 +37,8 @@ import java.util.logging.Logger;
 public class NodeManagementApiImpl implements NodeManagementApi {
     private static final Logger logger = Logger.getLogger(NodeManagementApiImpl.class.getName());
 
+    private static final String AUTH_FAILURE = "Authentication Required";
+
     @Resource
     private ConfigService configService;
 
@@ -60,7 +62,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
             throw new IllegalStateException("Couldn't get client address", e);
         }
 
-        final Object maybeCert = req.getParameter("javax.servlet.request.X509Certificate");
+        final Object maybeCert = req.getAttribute("javax.servlet.request.X509Certificate");
         final X509Certificate certificate;
         if (maybeCert instanceof X509Certificate) {
             certificate = (X509Certificate)maybeCert;
@@ -68,13 +70,16 @@ public class NodeManagementApiImpl implements NodeManagementApi {
             X509Certificate[] certs = (X509Certificate[])maybeCert;
             certificate = certs[0];
         } else if (maybeCert != null) {
-            throw new IllegalStateException("Client Certificate was a " + maybeCert.getClass().getName() + ", not an X509Certificate");
+            logger.warning( "Client certificate was a " + maybeCert.getClass().getName() + ", not an X509Certificate" );
+            throw new IllegalStateException(AUTH_FAILURE);
         } else {
-            throw new IllegalArgumentException("Client certificate authentication is required");
+            logger.fine( "Client certificate missing in request." );
+            throw new IllegalArgumentException(AUTH_FAILURE);
         }
 
         if (!configService.getTrustedRemoteNodeManagementCerts().contains(certificate)) {
-            throw new IllegalArgumentException("The client certificate provided is not trusted for remote node management");
+            logger.info( "Client certificate was not trusted for remote management '" + certificate.getSubjectDN().toString() + "'." );
+            throw new IllegalArgumentException(AUTH_FAILURE);
         }
 
         logger.log(Level.FINE, "Accepted client certificate {0}", certificate.getSubjectDN().getName());

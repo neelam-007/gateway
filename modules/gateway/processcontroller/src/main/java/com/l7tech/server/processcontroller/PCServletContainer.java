@@ -18,10 +18,13 @@ import org.springframework.context.ApplicationContextAware;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +65,21 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         Server server = new Server();
         Pair<X509Certificate[],RSAPrivateKey> keypair = configService.getSslKeypair();
         final SSLContext ctx = SSLContext.getInstance("SSL");
-        ctx.init(new KeyManager[] { new SingleCertX509KeyManager(keypair.left, keypair.right) }, null, null);
+        ctx.init(new KeyManager[] { new SingleCertX509KeyManager(keypair.left, keypair.right) }, new TrustManager[]{ new X509TrustManager(){
+            @Override
+            public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                throw new CertificateException();
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+        } }, null);
         final SslSocketConnector sslConnector = new SslSocketConnector() {
             @Override
             protected SSLServerSocketFactory createFactory() throws Exception {
@@ -79,6 +96,8 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
                 return httpIPAddress;
             }
         };
+        sslConnector.setWantClientAuth(true);
+        sslConnector.setNeedClientAuth(false);
         server.addConnector(sslConnector);
 
         if ( httpPort != 8765 || (!"0.0.0.0".equals(httpIPAddress) && !"127.0.0.1".equals(httpIPAddress)) ) {

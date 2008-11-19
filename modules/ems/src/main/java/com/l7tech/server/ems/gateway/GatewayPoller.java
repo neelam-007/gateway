@@ -8,9 +8,12 @@ import org.springframework.beans.factory.InitializingBean;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgNode;
+import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.xml.ws.soap.SOAPFaultException;
@@ -18,6 +21,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.net.ConnectException;
+import java.net.NoRouteToHostException;
 
 /**
  * 
@@ -80,20 +84,30 @@ public class GatewayPoller implements InitializingBean {
                         if ( host != null && host.length() > 0 && port > 0 ) {
                             try {
                                 GatewayContext context = gatewayContextFactory.getGatewayContext( null, host, port );
-                                GatewayApi api = context.getApi();
-                                GatewayApi.ClusterInfo info = api.getClusterInfo();
-                                if ( info != null ) {
-                                    if ( !cluster.getTrustStatus() ) {
-                                        logger.info("Trust established for gateway cluster '"+host+":"+port+"'.");
-                                        cluster.setTrustStatus( true );
-                                        ssgClusterManager.update( cluster );
+                                Set<GatewayApi.GatewayInfo> newInfoSet = null;
+                                try {
+                                    GatewayApi api = context.getApi();
+                                    GatewayApi.ClusterInfo info = api.getClusterInfo();
+                                    if ( info != null ) {
+                                        if ( !cluster.getTrustStatus() ) {
+                                            logger.info("Trust established for gateway cluster '"+host+":"+port+"'.");
+                                            cluster.setTrustStatus( true );
+                                            ssgClusterManager.update( cluster );
+                                        }
+                                    }
+                                    newInfoSet = new HashSet<GatewayApi.GatewayInfo>(api.getGatewayInfo());
+                                } catch ( SOAPFaultException sfe ) {
+                                    if ( ExceptionUtils.causedBy( sfe, ConnectException.class )  ||
+                                         ExceptionUtils.causedBy( sfe, NoRouteToHostException.class )) {
+                                        logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
+                                    } else {
+                                        throw sfe;
                                     }
                                 }
 
                                 // Periodically update SSG Nodes.
                                 Set<GatewayApi.GatewayInfo> currInfoSet = cluster.obtainGatewayInfoSet();
-                                Set<GatewayApi.GatewayInfo> newInfoSet = new HashSet<GatewayApi.GatewayInfo>(api.getGatewayInfo());
-                                if (! newInfoSet.equals(currInfoSet)) {
+                                if ( newInfoSet != null && !newInfoSet.equals(currInfoSet) ) {
                                     Set<SsgNode> nodes = new HashSet<SsgNode>();
 
                                     for (GatewayApi.GatewayInfo newInfo: newInfoSet) {
@@ -102,20 +116,28 @@ public class GatewayPoller implements InitializingBean {
                                         node.setName(newInfo.getName());
                                         node.setSoftwareVersion(newInfo.getSoftwareVersion());
                                         node.setIpAddress(newInfo.getIpAddress());
-                                        node.setOnlineStatus(node.getOnlineStatus()); // todo: use gateway info to get the real online status later on.
-                                        node.setTrustStatus(true);  // todo: use real status later on
+                                        refreshNodeStatus(node);
                                         node.setSsgCluster(cluster);
                                         nodes.add(node);
                                     }
                                     cluster.getNodes().clear();
                                     cluster.getNodes().addAll(nodes);
                                     ssgClusterManager.update(cluster);
+                                } else {
+                                    boolean updated = false;
+                                    for ( SsgNode node : cluster.getNodes() ) {
+                                        updated = updated || refreshNodeStatus( node );
+                                    }
+                                    if ( updated ) {
+                                        ssgClusterManager.update(cluster);
+                                    }
                                 }
                             } catch ( GatewayException ge ) {
                                 logger.log( Level.WARNING, "Gateway error when polling gateways", ge );
                             } catch ( SOAPFaultException sfe ) {
-                                if ( ExceptionUtils.causedBy( sfe, ConnectException.class ) ) {
-                                    logger.log( Level.INFO, "Gateway connection failed for gateway '"+host+":"+port+"'." );
+                                if ( ExceptionUtils.causedBy( sfe, ConnectException.class )  ||
+                                     ExceptionUtils.causedBy( sfe, NoRouteToHostException.class )) {
+                                    logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                 } else if ( "Authentication Required".equals(sfe.getMessage()) ){
                                     if ( cluster.getTrustStatus() ) {
                                         logger.info("Trust lost for gateway cluster '"+host+":"+port+"'.");
@@ -133,5 +155,71 @@ public class GatewayPoller implements InitializingBean {
                 }
             }
         } );
+    }
+
+    private boolean refreshNodeStatus( final SsgNode node ) {
+        boolean updated = false;
+
+        final String host = node.getIpAddress();
+        boolean trusted = false;
+        String status = JSONConstants.SsgNodeOnlineState.OFFLINE;
+        try {
+            NodeManagementApi nodeApi = gatewayContextFactory.getGatewayContext( null, host, 0 ).getManagementApi();
+            Collection<NodeManagementApi.NodeHeader> nodeHeaders = nodeApi.listNodes();
+            trusted = true;
+            for ( NodeManagementApi.NodeHeader header : nodeHeaders ) {
+                if ( header.getName().equals( "default" ) ) {
+                    switch ( header.getState() ) {
+                        case UNKNOWN:
+                        case WONT_START:
+                        case CRASHED:
+                            status = JSONConstants.SsgNodeOnlineState.DOWN;
+                            break;
+                        case STARTING:
+                        case RUNNING:
+                            status = JSONConstants.SsgNodeOnlineState.ON;
+                            break;
+                        case STOPPING:
+                        case STOPPED:
+                            status = JSONConstants.SsgNodeOnlineState.OFF;
+                            break;
+                    }
+                }
+            }
+        } catch ( SOAPFaultException sfe ) {
+            if ( ExceptionUtils.causedBy( sfe, ConnectException.class ) ||
+                 ExceptionUtils.causedBy( sfe, NoRouteToHostException.class )) {
+                logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+"'." );
+                trusted = true;
+            } else if ( "Authentication Required".equals(sfe.getMessage()) ){
+                // Ignore
+            } else{
+                trusted = true;
+                logger.log( Level.WARNING, "Gateway error when polling gateways", sfe );
+            }
+        } catch (GatewayException e) {
+            logger.log( Level.WARNING, "Error when polling gateways", e );
+        } catch (FindException fe) {
+            trusted = true;
+            logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(fe)+"'.", ExceptionUtils.getDebugException(fe));
+        }
+
+        if ( trusted != node.isTrustStatus() ) {
+            updated = true;
+            if ( !trusted ) {
+                logger.info("Trust lost for gateway node '"+host+"'.");
+            } else {
+                logger.info("Trust established for gateway '"+host+"'.");
+            }
+            node.setTrustStatus(trusted);
+            node.setOnlineStatus( status );
+
+        } else if ( !status.equals( node.getOnlineStatus() ) ) {
+            updated = true;
+            logger.info("Gateway node status changed, status is now '"+status+"' (was '"+node.getOnlineStatus()+"').");
+            node.setOnlineStatus( status );
+        }
+
+        return updated;
     }
 }
