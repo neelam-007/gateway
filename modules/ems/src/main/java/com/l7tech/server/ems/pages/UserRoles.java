@@ -6,8 +6,10 @@ import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.gateway.common.security.rbac.RbacUtilities;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.identity.internal.InternalUser;
 import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -24,7 +26,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.Serializable;
-import java.text.MessageFormat;
 
 /**
  * A page to manage a role for users such as assign a role to a user or unassign a user from a role.
@@ -54,19 +55,23 @@ public class UserRoles extends EmsPage {
         // Initialize all models
         initModels();
 
+        WebMarkupContainer secured = new SecureWebMarkupContainer( "secured", new AttemptedUpdateAny(EntityType.RBAC_ROLE) );
+
         // Create a form to select a role
-        add(new SelectRoleForm("form.selectRole"));
+        secured.add(new SelectRoleForm("form.selectRole"));
 
         // Add headers to page early to fix issue with CSS ordering
         YuiDataTable.contributeHeaders( this );
 
         // Create a container to contain all components to manage roles for users.
         initRoleManagementContainer();
-        add(roleManagementContainer);
+        secured.add(roleManagementContainer);
 
         // Create a warning dialog, just in case where some errors occur during role updates.
         initWarningDialogContainer();
-        add(warningDialogContainer);
+        secured.add(warningDialogContainer);
+
+        add( secured );
     }
 
     /**

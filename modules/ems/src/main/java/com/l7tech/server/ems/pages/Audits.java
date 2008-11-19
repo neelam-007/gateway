@@ -4,11 +4,16 @@ import com.l7tech.gateway.common.audit.AdminAuditRecord;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.identity.User;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -21,6 +26,8 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.validation.validator.DateValidator;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.protocol.http.WebRequest;
 
 import java.io.Serializable;
 import java.util.*;
@@ -62,7 +69,7 @@ public class Audits extends EmsPage {
                 auditHolder.replace(dialog);
                 ajaxRequestTarget.addComponent(auditHolder);
             }
-        };
+        }.add( new AttemptedReadAll(EntityType.AUDIT_RECORD) );
 
         Button deleteButton = new YuiAjaxButton("deleteAuditsButton") {
             @Override
@@ -72,7 +79,7 @@ public class Audits extends EmsPage {
                 auditHolder.replace(dialog);
                 ajaxRequestTarget.addComponent(auditHolder);
             }
-        };
+        }.add( new AttemptedDeleteAll(EntityType.AUDIT_RECORD) );
 
         final HiddenField hidden = new HiddenField("auditId", new Model(""));
         hidden.setOutputMarkupId( true );
@@ -141,9 +148,11 @@ public class Audits extends EmsPage {
     private static final String AUDIT_TYPE_SYSTEM = "system";
     private static final String[] values = new String[]{"any", AUDIT_TYPE_ADMIN, AUDIT_TYPE_SYSTEM};
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private AuditRecordManager auditRecordManager;
+
+    @SpringBean
+    private EmsSecurityManager securityManager;
 
     private Date startOfDay( final Date date ) {
         Calendar calendar = Calendar.getInstance();
@@ -219,13 +228,20 @@ public class Audits extends EmsPage {
         private final AuditSearchCriteria auditSearchCriteria;
 
         public AuditDataProvider(final String type, final Date start, final Date end,  final String sort, final boolean asc) {
+            User user = null;
+            if ( !securityManager.hasPermission( new AttemptedReadAll( EntityType.AUDIT_RECORD ) ) ) {
+                user = securityManager.getLoginInfo( ((WebRequest)RequestCycle.get().getRequest()).getHttpServletRequest().getSession(true) ).getUser();
+            }
+
             auditSearchCriteria = new AuditSearchCriteria.Builder().fromTime(start).
                     toTime(end).
                     recordClass(getClassForType(type)).
                     startMessageNumber(-1).
                     endMessageNumber(-1).
-                    maxRecords(-1).build();
-            
+                    maxRecords(-1).
+                    user(user)
+                    .build();
+
             setSort( sort, asc );
         }
 

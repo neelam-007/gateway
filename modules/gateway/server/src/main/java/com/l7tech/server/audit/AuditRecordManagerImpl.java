@@ -58,11 +58,13 @@ public class AuditRecordManagerImpl
 
     //- PUBLIC
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         if(this.applicationContext != null) throw new IllegalStateException("applicationContext is already initialized.");
         this.applicationContext = applicationContext;
     }
 
+    @Override
     @Transactional(readOnly=true)
     public Collection<AuditRecord> find( final AuditSearchCriteria criteria ) throws FindException {
         if (criteria == null) throw new IllegalArgumentException("Criteria must not be null");
@@ -95,6 +97,7 @@ public class AuditRecordManagerImpl
         }
     }
 
+    @Override
     @Transactional(readOnly = true)
     public Collection<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException {
         Collection<AuditRecord> auditRecords = find(criteria);
@@ -112,18 +115,21 @@ public class AuditRecordManagerImpl
         return arh;
     }
 
+    @Override
     public int findCount( final AuditSearchCriteria criteria ) throws FindException {
         return super.findCount( asCriterion(criteria) );
     }
 
+    @Override
     public Collection<AuditRecord> findPage( final SortProperty sortProperty,
                                              final boolean ascending,
                                              final int offset,
                                              final int count,
                                              final AuditSearchCriteria criteria) throws FindException {
-        return super.findPage( sortProperty.getPropertyName(), ascending, offset, count, asCriterion(criteria) );
+        return super.findPage( criteria.recordClass, sortProperty.getPropertyName(), ascending, offset, count, asCriterion(criteria) );
     }
 
+    @Override
     public void deleteOldAuditRecords( final long minAge ) throws DeleteException {
         applicationContext.publishEvent(new AuditPurgeInitiated(this));
         String sMinAgeHours = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
@@ -143,6 +149,7 @@ public class AuditRecordManagerImpl
         new Thread(runnable).start();
     }
 
+    @Override
     public long getMinOid(long lowerLimit) throws SQLException {
         final Session session = getSession();
         PreparedStatement stmt = null;
@@ -166,6 +173,7 @@ public class AuditRecordManagerImpl
         return -1;
     }
 
+    @Override
     public int deleteRangeByOid(final long start, final long end) throws SQLException {
         final Session session = getSession();
         PreparedStatement deleteStmt = null;
@@ -187,6 +195,7 @@ public class AuditRecordManagerImpl
      * @return  Max table space size in bytes, or -1 if not defined 
      * @throws FindException if an error was encountered and the value could not be retrieved
      */
+    @Override
     public long getMaxTableSpace() throws FindException {
         final Session session = getSession();
         PreparedStatement statement = null;
@@ -239,6 +248,7 @@ public class AuditRecordManagerImpl
         return multiplier * Long.parseLong(multiplier > 1 ? max.substring(0, max.length() -1) : max);
     }
 
+    @Override
     public long getCurrentUsage() throws FindException {
         final Session session = getSession();
         PreparedStatement statement = null;
@@ -268,14 +278,17 @@ public class AuditRecordManagerImpl
         throw new FindException("Error retrieving max space allocated for the innodb tablespace; no data retrieved.");
     }
 
+    @Override
     public Class<AuditRecord> getImpClass() {
         return AuditRecord.class;
     }
 
+    @Override
     public Class<AuditRecord> getInterfaceClass() {
         return AuditRecord.class;
     }
 
+    @Override
     public String getTableName() {
         return "audit";
     }
@@ -303,6 +316,8 @@ public class AuditRecordManagerImpl
     private static final String PROP_REQUEST_ID = "strRequestId";
     public static final String PROP_NAME = "name";
     public static final String PROP_MSG = "message";
+    private static final String PROP_PROV_ID = "identityProviderOid";
+    private static final String PROP_USER_ID = "userId";
 
     private static final String DELETE_RANGE_START = "delete_range_start";
     private static final String DELETE_RANGE_END = "delete_range_end";
@@ -357,6 +372,11 @@ public class AuditRecordManagerImpl
         if (criteria.message != null) criterion.add(Restrictions.ilike(PROP_MESSAGE, criteria.message));
         if (criteria.nodeId != null) criterion.add(Restrictions.eq(PROP_NODEID, criteria.nodeId));
 
+        if (criteria.user != null) {
+            criterion.add(Restrictions.eq(PROP_PROV_ID, criteria.user.getProviderId()));
+            criterion.add(Restrictions.eq(PROP_USER_ID, criteria.user.getId()));
+        }
+
         return criterion.toArray( new Criterion[criterion.size()] );
     }
 
@@ -368,6 +388,7 @@ public class AuditRecordManagerImpl
             this.maxTime = maxTime;
         }
 
+        @Override
         public void run() {
             // Delete in batches of 10000 audit events. Otherwise a single delete of millions
             // will fail with socket timeout. (Bugzilla # 3687)
@@ -388,6 +409,7 @@ public class AuditRecordManagerImpl
                          * Otherwise, without immediate commits, the total deletion time is exponential
                          * and audit events from other source will get "lock wait timeout".
                          */
+                        @Override
                         public Object doInTransaction(TransactionStatus status) {
                             try {
                                 return deleteBatch(auditPurgeRecordHolder, maxTime, tempTotal);

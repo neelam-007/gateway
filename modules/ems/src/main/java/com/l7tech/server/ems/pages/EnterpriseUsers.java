@@ -3,8 +3,10 @@ package com.l7tech.server.ems.pages;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ems.EmsAccountManager;
 import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -33,25 +35,27 @@ public class EnterpriseUsers extends EmsPage {
     //- PUBLIC
 
     public EnterpriseUsers() {
+        final WebMarkupContainer secured = new SecureWebMarkupContainer( "secured", new AttemptedUpdateAny(EntityType.RBAC_ROLE) );
+
         final WebMarkupContainer container = new WebMarkupContainer("user.container");
         container.setOutputMarkupId(true);
         container.add(new EmptyPanel("user.content"));
-        add ( container );
+        secured.add ( container );
         final WebMarkupContainer tableContainer = new WebMarkupContainer("usertable.container");
 
         final Form pageForm = new Form("form");
-        add ( pageForm );
+        secured.add ( pageForm );
         pageForm.add ( tableContainer.setOutputMarkupId(true) );
 
         final WebMarkupContainer userContainer1 = new WebMarkupContainer("user.container.1");
         userContainer1.setOutputMarkupId(true);
         userContainer1.add(new EmptyPanel("user.content"));
-        add ( userContainer1 );
+        secured.add ( userContainer1 );
 
         final WebMarkupContainer userContainer2 = new WebMarkupContainer("user.container.2");
         userContainer2.setOutputMarkupId(true);
         userContainer2.add(new EmptyPanel("user.content"));
-        add ( userContainer2 );
+        secured.add ( userContainer2 );
 
         Button addButton = new YuiAjaxButton("addUserButton") {
             @Override
@@ -117,7 +121,9 @@ public class EnterpriseUsers extends EmsPage {
                 }
             }
         };
-        tableContainer.add( table );        
+        tableContainer.add( table );
+
+        add( secured );
     }
 
     //- PRIVATE

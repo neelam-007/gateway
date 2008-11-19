@@ -1,6 +1,5 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IObjectClassAwareModel;
@@ -13,6 +12,8 @@ import java.util.logging.Level;
 import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 
 /**
  * Panel for collection of details for audit deletion.
@@ -27,14 +28,18 @@ public class AuditDeletePanel extends Panel {
 
         final int[] intHolder = new int[]{7};
         TextField minAgeTextField = new TextField("audit.minage", new IObjectClassAwareModel(){
+            @Override
             public Class getObjectClass() { return Integer.class; }
+            @Override
             public Object getObject() { return intHolder[0]; }
+            @Override
             public void setObject(Object object) { intHolder[0] = (Integer) object; }
+            @Override
             public void detach() { }
         });
         minAgeTextField.add( new NumberValidator.RangeValidator(7, 365) );
 
-        Form form = new Form("audit.form"){
+        SecureForm form = new SecureForm("audit.form",  new AttemptedDeleteAll(EntityType.AUDIT_RECORD) ){
             @Override
             protected void onSubmit() {
                 try {

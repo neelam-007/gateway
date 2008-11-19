@@ -172,14 +172,13 @@ public class EmsApplication extends WebApplication {
 
             @Override
             public boolean isInstantiationAuthorized(Class aClass) {
-                if ( Page.class.isAssignableFrom(aClass) &&
-                     !getEmsSecurityManager().isLicensed( aClass ) ) {
+                final boolean isPage = Page.class.isAssignableFrom(aClass);
+
+                if ( isPage && !getEmsSecurityManager().isLicensed( aClass ) ) {
                     throw new RestartResponseAtInterceptPageException( SystemSettings.class );
                 }
 
-                boolean permitted =
-                        !Page.class.isAssignableFrom(aClass) ||
-                        getEmsSecurityManager().isAuthenticated( aClass );
+                boolean permitted = !isPage ||  getEmsSecurityManager().isAuthenticated( aClass );
 
                 if (logger.isLoggable(Level.FINER))
                     logger.finer("Instantiation authorized check for component '" +aClass + "' is " + permitted + ".");
@@ -194,7 +193,7 @@ public class EmsApplication extends WebApplication {
                         (component instanceof Page || getEmsSecurityManager().isLicensed( component ));
 
                 if (logger.isLoggable(Level.FINER))
-                    logger.finer("Action authorized check for component  '" + component.getId() + "', '" + action.getName() + " is " + permitted);
+                    logger.finer("Action authorized check for component  '" + component.getId() + "', '" + action.getName() + "' is " + permitted);
 
                 return permitted;
             }

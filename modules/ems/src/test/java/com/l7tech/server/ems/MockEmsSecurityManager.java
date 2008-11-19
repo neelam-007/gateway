@@ -55,6 +55,11 @@ public class MockEmsSecurityManager implements EmsSecurityManager {
     }
 
     @Override
+    public boolean isAuthorized(Component component) {
+        return true;
+    }
+
+    @Override
     public boolean isLicensed(Component component) {
         return true;
     }

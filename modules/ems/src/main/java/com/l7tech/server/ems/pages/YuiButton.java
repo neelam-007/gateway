@@ -6,6 +6,8 @@ import org.apache.wicket.Response;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.markup.html.form.Button;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.server.ems.SecureComponent;
 
 /**
  * Extension of Button that has YUI look and feel.
@@ -15,7 +17,7 @@ import org.apache.wicket.markup.html.form.Button;
  *
  * @author steve
  */
-public class YuiButton extends Button {
+public class YuiButton extends Button implements SecureComponent {
 
     //- PUBLIC
 
@@ -29,7 +31,19 @@ public class YuiButton extends Button {
         init();
     }
 
+    @Override
+    public AttemptedOperation getAttemptedOperation() {
+        return attemptedOperation;
+    }
+
+    public YuiButton add( final AttemptedOperation attemptedOperation ) {
+        this.attemptedOperation = attemptedOperation;
+        return this;
+    }
+
     //- PRIVATE
+
+    private AttemptedOperation attemptedOperation;
 
     /**
      * Initialize this component.
@@ -52,7 +66,9 @@ public class YuiButton extends Button {
      * YUI buttons onclick function.
      */
     private static final class YuiButtonScriptComponentBorder implements IComponentBorder {
+        @Override
         public void renderBefore( final Component component ) {}
+        @Override
         public void renderAfter( final Component component ) {
             final Response response = component.getResponse();
             final StringBuilder builder = new StringBuilder();

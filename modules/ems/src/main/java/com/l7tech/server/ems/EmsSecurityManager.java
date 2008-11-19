@@ -60,6 +60,13 @@ public interface EmsSecurityManager {
     boolean isAuthenticated( final Class componentClass );
 
     /**
+     * Check if the current request is authorized for the given component.
+     *
+     * @return True if authorized
+     */
+    boolean isAuthorized( final Component component );
+
+    /**
      * Check if the ESM is licensed or the component does not require a license.
      *
      * <p>If the given component does not specify any licensing requirement then

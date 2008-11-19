@@ -1,12 +1,17 @@
 package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.WebPage;
+import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.resources.CompressedResourceReference;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.ResourceReference;
+import org.apache.wicket.Component;
+import org.apache.wicket.RequestListenerInterface;
+import org.apache.wicket.authorization.UnauthorizedActionException;
 import org.apache.wicket.behavior.HeaderContributor;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.EmsSession;
@@ -55,6 +60,13 @@ public abstract class EmsPage extends WebPage {
         return (EmsSession) super.getSession();
     }
 
+    @Override
+    public void beforeCallComponent( final Component component, final RequestListenerInterface listener ) {
+        if ( !securityManager.isAuthorized( component ) ) {
+            throw new UnauthorizedActionException( component, Component.RENDER );
+        }
+    }
+
     //- PACKAGE
 
     static final ResourceReference RES_CSS_SKIN = new CompressedResourceReference(YuiCommon.class, "../resources/css/l7-yui-skin.css" );    
@@ -63,8 +75,6 @@ public abstract class EmsPage extends WebPage {
 
     @Override
     protected void onBeforeRender() {
-        super.onBeforeRender();
-
         // component is added on before render so it is the last component in the page
         // this means that the CSS overrides any styles in any other components in the page
         if ( get("timeZoneLabel") == null ) {
@@ -72,11 +82,29 @@ public abstract class EmsPage extends WebPage {
                 HeaderContributor.forCss( RES_CSS_SKIN )
             ) );
         }
-    }    
+
+        // disable any secured component that the user is not permitted to access
+        this.visitChildren( null, new IVisitor(){
+            @Override
+            public Object component(Component component) {
+                if ( !securityManager.isAuthorized( component ) ) {
+                    if ( component instanceof Form ||
+                         component instanceof FormComponent ) {
+                        component.setEnabled( false );
+                    } else {
+                        component.setEnabled( false );
+                        component.setVisible( false );
+                    }
+                }
+                return null;
+            }
+        } );
+
+        super.onBeforeRender();
+    }
 
     //- PRIVATE
     
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private EmsSecurityManager securityManager;
 }

@@ -12,6 +12,8 @@ import java.util.Date;
 import java.util.Calendar;
 
 import com.l7tech.util.TimeUnit;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
+import com.l7tech.objectmodel.EntityType;
 
 /**
  * Panel for collection of details for audit download.
@@ -30,7 +32,7 @@ public class AuditDownloadPanel extends Panel {
         startDateField.getDateTextField().add(DateValidator.maximum(new Date()));
         endDateField.getDateTextField().add(DateValidator.maximum(new Date()));
 
-        Form form = new Form("audit.form"){
+        Form form = new SecureForm("audit.form", new AttemptedReadAll(EntityType.AUDIT_RECORD)){
             @Override
             protected void onSubmit() {
                 Date startDate = startOfDay((Date) startDateField.getModelObject());

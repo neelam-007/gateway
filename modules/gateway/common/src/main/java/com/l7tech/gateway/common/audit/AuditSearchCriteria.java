@@ -7,6 +7,7 @@
 package com.l7tech.gateway.common.audit;
 
 import com.l7tech.gateway.common.cluster.LogRequest;
+import com.l7tech.identity.User;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -48,6 +49,7 @@ public final class AuditSearchCriteria implements Serializable {
         serviceName = builder.serviceName;
         message = builder.message;
         requestId = builder.requestId;
+        user = builder.user;
     }
 
     /**
@@ -107,6 +109,11 @@ public final class AuditSearchCriteria implements Serializable {
      * the requestId of the message (null = don't care)
      */
     public final String requestId;
+
+    /**
+     * the user that performed the operation
+     */
+    public final User user;
 
     /**
      * Grabs information about the search critiera.  Similiar to toString() method.
@@ -218,6 +225,7 @@ public final class AuditSearchCriteria implements Serializable {
         private String serviceName = null; //null == any
         private String message = null; //null == any
         private String requestId = null; //null == any
+        private User user = null; //null == any
 
         public Builder() {
         }
@@ -297,6 +305,11 @@ public final class AuditSearchCriteria implements Serializable {
             if (value != null && value.length() > 0) {
                 requestId = value.replace("*", "%");//translate any wildcard chars from GUI to mysql format
             }
+            return this;
+        }
+
+        public Builder user(User user) {
+            this.user = user;
             return this;
         }
 

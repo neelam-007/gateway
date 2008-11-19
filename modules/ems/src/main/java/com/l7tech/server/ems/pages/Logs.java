@@ -2,6 +2,8 @@ package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.LogResource;
 import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
+import com.l7tech.objectmodel.EntityType;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -29,8 +31,10 @@ import java.util.*;
 public class Logs extends EmsPage {
 
     public Logs() {
+        WebMarkupContainer secured = new SecureWebMarkupContainer( "secured", new AttemptedReadAny(EntityType.LOG_RECORD) );
+        
         final Form pageForm = new Form("form");
-        add ( pageForm );
+        secured.add ( pageForm );
 
         final WebMarkupContainer detailsContainer = new WebMarkupContainer("log.details");
         Button viewButton = new YuiAjaxButton("viewLogButton") {
@@ -78,7 +82,9 @@ public class Logs extends EmsPage {
 
         detailsContainer.add( new WebMarkupContainer("details") );
 
-        add(detailsContainer.setOutputMarkupId(true));
+        secured.add(detailsContainer.setOutputMarkupId(true));
+
+        add(secured);
     }
 
     private static File getLogFile( String name ) {

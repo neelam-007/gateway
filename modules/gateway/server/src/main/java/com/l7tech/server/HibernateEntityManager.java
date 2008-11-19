@@ -125,13 +125,13 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @return  The matching entities or an empty list if none found
      * @throws FindException If an error occurs
      */
-    protected List<ET> findPage( final String sortProperty, final boolean ascending, final int offset, final int count, final Criterion... restrictions ) throws FindException {
+    protected List<ET> findPage( final Class clazz, final String sortProperty, final boolean ascending, final int offset, final int count, final Criterion... restrictions ) throws FindException {
         try {
             //noinspection unchecked
             return (List<ET>)getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 @Override
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Criteria crit = session.createCriteria(getImpClass());
+                    Criteria crit = session.createCriteria(clazz==null ? getImpClass() : clazz);
 
                     // Ensure manager specific criteria are added
                     addFindAllCriteria( crit );

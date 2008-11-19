@@ -108,6 +108,28 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
         return authenticated;
     }
 
+    @Override
+    public boolean isAuthorized( final Component component ) {
+        boolean authorized = isAuthenticated();
+
+        if ( authorized ) {
+            Component comp = component;
+            while ( comp != null ) {
+                if ( comp instanceof SecureComponent) {
+                    AttemptedOperation operation = ((SecureComponent)comp).getAttemptedOperation();
+                    if ( operation != null ) {
+                        authorized = hasPermission( operation );
+                        break;
+                    }
+                }
+
+                comp = comp.getParent();
+            }
+        }
+
+        return authorized;
+    }
+
     /**
      * Check if the ESM is licensed or the component does not require a license.
      *

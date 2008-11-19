@@ -4,9 +4,11 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ems.NavigationPage;
@@ -201,7 +203,7 @@ public class SystemSettings extends EmsPage {
                     }
                 }
             }
-        } );
+        }.add( new AttemptedUpdateAny( EntityType.CLUSTER_PROPERTY ) ) );
         add(listenerChangeForm);
 
         final SslModel sslModel = new SslModel();
@@ -250,7 +252,7 @@ public class SystemSettings extends EmsPage {
                     }
                 }
             }
-        } );
+        }.add( new AttemptedUpdateAny( EntityType.SSG_KEY_ENTRY ) ) );
         add(sslChangeForm);
     }
 
@@ -318,7 +320,7 @@ public class SystemSettings extends EmsPage {
                     ajaxRequestTarget.addComponent(dynamicDialogHolder);
                 }
             }
-        } );
+        }.add( new AttemptedUpdateAny( EntityType.CLUSTER_PROPERTY ) ) );
         licenseDetailsContainer.add(licenseDeleteForm);
 
         add(new LicenseForm("licenseForm", refreshComponents, dynamicDialogHolder, feedback));
@@ -521,6 +523,7 @@ public class SystemSettings extends EmsPage {
             add(new YuiButton("license.submit"));
 
             setMaxSize(Bytes.bytes(MAX_LICENSE_FILE_UPLOAD_BYTES));
+            add( new AttemptedUpdateAny( EntityType.CLUSTER_PROPERTY ) );
         }
 
         @Override

@@ -180,26 +180,28 @@
             </div>
             <div class="content">
                 <wicket:extend>
-                    <form wicket:id="form" action="">
-                        <div class="panel">
-                            <div class="panelToolbar">
-                               <button id="addUserButton" type="button" wicket:id="addUserButton"><img src="../images/addUser.png" alt="" /> <wicket:message key="label.new">New</wicket:message></button>
-                               <button id="deleteUserButton" type="button" wicket:id="deleteUserButton"><img src="../images/deleteUser.png" alt="" /> <wicket:message key="label.delete">Delete</wicket:message></button>
-                               <input name="userId" type="hidden" value="" wicket:id="userId"/>
+                    <div wicket:id="secured">
+                        <form wicket:id="form" action="">
+                            <div class="panel">
+                                <div class="panelToolbar">
+                                   <button id="addUserButton" type="button" wicket:id="addUserButton"><img src="../images/addUser.png" alt="" /> <wicket:message key="label.new">New</wicket:message></button>
+                                   <button id="deleteUserButton" type="button" wicket:id="deleteUserButton"><img src="../images/deleteUser.png" alt="" /> <wicket:message key="label.delete">Delete</wicket:message></button>
+                                   <input name="userId" type="hidden" value="" wicket:id="userId"/>
+                                </div>
+                                <div wicket:id="usertable.container">
+                                    <div wicket:id="usertable"/>
+                                </div>
                             </div>
-                            <div wicket:id="usertable.container">
-                                <div wicket:id="usertable"/>
-                            </div>
+                        </form>
+                        <div wicket:id="user.container.1">
+                            <div wicket:id="user.content"/>
                         </div>
-                    </form>
-                    <div wicket:id="user.container.1">
-                        <div wicket:id="user.content"/>
-                    </div>
-                    <div wicket:id="user.container.2">
-                        <div wicket:id="user.content"/>
-                    </div>
-                    <div wicket:id="user.container">
-                        <div wicket:id="user.content"/>
+                        <div wicket:id="user.container.2">
+                            <div wicket:id="user.content"/>
+                        </div>
+                        <div wicket:id="user.container">
+                            <div wicket:id="user.content"/>
+                        </div>
                     </div>
                 </wicket:extend>
             </div>

@@ -8,13 +8,15 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.internal.HtmlHeaderContainer;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.protocol.http.WebRequest;
+import com.l7tech.server.ems.SecureComponent;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 
 /**
  * Form for AJAX style file uploads.
  *
  * @author steve
  */
-public class YuiFileUploadForm extends Form {
+public class YuiFileUploadForm extends Form implements SecureComponent {
 
     //- PUBLIC
 
@@ -45,6 +47,16 @@ public class YuiFileUploadForm extends Form {
             " YAHOO.util.Connect.setForm('"+getMarkupId()+"', true);\n" +
             " var uploadHandler = { upload: function(o) {  new Wicket.Ajax.Call().loadedCallback(o.responseXML); } };\n" +
             " YAHOO.util.Connect.asyncRequest('POST', document.getElementById('"+getMarkupId()+"').action + '&yui=true', uploadHandler);\n";        
+    }
+
+    @Override
+    public AttemptedOperation getAttemptedOperation() {
+        return attemptedOperation;
+    }
+
+    public YuiFileUploadForm add( final AttemptedOperation attemptedOperation ) {
+        this.attemptedOperation = attemptedOperation;
+        return this;
     }
 
     //- PROTECTED
@@ -86,6 +98,8 @@ public class YuiFileUploadForm extends Form {
     }
 
     //- PRIVATE
+
+    private AttemptedOperation attemptedOperation;
 
     private void init() {
         setOutputMarkupId( true );
