@@ -321,7 +321,7 @@ public class SystemSettings extends EmsPage {
         }.add( new AttemptedUpdateAny( EntityType.CLUSTER_PROPERTY ) ) );
         licenseDetailsContainer.add(licenseDeleteForm);
 
-        add(new LicenseForm("licenseForm", refreshComponents, dynamicDialogHolder, feedback));
+        add(new LicenseForm("licenseForm", refreshComponents, dynamicDialogHolder, feedback).setOutputMarkupId(true));
     }
 
     /**
@@ -399,8 +399,11 @@ public class SystemSettings extends EmsPage {
      * Add new license
      */
     private boolean licenseSetup(final String license) {
+        boolean installed = false;
+
         try {
             licenseManager.installNewLicense(license);
+            installed = true;
             info( new StringResourceModel("license.message.updated", this, null).getString() );
         } catch (InvalidLicenseException e) {
             error(ExceptionUtils.getMessage(e));
@@ -410,7 +413,7 @@ public class SystemSettings extends EmsPage {
             logger.log( Level.WARNING, "Error installing new license", e );
         }
 
-        return true;
+        return installed;
     }
 
     /**
@@ -535,10 +538,12 @@ public class SystemSettings extends EmsPage {
                         public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
                             if ( button == YuiDialog.Button.OK ) {
                                 logger.info("License installation confirmed.");
-                                licenseSetup( license );
-                                for ( Component component : components ) {
-                                    component.setVisible(true);
-                                    target.addComponent(component);                                    
+                                if ( licenseSetup( license ) ) {
+                                    for ( Component component : components ) {
+                                        component.setVisible(true);
+                                        target.addComponent(component);
+                                    }
+                                    target.addComponent(LicenseForm.this);
                                 }
                             } else {
                                 logger.info("License installation cancelled.");
