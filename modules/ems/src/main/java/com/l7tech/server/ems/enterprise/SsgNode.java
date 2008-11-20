@@ -84,20 +84,21 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         this.trustStatus = trustStatus;
     }
 
+    @Override
     public void toJSON(JSON.Output output) {
         output.add(JSONConstants.ID, guid);
         output.add(JSONConstants.PARENT_ID, ssgCluster.getGuid());
         output.add(JSONConstants.TYPE, JSONConstants.Entity.SSG_NODE);
         output.add(JSONConstants.VERSION, getSoftwareVersion());
         output.add(JSONConstants.NAME, _name);
-        output.add(JSONConstants.RBAC_CUD, true); // TODO Should be true only for user with administrator role.
+        output.add(JSONConstants.RBAC_CUD, false);
         output.add(JSONConstants.ONLINES_TATUS, getOnlineStatus());
         output.add(JSONConstants.TRUST_STATUS, isTrustStatus());
-        output.add(JSONConstants.ACCESS_STATUS, true); // TODO get the real status later on
         output.add(JSONConstants.SELF_HOST_NAME, obtainHostName());
         output.add(JSONConstants.IP_ADDRESS, getIpAddress());
     }
 
+    @Override
     public void fromJSON(Map map) {
         throw new UnsupportedOperationException("Mapping from JSON not supported.");
     }
@@ -111,10 +112,45 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         }
     }
 
+     @Override
      public int compareTo(Object o) {
          return _name.compareTo(((SsgNode)o).getName());
      }
 
+    @SuppressWarnings({"RedundantIfStatement"})
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        SsgNode ssgNode = (SsgNode) o;
+
+        if (trustStatus != ssgNode.trustStatus) return false;
+        if (guid != null ? !guid.equals(ssgNode.guid) : ssgNode.guid != null) return false;
+        if (ipAddress != null ? !ipAddress.equals(ssgNode.ipAddress) : ssgNode.ipAddress != null) return false;
+        if (onlineStatus != null ? !onlineStatus.equals(ssgNode.onlineStatus) : ssgNode.onlineStatus != null)
+            return false;
+        if (softwareVersion != null ? !softwareVersion.equals(ssgNode.softwareVersion) : ssgNode.softwareVersion != null)
+            return false;
+        if (ssgCluster != null ? !ssgCluster.equals(ssgNode.ssgCluster) : ssgNode.ssgCluster != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (guid != null ? guid.hashCode() : 0);
+        result = 31 * result + (ipAddress != null ? ipAddress.hashCode() : 0);
+        result = 31 * result + (ssgCluster != null ? ssgCluster.hashCode() : 0);
+        result = 31 * result + (onlineStatus != null ? onlineStatus.hashCode() : 0);
+        result = 31 * result + (trustStatus ? 1 : 0);
+        result = 31 * result + (softwareVersion != null ? softwareVersion.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return
             "SSG Node Name : " + getName() + "\n" +

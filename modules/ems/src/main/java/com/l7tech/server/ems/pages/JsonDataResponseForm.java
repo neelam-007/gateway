@@ -1,23 +1,32 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.mortbay.util.ajax.JSON;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
  * @Author: ghuang
  * @Date: Nov 6, 2008
  */
-public abstract class JsonDataResponseForm extends Form {
+public abstract class JsonDataResponseForm extends SecureForm {
+
     /**
      * Constructor to create a form to manage json requests from the browser
      * @param id: a wicket component id
      */
     public JsonDataResponseForm(String id) {
         super(id);
+    }
+
+    /**
+     * Constructor to create a form to manage json requests from the browser
+     * @param id: a wicket component id
+     */
+    public JsonDataResponseForm(String id, AttemptedOperation attemptedOperation) {
+        super(id, attemptedOperation);
     }
 
     /**

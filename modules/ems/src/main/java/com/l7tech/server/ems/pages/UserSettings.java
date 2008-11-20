@@ -47,13 +47,9 @@ public class UserSettings extends EmsPage {
      * Create user settings page
      */
     public UserSettings() {
-        ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
-        HttpServletRequest request = servletWebRequest.getHttpServletRequest();
-        EmsSecurityManager.LoginInfo info = securityManager.getLoginInfo( request.getSession(true) );
-
         Map<String,String> preferences = Collections.emptyMap();
         try {
-            preferences = userPropertyManager.getUserProperties(info.getUser());
+            preferences = userPropertyManager.getUserProperties(getUser());
             logger.info("Loaded user preferences: " + preferences);
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error loading user preferences.", fe );       
@@ -115,13 +111,9 @@ public class UserSettings extends EmsPage {
     private boolean storePreferences( final Map<String,String> preferences ) {
         boolean updated = false;
 
-        ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
-        HttpServletRequest request = servletWebRequest.getHttpServletRequest();
-        EmsSecurityManager.LoginInfo info = securityManager.getLoginInfo( request.getSession(true) );
-
         try {
             logger.info("Saving user preferences: " + preferences);
-            userPropertyManager.saveUserProperties( info.getUser(), preferences );
+            userPropertyManager.saveUserProperties( getUser(), preferences );
             updated = true;
 
             String dateFormat = preferences.get("dateformat");

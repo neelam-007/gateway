@@ -15,6 +15,7 @@ import org.apache.wicket.authorization.UnauthorizedActionException;
 import org.apache.wicket.behavior.HeaderContributor;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.EmsSession;
+import com.l7tech.identity.User;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -26,9 +27,7 @@ public abstract class EmsPage extends WebPage {
     //- PUBLIC
 
     public EmsPage() {
-        ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
-        HttpServletRequest request = servletWebRequest.getHttpServletRequest();
-        final EmsSecurityManager.LoginInfo info = securityManager.getLoginInfo( request.getSession(true) );
+        final EmsSecurityManager.LoginInfo info = getLoginInfo();
         final StringResourceModel sinceResourceModel = new StringResourceModel( "page.since", this, null, new Object[]{new Model(){
             @Override
             public Object getObject() {
@@ -69,6 +68,27 @@ public abstract class EmsPage extends WebPage {
     //- PACKAGE
 
     static final ResourceReference RES_CSS_SKIN = new CompressedResourceReference(YuiCommon.class, "../resources/css/l7-yui-skin.css" );    
+
+    EmsSecurityManager.LoginInfo getLoginInfo() {
+        EmsSecurityManager.LoginInfo info;
+
+        ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
+        HttpServletRequest request = servletWebRequest.getHttpServletRequest();
+        info = securityManager.getLoginInfo( request.getSession(true) );
+
+        return info;
+    }
+
+    User getUser() {
+        User user = null;
+
+        EmsSecurityManager.LoginInfo info = getLoginInfo();
+        if ( info != null ) {
+            user = info.getUser();
+        }
+
+        return user;
+    }
 
     //- PROTECTED
 

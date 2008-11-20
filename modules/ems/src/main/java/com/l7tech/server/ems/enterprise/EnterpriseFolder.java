@@ -79,15 +79,16 @@ public class EnterpriseFolder extends NamedEntityImp implements JSON.Convertible
     }
 
     // Implements JSON.Convertible
+    @Override
     public void toJSON(JSON.Output output) {
         output.add(JSONConstants.ID, guid);
         output.add(JSONConstants.PARENT_ID, parentFolder == null ? null : parentFolder.getGuid());
         output.add(JSONConstants.TYPE, JSONConstants.Entity.ENTERPRISE_FOLDER);
         output.add(JSONConstants.NAME, _name);
-        output.add(JSONConstants.RBAC_CUD, true); // TODO Should be true only for user with administrator role.
     }
 
     // Implements JSON.Convertible
+    @Override
     public void fromJSON(Map map) {
         throw new UnsupportedOperationException("Mapping from JSON not supported.");
     }

@@ -149,21 +149,52 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         return infoSet;
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        SsgCluster that = (SsgCluster) o;
+
+        if (adminPort != that.adminPort) return false;
+        if (trustStatus != that.trustStatus) return false;
+        if (dbHosts != null ? !dbHosts.equals(that.dbHosts) : that.dbHosts != null) return false;
+        if (guid != null ? !guid.equals(that.guid) : that.guid != null) return false;
+        if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) return false;
+        if (parentFolder != null ? !parentFolder.equals(that.parentFolder) : that.parentFolder != null) return false;
+        if (sslHostName != null ? !sslHostName.equals(that.sslHostName) : that.sslHostName != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (guid != null ? guid.hashCode() : 0);
+        result = 31 * result + (sslHostName != null ? sslHostName.hashCode() : 0);
+        result = 31 * result + (ipAddress != null ? ipAddress.hashCode() : 0);
+        result = 31 * result + adminPort;
+        result = 31 * result + (trustStatus ? 1 : 0);
+        result = 31 * result + (dbHosts != null ? dbHosts.hashCode() : 0);
+        result = 31 * result + (parentFolder != null ? parentFolder.hashCode() : 0);
+        return result;
+    }
+
     @Override
     public String toString() {
         return _name;
     }
 
     // Implements JSON.Convertible
+    @Override
     public void toJSON(JSON.Output output) {
         output.add(JSONConstants.ID, guid);
         output.add(JSONConstants.PARENT_ID, parentFolder.getGuid());
         output.add(JSONConstants.TYPE, JSONConstants.Entity.SSG_CLUSTER);
         output.add(JSONConstants.NAME, _name);
-        output.add(JSONConstants.RBAC_CUD, true); // TODO Should be true only for user with administrator role.
-// TODO       output.add(JSONConstants.ANCESTORS, );
         output.add(JSONConstants.TRUST_STATUS, trustStatus);
-        output.add(JSONConstants.ACCESS_STATUS, true); // TODO Get the actual access status for the current user.
         output.add(JSONConstants.SSL_HOST_NAME, sslHostName);
         output.add(JSONConstants.ADMIN_PORT, Integer.toString(adminPort));
 // TODO       output.add(JSONConstants.DB_HOSTS, ...);
@@ -171,6 +202,7 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
     }
 
     // Implements JSON.Convertible
+    @Override
     public void fromJSON(Map map) {
         throw new UnsupportedOperationException("Mapping from JSON not supported.");
     }

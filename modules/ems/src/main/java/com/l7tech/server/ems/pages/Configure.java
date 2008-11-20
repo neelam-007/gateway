@@ -2,7 +2,10 @@ package com.l7tech.server.ems.pages;
 
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayContext;
@@ -10,18 +13,24 @@ import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.mortbay.util.ajax.JSON;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.Collections;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  *
@@ -32,14 +41,14 @@ public class Configure extends EmsPage  {
 
     private static final Logger logger = Logger.getLogger(Configure.class.getName());
 
-    @SpringBean(name="serverConfig")
+    @SpringBean
     private Config config;
 
     @SpringBean
-    GatewayTrustTokenFactory gatewayTrustTokenFactory;
+    private GatewayTrustTokenFactory gatewayTrustTokenFactory;
 
     @SpringBean
-    GatewayContextFactory gatewayContextFactory;
+    private GatewayContextFactory gatewayContextFactory;
 
     @SpringBean
     private EnterpriseFolderManager enterpriseFolderManager;
@@ -50,14 +59,34 @@ public class Configure extends EmsPage  {
     @SpringBean
     private SsgNodeManager ssgNodeManager;
 
+    @SpringBean
+    private EmsSecurityManager securityManager;
+
+    @SpringBean
+    private UserPropertyManager userPropertyManager;
+
     public Configure() {
+        Map<String,String> up = Collections.emptyMap();
+        try {
+            up = userPropertyManager.getUserProperties( getUser() );
+        } catch ( FindException fe ){
+            logger.log( Level.WARNING, "Error loading user properties", fe );
+        }
+        final Map<String,String> userProperties = up;
+
         JsonInteraction interaction = new JsonInteraction("actiondiv", "jsonUrl", new JsonDataProvider(){
             @Override
             public Object getData() {
                 try {
-                    final List<JSON.Convertible> entities = new ArrayList<JSON.Convertible>();
-                    EnterpriseFolder rootFolder = enterpriseFolderManager.findRootFolder();
-                    entities.add(rootFolder);
+                    final List<Object> entities = new ArrayList<Object>();
+                    final EnterpriseFolder rootFolder = enterpriseFolderManager.findRootFolder();
+                    entities.add(new JSONSupport( rootFolder ){
+                        @Override
+                        protected void writeJson() {
+                            super.writeJson();
+                            add(JSONConstants.RBAC_CUD, securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_ENTERPRISE_FOLDER, rootFolder)) );
+                        }
+                    } );
                     addChildren(entities, rootFolder);
                     return entities;
                 } catch (FindException e) {
@@ -66,19 +95,38 @@ public class Configure extends EmsPage  {
                 }
             }
 
-            private void addChildren(final List<JSON.Convertible> nodes, final EnterpriseFolder folder) throws FindException {
+            private void addChildren(final List<Object> nodes, final EnterpriseFolder folder) throws FindException {
                 // Display order is alphabetical on name, with folders before clusters.
-                for (EnterpriseFolder childFolder : enterpriseFolderManager.findChildFolders(folder)) {
-                    nodes.add(childFolder);
+                for ( final EnterpriseFolder childFolder : enterpriseFolderManager.findChildFolders(folder)) {
+                    nodes.add( new JSONSupport( childFolder ){
+                        @Override
+                        protected void writeJson() {
+                            super.writeJson();
+                            add(JSONConstants.RBAC_CUD, securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_ENTERPRISE_FOLDER, childFolder)) );
+                        }
+                    }  );
                     addChildren(nodes, childFolder);
                 }
 
-                for (SsgCluster childCluster : ssgClusterManager.findChildSsgClusters(folder)) {
-                    nodes.add(childCluster);
+                for ( final SsgCluster childCluster : ssgClusterManager.findChildSsgClusters(folder) ) {
+                    nodes.add( new JSONSupport( childCluster ){
+                        @Override
+                        protected void writeJson() {
+                            super.writeJson();
+                            add(JSONConstants.RBAC_CUD, securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_SSG_CLUSTER, childCluster)) );
+                            add(JSONConstants.ACCESS_STATUS, userProperties.containsKey("cluster." +  childCluster.getGuid() + ".trusteduser"));
+                        }
+                    });
 
                     // Add SSG nodes
-                    for (SsgNode node: new TreeSet<SsgNode>(childCluster.getNodes())) {
-                        nodes.add(node);
+                    for ( SsgNode node : new TreeSet<SsgNode>(childCluster.getNodes()) ) {
+                        nodes.add( new JSONSupport( node ){
+                            @Override
+                            protected void writeJson() {
+                                super.writeJson();
+                                add( JSONConstants.ACCESS_STATUS, securityManager.hasPermission( new AttemptedReadSpecific(EntityType.ESM_SSG_CLUSTER, childCluster.getId())) );
+                            }
+                        } );
                     }
                 }
             }
@@ -86,7 +134,7 @@ public class Configure extends EmsPage  {
 
         final HiddenField addFolderDialogInputParentId = new HiddenField("addFolderDialog_parentId", new Model(""));
         final RequiredTextField addFolderInputName = new RequiredTextField("addFolderDialog_name", new Model(""));
-        Form addFolderForm = new JsonDataResponseForm("addFolderForm"){
+        Form addFolderForm = new JsonDataResponseForm("addFolderForm", new AttemptedCreate( EntityType.ESM_ENTERPRISE_FOLDER )){
             @Override
             protected Object getJsonResponseData() {
                 String newFolderName = addFolderInputName.getModelObjectAsString();
@@ -118,7 +166,7 @@ public class Configure extends EmsPage  {
 
         final HiddenField renameFolderDialogInputId = new HiddenField("renameFolderDialog_id", new Model(""));
         final RequiredTextField renameFolderInputName = new RequiredTextField("renameFolderDialog_name", new Model(""));
-        Form renameFolderForm = new JsonDataResponseForm("renameFolderForm"){
+        Form renameFolderForm = new JsonDataResponseForm("renameFolderForm", new AttemptedUpdateAny( EntityType.ESM_ENTERPRISE_FOLDER )){
             @Override
             protected Object getJsonResponseData() {
                 String renamedFolderGuid = renameFolderDialogInputId.getModelObjectAsString();
@@ -150,7 +198,7 @@ public class Configure extends EmsPage  {
         renameFolderForm.add(renameFolderInputName);
 
         final HiddenField deleteFolderDialogInputId = new HiddenField("deleteFolderDialog_id", new Model(""));
-        Form deleteFolderForm = new JsonDataResponseForm("deleteFolderForm"){
+        Form deleteFolderForm = new JsonDataResponseForm("deleteFolderForm", new AttemptedDeleteAll( EntityType.ESM_ENTERPRISE_FOLDER )){
             @Override
             protected Object getJsonResponseData() {
                 try {
@@ -171,7 +219,7 @@ public class Configure extends EmsPage  {
         final RequiredTextField addSSGClusterInputName = new RequiredTextField("addSSGClusterDialog_name", new Model(""));
         final RequiredTextField addSSGClusterInputHostName = new RequiredTextField("addSSGClusterDialog_hostName", new Model(""));
         final RequiredTextField addSSGClusterInputPort = new RequiredTextField("addSSGClusterDialog_port", new Model(""));
-        Form addSSGClusterForm = new JsonDataResponseForm("addSSGClusterForm"){
+        Form addSSGClusterForm = new JsonDataResponseForm("addSSGClusterForm", new AttemptedCreate( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {
                 String newClusterName = addSSGClusterInputName.getModelObjectAsString();
@@ -210,7 +258,7 @@ public class Configure extends EmsPage  {
 
         final HiddenField renameSSGClusterDialogInputId = new HiddenField("renameSSGClusterDialog_id", new Model(""));
         final RequiredTextField renameSSGClusterInputName = new RequiredTextField("renameSSGClusterDialog_name", new Model(""));
-        Form renameSSGClusterForm = new JsonDataResponseForm("renameSSGClusterForm"){
+        Form renameSSGClusterForm = new JsonDataResponseForm("renameSSGClusterForm", new AttemptedUpdateAny( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {
                 String renamedSSGClusterGuid = renameSSGClusterDialogInputId.getModelObjectAsString();
@@ -242,7 +290,7 @@ public class Configure extends EmsPage  {
         renameSSGClusterForm.add(renameSSGClusterInputName);
 
         final HiddenField deleteSSGClusterDialogInputId = new HiddenField("deleteSSGClusterDialog_id", new Model(""));
-        Form deleteSSGClusterForm = new JsonDataResponseForm("deleteSSGClusterForm"){
+        Form deleteSSGClusterForm = new JsonDataResponseForm("deleteSSGClusterForm", new AttemptedDeleteAll( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {
                 try {
@@ -265,15 +313,10 @@ public class Configure extends EmsPage  {
                 try {
                     logger.info("Responding to request for trust token.");
                     final String token = gatewayTrustTokenFactory.getTrustToken();
-                    return new JSON.Convertible() {
+                    return new JSONSupport() {
                         @Override
-                        public void toJSON(JSON.Output output) {
-                            output.add("token", token);
-                        }
-
-                        @Override
-                        public void fromJSON(Map map) {
-                            throw new UnsupportedOperationException("Mapping from JSON not supported.");
+                        protected void writeJson() {
+                            add("token", token);
                         }
                     };
                 } catch (Exception e) {
@@ -294,16 +337,18 @@ public class Configure extends EmsPage  {
                     
                     SsgNode node = ssgNodeManager.findByGuid(ssgNodeGuid);
                     SsgCluster cluster = node.getSsgCluster();
-                    GatewayContext gatewayContext = gatewayContextFactory.getGatewayContext(null, node.getIpAddress(), cluster.getAdminPort());
-                    NodeManagementApi nodeManagementApi = gatewayContext.getManagementApi();
+                    if ( securityManager.hasPermission( new AttemptedReadSpecific( EntityType.ESM_SSG_CLUSTER, cluster.getId() ) ) ) {
+                        GatewayContext gatewayContext = gatewayContextFactory.getGatewayContext(null, node.getIpAddress(), cluster.getAdminPort());
+                        NodeManagementApi nodeManagementApi = gatewayContext.getManagementApi();
 
-                    // Start the node
-                    nodeManagementApi.startNode("default");
+                        // Start the node
+                        nodeManagementApi.startNode("default");
 
-                    // Todo: the below updating node is for demo only.  We will remove the part later on, since GatewayPoller will update node status periodically.
-                    // Update the node online status
-                    node.setOnlineStatus("on");
-                    ssgNodeManager.update(node);
+                        // Todo: the below updating node is for demo only.  We will remove the part later on, since GatewayPoller will update node status periodically.
+                        // Update the node online status
+                        node.setOnlineStatus("on");
+                        ssgNodeManager.update(node);
+                    }
 
                     // Return the response to the client
                     return node;
@@ -325,16 +370,18 @@ public class Configure extends EmsPage  {
 
                     SsgNode node = ssgNodeManager.findByGuid(ssgNodeGuid);
                     SsgCluster cluster = node.getSsgCluster();
-                    GatewayContext gatewayContext = gatewayContextFactory.getGatewayContext(null, node.getIpAddress(), cluster.getAdminPort());
-                    NodeManagementApi nodeManagementApi = gatewayContext.getManagementApi();
+                    if ( securityManager.hasPermission( new AttemptedReadSpecific( EntityType.ESM_SSG_CLUSTER, cluster.getId() ) ) ) {
+                        GatewayContext gatewayContext = gatewayContextFactory.getGatewayContext(null, node.getIpAddress(), cluster.getAdminPort());
+                        NodeManagementApi nodeManagementApi = gatewayContext.getManagementApi();
 
-                    // Stop the node
-                    nodeManagementApi.stopNode("default", 20000);
+                        // Stop the node
+                        nodeManagementApi.stopNode("default", 20000);
 
-                    // Todo: the below updating node is for demo only.  We will remove this part later on, since GatewayPoller will update node status periodically.
-                    // Update the node online status
-                    node.setOnlineStatus("off");
-                    ssgNodeManager.update(node);
+                        // Todo: the below updating node is for demo only.  We will remove this part later on, since GatewayPoller will update node status periodically.
+                        // Update the node online status
+                        node.setOnlineStatus("off");
+                        ssgNodeManager.update(node);
+                    }
 
                     // Return the response to the client
                     return node;
