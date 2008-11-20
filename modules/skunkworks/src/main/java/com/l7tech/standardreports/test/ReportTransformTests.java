@@ -105,12 +105,15 @@ public class ReportTransformTests {
         mappingValues.add("127.0.0.1Gold");
         mappingValues.add("127.0.0.1Silver");
 
-        LinkedHashMap<String, String> linkedHashMap = new LinkedHashMap<String, String>();
-        linkedHashMap.put("Group 1", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze");
-        linkedHashMap.put("Group 2", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold");
-        linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.3, CUSTOMER: Silver");
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        List<String> valueList = new ArrayList<String>();
+        valueList.add("Donal");
+        valueList.add("127.0.0.1");
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, linkedHashMap);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageRuntimeTransform.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
@@ -149,17 +152,14 @@ public class ReportTransformTests {
         keys.add("IP_ADDRESS");
 //        keys.add("CUSTOMER");
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-        mappingValues.add("127.0.0.1");
-        mappingValues.add("127.0.0.2");
-//        mappingValues.add("127.0.0.1Bronze");
-//        mappingValues.add("127.0.0.1Gold");
-//        mappingValues.add("127.0.0.1Silver");
-//        mappingValues.add("127.0.0.2Bronze");
-//        mappingValues.add("127.0.0.2Gold");
-//        mappingValues.add("127.0.0.2Silver");
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        List<String> valueList = new ArrayList<String>();
+        valueList.add("127.0.0.1");
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
 
-        Document transformDoc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, null);
+        Document transformDoc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
         String xmlFileName = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
@@ -204,26 +204,19 @@ public class ReportTransformTests {
         keys.add("IP_ADDRESS");
         keys.add("CUSTOMER");
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-//        mappingValues.add("127.0.0.1");
-//        mappingValues.add("127.0.0.2");
-        mappingValues.add("127.0.0.1Bronze");
-        mappingValues.add("127.0.0.1Gold");
-        mappingValues.add("127.0.0.1Silver");
-        mappingValues.add("127.0.0.2Bronze");
-        mappingValues.add("127.0.0.2Gold");
-        mappingValues.add("127.0.0.2Silver");
-        mappingValues.add("127.0.0.1Bronze1");
-        mappingValues.add("127.0.0.1Gold1");
-        mappingValues.add("127.0.0.1Silver1");
-        mappingValues.add("127.0.0.2Bronze1");
-        mappingValues.add("127.0.0.2Gold1");
-        mappingValues.add("127.0.0.2Silver1");
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        List<String> valueList = new ArrayList<String>();
+        valueList.add("Donal");
+        valueList.add("127.0.0.1");
+        valueList.add("Bronze");
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
 
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, null);
+        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 535);
@@ -276,21 +269,16 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
 
-        LinkedHashMap<String, String> linkedHashMap = new LinkedHashMap<String, String>();
-        linkedHashMap.put("Group 1", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze");
-        linkedHashMap.put("Group 2", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Gold");
-        linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Silver");
-        linkedHashMap.put("Group 4", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Bronze");
-        linkedHashMap.put("Group 5", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold");
-        linkedHashMap.put("Group 6", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Silver");
-        linkedHashMap.put("Group 7", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze1");
-        linkedHashMap.put("Group 8", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Gold1");
-        linkedHashMap.put("Group 9", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Silver1");
-        linkedHashMap.put("Group 10", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Bronze1");
-        linkedHashMap.put("Group 11", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold1");
-        linkedHashMap.put("Group 12", "IP_ADDRESS: 127.0.0.2, CUSTOMER: Silver1");
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        List<String> valueList = new ArrayList<String>();
+        valueList.add("Donal");
+        valueList.add("127.0.0.1");
+        valueList.add("Bronze");
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
 
-        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, linkedHashMap);
+        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
 
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestMasterTransformDoc.xml");
         f.createNewFile();
@@ -337,26 +325,19 @@ public class ReportTransformTests {
         keys.add("IP_ADDRESS");
         keys.add("CUSTOMER");
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-//        mappingValues.add("127.0.0.1");
-//        mappingValues.add("127.0.0.2");
-        mappingValues.add("127.0.0.1Bronze");
-        mappingValues.add("127.0.0.1Gold");
-        mappingValues.add("127.0.0.1Silver");
-        mappingValues.add("127.0.0.2Bronze");
-        mappingValues.add("127.0.0.2Gold");
-        mappingValues.add("127.0.0.2Silver");
-        mappingValues.add("127.0.0.1Bronze1");
-        mappingValues.add("127.0.0.1Gold1");
-        mappingValues.add("127.0.0.1Silver1");
-        mappingValues.add("127.0.0.2Bronze1");
-        mappingValues.add("127.0.0.2Gold1");
-        mappingValues.add("127.0.0.2Silver1");
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        List<String> valueList = new ArrayList<String>();
+        valueList.add("Donal");
+        valueList.add("127.0.0.1");
+        valueList.add("Bronze");
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
 
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportSubIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -389,24 +370,19 @@ public class ReportTransformTests {
         keys.add("IP_ADDRESS");
         keys.add("CUSTOMER");
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-        mappingValues.add("127.0.0.1Bronze");
-        mappingValues.add("127.0.0.1Gold");
-        mappingValues.add("127.0.0.1Silver");
-        mappingValues.add("127.0.0.2Bronze");
-        mappingValues.add("127.0.0.2Gold");
-        mappingValues.add("127.0.0.2Silver");
-        mappingValues.add("127.0.0.1Bronze1");
-        mappingValues.add("127.0.0.1Gold1");
-        mappingValues.add("127.0.0.1Silver1");
-        mappingValues.add("127.0.0.2Bronze1");
-        mappingValues.add("127.0.0.2Gold1");
-        mappingValues.add("127.0.0.2Silver1");
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        List<String> valueList = new ArrayList<String>();
+        valueList.add("Donal");
+        valueList.add("127.0.0.1");
+        valueList.add("Bronze");
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
 
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportSubIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -428,26 +404,17 @@ public class ReportTransformTests {
         keys.add("IP_ADDRESS");
 //        keys.add("CUSTOMER");
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-        mappingValues.add("127.0.0.1");
-        mappingValues.add("127.0.0.2");
-//        mappingValues.add("127.0.0.1Bronze");
-//        mappingValues.add("127.0.0.1Gold");
-//        mappingValues.add("127.0.0.1Silver");
-//        mappingValues.add("127.0.0.2Bronze");
-//        mappingValues.add("127.0.0.2Gold");
-//        mappingValues.add("127.0.0.2Silver");
-//        mappingValues.add("127.0.0.1Bronze1");
-//        mappingValues.add("127.0.0.1Gold1");
-//        mappingValues.add("127.0.0.1Silver1");
-//        mappingValues.add("127.0.0.2Bronze1");
-//        mappingValues.add("127.0.0.2Gold1");
-//        mappingValues.add("127.0.0.2Silver1");
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        List<String> valueList = new ArrayList<String>();
+        valueList.add("127.0.0.1");
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
 
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(false, keys, mappingValues);
+        Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -480,24 +447,18 @@ public class ReportTransformTests {
         keys.add("IP_ADDRESS");
         keys.add("CUSTOMER");
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-        mappingValues.add("127.0.0.1Bronze");
-        mappingValues.add("127.0.0.1Gold");
-        mappingValues.add("127.0.0.1Silver");
-        mappingValues.add("127.0.0.2Bronze");
-        mappingValues.add("127.0.0.2Gold");
-        mappingValues.add("127.0.0.2Silver");
-        mappingValues.add("127.0.0.1Bronze1");
-        mappingValues.add("127.0.0.1Gold1");
-        mappingValues.add("127.0.0.1Silver1");
-        mappingValues.add("127.0.0.2Bronze1");
-        mappingValues.add("127.0.0.2Gold1");
-        mappingValues.add("127.0.0.2Silver1");
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        List<String> valueList = new ArrayList<String>();
+        valueList.add("127.0.0.1");
+        valueList.add("Bronze");
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
+        distinctMappingSets.add(valueList);
 
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(false, keys, mappingValues);
+        Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);

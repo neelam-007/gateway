@@ -1493,14 +1493,16 @@ Value is included in all or none, comment is just illustrative
      *
      * @param useUser
      * @param keys
-     * @param distinctMappingValues
      * @return
      */
-    public static Document getUsageSubReportRuntimeDoc(boolean useUser, List<String> keys, LinkedHashSet<String> distinctMappingValues) {
+    public static Document getUsageSubReportRuntimeDoc(boolean useUser, List<String> keys,
+                                                       LinkedHashSet<List<String>> distinctMappingSets) {
         if((keys == null || keys.isEmpty()) && !useUser){
             throw new IllegalArgumentException("keys must not be null or empty if useUser is not true");
         }
 
+        LinkedHashSet<String> distinctMappingValues = getMappingValues(distinctMappingSets);
+        
         if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
             throw new IllegalArgumentException("distinctMappingValues must not be null or empty");
         }
@@ -1562,13 +1564,15 @@ Value is included in all or none, comment is just illustrative
      *
      * @param useUser
      * @param keys
-     * @param distinctMappingValues
      * @return
      */
-    public static Document getUsageSubIntervalMasterRuntimeDoc(boolean useUser, List<String> keys, LinkedHashSet<String> distinctMappingValues) {
+    public static Document getUsageSubIntervalMasterRuntimeDoc(boolean useUser, List<String> keys,
+                                                               LinkedHashSet<List<String>> distinctMappingSets) {
         if((keys == null || keys.isEmpty()) && !useUser){
             throw new IllegalArgumentException("keys must not be null or empty if useUser is not true");
         }
+
+        LinkedHashSet<String> distinctMappingValues = getMappingValues(distinctMappingSets);
 
         if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
             throw new IllegalArgumentException("distinctMappingValues must not be null or empty");
@@ -1730,20 +1734,24 @@ Value is included in all or none, comment is just illustrative
      * Create a document, given the input properties, which will be used to transform the
      * template usgae report.
      * @param keys The mapping keys selected to be included in the report. Used for creating display elements
-     * @param distinctMappingValues The set of distinct mapping values, which were determined earlier based on
-     * the users selection of keys, key values, time and other constraints. Each string in the set is the
-     * concatanated value of authenticated user, mapping1_value, mapping2_value, mapping3_value, mapping4_value
-     * and mapping5_value.
      * @param useUser if true, then the report header will include a display item for 'Authenticated User'
      * @return the Document returned is not formatted
      */
     public static Document getUsageIntervalMasterRuntimeDoc(boolean useUser, List<String> keys,
-                                                            LinkedHashSet<String> distinctMappingValues,
-                                                            LinkedHashMap<String,String> groupToMappingValue) {
+                                              LinkedHashSet<List<String>> distinctMappingSets) {
         if((keys == null || keys.isEmpty()) && !useUser){
             throw new IllegalArgumentException("keys must not be null or empty if useUser is not true");
         }
 
+        LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);        
+        /*
+        * distinctMappingValues The set of distinct mapping values, which were determined earlier based on
+        * the users selection of keys, key values, time and other constraints. Each string in the set is the
+        * concatanated value of authenticated user, mapping1_value, mapping2_value, mapping3_value, mapping4_value
+        * and mapping5_value.
+        */
+        LinkedHashSet<String> distinctMappingValues = getMappingValues(distinctMappingSets);
+        
         if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
             throw new IllegalArgumentException("distinctMappingValues must not be null or empty");
         }
@@ -1888,29 +1896,106 @@ Value is included in all or none, comment is just illustrative
         rightMarginElement.setTextContent(String.valueOf(LEFT_MARGIN_WIDTH));
         rootNode.appendChild(rightMarginElement);
 
-        addChartXMLToDocument(doc, groupToMappingValue, frameWidth, 595);
+        LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
+        addChartXMLToDocument(doc, groupToLegendDisplayStringMap, frameWidth, 595);
         
         return doc;
     }
-    
+
+    private static LinkedHashSet<String> getMappingValues(LinkedHashSet<List<String>> distinctMappingSets){
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+
+        for(List<String> set: distinctMappingSets){
+            List<String> mappingStrings = new ArrayList<String>();
+            boolean first = true;
+            String authUser = null;
+            for(String s: set){
+                if(first){
+                    authUser = s;
+                    first = false;
+                    continue;
+                }
+                mappingStrings.add(s);
+            }
+            String mappingValue = Utilities.getMappingValueString(authUser, mappingStrings.toArray(new String[]{}));
+            mappingValues.add(mappingValue);
+        }
+
+        return mappingValues;
+    }
+
+    public static LinkedHashMap<String, String> getKeyToColumnValues(LinkedHashSet<List<String>> distinctMappingSets) {
+        LinkedHashSet<String> mappingValues = getMappingValues(distinctMappingSets);
+        LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
+        int count = 1;
+        //System.out.println("Key to column map");
+        for (String s : mappingValues) {
+            keyToColumnName.put(s, "COLUMN_"+count);
+            //System.out.println(s+" " + "COLUMN_"+count);
+            count++;
+        }
+        return keyToColumnName;
+    }
+
+    public static LinkedHashMap<Integer, String> getGroupIndexToGroupString(LinkedHashSet<String> mappingValuesLegend){
+        LinkedHashMap<Integer, String> groupIndexToGroup = new LinkedHashMap<Integer, String>();
+        int index = 1;
+        for(String s: mappingValuesLegend){
+            String group = "Group "+index;
+            groupIndexToGroup.put(index, group);
+            index++;
+        }
+        return groupIndexToGroup;
+    }
+
+    public static LinkedHashMap<String, String> getLegendDisplayStringToGroupMap(LinkedHashSet<String> mappingValuesLegend){
+        LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
+        int index = 1;
+        for(String s: mappingValuesLegend){
+            String group = "Group "+index;
+            displayStringToGroup.put(s, group);
+            index++;
+        }
+
+        return displayStringToGroup;
+    }
+
+
+    private static LinkedHashMap<String, String> getGroupToLegendDisplayStringMap(LinkedHashSet<String> mappingValuesLegend){
+        LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
+        int index = 1;
+        for(String s: mappingValuesLegend){
+            String group = "Group "+index;
+            groupToDisplayString.put(group, s);
+            index++;
+        }
+
+        return groupToDisplayString;
+    }
+
     /**
      * Create a document, given the input properties, which will be used to transform the
      * template usgae report.
      * @param keys The mapping keys selected to be included in the report. Used for creating display elements
-     * @param distinctMappingValues The set of distinct mapping values, which were determined earlier based on
-     * the users selection of keys, key values, time and other constraints. Each string in the set is the
-     * concatanated value of authenticated user, mapping1_value, mapping2_value, mapping3_value, mapping4_value
-     * and mapping5_value.
      * @param useUser if true, then the report header will include a display item for 'Authenticated User'
-     * @param groupToMappingValue 
      * @return the Document returned is not formatted
      */
     public static Document getUsageRuntimeDoc(boolean useUser, List<String> keys,
-                                              LinkedHashSet<String> distinctMappingValues,
-                                              LinkedHashMap<String,String> groupToMappingValue) {
+                                              LinkedHashSet<List<String>> distinctMappingSets) {
         if((keys == null || keys.isEmpty()) && !useUser){
             throw new IllegalArgumentException("keys must not be null or empty if useUser is not true");
         }
+
+        LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);
+
+        /*
+        * distinctMappingValues The set of distinct mapping values, which were determined earlier based on
+        * the users selection of keys, key values, time and other constraints. Each string in the set is the
+        * concatanated value of authenticated user, mapping1_value, mapping2_value, mapping3_value, mapping4_value
+        * and mapping5_value.
+        */
+
+        LinkedHashSet<String> distinctMappingValues = getMappingValues(distinctMappingSets);
 
         if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
             throw new IllegalArgumentException("distinctMappingValues must not be null or empty");
@@ -2045,8 +2130,41 @@ Value is included in all or none, comment is just illustrative
         rightMarginElement.setTextContent(String.valueOf(LEFT_MARGIN_WIDTH));
         rootNode.appendChild(rightMarginElement);
 
-        addChartXMLToDocument(doc, groupToMappingValue, frameWidth, 595);        
+        LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
+        addChartXMLToDocument(doc, groupToLegendDisplayStringMap, frameWidth, 595);
         return doc;
+    }
+
+    /**
+     *
+     * @param keys
+     * @param distinctMappingSets the first value of each list is alwasys the authenticated user, followed by 5
+     * mapping values
+     * @return
+     */
+    public static LinkedHashSet<String> getMappingLegendValues(List<String> keys,
+                                                        LinkedHashSet<List<java.lang.String>> distinctMappingSets){
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+
+        for(List<String> set: distinctMappingSets){
+            List<String> mappingStrings = new ArrayList<String>();
+            boolean first = true;
+            String authUser = null;
+            for(String s: set){
+                if(first){
+                    authUser = s;
+                    first = false;
+                    continue;
+                }
+                mappingStrings.add(s);
+            }
+            String mappingValue = Utilities.getMappingValueDisplayString(keys,
+                    authUser,
+                    mappingStrings.toArray(new String[]{}), false, null);
+            mappingValues.add(mappingValue);
+        }
+
+        return mappingValues;
     }
 
     private static void addChartXMLToDocument(Document doc, LinkedHashMap<String,String> groupToMappingValue,
@@ -2066,6 +2184,7 @@ Value is included in all or none, comment is just illustrative
         int index = 0;
         if(frameWidth < FRAME_MIN_WIDTH) frameWidth = FRAME_MIN_WIDTH;
         for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
+
             addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey"+(index+1), "java.lang.String",
                     "<b>"+me.getKey()+":</b> " + me.getValue(), "chartLegendTextField", false);
 

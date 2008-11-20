@@ -14,7 +14,6 @@ import java.sql.Statement;
 import java.util.*;
 
 import net.sf.jasperreports.engine.*;
-import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.view.JasperViewer;
 import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.common.io.XmlUtil;
@@ -35,7 +34,7 @@ import javax.xml.xpath.XPathConstants;
 
 public class ReportApp
 {
-	private static final String TASK_FILL = "fill";
+	private static final String TASK_RUN = "run";
 	private static final String TASK_PDF = "pdf";
 	private static final String TASK_HTML = "html";
 	private static final String TASK_VIEW = "view";
@@ -126,7 +125,7 @@ public class ReportApp
         try
 		{
 			long start = System.currentTimeMillis();
-            if (TASK_FILL.equals(taskName))
+            if (TASK_RUN.equals(taskName))
 			{
                 fill(fileName, start);
 			}else if ("chart".equals(taskName)){
@@ -327,53 +326,6 @@ public class ReportApp
         return returnList;
     }
 
-    private LinkedHashSet<String> getMappingLegendValues(LinkedHashSet<List<java.lang.String>> distinctMappingSets,
-                                                         List<String> keys){
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-
-        for(List<String> set: distinctMappingSets){
-            List<String> mappingStrings = new ArrayList<String>();
-            boolean first = true;
-            String authUser = null;
-            for(String s: set){
-                if(first){
-                    authUser = s;
-                    first = false;
-                    continue;
-                }
-                mappingStrings.add(s);
-            }
-            String mappingValue = Utilities.getMappingValueDisplayString(keys,
-                    authUser,
-                    mappingStrings.toArray(new String[]{}), false, null);
-            mappingValues.add(mappingValue);
-        }
-
-        return mappingValues;
-    }
-
-    private LinkedHashSet<String> getMappingValues(LinkedHashSet<List<String>> distinctMappingSets){
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-
-        for(List<String> set: distinctMappingSets){
-            List<String> mappingStrings = new ArrayList<String>();
-            boolean first = true;
-            String authUser = null;
-            for(String s: set){
-                if(first){
-                    authUser = s;
-                    first = false;
-                    continue;
-                }
-                mappingStrings.add(s);
-            }
-            String mappingValue = Utilities.getMappingValueString(authUser, mappingStrings.toArray(new String[]{}));
-            mappingValues.add(mappingValue);                        
-        }
-
-        return mappingValues;
-    }
-
     /**
      * Get the ordered set of distinct mapping sets for the keys and values in the sql string from the db
      * @param connection
@@ -381,7 +333,7 @@ public class ReportApp
      * @return
      * @throws Exception
      */
-    private LinkedHashSet<List<String>> getDistinctMappingSets(Connection connection, String sql) throws Exception{
+    public static LinkedHashSet<List<String>> getDistinctMappingSets(Connection connection, String sql) throws Exception{
         LinkedHashSet<List<String>> returnSet = new LinkedHashSet<List<String>>();
 
         try{
@@ -446,52 +398,24 @@ public class ReportApp
         }
     }
 
-    private LinkedHashMap<String, String> getKeyToColumnValues(LinkedHashSet<String> mappingValues) {
-        LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
-        int count = 1;
-        //System.out.println("Key to column map");
-        for (String s : mappingValues) {
-            keyToColumnName.put(s, "COLUMN_"+count);
-            //System.out.println(s+" " + "COLUMN_"+count);
-            count++;
-        }
-        return keyToColumnName;
-    }
-
     private void runUsageIntervalReport(String fileName, Properties prop, Map parameters, Object scriplet, String sql,
                                        List<String> keys, boolean useUser)
                                                                     throws Exception{
         UsageReportHelper helper = (UsageReportHelper) scriplet;
         Connection connection = getConnection(prop);
-        //LinkedHashSet<String> mappingValues = getMappingValues(connection, sql);
         LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-        LinkedHashSet<String> mappingValues = getMappingValues(distinctMappingSets);
-
-        LinkedHashMap<String, String> keyToColumnName = getKeyToColumnValues(mappingValues);
+        LinkedHashMap<String, String> keyToColumnName = Utilities.getKeyToColumnValues(distinctMappingSets);
         helper.setKeyToColumnMap(keyToColumnName);
-
         UsageSummaryAndSubReportHelper summaryAndSubReportHelper = new UsageSummaryAndSubReportHelper();
         summaryAndSubReportHelper.setKeyToColumnMap(keyToColumnName);
-
         parameters.put(SUB_REPORT_HELPER, summaryAndSubReportHelper);
 
-        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(distinctMappingSets, keys);
-        LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
-        LinkedHashMap<Integer, String> groupIndexToGroup = new LinkedHashMap<Integer, String>();
-
-        int index = 1;
-        for(String s: mappingValuesLegend){
-            String group = "Group "+index;
-            //System.out.println("Group: " + group+" s: " + s);
-            groupToDisplayString.put(group, s);
-            groupIndexToGroup.put(index, group);
-            index++;
-        }
-
+        LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);
+        LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend);
         helper.setIndexToGroupMap(groupIndexToGroup);
         
         //Master report first
-        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(useUser, keys, mappingValues, groupToDisplayString);
+        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
 
         XPathFactory factory = XPathFactory.newInstance(XPathFactory.DEFAULT_OBJECT_MODEL_URI);
         XPath xPath = factory.newXPath();
@@ -530,7 +454,7 @@ public class ReportApp
         }
 
         //MasterSubInterval report
-        transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(useUser, keys, mappingValues);
+        transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
         f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageSubIntervalTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
@@ -559,7 +483,7 @@ public class ReportApp
         }
 
         //subreport report
-        transformDoc = Utilities.getUsageSubReportRuntimeDoc(useUser, keys, mappingValues);
+        transformDoc = Utilities.getUsageSubReportRuntimeDoc(useUser, keys, distinctMappingSets);
         f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageSubReportTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
@@ -638,7 +562,7 @@ public class ReportApp
 
         if(isContextMapping){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-            LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(distinctMappingSets, keys);
+            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -734,7 +658,7 @@ public class ReportApp
         
         if(isContextMapping){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-            LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(distinctMappingSets, keys);
+            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -823,27 +747,14 @@ public class ReportApp
         UsageSummaryAndSubReportHelper helper = (UsageSummaryAndSubReportHelper) scriplet;
         Connection connection = getConnection(prop);
         LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-        LinkedHashSet<String> mappingValues = getMappingValues(distinctMappingSets);
-        LinkedHashMap<String, String> keyToColumnName = getKeyToColumnValues(mappingValues);
+        LinkedHashMap<String, String> keyToColumnName = Utilities.getKeyToColumnValues(distinctMappingSets);
         helper.setKeyToColumnMap(keyToColumnName);
-
-        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(distinctMappingSets, keys);
-        LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
-        LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
-
-        int index = 1;
-        for(String s: mappingValuesLegend){
-            String group = "Group "+index;
-            groupToDisplayString.put(group, s);
-            displayStringToGroup.put(s, group);
-            index++;
-        }
-
+        LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);
+        LinkedHashMap<String, String> displayStringToGroup = Utilities.getLegendDisplayStringToGroupMap(mappingValuesLegend);
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
-        //now generate the report to be compiled
         //todo [Donal] note - if there is no data this throws an exception. Need to create a canned report showing report info to return to user
-        Document transformDoc = Utilities.getUsageRuntimeDoc(useUser, keys, mappingValues, groupToDisplayString);
+        Document transformDoc = Utilities.getUsageRuntimeDoc(useUser, keys, distinctMappingSets);
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);

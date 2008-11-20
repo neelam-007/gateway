@@ -60,7 +60,6 @@ public class RuntimeDocTests {
         }
     }
 
-
     @Test
     public void testRuntimeDocCreation() throws Exception{
 
@@ -73,20 +72,9 @@ public class RuntimeDocTests {
 
         String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, values, useAnd, 2, isDetail, null, false, null);
 
-        LinkedHashSet<String> set = new LinkedHashSet<String>();
-        ResultSet rs = stmt.executeQuery(sql);
-
-        while(rs.next()){
-            StringBuilder sb = new StringBuilder();
-            String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
-            sb.append(authUser);
-            for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
-                sb.append(rs.getString("MAPPING_VALUE_"+(i+1)));
-            }
-            set.add(sb.toString());
-        }
-
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, set, null);
+        LinkedHashSet<List<String>> distinctMappingSets = ReportApp.getDistinctMappingSets(conn, sql);
+        
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         Assert.assertTrue(doc != null);
         XmlUtil.format(doc, true);
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
@@ -99,23 +87,27 @@ public class RuntimeDocTests {
         }
     }
 
+    private LinkedHashSet<List<String>> getTestDistinctMappingSets(){
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        for(int i = 0; i < 4; i++){
+            List<String> valueList = new ArrayList<String>();
+            valueList.add("Donal");
+            valueList.add("127.0.0.1");
+            valueList.add("Bronze"+i);//make each list unique - turns out set is quite smart, not just object refs
+            distinctMappingSets.add(valueList);
+        }
+        return distinctMappingSets;
+    }
+
     @Test
     public void testGetUsageIntervalMasterRuntimeDoc() throws Exception{
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
         keys.add("CUSTOMER");
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-        mappingValues.add("127.0.0.1Bronze");
-        mappingValues.add("127.0.0.1Gold");
-        mappingValues.add("127.0.0.1Silver");
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        LinkedHashMap linkedHashMap = new LinkedHashMap();
-        linkedHashMap.put("Group 1", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze");
-        linkedHashMap.put("Group 2", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Gold");
-        linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.1, CUSTOMER: Silver");
-
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, linkedHashMap);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
@@ -135,15 +127,8 @@ public class RuntimeDocTests {
         keys.add("IP_ADDRESS");
         keys.add("CUSTOMER");
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-        mappingValues.add("127.0.0.1Bronze");
-        mappingValues.add("127.0.0.1Gold");
-        mappingValues.add("127.0.0.1Silver");
-        mappingValues.add("127.0.0.2Bronze");
-        mappingValues.add("127.0.0.2Gold");
-        mappingValues.add("127.0.0.2Silver");
-
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
+        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
@@ -163,15 +148,9 @@ public class RuntimeDocTests {
         keys.add("IP_ADDRESS");
         keys.add("CUSTOMER");
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-        mappingValues.add("127.0.0.1Bronze");
-        mappingValues.add("127.0.0.1Gold");
-        mappingValues.add("127.0.0.1Silver");
-        mappingValues.add("127.0.0.2Bronze");
-        mappingValues.add("127.0.0.2Gold");
-        mappingValues.add("127.0.0.2Silver");
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, mappingValues);
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);

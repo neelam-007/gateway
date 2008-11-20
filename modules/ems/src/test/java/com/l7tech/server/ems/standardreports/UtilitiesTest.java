@@ -1208,7 +1208,7 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_NullParams(){
         boolean exception = false;
         try{
-            Utilities.getUsageRuntimeDoc(false, null, null, null);
+            Utilities.getUsageRuntimeDoc(false, null, null);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
@@ -1218,10 +1218,9 @@ public class UtilitiesTest{
     @Test
     public void testGetUsageRuntimeDoc_NotNull(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         Assert.assertNotNull(doc);
     }
 
@@ -1240,31 +1239,24 @@ public class UtilitiesTest{
      * Don't change the number of elements, as you will break the tests which use this as convenience
      * @return
      */
-    private LinkedHashSet<String> getTestMappingValues(){
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-        mappingValues.add("notimportant1");
-        mappingValues.add("notimportant2");
-        mappingValues.add("notimportant3");
-        mappingValues.add("notimportant4");
-        return mappingValues;
+    private LinkedHashSet<List<String>> getTestDistinctMappingSets(){
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        for(int i = 0; i < 4; i++){
+            List<String> valueList = new ArrayList<String>();
+            valueList.add("Donal");
+            valueList.add("127.0.0.1");
+            valueList.add("Bronze"+i);//make each list unique - turns out set is quite smart, not just object refs
+            distinctMappingSets.add(valueList);
+        }
+        return distinctMappingSets;       
     }
 
-    private LinkedHashMap<String,String> getTestGroupToMappingValue(){
-        LinkedHashMap<String,String> groupToMappingValue = new LinkedHashMap<String, String>();
-        groupToMappingValue.put("Group 1", "notimportant1");
-        groupToMappingValue.put("Group 2", "notimportant2");
-        groupToMappingValue.put("Group 3", "notimportant3");
-        groupToMappingValue.put("Group 4", "notimportant4");
-        return groupToMappingValue;
-    }
-    
     @Test
     public void testGetUsageRuntimeDoc_FirstLevelElements(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         Assert.assertTrue(list.getLength() == 1);
@@ -1297,16 +1289,15 @@ public class UtilitiesTest{
     @Test
     public void testGetUsageRuntimeDoc_Variables(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
         //3 sets of variables X 4 value sets from getTestMappingValues()
-        Assert.assertTrue(Utilities.VARIABLES+" element should have " + (3 * mappingValues.size()) + " elements",
-                list.getLength() == (3 * mappingValues.size()));
+        Assert.assertTrue(Utilities.VARIABLES+" element should have " + (3 * distinctMappingSets.size()) + " elements",
+                list.getLength() == (3 * distinctMappingSets.size()));
 
     }
 
@@ -1317,10 +1308,9 @@ public class UtilitiesTest{
     @Test
     public void testGetUsageRuntimeDoc_VariablesNames(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
         String [] variableNames = new String[]{"COLUMN_","COLUMN_MAPPING_TOTAL_","COLUMN_SERVICE_TOTAL_"};
@@ -1331,7 +1321,7 @@ public class UtilitiesTest{
         int index = 0;
         int varIndex = 1;
         for(int i = 0; i < list.getLength(); i++,varIndex++){
-            if(i > 0 && (i % mappingValues.size()  == 0)){
+            if(i > 0 && (i % distinctMappingSets.size()  == 0)){
                 index++;
                 varIndex = 1;
             }
@@ -1339,10 +1329,11 @@ public class UtilitiesTest{
             NamedNodeMap attributes = list.item(i).getAttributes();
             Node varName = attributes.getNamedItem("name");
             
-            String expectedValue = variableNames[index % mappingValues.size()]+varIndex;
-            Assert.assertTrue("Name attribute should equal " + expectedValue,varName.getNodeValue().equals(expectedValue));
+            String expectedValue = variableNames[index % distinctMappingSets.size()]+varIndex;
+            Assert.assertTrue("Name attribute should equal " + expectedValue+" actual value was: " + varName.getNodeValue()
+                    ,varName.getNodeValue().equals(expectedValue));
 
-            expectedValue = calculations[index % mappingValues.size()];
+            expectedValue = calculations[index % distinctMappingSets.size()];
             Node calcName = attributes.getNamedItem("calculation");
 
             Assert.assertTrue("calculation attribute should equal " + expectedValue+ " Actual value was: " +
@@ -1358,7 +1349,7 @@ public class UtilitiesTest{
             Node varResetType = attributes.getNamedItem("resetType");
             String resetType = varResetType.getNodeValue();
 
-            expectedValue = resetTypes[index % mappingValues.size()];
+            expectedValue = resetTypes[index % distinctMappingSets.size()];
             Assert.assertTrue("resetType attribute should equal " + expectedValue+ " Actual value was: " + resetType
                     ,resetType.equals(expectedValue));
 
@@ -1367,7 +1358,7 @@ public class UtilitiesTest{
                 Node varResetGroup = attributes.getNamedItem("resetGroup");
                 String resetGroup = varResetGroup.getNodeValue();
 
-                expectedValue = resetGroups[index % mappingValues.size()];
+                expectedValue = resetGroups[index % distinctMappingSets.size()];
                 Assert.assertTrue("resetGroup attribute should equal " + expectedValue+ " Actual value was: " + resetGroup
                         ,resetGroup.equals(expectedValue));
             }
@@ -1377,26 +1368,24 @@ public class UtilitiesTest{
     @Test
     public void testGetUsageRuntimeDoc_ConstantHeader(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
         //1 text fields which are hardcoded, and 4 value sets from getTestMappingValues()
-        Assert.assertTrue(Utilities.CONSTANT_HEADER+" element should have " + (mappingValues.size() + 1) + " elements, " +
+        Assert.assertTrue(Utilities.CONSTANT_HEADER+" element should have " + (distinctMappingSets.size() + 1) + " elements, " +
                 "instead it had " + list.getLength(),
-                list.getLength() == mappingValues.size() + 1);
+                list.getLength() == distinctMappingSets.size() + 1);
     }
 
     @Test
     public void getUsageRuntimeDoc_ConstantHeader_CheckElements(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1467,25 +1456,23 @@ public class UtilitiesTest{
     @Test
     public void testGetUsageRuntimeDoc_ServiceOperationFooter(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
         //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
-        Assert.assertTrue(Utilities.SERVICE_AND_OPERATION_FOOTER+" element should have " + (mappingValues.size() + 1)
-                + " elements", list.getLength() == mappingValues.size() + 1);
+        Assert.assertTrue(Utilities.SERVICE_AND_OPERATION_FOOTER+" element should have " + (distinctMappingSets.size() + 1)
+                + " elements", list.getLength() == distinctMappingSets.size() + 1);
     }
 
     @Test
     public void getUsageRuntimeDoc_ServiceOperationFooter_CheckElements(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         printOutDocument(doc);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
@@ -1568,25 +1555,23 @@ public class UtilitiesTest{
     @Test
     public void testGetUsageRuntimeDoc_SerivceIdFooter(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
         list = list.item(0).getChildNodes();
         //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
-        Assert.assertTrue(Utilities.SERVICE_ID_FOOTER+" element should have " + (mappingValues.size() + 1)
-                + " elements", list.getLength() == mappingValues.size() + 1);
+        Assert.assertTrue(Utilities.SERVICE_ID_FOOTER+" element should have " + (distinctMappingSets.size() + 1)
+                + " elements", list.getLength() == distinctMappingSets.size() + 1);
     }
 
     @Test
     public void getUsageRuntimeDoc_ServiceIdFooter_CheckElements(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1664,25 +1649,23 @@ public class UtilitiesTest{
     @Test
     public void testGetUsageRuntimeDoc_ConstantFooter(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         list = list.item(0).getChildNodes();
         //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
-        Assert.assertTrue(Utilities.CONSTANT_FOOTER+" element should have " + (mappingValues.size() + 1)
-                + " elements", list.getLength() == mappingValues.size() + 1);
+        Assert.assertTrue(Utilities.CONSTANT_FOOTER+" element should have " + (distinctMappingSets.size() + 1)
+                + " elements", list.getLength() == distinctMappingSets.size() + 1);
     }
 
     @Test
     public void getUsageRuntimeDoc_ConstantFooter_CheckElements(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1759,12 +1742,11 @@ public class UtilitiesTest{
     @Test
     public void getUsageRuntimeDoc_CheckWidths(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
-        testWidths(rootNode, mappingValues.size());
+        testWidths(rootNode, distinctMappingSets.size());
     }
 
     /**
@@ -1774,10 +1756,9 @@ public class UtilitiesTest{
     @Test
     public void getUsageIntervalMasterRuntimeDoc_Variables(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
         String [] variableNames = new String[]{"COLUMN_SERVICE_","COLUMN_OPERATION_","COLUMN_REPORT_"};
@@ -1788,7 +1769,7 @@ public class UtilitiesTest{
         int index = 0;
         int varIndex = 1;
         for(int i = 0; i < list.getLength(); i++,varIndex++){
-            if(i > 0 && (i % mappingValues.size()  == 0)){
+            if(i > 0 && (i % distinctMappingSets.size()  == 0)){
                 index++;
                 varIndex = 1;
             }
@@ -1797,7 +1778,7 @@ public class UtilitiesTest{
             Node varName = attributes.getNamedItem("name");
             
             //Going to check the name, class, resetType and resetGroup
-            String expectedValue = variableNames[index % mappingValues.size()]+varIndex;
+            String expectedValue = variableNames[index % distinctMappingSets.size()]+varIndex;
             Assert.assertTrue("Name attribute should equal " + expectedValue+ " Actual value was: " + varName.getNodeValue()
                     ,varName.getNodeValue().equals(expectedValue));
 
@@ -1811,7 +1792,7 @@ public class UtilitiesTest{
             Node varResetType = attributes.getNamedItem("resetType");
             String resetType = varResetType.getNodeValue();
 
-            expectedValue = resetTypes[index % mappingValues.size()];
+            expectedValue = resetTypes[index % distinctMappingSets.size()];
             Assert.assertTrue("resetType attribute should equal " + expectedValue+ " Actual value was: " + resetType
                     ,resetType.equals(expectedValue));
 
@@ -1820,12 +1801,12 @@ public class UtilitiesTest{
                 Node varResetGroup = attributes.getNamedItem("resetGroup");
                 String resetGroup = varResetGroup.getNodeValue();
 
-                expectedValue = resetGroups[index % mappingValues.size()];
+                expectedValue = resetGroups[index % distinctMappingSets.size()];
                 Assert.assertTrue("resetGroup attribute should equal " + expectedValue+ " Actual value was: " + resetGroup
                         ,resetGroup.equals(expectedValue));
             }
 
-            expectedValue = calculations[index % mappingValues.size()];
+            expectedValue = calculations[index % distinctMappingSets.size()];
             Node calcName = attributes.getNamedItem("calculation");
 
             Assert.assertTrue("calculation attribute should equal " + expectedValue+ " Actual value was: " +
@@ -1837,10 +1818,9 @@ public class UtilitiesTest{
     @Test
     public void getUsageIntervalMasterRuntimeDoc_serviceHeader_CheckElements(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_HEADER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1907,10 +1887,9 @@ public class UtilitiesTest{
     @Test
     public void getUsageIntervalMasterRuntimeDoc_CheckSubReport(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.RETURN_VALUE);
         list = list.item(0).getChildNodes();
         String [] variableNames = new String[]{"COLUMN_SERVICE_","COLUMN_OPERATION_","COLUMN_REPORT_"};
@@ -1919,7 +1898,7 @@ public class UtilitiesTest{
         int index = 0;
         int varIndex = 1;
         for(int i = 0; i < list.getLength(); i++,varIndex++){
-            if(i > 0 && (i % mappingValues.size()  == 0)){
+            if(i > 0 && (i % distinctMappingSets.size()  == 0)){
                 index++;
                 varIndex = 1;
             }
@@ -1927,7 +1906,7 @@ public class UtilitiesTest{
             NamedNodeMap attributes = list.item(i).getAttributes();
             Node calculation = attributes.getNamedItem("calculation");
 
-            String expectedValue = calculations[index % mappingValues.size()];
+            String expectedValue = calculations[index % distinctMappingSets.size()];
             String actualValue = calculation.getNodeValue();
             Assert.assertTrue("calculation attribute should equal " + expectedValue+ " Actual value was: " + actualValue
                     ,actualValue.equals(expectedValue));
@@ -1940,7 +1919,7 @@ public class UtilitiesTest{
                     ,actualValue.equals(expectedValue));
 
             Node toVariable = attributes.getNamedItem("toVariable");
-            expectedValue = variableNames[index % mappingValues.size()] + varIndex;
+            expectedValue = variableNames[index % distinctMappingSets.size()] + varIndex;
             actualValue = toVariable.getNodeValue();
 
             Assert.assertTrue("subreportVariable attribute should equal " + expectedValue+ " Actual value was: " + actualValue
@@ -1951,10 +1930,9 @@ public class UtilitiesTest{
 
     private void testGroupTotalRow(String elementName, String columnVariable, String totalVariable){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(elementName);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -2087,19 +2065,19 @@ public class UtilitiesTest{
     @Test
     public void getUsageIntervalMasterRuntimeDoc_CheckWidths(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        LinkedHashMap<String,String> groupToMappingValue = getTestGroupToMappingValue();
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, mappingValues, groupToMappingValue);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
-        testWidths(rootNode, mappingValues.size());
+        testWidths(rootNode, distinctMappingSets.size());
     }
 
     @Test
     public void getUsageSubIntervalMasterRuntimeDoc_Variables(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
+
+        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
 
@@ -2139,8 +2117,8 @@ public class UtilitiesTest{
     @Test
     public void getUsageSubIntervalMasterRuntimeDoc_CheckSubReport(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
+        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.RETURN_VALUE);
         list = list.item(0).getChildNodes();
 
@@ -2174,19 +2152,20 @@ public class UtilitiesTest{
     @Test
     public void getUsageSubIntervalMasterRuntimeDoc_CheckWidths(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, mappingValues);
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
+
+        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
 
         Node subReportWidth = findFirstChildElementByName(rootNode, "subReportWidth");
-        int expectedIntValue = (Utilities.DATA_COLUMN_WIDTH * mappingValues.size()) + Utilities.TOTAL_COLUMN_WIDTH;
+        int expectedIntValue = (Utilities.DATA_COLUMN_WIDTH * distinctMappingSets.size()) + Utilities.TOTAL_COLUMN_WIDTH;
         int actualIntValue = Integer.valueOf(subReportWidth.getTextContent());
 
         Assert.assertTrue("subReportWidth element should equal " + expectedIntValue+ " Actual value was: " +
                 actualIntValue ,actualIntValue == expectedIntValue);
 
         Node pageWidth = findFirstChildElementByName(rootNode, "pageWidth");
-        expectedIntValue = (Utilities.DATA_COLUMN_WIDTH * mappingValues.size()) + Utilities.TOTAL_COLUMN_WIDTH
+        expectedIntValue = (Utilities.DATA_COLUMN_WIDTH * distinctMappingSets.size()) + Utilities.TOTAL_COLUMN_WIDTH
                 + Utilities.SUB_INTERVAL_STATIC_WIDTH;
         actualIntValue = Integer.valueOf(pageWidth.getTextContent());
 
@@ -2198,8 +2177,9 @@ public class UtilitiesTest{
     @Test
     public void getUsageSubReportRuntimeDoc_Variables(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, mappingValues);
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
+
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
 
@@ -2249,8 +2229,9 @@ public class UtilitiesTest{
     @Test
     public void getUsageSubReportRuntimeDoc_serviceAndOperationFooter_CheckElements(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, mappingValues);
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
+
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
 
@@ -2333,8 +2314,9 @@ public class UtilitiesTest{
     @Test
     public void getUsageSubReportRuntimeDoc_noData_CheckElements(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, mappingValues);
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
+
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.NO_DATA);
         list = list.item(0).getChildNodes();
 
@@ -2401,12 +2383,13 @@ public class UtilitiesTest{
     @Test
     public void getUsageSubReportRuntimeDoc_CheckWidths(){
         List<String> keys = getTestKeys();
-        LinkedHashSet<String> mappingValues = getTestMappingValues();
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, mappingValues);
+        LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
+
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
 
         Node pageWidth = findFirstChildElementByName(rootNode, "pageWidth");
-        int expectedIntValue = (Utilities.DATA_COLUMN_WIDTH * mappingValues.size()) + Utilities.TOTAL_COLUMN_WIDTH;
+        int expectedIntValue = (Utilities.DATA_COLUMN_WIDTH * distinctMappingSets.size()) + Utilities.TOTAL_COLUMN_WIDTH;
         int actualIntValue = Integer.valueOf(pageWidth.getTextContent());
 
         Assert.assertTrue("pageWidth element should equal " + expectedIntValue+ " Actual value was: " +

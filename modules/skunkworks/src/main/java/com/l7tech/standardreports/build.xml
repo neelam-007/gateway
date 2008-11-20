@@ -66,10 +66,10 @@
 		</jrc>
 	</target>
 
-	<target name="fill" description="Fills the compiled report design with data and produces the .jrprint file.">
+	<target name="run" description="Runs the report as configured in report.properties and displays the results.">
         <copy file="../../../../../../../ems/src/main/resources/com/l7tech/server/ems/standardreports/Styles.jrtx" todir="."/>
         <java classname="${class.name}" fork="true">
-			<arg value="fill"/>
+			<arg value="run"/>
 			<classpath refid="classpath"/>
 		</java>
 	</target>
