@@ -33,25 +33,23 @@ public class UsageIntervalChartCustomizer implements JRChartCustomizer {
         barRenderer.setMaximumBarWidth(0.3);
         barRenderer.setSeriesPositiveItemLabelPosition(0, new ItemLabelPosition(ItemLabelAnchor.CENTER, TextAnchor.CENTER));
 
-        CategoryDataset dataset = jFreeChart.getCategoryPlot().getDataset();
-
-        DefaultCategoryDataset dC = new DefaultCategoryDataset();
-//        dC.addValue(100, "Row 1", "Column 1");
-
-        String chartKey = jrChart.getKey();
-
-        UsageReportHelper helper = Utilities.getHelper(chartKey);
-        Map<String, Long> groupToValueMap = helper.getReportTotalsMap();
-        LinkedHashMap<Integer, String> groupIndexToGroupMap = helper.getGroupIndexToGroupMap();
-
-        int index = 1;
-        for(Map.Entry<String, Long> e: groupToValueMap.entrySet()){
-            String group = groupIndexToGroupMap.get(index);
-            dC.addValue(e.getValue(), "# Successful Requests", group);
-            index++;
-        }
-
-        jFreeChart.getCategoryPlot().setDataset(dC);
+//        DefaultCategoryDataset dC = new DefaultCategoryDataset();
+////        dC.addValue(100, "Row 1", "Column 1");
+//
+//        String chartKey = jrChart.getKey();
+//
+//        UsageReportHelper helper = Utilities.getHelper(chartKey);
+//        Map<String, Long> groupToValueMap = helper.getReportTotalsMap();
+//        LinkedHashMap<Integer, String> groupIndexToGroupMap = helper.getGroupIndexToGroupMap();
+//
+//        int index = 1;
+//        for(Map.Entry<String, Long> e: groupToValueMap.entrySet()){
+//            String group = groupIndexToGroupMap.get(index);
+//            dC.addValue(e.getValue(), "# Successful Requests", group);
+//            index++;
+//        }
+//
+//        jFreeChart.getCategoryPlot().setDataset(dC);
 
     }
 }

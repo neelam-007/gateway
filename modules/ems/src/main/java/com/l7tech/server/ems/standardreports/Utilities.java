@@ -2235,11 +2235,6 @@ Value is included in all or none, comment is just illustrative
         chartElement.appendChild(pageHeightElement);
         pageHeightElement.setTextContent(String.valueOf(totalFirstPageHeight));
 
-        //modify the chart's key, currently only used in interval usage reports
-        Element chartKeyElement = doc.createElement(CHART_KEY);
-        chartElement.appendChild(chartKeyElement);
-        UUID chartKey = UUID.randomUUID();
-        chartKeyElement.setTextContent(chartKey.toString());
     }
 
 

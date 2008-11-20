@@ -417,12 +417,6 @@ public class ReportApp
         //Master report first
         Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
 
-        XPathFactory factory = XPathFactory.newInstance(XPathFactory.DEFAULT_OBJECT_MODEL_URI);
-        XPath xPath = factory.newXPath();
-        //COLUMN_MAPPING_TOTAL_
-        String chartkey = (String)xPath.evaluate("/JasperRuntimeTransformation/chartElement/chartKey/text()", transformDoc, XPathConstants.STRING);
-        helper.setChartKey(chartkey);
-
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageMasterTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);

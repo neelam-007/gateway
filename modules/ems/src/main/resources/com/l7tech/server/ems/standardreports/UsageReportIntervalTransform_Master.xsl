@@ -422,19 +422,13 @@
                     <xsl:attribute name="height"><xsl:value-of
                             select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartHeight" />
                     </xsl:attribute>
-                    <xsl:attribute name="key"><xsl:value-of
-                            select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartKey" />
-                    </xsl:attribute>
-                    <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='width' and local-name()!='key']"/>
+                    <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='width']"/>
                 </xsl:when>
                 <xsl:otherwise>
                     <xsl:attribute name="height"><xsl:value-of
                             select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartHeight" />
                     </xsl:attribute>
-                    <xsl:attribute name="key"><xsl:value-of
-                            select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartKey" />
-                    </xsl:attribute>
-                    <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='key']"/>
+                    <xsl:apply-templates select="node()|@*[local-name()!='height']"/>
                 </xsl:otherwise>
             </xsl:choose>
         </xsl:element>

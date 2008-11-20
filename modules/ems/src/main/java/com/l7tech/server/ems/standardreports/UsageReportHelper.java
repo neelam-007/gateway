@@ -7,6 +7,7 @@
 package com.l7tech.server.ems.standardreports;
 
 import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.engine.fill.JRFillField;
 import net.sf.jasperreports.engine.fill.JRFillVariable;
 
@@ -18,8 +19,6 @@ public class UsageReportHelper extends JRDefaultScriptlet {
     private LinkedHashMap<Integer, String> groupIndexToGroupMap;
 
     public static final String COLUMN_REPORT = "COLUMN_REPORT_";
-    
-    public String chartKey;
 
     public void setKeyToColumnMap(LinkedHashMap<String, String> keyToColumnMap){
         this.keyToColumnMap = keyToColumnMap;
@@ -48,10 +47,6 @@ public class UsageReportHelper extends JRDefaultScriptlet {
         return (Long) jrFillVariable.getValue();
     }
 
-    public void setChartKey(String key){
-        this.chartKey = key;
-    }
-
     public Map<String, Long> getReportTotalsMap(){
         Map<String, Long> returnMap = new LinkedHashMap<String, Long>();//order is important always
 
@@ -67,31 +62,26 @@ public class UsageReportHelper extends JRDefaultScriptlet {
         return returnMap;
     }
 
-    public void beforeReportInit() throws JRScriptletException {
-        if(chartKey == null || chartKey.equals("")) throw new IllegalStateException("chartKey has not been set");
-        Utilities.addHelper(chartKey, this);
-    }
+    public JRDataSource getChartDataSource() throws JRException {
 
-    //    public JRDataSource getChartDataSource() throws JRException {
-//
-//        System.out.println("Getting data source");
-//        List<ReportTotalBean> beans = new ArrayList<ReportTotalBean>();
-//
-//        for(Object o: this.variablesMap.keySet()){
-//            JRFillVariable fV = (JRFillVariable) this.variablesMap.get(o);
-//            if(fV.getName().startsWith(COLUMN_MAPPING_TOTAL)){
-//                ReportTotalBean reportTotalBean = new ReportTotalBean(fV.getName(), (Long)fV.getValue());
-//                beans.add(reportTotalBean);
-//            }
-//        }
-//        System.out.println("Printing out beans");
-//
+        System.out.println("Getting data source");
+        List<ReportTotalBean> beans = new ArrayList<ReportTotalBean>();
+
+        for(Object o: this.variablesMap.keySet()){
+            JRFillVariable fV = (JRFillVariable) this.variablesMap.get(o);
+            if(fV.getName().startsWith(COLUMN_REPORT)){
+                ReportTotalBean reportTotalBean = new ReportTotalBean(fV.getName(), (Long)fV.getValue());
+                beans.add(reportTotalBean);
+            }
+        }
+        //System.out.println("Printing out beans");
+
 //        for(ReportTotalBean bean: beans){
 //            System.out.println(bean.getName()+" " + bean.getValue());
 //        }
 //        System.out.println(beans.size()+ " beans found");
-//        JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(beans);
-//
+        JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(beans);
+
 //        JRField name = new FieldImpl("name");
 //        JRField value = new FieldImpl("value");
 //
@@ -100,8 +90,8 @@ public class UsageReportHelper extends JRDefaultScriptlet {
 //        }
 //
 //        dataSource.moveFirst();
-//        return dataSource;
-//    }
+          return dataSource;
+     }
 
 
 //    public static class FieldImpl implements JRField{
