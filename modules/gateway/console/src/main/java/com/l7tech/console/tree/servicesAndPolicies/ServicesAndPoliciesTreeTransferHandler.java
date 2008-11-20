@@ -20,6 +20,7 @@ import javax.swing.tree.*;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.DataFlavor;
 import java.util.List;
+import java.util.Enumeration;
 
 /**
  * TransferHandler for the Services and Policies tree.
@@ -58,7 +59,6 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             for(AbstractTreeNode atn: transferNodes){
                 atn.setCut(true);
                 atn.setChildrenCut(true);
-                model.nodeChanged(atn);
             }
 
             if(transferNodes.isEmpty()) {
@@ -193,7 +193,10 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             }
                             childTransferNode.updateUserObject();
                         }
-                        
+
+                        transferNode.setCut(false);
+                        transferNode.setChildrenCut(false);
+
                         int transferNodeIndex = oldParent.getIndex(transferNode);
                         int insertPosition = parentNode.getInsertPosition(transferNode, RootNode.getComparator());
                         parentNode.insert(transferNode, insertPosition);
@@ -201,9 +204,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                         //order is important. Update the old parent first
                         model.nodesWereRemoved(oldParent, new int[]{transferNodeIndex}, new Object[]{transferNode});
                         model.nodesWereInserted(parentNode, new int[]{insertPosition});
-
-                        transferNode.setCut(false);
-                        transferNode.setChildrenCut(false);
+                        model.nodeChanged(transferNode);
                     }
                 }
             } catch (SaveException e) {
@@ -223,6 +224,17 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                    }
                 }
                 return false;
+            } finally {                
+                TreePath rootPath = tree.getPathForRow(0);
+                final Enumeration pathEnum = tree.getExpandedDescendants(rootPath);
+
+                RootNode rootNode = (RootNode) tree.getModel().getRoot();
+                ((DefaultTreeModel) tree.getModel()).nodeStructureChanged(rootNode);
+                while (pathEnum.hasMoreElements()) {
+                    Object pathObj = pathEnum.nextElement();
+                    TreePath tp = (TreePath) pathObj;
+                    tree.expandPath(tp);
+                }
             }
         }
         return true;
