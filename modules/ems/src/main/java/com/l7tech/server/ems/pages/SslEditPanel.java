@@ -1,11 +1,14 @@
 package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.Radio;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.RadioGroup;
+import org.apache.wicket.markup.html.form.FormComponent;
+import org.apache.wicket.markup.html.form.validation.IFormValidator;
 import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -13,6 +16,7 @@ import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.Component;
+import org.apache.wicket.validation.validator.PatternValidator;
 import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 
@@ -53,13 +57,16 @@ public class SslEditPanel extends Panel {
     public SslEditPanel( final String id ) {
         super( id );
 
+        final FeedbackPanel feedback = new FeedbackPanel("feedback");
+
         final SslFormModel sslFormModel = new SslFormModel();
 
         Radio sslGenerate = new Radio("sslRadioGen", new Model("gen"));
         Radio sslLoad = new Radio("sslRadioLoad", new Model("load"));
         final RadioGroup group = new RadioGroup("sslGroup", new Model("gen"));
 
-        TextField hostname = new TextField("hostname");
+        final TextField hostname = new TextField("hostname");
+        hostname.add( new PatternValidator("^[a-zA-Z0-9][a-zA-Z0-9\\-\\_.]{1,1024}$") );
 
         final FileUploadField keystore = new FileUploadField("keystore");
 
@@ -88,6 +95,12 @@ public class SslEditPanel extends Panel {
         });
 
         Form sslForm = new YuiFileUploadForm("sslForm", new CompoundPropertyModel(sslFormModel)){
+            @Override
+            @SuppressWarnings({"UnusedDeclaration"})
+             protected void onError( final AjaxRequestTarget target ) {
+                target.addComponent( feedback );
+            }
+
             @Override
             @SuppressWarnings({"UnusedDeclaration", "SuspiciousSystemArraycopy"})
             protected void onSubmit( final AjaxRequestTarget target ) {
@@ -160,6 +173,22 @@ public class SslEditPanel extends Panel {
             }
         };
 
+        sslForm.add( new IFormValidator(){
+            @Override
+            public void validate( final Form form ) {
+                String hostValue = hostname.getInput();
+                if ( hostValue == null || hostValue.trim().isEmpty() ) {
+                    form.error("Host name is required for SSL certificate generation.");
+                }
+            }
+
+            @Override
+            public FormComponent[] getDependentFormComponents() {
+                return new FormComponent[]{ group, hostname };
+            }
+        } );
+
+        group.add( feedback.setOutputMarkupId(true) );
         group.add( sslGenerate.setOutputMarkupId(true) );
         group.add( sslLoad.setOutputMarkupId(true) );
         group.add( hostname.setOutputMarkupId(true) );
