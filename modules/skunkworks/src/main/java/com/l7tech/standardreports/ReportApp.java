@@ -14,6 +14,7 @@ import java.sql.Statement;
 import java.util.*;
 
 import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.view.JasperViewer;
 import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.common.io.XmlUtil;
@@ -129,8 +130,18 @@ public class ReportApp
 			{
                 fill(fileName, start);
 			}else if ("chart".equals(taskName)){
-                JasperPrint jrPrint = JasperFillManager.fillReport("chart.jasper", new HashMap(), new JREmptyDataSource());
-                JasperViewer.viewReport(jrPrint, false);
+//                List<ReportTotalBean> beans = new ArrayList<ReportTotalBean>();
+//                for(int i = 0; i < 2; i++){
+//                    ReportTotalBean bean = new ReportTotalBean("Bean"+i, Long.valueOf(100+i));
+//                    beans.add(bean);
+//                }
+//
+//                JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(beans);
+//                Map parameters = new HashMap();
+//                parameters.put("REPORT_BEANS", dataSource);
+//
+//                JasperPrint jrPrint = JasperFillManager.fillReport("DataSetTest.jasper", parameters, new JREmptyDataSource());
+//                JasperViewer.viewReport(jrPrint, false);
             }
             else if (TASK_PDF.equals(taskName))
 			{
@@ -316,20 +327,63 @@ public class ReportApp
         return returnList;
     }
 
-    private LinkedHashSet<String> getMappingValues(Connection connection, String sql) throws Exception{
-        LinkedHashSet<String> mappingValues;
-        try{
-            Statement stmt = connection.createStatement();
-            mappingValues = getMappingValueSet(stmt, sql);
-        }catch(Exception ex){
-            if(connection != null) connection.close();
-            throw(ex);
+    private LinkedHashSet<String> getMappingLegendValues(LinkedHashSet<List<java.lang.String>> distinctMappingSets,
+                                                         List<String> keys){
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+
+        for(List<String> set: distinctMappingSets){
+            List<String> mappingStrings = new ArrayList<String>();
+            boolean first = true;
+            String authUser = null;
+            for(String s: set){
+                if(first){
+                    authUser = s;
+                    first = false;
+                    continue;
+                }
+                mappingStrings.add(s);
+            }
+            String mappingValue = Utilities.getMappingValueDisplayString(keys,
+                    authUser,
+                    mappingStrings.toArray(new String[]{}), false, null);
+            mappingValues.add(mappingValue);
         }
 
         return mappingValues;
     }
 
-    private LinkedHashSet<String> getMappingDisplayStrings(Connection connection, String sql, List<String> keys) throws Exception{
+    private LinkedHashSet<String> getMappingValues(LinkedHashSet<List<String>> distinctMappingSets){
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+
+        for(List<String> set: distinctMappingSets){
+            List<String> mappingStrings = new ArrayList<String>();
+            boolean first = true;
+            String authUser = null;
+            for(String s: set){
+                if(first){
+                    authUser = s;
+                    first = false;
+                    continue;
+                }
+                mappingStrings.add(s);
+            }
+            String mappingValue = Utilities.getMappingValueString(authUser, mappingStrings.toArray(new String[]{}));
+            mappingValues.add(mappingValue);                        
+        }
+
+        return mappingValues;
+    }
+
+    /**
+     * Get the ordered set of distinct mapping sets for the keys and values in the sql string from the db
+     * @param connection
+     * @param sql
+     * @return
+     * @throws Exception
+     */
+    private LinkedHashSet<List<String>> getDistinctMappingSets(Connection connection, String sql) throws Exception{
+        LinkedHashSet<List<String>> returnSet = new LinkedHashSet<List<String>>();
+
         try{
             Statement stmt = connection.createStatement();
             LinkedHashSet<String> set = new LinkedHashSet<String>();
@@ -338,19 +392,41 @@ public class ReportApp
             while(rs.next()){
                 List<String> mappingStrings = new ArrayList<String>();
                 String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
+                mappingStrings.add(authUser);
                 for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
                     mappingStrings.add(rs.getString("MAPPING_VALUE_"+(i+1)));
                 }
-                String mappingValue = Utilities.getMappingValueDisplayString(authUser, keys, mappingStrings.toArray(new String[]{}), false, null);
-                set.add(mappingValue);
+                returnSet.add(mappingStrings);
             }
-            return set;
-
         }catch(Exception ex){
             if(connection != null) connection.close();
             throw(ex);
         }
+        return returnSet;
     }
+
+//    private LinkedHashSet<String> getMappingDisplayStrings(Connection connection, String sql, List<String> keys) throws Exception{
+//        try{
+//            Statement stmt = connection.createStatement();
+//            LinkedHashSet<String> set = new LinkedHashSet<String>();
+//            ResultSet rs = stmt.executeQuery(sql);
+//
+//            while(rs.next()){
+//                List<String> mappingStrings = new ArrayList<String>();
+//                String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
+//                for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
+//                    mappingStrings.add(rs.getString("MAPPING_VALUE_"+(i+1)));
+//                }
+//                String mappingValue = Utilities.getMappingValueDisplayString(keys, authUser, mappingStrings.toArray(new String[]{}), false, null);
+//                set.add(mappingValue);
+//            }
+//            return set;
+//
+//        }catch(Exception ex){
+//            if(connection != null) connection.close();
+//            throw(ex);
+//        }
+//    }
 
     private LinkedHashSet<String> getServiceDisplayStrings(Connection connection, String sql) throws Exception{
         try{
@@ -387,7 +463,10 @@ public class ReportApp
                                                                     throws Exception{
         UsageReportHelper helper = (UsageReportHelper) scriplet;
         Connection connection = getConnection(prop);
-        LinkedHashSet<String> mappingValues = getMappingValues(connection, sql);
+        //LinkedHashSet<String> mappingValues = getMappingValues(connection, sql);
+        LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
+        LinkedHashSet<String> mappingValues = getMappingValues(distinctMappingSets);
+
         LinkedHashMap<String, String> keyToColumnName = getKeyToColumnValues(mappingValues);
         helper.setKeyToColumnMap(keyToColumnName);
 
@@ -396,12 +475,12 @@ public class ReportApp
 
         parameters.put(SUB_REPORT_HELPER, summaryAndSubReportHelper);
 
-        LinkedHashSet<String> mappingValuesDisplay = getMappingDisplayStrings(connection, sql, keys);
+        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(distinctMappingSets, keys);
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<Integer, String> groupIndexToGroup = new LinkedHashMap<Integer, String>();
 
         int index = 1;
-        for(String s: mappingValuesDisplay){
+        for(String s: mappingValuesLegend){
             String group = "Group "+index;
             //System.out.println("Group: " + group+" s: " + s);
             groupToDisplayString.put(group, s);
@@ -558,11 +637,12 @@ public class ReportApp
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
 
         if(isContextMapping){
-            LinkedHashSet<String> mappingValues = getMappingDisplayStrings(connection, sql, keys);
+            LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
+            LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(distinctMappingSets, keys);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
-            for(String s: mappingValues){
+            for(String s: mappingValuesLegend){
                 String group = "Group "+index;
                 //System.out.println("Group: " + group+" s: " + s);
                 groupToDisplayString.put(group, s);
@@ -653,11 +733,12 @@ public class ReportApp
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
         
         if(isContextMapping){
-            LinkedHashSet<String> mappingValues = getMappingDisplayStrings(connection, sql, keys);
+            LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
+            LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(distinctMappingSets, keys);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
-            for(String s: mappingValues){
+            for(String s: mappingValuesLegend){
                 String group = "Group "+index;
                 //System.out.println("Group: " + group+" s: " + s);
                 groupToDisplayString.put(group, s);
@@ -741,18 +822,17 @@ public class ReportApp
                                                                     throws Exception{
         UsageSummaryAndSubReportHelper helper = (UsageSummaryAndSubReportHelper) scriplet;
         Connection connection = getConnection(prop);
-        LinkedHashSet<String> mappingValues = getMappingValues(connection, sql);
+        LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
+        LinkedHashSet<String> mappingValues = getMappingValues(distinctMappingSets);
         LinkedHashMap<String, String> keyToColumnName = getKeyToColumnValues(mappingValues);
         helper.setKeyToColumnMap(keyToColumnName);
-        //the report also needs access to this key to column map
-        //parameters.put(KEY_TO_COLUMN_NAME_MAP, keyToColumnName);
 
-        LinkedHashSet<String> mappingValuesDisplay = getMappingDisplayStrings(connection, sql, keys);
+        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(distinctMappingSets, keys);
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
 
         int index = 1;
-        for(String s: mappingValuesDisplay){
+        for(String s: mappingValuesLegend){
             String group = "Group "+index;
             groupToDisplayString.put(group, s);
             displayStringToGroup.put(s, group);
@@ -836,23 +916,7 @@ public class ReportApp
             is.close();
         }
     }
-    
-    private LinkedHashSet<String> getMappingValueSet(Statement stmt, String sql) throws Exception{
 
-        LinkedHashSet<String> set = new LinkedHashSet<String>();
-        ResultSet rs = stmt.executeQuery(sql);
-
-        while(rs.next()){
-            List<String> mappingStrings = new ArrayList<String>();
-            String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
-            for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
-                mappingStrings.add(rs.getString("MAPPING_VALUE_"+(i+1)));
-            }
-            String mappingValue = Utilities.getMappingValueString(authUser, mappingStrings.toArray(new String[]{}));
-            set.add(mappingValue);
-        }
-        return set;
-    }
     /**
 	 *
 	 */

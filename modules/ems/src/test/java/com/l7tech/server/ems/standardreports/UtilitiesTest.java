@@ -796,14 +796,14 @@ public class UtilitiesTest{
 
         exception = false;
         try{
-            Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, null, null, false, null);
+            Utilities.getMappingValueDisplayString(null, Utilities.SQL_PLACE_HOLDER, null, false, null);
         }catch (IllegalArgumentException e){
             exception = true;
         }
         Assert.assertTrue(exception);
 
         String preFix = "Group values: ";
-        String val = Utilities.getMappingValueDisplayString("Donal", null, null, true, preFix);
+        String val = Utilities.getMappingValueDisplayString(null,"Donal",null, true, preFix);
         Assert.assertTrue(val.equals(preFix+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal"));
 
         List<String> keys = new ArrayList<String>();
@@ -814,16 +814,16 @@ public class UtilitiesTest{
         values.add("127.0.0.1");
         values.add("GOLD");
 
-        val = Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, keys, values.toArray(new String[]{}), true, preFix);
+        val = Utilities.getMappingValueDisplayString(keys, Utilities.SQL_PLACE_HOLDER, values.toArray(new String[]{}), true, preFix);
         Assert.assertTrue(val.equals(preFix+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
 
-        val = Utilities.getMappingValueDisplayString("Donal", keys, values.toArray(new String[]{}), true, preFix);
+        val = Utilities.getMappingValueDisplayString(keys, "Donal", values.toArray(new String[]{}), true, preFix);
         Assert.assertTrue(val.equals(preFix+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal, "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
         
         values.remove(1);
         exception = false;
         try{
-            Utilities.getMappingValueDisplayString(Utilities.SQL_PLACE_HOLDER, keys, values.toArray(new String[]{}), true, preFix);
+            Utilities.getMappingValueDisplayString(keys, Utilities.SQL_PLACE_HOLDER, values.toArray(new String[]{}), true, preFix);
         }catch (IllegalArgumentException e){
             exception = true;
         }

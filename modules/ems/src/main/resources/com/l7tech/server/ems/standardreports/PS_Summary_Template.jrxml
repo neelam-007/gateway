@@ -908,7 +908,7 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingValueDisplayString(
-$F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
+$P{MAPPING_KEYS}, $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement

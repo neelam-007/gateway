@@ -88,13 +88,14 @@ public class UsageSummaryAndSubReportHelper extends JRDefaultScriptlet {
      * @return Long, the value for the column, which represents the unique set of mapping values supplied
      */
     public Long getUsageChartCategoryValue(String authUser, String [] mappingValues, String variablePrefix) throws JRScriptletException {
-        String mapping = Utilities.getMappingValueString(authUser, mappingValues);
-        //System.out.println("Getting column name for: " + mapping);
-        if(!keyToColumnMap.containsKey(mapping)){
+        String mappingValue = Utilities.getMappingValueString(authUser, mappingValues);
+
+        //System.out.println("Getting column name for: " + mappingValue);
+        if(!keyToColumnMap.containsKey(mappingValue)){
             System.out.println("Throwing exception");
-            throw new IllegalArgumentException("Key: " + mapping+" not found in keyToColumnName map");
+            throw new IllegalArgumentException("Key: " + mappingValue +" not found in keyToColumnName map");
         }
-        String columnName = keyToColumnMap.get(mapping);
+        String columnName = keyToColumnMap.get(mappingValue);
         String index = columnName.substring(columnName.indexOf("_")+1, columnName.length());
         //System.out.println("Index is: " + index);
         int i = Integer.valueOf(index);

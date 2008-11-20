@@ -42,9 +42,9 @@ public class UsageReportHelper extends JRDefaultScriptlet {
             throw new IllegalArgumentException("varName: " + varName+" not found");
         }
 
-        System.out.println("Getting variable: " + varName);
+        //System.out.println("Getting variable: " + varName);
         JRFillVariable jrFillVariable = (JRFillVariable) this.variablesMap.get(varName);
-        System.out.println("Getting variable: " + varName + " with value " + jrFillVariable.getValue());
+        //System.out.println("Getting variable: " + varName + " with value " + jrFillVariable.getValue());
         return (Long) jrFillVariable.getValue();
     }
 
@@ -58,9 +58,9 @@ public class UsageReportHelper extends JRDefaultScriptlet {
         for(Map.Entry<String, String> e: keyToColumnMap.entrySet()){
             String columnName = e.getValue();
             String index = columnName.substring(columnName.indexOf("_")+1, columnName.length());
-            System.out.println("Index is: " + index);
+            //System.out.println("Index is: " + index);
             int i = Integer.valueOf(index);
-            System.out.println("Column name is: " + COLUMN_REPORT+i);
+            //System.out.println("Column name is: " + COLUMN_REPORT+i);
             Long returnValue = this.getDirectVariableValue(COLUMN_REPORT+i);
             returnMap.put(columnName, returnValue);
         }

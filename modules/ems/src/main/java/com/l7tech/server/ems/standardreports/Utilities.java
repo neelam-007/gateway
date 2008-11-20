@@ -1307,7 +1307,7 @@ Value is included in all or none, comment is just illustrative
     public static String getCategoryMappingDisplayString(Map<String, String> displayStringToMappingGroup, 
                                                                String authUser, List<String> keys, String [] keyValues){
 
-        String displayString = getMappingValueDisplayString(authUser, keys, keyValues, false, null);
+        String displayString = getMappingValueDisplayString(keys, authUser, keyValues, false, null);
         //System.out.println("getCategoryMappingDisplayString: " + displayString);
         if(!displayStringToMappingGroup.containsKey(displayString)) throw new IllegalArgumentException("Group for " +
                 "display string not found: " + displayString);
@@ -1346,7 +1346,7 @@ Value is included in all or none, comment is just illustrative
      * @throws NullPointerException if any argument is null or empty for it's type
      * @throws IllegalStateException if keyValues ever has the place holder value for any value from keys
      */
-    public static String getMappingValueDisplayString(String authUser, List<String> keys, String[] keyValues, boolean includePreFix, String prefix) {
+    public static String getMappingValueDisplayString(List<String> keys, String authUser, String[] keyValues, boolean includePreFix, String prefix) {
         if(authUser == null || authUser.equals(""))
             throw new NullPointerException("authUser must have a non null and non empty value. " +
                     "It can be the placeholder value");//as it always exists in select

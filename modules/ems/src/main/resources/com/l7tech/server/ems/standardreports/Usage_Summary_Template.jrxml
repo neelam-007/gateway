@@ -200,7 +200,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_
 $F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}}))]]></categoryExpression>
 							<valueExpression><![CDATA[((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET}).getUsageChartCategoryValue(
-$F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, 
+ $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, 
 $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndSubReportHelper.COLUMN_MAPPING_TOTAL)]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
