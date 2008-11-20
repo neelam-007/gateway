@@ -177,7 +177,7 @@ public class SslEditPanel extends Panel {
             @Override
             public void validate( final Form form ) {
                 String hostValue = hostname.getInput();
-                if ( hostValue == null || hostValue.trim().isEmpty() ) {
+                if ( "gen".equals( group.getConvertedInput() ) && (hostValue == null || hostValue.trim().isEmpty()) ) {
                     form.error("Host name is required for SSL certificate generation.");
                 }
             }
