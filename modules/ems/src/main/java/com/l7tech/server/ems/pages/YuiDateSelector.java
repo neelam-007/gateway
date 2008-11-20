@@ -3,11 +3,19 @@ package com.l7tech.server.ems.pages;
 import org.apache.wicket.extensions.markup.html.form.DateTextField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.ResourceReference;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.util.convert.IConverter;
+import com.l7tech.server.ems.EmsSession;
+
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.TimeZone;
+import java.util.Locale;
+import java.util.Date;
 
 /**
  * Panel with a text input field with an associated pop-up YUI calendar.
@@ -40,7 +48,38 @@ public class YuiDateSelector extends Panel {
 
         add( HeaderContributor.forJavaScript( new ResourceReference( YuiDataTable.class, "../resources/js/dateSelector.js" ) ) );
 
-        DateTextField textField = new DateTextField("date", model);
+        DateTextField textField = new DateTextField("date", model) {
+            @Override
+            public IConverter getConverter(final Class aClass) {
+                return new IConverter() {
+                    public SimpleDateFormat getDateFormat() {
+                        EmsSession session = ((EmsSession) RequestCycle.get().getSession());
+                        SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy");
+                        if ( session.getTimeZoneId() != null ) {
+                            format.setTimeZone( TimeZone.getTimeZone( session.getTimeZoneId() ) );
+                        }
+                        format.setLenient( false );
+                        return format;
+                    }
+
+                    @Override
+                    public Object convertToObject(String s, Locale locale) {
+                        Date value = new Date(0);
+                        try {
+                            value = getDateFormat().parse(s);
+                        } catch ( ParseException pe ) {
+                            // not of interest
+                        }
+                        return value;
+                    }
+
+                    @Override
+                    public String convertToString(Object o, Locale locale) {
+                        return getDateFormat().format((Date)o);
+                    }
+                };
+            }
+        };
         textField.setRequired(true);
         WebMarkupContainer calendarDiv = new WebMarkupContainer("calendar");
         WebMarkupContainer calendarBody = new WebMarkupContainer("calendar-body");        

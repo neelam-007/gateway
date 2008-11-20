@@ -26,7 +26,6 @@ import org.springframework.beans.factory.BeanFactory;
 
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -201,12 +200,8 @@ public class EmsApplication extends WebApplication {
 
         ((ConverterLocator) this.getConverterLocator()).set( Date.class, new IConverter() {
             public DateFormat getDateFormat() {
-                String formatPattern = ((EmsSession)RequestCycle.get().getSession()).getDateTimeFormatPattern();
-                if ( formatPattern == null ) {
-                    formatPattern = DEFAULT_DATE_FORMAT;
-                }
-
-                return new SimpleDateFormat(formatPattern);
+                EmsSession session = ((EmsSession)RequestCycle.get().getSession());
+                return session.buildDateFormat();
             }
 
             @Override

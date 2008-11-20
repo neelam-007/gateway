@@ -3,6 +3,10 @@ package com.l7tech.server.ems;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.Request;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+
 /**
  * Extended session with EMS specific properties.
  */
@@ -38,6 +42,13 @@ public class EmsSession extends WebSession {
         this.preferredPage = preferredPage;
     }
 
+    public DateFormat buildDateFormat() {
+        SimpleDateFormat format = new SimpleDateFormat( getDateTimeFormatPattern() );
+        if ( getTimeZoneId() != null ) {
+            format.setTimeZone( TimeZone.getTimeZone( getTimeZoneId() ) );
+        }
+        return format;
+    }
     //- PRIVATE
 
     private String dateTimeFormatPattern = EmsApplication.DEFAULT_DATE_FORMAT;

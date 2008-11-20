@@ -23,6 +23,7 @@ public class PagesTest {
     @Before
     public void setup() {
         tester = new WicketTester(new WebApplication() {
+            @Override
             protected void init() {
                 AbstractApplicationContext applicationContext = new ClassPathXmlApplicationContext(new String[] {
                         "com/l7tech/server/ems/resources/testEmsApplicationContext.xml",
@@ -30,10 +31,12 @@ public class PagesTest {
                 addComponentInstantiationListener(new SpringComponentInjector(this, applicationContext));
             }
 
+            @Override
             public Class getHomePage() {
                 return Login.class;
             }
 
+            @Override
             public Session newSession(Request request, Response response) {
                 return new EmsSession(request);
             }
@@ -42,6 +45,7 @@ public class PagesTest {
         tester.getApplication().getMarkupSettings().setStripWicketTags(true);
         tester.getApplication().getResourceSettings().setResourceStreamLocator(
             new ResourceStreamLocator() {
+                @Override
                 public IResourceStream locate(final Class clazz, final String path) {
                     // logger.info("Processing locate call for path '"+path+"'.");
                     return super.locate(clazz, path.replace("pages", "resources/templates"));
@@ -62,10 +66,34 @@ public class PagesTest {
     }
 
     @Test
+    public void testAuditPage() {
+        tester.startPage(Audits.class);
+        tester.assertRenderedPage(Audits.class);
+    }
+
+    @Test
+    public void testConfigurePage() {
+        tester.startPage(Configure.class);
+        tester.assertRenderedPage(Configure.class);
+    }
+
+    @Test
+    public void testEnterpriseUserPage() {
+        tester.startPage(EnterpriseUsers.class);
+        tester.assertRenderedPage(EnterpriseUsers.class);
+    }
+
+    @Test
     public void testLoginPage() {
         tester.startPage(Login.class);
         tester.assertRenderedPage(Login.class);
         tester.assertVisible("loginForm");
+    }
+
+    @Test
+    public void testLogsPage() {
+        tester.startPage(Logs.class);
+        tester.assertRenderedPage(Logs.class);
     }
 
     @Test
@@ -75,20 +103,15 @@ public class PagesTest {
     }
 
     @Test
+    public void testUserRolesPage() {
+        tester.startPage(UserRoles.class);
+        tester.assertRenderedPage(UserRoles.class);
+    }
+
+    @Test
     public void testUserSettingsPage() {
         tester.startPage(UserSettings.class);
         tester.assertRenderedPage(UserSettings.class);
     }
 
-    @Test
-    public void testAuditPage() {
-        tester.startPage(Audits.class);
-        tester.assertRenderedPage(Audits.class);
-    }
-
-    @Test
-    public void testEnterpriseUserPage() {
-        tester.startPage(EnterpriseUsers.class);
-        tester.assertRenderedPage(EnterpriseUsers.class);
-    }
 }

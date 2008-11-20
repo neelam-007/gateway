@@ -33,6 +33,18 @@
     <!-- Mock test key -->
     <bean id="defaultKey" class="com.l7tech.server.TestDefaultKey"/>
 
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.MockRoleManager"/>
+
+    <bean id="gatewayTrustTokenFactory" class="com.l7tech.server.ems.gateway.MockGatewayTrustTokenFactory"/>
+
+    <bean id="gatewayContextFactory" class="com.l7tech.server.ems.gateway.MockGatewayContextFactory"/>
+
+    <bean id="enterpriseFolderManager" class="com.l7tech.server.ems.enterprise.MockEnterpriseFolderManager"/>
+
+    <bean id="ssgClusterManager" class="com.l7tech.server.ems.enterprise.MockSsgClusterManager"/>
+
+    <bean id="ssgNodeManager" class="com.l7tech.server.ems.enterprise.MockSsgNodeManager"/>
+
     <bean id="serverConfig" class="com.l7tech.util.MockConfig">
         <constructor-arg>
             <props>                

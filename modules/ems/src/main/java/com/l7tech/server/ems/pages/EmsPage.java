@@ -17,7 +17,6 @@ import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.EmsSession;
 
 import javax.servlet.http.HttpServletRequest;
-import java.text.SimpleDateFormat;
 
 /**
  * Base page for EMS
@@ -33,7 +32,7 @@ public abstract class EmsPage extends WebPage {
         final StringResourceModel sinceResourceModel = new StringResourceModel( "page.since", this, null, new Object[]{new Model(){
             @Override
             public Object getObject() {
-                return new SimpleDateFormat(getSession().getDateTimeFormatPattern()).format(info.getDate());
+                return getSession().buildDateFormat().format(info.getDate());
             }
         }} );
 

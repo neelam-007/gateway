@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.io.Serializable;
 import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
 
 /**
  * Panel to display audit details.
@@ -78,7 +77,7 @@ public class AuditDetailPanel extends Panel {
 
         Collection<Pair<String,String>> details = new ArrayList<Pair<String,String>>();
 
-        nonull(details, "Time", new SimpleDateFormat(session.getDateTimeFormatPattern()).format( new Date(record.getMillis()) ));
+        nonull(details, "Time", session.buildDateFormat().format( new Date(record.getMillis()) ));
         nonull(details, "Severity", record.getLevel());
         nonule(details, "Request Id", record.getReqId());
         nonull(details, "Class", record.getSourceClassName());

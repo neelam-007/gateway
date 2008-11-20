@@ -44,7 +44,6 @@ import java.util.Date;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.net.URL;
 import java.net.MalformedURLException;
@@ -167,8 +166,7 @@ public class SystemSettings extends EmsPage {
         } else { // This case is applied for a testing purpose, since PagesTest is running.
             timeStarted = System.currentTimeMillis();
         }
-        SimpleDateFormat dateFormat = new SimpleDateFormat(getSession().getDateTimeFormatPattern());
-        Label timeStartedLabel = new Label("time.ems.process.started", dateFormat.format(new Date(timeStarted)));
+        Label timeStartedLabel = new Label("time.ems.process.started", getSession().buildDateFormat().format(new Date(timeStarted)));
         add(timeStartedLabel);
 
         final ListenerModel listenerModel = new ListenerModel();
@@ -355,8 +353,7 @@ public class SystemSettings extends EmsPage {
         if ( startDate != null ) {
             String m = DateUtils.makeRelativeDateMessage(startDate, true);
             m = m != null && m.length() > 0 ? " (" + m + ")" : m;
-            SimpleDateFormat dateFormat = new SimpleDateFormat(getSession().getDateTimeFormatPattern());
-            licenseStartText = dateFormat.format(startDate) + m;
+            licenseStartText = getSession().buildDateFormat().format(startDate) + m;
         }
 
         return licenseStartText;
@@ -372,8 +369,7 @@ public class SystemSettings extends EmsPage {
         if ( endDate != null ) {
             String m = DateUtils.makeRelativeDateMessage(endDate, false);
             m = m != null && m.length() > 0 ? " (" + m + ")" : m;
-            SimpleDateFormat dateFormat = new SimpleDateFormat(getSession().getDateTimeFormatPattern());
-            licenseEndText = dateFormat.format(endDate)  + m;
+            licenseEndText = getSession().buildDateFormat().format(endDate)  + m;
         }
 
         return licenseEndText;
