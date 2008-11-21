@@ -683,6 +683,57 @@ public class DialogDisplayer {
     }
 
     /**
+     * Display a confirmation dialog, in which the OK button won't enabled until the checkbox is marked.
+     * Such safe manner is to avoid that the user accidentally clicked OK and could not undo the action.
+     * <p/>
+     * <b>Note</b>: overuse of this dialog will train users to automtically accept it, defeating
+     * the purpose of having it.  This dialog should be used only in cases where accidental confirmation
+     * will lead to irrecoverable loss of user data that is stored nowhere else (example: deleting private keys)
+     * or actions that may permanently place the system into a degraded state (example: removing the license).
+     * It should not be used to guard deletion of anything that can be easily recreated
+     * (up to and including entire policies in most cases).
+     *
+     * @param parent: a parent of the safe-confirmation dialog
+     * @param mess: a message reminding the user what the safe-confirmation dialog does.
+     * @param title: a title of the safe-confirmation dialog
+     * @param opType: operation type per JOptionPane
+     * @param messType: message type per JOptionPane.
+     * @param width: The width of the dialog box
+     * @param height: The height of the dialog box
+     * @param result: callback to invoke with the result when dialog is dismissed.
+     */
+    public static void showSafeConfirmDialog(final Component parent,
+                                             final Object mess,
+                                             final String title,
+                                             final int opType,
+                                             final int messType,
+                                             final int width,
+                                             final int height,
+                                             final OptionListener result
+                                             ) {
+        // Create safe-confirmation-dialog components such as one checkbox, one OK button, and one Cancel button.
+        JPanel confirmationComponentsPanel = new JPanel();
+        JCheckBox enableOkCheckBox = new JCheckBox();
+        JButton okButton = new JButton();
+        JButton cancelButton = new JButton();
+        initSafeConfirmationComponents(confirmationComponentsPanel, enableOkCheckBox, okButton, cancelButton, result);
+
+        // Create a JOptionPane consisting of all safe-confirmation-dialog components.
+        Object[] options = new Object[] { confirmationComponentsPanel };
+        JOptionPane optionPane = new JOptionPane(mess, messType, opType, null, options, null);
+
+        // Create a safe-confirmation dialog
+        safeConfirmationDialog = optionPane.createDialog(parent, title);
+        safeConfirmationDialog.getRootPane().setDefaultButton(cancelButton);
+        safeConfirmationDialog.setPreferredSize(new Dimension(width, height));
+        safeConfirmationDialog.pack();
+        Utilities.centerOnParentWindow(safeConfirmationDialog);
+
+        // Display the safe-confirmation dialog
+        display(safeConfirmationDialog);
+    }
+
+    /**
      * Initialize the safe-confirmation components such as panels, checkbox, and buttons.
      *
      * @param confirmationComponentsPanel: used to arrange the positions of the checkbox and two buttons.

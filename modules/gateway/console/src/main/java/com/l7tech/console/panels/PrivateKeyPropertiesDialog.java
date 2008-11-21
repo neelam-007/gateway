@@ -546,10 +546,14 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         }
 
         String confirmationDialogTitle = "Confirm Private Key Deletion";
+        String alias = subject.getAlias();
+        if (alias.length() > 50) {
+            alias = alias.substring(0, 49) + "...";
+        }
         String confirmationDialogMessage =
-            "<html>This will irrevocably destroy this key and cannot be undone. The change" +
-                  "<center>will not fully take effect until all cluster nodes have been restarted.</center><p>" +
-                "<center>Really delete the private key " + subject.getAlias() + " (" + subject.getKeyEntry().getSubjectDN() + ")?</center></html>";
+            "<html><center>This will irrevocably destroy this key and cannot be undone. " +
+                    "The change will not fully take effect until all cluster nodes have been restarted.</center><p>" +
+                "<center>Really delete the private key " + alias + " (" + subject.getKeyEntry().getSubjectDN() + ")?</center></html>";
 
         DialogDisplayer.showSafeConfirmDialog(
             this,
@@ -557,6 +561,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             confirmationDialogTitle,
             JOptionPane.OK_CANCEL_OPTION,
             JOptionPane.WARNING_MESSAGE,
+            465, 180,
             new DialogDisplayer.OptionListener() {
                 public void reportResult(int option) {
                     if (option == JOptionPane.CANCEL_OPTION) {
