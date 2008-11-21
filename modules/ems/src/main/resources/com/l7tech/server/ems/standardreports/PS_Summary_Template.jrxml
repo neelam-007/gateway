@@ -1156,7 +1156,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<text><![CDATA[Mapping Totals]]></text>
+				<text><![CDATA[Group Totals]]></text>
 				</staticText>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement

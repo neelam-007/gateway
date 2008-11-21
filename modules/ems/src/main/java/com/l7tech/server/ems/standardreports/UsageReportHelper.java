@@ -70,10 +70,17 @@ public class UsageReportHelper extends JRDefaultScriptlet {
         for(Object o: this.variablesMap.keySet()){
             JRFillVariable fV = (JRFillVariable) this.variablesMap.get(o);
             if(fV.getName().startsWith(COLUMN_REPORT)){
-                ReportTotalBean reportTotalBean = new ReportTotalBean(fV.getName(), (Long)fV.getValue());
+                String columnName = fV.getName();
+                String index = columnName.substring(columnName.lastIndexOf("_")+1, columnName.length());
+                //System.out.println("Index is: " + index);
+                int i = Integer.valueOf(index);
+                if(!groupIndexToGroupMap.containsKey(i)) throw new IllegalStateException("key: " + i+" not found in groupIndexToGroupMap");
+                String groupName = this.groupIndexToGroupMap.get(i);
+                ReportTotalBean reportTotalBean = new ReportTotalBean(groupName, (Long)fV.getValue());
                 beans.add(reportTotalBean);
             }
         }
+        Collections.sort(beans);
         //System.out.println("Printing out beans");
 
 //        for(ReportTotalBean bean: beans){
