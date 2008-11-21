@@ -347,6 +347,8 @@ public final class RegistryImpl extends Registry
         folderAdmin = null;
         rbacAdmin = null;
         logSinkAdmin = null;
+        emailListenerAdmin = null;
+        emailAdmin = null;
     }
 
 
