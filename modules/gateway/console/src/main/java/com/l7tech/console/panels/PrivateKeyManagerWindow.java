@@ -296,13 +296,23 @@ public class PrivateKeyManagerWindow extends JDialog {
             return;
 
         try {
-            FileUtils.save(file, new FileUtils.Saver() {
-                public void doSave(FileOutputStream fos) throws IOException {
-                    for (String msg : pemCertChain) {
-                        fos.write(msg.getBytes("ASCII")); // it's PEM
-                    }
+
+            //if file already exists, we need to ask for confirmation to overwrite.
+            if (file.exists()) {
+                result = JOptionPane.showOptionDialog(fc, "The file '" + file.getName() + "' already exists.  Overwrite?",
+                        "Warning",JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
+                if (result != JOptionPane.YES_OPTION) {
+                    return;
+                } else {
+                    FileUtils.save(file, new FileUtils.Saver() {
+                        public void doSave(FileOutputStream fos) throws IOException {
+                            for (String msg : pemCertChain) {
+                                fos.write(msg.getBytes("ASCII")); // it's PEM
+                            }
+                        }
+                    });
                 }
-            });
+            }
         } catch (IOException e) {
             showErrorMessage("Unable to Save Certificate Chain", "Unable to save certificate chain: " + ExceptionUtils.getMessage(e), e);
         }
