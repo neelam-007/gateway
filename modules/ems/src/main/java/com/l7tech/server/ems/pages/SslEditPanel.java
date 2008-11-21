@@ -15,6 +15,7 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.CompoundPropertyModel;
+import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.Component;
 import org.apache.wicket.validation.validator.PatternValidator;
 import org.apache.wicket.util.lang.Bytes;
@@ -40,15 +41,12 @@ import com.l7tech.util.SyspropUtil;
 
 /**
  * Panel for generation / upload of SSL key / certificate.
- *
- * TODO [steve] form feedback and validation messaegs.
  */
 public class SslEditPanel extends Panel {
 
     private static final Logger logger = Logger.getLogger(SslEditPanel.class.getName());
     private static final int MAX_KEYSTORE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.keystoreFile.maxBytes", 1024 * 500);
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private SetupManager setupManager;
 
@@ -122,26 +120,31 @@ public class SslEditPanel extends Panel {
                     String passwordValue = sslFormModel.getPassword();
                     String aliasValue = sslFormModel.getAlias();
                     try {
-                        final FileUpload upload = keystore.getFileUpload();
-                        if ( upload != null ) {
-                            KeyStore keystore = KeyStore.getInstance("PKCS12");
-                            keystore.load( upload.getInputStream(), passwordValue.toCharArray() );
+                        FileUpload upload = null;
+                        try {
+                            upload = keystore.getFileUpload();
+                            if ( upload != null ) {
+                                KeyStore keystore = KeyStore.getInstance("PKCS12");
+                                keystore.load( upload.getInputStream(), passwordValue.toCharArray() );
 
-                            if ( aliasValue == null || aliasValue.trim().isEmpty() ) {
-                                aliasValue = "";
-                                for ( String keystoreAlias : Collections.list(keystore.aliases()) ) {
-                                    if ( !aliasValue.isEmpty() ) throw new SetupException("Alias not specified and multiple values present.");
-                                    aliasValue = keystoreAlias;
+                                if ( aliasValue == null || aliasValue.trim().isEmpty() ) {
+                                    aliasValue = "";
+                                    for ( String keystoreAlias : Collections.list(keystore.aliases()) ) {
+                                        if ( !aliasValue.isEmpty() ) throw new SetupException("Alias not specified and multiple values present.");
+                                        aliasValue = keystoreAlias;
+                                    }
                                 }
+
+                                Certificate[] certs = keystore.getCertificateChain(aliasValue);
+                                X509Certificate[] xcerts = new X509Certificate[certs.length];
+                                System.arraycopy(certs, 0, xcerts, 0, certs.length);
+
+                                 alias = setupManager.saveSsl( (PrivateKey)keystore.getKey(aliasValue, passwordValue.toCharArray()), xcerts );
+                            } else {
+                                logger.warning("Keystore not present in upload!");
                             }
-
-                            Certificate[] certs = keystore.getCertificateChain(aliasValue);
-                            X509Certificate[] xcerts = new X509Certificate[certs.length];
-                            System.arraycopy(certs, 0, xcerts, 0, certs.length);                            
-
-                             alias = setupManager.saveSsl( (PrivateKey)keystore.getKey(aliasValue, passwordValue.toCharArray()), xcerts );
-                        } else {
-                            logger.warning("Keystore not present in upload!");
+                        } finally {
+                            if (upload != null) upload.closeStreams();
                         }
                     } catch ( SetupException se ) {
                         logger.log( Level.WARNING, "Error configuring ssl with keystore.", se );
@@ -178,7 +181,7 @@ public class SslEditPanel extends Panel {
             public void validate( final Form form ) {
                 String hostValue = hostname.getInput();
                 if ( "gen".equals( group.getConvertedInput() ) && (hostValue == null || hostValue.trim().isEmpty()) ) {
-                    form.error("Host name is required for SSL certificate generation.");
+                    form.error( new StringResourceModel("message.hostname.required", SslEditPanel.this, null).getString() );
                 }
             }
 

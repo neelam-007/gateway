@@ -18,18 +18,14 @@ import java.util.logging.Level;
 
 /**
  * Panel for editing of server listen IP address / port.
- *
- * TODO [steve] form validation messaegs.
  */
 public class ListenerEditPanel extends Panel {
 
     private static final Logger logger = Logger.getLogger(ListenerEditPanel.class.getName());
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private SetupManager setupManager;
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean(name="serverConfig")
     private Config config;
 

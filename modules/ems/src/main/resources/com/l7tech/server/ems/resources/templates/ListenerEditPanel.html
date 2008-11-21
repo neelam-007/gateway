@@ -14,18 +14,19 @@
                 <tr>
                     <td valign="top">
                         <div>
-                            Enter the IP address and port for the HTTPS listener.
+                            <div wicket:id="feedback" class="center"/>
                         </div>
-                        <br/>
-                        <div wicket:id="feedback"/>
+                        <div>
+                            <wicket:message key="label.header">Enter the IP address and port for the HTTPS listener.</wicket:message>
+                        </div>
                         <div>
                             <table class="spaced">
                                 <tr>
-                                    <th>IP Address:</th>
+                                    <th><wicket:message key="addr">IP Address</wicket:message>:</th>
                                     <td><input wicket:id="addr" type="text" maxLength="15"/></td>
                                 </tr>
                                 <tr>
-                                    <th>Port:</th>
+                                    <th><wicket:message key="port">Port</wicket:message>:</th>
                                     <td><input wicket:id="port" type="text" maxLength="5"/></td>
                                 </tr>
                             </table>

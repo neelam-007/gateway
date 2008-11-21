@@ -18,34 +18,34 @@
                                 <div wicket:id="feedback" class="center"/>
                             </div>
                             <div>
-                                Enter a host name or select a key store for upload.
+                                <wicket:message key="label.header">Enter a host name or select a key store for upload.</wicket:message>                                
                             </div>
                             <br/>
                             <div>
-                                <input type="radio" wicket:id="sslRadioGen"/> Generate new SSL certificate for host name.
+                                <input type="radio" wicket:id="sslRadioGen"/> <wicket:message key="label.generate">Generate new SSL certificate for host name.</wicket:message>
                                 <br/>
                                 <table class="spaced">
                                     <tr>
-                                        <th>Host name:</th>
+                                        <th><wicket:message key="hostname">Host name</wicket:message>:</th>
                                         <td><input wicket:id="hostname" type="text"/></td>
                                     </tr>
                                 </table>
                             </div>
                             <br/>
                             <div>
-                                <input type="radio" wicket:id="sslRadioLoad"/> Upload SSL certificate key store.
+                                <input type="radio" wicket:id="sslRadioLoad"/> <wicket:message key="label.upload">Upload SSL certificate key store.</wicket:message>
                                 <br/>
                                 <table class="spaced">
                                     <tr>
-                                        <th>PKCS 12 key store:</th>
+                                        <th><wicket:message key="keystore">PKCS 12 key store</wicket:message>:</th>
                                         <td><input wicket:id="keystore" type="file" size="22"/></td>
                                     </tr>
                                     <tr>
-                                        <th>Password:</th>
+                                        <th><wicket:message key="password">Password</wicket:message>:</th>
                                         <td><input wicket:id="password" type="password"/></td>
                                     </tr>
                                     <tr>
-                                        <th>Alias:</th>
+                                        <th><wicket:message key="alias">Alias</wicket:message>:</th>
                                         <td><input wicket:id="alias" type="text"/></td>
                                     </tr>
                                 </table>
