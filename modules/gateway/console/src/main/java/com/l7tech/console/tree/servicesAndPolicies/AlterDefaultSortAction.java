@@ -4,6 +4,8 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.security.LogonListener;
+import com.l7tech.gateway.common.audit.LogonEvent;
 
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
@@ -21,7 +23,7 @@ import java.util.logging.Logger;
  * Date: Aug 15, 2008
  * Time: 9:53:47 AM
  */
-public class AlterDefaultSortAction extends BaseAction {
+public class AlterDefaultSortAction extends BaseAction implements LogonListener {
     static Logger log = Logger.getLogger(AlterDefaultSortAction.class.getName());
 
     /**
@@ -193,5 +195,13 @@ public class AlterDefaultSortAction extends BaseAction {
         for(AbstractTreeNode atn: childNodes){
             node.insert(atn, node.getInsertPosition(atn, RootNode.getComparator()));
         }
+    }
+
+    public void onLogon(LogonEvent e) {
+        setEnabled(true);
+    }
+
+    public void onLogoff(LogonEvent e) {
+        setEnabled(false);
     }
 }

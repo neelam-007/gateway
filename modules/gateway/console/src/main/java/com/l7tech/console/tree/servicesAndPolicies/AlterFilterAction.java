@@ -1,11 +1,13 @@
 package com.l7tech.console.tree.servicesAndPolicies;
 
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.audit.LogonEvent;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -20,7 +22,7 @@ import java.util.Enumeration;
  *
  * Filters the entities in the Services and Policies tree
  */
-public class AlterFilterAction extends BaseAction {
+public class AlterFilterAction extends BaseAction implements LogonListener {
     private static final ServiceNodeFilter serviceNodeFilter = new ServiceNodeFilter();
     private static final PolicyNodeFilter policyNodeFilter = new PolicyNodeFilter();
 
@@ -137,5 +139,13 @@ public class AlterFilterAction extends BaseAction {
 
     protected void performAction() {
         applyfilter( filterType, filterLabel );
+    }
+
+    public void onLogoff(LogonEvent e) {
+        setEnabled(false);
+    }
+
+    public void onLogon(LogonEvent e) {
+        setEnabled(true);
     }
 }

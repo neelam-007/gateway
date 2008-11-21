@@ -182,6 +182,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private EventListenerList listenerList = new WeakEventListenerList();
     @SuppressWarnings({"FieldCanBeLocal"})
     private LogonListener closeWindowListener;
+    LogonListener topMenuListener;
     // cached credential manager
     private String connectionContext = "";
     private String connectionID = "";
@@ -737,16 +738,36 @@ public class MainWindow extends JFrame implements SheetHolder {
         //Add tree filter menu items
         menu.addSeparator();
         JMenu filterMenu = new JMenu("Filter Tree");
-        filterMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL, getFilterStatusLabel()));
-        filterMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES, getFilterStatusLabel()));
-        filterMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, getFilterStatusLabel()));
+        AlterFilterAction filterAll = new AlterFilterAction(AlterFilterAction.FilterType.ALL, getFilterStatusLabel());
+        filterAll.setEnabled(false);
+        this.addLogonListener(filterAll);
+
+        AlterFilterAction filterServices = new AlterFilterAction(AlterFilterAction.FilterType.SERVICES, getFilterStatusLabel());
+        filterServices.setEnabled(false);
+        this.addLogonListener(filterServices);
+
+        AlterFilterAction filterPolicies = new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, getFilterStatusLabel());
+        filterPolicies.setEnabled(false);
+        this.addLogonListener(filterPolicies);
+
+        filterMenu.add(filterAll);
+        filterMenu.add(filterServices);
+        filterMenu.add(filterPolicies);
 
         menu.add(filterMenu);
         //Add tree sort filter menu items
         menu.addSeparator();
         JMenu sortMenu = new JMenu("Sort Tree");
-        sortMenu.add(AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.NAME));
-        sortMenu.add(AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.TYPE));
+        AlterDefaultSortAction nameSort = AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.NAME);
+        nameSort.setEnabled(false);
+        this.addLogonListener(nameSort);
+
+        AlterDefaultSortAction typeSort = AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.TYPE);
+        typeSort.setEnabled(false);
+        this.addLogonListener(typeSort);
+
+        sortMenu.add(nameSort);
+        sortMenu.add(typeSort);
         menu.add(sortMenu);
         
         int mnemonic = menu.getText().toCharArray()[0];
@@ -2300,6 +2321,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         installInactivityTimerEventListener();
         installCascadingErrorHandler();
         installClosingWindowHandler();
+        installTopMenuRefresh();
     }
 
     /**
@@ -2510,6 +2532,23 @@ public class MainWindow extends JFrame implements SheetHolder {
         };
 
        addLogonListener(closeWindowListener);
+    }
+
+    /**
+     * Installs listener to refresh top menu so that it will enable/disable menu items upon start of SSM, logon, and logoff
+     */
+    private void installTopMenuRefresh() {
+        updateTopMenu();
+        topMenuListener = new LogonListener() {
+            public void onLogoff(LogonEvent e) {
+                updateTopMenu();
+            }
+
+            public void onLogon(LogonEvent e) {
+                updateTopMenu();
+            }
+        };
+        addLogonListener(topMenuListener);
     }
 
     /**
@@ -3023,5 +3062,54 @@ public class MainWindow extends JFrame implements SheetHolder {
         publishInternalServiceAction = new PublishInternalServiceAction();
         disableUntilLogin(publishInternalServiceAction);
         return publishInternalServiceAction;
+    }
+
+    /**
+     * A recursive method which will parse out the menu to see if it can determine if the menu should be enabled/disabled
+     * based on the children of the given menu.
+     *
+     * @param menu  the menu to determine to enable/disable
+     * @return  TRUE if menu should be enabled, otherwise FALSE to make menu disabled.
+     */
+    private boolean isMenuItemActive(JMenu menu) {
+        if (menu.getMenuComponentCount() == 0) {    //no more children
+            return menu.getAction().isEnabled();
+        } else {
+            final Component[] components = menu.getMenuComponents();
+            for (Component component : components) {
+                if (component instanceof JMenu) {
+                    if (isMenuItemActive((JMenu) component)) {
+                        return true;
+                    }
+                } else if (component instanceof JMenuItem) { //a menu item
+                    return ((JMenuItem) component).getAction().isEnabled();
+                }
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Helper method to enable/disable the menu items for the given root menu.
+     * @param menu  The root of the menu.
+     */
+    private void updateTopMenu(JMenu menu) {
+        final Component[] components = menu.getMenuComponents();
+        for (Component component : components) {
+            if (component instanceof JMenu) {
+                component.setEnabled(isMenuItemActive((JMenu) component));
+            }
+        }
+    }
+
+    /**
+     * Updates the top menu to enable/disable the menu items
+     */
+    private void updateTopMenu() {
+        updateTopMenu(fileMenu);
+        updateTopMenu(editMenu);
+        updateTopMenu(tasksMenu);
+        updateTopMenu(viewMenu);
+        updateTopMenu(helpMenu);
     }
 }
