@@ -1115,6 +1115,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
                                                    boolean useUser) {
         //we need at least one key. However both user and operation are technically keys, so if we have either
         //a user or an operation, they we have conceptually a key
+        boolean keysOk = true;
         if(keys == null || keys.isEmpty()){
             if(!useUser){
                 if(!isDetail){
@@ -1123,6 +1124,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
 
                 }
             }
+            keysOk = false;
         }
 
         boolean keyValuesSupplied = false;
@@ -1137,11 +1139,13 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             }
             keyValuesSupplied = true;
         }else{
+            //only throw an exception if keys are not null or empty
+            if(keysOk) throw new IllegalArgumentException("The size of keyValueConstraints must match the size of keys");            
             //if keyValueConstraint are not supplied, then we can't have valueConstraintAndOrLike supplied either
-            if(valueConstraintAndOrLike != null && !valueConstraintAndOrLike.isEmpty()){
-                throw new IllegalArgumentException("Cannot supply valueConstraintAndOrLike with values if no values in" +
-                        " keyValueConstraints have been supplied, on which they would be applied");
-            }
+//            if(valueConstraintAndOrLike != null && !valueConstraintAndOrLike.isEmpty()){
+//                throw new IllegalArgumentException("Cannot supply valueConstraintAndOrLike with values if no values in" +
+//                        " keyValueConstraints have been supplied, on which they would be applied");
+//            }
         }
         return keyValuesSupplied;
     }

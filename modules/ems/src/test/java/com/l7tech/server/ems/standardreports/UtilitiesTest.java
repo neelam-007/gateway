@@ -51,8 +51,11 @@ public class UtilitiesTest{
     public void testCreateMappingQuery_OneKey(){
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
+        List<String> values = new ArrayList<String>();
+        values.add(null);
+
         String sql =
-                Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),keys ,null,null,1,false,null,false,null);
+                Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),keys ,values ,null,1,false,null,false,null);
 
         //There should only be 1 CASE statement in SQL
         int index = sql.indexOf("CASE", 0);
@@ -79,7 +82,7 @@ public class UtilitiesTest{
             index = sql.indexOf("AS MAPPING_VALUE_"+(i+1));
             Assert.assertTrue(index != -1);
         }
-        //System.out.println("OneKey: "+sql);
+        System.out.println("OneKey: "+sql);
     }
 
     @Test
@@ -89,8 +92,8 @@ public class UtilitiesTest{
         keys.add("CUSTOMER");
 
         List<String> values = new ArrayList<String>();
-//        values.add("127.0.0.1");
-//        values.add("GOLD");
+        values.add("127.0.0.1");
+        values.add("GOLD");
 
         String sql = Utilities.createMappingQuery(true, null,null,new ArrayList<String>(),keys ,values ,null ,1 ,false ,null
                 ,false ,null);
@@ -206,7 +209,7 @@ public class UtilitiesTest{
     @Test
     public void testCreateMappingQuery_OnlyDetail(){
         String sql =
-                Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null ,null,1,true ,null ,false ,null);
+                Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),new ArrayList<String>(),null ,null,1,true ,null ,false ,null);
 
         int index = sql.indexOf("mcmv.service_operation AS SERVICE_OPERATION_VALUE");
         Assert.assertTrue(index != -1);
@@ -226,7 +229,7 @@ public class UtilitiesTest{
         users.add("Ldap User 1");
 
         String sql =
-                Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null ,null,1,true ,null ,true , users);
+                Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),new ArrayList<String>() ,null ,null,1,true ,null ,true , users);
 
         int index = sql.indexOf("mcmv.auth_user_id AS AUTHENTICATED_USER");
         Assert.assertTrue(index != -1);
@@ -250,19 +253,19 @@ public class UtilitiesTest{
     public void testCreateMappingQuery_Resolution(){
 
         String sql =
-                Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null ,null,1,true ,null ,false , null);
+                Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),new ArrayList<String>() ,null ,null,1,true ,null ,false , null);
 
         int index = sql.indexOf("sm.resolution = 1");
         Assert.assertTrue(index != -1);
 
-        sql = Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null ,null,2,true ,null ,false , null);
+        sql = Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),new ArrayList<String>() ,null ,null,2,true ,null ,false , null);
         index = sql.indexOf("sm.resolution = 2");
         Assert.assertTrue(index != -1);
         //System.out.println("Resolution: "+sql);
 
         boolean exception = false;
         try{
-            Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),null ,null ,null,3 ,true ,null ,false , null);
+            Utilities.createMappingQuery(false, null,null,new ArrayList<String>(),new ArrayList<String>() ,null ,null,3 ,true ,null ,false , null);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
@@ -280,7 +283,7 @@ public class UtilitiesTest{
         long startTime = cal.getTimeInMillis() - 1000;
         long endTime = cal.getTimeInMillis();
 
-        String sql = Utilities.createMappingQuery(false, startTime, endTime ,new ArrayList<String>(),null ,null ,null,1,true ,
+        String sql = Utilities.createMappingQuery(false, startTime, endTime ,new ArrayList<String>(),new ArrayList<String>() ,null ,null,1,true ,
                 null ,false , null);
 
         int index = sql.indexOf("sm.period_start >="+startTime);
@@ -291,7 +294,7 @@ public class UtilitiesTest{
         
         boolean exception = false;
         try{
-            Utilities.createMappingQuery(false, endTime, startTime, new ArrayList<String>(),null ,null ,null,1 ,true ,null ,false , null);
+            Utilities.createMappingQuery(false, endTime, startTime, new ArrayList<String>(),new ArrayList<String>() ,null ,null,1 ,true ,null ,false , null);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
@@ -415,10 +418,17 @@ public class UtilitiesTest{
         keys.add("CUSTOMER");
 
         List<String> values = new ArrayList<String>();
-//        values.add(null);
-//        values.add("GOLD");
+        values.add(null);
+        values.add(null);
 
-        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, null, null, 2, true, null, false, null);
+        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, values, null, 2, true, null, false, null);
+        System.out.println(sql);
+
+        values.clear();
+        values.add("127.0.0.1");
+        values.add(null);
+
+        sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, values, null, 2, true, null, false, null);
         System.out.println(sql);
     }
 
@@ -429,10 +439,10 @@ public class UtilitiesTest{
         keys.add("CUSTOMER");
 
         List<String> values = new ArrayList<String>();
-//        values.add(null);
-//        values.add("GOLD");
+        values.add(null);
+        values.add(null);
 
-        String sql = Utilities.getUsageQuery(null, null, new ArrayList<String>(), keys, null, null, 2, false, null, false, null);
+        String sql = Utilities.getUsageQuery(null, null, new ArrayList<String>(), keys, values , null, 2, false, null, false, null);
         System.out.println(sql);
     }
 
@@ -481,10 +491,14 @@ public class UtilitiesTest{
         keys.add("IP_ADDRESS");
         keys.add("CUSTOMER");
 
-        String sql = Utilities.getUsageMasterIntervalQuery(null, null, null, keys, null, null, 2, true, null, false, null);
+        List<String> values = new ArrayList<String>();
+        values.add(null);
+        values.add(null);
+
+        String sql = Utilities.getUsageMasterIntervalQuery(null, null, null, keys, values, null, 2, true, null, false, null);
         System.out.println(sql);
 
-        sql = Utilities.getUsageMasterIntervalQuery(null, null, null, keys, null, null, 2, false, null, false, null);
+        sql = Utilities.getUsageMasterIntervalQuery(null, null, null, keys, values, null, 2, false, null, false, null);
         System.out.println(sql);
     }
 
@@ -754,11 +768,15 @@ public class UtilitiesTest{
         keys.add("CUSTOMER");
 
         List<String> values = new ArrayList<String>();
+        values.add(null);
+        values.add(null);
+
+        val = Utilities.getMappingReportInfoDisplayString(authUsers, keys, values, false, false);
+        Assert.assertTrue(val.equals(keys.get(0) + ", "+keys.get(1)));
+
+        values.clear();
         values.add("127.0.0.1");
         values.add("GOLD");
-
-        val = Utilities.getMappingReportInfoDisplayString(authUsers, keys, null, false, false);
-        Assert.assertTrue(val.equals(keys.get(0) + ", "+keys.get(1)));
 
         val = Utilities.getMappingReportInfoDisplayString(authUsers, keys, values, false, false);
         Assert.assertTrue(val.equals(keys.get(0) + " ("+values.get(0)+"), "+keys.get(1)+" ("+values.get(1)+")"));
