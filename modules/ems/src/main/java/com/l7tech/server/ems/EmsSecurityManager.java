@@ -50,21 +50,28 @@ public interface EmsSecurityManager {
      *
      * @return True if authenticated
      */
-    boolean isAuthenticated( final Component component );
+    boolean isAuthenticated( Component component );
 
     /**
      * Check if the current request is authenticated for the given class.
      *
      * @return True if authenticated
      */
-    boolean isAuthenticated( final Class componentClass );
+    boolean isAuthenticated( Class componentClass );
 
     /**
      * Check if the current request is authorized for the given component.
      *
      * @return True if authorized
      */
-    boolean isAuthorized( final Component component );
+    boolean isAuthorized( Component component );
+
+    /**
+     * Check if the current request is authorized for the given class.
+     *
+     * @return True if authorized
+     */
+    boolean isAuthorized( Class componentClass );
 
     /**
      * Check if the ESM is licensed or the component does not require a license.
@@ -75,7 +82,7 @@ public interface EmsSecurityManager {
      * @param component The component (heriarchy) to check. 
      * @return True if the component is licensed or does not require a license.
      */
-    boolean isLicensed( final Component component );
+    boolean isLicensed( Component component );
 
     /**
      * Check if the ESM is licensed for the given class.
@@ -83,7 +90,7 @@ public interface EmsSecurityManager {
      * @param componentClass The component class to check.
      * @return True if the component is licensed or does not require a license.
      */
-    boolean isLicensed( final Class componentClass );
+    boolean isLicensed( Class componentClass );
 
     /**
      * Check if the user of the current session is permitted to access the given page.
@@ -103,6 +110,15 @@ public interface EmsSecurityManager {
      */
     @Transactional(propagation=SUPPORTS,readOnly=true)
     boolean hasPermission( AttemptedOperation ao );
+
+    /**
+     * Check if the user of the current session is permitted to perform an operation.
+     *
+     * @param clazz The class annotated with the attempted operation
+     * @return true if permitted
+     */
+    @Transactional(propagation=SUPPORTS,readOnly=true)
+    boolean hasPermission( Class clazz );
 
     /**
      * Change password for the current user.

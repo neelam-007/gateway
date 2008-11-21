@@ -6,6 +6,9 @@ import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
+import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
+import com.l7tech.gateway.common.security.rbac.RequiredPermission;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.audit.AuditRecordManager;
@@ -37,6 +40,9 @@ import java.util.logging.Logger;
 /**
  * 
  */
+@RequiredPermissionSet(
+    requiredPermissions=@RequiredPermission(entityType=EntityType.AUDIT_RECORD, operationType= OperationType.READ)
+)
 @NavigationPage(page="Audits",pageIndex=100,section="Tools",sectionIndex=100,sectionPage="Audits",pageUrl="Audits.html")
 public class Audits extends EmsPage {
     

@@ -1,8 +1,11 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.NavigationModel;
+import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.util.Functions;
 import org.apache.wicket.AttributeModifier;
+import org.apache.wicket.Page;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.ExternalLink;
@@ -22,10 +25,16 @@ public class NavigationPanel extends Panel {
     /**
      * The model must be the page being rendered.
      */
-    public NavigationPanel( final String id, final IModel model ) {
+    public NavigationPanel( final String id, final IModel model, final EmsSecurityManager securityManager ) {
         super(id, model);
 
-        NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
+        NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages", new Functions.Unary<Boolean,Class<? extends Page>>(){
+            @Override
+            public Boolean call(Class<? extends Page> aClass) {
+                return securityManager.hasPermission( aClass );
+            }
+        });
+
 
         String currentPage = ((EmsPage)model.getObject()).getPageName();
         currentPage = currentPage.substring(currentPage.lastIndexOf('.')+1);

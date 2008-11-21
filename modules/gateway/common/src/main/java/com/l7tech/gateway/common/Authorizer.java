@@ -20,9 +20,42 @@ import java.util.Collection;
  * @version Sep 2, 2004
  */
 public abstract class Authorizer {
+
+    //- PUBLIC
+
+    public boolean hasPermission( final Class<?> permissionTarget ) {
+        return hasPermission( permissionTarget == null ? null : permissionTarget.getAnnotation( RequiredPermissionSet.class ) );
+    }
+
+    public boolean hasPermission( final RequiredPermissionSet permissionSet ) {
+        boolean permitted = false;
+
+        if ( permissionSet != null ) {
+            if ( RequiredPermissionSet.Type.ANY == permissionSet.type() ) {
+                for ( RequiredPermission permission : permissionSet.requiredPermissions() ) {
+                    if ( hasPermission( asAttemptedOperation(permission) ) ) {
+                        permitted = true;
+                        break;
+                    }
+                }
+            } else {
+                boolean granted = true;
+                for ( RequiredPermission permission : permissionSet.requiredPermissions() ) {
+                    if ( !hasPermission( asAttemptedOperation(permission) ) ) {
+                        granted = false;
+                        break;
+                    }
+                }
+                permitted = granted;
+            }
+        }
+
+        return permitted;
+    }
+
     public boolean hasPermission(AttemptedOperation attempted) {
         Collection<Permission> perms = getUserPermissions();
-        if (perms == null || perms.isEmpty()) return false;
+        if (attempted == null || perms == null || perms.isEmpty()) return false;
 
         for ( com.l7tech.gateway.common.security.rbac.Permission perm : perms) {
             if (perm.getEntityType() != EntityType.ANY && perm.getEntityType() != attempted.getType()) continue;
@@ -73,4 +106,27 @@ public abstract class Authorizer {
     }
 
     public abstract Collection<Permission> getUserPermissions() throws RuntimeException;
+
+    //- PRIVATE
+
+    private AttemptedOperation asAttemptedOperation( final RequiredPermission permission ) {
+        AttemptedOperation operation = null;
+
+        switch ( permission.operationType() ) {
+            case CREATE:
+                operation = new AttemptedCreate( permission.entityType() );
+                break;
+            case READ:
+                operation = new AttemptedReadAny( permission.entityType() );
+                break;
+            case UPDATE:
+                operation = new AttemptedUpdateAny( permission.entityType() );
+                break;
+            case DELETE:
+                operation = new AttemptedDeleteAll( permission.entityType() );
+                break;
+        }
+
+        return operation;
+    }
 }

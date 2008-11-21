@@ -3,6 +3,9 @@ package com.l7tech.server.ems.pages;
 import com.l7tech.server.ems.LogResource;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
+import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
+import com.l7tech.gateway.common.security.rbac.RequiredPermission;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
@@ -27,6 +30,9 @@ import java.util.*;
 /**
  * Log management
  */
+@RequiredPermissionSet(
+    requiredPermissions=@RequiredPermission(entityType=EntityType.LOG_RECORD, operationType= OperationType.READ)
+)
 @NavigationPage(page="Logs",pageIndex=200,section="Tools",sectionIndex=100,sectionPage="Audits",pageUrl="Logs.html")
 public class Logs extends EmsPage {
 

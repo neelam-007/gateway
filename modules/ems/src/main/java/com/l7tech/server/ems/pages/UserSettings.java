@@ -14,6 +14,7 @@ import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.feedback.ContainerFeedbackMessageFilter;
+import org.apache.wicket.Page;
 
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.EmsApplication;
@@ -23,6 +24,7 @@ import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.Config;
+import com.l7tech.util.Functions;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -202,7 +204,12 @@ public class UserSettings extends EmsPage {
             List<String> zoneIds = Arrays.asList(TimeZone.getAvailableIDs());
             Collections.sort( zoneIds );
 
-            final NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
+            final NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages", new Functions.Unary<Boolean,Class<? extends Page>>(){
+                @Override
+                public Boolean call(Class<? extends Page> aClass) {
+                    return securityManager.hasPermission( aClass );
+                }
+            });
 
             add( new DropDownChoice( "timezone", zoneIds ) );
             add( new DropDownChoice( "dateformat", EmsApplication.getDateFormatkeys(), new DateChoiceRenderer(true) ) );

@@ -16,12 +16,14 @@ import org.apache.wicket.behavior.HeaderContributor;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.EmsSession;
 import com.l7tech.identity.User;
+import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 
 import javax.servlet.http.HttpServletRequest;
 
 /**
  * Base page for EMS
  */
+@RequiredPermissionSet()
 public abstract class EmsPage extends WebPage {
 
     //- PUBLIC
@@ -39,7 +41,7 @@ public abstract class EmsPage extends WebPage {
         add( new UnlicensedLabel("titleLabel", new StringResourceModel( "page.title", this, null, new Object[]{ new StringResourceModel( "page.${pageName}.title", this, new Model(this))} )) );
         add( new UnlicensedLabel("userLabel", new StringResourceModel( "page.user", this, infoModel )) );
         add( new UnlicensedLabel("sinceLabel", sinceResourceModel ));
-        add( new NavigationPanel("navigation", new Model(this)) );
+        add( new NavigationPanel("navigation", new Model(this), securityManager) );
     }
 
     public String getPageName() {

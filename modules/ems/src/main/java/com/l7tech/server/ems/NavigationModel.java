@@ -1,6 +1,7 @@
 package com.l7tech.server.ems;
 
 import org.apache.wicket.markup.html.WebPage;
+import org.apache.wicket.Page;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +15,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.l7tech.util.Functions;
 
 /**
  * Model for site sections and pages. 
@@ -30,7 +33,7 @@ public class NavigationModel implements Serializable {
      * @param packageName The name of the package containing pages.
      */
     public NavigationModel( final String packageName ) {
-        this( Package.getPackage(packageName) );
+        this( Package.getPackage(packageName), null );
     }
     
     /**
@@ -39,7 +42,7 @@ public class NavigationModel implements Serializable {
      * @param pagePackage The package containing pages.
      */
     public NavigationModel( final Package pagePackage ) {
-        this( Collections.singleton( pagePackage ) );
+        this( Collections.singleton( pagePackage ), null );
     }
     
     /**
@@ -48,7 +51,39 @@ public class NavigationModel implements Serializable {
      * @param packages The packages containing pages.
      */
     public NavigationModel( final Collection<Package> packages ) {
-        pages = loadPages( packages );
+        this( packages, null );
+    }
+
+    // new Functions.Unary<Boolean,Class<? extends Page>>
+
+    /**
+     * Build a navigation model using the "page.index" in the named package.
+     *
+     * @param packageName The name of the package containing pages.
+     * @param pageChecker Callback for verification of access to a page.
+     */
+    public NavigationModel( final String packageName, final Functions.Unary<Boolean,Class<? extends Page>> pageChecker ) {
+        this( Package.getPackage(packageName), pageChecker );
+    }
+
+    /**
+     * Build a navigation model using the "page.index" in the named package.
+     *
+     * @param pagePackage The package containing pages.
+     * @param pageChecker Callback for verification of access to a page.
+     */
+    public NavigationModel( final Package pagePackage, final Functions.Unary<Boolean,Class<? extends Page>> pageChecker  ) {
+        this( Collections.singleton( pagePackage ), pageChecker );
+    }
+
+    /**
+     * Build a navigation model using the "page.index" in the named packages.
+     *
+     * @param packages The packages containing pages.
+     * @param pageChecker Callback for verification of access to a page.
+     */
+    public NavigationModel( final Collection<Package> packages, final Functions.Unary<Boolean,Class<? extends Page>> pageChecker  ) {
+        pages = loadPages( packages, pageChecker );
     }
 
     /**
@@ -194,7 +229,7 @@ public class NavigationModel implements Serializable {
     private final Collection<NavigationPageHolder> pages;
     
     @SuppressWarnings({"unchecked"})
-    private Collection<NavigationPageHolder> loadPages( final Collection<Package> packages ) {
+    private Collection<NavigationPageHolder> loadPages( final Collection<Package> packages, final Functions.Unary<Boolean,Class<? extends Page>> pageChecker ) {
         Set<NavigationPageHolder> pages = new TreeSet<NavigationPageHolder>();
         
         for ( Package pagePackage : packages ) {
@@ -209,9 +244,11 @@ public class NavigationModel implements Serializable {
                 String pageLine;
                 while ( (pageLine = reader.readLine()) != null ) {
                     Class<WebPage> pageClass = (Class<WebPage>) Class.forName( pagePackage.getName() + "." + pageLine );
-                    NavigationPage navPage = pageClass.getAnnotation(NavigationPage.class);
-                    if ( navPage != null ) {
-                        pages.add( new NavigationPageHolder(navPage, pageClass) );
+                    if ( pageChecker == null || pageChecker.call(pageClass) ) {
+                        NavigationPage navPage = pageClass.getAnnotation(NavigationPage.class);
+                        if ( navPage != null ) {
+                            pages.add( new NavigationPageHolder(navPage, pageClass) );
+                        }
                     }
                 }
             } catch ( IOException ioe ) {
@@ -240,6 +277,7 @@ public class NavigationModel implements Serializable {
         /**
          * Order is by section index, section name, page index, page name.
          */
+        @Override
         public int compareTo( final Object pageHolderObject ) {
             NavigationPageHolder otherPage = (NavigationPageHolder) pageHolderObject;
             

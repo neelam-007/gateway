@@ -19,6 +19,7 @@ import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -28,6 +29,7 @@ import java.util.TimeZone;
 /**
  * Login page
  */
+@RequiredPermissionSet()
 @Administrative(licensed=false,authenticated=false)
 public class Login extends WebPage {
 

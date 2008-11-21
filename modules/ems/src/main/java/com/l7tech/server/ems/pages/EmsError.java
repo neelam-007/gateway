@@ -4,6 +4,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.WebPage;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -11,6 +12,7 @@ import java.io.StringWriter;
 /**
  * Error page
  */
+@RequiredPermissionSet()
 @Administrative(licensed=false,authenticated=false)
 public class EmsError extends WebPage {
 

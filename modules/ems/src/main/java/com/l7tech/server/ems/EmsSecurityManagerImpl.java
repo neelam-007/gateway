@@ -130,6 +130,17 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
         return authorized;
     }
 
+    @Override
+    public boolean isAuthorized( final Class componentClass ) {
+        boolean authorized = isAuthenticated( componentClass );
+
+        if ( authorized ) {
+            authorized = hasPermission( componentClass );
+        }
+
+        return authorized;
+    }
+
     /**
      * Check if the ESM is licensed or the component does not require a license.
      *
@@ -315,6 +326,17 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     @Override
     public boolean hasPermission( final AttemptedOperation ao ) {
         return authorizer.hasPermission( ao );
+    }
+
+    /**
+     * Check if the user of the current session has the annotated permitted(s).
+     *
+     * @param clazz The annotated class
+     * @return true if permitted
+     */
+    @Override
+    public boolean hasPermission( final Class clazz ) {
+        return authorizer.hasPermission( clazz );
     }
 
     @Override

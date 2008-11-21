@@ -173,6 +173,10 @@ public class EmsApplication extends WebApplication {
             public boolean isInstantiationAuthorized(Class aClass) {
                 final boolean isPage = Page.class.isAssignableFrom(aClass);
 
+                if ( isPage && !getEmsSecurityManager().isAuthorized( aClass ) ) {
+                    throw new RestartResponseAtInterceptPageException( Login.class );
+                }
+
                 if ( isPage && !getEmsSecurityManager().isLicensed( aClass ) ) {
                     throw new RestartResponseAtInterceptPageException( SystemSettings.class );
                 }

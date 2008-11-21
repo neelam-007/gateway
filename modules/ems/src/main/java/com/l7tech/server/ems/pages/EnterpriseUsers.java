@@ -7,6 +7,9 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ems.EmsAccountManager;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
+import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
+import com.l7tech.gateway.common.security.rbac.RequiredPermission;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -29,7 +32,12 @@ import java.util.logging.Logger;
 /**
  * Enterprise Users page
  */
-@NavigationPage(page="EnterpriseUsers",pageIndex=200,section="Settings",sectionIndex=200,pageUrl="EnterpriseUsers.html")
+@RequiredPermissionSet(
+    requiredPermissions={
+        @RequiredPermission(entityType=EntityType.RBAC_ROLE, operationType= OperationType.READ),
+        @RequiredPermission(entityType=EntityType.USER, operationType=OperationType.DELETE)
+    }
+)@NavigationPage(page="EnterpriseUsers",pageIndex=200,section="Settings",sectionIndex=200,pageUrl="EnterpriseUsers.html")
 public class EnterpriseUsers extends EmsPage {
 
     //- PUBLIC

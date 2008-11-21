@@ -7,6 +7,9 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.gateway.common.security.rbac.RbacUtilities;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
+import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
+import com.l7tech.gateway.common.security.rbac.RequiredPermission;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.EntityType;
@@ -30,15 +33,19 @@ import java.io.Serializable;
 /**
  * A page to manage a role for users such as assign a role to a user or unassign a user from a role.
  */
+@RequiredPermissionSet(
+    requiredPermissions={
+        @RequiredPermission(entityType=EntityType.RBAC_ROLE, operationType=OperationType.UPDATE),
+        @RequiredPermission(entityType=EntityType.USER, operationType=OperationType.READ)
+    }
+)
 @NavigationPage(page="UserRoles",pageIndex=300,section="Settings",sectionIndex=200,pageUrl="UserRoles.html")
 public class UserRoles extends EmsPage {
     private static final Logger logger = Logger.getLogger(UserRoles.class.getName());
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private RoleManager roleManager;
 
-    @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private EmsAccountManager emsAccountManager;
 
