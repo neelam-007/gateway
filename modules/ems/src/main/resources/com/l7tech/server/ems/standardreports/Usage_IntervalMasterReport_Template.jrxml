@@ -99,7 +99,7 @@
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?$P{relativeEndTimeMilli}:$P{absoluteEndTimeMilli}]]></defaultValueExpression>
 	</parameter>
 	<parameter name="resolution" isForPrompting="false" class="java.lang.Integer">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getResolutionFromTimePeriod($P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getIntervalResolutionFromTimePeriod($P{INTERVAL_TIME_UNIT}, $P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
 	</parameter>
 	<parameter name="intervalAsString" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS} + " " + Utilities.getIntervalAsString($P{INTERVAL_TIME_UNIT},$P{INTERVAL_NUM_OF_TIME_UNITS}.intValue())]]></defaultValueExpression>

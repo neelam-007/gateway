@@ -27,9 +27,6 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
 
 
 public class ReportApp
@@ -263,7 +260,7 @@ public class ReportApp
         boolean isDetail = Boolean.valueOf(parameters.get(IS_DETAIL).toString());
         Object scriplet = parameters.get(REPORT_SCRIPTLET);
 
-        int resolution = Utilities.getResolutionFromTimePeriod(30, startTimeInPast, endTimeInPast);
+        int resolution = Utilities.getSummaryResolutionFromTimePeriod(30, startTimeInPast, endTimeInPast);
 
         boolean isContextMapping = Boolean.valueOf(parameters.get(IS_CONTEXT_MAPPING).toString()); 
 

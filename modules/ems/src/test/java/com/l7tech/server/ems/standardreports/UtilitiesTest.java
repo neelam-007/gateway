@@ -1157,22 +1157,52 @@ public class UtilitiesTest{
      * Ensure for various start and end times, that the correct resolution is used in sql queries
      */
     @Test
-    public void testGetResolutionFromTimePeriod() throws ParseException {
+    public void testGetSummaryResolutionFromTimePeriod() throws ParseException {
         Calendar cal = Calendar.getInstance();
         long startTime = cal.getTimeInMillis();         
         cal.add(Calendar.HOUR_OF_DAY, 6);
         long endTime = cal.getTimeInMillis();
-        int resolution = Utilities.getResolutionFromTimePeriod(24, startTime, endTime);
+        int resolution = Utilities.getSummaryResolutionFromTimePeriod(24, startTime, endTime);
         Assert.assertTrue(resolution == 1);
 
         cal.add(Calendar.DAY_OF_MONTH, -40);
         startTime = cal.getTimeInMillis();
-        resolution = Utilities.getResolutionFromTimePeriod(24, startTime, endTime);
+        resolution = Utilities.getSummaryResolutionFromTimePeriod(24, startTime, endTime);
         Assert.assertTrue(resolution == 2);
 
         boolean exception = false;
         try{
-            Utilities.getResolutionFromTimePeriod(24, endTime, startTime);
+            Utilities.getSummaryResolutionFromTimePeriod(24, endTime, startTime);
+        }catch(IllegalArgumentException iae){
+            exception = true;
+        }
+        Assert.assertTrue(exception);
+    }
+
+    /**
+     * Ensure for various start and end times, that the correct resolution is used in sql queries
+     */
+    @Test
+    public void testGetIntervalResolutionFromTimePeriod() throws ParseException {
+        Calendar cal = Calendar.getInstance();
+        long startTime = cal.getTimeInMillis();
+        cal.add(Calendar.HOUR_OF_DAY, 6);
+        long endTime = cal.getTimeInMillis();
+        int resolution = Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.HOUR, 24, startTime, endTime);
+        Assert.assertTrue(resolution == 1);
+
+        cal.add(Calendar.DAY_OF_MONTH, -40);
+        startTime = cal.getTimeInMillis();
+
+        resolution = Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.HOUR, 24, startTime, endTime);
+        Assert.assertTrue(resolution == 1);
+
+        resolution = Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.DAY, 24, startTime, endTime);
+        Assert.assertTrue(resolution == 2);
+
+        boolean exception = false;
+        try{
+            Utilities.getSummaryResolutionFromTimePeriod(24, endTime, startTime);
         }catch(IllegalArgumentException iae){
             exception = true;
         }

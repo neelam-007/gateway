@@ -48,11 +48,10 @@ public class Utilities {
     private static final String PAGE_HEIGHT = "pageHeight";
     private static final String CHART_ELEMENT = "chartElement";
     private static final int CONSTANT_HEADER_HEIGHT = 54;
-    private static final String CHART_KEY = "chartKey";
     private static final int FRAME_MIN_WIDTH = 820;
 
     public static enum UNIT_OF_TIME {
-        HOUR, DAY, WEEK, MONTH; 
+        HOUR, DAY, WEEK, MONTH
     }
 
     public static UNIT_OF_TIME getUnitFromString(String unitOfTime){
@@ -201,7 +200,7 @@ public class Utilities {
     }
 
     /**
-     * Get the resolution to use in queries. Used in a summary report
+     * Get the resolution to use in summary queries.
      * If the difference between the startTimeMilli and endTimeMilli > hourRetentionPeriod * num milli seconds in a day,
      * then the daily bin resolution is used, otherwise hourly is used.
      * @param startTimeMilli start of time period, in milliseconds, since epoch
@@ -210,7 +209,7 @@ public class Utilities {
      * kept for
      * @return
      */
-    public static Integer getResolutionFromTimePeriod(Integer hourRetentionPeriod, Long startTimeMilli, Long endTimeMilli){
+    public static Integer getSummaryResolutionFromTimePeriod(Integer hourRetentionPeriod, Long startTimeMilli, Long endTimeMilli){
 
         if(startTimeMilli >= endTimeMilli) throw new IllegalArgumentException("Start time must be before end time");
         
@@ -223,6 +222,40 @@ public class Utilities {
             return new Integer(1);
         }
     }
+
+    /**
+     * Get the resolution to use in interval queries.
+     * This method delegates to getSummaryResolutionFromTimePeriod after checking that if the relativeTimeUnit is
+     * UNIT_OF_TIME.HOUR, that the relative time period does not exceed the maximum retention period for hourly bins
+     * @param startTimeMilli start of time period, in milliseconds, since epoch
+     * @param endTimeMilli end of time period, in milliseconds, since epoch
+     * @param hourRetentionPeriod SSG's current hourly bin max retention policy value, number of days hourly data is
+     * kept for
+     * @param
+     * @return
+     */
+    public static Integer getIntervalResolutionFromTimePeriod(UNIT_OF_TIME intervalTimeUnit, Integer hourRetentionPeriod,
+                                                              Long startTimeMilli, Long endTimeMilli){
+        if(startTimeMilli >= endTimeMilli) throw new IllegalArgumentException("Start time must be before end time");
+
+        if(intervalTimeUnit == UNIT_OF_TIME.HOUR){
+            //If the interval is in hours, then we have to use the hourly bin
+            long dayMillis = 86400000L;//day milli seconds
+            long maxHourRenentionMilli = dayMillis * hourRetentionPeriod;
+            
+            long totalRelativeTime = endTimeMilli - startTimeMilli;
+
+            if(totalRelativeTime > maxHourRenentionMilli){
+//                throw new IllegalStateException("The relative time period extends beyond the maximum retention time for" +
+//                        " hourly metrics");
+            }
+            return new Integer(1);
+
+        }
+        
+        return getSummaryResolutionFromTimePeriod(hourRetentionPeriod, startTimeMilli, endTimeMilli);
+    }
+
     /**
      * Get the date string representation of a time value in milliseconds
      * @param timeMilliSeconds the number of milliseconds since epoch
