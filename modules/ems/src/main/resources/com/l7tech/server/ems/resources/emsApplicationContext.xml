@@ -86,6 +86,10 @@
                 <value>com.l7tech.server.ems.enterprise.SsgCluster</value>
                 <value>com.l7tech.server.ems.enterprise.SsgNode</value>
 
+                <!-- Reporting -->
+                <value>com.l7tech.server.ems.standardreports.StandardReport</value>
+                <value>com.l7tech.server.ems.standardreports.StandardReportArtifact</value>
+
                 <!-- General -->                
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
                 <value>com.l7tech.identity.internal.InternalUser</value>
@@ -430,8 +434,7 @@
     </bean>
 
     <!-- SSG Node Manager -->
-    <bean id="ssgNodeManager" class="com.l7tech.server.ems.enterprise.SsgNodeManagerImpl" parent="hibernateBean">
-    </bean>
+    <bean id="ssgNodeManager" class="com.l7tech.server.ems.enterprise.SsgNodeManagerImpl" parent="hibernateBean"/>
 
     <!-- keystore root cert and ssl config  -->
     <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl">
@@ -468,5 +471,7 @@
         <constructor-arg index="3" ref="ssgClusterManager" />
         <constructor-arg index="4" ref="gatewayContextFactory" />
     </bean>
+
+    <bean id="standardReportManager" class="com.l7tech.server.ems.standardreports.StandardReportManagerImpl" parent="hibernateBean"/>
 
 </beans>
