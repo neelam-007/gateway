@@ -28,11 +28,24 @@ public class YuiDateSelector extends Panel {
 
     /**
      * Create a DateSelector with the given model.
+     *
+     * @param id The component identifier.
+     * @param model The {@link java.util.Date Date} model.
+     * @param maxDate Maximumn permitted date (may be null)
+     */
+    public YuiDateSelector( final String id, final Model model, final Date maxDate ) {
+        this( id, model, maxDate, false ) ;
+    }
+
+    /**
+     * Create a DateSelector with the given model.
      * 
      * @param id The component identifier.
      * @param model The {@link java.util.Date Date} model.
+     * @param maxDate Maximumn permitted date (may be null)
+     * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
      */
-    public YuiDateSelector( final String id, final Model model, final Date maxDate ) {
+    public YuiDateSelector( final String id, final Model model, final Date maxDate, final boolean ignoreFirstSelect ) {
         super( id, model );
 
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CONTAINER ) );
@@ -106,7 +119,11 @@ public class YuiDateSelector extends Panel {
             scriptBuilder.append(", '");
             scriptBuilder.append( YuiCommon.toYuiDate(maxDate, timeZoneId) );
             scriptBuilder.append("'");
+        } else {
+            scriptBuilder.append(", null");
         }
+        scriptBuilder.append(", ");
+        scriptBuilder.append( ignoreFirstSelect );                
         scriptBuilder.append("); });");
         
         Label label = new Label("javascript", scriptBuilder.toString());

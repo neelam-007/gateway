@@ -1,8 +1,11 @@
 package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.FormComponent;
+import org.apache.wicket.markup.html.form.validation.IFormValidator;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.validation.validator.DateValidator;
@@ -27,11 +30,11 @@ public class AuditDownloadPanel extends Panel {
         setOutputMarkupId(true);
 
         final Date now = new Date();
-        final YuiDateSelector startDateField = new YuiDateSelector("audit.startdate", new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), now);
-        final YuiDateSelector endDateField = new YuiDateSelector("audit.enddate", new Model(now), now);
+        final YuiDateSelector startDateField = new YuiDateSelector("audit.startdate", new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), now, true);
+        final YuiDateSelector endDateField = new YuiDateSelector("audit.enddate", new Model(new Date(now.getTime())), now);
 
-        startDateField.getDateTextField().add(DateValidator.maximum(new Date()));
-        endDateField.getDateTextField().add(DateValidator.maximum(new Date()));
+        startDateField.getDateTextField().add(DateValidator.maximum(now));
+        endDateField.getDateTextField().add(DateValidator.maximum(now));
 
         Form form = new SecureForm("audit.form", new AttemptedReadAll(EntityType.AUDIT_RECORD)){
             @Override
@@ -53,6 +56,21 @@ public class AuditDownloadPanel extends Panel {
 
         form.add( startDateField );
         form.add( endDateField );
+
+        form.add( new IFormValidator(){
+            @Override
+            public FormComponent[] getDependentFormComponents() {
+                return new FormComponent[]{ startDateField.getDateTextField(), endDateField.getDateTextField() };
+            }
+            @Override
+            public void validate( final Form form ) {
+                Date start = (Date) startDateField.getDateTextField().getConvertedInput();
+                Date end = (Date) endDateField.getDateTextField().getConvertedInput();
+                if ( end.before(start) ) {
+                    form.error( new StringResourceModel("message.daterange", AuditDownloadPanel.this, null).getString() );
+                }
+            }
+        } );
 
         add( form );
     }

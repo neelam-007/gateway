@@ -22,7 +22,9 @@ import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColu
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.*;
+import org.apache.wicket.markup.html.form.validation.IFormValidator;
 import org.apache.wicket.markup.html.panel.EmptyPanel;
+import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
@@ -96,16 +98,18 @@ public class Audits extends EmsPage {
         columns.add(new PropertyColumn(new StringResourceModel("audittable.column.level", this, null), "LEVEL", "level"));
         columns.add(new PropertyColumn(new StringResourceModel("audittable.column.message", this, null), "MESSAGE", "message"));
 
+        final FeedbackPanel feedback = new FeedbackPanel("feedback");
         Date now = new Date();
         final Model dateStartModel = new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7)));
-        final Model dateEndModel = new Model(now);
+        final Model dateEndModel = new Model(new Date(now.getTime()));
         final Model typeModel = new Model(values[0]);
         final WebMarkupContainer tableContainer = new WebMarkupContainer("audittable.container");
         tableContainer.setOutputMarkupId(true);
         Form auditSelectionForm = new Form("auditselectform");
-        YuiDateSelector startDate = new YuiDateSelector("auditstart", dateStartModel, now );
-        YuiDateSelector endDate = new YuiDateSelector("auditend", dateEndModel, now );
-        startDate.getDateTextField().add(DateValidator.maximum(new Date()));
+        final YuiDateSelector startDate = new YuiDateSelector("auditstart", dateStartModel, now );
+        final YuiDateSelector endDate = new YuiDateSelector("auditend", dateEndModel, now );
+        startDate.getDateTextField().add(DateValidator.maximum(now));
+        endDate.getDateTextField().add(DateValidator.maximum(now));
         auditSelectionForm.add( startDate );
         auditSelectionForm.add( endDate );
         auditSelectionForm.add( new DropDownChoice( "audittype", typeModel, Arrays.asList(values), new IChoiceRenderer(){
@@ -132,6 +136,25 @@ public class Audits extends EmsPage {
                 ajaxRequestTarget.addComponent(tableContainer);
                 ajaxRequestTarget.addComponent(detailsContainer);
             }
+
+            @Override
+            protected void onError( final AjaxRequestTarget ajaxRequestTarget, final Form form) {
+                ajaxRequestTarget.addComponent( feedback );
+            }
+        } );
+        auditSelectionForm.add( new IFormValidator(){
+            @Override
+            public FormComponent[] getDependentFormComponents() {
+                return new FormComponent[]{ startDate.getDateTextField(), endDate.getDateTextField() };
+            }
+            @Override
+            public void validate( final Form form ) {
+                Date start = (Date) startDate.getDateTextField().getConvertedInput();
+                Date end = (Date) endDate.getDateTextField().getConvertedInput();
+                if ( end.before(start) ) {
+                    form.error( new StringResourceModel("message.daterange", Audits.this, null).getString() );
+                }
+            }
         } );
 
         tableContainer.add( buildDataTable( (String)typeModel.getObject(), (Date)dateStartModel.getObject(), (Date)dateEndModel.getObject(), columns, hidden, detailsContainer ) );
@@ -141,6 +164,7 @@ public class Audits extends EmsPage {
         pageForm.add( hidden );
 
         add( pageForm );
+        add( feedback.setOutputMarkupId(true) );
         add( auditSelectionForm );
         add( tableContainer );
         add( detailsContainer );
