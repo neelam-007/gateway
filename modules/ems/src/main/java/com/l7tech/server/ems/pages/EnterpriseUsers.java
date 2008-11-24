@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
@@ -84,21 +85,31 @@ public class EnterpriseUsers extends EmsPage {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 final String id = (String) form.get("userId").getModel().getObject();
                 container.removeAll();
-                Label confirmLabel = new Label( YuiDialog.getContentId(), "Are you sure you want to delete user '"+id+"'?" );
-                YuiDialog dialog = new YuiDialog( "user.content", "Delete User", YuiDialog.Style.OK_CANCEL, confirmLabel, new YuiDialog.OkCancelCallback(){
-                    @Override
-                    public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
-                        if ( button == YuiDialog.Button.OK ) {
-                            try {
-                                emsAccountManager.delete( id );
-                                target.addComponent(tableContainer);
-                            } catch (DeleteException de) {
-                                logger.log(Level.WARNING, "Error deleting user.", de);
+                User u = getUser();
+                String userLogin = u.getLogin();
+                //todo need to also check the identity provider of the current user
+                if(userLogin.equals(id)){
+                    Label confirmLabel = new Label(YuiDialog.getContentId(), new StringResourceModel("deleteuser.error.message", this, null, new Object[]{"'"+userLogin+"'"}));
+                    YuiDialog dialog = new YuiDialog( "user.content", new StringResourceModel("deleteuser.error.heading", this, null).getString(), YuiDialog.Style.CLOSE, confirmLabel, null);
+                    container.add( dialog );
+                }else{
+                    Label confirmLabel = new Label( YuiDialog.getContentId(), new StringResourceModel("deleteuser.confirm", this, null, new Object[]{"'"+id+"'"}));
+                    YuiDialog dialog = new YuiDialog( "user.content", new StringResourceModel("deleteuser.heading", this, null).getString(), YuiDialog.Style.OK_CANCEL, confirmLabel, new YuiDialog.OkCancelCallback(){
+                        @Override
+                        public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
+                            if ( button == YuiDialog.Button.OK ) {
+                                try {
+                                    emsAccountManager.delete( id );
+                                    target.addComponent(tableContainer);
+                                } catch (DeleteException de) {
+                                    logger.log(Level.WARNING, "Error deleting user.", de);
+                                }
                             }
                         }
-                    }
-                } );
-                container.add( dialog );
+                    } );
+                    container.add( dialog );
+                }
+
                 ajaxRequestTarget.addComponent( container );
             }
         };
