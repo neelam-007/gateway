@@ -23,6 +23,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebApplication;
+import org.apache.wicket.protocol.http.WebResponse;
 import org.mortbay.util.ajax.JSON;
 
 import java.io.Serializable;
@@ -200,8 +201,12 @@ public class YuiDataTable extends Panel {
                                 }
                                 String data = buildResultsPage(startIndex, results, sortRaw, dir);
 
-                                requestCycle.getResponse().setContentType("application/json");
-                                requestCycle.getResponse().write(data);
+                                WebResponse response = (WebResponse)requestCycle.getResponse();
+                                response.setContentType("application/json");
+                                response.setHeader("Expires", "Mon, 26 Jul 1997 05:00:00 GMT");
+                                response.setHeader("Cache-Control", "no-cache, must-revalidate");
+                                response.setHeader("Pragma", "no-cache");
+                                response.write(data);
                             }
                         }
                     });

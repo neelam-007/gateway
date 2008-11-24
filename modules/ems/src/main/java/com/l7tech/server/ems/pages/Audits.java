@@ -181,7 +181,7 @@ public class Audits extends EmsPage {
         Date start = startOfDay(startDate);
         Date end = new Date(startOfDay(endDate).getTime() + TimeUnit.DAYS.toMillis(1));
 
-        return new YuiDataTable("audittable", columns, "TIME", false,  new AuditDataProvider(type, start, end, "TIME", false), hidden, "id", true, null ){
+        return new YuiDataTable("audittable", columns, "time", false,  new AuditDataProvider(type, start, end, "time", false), hidden, "id", true, null ){
             @Override
             protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String auditIdentifier ) {
                 logger.info("Processing selection callback for audit '"+auditIdentifier+"'.");
