@@ -11,6 +11,7 @@ import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.validation.validator.PatternValidator;
+import org.apache.wicket.validation.validator.EmailAddressValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.Component;
@@ -95,7 +96,7 @@ public class EnterpriseUsersNewPanel extends Panel {
             pass1.add( new StringValidator.LengthBetweenValidator(config.getIntProperty("password.length.min", 6), config.getIntProperty("password.length.max", 32)) );
 
             add(new RequiredTextField("userId").add(new StringValidator.LengthBetweenValidator(3, 128)).add(new PatternValidator("^[^#,+\"\\\\<>;]{3,128}$")));
-            add(new TextField("email").add(new StringValidator.LengthBetweenValidator(1, 128)));
+            add(new TextField("email").add(new StringValidator.LengthBetweenValidator(1, 128)).add(EmailAddressValidator.getInstance()));
             add(new TextField("lastName").add(new StringValidator.LengthBetweenValidator(1, 32)));
             add(new TextField("firstName").add(new StringValidator.LengthBetweenValidator(1, 32)));
             add(new TextField("description").add(new StringValidator.LengthBetweenValidator(1, 255)));

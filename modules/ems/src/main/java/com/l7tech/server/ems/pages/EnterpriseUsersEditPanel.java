@@ -7,6 +7,7 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
+import org.apache.wicket.validation.validator.EmailAddressValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.Component;
@@ -132,7 +133,7 @@ public class EnterpriseUsersEditPanel extends Panel {
         public UserForm( final String componentName, final UserModel userModel ) {
             super(componentName, new CompoundPropertyModel(userModel));
 
-            add(new TextField("email").add(new StringValidator.LengthBetweenValidator(1, 128)));
+            add(new TextField("email").add(new StringValidator.LengthBetweenValidator(1, 128)).add(EmailAddressValidator.getInstance()));
             add(new TextField("lastName").add(new StringValidator.LengthBetweenValidator(1, 32)));
             add(new TextField("firstName").add(new StringValidator.LengthBetweenValidator(1, 32)));
             add(new TextField("description").add(new StringValidator.LengthBetweenValidator(1, 255)));
