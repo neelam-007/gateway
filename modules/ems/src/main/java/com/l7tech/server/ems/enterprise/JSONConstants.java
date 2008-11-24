@@ -76,12 +76,15 @@ public final class JSONConstants {
      * Defined as l7.EntityTreeTable.ENTITY in entityTreeTable.js.
      */
     public final class Entity {
-        public static final String ENTERPRISE_FOLDER = "enterpriseFolder";
-        public static final String SSG_CLUSTER       = "ssgCluster";
-        public static final String SSG_NODE          = "ssgNode";
-        public static final String SSG_FOLDER        = "ssgFolder";
-        public static final String PUBLISHED_SERVICE = "publishedService";
-        public static final String POLICY_FRAGMENT   = "policyFragment";
+        public static final String ENTERPRISE_FOLDER       = "enterpriseFolder";
+        public static final String SSG_CLUSTER             = "ssgCluster";
+        public static final String SSG_NODE                = "ssgNode";
+        public static final String SSG_FOLDER              = "ssgFolder";
+        public static final String PUBLISHED_SERVICE       = "publishedService";
+        public static final String PUBLISHED_SERVICE_ALIAS = "publishedServiceAlias";
+        public static final String OPERATION               = "operation";
+        public static final String POLICY_FRAGMENT         = "policyFragment";
+        public static final String POLICY_FRAGMENT_ALIAS   = "policyFragmentAlias";
     }
 
     // Properties for all entities.

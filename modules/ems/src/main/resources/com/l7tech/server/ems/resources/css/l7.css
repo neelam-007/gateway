@@ -207,6 +207,14 @@ input[type='text'].invalid {
     padding: 0 0 0 0 !important;
 }
 
+.smallPadding {
+    padding: 4px !important;
+}
+
+.noMargin {
+    margin: 0 0 0 0 !important;
+}
+
 .unselected {
     opacity: 0.2;
     *filter: alpha(opacity=20);
@@ -433,6 +441,28 @@ table.spaced td input[type='text'], table.spaced td input[type='password'], tabl
     margin-top: 1px;
 }
 
+/* Putting a tight table within a spaced table effectively disinherit spacing in the subtable. */
+table.explorer th, table.explorer td {
+    padding: 0;
+}
+
+table.explorer th {
+    background-color: #808080;
+    border-bottom: 1px solid #000000;
+    border-left: 1px solid #000000;
+    border-right: 1px solid #000000;
+    border-top: 1px solid #808080;
+    color: #ffffff;
+    text-align: center;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+table.explorer td {
+    border: 1px solid #000000;
+    vertical-align: top;
+}
+
 div.tippy {
     font-weight: bold;
 }
@@ -472,110 +502,110 @@ img.debugLogReader {
 }
 
 /* A dataTable is an HTML TABLE used for displaying data, as oppposed to layout purpose. */
-.dataTable {
+table.dataTable {
     border-bottom: 1px #cccccc solid;
 }
 
-.dataTable thead tr {
+table.dataTable thead tr {
     background-color: #dbd3b0;
 }
 
-.dataTable tbody tr {
+table.dataTable tbody tr {
     background-color: #eeeeee;
 }
 
-.dataTable tbody tr:hover {
+table.dataTable tbody tr:hover {
     background-color: #f5f9d4;
 }
 
-.dataTable tbody tr.selected {
+table.dataTable tbody tr.selected {
     background-color: #ffddee;
 }
 
-.dataTable th {
+table.dataTable th {
     border: 1px #bfb173 solid;
 }
 
-.dataTable td {
+table.dataTable td {
     border: 1px #cccccc solid;
 }
 
-.dataTable th, .dataTable td {
+table.dataTable th, table.dataTable td {
     padding: 2px 7px 2px 7px;
     white-space: nowrap;
 }
 
-.dataTable td.dashboard {
+table.dataTable td.dashboard {
     text-align: center;
 }
 
-.dataTable td.details {
+table.dataTable td.details {
     white-space: normal;
 }
 
-.dataTable th.parentId, .dataTable td.parentId, .dataTree th.parentId, .dataTree td.parentId {
+table.dataTable th.parentId, table.dataTable td.parentId, table.dataTree th.parentId, table.dataTree td.parentId {
     display: none;
 }
 
-.dataTable td img {
+table.dataTable td img {
     padding-left: 2px;
     padding-right: 2px;
     vertical-align: middle;
 }
 
-.dataTable th div.collapsedHeader {
+table.dataTable th div.collapsedHeader {
     overflow-x: hidden;
 }
 
 /* These are for color-coded grouping. */
-.dataTable th.group0 {
+table.dataTable th.group0 {
     background-color: #e8eaff;
     text-align: left;
 }
 
-.dataTable th.group1 {
+table.dataTable th.group1 {
     background-color: #f4ffe8;
     text-align: left;
 }
 
 /* These are for stepped headers. */
-.dataTable th.topStep {
+table.dataTable th.topStep {
     border-bottom: none;
     text-align: left;
 }
 
-.dataTable th.middleStep {
+table.dataTable th.middleStep {
     background-position: top center;
     border-bottom: none;
     border-top: none;
 }
 
-.dataTable th.bottomStep {
+table.dataTable th.bottomStep {
     background-position: bottom center;
     border-top: none;
 }
 
-.dataTable th.group0middleStep, .dataTable th.group0bottomStep {
+table.dataTable th.group0middleStep, table.dataTable th.group0bottomStep {
     background-image: url(../images/steppedHeaderArrow0.png);
     background-repeat: no-repeat;
 }
 
-.dataTable th.group1middleStep, .dataTable th.group1bottomStep {
+table.dataTable th.group1middleStep, table.dataTable th.group1bottomStep {
     background-image: url(../images/steppedHeaderArrow1.png);
     background-repeat: no-repeat;
 }
 
 /* A table cell with no applicable data. */
-.dataTable td.notApplicable {
+table.dataTable td.notApplicable {
     background-color: #7a7a7a;
 }
 
 /* A table cell for a monitoring property that is not turned off . */
-.dataTable td.notMonitored {
+table.dataTable td.notMonitored {
     background-color: #a8a8a8;
 }
 
-.dataTable td.critical {
+table.dataTable td.critical {
     background-color: #ffff00;
     color: #ff0000;
 }
@@ -604,26 +634,26 @@ img.debugLogReader {
     border: 1px #433e29 solid;
 }
 
-.srcDestTitleLeft, .srcDestTitleRight {
+.roundedTitleLeft, .roundedTitleRight {
     background-color: #000000;
     vertical-align: top;
 }
 
-.srcDestTitleLeft img {
-    background-image: url('../images/topLeftCorner.png');
+.roundedTitleLeft img {
+    background-image: url( '../images/topLeftRoundedCorner.png' );
     background-position: top;
 }
 
-.srcDestTitleRight img {
-    background-image: url('../images/topRightCorner.png');
+.roundedTitleRight img {
+    background-image: url( '../images/topRightRoundedCorner.png' );
     background-position: top;
 }
 
-.srcDestTitleCenter {
+.roundedTitleCenter {
     background-color: #000000;
     color: #ffffff;
     font-weight: bold;
-    padding: 4px 10px 4px 10px;
+    padding: 4px 10px 4px 10px !important;
     text-align: center;
 }
 

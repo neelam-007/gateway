@@ -11,31 +11,85 @@
     <title>Policy Approval [Enterprise Service Manager]</title>
     <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
 
-    <!-- Required YUI modules: animation -->
+    <!-- Required YUI modules: animation, event, logger -->
+    <link rel="stylesheet" type="text/css" href="../yui/logger/assets/skins/sam/logger.css">
     <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
     <script type="text/javascript" src="../yui/animation/animation-min.js"></script>
+    <script type="text/javascript" src="../yui/logger/logger-min.js"></script>
 
     <script type="text/javascript" src="../js/l7.js"></script>
+    <script type="text/javascript" src="../js/entityTreeTable.js"></script>
     <script type="text/javascript">
         var MIN_FRAME_HEIGHT = 150;
         var MAX_FRAME_HEIGHT = 500;
         var INCR_FRAME_HEIGHT = 50;
         var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
 
+        /**
+         * @type HTMLIFrameElement
+         */
+        var destSSGClusterContentSelectorWindow;
+
+        function showHideLogReader() {
+            var debugLogReader = document.getElementById('debugLogReader');
+            if (debugLogReader.style.display == '') {
+                debugLogReader.style.display = 'none';
+            } else {
+                debugLogReader.style.display = '';
+            }
+        }
+
         function initSubmissionSelector(self) {
             self.contentWindow.messageIFrameName = 'submissionMessage';
         }
 
-        function initDestSSGClusterSelector(self) {
-            self.contentWindow.ssgClusterContentIFrameName = 'destSSGClusterContent';
-            self.contentWindow.ssgClusterContentIFrameType = 'ssgClusterContentWithFolderRadio';
+        function initSSGClusterSelector(iframe) {
+            iframe.contentWindow.setCallbackId(iframe.id);
+            iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
         }
 
-        function initDestSSGClusterContent(self) {
-            if (self.src != '') {
-                self.contentWindow.setDetailsIFrameName('destItemDetails');
+        function initSSGClusterContentSelector(iframe) {
+            iframe.contentWindow.setCallbackId(iframe.id);
+        }
+
+        /**
+         * Callback function upon an SSG Cluster highlighted.
+         * @param {object} previous     the previously highlighted SSG Cluster entity object literal; null if none
+         * @param {object} ssgCluster   the newly highlighted SSG Cluster entity object literal
+         * @param {string} callbackId
+         */
+        function onHighlightSsgCluster(previous, ssgCluster, callbackId) {
+            if (callbackId == 'destSSGClusterSelector') {
+                destSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
+                    [
+                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
+                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
+                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
+                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                    ], zoomItem);
+                destSSGClusterContentSelectorWindow.loadSsgClusterContent(
+                    ssgCluster,
+                    null,
+                    [
+                        l7.EntityTreeTable.ENTITY.SERVICE_FOLDER
+                    ]);
             }
         }
+
+        function zoomItem(previous, entity, callbackId) {
+            if (callbackId == 'destSSGClusterContentSelector') {
+                document.getElementById('destItemDetails').src = 'dataSource/' + entity.type + '/' + destSSGClusterContentSelectorWindow.getSsgCluster().id + '/' + entity.id + '.xml';
+            }
+        }
+
+        function init() {
+            var debugLogReader = new YAHOO.widget.LogReader('debugLogReader');
+            debugLogReader.hide();   // Initially hidden.
+
+            destSSGClusterContentSelectorWindow = document.getElementById('destSSGClusterContentSelector').contentWindow;
+        }
+
+        YAHOO.util.Event.onDOMReady(init);
     </script>
 </head>
 <body>
@@ -150,17 +204,17 @@
                         <tr>
                             <td width="50%"><table width="100%">
                                 <tr>
-                                    <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                    <td class="srcDestTitleCenter" width="100%">Source</td>
-                                    <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                    <td class="roundedTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                    <td class="roundedTitleCenter" width="100%">Source</td>
+                                    <td class="roundedTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
                                 </tr>
                             </table></td>
                             <td class="srcDestCenter"></td>
                             <td width="50%"><table width="100%">
                                 <tr>
-                                    <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                    <td class="srcDestTitleCenter" width="100%">Destination</td>
-                                    <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                    <td class="roundedTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                    <td class="roundedTitleCenter" width="100%">Destination</td>
+                                    <td class="roundedTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
                                 </tr>
                             </table></td>
                         </tr>
@@ -192,7 +246,7 @@
                         <tr>
                             <td class="srcDest"><iframe id="submissionSelector" src="SubmissionReceived.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSubmissionSelector(this);"></iframe></td>
                             <td class="srcDestCenter"></td>
-                            <td class="srcDest"><iframe id="destSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestSSGClusterSelector(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="destSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSSGClusterSelector(this);"></iframe></td>
                         </tr>
                         <tr>
                             <td class="srcDest">
@@ -210,7 +264,7 @@
                             <td class="srcDest">
                                 <table width="100%">
                                     <tr>
-                                        <td class="nowrap">Select a destination folder (<input id="checkbox:enable" type="checkbox" /><label for="checkbox:enable"> enable service policies upon save</label>):</td>
+                                        <td class="nowrap">Select a destination folder: (<input id="checkbox:enable" type="checkbox" /><label for="checkbox:enable"> enable new services</label>)</td>
                                         <td class="right" width="100%">
                                             <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['submissionMessage', 'destSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                             <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['submissionMessage', 'destSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
@@ -222,7 +276,7 @@
                         <tr>
                             <td class="srcDest"><iframe id="submissionMessage" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
                             <td class="srcDestCenter nowrap">Approve<br /><img src="../images/copy.png" alt="" /><br /><img src="../images/spacer.png" height="20px" alt="" /><br />Reject<br /><img src="../images/reject.png" alt="" /></td>
-                            <td class="srcDest"><iframe id="destSSGClusterContent" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestSSGClusterContent(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="destSSGClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSSGClusterContentSelector(this);"></iframe></td>
                         </tr>
                         <tr>
                             <td class="srcDest">

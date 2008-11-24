@@ -9,10 +9,710 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>Standard Reports [Enterprise Service Manager]</title>
-    <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../css/l7.css" />
+
+    <wicket:head>
+    <!-- Required YUI modules: button, connection, event, json, logger -->
+    <link rel="stylesheet" type="text/css" href="../yui/assets/skins/sam/skin.css">
+    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
+    <script type="text/javascript" src="../yui/button/button-min.js"></script>
+    <script type="text/javascript" src="../yui/connection/connection-min.js"></script>
+    <script type="text/javascript" src="../yui/container/container-min.js"></script>
+    <script type="text/javascript" src="../yui/json/json-min.js"></script>
+    <script type="text/javascript" src="../yui/logger/logger-min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css" /> <!-- modifies YUI sam skin; must come after YUI CSS files -->
+    <style type="text/css">
+        .note {
+            font-size: 90%;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+    </style>
     <script type="text/javascript" src="../js/l7.js"></script>
+    <script type="text/javascript" src="../js/entityTreeTable.js"></script>
+    <script type="text/javascript">
+        /** Localized strings for local HTML markups, e.g., error dialogs. */
+        var localizedStrings = {
+            REPORT_TYPE_PERFORMANCE : 'Performance Statistics',
+            REPORT_TYPE_USAGE : 'Usage Report',
+            SAVE_DEFAULT_BUTTON_LABEL : 'Save Settings as Default for &ldquo;REPORT_TYPE&rdquo;',
+            PUBLISHED_SERVICE_S : 'Published Service(s)',
+            OPERATION_S : 'Operation(s)',
+            ADD_ENTITY_BUTTON_LABEL : 'Add Checked ENTITY_TYPE',
+            OK : 'OK',
+            CANCEL : 'Cancel',
+            ERROR : 'Error',
+            CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server: ',
+            CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST : 'Failed to download list of saved settings: ',
+            CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Failed to download list of message context for the selected SSG Clusers: ',
+            SSG_CLUSTER_NOT_APPLICABLE : 'None of the selected entities belong to this SSG Cluster. Please delete, or, refresh and reselect.',
+            STANDARD_MESSAGE_CONTEXT_MAPPING : 'Standard Mapping',
+            CUSTOM_MESSAGE_CONTEXT_MAPPING : 'Custom Mapping',
+            RELATIVE_TIME_PERIOD_HINT : 'Must be positive integer',
+            TIME_INTERVAL_HINT : 'Must be positive integer'
+        }
+    </script>
+    <script type="text/javascript">
+        var ReportType = {
+            PERFORMANCE : 'performance',
+            USAGE       : 'usage'
+        }
+
+        var loadSettingsButton;
+        var saveSettingsButton;
+        var manageSettingsButton;
+        var saveDefaultButton;
+        var addEntityButton;
+        var addGroupingButton;
+        var generateButton;
+
+        /**
+         * @type HTMLSelectElement
+         */
+        var reportTypeDropDown;
+
+        /**
+         * List of saved settings available to choose from.
+         * @type array
+         */
+        var savedSettings;
+
+        /**
+         * @type HTMLIFrameElement
+         */
+        var ssgClusterSelectorWindow;
+
+        /**
+         * @type HTMLIFrameElement
+         */
+        var ssgClusterContentSelectorWindow;
+
+        /**
+         * @type HTMLTableSectionElement
+         */
+        var entitySelectionTableBody;
+
+        /**
+         * Array of SSG Cluster entity object literals that have entities selected.
+         * May be empty but never null.
+         * @type array
+         */
+        var ssgClustersWithSelectedEntities = [];
+
+        /**
+         * Set of SSG Cluster IDs in ssgClustersWithSelectedEntities.
+         * May be empty but never null.
+         * For fast lookup by testing ssgClusterIdsWithSelectedEntities[id] != undefined.
+         * @type object
+         */
+        var ssgClusterIdsWithSelectedEntities = {};
+
+        /**
+         * List of message context object literals.
+         * @type array
+         */
+        var availableMessageContext;
+
+        /**
+         * The TBODY child element of the grouping table.
+         * @type HTMLTableSectionElement
+         */
+        var groupingTableBody;
+
+        function showHideLogReader() {
+            var debugLogReader = document.getElementById('debugLogReader');
+            if (debugLogReader.style.display == '') {
+                debugLogReader.style.display = 'none';
+            } else {
+                debugLogReader.style.display = '';
+            }
+        }
+
+        function validateRelativeTimePeriod() {
+            var textField = document.getElementById('relativeTimePeriodTextField');
+
+            var isValid = false;
+            if (document.getElementById('timePeriodType_relative').checked) {
+                var timePeriod = textField.value;
+                isValid = l7.Util.isIntString(timePeriod) && timePeriod >= 0;
+            } else if (document.getElementById('timePeriodType_absolute').checked) {
+                isValid = true;
+            }
+
+            if (isValid) {
+                l7.Util.removeClass(textField, 'invalid');
+                document.getElementById('relativeTimePeriodHint').innerHTML = '';
+            } else {
+               l7.Util.addClass(textField, 'invalid');
+                document.getElementById('relativeTimePeriodHint').innerHTML = '(' + localizedStrings.RELATIVE_TIME_PERIOD_HINT + ')';
+            }
+
+            return isValid;
+        }
+
+        function validateTimePeriod() {
+            validateRelativeTimePeriod();
+// TODO           validateAbsoluteTimePeriod();
+        }
+
+        function updateTimePeriodUiElements() {
+            var isRelative = document.getElementById('timePeriodType_relative').checked;
+            document.getElementById('relativeTimePeriodTextField').disabled = !isRelative;
+            document.getElementById('relativeTimePeriodUnitList').disabled = !isRelative;
+            // TODO
+        }
+
+        function validateTimeInterval() {
+            var textField = document.getElementById('timeIntervalTextField');
+
+            var isValid = false;
+            if (document.getElementById('timeInterval_false').checked) {
+                isValid = true;
+            } else if (document.getElementById('timeInterval_true').checked) {
+                var timeInterval = textField.value;
+                isValid = l7.Util.isIntString(timeInterval) && timeInterval >= 0;
+            }
+
+            if (isValid) {
+                l7.Util.removeClass(textField, 'invalid');
+                document.getElementById('timeIntervalHint').innerHTML = '';
+            } else {
+               l7.Util.addClass(textField, 'invalid');
+                document.getElementById('timeIntervalHint').innerHTML = '(' + localizedStrings.TIME_INTERVAL_HINT + ')';
+            }
+
+            return isValid;
+        }
+
+        function validateGrouping(tr) {
+            var ssgClusterDropDown = tr._ssgClusterDropDown;
+            var isAmongSelected = false;
+            for (var j = 0; j < ssgClustersWithSelectedEntities.length; ++j) {
+                if (ssgClustersWithSelectedEntities[j].id == ssgClusterDropDown.value) {
+                    isAmongSelected = true;
+                    break;
+                }
+            }
+            tr._warningImg.style.display = isAmongSelected ? 'none' : '';
+        }
+
+        function validateGroupings() {
+            var trs = groupingTableBody.rows;
+            for (var i = 0; i < trs.length; ++i) {
+                var tr = trs[i];
+                validateGrouping(tr);
+            }
+        }
+
+        function updateTimeIntervalUiElements() {
+            var disabled = !document.getElementById('timeInterval_true').checked;
+            document.getElementById('timeIntervalTextField').disabled = disabled;
+            document.getElementById('timeIntervalUnitList').disabled = disabled;
+        }
+
+        function updateSaveDefaultButton() {
+            var selected = reportTypeDropDown.options[reportTypeDropDown.selectedIndex];
+            saveDefaultButton.set('label', localizedStrings.SAVE_DEFAULT_BUTTON_LABEL.replace('REPORT_TYPE', selected.text));
+        }
+
+        /**
+         * Updates ssgClustersWithSelectedEntities and ssgClusterIdsWithSelectedEntities.
+         * Should be called upon change in selected entities.
+         */
+        function updateSsgClustersWithSelectedEntities() {
+            ssgClustersWithSelectedEntities = [];
+            ssgClusterIdsWithSelectedEntities = {};
+            for (var i = 0; i < entitySelectionTableBody.rows.length; ++i) {
+                var ssgCluster = entitySelectionTableBody.rows[i]._ssgCluster;
+                if (!l7.Util.arrayContains(ssgClustersWithSelectedEntities, ssgCluster)) {
+                    ssgClustersWithSelectedEntities.push(ssgCluster);
+                    ssgClusterIdsWithSelectedEntities[ssgCluster.id] = ssgCluster.id;
+                }
+            }
+
+        }
+
+        function updateAddGroupingButton() {
+            addGroupingButton.set('disabled', ssgClustersWithSelectedEntities.length == 0);
+        }
+
+        /**
+         * Enables/Disables each SSG Cluster in a drop down list based on
+         * whether it contains selected entities.
+         * @param {HTMLSelectElement} dropDown
+         */
+        function updateGroupingSsgClusterDropDown(dropDown) {
+            for (var i = 0; i < dropDown.options.length; ++i) {
+                var option = dropDown.options[i];
+                var ssgClusterId = option.value;
+                option.disabled = ssgClusterIdsWithSelectedEntities[ssgClusterId] == undefined;
+            }
+        }
+
+        function updateGroupingSsgClusterDropDowns() {
+            var trs = groupingTableBody.rows;
+            for (var i = 0; i < trs.length; ++i) {
+                var tr = trs[i];
+                var dropDown = tr._ssgClusterDropDown;
+                updateGroupingSsgClusterDropDown(dropDown);
+            }
+        }
+
+        function updateUiElements() {
+            var settingsIsValid = false // TODO;
+            saveSettingsButton.set('disabled', !settingsIsValid);
+            updateSaveDefaultButton();
+            updateAddGroupingButton();
+            updateTimeIntervalUiElements();
+            generateButton.set('disabled', !settingsIsValid);
+            // TODO
+        }
+
+        /**
+         * Populates the input fields given a settings.
+         * @param {object} settings     object literal for a settings
+         */
+        function setFieldsFromSettings(settings) {
+            setReportType(settings.type);
+        }
+
+        /**
+         * Returns a settings from the input fields.
+         * @return {object}
+         */
+        function getSettingsFromFields() {
+
+        }
+
+        function loadSavedSettingsDropDown() {
+            var callback = {
+                success : function(o) {
+                    var result = l7.Dialog.parseJSON(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (!l7.Util.isException(result)) {
+                        savedSettings = result;
+                        var list = document.getElementById('savedSettingsDropDown');
+                        while (list.length > 0) {
+                            list.remove(0);
+                        }
+                        for (var i = 0; i < result.length; ++i) {
+                            var option = document.createElement('option');
+                            option.value = savedSettings[i].id
+                            option.innerHTML = savedSettings[i].name;
+                            list.appendChild(option); // Note: HTMLSelectElement.add(option, null) doesn't work in IE7.
+                        }
+                        loadSettingsButton.set('disabled', list.length == 0);
+                    }
+                },
+                failure : function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST + o.statusText, localizedStrings.OK);
+                }
+            };
+            var url = 'dataSource/standardReport/settingsList.json';
+            YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
+        }
+
+        /**
+         * @param {string} type     a ReportType value
+         */
+        function setReportType(type) {
+            for (var i = 0; i < reportTypeDropDown.options.length; ++i) {
+                if (reportTypeDropDown.options[i].value == type) {
+                    reportTypeDropDown.selectedIndex = i;
+                }
+            }
+            updateSaveDefaultButton();
+        }
+
+        function getEntityType() {
+            var result;
+            if (document.getElementById('entityType_publishedService').checked) {
+                result = l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE;
+            } else if (document.getElementById('entityType_operation').checked) {
+                result = l7.EntityTreeTable.ENTITY.OPERATION;
+            } else {
+                YAHOO.log('Unexpected entity type selection.', 'error', 'StandardReports.html showSsgClusterContent')
+            }
+            return result;
+        }
+
+        function refreshSsgClusterSelector() {
+            ssgClusterSelectorWindow.loadEntityTreeTable();
+        }
+
+        function refreshSsgClusterContentSelector() {
+            var ssgCluster = ssgClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
+            var entityType = getEntityType();
+            ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, [entityType], null);
+        }
+
+        /**
+         * Callback function upon an SSG Cluster highlighted.
+         * @param {object} previous     the previously highlighted SSG Cluster entity object literal; null if none
+         * @param {object} ssgCluster   the newly highlighted SSG Cluster entity object literal
+         * @param {string} callbackId
+         */
+        function onHighlightSsgCluster(previous, ssgCluster, callbackId) {
+            var entityType = getEntityType();
+            ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, [entityType], null);
+        }
+
+        /**
+         * Downloads the list of message context applicable to the SSG Clusters with selected entities.
+         */
+        function loadAvailableMessageContext() {
+            var callback = {
+                success : function(o) {
+                    var result = l7.Dialog.parseJSON(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (!l7.Util.isException(result)) {
+                        availableMessageContext = result;
+                    }
+                },
+                failure : function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST + o.statusText, localizedStrings.OK);
+                }
+            };
+            var postData;
+            for (var i = 0; i < ssgClustersWithSelectedEntities.length; ++i) {
+                if (i != 0) postData += '&';
+                postData += 'clusterGuid=' + encodeURIComponent(ssgClustersWithSelectedEntities[i].id);
+            }
+            // TODO pass array of published service OIDs in each cluster
+            var url = 'dataSource/standardReport/messageContextList.json';
+            YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
+        }
+
+        /**
+         * @param {HTMLSelectElement} dropDown      the drop down list to populate
+         */
+        function populateGroupingSsgClusterDropDown(dropDown) {
+            // Saves selected value, if any, to be restored once repopulated.
+            var prevValue = null;
+            if (dropDown.options.length > 0) {
+                prevValue = dropDown.value;
+            }
+
+            // Removes all.
+            while (dropDown.options.length > 0) {
+                dropDown.remove(0);
+            }
+
+            // Populates the drop down list with each available SSG Cluster.
+            var entities = ssgClusterSelectorWindow.getEntityTreeTable().getEntities();
+            for (var i = 0; i < entities.length; ++i) {
+                var entity = entities[i];
+                if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                    var option = document.createElement('option');
+                    option.value = entity.id;
+                    option.innerHTML = entity.ancestors.join(' / ') + ' / ' + entity.name;
+                    option.disabled = ssgClusterIdsWithSelectedEntities[option.value] == undefined;
+                    dropDown.appendChild(option);
+                    if (option.value == prevValue) {
+                        dropDown.selectedIndex = option.index; // Restores previously selected SSG Cluster.
+                    }
+                    // The disabled attribute does not work properly in IE7. We have to
+                    // manually set default selection to the first enabled OPTION.
+                    if (prevValue == null) {
+                        if (ssgClusterIdsWithSelectedEntities[dropDown.value] == undefined) {
+                            dropDown.selectedIndex = option.index;
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * @param {HTMLSelectElement} dropDown      the drop down list to populate
+         * @param {string} ssgClusterId
+         */
+        function populateGroupingMessageContextDropDown(dropDown, ssgClusterId) {
+            while (dropDown.childNodes.length > 0) {
+                dropDown.removeChild(dropDown.childNodes[0]);
+            }
+            for (var i = 0; i < availableMessageContext.length; ++i) {
+                var messageContext = availableMessageContext[i];
+                if (messageContext.id == ssgClusterId) {
+                    var optGroup = document.createElement('optgroup');
+                    optGroup.label = localizedStrings.STANDARD_MESSAGE_CONTEXT_MAPPING;
+                    dropDown.appendChild(optGroup);
+                    for (var j = 0; j < messageContext.standard.length; ++j) {
+                        var option = document.createElement('option');
+                        option.value = messageContext.standard[j];
+                        option.innerHTML = messageContext.standard[j];
+                        optGroup.appendChild(option);
+                    }
+
+                    if (messageContext.custom.length > 0) {
+                        optGroup = document.createElement('optgroup');
+                        optGroup.label = localizedStrings.CUSTOM_MESSAGE_CONTEXT_MAPPING;
+                        dropDown.appendChild(optGroup);
+                        for (j = 0; j < messageContext.custom.length; ++j) {
+                            option = document.createElement('option');
+                            option.value = messageContext.custom[j];
+                            option.innerHTML = messageContext.custom[j];
+                            optGroup.appendChild(option);
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        function onClickLoadSettings() {
+            var list = document.getElementById('savedSettingsDropDown');
+            setFieldsFromSettings(savedSettings[list.selectedIndex]);
+        }
+
+        function onClickSaveSettings() {
+            // TODO
+        }
+
+        function onClickManageSettings() {
+            // TODO
+        }
+
+        function onClickSaveDefault() {
+            // TODO
+        }
+
+        function onChangeEntityType() {
+            refreshSsgClusterContentSelector();
+
+            // Clears out all entity selections because they would now be the wrong type.
+            while (entitySelectionTableBody.rows.length > 0) {
+                entitySelectionTableBody.deleteRow(-1);
+            }
+            // and all groupings
+            while (groupingTableBody.rows.length > 0) {
+                groupingTableBody.deleteRow(-1);
+            }
+
+            // Updates the add button.
+            var entityTypeText;
+            var entityType = getEntityType();
+            if (entityType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                entityTypeText = localizedStrings.PUBLISHED_SERVICE_S;
+            } else if (entityType == l7.EntityTreeTable.ENTITY.OPERATION) {
+                entityTypeText = localizedStrings.OPERATION_S;
+            }
+            addEntityButton.set('label', localizedStrings.ADD_ENTITY_BUTTON_LABEL.replace('ENTITY_TYPE', entityTypeText));
+        }
+
+        function onClickAddEntity() {
+            var ssgCluster = ssgClusterContentSelectorWindow.getSsgCluster();
+            var entities = ssgClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected();
+
+            for (var i = 0; i < entities.length; ++i) {
+                var entity = entities[i];
+
+                // Skips this if already added.
+                var alreadyAdded = false;
+                var trs = entitySelectionTableBody.rows;
+                for (var j = 0; j < trs.length; ++j) {
+                    if (trs[j]._entity == entity) {
+                        alreadyAdded = true;
+                    }
+                }
+                if (alreadyAdded) {
+                    continue;
+                }
+
+                var tr = entitySelectionTableBody.insertRow(-1);
+                tr._ssgCluster = ssgCluster;    // Stash these away for later retrieval.
+                tr._entity = entity;
+                var td;
+
+                // Delete button column.
+                var img = document.createElement('img');
+                img.src = '../images/delete.png';
+                img.className = 'clickable';
+                YAHOO.util.Event.addListener(img, 'click', onClickDeleteEntity, tr);
+                td = tr.insertCell(-1);
+                td.appendChild(img);
+
+                // SSG Cluster column.
+                td = tr.insertCell(-1);
+                if (ssgCluster.ancestors != undefined) {
+                    td.innerHTML = ssgCluster.ancestors.join(' / ') + ' / ' + ssgCluster.name;
+                } else {
+                    td.innerHTML = ssgCluster.name;
+                }
+
+                // Published Service column.
+                var publishedService;
+                if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                    publishedService = entity;
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.OPERATION) {
+                    publishedService = ssgClusterContentSelectorWindow.getEntityTreeTable().getParentEntity(entity);
+                } else {
+                    YAHOO.log('Invalid entity type: ' + entity.type, 'error', 'StandardReports.html onClickAddEntity')
+                }
+                td = tr.insertCell(-1);
+                td.innerHTML = publishedService.name;
+
+                // Operation column.
+                td = tr.insertCell(-1);
+                if (entity.type == l7.EntityTreeTable.ENTITY.OPERATION) {
+                    td.innerHTML = entity.name;
+                } else {
+                    td.className = 'notApplicable';
+                }
+            }
+
+            updateSsgClustersWithSelectedEntities();
+            loadAvailableMessageContext();
+            updateAddGroupingButton();
+            updateGroupingSsgClusterDropDowns();
+            validateGroupings();
+        }
+
+        function onClickDeleteEntity(event, tr) {
+            entitySelectionTableBody.removeChild(tr);
+            updateSsgClustersWithSelectedEntities();
+            loadAvailableMessageContext();
+            updateAddGroupingButton();
+            updateGroupingSsgClusterDropDowns();
+            validateGroupings();
+        }
+
+        function onClickAddGrouping() {
+            var tr = groupingTableBody.insertRow(-1);
+            var td;
+
+            // Delete button column.
+            var deleteImg = document.createElement('img');
+            deleteImg.src = '../images/delete.png';
+            deleteImg.className = 'clickable';
+            YAHOO.util.Event.addListener(deleteImg, 'click', onClickDeleteGrouping, tr);
+            td = tr.insertCell(-1);
+            td.appendChild(deleteImg);
+
+            // SSG Cluster drop down list column.
+            var ssgClusterDropDown = document.createElement('select');
+            populateGroupingSsgClusterDropDown(ssgClusterDropDown);
+            td = tr.insertCell(-1);
+            td.appendChild(ssgClusterDropDown);
+            // Warning icon; appears when the SSG Cluster selected in the drop down list
+            // is not long part of selected entities.
+            var warningImg = document.createElement('img');
+            warningImg.src = '../images/warning.png';
+            warningImg.className = 'middle';
+            warningImg.title = localizedStrings.SSG_CLUSTER_NOT_APPLICABLE;
+            warningImg.style.display = 'none';
+            td.appendChild(warningImg);
+
+            // Message context drop down list column.
+            var messageContextDropDown = document.createElement('select');
+            populateGroupingMessageContextDropDown(messageContextDropDown, ssgClusterDropDown.value);
+            td = tr.insertCell(-1);
+            td.appendChild(messageContextDropDown);
+            YAHOO.util.Event.addListener(ssgClusterDropDown, 'change',
+                function(event, tr) {
+                    var ssgClusterDropDown = tr._ssgClusterDropDown;
+                    var messageContextDropDown = tr._messageContextDropDown;
+                    validateGrouping(tr);
+                    populateGroupingMessageContextDropDown(messageContextDropDown, ssgClusterDropDown.value);
+                },
+                tr
+            );
+
+            // Constraint value column.
+            var constraintTextBox = document.createElement('input');
+            constraintTextBox.type = 'text';
+            constraintTextBox.style.width = '95%'; // Any better solution?
+            constraintTextBox.maxlength = '128';
+            td = tr.insertCell(-1);
+            td.appendChild(constraintTextBox);
+
+            // Stashes the HTML element into the TR element for easy reference.
+            tr._ssgClusterDropDown = ssgClusterDropDown;
+            tr._messageContextDropDown = messageContextDropDown;
+            tr._warningImg = warningImg;
+            tr._constraintTextBox = constraintTextBox;
+        }
+
+        function onClickDeleteGrouping(event, tr) {
+            groupingTableBody.removeChild(tr);
+        }
+
+        function onClickGenerate() {
+            // TODO
+        }
+
+        function initButtons() {
+            loadSettingsButton = new YAHOO.widget.Button('loadSettingsButton', {
+                onclick : {fn : onClickLoadSettings},
+                type : 'push'
+            });
+            saveSettingsButton = new YAHOO.widget.Button('saveSettingsButton', {
+                onclick : {fn : onClickSaveSettings},
+                type : 'push'
+            });
+            manageSettingsButton = new YAHOO.widget.Button('manageSettingsButton', {
+                onclick : {fn : onClickManageSettings},
+                type : 'push'
+            });
+            saveDefaultButton = new YAHOO.widget.Button('saveDefaultButton', {
+                disabled : true,
+                onclick : {fn : onClickSaveDefault},
+                type : 'push'
+            });
+            addEntityButton = new YAHOO.widget.Button('addEntityButton', {
+                onclick : {fn : onClickAddEntity},
+                type : 'push'
+            });
+            addGroupingButton = new YAHOO.widget.Button('addGroupingButton', {
+                onclick : {fn : onClickAddGrouping},
+                type : 'push'
+            });
+            generateButton = new YAHOO.widget.Button('generateButton', {
+                onclick : {fn : onClickGenerate},
+                type : 'push'
+            });
+        }
+
+        function initSsgClusterSelector(iframe) {
+            iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
+        }
+
+        function initSsgClusterContentSelector(iframe) {
+            // Nothing to do.
+        }
+
+        function init() {
+            var debugLogReader = new YAHOO.widget.LogReader('debugLogReader');
+            debugLogReader.hide();   // Initially hidden.
+
+            reportTypeDropDown = document.getElementById('reportTypeDropDown');
+            ssgClusterSelectorWindow = document.getElementById('ssgClusterSelector').contentWindow;
+            ssgClusterContentSelectorWindow = document.getElementById('ssgClusterContentSelector').contentWindow;
+            entitySelectionTableBody = document.getElementById('entitySelectionTableBody');
+            groupingTableBody = document.getElementById('groupingTableBody');
+
+            initButtons();
+//            initDialogs();
+            loadSavedSettingsDropDown();
+            updateUiElements();
+// TODO           YAHOO.util.Event.addListener(entitySelectionTableBody, 'change', validateGrouping);
+        }
+
+        YAHOO.util.Event.onDOMReady(init);
+    </script>
+    </wicket:head>
 </head>
-<body>
+<body class="yui-skin-sam">
 <noscript><div class="javascriptWarning">This page requires JavaScript. Your browser either does not have JavaScript support or has disabled it.</div></noscript>
 <table width="100%">
     <tr>
@@ -106,7 +806,203 @@
             </div>
             <div class="content">
                 <wicket:extend>
-                    <span style="font-size: 1in;">X</span>
+                <div class="panel">
+                    <div class="panelTitle tippy"><img id="newReportTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'newReportDiv')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('newReportTippy', 'newReportDiv')">New Report</span></div>
+                    <div id="newReportDiv">
+                        <div class="panelToolbar">
+                            <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
+                                <tr>
+                                    <td class="middle"><button id="loadSettingsButton" title="Load a previously saved settings">Load Settings:</button></td>
+                                    <td class="middle">
+                                        <select id="savedSettingsDropDown">
+                                            <option></option> <!-- Workaround for IE7 bug: Weird overlap without this. -->
+                                        </select>
+                                    </td>
+                                    <td class="middle"><img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of saved settings" alt="Refresh" onclick="loadSavedSettingsDropDown();" /></td>
+                                    <td class="middle"><button id="saveSettingsButton" title="Save as a named setttings">Save Settings ...</button></td>
+                                    <td class="middle"><button id="manageSettingsButton" title="Save as a named setttings">Manage Settings ...</button></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="panelContent">
+                            <table class="spaced">
+                                <tr>
+                                    <th class="middle">Report Type:</th>
+                                    <td class="middle">
+                                        <table>
+                                            <tr>
+                                                <td class="middle">
+                                                    <select id="reportTypeDropDown" onchange="updateSaveDefaultButton();">
+                                                        <option value="performance">Performance Statistics</option>
+                                                        <option value="usage">Usage Report</option>
+                                                    </select>
+                                                </td>
+                                                <td class="middle"><button id="saveDefaultButton"></button></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="top">Entity Selection:</th>
+                                    <td width="100%">
+                                        <div class="panel noMargin">
+                                            <div class="panelToolbar">
+                                                Select by:
+                                                <input id="entityType_publishedService" type="radio" name="selectionType" value="publishedService" onclick="onChangeEntityType();" checked/>
+                                                <label for="entityType_publishedService">Published Service</label>
+                                                <input id="entityType_operation" type="radio" name="selectionType" value="operation" onclick="onChangeEntityType();"/>
+                                                <label for="entityType_operation">Operation</label>
+                                            </div>
+                                                <table class="explorer" width="100%">
+                                                    <tr>
+                                                        <th width="50%"><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width --></th>
+                                                        <th width="50%"><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width --></th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>SSG Clusters <img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of SSG Clusters" alt="Refresh" onclick="refreshSsgClusterSelector();"/></th>
+                                                        <th><span title="Content of selected SSG Cluster">Content</span> <img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of content" alt="Refresh" onclick="refreshSsgClusterContentSelector();"/></th>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="srcDest"><iframe id="ssgClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="200" width="100%" onload="initSsgClusterSelector(this);"></iframe></td>
+                                                        <td class="srcDest"><iframe id="ssgClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0" scrolling="yes" height="200" width="100%" onload="initSsgClusterContentSelector(this);"></iframe></td>
+                                                    </tr>
+                                                </table>
+                                            <div class="panelToolbar">
+                                                <button id="addEntityButton">Add Checked Published Service(s)</button>
+                                            </div>
+                                            <div class="panelContent smallPadding">
+                                                <table class="dataTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th><!-- deletion image button --></th>
+                                                            <th>SSG Cluster</th>
+                                                            <th>Published Service</th>
+                                                            <th width="100%">Operation</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="entitySelectionTableBody"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="middle">Time Period:</th>
+                                    <td class="middle">
+                                        <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
+                                            <tr>
+                                                <td class="middle"><input id="timePeriodType_relative" type="radio" name="timePeriodType" value="relative" onclick="updateTimePeriodUiElements(); validateTimePeriod();" checked/></td>
+                                                <td class="middle"><label for="timePeriodType_relative">Last</label></td>
+                                                <td class="middle"><input id="relativeTimePeriodTextField" class="right" type="text" size="9" maxlength="9" value="1" onkeyup="validateTimePeriod();"/></td>
+                                                <td class="middle">
+                                                    <select id="relativeTimePeriodUnitList" name="relativeTimePeriodUnit">
+                                                        <option value="hour">hour</option>
+                                                        <option value="hour" selected>day</option>
+                                                        <option value="hour">week</option>
+                                                        <option value="hour">month</option>
+                                                    </select>
+                                                </td>
+                                                <td class="middle"><span id="relativeTimePeriodHint" class="red"></span></td>
+                                                <td class="middle"><span id="relativeTimePeriodSpan"></span></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th></th>
+                                    <td>
+                                        <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
+                                            <tr>
+                                                <td class="middle"><input id="timePeriodType_absolute" type="radio" name="timePeriodType" value="absolute" onclick="updateTimePeriodUiElements(); validateTimePeriod();"/></td>
+                                                <td class="middle"><label for="timePeriodType_absolute">From</label></td>
+                                                <td class="middle">To</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="middle">Time Interval:</th>
+                                    <td class="middle">
+                                        <table>
+                                            <tr>
+                                                <td class="middle"><input id="timeInterval_false" type="radio" name="timeInterval" value="false" onclick="updateTimeIntervalUiElements(); validateTimeInterval();" checked/></td>
+                                                <td class="middle"><label for="timeInterval_false">None (Summary Report)</label></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th></th>
+                                    <td>
+                                        <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
+                                            <tr>
+                                                <td class="middle"><input id="timeInterval_true" type="radio" name="timeInterval" value="true" onclick="updateTimeIntervalUiElements(); validateTimeInterval();"/></td>
+                                                <td class="middle"><label for="timeInterval_true">Interval:</label></td>
+                                                <td class="middle"><input id="timeIntervalTextField" class="right" type="text" size="9" maxlength="9" onkeyup="validateTimeInterval();"/></td>
+                                                <td class="middle">
+                                                    <select id="timeIntervalUnitList" name="timeIntervalUnit">
+                                                        <option value="hour">hour</option>
+                                                        <option value="hour">day</option>
+                                                        <option value="hour">week</option>
+                                                    </select>
+                                                </td>
+                                                <td class="middle"><span id="timeIntervalHint" class="red"></span></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="top">Grouping:</th>
+                                    <td>
+                                        <div class="panel noMargin">
+                                            <div class="panelToolbar">
+                                                <button id="addGroupingButton">Add Group by Message Context</button>
+                                                <span class="note">Note: There must be at least one message context group for Usage Report.</span>
+                                            </div>
+                                            <div class="panelContent smallPadding">
+                                                <table class="dataTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th><!-- deletion image button --></th>
+                                                            <th>SSG Cluster</th>
+                                                            <th>Message Context</th>
+                                                            <th width="100%">Constraint Value <span class="note">(optional, wildcard * allowed)</span></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="groupingTableBody">
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Charting:</th>
+                                    <td>
+                                        <input id="charting" type="checkbox" checked/>
+                                        <label for="charting">Include Summary Chart</label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Report Name:</th>
+                                    <td><input type="text" size="64" maxlength="128"/></td>
+                                </tr>
+                            </table>
+                            <div class="middle nowrap">
+                                <button id="generateButton">Generate Report</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panelTitle tippy"><img id="oldReportsTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'oldReportsDiv')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('oldReportsTippy', 'oldReportsDiv')">Generated Reports</span></div>
+                    <div id="oldReportsDiv">
+                        <div class="panelToolbar">
+                        </div>
+                        <div class="panelContent">
+                        </div>
+                    </div>
+                </div>
                 </wicket:extend>
             </div>
             <div class="statusBar">

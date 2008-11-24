@@ -194,7 +194,7 @@
                 launchSSMButton.set('disabled', !enabled);
             }
 
-            function onEntitySelected(entity) {
+            function onEntityHighlighted(previous, entity) {
                 enableToolbarButtons(false);
                 addFolderButton.set('disabled', !isPermitted(entity, 'addFolder'));
                 renameButton.set('disabled', !isPermitted(entity, 'rename'));
@@ -254,8 +254,12 @@
                         l7.EntityTreeTable.COLUMN.VERSION,
                         l7.EntityTreeTable.COLUMN.DETAILS
                     ],
-                    entitySelectable : true,
-                    onEntitySelected : onEntitySelected,
+                    highlightableEntities : [
+                        l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER,
+                        l7.EntityTreeTable.ENTITY.SSG_CLUSTER,
+                        l7.EntityTreeTable.ENTITY.SSG_NODE
+                    ],
+                    onEntityHighlighted : onEntityHighlighted,
                     onClickTrustDialogButton : onClickTrustDialogButton,
                     onClickAccessDialogButton : onClickAccessDialogButton
                 };
@@ -281,7 +285,7 @@
             }
 
             function onClickAddFolder(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('addFolderDialog_parentId').value = entity.id;
                 document.getElementById('addFolderDialog_name').value = '';
                 validateAddFolderDialog();
@@ -290,7 +294,7 @@
             }
 
             function onClickRenameFolder(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('renameFolderDialog_id').value = entity.id;
                 document.getElementById('renameFolderDialog_name').value = entity.name;
                 validateRenameFolderDialog();
@@ -299,7 +303,7 @@
             }
 
             function onClickRenameSSGCluster(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('renameSSGClusterDialog_id').value = entity.id;
                 document.getElementById('renameSSGClusterDialog_name').value = entity.name;
                 validateRenameSSGClusterDialog();
@@ -308,7 +312,7 @@
             }
 
             function onClickRename(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
                     onClickRenameFolder(event);
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
@@ -319,13 +323,13 @@
             }
 
             function onClickMove(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 // TODO
 alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             }
 
             function onClickDeleteFolder(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('deleteFolderDialog_id').value = entity.id;
                 document.getElementById('deleteFolderDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
                 deleteFolderDialog.center();
@@ -333,7 +337,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             }
 
             function onClickDeleteSSGCluster(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('deleteSSGClusterDialog_id').value = entity.id;
                 document.getElementById('deleteSSGClusterDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
                 deleteSSGClusterDialog.center();
@@ -341,7 +345,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             }
 
             function onClickDelete(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
                     onClickDeleteFolder(event);
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
@@ -352,7 +356,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             }
 
             function onClickAddSSGCluster(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('addSSGClusterDialog_parentId').value = entity.id;
                 document.getElementById('addSSGClusterDialog_name').value = '';
                 document.getElementById('addSSGClusterDialog_hostName').value = '';
@@ -386,7 +390,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             };
 
             function onClickStart(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 var callback = {
                     success : function(o) {
                         l7.Dialog.hideWaitDialog();
@@ -413,7 +417,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             }
 
             function onClickStop(event) {
-                var entity = entityTreeTable.getSelectedEntity();
+                var entity = entityTreeTable.getHighlightedEntity();
                 var callback = {
                     success : function(o) {
                         l7.Dialog.hideWaitDialog();
@@ -1056,7 +1060,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
              */
             function onContextMenuBeforeShow(eventName, args) {
                 var entity = entityTreeTable.findEntityFromContextEventTarget(this.contextEventTarget);
-                entityTreeTable.selectEntity(entity, true);
+                entityTreeTable.highlightEntity(entity, true);
 
                 this.clearContent();
                 initContextMenuItemsEventHandler(); // Need to do this because, strangely, clearContent destroys the onclick handler of menu items.
@@ -1086,7 +1090,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
              *                              second array element is the target of the event if it was a MenuItem instance
              */
             function onContextMenuHide(eventName, args) {
-                entityTreeTable.selectEntity(null, true);
+                entityTreeTable.highlightEntity(null, true);
             }
 
             function initContextMenuItemsEventHandler() {

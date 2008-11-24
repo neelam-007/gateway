@@ -19,44 +19,88 @@
         <script type="text/javascript" src="../yui/logger/logger-min.js"></script>
 
         <script type="text/javascript" src="../js/l7.js"></script>
+        <script type="text/javascript" src="../js/entityTreeTable.js"></script>
         <script type="text/javascript">
             var MIN_FRAME_HEIGHT = 150;
             var MAX_FRAME_HEIGHT = 500;
             var INCR_FRAME_HEIGHT = 50;
             var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
 
-            function initSrcSSGClusterSelector(self) {
-                self.contentWindow.setCallbackId(self.id);
+            /**
+             * @type HTMLIFrameElement
+             */
+            var srcSSGClusterContentSelectorWindow;
+
+            /**
+             * @type HTMLIFrameElement
+             */
+            var destSSGClusterContentSelectorWindow;
+
+            function initSSGClusterSelector(iframe) {
+                iframe.contentWindow.setCallbackId(iframe.id);
+                iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
             }
 
-            function initDestSSGClusterSelector(self) {
-                self.contentWindow.setCallbackId(self.id);
+            function initSSGClusterContentSelector(iframe) {
+                iframe.contentWindow.setCallbackId(iframe.id);
             }
 
-            function initSrcSSGClusterContent(self) {
-                self.contentWindow.setCallbackId(self.id);
-            }
-
-            function initDestSSGClusterContent(self) {
-                self.contentWindow.setCallbackId(self.id);
-            }
-
-            function showSSGClusterContent(callbackId, ssgClusterId) {
+            /**
+             * Callback function upon an SSG Cluster highlighted.
+             * @param {object} previous     the previously highlighted SSG Cluster entity object literal; null if none
+             * @param {object} ssgCluster   the newly highlighted SSG Cluster entity object literal
+             * @param {string} callbackId
+             */
+            function onHighlightSsgCluster(previous, ssgCluster, callbackId) {
                 if (callbackId == 'srcSSGClusterSelector') {
-                    document.getElementById('srcSSGClusterContent').contentWindow.loadSSGClusterContent(ssgClusterId);
+                    srcSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
+                        [
+                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
+                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
+                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
+                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                        ], zoomItem);
+                    srcSSGClusterContentSelectorWindow.loadSsgClusterContent(
+                        ssgCluster,
+                        [
+                            l7.EntityTreeTable.ENTITY.SERVICE_FOLDER,
+                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
+                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
+                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
+                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                        ],
+                        null);
                 } else if (callbackId == 'destSSGClusterSelector') {
-                    document.getElementById('destSSGClusterContent').contentWindow.loadSSGClusterContent(ssgClusterId);
+                    destSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
+                        [
+                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
+                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
+                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
+                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                        ], zoomItem);
+                    destSSGClusterContentSelectorWindow.loadSsgClusterContent(
+                        ssgCluster,
+                        null,
+                        [
+                            l7.EntityTreeTable.ENTITY.SERVICE_FOLDER
+                        ]);
                 }
             }
 
-            function zoomItem(callbackId, ssgClusterId, entityType, entityId) {
-                var url = 'dataSource/' + entityType + '/' + ssgClusterId + '/' + entityId + '.xml';
-                if (callbackId == 'srcSSGClusterContent') {
-                    document.getElementById('srcItemDetails').src = url;
-                } else if (callbackId == 'destSSGClusterContent') {
-                    document.getElementById('destItemDetails').src = url;
+            function zoomItem(previous, entity, callbackId) {
+                if (callbackId == 'srcSSGClusterContentSelector') {
+                    document.getElementById('srcItemDetails').src = 'dataSource/' + entity.type + '/' + srcSSGClusterContentSelectorWindow.getSsgCluster().id + '/' + entity.id + '.xml';
+                } else if (callbackId == 'destSSGClusterContentSelector') {
+                    document.getElementById('destItemDetails').src = 'dataSource/' + entity.type + '/' + destSSGClusterContentSelectorWindow.getSsgCluster().id + '/' + entity.id + '.xml';
                 }
             }
+
+            function init() {
+                srcSSGClusterContentSelectorWindow = document.getElementById('srcSSGClusterContentSelector').contentWindow;
+                destSSGClusterContentSelectorWindow = document.getElementById('destSSGClusterContentSelector').contentWindow;
+            }
+
+            YAHOO.util.Event.onDOMReady(init);
         </script>
     </wicket:head>
 </head>
@@ -170,17 +214,17 @@
                           <tr>
                               <td width="50%"><table width="100%">
                                   <tr>
-                                      <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                      <td class="srcDestTitleCenter" width="100%">Source</td>
-                                      <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                      <td class="roundedTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                      <td class="roundedTitleCenter" width="100%">Source</td>
+                                      <td class="roundedTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
                                   </tr>
                               </table></td>
                               <td class="srcDestCenter"></td>
                               <td width="50%"><table width="100%">
                                   <tr>
-                                      <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                      <td class="srcDestTitleCenter" width="100%">Destination</td>
-                                      <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                      <td class="roundedTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                      <td class="roundedTitleCenter" width="100%">Destination</td>
+                                      <td class="roundedTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
                                   </tr>
                               </table></td>
                           </tr>
@@ -210,9 +254,9 @@
                               </td>
                           </tr>
                           <tr>
-                              <td class="srcDest"><iframe id="srcSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterSelector(this);"></iframe></td>
+                              <td class="srcDest"><iframe id="srcSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSSGClusterSelector(this);"></iframe></td>
                               <td class="srcDestCenter"></td>
-                              <td class="srcDest"><iframe id="destSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestSSGClusterSelector(this);"></iframe></td>
+                              <td class="srcDest"><iframe id="destSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSSGClusterSelector(this);"></iframe></td>
                           </tr>
                           <tr>
                               <td class="srcDest">
@@ -220,8 +264,8 @@
                                       <tr>
                                           <td class="nowrap">Select items to copy:</td>
                                           <td class="right" width="100%">
-                                              <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                              <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                              <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                              <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                           </td>
                                       </tr>
                                   </table>
@@ -230,19 +274,19 @@
                               <td class="srcDest">
                                   <table width="100%">
                                       <tr>
-                                          <td class="nowrap">Select a destination folder (<input id="checkbox:enable" type="checkbox" /><label for="checkbox:enable"> enable service policies upon save</label>):</td>
+                                          <td class="nowrap">Select a destination folder: (<input id="checkbox:enable" type="checkbox" /><label for="checkbox:enable"> enable new services</label>)</td>
                                           <td class="right" width="100%">
-                                              <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                              <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                                <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                                <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                           </td>
                                       </tr>
                                   </table>
                               </td>
                           </tr>
                           <tr>
-                              <td class="srcDest"><iframe id="srcSSGClusterContent" src="SrcSSGClusterContent.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterContent(this);"></iframe></td>
+                              <td class="srcDest"><iframe id="srcSSGClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSSGClusterContentSelector(this);"></iframe></td>
                               <td class="srcDestCenter">Copy<br /><img src="../images/copy.png" alt="" /></td>
-                              <td class="srcDest"><iframe id="destSSGClusterContent" src="DestSSGClusterContent.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestSSGClusterContent(this);"></iframe></td>
+                              <td class="srcDest"><iframe id="destSSGClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSSGClusterContentSelector(this);"></iframe></td>
                           </tr>
                           <tr>
                               <td class="srcDest">

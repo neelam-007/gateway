@@ -3,7 +3,7 @@
  * @namespace l7
  * @requires l7.css
  * @requires YUI module "animation" if using l7.Resize
- * @requires YUI modules "button", "container" if using l7.Dialog
+ * @requires YUI modules "button", "container", "json" if using l7.Dialog
  */
 
 // -----------------------------------------------------------------------------

@@ -21,16 +21,16 @@ import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.locator.ResourceStreamLocator;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Wicket WebApplication for Enterprise Manager.
@@ -235,8 +235,7 @@ public class EmsApplication extends WebApplication {
         mountTemplate("/Help.html");
         mountPage("/Login.html", Login.class);
         mountTemplate("/SSGClusterSelector.html");
-        mountTemplate("/SrcSSGClusterContent.html");
-        mountTemplate("/DestSSGClusterContent.html");
+        mountTemplate("/SSGClusterContentSelector.html");
         mountTemplate("/UserSelector.html");
         mountTemplate("/SubmissionReceived.html");
     }
