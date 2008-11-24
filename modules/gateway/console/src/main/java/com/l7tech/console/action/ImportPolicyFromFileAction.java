@@ -145,7 +145,7 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
             // the name of the existing policy fragment or not.
             StringBuilder errorMessage = new StringBuilder("The policy fragment " + importedPolicyName + " in the imported file is different from the existing policy fragment");
             if (! importedPolicyName.equals(existingPolicyName)) {
-                errorMessage.append(" ").append(existingPolicyName);
+                errorMessage.append(" ").append(existingPolicyName).append(", but they have the same ID");
             }
             errorMessage.append(".\n");
             errorMessage.append("Due to this conflict, the policy fragment ").append(importedPolicyName).append(" cannot be imported.");
