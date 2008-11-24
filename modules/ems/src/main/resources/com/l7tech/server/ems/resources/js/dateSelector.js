@@ -9,9 +9,9 @@
  * @param calContainerId DOM id for div holding the calendar.
  * @param calBodyId DOM id for div holding the calendar body.
  */
-function initDateSelector( inputId, calContainerId, calBodyId ) {
+function initDateSelector( inputId, calContainerId, calBodyId, enddate ) {
     var dialog, calendar;
-    calendar = new YAHOO.widget.Calendar(calBodyId, {iframe:false,hide_blank_weeks:true});
+    calendar = new YAHOO.widget.Calendar(calBodyId, {iframe:false,hide_blank_weeks:true,maxdate:enddate});
 
     dialog = new YAHOO.widget.Dialog(calContainerId, {
         context:[ inputId, "tl", "bl" ],

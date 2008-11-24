@@ -3,10 +3,16 @@ package com.l7tech.server.ems.pages;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.markup.html.resources.CompressedResourceReference;
 
+import java.util.Date;
+import java.util.TimeZone;
+import java.text.SimpleDateFormat;
+
 /**
  *
  */
-public class YuiCommon {
+class YuiCommon {
+
+    //- PACKAGE
 
     static final ResourceReference RES_CSS_SAM_BUTTON = new CompressedResourceReference(YuiCommon.class, "../resources/yui/button/assets/skins/sam/button.css" );
     static final ResourceReference RES_CSS_SAM_MENU = new CompressedResourceReference(YuiCommon.class, "../resources/yui/menu/assets/skins/sam/menu.css" );
@@ -30,4 +36,17 @@ public class YuiCommon {
     static final ResourceReference RES_JS_DOM = new CompressedResourceReference(YuiCommon.class, "../resources/yui/dom/dom-min.js" );
     static final ResourceReference RES_JS_CALENDAR = new CompressedResourceReference(YuiCommon.class, "../resources/yui/calendar/calendar-min.js" );
 
+    static String toYuiDate( final Date date, final String timeZoneId ) {
+        SimpleDateFormat format = new SimpleDateFormat(YUI_DATE_FORMAT);
+
+        if ( timeZoneId != null ) {
+            format.setTimeZone( TimeZone.getTimeZone( timeZoneId ) );
+        }
+        
+        return format.format( date );
+    }
+
+    //- PRIVATE
+
+    private static final String YUI_DATE_FORMAT = "MM/dd/yyyy";
 }

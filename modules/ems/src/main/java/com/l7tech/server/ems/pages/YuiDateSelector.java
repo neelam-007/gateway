@@ -32,7 +32,7 @@ public class YuiDateSelector extends Panel {
      * @param id The component identifier.
      * @param model The {@link java.util.Date Date} model.
      */
-    public YuiDateSelector( final String id, final Model model ) {
+    public YuiDateSelector( final String id, final Model model, final Date maxDate ) {
         super( id, model );
 
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CONTAINER ) );
@@ -48,15 +48,17 @@ public class YuiDateSelector extends Panel {
 
         add( HeaderContributor.forJavaScript( new ResourceReference( YuiDataTable.class, "../resources/js/dateSelector.js" ) ) );
 
+        EmsSession session = ((EmsSession) RequestCycle.get().getSession());
+        final String timeZoneId = session.getTimeZoneId();
+
         DateTextField textField = new DateTextField("date", model) {
             @Override
             public IConverter getConverter(final Class aClass) {
                 return new IConverter() {
                     public SimpleDateFormat getDateFormat() {
-                        EmsSession session = ((EmsSession) RequestCycle.get().getSession());
                         SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy");
-                        if ( session.getTimeZoneId() != null ) {
-                            format.setTimeZone( TimeZone.getTimeZone( session.getTimeZoneId() ) );
+                        if ( timeZoneId != null ) {
+                            format.setTimeZone( TimeZone.getTimeZone( timeZoneId ) );
                         }
                         format.setLenient( false );
                         return format;
@@ -99,7 +101,13 @@ public class YuiDateSelector extends Panel {
         scriptBuilder.append( calendarDiv.getMarkupId() );
         scriptBuilder.append("', '");
         scriptBuilder.append( calendarBody.getMarkupId() );
-        scriptBuilder.append("'); } );");
+        scriptBuilder.append("'");
+        if ( maxDate != null ) {
+            scriptBuilder.append(", '");
+            scriptBuilder.append( YuiCommon.toYuiDate(maxDate, timeZoneId) );
+            scriptBuilder.append("'");
+        }
+        scriptBuilder.append("); });");
         
         Label label = new Label("javascript", scriptBuilder.toString());
         label.setEscapeModelStrings(false);

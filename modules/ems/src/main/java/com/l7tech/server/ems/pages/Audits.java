@@ -96,14 +96,15 @@ public class Audits extends EmsPage {
         columns.add(new PropertyColumn(new StringResourceModel("audittable.column.level", this, null), "LEVEL", "level"));
         columns.add(new PropertyColumn(new StringResourceModel("audittable.column.message", this, null), "MESSAGE", "message"));
 
-        final Model dateStartModel = new Model(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)));
-        final Model dateEndModel = new Model(new Date());
+        Date now = new Date();
+        final Model dateStartModel = new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7)));
+        final Model dateEndModel = new Model(now);
         final Model typeModel = new Model(values[0]);
         final WebMarkupContainer tableContainer = new WebMarkupContainer("audittable.container");
         tableContainer.setOutputMarkupId(true);
         Form auditSelectionForm = new Form("auditselectform");
-        YuiDateSelector startDate = new YuiDateSelector("auditstart", dateStartModel );
-        YuiDateSelector endDate = new YuiDateSelector("auditend", dateEndModel );
+        YuiDateSelector startDate = new YuiDateSelector("auditstart", dateStartModel, now );
+        YuiDateSelector endDate = new YuiDateSelector("auditend", dateEndModel, now );
         startDate.getDateTextField().add(DateValidator.maximum(new Date()));
         auditSelectionForm.add( startDate );
         auditSelectionForm.add( endDate );
