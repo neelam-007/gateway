@@ -29,6 +29,7 @@ public class LogResource extends SecureResource {
      */
     public LogResource() {
         super( new AttemptedReadAll(EntityType.LOG_RECORD) );
+        setCacheable( false );
     }
 
     /**
@@ -73,7 +74,12 @@ public class LogResource extends SecureResource {
             File logFile = getLogFileIfValid( name );
             if ( logFile != null ) {
                 logger.fine("Processing resource request for log file '"+logFile.getAbsolutePath()+"'.");
-                resource = new FileResourceStream(logFile);
+                resource = new FileResourceStream(logFile){
+                    @Override
+                    public String getContentType() {
+                        return "text/plain; charset=utf-8";
+                    }
+                };
             } else {
                 logger.warning("Not processing resource request for log file '"+name+"'.");
             }
@@ -119,6 +125,7 @@ public class LogResource extends SecureResource {
 
     private static FilenameFilter getLogFilter() {
         return new FilenameFilter() {
+            @Override
             public boolean accept(File dir, String name) {
                 return name.endsWith(".log");
             }
