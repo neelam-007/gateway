@@ -30,10 +30,12 @@ public class EmsAccountManagerImpl implements EmsAccountManager {
         this.identityProviderFactory = identityProviderFactory;            
     }
 
+    @Override
     public int getUserCount() throws FindException {
         return getUserManager().findAllHeaders().size();
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public Collection<InternalUser> getUserPage( final int startIndex,
                                                  final int count,
@@ -47,6 +49,7 @@ public class EmsAccountManagerImpl implements EmsAccountManager {
             users.add( manager.findByPrimaryKey(header.getStrId()) );
         }
         Collections.sort( users, new ResolvingComparator( new Resolver(){
+            @Override
             public Object resolve( Object key ) {
                 User user = (User) key;
                 String value = null;
@@ -79,14 +82,17 @@ public class EmsAccountManagerImpl implements EmsAccountManager {
         return result;
     }
 
+    @Override
     public InternalUser findByLogin( final String login ) throws FindException {
         return getUserManager().findByLogin(login);
     }
 
+    @Override
     public InternalUser findByPrimaryKey(final String identifier) throws FindException {
         return getUserManager().findByPrimaryKey(identifier);
     }
 
+    @Override
     public void update( final InternalUser user ) throws UpdateException {
         try {
             getUserManager().update( user );
@@ -95,13 +101,18 @@ public class EmsAccountManagerImpl implements EmsAccountManager {
         }
     }
 
+    @Override
     public String save( final InternalUser user ) throws SaveException {
         return getUserManager().save( user, Collections.<IdentityHeader>emptySet() );
     }
 
+    @Override
     public void delete( final String login ) throws DeleteException {
         try {
-            getUserManager().delete( getUserManager().findByLogin(login) );
+            InternalUser user = getUserManager().findByLogin(login);
+            if ( user != null ) {
+                getUserManager().delete( user );
+            }
         } catch ( FindException fe ) {
             throw new DeleteException( ExceptionUtils.getMessage(fe), fe );
         }

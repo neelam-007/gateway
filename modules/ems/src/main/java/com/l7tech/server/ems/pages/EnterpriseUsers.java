@@ -75,6 +75,7 @@ public class EnterpriseUsers extends EmsPage {
                 userContainer1.add( new EnterpriseUsersNewPanel( "user.content", Collections.singleton(tableContainer) ) );
                 userContainer2.add( new EmptyPanel("user.content") );
 
+                ajaxRequestTarget.addComponent( tableContainer ); // refresh to clear selection
                 ajaxRequestTarget.addComponent( userContainer1 );
                 ajaxRequestTarget.addComponent( userContainer2 );
             }
@@ -84,33 +85,35 @@ public class EnterpriseUsers extends EmsPage {
             @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 final String id = (String) form.get("userId").getModel().getObject();
-                container.removeAll();
-                User u = getUser();
-                String userLogin = u.getLogin();
-                //todo need to also check the identity provider of the current user
-                if(userLogin.equals(id)){
-                    Label confirmLabel = new Label(YuiDialog.getContentId(), new StringResourceModel("deleteuser.error.message", this, null, new Object[]{"'"+userLogin+"'"}));
-                    YuiDialog dialog = new YuiDialog( "user.content", new StringResourceModel("deleteuser.error.heading", this, null).getString(), YuiDialog.Style.CLOSE, confirmLabel, null);
-                    container.add( dialog );
-                }else{
-                    Label confirmLabel = new Label( YuiDialog.getContentId(), new StringResourceModel("deleteuser.confirm", this, null, new Object[]{"'"+id+"'"}));
-                    YuiDialog dialog = new YuiDialog( "user.content", new StringResourceModel("deleteuser.heading", this, null).getString(), YuiDialog.Style.OK_CANCEL, confirmLabel, new YuiDialog.OkCancelCallback(){
-                        @Override
-                        public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
-                            if ( button == YuiDialog.Button.OK ) {
-                                try {
-                                    emsAccountManager.delete( id );
-                                    target.addComponent(tableContainer);
-                                } catch (DeleteException de) {
-                                    logger.log(Level.WARNING, "Error deleting user.", de);
+                if ( id != null && !id.isEmpty() ) {
+                    container.removeAll();
+                    User u = getUser();
+                    String userLogin = u.getLogin();
+                    //todo need to also check the identity provider of the current user
+                    if(userLogin.equals(id)){
+                        Label confirmLabel = new Label(YuiDialog.getContentId(), new StringResourceModel("deleteuser.error.message", this, null, new Object[]{"'"+userLogin+"'"}));
+                        YuiDialog dialog = new YuiDialog( "user.content", new StringResourceModel("deleteuser.error.heading", this, null).getString(), YuiDialog.Style.CLOSE, confirmLabel, null);
+                        container.add( dialog );
+                    }else{
+                        Label confirmLabel = new Label( YuiDialog.getContentId(), new StringResourceModel("deleteuser.confirm", this, null, new Object[]{"'"+id+"'"}));
+                        YuiDialog dialog = new YuiDialog( "user.content", new StringResourceModel("deleteuser.heading", this, null).getString(), YuiDialog.Style.OK_CANCEL, confirmLabel, new YuiDialog.OkCancelCallback(){
+                            @Override
+                            public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
+                                if ( button == YuiDialog.Button.OK ) {
+                                    try {
+                                        emsAccountManager.delete( id );
+                                        target.addComponent(tableContainer);
+                                    } catch (DeleteException de) {
+                                        logger.log(Level.WARNING, "Error deleting user.", de);
+                                    }
                                 }
                             }
-                        }
-                    } );
-                    container.add( dialog );
-                }
+                        } );
+                        container.add( dialog );
+                    }
 
-                ajaxRequestTarget.addComponent( container );
+                    ajaxRequestTarget.addComponent( container );
+                }
             }
         };
 
@@ -190,4 +193,5 @@ public class EnterpriseUsers extends EmsPage {
                 }
             };
         }
-    }}
+    }
+}

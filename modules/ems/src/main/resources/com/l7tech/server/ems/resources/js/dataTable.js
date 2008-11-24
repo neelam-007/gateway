@@ -85,13 +85,15 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, so
         // Subscribes to row select changes for enabling/disabling toolbar buttons.
         var enableOrDisableControls = function (event, target) {
             var selectedRows = myDataTable.getSelectedRows();
-            var hasSelectedRows = (selectedRows != null) && (selectedRows.length != 0);
+            var hasSelectedRows = selectedRows && (selectedRows.length != 0);
 
             if ( selectionControlIds ) {
                 var controlId;
                 for ( controlId in selectionControlIds ) {
-                    var control = document.getElementById( controlId );
-                    if ( control ) control.disabled = !hasSelectedRows;
+                    var control = document.getElementById( selectionControlIds[controlId] );
+                    if ( control ) {
+                        control.disabled = !hasSelectedRows;
+                    }
                 }
             }
 
@@ -100,7 +102,7 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, so
                 if ( hasSelectedRows ) {
                     selectionControl.value = this.getRecord( selectedRows[0] ).getData(idProperty);
                 } else {
-                    selectionControl.value = "-1";
+                    selectionControl.value = "";
                 }
 
                 if( selectionCallback ) {
@@ -111,5 +113,7 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, so
         
         myDataTable.subscribe("rowSelectEvent", enableOrDisableControls);
         myDataTable.subscribe("rowUnSelectEvent", enableOrDisableControls);
+
+        enableOrDisableControls();
     }
 };
