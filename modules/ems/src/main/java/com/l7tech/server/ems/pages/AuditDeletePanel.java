@@ -26,7 +26,7 @@ public class AuditDeletePanel extends Panel {
         super(id);
         setOutputMarkupId(true);
 
-        final int[] intHolder = new int[]{7};
+        final Integer[] intHolder = new Integer[]{7};
         TextField minAgeTextField = new TextField("audit.minage", new IObjectClassAwareModel(){
             @Override
             public Class getObjectClass() { return Integer.class; }
@@ -38,6 +38,7 @@ public class AuditDeletePanel extends Panel {
             public void detach() { }
         });
         minAgeTextField.add( new NumberValidator.RangeValidator(7, 365) );
+        minAgeTextField.setRequired(true);
 
         SecureForm form = new SecureForm("audit.form",  new AttemptedDeleteAll(EntityType.AUDIT_RECORD) ){
             @Override

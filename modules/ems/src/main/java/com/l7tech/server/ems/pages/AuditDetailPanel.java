@@ -62,7 +62,7 @@ public class AuditDetailPanel extends Panel {
         columns.add(new PropertyColumn(new StringResourceModel("auditdetailtable.column.date", this, null), "DATE", "date"));
         columns.add(new PropertyColumn(new StringResourceModel("auditdetailtable.column.level", this, null), "LEVEL", "level"));
         columns.add(new PropertyColumn(new StringResourceModel("auditdetailtable.column.message", this, null), "MESSAGE", "message"));
-        YuiDataTable table = new YuiDataTable("auditdetailtable", columns, "TIME", false,  new AuditDetailDataProvider(record, "DATE", false));
+        YuiDataTable table = new YuiDataTable("auditdetailtable", columns, "date", false,  new AuditDetailDataProvider(record, "date", false));
         table.setVisible(!record.getDetails().isEmpty());
         
         add( summary );
