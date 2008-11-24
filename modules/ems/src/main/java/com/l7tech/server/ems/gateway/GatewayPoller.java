@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
+import java.net.UnknownHostException;
 
 /**
  * 
@@ -97,8 +98,7 @@ public class GatewayPoller implements InitializingBean {
                                     }
                                     newInfoSet = new HashSet<GatewayApi.GatewayInfo>(api.getGatewayInfo());
                                 } catch ( SOAPFaultException sfe ) {
-                                    if ( ExceptionUtils.causedBy( sfe, ConnectException.class )  ||
-                                         ExceptionUtils.causedBy( sfe, NoRouteToHostException.class )) {
+                                    if ( isExpectedNetworkException(sfe) ) {
                                         logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                     } else {
                                         throw sfe;
@@ -135,8 +135,7 @@ public class GatewayPoller implements InitializingBean {
                             } catch ( GatewayException ge ) {
                                 logger.log( Level.WARNING, "Gateway error when polling gateways", ge );
                             } catch ( SOAPFaultException sfe ) {
-                                if ( ExceptionUtils.causedBy( sfe, ConnectException.class )  ||
-                                     ExceptionUtils.causedBy( sfe, NoRouteToHostException.class )) {
+                                if ( isExpectedNetworkException(sfe) ) {
                                     logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                 } else if ( "Authentication Required".equals(sfe.getMessage()) ){
                                     if ( cluster.getTrustStatus() ) {
@@ -192,8 +191,7 @@ public class GatewayPoller implements InitializingBean {
                 }
             }
         } catch ( SOAPFaultException sfe ) {
-            if ( ExceptionUtils.causedBy( sfe, ConnectException.class ) ||
-                 ExceptionUtils.causedBy( sfe, NoRouteToHostException.class )) {
+            if ( isExpectedNetworkException(sfe) ) {
                 logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+"'." );
             } else if ( "Authentication Required".equals(sfe.getMessage()) ){
                 trusted = false;
@@ -222,5 +220,11 @@ public class GatewayPoller implements InitializingBean {
         }
 
         return updated;
+    }
+
+    private boolean isExpectedNetworkException( SOAPFaultException sfe ) {
+        return ExceptionUtils.causedBy( sfe, ConnectException.class ) ||
+               ExceptionUtils.causedBy( sfe, NoRouteToHostException.class ) ||
+               ExceptionUtils.causedBy( sfe, UnknownHostException.class );
     }
 }
