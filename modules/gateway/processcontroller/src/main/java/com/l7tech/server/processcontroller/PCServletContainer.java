@@ -100,7 +100,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         sslConnector.setNeedClientAuth(false);
         server.addConnector(sslConnector);
 
-        if ( httpPort != 8765 || (!"0.0.0.0".equals(httpIPAddress) && !"127.0.0.1".equals(httpIPAddress)) ) {
+        if ( httpPort != 8765 || (!"0.0.0.0".equals(httpIPAddress) && !"127.0.0.1".equals(httpIPAddress) && !"localhost".equals(httpIPAddress)) ) {
             final SslSocketConnector localSslConnector = new SslSocketConnector() {
                 @Override
                 protected SSLServerSocketFactory createFactory() throws Exception {
