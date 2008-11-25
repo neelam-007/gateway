@@ -649,6 +649,7 @@ public class Utilities {
             addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
         }
 
+        //----SECTION H & I----
         //Service ids only constrained here, if isDetail is false, otherwise operation and services are constrained
         //together below
 
@@ -747,11 +748,18 @@ public class Utilities {
      * SECTION G: The time period for the query is for A SPECIFIC interval. The interval is inclusive of the start time
      * and exclusive of the end time.
      *
-     * SECTION H: (Optional) If serviceIds is not null or empty, then all values from the Collection are placed inside
-     * an IN constraint, otherwise no SQL is added to the overall query
+     * SECTION H & I: (Optional) Sections H & I determine if and how service id's and operations are constrained. The
+     * general rule is that an operation is never constrained without it also being constrained to a service.
+     * serviceIdToOperations is a map of service ids to a list of operations. There is domain logic applied depending
+     * on what the values of the keys in the map are, and whether isDetail is true or false:-
+     * H) When any of the keys has a non null and non empty list of operations, then the query produced is for a set
+     * of services, with each service id constrained by specific operations. If any service in the map contains a null
+     * or empty list of operations, it is simply left out of the query. isDetail must be true for this behaviour to happen.
+     * I) When all of the keys have null or empty lists of operations, then the query is only constrained by service ids.
+     * If isDetail is true, then this turns the query into a blanket operation query, in which all operations for the
+     * selected services are returned.  
      *
-     * SECTION I: (Optional) If isDetail is true AND operations is not null or empty, then all values from the Collection
-     * are placed inside an IN constraint, otherwise no SQL is added to the overall query
+     * If serviceIdToOperations is null or empty, then no constraint is put on services or operations.
      *
      * SECTION J: (Optional) If useUser is true AND authenticatedUsers is not null or empty, then all values from the
      * Collection are placed inside an IN constraint, otherwise no SQL is added to the overall query
@@ -838,9 +846,18 @@ sm.resolution = 2  AND
 sm.period_start >=1220252459000 AND
 sm.period_start <1222844459000 AND
      ----SECTION H----
-p.objectid IN (229384) AND
-     ----SECTION I----
-mcmv.service_operation IN ('listProducts')
+     AND
+     (
+         (  p.objectid = 229384 AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
+         (  p.objectid = 229382 AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
+         (  p.objectid = 229380 AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
+         (  p.objectid = 229376 AND mcmv.service_operation IN ('listProducts','orderProduct') )  OR
+         (  p.objectid = 229378 AND mcmv.service_operation IN ('listProducts','orderProduct') )
+     )
+    SECTIONS H AND I ARE MUTUALLY EXCLUSIVE
+    ----SECTION I----
+    p.objectid IN (229384, 229382, 229380, 229376, 229378)
+
      ----SECTION J----
 AND mcmv.auth_user_id IN ('Ldap User 1')  AND
     ----SECTION K----
@@ -876,7 +893,11 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
 </pre>
      * @param startTimeInclusiveMilli time_period start time inclusive
      * @param endTimeInclusiveMilli time_period end time exclsuvie
-     * @param serviceIds if supplied the published_service_oid from service_metrics will be constrained by these values
+     * @param serviceIdToOperations if supplied the published_service_oid from service_metrics will be constrained by these keys.
+     * If the values for a key is a list of operations, then the constraint for that service will include those operations.
+     * If any service has a non null and non empty list of operations, then services will only be returned which have operations
+     * specified. if all values are null or empty, then the query is constrained with just service id's, and all operations data
+     * will come back for each service supplied
      * @param keys the list of keys representing the mapping keys
      * @param keyValueConstraints the values which each key must be equal to, Can be null or empty
      * @param valueConstraintAndOrLike for each key and value, if a value constraint exists as the index, the index into this
@@ -886,8 +907,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * @param isDetail if true then the service_operation's real value is used in the select, group and order by,
      * otherwise operation is selected as 1. To facilitate this service_operation is always selected as
      * SERVICE_OPERATION_VALUE so that the real column is not used when isDetail is false
-     * @param operations if isDetail is true, the where clauses constrains the values of service_operation from the
-     * table message_context_mapping_values, with the values in operaitons 
+     * table message_context_mapping_values, with the values in operaitons
      * @param useUser if true the auth_user_id column from message_context_mapping_values will be included in the
      * select, group by and order by clauses
      * @param authenticatedUsers if useUser is true, the where clause will constrain the values of
@@ -895,74 +915,6 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * @return String query
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
-    public static String createMappingQuery_NoLongerUsed(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                            Collection<String> serviceIds, List<String> keys,
-                                            List<String> keyValueConstraints,
-                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-                                            List<String> operations, boolean useUser, List<String> authenticatedUsers){
-
-        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
-
-        boolean keyValuesSupplied = checkMappingQueryParams(keys,
-                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
-
-        checkResolutionParameter(resolution);
-        
-        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
-
-        //----SECTION A----
-        StringBuilder sb = null;
-        if(isMasterQuery){
-            sb = new StringBuilder(distinctFrom);
-        }else{
-            String select = MessageFormat.format(aggregateSelect ,"smd");
-            sb = new StringBuilder(select);
-        }
-        //----SECTION B----
-        addUserToSelect(true, useUser, sb);
-        //----SECTION C----
-        addOperationToSelect(isDetail, sb);
-        //----SECTION D's----
-        addCaseSQL(keys, sb);
-        //----SECTION E----
-        sb.append(mappingJoin);
-        //----SECTION F----
-        addResolutionConstraint(resolution, sb);
-
-        //----SECTION G----
-        if(useTime){
-            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
-        }
-        //----SECTION H----
-        if(serviceIds != null && !serviceIds.isEmpty()){
-            addServiceIdConstraint(serviceIds, sb);
-        }
-
-        //----SECTION I----
-        if(isDetail && operations != null && !operations.isEmpty()){
-            addOperationConstraint(operations, sb);
-        }
-        //----SECTION J----
-        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
-            addUserConstraint(authenticatedUsers, sb);
-        }
-
-        //----SECTION K----
-        if(keyValuesSupplied){
-            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
-        }
-
-        if(!isMasterQuery){
-            //----SECTION L----
-            addGroupBy(sb);
-        }
-        
-        //----SECTION M----
-        addMappingOrder(sb);
-
-        return sb.toString();
-    }
-
     public static String createMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                Map<String, List<String>> serviceIdToOperations,
                                             List<String> keys,
@@ -1006,7 +958,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
         }
 
-        //----SECTION H----
+        //----SECTION H & I----
         //Service ids only constrained here, if isDetail is false, otherwise operation and services are constrained
         //together below
 

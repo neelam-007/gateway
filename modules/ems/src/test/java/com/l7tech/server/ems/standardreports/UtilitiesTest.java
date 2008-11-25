@@ -406,11 +406,10 @@ public class UtilitiesTest{
         serviceIdsToOps.put("229382", new ArrayList<String>(operations));
         serviceIdsToOps.put("229384", new ArrayList<String>(operations));
 
-        //todo [Donal] this tests needs to be rewritten
         String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
                 false, null);
 
-//        System.out.println("Operation: "+sql);
+        //System.out.println("Operation: "+sql);
 
             //AND mcmv.service_operation IN ('listProducts','orderProduct')
         int index = sql.indexOf("mcmv.service_operation IN");
@@ -426,7 +425,36 @@ public class UtilitiesTest{
         sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
                 false, null);
         index = sql.indexOf("mcmv.service_operation IN");
+        //System.out.println("Operation: "+sql);
         Assert.assertTrue(index == -1);
+
+        serviceIdsToOps.put("229376", new ArrayList<String>());
+        serviceIdsToOps.put("229378", new ArrayList<String>());
+        serviceIdsToOps.put("229380", null);
+        serviceIdsToOps.put("229382", null);
+        serviceIdsToOps.put("229384", new ArrayList<String>());
+
+        //also check when just the serivce id's are supplied, but no operations are
+        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
+                false, null);
+        index = sql.indexOf("mcmv.service_operation IN");
+        //System.out.println("Operation: "+sql);
+        Assert.assertTrue(index == -1);
+
+        //make sure that a constraint is provided, if at least one service has operations provided
+        serviceIdsToOps.clear();
+        serviceIdsToOps.put("229376", new ArrayList<String>());
+        serviceIdsToOps.put("229378", new ArrayList<String>(operations));
+        serviceIdsToOps.put("229380", null);
+        serviceIdsToOps.put("229382", null);
+        serviceIdsToOps.put("229384", new ArrayList<String>());
+
+        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
+                false, null);
+        index = sql.indexOf("mcmv.service_operation IN");
+        //System.out.println("Operation: "+sql);
+        Assert.assertTrue(index != -1);
+
     }
 
     /**
