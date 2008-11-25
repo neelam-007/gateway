@@ -122,7 +122,9 @@ public class YuiDataTable extends Panel {
         final String tableId = tableContainer.getMarkupId();
         final String pagingId = pagingContainer.getMarkupId();
         final String selectionId = selectionComponent == null ? "null" : selectionComponent.getMarkupId();
-
+        if (selectionComponent != null && !selectionComponent.getOutputMarkupId()) {
+            throw new IllegalArgumentException("Hidden component markup id must be output.");
+        }
         Label jsContainer = new Label("script", "YAHOO.util.Event.onDOMReady( function(){ initDataTable"+tableId+"(); } );");
         add( jsContainer );
 

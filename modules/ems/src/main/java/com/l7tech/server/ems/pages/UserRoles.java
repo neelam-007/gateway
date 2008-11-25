@@ -104,6 +104,7 @@ public class UserRoles extends EmsPage {
 
         // Step 2: create components to unassign assigned users from a role.
         HiddenField hiddenFieldForAssignedUser = new HiddenField("assignedUserId", new Model(""));
+        hiddenFieldForAssignedUser.setOutputMarkupId(true);
         YuiAjaxButton buttonToUnassignRole = new YuiAjaxButton("button.unassignRole") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, Form form) {
@@ -138,12 +139,13 @@ public class UserRoles extends EmsPage {
             searchAssignedUsersModel, Collections.singleton(assignedUserTable));
 
         assignedUsersRoleForm.add(buttonToUnassignRole);
-        assignedUsersRoleForm.add(hiddenFieldForAssignedUser.setOutputMarkupId(true));
+        assignedUsersRoleForm.add(hiddenFieldForAssignedUser);
         assignedUsersRoleForm.add(assignedUserTable);
         assignedUsersRoleForm.add(searchAssignedUsersPanel);
 
         // Step 3: create components to assign a role to unassigned users
         HiddenField hiddenFieldForUnassignedUser = new HiddenField("unassignedUserId", new Model(""));
+        hiddenFieldForUnassignedUser.setOutputMarkupId(true);
         YuiAjaxButton buttonToAssignRole = new YuiAjaxButton("button.assignRole") {
             @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
@@ -178,7 +180,7 @@ public class UserRoles extends EmsPage {
             searchUnassignedUsersModel, Collections.singleton(unassignedUserTable));
 
         unassignedUsersRoleForm.add(buttonToAssignRole);
-        unassignedUsersRoleForm.add(hiddenFieldForUnassignedUser.setOutputMarkupId(true));
+        unassignedUsersRoleForm.add(hiddenFieldForUnassignedUser);
         unassignedUsersRoleForm.add(unassignedUserTable);
         unassignedUsersRoleForm.add(searchUnassignedUsersPanel);
 

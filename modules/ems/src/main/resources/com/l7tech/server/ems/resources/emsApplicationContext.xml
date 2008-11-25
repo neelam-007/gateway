@@ -90,7 +90,10 @@
                 <value>com.l7tech.server.ems.standardreports.StandardReport</value>
                 <value>com.l7tech.server.ems.standardreports.StandardReportArtifact</value>
 
-                <!-- General -->                
+                <!-- Enterprise Migration -->
+                <value>com.l7tech.server.ems.migration.Migration</value>
+
+                <!-- General -->
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
                 <value>com.l7tech.identity.internal.InternalUser</value>
                 <value>com.l7tech.identity.internal.PasswordChangeRecord</value>
@@ -387,7 +390,7 @@
 
     <!-- Security Manager -->
     <bean id="securityManager" class="com.l7tech.server.ems.EmsSecurityManagerImpl">
-        <constructor-arg index="0" ref="identityProviderFactory"/>        
+        <constructor-arg index="0" ref="identityProviderFactory"/>
         <constructor-arg index="1" ref="roleManager"/>
         <constructor-arg index="2" ref="licenseManager"/>
     </bean>
@@ -435,6 +438,10 @@
 
     <!-- SSG Node Manager -->
     <bean id="ssgNodeManager" class="com.l7tech.server.ems.enterprise.SsgNodeManagerImpl" parent="hibernateBean"/>
+
+    <!-- Policy Migration Manager -->
+    <bean id="migrationManager" class="com.l7tech.server.ems.migration.MigrationManagerImpl" parent="hibernateBean">
+    </bean>
 
     <!-- keystore root cert and ssl config  -->
     <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl">

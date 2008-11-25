@@ -112,7 +112,59 @@
             </div>
             <div class="content">
                 <wicket:extend>
-                    <span style="font-size: 1in;">X</span>
+                    <!--
+                        Migration Selection controls
+                    -->
+                    <div class="panelTitle"><wicket:message key="label.migration.select">Migration Selection</wicket:message></div>
+                    <div class="panelContent">
+                        <form wicket:id="migrationSelectForm">
+                            <table>
+                                <tr>
+                                    <td><wicket:message key="label.start.date">Start Date</wicket:message>:</td>
+                                    <td><div wicket:id="migrationStartSelector"/></td>
+                                </tr>
+                                <tr>
+                                    <td><wicket:message key="label.end.date">End Date</wicket:message>:</td>
+                                    <td><div wicket:id="migrationEndSelector"/></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td align="right">
+                                        <button wicket:id="migrationSelectButton" type="submit"><wicket:message key="label.select">Select</wicket:message></button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </form>
+                    </div>
+
+                    <!--
+                        Migration Record Table
+                    -->
+                    <div wicket:id="migrationTableContainer">
+                        <div class="panelTitle"><wicket:message key="label.migration.table">Migrations Table</wicket:message></div>
+                        <div wicket:id="migrationTable"/>
+                        <form wicket:id="deleteMigrationForm">
+                            <button id="deleteMigrationButton" type="button" wicket:id="deleteMigrationButton">
+                                <wicket:message key="button.delete"/>
+                            </button>
+                            <input name="migrationId" type="hidden" value="" wicket:id="migrationId"/>
+                        </form>
+                    </div>
+
+                    <!--
+                        Migration Details Panel
+                    -->
+                    <div wicket:id="migrationSummaryContainer">
+                        <div class="panelTitle"><wicket:message key="label.migration.summary">Migrations Summary</wicket:message></div>
+                        <textarea style="width:100%" wicket:id="migrationSummaryTextarea"></textarea>
+                    </div>
+
+                    <!--
+                        Dynamic Holder for warning dialog
+                    -->
+                    <div wicket:id="dynamic.holder">
+                        <div wicket:id="dynamic.holder.content"/>
+                    </div>
                 </wicket:extend>
             </div>
             <div class="statusBar">
