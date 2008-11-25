@@ -17,7 +17,6 @@ import java.util.List;
 import java.awt.*;
 
 import com.l7tech.common.io.XmlUtil;
-import net.sf.jasperreports.engine.JRScriptletException;
 
 
 public class Utilities {
@@ -475,7 +474,7 @@ public class Utilities {
      * value, it has a special meaning and is never used in conjunction with the other mapping values
      * @param startTimeInclusiveMilli
      * @param endTimeInclusiveMilli
-     * @param serviceIds
+     * @param serviceIdToOperations
      * @param keys
      * @param keyValueConstraints
      * @param valueConstraintAndOrLike
@@ -487,16 +486,18 @@ public class Utilities {
      * @return
      */
     public static String getUsageDistinctMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                            Collection<String> serviceIds, List<String> keys,
+                                            Map<String, List<String>> serviceIdToOperations, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-                                            List<String> operations, boolean useUser, List<String> authenticatedUsers){
+                                            boolean useUser, List<String> authenticatedUsers){
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
         boolean keyValuesSupplied = checkMappingQueryParams(keys,
                 keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
 
+        boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
+        
         checkResolutionParameter(resolution);
 
         if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
@@ -510,12 +511,19 @@ public class Utilities {
         if(useTime){
             addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
         }
-        if(serviceIds != null && !serviceIds.isEmpty()){
-            addServiceIdConstraint(serviceIds, sb);
+
+        boolean isBlankedOpQuery = isBlanketOperationQuery(serviceIdToOperations);
+        //not a detail query and service id's are ok
+        // OR is a detail query, and we have blanked operation requirements
+        if(serviceIdsOk && ( (!isDetail) || (isBlankedOpQuery && isDetail))){
+            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
         }
-        if(isDetail && operations != null && !operations.isEmpty()){
-            addOperationConstraint(operations, sb);
+        //else isDetail and were going to use operations
+        else if(serviceIdsOk && !isBlankedOpQuery && isDetail){
+            //new method to constrain serivce id and operation together
+            addServiceAndOperationConstraint(serviceIdToOperations, sb);
         }
+
         if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
             addUserConstraint(authenticatedUsers, sb);
         }
@@ -535,16 +543,18 @@ public class Utilities {
      * @return
      */
     public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                            Collection<String> serviceIds, List<String> keys,
+                                            Map<String, List<String>> serviceIdToOperations, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-                                            List<String> operations, boolean useUser, List<String> authenticatedUsers){
+                                            boolean useUser, List<String> authenticatedUsers){
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
         boolean keyValuesSupplied = checkMappingQueryParams(keys,
                 keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
 
+        boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
+        
         checkResolutionParameter(resolution);
 
         if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
@@ -561,12 +571,16 @@ public class Utilities {
             addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
         }
 
-        if(serviceIds != null && !serviceIds.isEmpty()){
-            addServiceIdConstraint(serviceIds, sb);
+        boolean isBlankedOpQuery = isBlanketOperationQuery(serviceIdToOperations);
+        //not a detail query and service id's are ok
+        // OR is a detail query, and we have blanked operation requirements
+        if(serviceIdsOk && ( (!isDetail) || (isBlankedOpQuery && isDetail))){
+            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
         }
-
-        if(isDetail && operations != null && !operations.isEmpty()){
-            addOperationConstraint(operations, sb);
+        //else isDetail and were going to use operations
+        else if(serviceIdsOk && !isBlankedOpQuery && isDetail){
+            //new method to constrain serivce id and operation together
+            addServiceAndOperationConstraint(serviceIdToOperations, sb);
         }
 
         if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
@@ -589,27 +603,28 @@ public class Utilities {
      * querying for a particular service and possibly an operation, for those queries
      * @param startTimeInclusiveMilli
      * @param endTimeInclusiveMilli
-     * @param serviceIds
+     * @param serviceIdToOperations
      * @param keys
      * @param keyValueConstraints
      * @param valueConstraintAndOrLike
      * @param resolution
      * @param isDetail
-     * @param operations
      * @param useUser
      * @param authenticatedUsers
      * @return
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                            Collection<String> serviceIds, List<String> keys,
+                                            Map<String, List<String>> serviceIdToOperations, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-                                            List<String> operations, boolean useUser, List<String> authenticatedUsers){
+                                            boolean useUser, List<String> authenticatedUsers){
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
         boolean keyValuesSupplied = checkMappingQueryParams(keys,
                 keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
+
+        boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
 
         checkResolutionParameter(resolution);
 
@@ -633,15 +648,22 @@ public class Utilities {
         if(useTime){
             addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
         }
-        //----SECTION H----
-        if(serviceIds != null && !serviceIds.isEmpty()){
-            addServiceIdConstraint(serviceIds, sb);
+
+        //Service ids only constrained here, if isDetail is false, otherwise operation and services are constrained
+        //together below
+
+        boolean isBlankedOpQuery = isBlanketOperationQuery(serviceIdToOperations);
+        //not a detail query and service id's are ok
+        // OR is a detail query, and we have blanked operation requirements
+        if(serviceIdsOk && ( (!isDetail) || (isBlankedOpQuery && isDetail))){
+            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
+        }
+        //else isDetail and were going to use operations
+        else if(serviceIdsOk && !isBlankedOpQuery && isDetail){
+            //new method to constrain serivce id and operation together
+            addServiceAndOperationConstraint(serviceIdToOperations, sb);
         }
 
-        //----SECTION I----
-        if(isDetail && operations != null && !operations.isEmpty()){
-            addOperationConstraint(operations, sb);
-        }
         //----SECTION J----
         if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
             addUserConstraint(authenticatedUsers, sb);
@@ -670,13 +692,13 @@ public class Utilities {
             throw new IllegalArgumentException("operation can be null or empty");
         }
         
-        List<String> serviceIds = new ArrayList<String>();
-        serviceIds.add(String.valueOf(serviceId));
         List<String> operations = new ArrayList<String>();
         if(!operation.equals(Utilities.SQL_PLACE_HOLDER)) operations.add(operation);
-        
-        return getUsageQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIds, keys, keyValueConstraints,
-                valueConstraintAndOrLike, resolution, isDetail, operations, useUser, authenticatedUsers);
+        Map<String, List<String>> serviceIdToOperations = new HashMap<String, List<String>>();
+        serviceIdToOperations.put(String.valueOf(serviceId), operations);
+
+        return getUsageQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIdToOperations, keys, keyValueConstraints,
+                valueConstraintAndOrLike, resolution, isDetail, useUser, authenticatedUsers);
 
     }
 
@@ -873,7 +895,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * @return String query
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
-    public static String createMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+    public static String createMappingQuery_NoLongerUsed(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Collection<String> serviceIds, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
@@ -941,6 +963,147 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         return sb.toString();
     }
 
+    public static String createMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                               Map<String, List<String>> serviceIdToOperations,
+                                            List<String> keys,
+                                            List<String> keyValueConstraints,
+                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
+                                            boolean useUser, List<String> authenticatedUsers){
+
+        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
+
+        boolean keyValuesSupplied = checkMappingQueryParams(keys,
+                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
+
+        boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
+        //if(!serviceIdsOk) throw new IllegalArgumentException("There must be at least one service id specified as a key in serviceIdToOperations");
+        
+        checkResolutionParameter(resolution);
+
+        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
+
+        //----SECTION A----
+        StringBuilder sb = null;
+        if(isMasterQuery){
+            sb = new StringBuilder(distinctFrom);
+        }else{
+            String select = MessageFormat.format(aggregateSelect ,"smd");
+            sb = new StringBuilder(select);
+        }
+        //----SECTION B----
+        addUserToSelect(true, useUser, sb);
+        //----SECTION C----
+        addOperationToSelect(isDetail, sb);
+        //----SECTION D's----
+        addCaseSQL(keys, sb);
+        //----SECTION E----
+        sb.append(mappingJoin);
+        //----SECTION F----
+        addResolutionConstraint(resolution, sb);
+
+        //----SECTION G----
+        if(useTime){
+            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+        }
+
+        //----SECTION H----
+        //Service ids only constrained here, if isDetail is false, otherwise operation and services are constrained
+        //together below
+
+        boolean isBlankedOpQuery = isBlanketOperationQuery(serviceIdToOperations);
+        //not a detail query and service id's are ok
+        // OR is a detail query, and we have blanked operation requirements
+        if(serviceIdsOk && ( (!isDetail) || (isBlankedOpQuery && isDetail))){
+            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);            
+        }
+        //else isDetail and were going to use operations
+        else if(serviceIdsOk && !isBlankedOpQuery && isDetail){
+            //new method to constrain serivce id and operation together
+            addServiceAndOperationConstraint(serviceIdToOperations, sb);
+        }
+
+        //----SECTION J----
+        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
+            addUserConstraint(authenticatedUsers, sb);
+        }
+
+        //----SECTION K----
+        if(keyValuesSupplied){
+            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
+        }
+
+        if(!isMasterQuery){
+            //----SECTION L----
+            addGroupBy(sb);
+        }
+
+        //----SECTION M----
+        addMappingOrder(sb);
+
+        return sb.toString();
+    }
+
+    /**
+     * This method should only be called when some of the service id's map to one or more operations. Operations are
+     * therefore only included in a query when they can be explicitly constrained by a service id. This ensures that
+     * when a selection of operations are made by the user, that operations from other services with the same name won't
+     * also be included in report output.
+     * @param serviceIdToOperations
+     * @param sb
+     */
+    public static void addServiceAndOperationConstraint(Map<String, List<String>> serviceIdToOperations, StringBuilder sb) {
+        int index = 0;
+        //and surrounds the entire constraint
+        sb.append(" AND (");
+
+        for(Map.Entry<String, List<String>> me: serviceIdToOperations.entrySet()){
+            //we know this statement is not true for all elements in the map, but it may be true for some
+            //if a service has no op's listed, then it's simply ignored, could log a warning
+            //see isBlankedOperationQuery
+            if(me.getValue() == null || me.getValue().isEmpty()) continue;
+
+            if(index > 0) sb.append(" OR ");
+
+            sb.append("( ");
+            sb.append(" p.objectid = ").append(me.getKey());
+            sb.append(" AND mcmv.service_operation IN (");
+            for (int i = 0; i < me.getValue().size(); i++) {
+                String op = me.getValue().get(i);
+                if(i != 0) sb.append(",");
+                sb.append("'" + op + "'");
+            }
+            sb.append(")");//close in IN
+            sb.append(" ) ");//close the OR
+            index++;
+        }
+        sb.append(" ) ");
+    }
+
+    /**
+     * The map serviceIdToOperations lists all service ids and any operations they map to. If a single service id maps
+     * to an operation then the result is true. If every single service id key maps to a null or empty list, then false
+     * is returned, as the query will not need to constrain the service id's with operation information 
+     * @param serviceIdToOperations
+     * @return
+     */
+    private static boolean isBlanketOperationQuery(Map<String, List<String>> serviceIdToOperations) {
+//        if(serviceIdToOperations == null) throw new NullPointerException("serviceIdToOperations cannot be null");
+//        if(serviceIdToOperations.isEmpty()) throw new IllegalArgumentException("serviceIdToOperations must contain at least one key");
+
+        if(serviceIdToOperations == null || serviceIdToOperations.isEmpty()){
+            return true;
+        }
+        
+        for(Map.Entry<String, List<String>> me: serviceIdToOperations.entrySet()){
+            if(me.getValue() == null) continue;
+            if(!me.getValue().isEmpty()){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Convenience method called from sub reports. Instead of taking in collections of service ids, operations and
      * authenticated users, it takes in string values, places them in a collection and then calls createMappingQuery,
@@ -975,18 +1138,19 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
                                             String operation, boolean useUser, String authenticatedUser){
 
         if(serviceId == null) throw new IllegalArgumentException("Service Id must be supplied");
-        List<String> sIds = new ArrayList<String>();
-        sIds.add(serviceId.toString());
         List<String> operationList = new ArrayList<String>();
         if(operation != null && !operation.equals("") && !operation.equals(SQL_PLACE_HOLDER)){
             operationList.add(operation);
         }
+        Map<String, List<String>> serviceIdToOperations = new HashMap<String, List<String>>();
+        serviceIdToOperations.put(serviceId.toString(), operationList);
+
         List<String> authUsers = new ArrayList<String>();
         if(authenticatedUser != null && !authenticatedUser.equals("") && !authenticatedUser.equals(SQL_PLACE_HOLDER)){
             authUsers.add(authenticatedUser);
         }
-        return createMappingQuery(false, startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, keys, keyValueConstraints,
-                valueConstraintAndOrLike, resolution, isDetail, operationList, useUser, authUsers);
+        return createMappingQuery(false, startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIdToOperations, keys,
+                keyValueConstraints, valueConstraintAndOrLike, resolution, isDetail, useUser, authUsers);
     }
 
     private static void addUserToSelect(boolean addComma, boolean useUser, StringBuilder sb) {
@@ -1334,7 +1498,7 @@ Value is included in all or none, comment is just illustrative
      * Calls getMappingValueDisplayString to get how the authUser, keys and keyValues are displayed as a string. Uses
      * that string to look up the group from displayStringToMappingGroup, this is the value that will be shown as
      * the category value on a chart.
-     * @see Utilities.getMappingValueDisplayString()
+     * see Utilities.getMappingValueDisplayString()
      * @param displayStringToMappingGroup
      * @param authUser
      * @param keys

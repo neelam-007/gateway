@@ -40,7 +40,6 @@ public class ReportApp
 
     //The following params must be supplied when filling the report
     private static final String REPORT_CONNECTION= "REPORT_CONNECTION";
-    private static final String REPORT_TIME_ZONE = "REPORT_TIME_ZONE";
     private static final String REPORT_TYPE = "REPORT_TYPE";
     private static final String INTERVAL_TIME_UNIT = "INTERVAL_TIME_UNIT";
     private static final String INTERVAL_NUM_OF_TIME_UNITS = "INTERVAL_NUM_OF_TIME_UNITS";
@@ -52,7 +51,6 @@ public class ReportApp
     private static final String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
     public static final String IS_DETAIL = "IS_DETAIL";
     //Optional
-    private static final String SERVICE_NAME_TO_ID_MAP = "SERVICE_NAME_TO_ID_MAP";
     public static final String SERVICE_ID_TO_NAME = "SERVICE_ID_TO_NAME";
     public static final String SERVICE_ID_TO_NAME_OID = "SERVICE_ID_TO_NAME_OID";
 
@@ -81,7 +79,6 @@ public class ReportApp
     private static final String DB_PASSWORD = "DB_PASSWORD";
 
     //Non report params, just used in ReportApp
-    private static final String IS_SUMMARY = "IS_SUMMARY";
     private static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
     private static final String REPORT_FILE_NAME_NO_ENDING = "REPORT_FILE_NAME_NO_ENDING";
     private static final Properties prop = new Properties();
@@ -89,11 +86,11 @@ public class ReportApp
     private static final String REPORT_SCRIPTLET = "REPORT_SCRIPTLET";
     private static final String SUB_INTERVAL_SUB_REPORT = "SUB_INTERVAL_SUB_REPORT";
     private static final String SUB_REPORT = "SUB_REPORT";
-    private static final String SUBINTERVAL_REPORT_SCRIPTLET = "SUBINTERVAL_REPORT_SCRIPTLET";
     private static final String PRINT_CHART = "PRINT_CHART";
     private static final String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
-    private static final String KEY_TO_COLUMN_NAME_MAP = "KEY_TO_COLUMN_NAME_MAP";
     private static final String SUB_REPORT_HELPER = "SUB_REPORT_HELPER";
+    private static final String SERVICE_NAMES_LIST = "SERVICE_NAMES_LIST";
+    private static final String SERVICE_ID_TO_OPERATIONS_MAP = "SERVICE_ID_TO_OPERATIONS_MAP";
 
     public ReportApp() {
     }
@@ -250,8 +247,8 @@ public class ReportApp
         List<String> keys = (List<String>) parameters.get(MAPPING_KEYS);
         List<String> values = (List<String>) parameters.get(MAPPING_VALUES);
         List<String> useAnd = (List<String>) parameters.get(VALUE_EQUAL_OR_LIKE);
-        Collection<String> serviceIds = ((Map<String, String>) parameters.get(SERVICE_NAME_TO_ID_MAP)).values();
-        List<String> operations = (List<String>) parameters.get(OPERATIONS);
+        Map<String, List<String>> serivceIdsToOp = (Map<String, List<String>>) parameters.get(SERVICE_ID_TO_OPERATIONS_MAP);
+
 
         boolean useUser = Boolean.valueOf(parameters.get(USE_USER).toString());
         List<String> authUsers = (List<String>) parameters.get(AUTHENTICATED_USERS);
@@ -266,9 +263,9 @@ public class ReportApp
 
         String sql = null;
         if(isContextMapping){
-            sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serviceIds, keys, values, useAnd, resolution, isDetail, operations, useUser, authUsers);
+            sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serivceIdsToOp, keys, values, useAnd, resolution, isDetail, useUser, authUsers);
         }else{
-            sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serviceIds, resolution);
+            sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
         }
         //System.out.println("Distinct sql: " + sql);
         
@@ -910,18 +907,25 @@ public class ReportApp
 
         parameters.put(HOURLY_MAX_RETENTION_NUM_DAYS, new Integer(prop.getProperty(HOURLY_MAX_RETENTION_NUM_DAYS)));
 
+        List<String> operations = loadListFromProperties(OPERATIONS, prop);
 
-        Map<String, String> nameToId = new HashMap<String,String>();
+        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        List<String> serviceNames = new ArrayList<String>();
+
         String serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_1");
         String serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_1");
         int index = 2;
         while(serviceName != null && serviceOid != null){
-            nameToId.put(serviceName, serviceOid);
+            serviceNames.add(serviceName);
+            serviceIdsToOps.put(serviceOid, new ArrayList<String>(operations));
+            
             serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_"+index);
             serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_"+index);
             index++;
         }
-        if(!nameToId.isEmpty()) parameters.put(SERVICE_NAME_TO_ID_MAP, nameToId);
+
+        parameters.put(SERVICE_NAMES_LIST, serviceNames);
+        parameters.put(SERVICE_ID_TO_OPERATIONS_MAP, serviceIdsToOps);
 
         List<String> keys  = loadListFromProperties(MAPPING_KEY, prop);
         List<String> values = loadListFromProperties(MAPPING_VALUE, prop);
@@ -930,9 +934,6 @@ public class ReportApp
         parameters.put(MAPPING_KEYS, keys);
         parameters.put(MAPPING_VALUES, values);
         parameters.put(VALUE_EQUAL_OR_LIKE, useAnd);
-
-        List<String> operations = loadListFromProperties(OPERATIONS, prop);
-        parameters.put(OPERATIONS, operations);
 
         b = Boolean.parseBoolean(prop.getProperty(USE_USER).toString());
         parameters.put(USE_USER, b);

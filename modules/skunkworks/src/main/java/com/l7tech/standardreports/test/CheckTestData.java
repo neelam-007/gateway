@@ -11,9 +11,7 @@ import org.junit.*;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.File;
-import java.util.Properties;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 import java.sql.*;
 
 import com.l7tech.server.ems.standardreports.Utilities;
@@ -98,8 +96,13 @@ public class CheckTestData{
     private int getNumDistinctMetricDetailRows() throws Exception{
         List<String > keys  = ReportApp.loadListFromProperties(ReportApp.MAPPING_KEY, prop);
         Assert.assertTrue("2 mapping keys should be specified in report.properties", keys.size() == 2);
-        String s = Utilities.createMappingQuery(true, null, null, new ArrayList<String>(),
-                keys, null, null, 2, true, null, true, null);
+        List<String > values  = new ArrayList<String>();
+        values.add(null);
+        values.add(null);
+
+        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        String s = Utilities.createMappingQuery(true, null, null, serviceIdsToOps,
+                keys, values, null, 2, true, true, null);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select count(*) as total from (");
@@ -135,8 +138,14 @@ public class CheckTestData{
 
     private int getSumOfAllDailyValueGroups() throws SQLException {
         List<String > keys  = ReportApp.loadListFromProperties(ReportApp.MAPPING_KEY, prop);
-        String s = Utilities.createMappingQuery(false, null, null, new ArrayList<String>(),
-                keys, null, null, 2, true, null, true, null);
+        Assert.assertTrue("2 mapping keys should be specified in report.properties", keys.size() == 2);
+        List<String > values  = new ArrayList<String>();
+        values.add(null);
+        values.add(null);
+
+        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        String s = Utilities.createMappingQuery(false, null, null, serviceIdsToOps,
+                keys, values, null, 2, true, true, null);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
@@ -176,8 +185,9 @@ public class CheckTestData{
      * @throws SQLException
      */
     private int getMappingQueryOverallTotalSpecificValues_Daily(List<String> keys, List<String> values) throws SQLException {
-        String s = Utilities.createMappingQuery(false, null, null, new ArrayList<String>(),
-                keys, values, null, 2, true, null, true, null);
+        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        String s = Utilities.createMappingQuery(false, null, null, serviceIdsToOps,
+                keys, values, null, 2, true, true, null);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
@@ -186,7 +196,27 @@ public class CheckTestData{
         sql.append(s.substring(s.indexOf("FROM"), s.length()));
         sql.append(") a");
 
-        //System.out.println(sql.toString());
+        System.out.println(sql.toString());
+
+        ResultSet rs = stmt.executeQuery(sql.toString());
+        Assert.assertTrue(rs.first());
+        return rs.getInt("overall_total");
+    }
+
+    private int getMappingQueryOverallTotalSpecificValues_DailyNew(Map<String, List<String>> serviceIdToOp,
+                                                                   List<String> keys,
+                                                                   List<String> values) throws SQLException {
+        String s = Utilities.createMappingQuery(false, null, null, serviceIdToOp, keys, values, null, 2, true, true, null);
+        //String s = Utilities.createMappingQueryNew(false, null, null, null, null, null, null, 2, true, true, null);
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("select sum(total) as overall_total from (");
+        sql.append(s.substring(0,s.indexOf("FROM")));
+        sql.append(", count(*) as total ");
+        sql.append(s.substring(s.indexOf("FROM"), s.length()));
+        sql.append(") a");
+
+        System.out.println(sql.toString());
 
         ResultSet rs = stmt.executeQuery(sql.toString());
         Assert.assertTrue(rs.first());
@@ -246,6 +276,45 @@ public class CheckTestData{
             throw new IllegalArgumentException("This test designed to work with two key values");
         }
         int total = getMappingQueryOverallTotalSpecificValues_Daily(keys, values);
+        //364
+        int rowsPerDistinctValue = getMetricRowsPerDistinctValue();
+        //24
+        int numValueRows = getNumValueRows();
+
+        int numApplicableValueRows = 0;
+        for(String s1: keys){
+            numApplicableValueRows += getDistinctValuesForKey(s1);
+        }
+
+        int totalValueFactor = numValueRows / numApplicableValueRows;
+        //System.out.println("totalValueFactor: " + totalValueFactor);
+        int queryExpectedTotal = rowsPerDistinctValue * totalValueFactor * numServices;
+        //System.out.println("queryExpectedTotal: " + queryExpectedTotal);
+        //System.out.println("total: " + total);
+        Assert.assertTrue(queryExpectedTotal == total);
+    }
+
+    @Test
+    public void testMappingQuerySpecificValues_SummaryDailyNew() throws Exception{
+        List<String > keys  = ReportApp.loadListFromProperties(ReportApp.MAPPING_KEY, prop);
+        List<String > values  = ReportApp.loadListFromProperties(ReportApp.MAPPING_VALUE, prop);
+        if(values.size() != 2){
+            throw new IllegalArgumentException("This test designed to work with two key values");
+        }
+        Map<String, List<String>> serviceIdToOp = new HashMap<String,List<String>>();
+        List<String> ops = new ArrayList<String>();
+        ops.add("listProducts");
+        ops.add("listOrders");
+
+        String serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID+"_1");
+        int index = 2;
+        while(serviceOid != null){
+            serviceIdToOp.put(serviceOid, new ArrayList<String>(ops));
+            serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID+"_"+index);
+            index++;
+        }
+
+        int total = getMappingQueryOverallTotalSpecificValues_DailyNew(serviceIdToOp, keys, values);
         //364
         int rowsPerDistinctValue = getMetricRowsPerDistinctValue();
         //24

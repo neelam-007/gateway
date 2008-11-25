@@ -52,7 +52,10 @@
 	<parameter name="ABSOLUTE_START_TIME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ABSOLUTE_END_TIME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="REPORT_RAN_BY" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="SERVICE_NAME_TO_ID_MAP" isForPrompting="false" class="java.util.Map">
+    <parameter name="SERVICE_NAMES_LIST" isForPrompting="false" class="java.util.List">
+        <defaultValueExpression><![CDATA[ new ArrayList()]]></defaultValueExpression>
+    </parameter>
+    <parameter name="SERVICE_ID_TO_OPERATIONS_MAP" isForPrompting="false" class="java.util.Map">
 		<defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
 	</parameter>
 	<parameter name="HOURLY_MAX_RETENTION_NUM_DAYS" isForPrompting="false" class="java.lang.Integer">
@@ -61,9 +64,6 @@
 	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
 	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
-	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List">
-		<defaultValueExpression ><![CDATA[new ArrayList()]]></defaultValueExpression>
-	</parameter>
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="AUTHENTICATED_USERS" isForPrompting="false" class="java.util.List"/>
@@ -99,7 +99,7 @@
 		<defaultValueExpression ><![CDATA[Utilities.getSummaryResolutionFromTimePeriod($P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[Utilities.getStringNamesFromCollection((java.util.Collection)$P{SERVICE_NAME_TO_ID_MAP}.keySet())]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[Utilities.getStringNamesFromCollection((java.util.Collection)$P{SERVICE_NAMES_LIST})]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdValueToDisplay" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[($P{serviceIdDisplayText} == null || $P{serviceIdDisplayText}.equals(""))
@@ -111,8 +111,8 @@
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[Utilities.getUsageQuery($P{startTimeMilli},
-$P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
-$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
+$P{endTimeMilli}, $P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
+$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
 ]]></defaultValueExpression>
 	</parameter>
 	<parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
@@ -822,8 +822,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($P{OPERATIONS} == null || $P{OPERATIONS}.isEmpty())?"All"
-:Utilities.getStringNamesFromCollection($P{OPERATIONS})]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["TO BE DETERMINED"]]></textFieldExpression>
 				</textField>
 				</frame>				</frame>			</band>
 		</title>
@@ -1242,8 +1241,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($P{OPERATIONS} == null || $P{OPERATIONS}.isEmpty())?"All"
-:Utilities.getStringNamesFromCollection($P{OPERATIONS})]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["TO BE DETERMINED"]]></textFieldExpression>
 				</textField>
 				</frame>				</frame>				<frame>					<reportElement
 						style="TableCell"

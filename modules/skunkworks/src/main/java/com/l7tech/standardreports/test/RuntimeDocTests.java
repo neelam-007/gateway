@@ -70,7 +70,7 @@ public class RuntimeDocTests {
 
         List<String> useAnd = ReportApp.loadListFromProperties(ReportApp.VALUE_EQUAL_OR_LIKE, prop);
 
-        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, values, useAnd, 2, isDetail, null, false, null);
+        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, values, useAnd, 2, isDetail, false, null);
 
         LinkedHashSet<List<String>> distinctMappingSets = ReportApp.getDistinctMappingSets(conn, sql);
         
