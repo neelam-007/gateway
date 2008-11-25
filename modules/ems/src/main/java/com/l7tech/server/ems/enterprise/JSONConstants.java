@@ -121,4 +121,21 @@ public final class JSONConstants {
 
     // Additional properties for SSG Cluster, SSG Node, published service and policy fragment entities.
     public static final String VERSION = "version";
+
+    /**
+     * Enum of standard report types.
+     * Defined in StandardReports.html.
+     */
+    public final class ReportType {
+        public static final String PERFORMANCE = "performance";
+        public static final String USAGE       = "usage";
+    }
+
+    /**
+     * Enum of time period types.
+     */
+    public final class TimePeriodType {
+        public static final String RELATIVE = "relative";
+        public static final String ABSOLUTE = "absolute";
+    }
 }

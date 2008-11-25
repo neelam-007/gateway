@@ -785,6 +785,44 @@ if (!l7.Dialog) {
         }
 
         /**
+         * Displays a simple info dialog.
+         *
+         * @param {string} header   localized header text; defaults to 'Info' if null
+         * @param {html} body       HTML content
+         * @param {string} okText   localized text label for the OK button; defaults to 'OK' if null
+         * @requires YAHOO.widget.Dialog
+         * @requires YAHOO.widget.Button
+         */
+        l7.Dialog.showInfoDialog = function(header, body, okText) {
+            if (l7.Dialog._infoDialog == undefined) {
+                /**
+                 * @private
+                 */
+                l7.Dialog._infoDialog = new YAHOO.widget.Dialog('l7_Dialog_infoDialog', {
+                    buttons     : [
+                        {
+                            text      : 'OK',
+                            handler   : function() { this.hide(); },
+                            isDefault : true
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_INFO,
+                    modal       : true,
+                    visible     : false,
+                    zindex      : 999
+                });
+            }
+            l7.Dialog._infoDialog.setHeader(header == null ? 'Info' : header);
+            l7.Dialog._infoDialog.setBody(body);
+            l7.Dialog._infoDialog.render(document.body);
+            l7.Dialog._infoDialog.getButtons()[0].set('label', okText == null ? 'OK' : okText);
+            l7.Dialog._infoDialog.center();
+            l7.Dialog._infoDialog.show();
+        }
+
+        /**
          * Displays the given l7-style exception object literal in a simple error dialog.
          *
          * @public

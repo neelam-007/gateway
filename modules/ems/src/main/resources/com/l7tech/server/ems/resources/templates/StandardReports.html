@@ -45,20 +45,27 @@
             CANCEL : 'Cancel',
             ERROR : 'Error',
             CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server: ',
-            CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST : 'Failed to download list of saved settings: ',
+            CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Failed to download list of saved settings: ',
             CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Failed to download list of message context for the selected SSG Clusers: ',
             SSG_CLUSTER_NOT_APPLICABLE : 'None of the selected entities belong to this SSG Cluster. Please delete, or, refresh and reselect.',
             STANDARD_MESSAGE_CONTEXT_MAPPING : 'Standard Mapping',
             CUSTOM_MESSAGE_CONTEXT_MAPPING : 'Custom Mapping',
             RELATIVE_TIME_PERIOD_HINT : 'Must be positive integer',
-            TIME_INTERVAL_HINT : 'Must be positive integer'
+            TIME_INTERVAL_HINT : 'Must be positive integer',
+            SUBMITTING_GENERATE_REPORT : 'Submitting standard report generation',
+            CANNOT_SUBMIT_GENERATE_REPORT : 'Failed to submit standard report generation: '
         }
     </script>
     <script type="text/javascript">
         var ReportType = {
             PERFORMANCE : 'performance',
             USAGE       : 'usage'
-        }
+        };
+
+        var TimePeriodType = {
+            RELATIVE : 'relative',
+            ABSOLUTE : 'absolute'
+        };
 
         var loadSettingsButton;
         var saveSettingsButton;
@@ -68,31 +75,37 @@
         var addGroupingButton;
         var generateButton;
 
-        /**
-         * @type HTMLSelectElement
-         */
+        var relativeTimePeriodRadioButton;
+        var absoluteTimePeriodRadioButton;
+        var hasTimeIntervalRadioButton;
+        var noTimeIntervalRadioButton;
+        var publishedServiceRadioButton;
+        var operationRadioButton;
+
+        var summaryChartCheckBox;
+
+        var relativeTimePeriodTextField;
+        var relativeTimePeriodHint;
+        var timeIntervalTextField;
+        var timeIntervalHint;
+        var reportNameTextField;
+
+        var savedSettingsDropDown;
         var reportTypeDropDown;
+        var relativeTimePeriodUnitDropDown;
+        var timeIntervalUnitDropDown;
+
+        var ssgClusterSelectorWindow;
+        var ssgClusterContentSelectorWindow;
+
+        var entitySelectionTableBody;
+        var groupingTableBody;
 
         /**
          * List of saved settings available to choose from.
          * @type array
          */
         var savedSettings;
-
-        /**
-         * @type HTMLIFrameElement
-         */
-        var ssgClusterSelectorWindow;
-
-        /**
-         * @type HTMLIFrameElement
-         */
-        var ssgClusterContentSelectorWindow;
-
-        /**
-         * @type HTMLTableSectionElement
-         */
-        var entitySelectionTableBody;
 
         /**
          * Array of SSG Cluster entity object literals that have entities selected.
@@ -116,105 +129,103 @@
         var availableMessageContext;
 
         /**
-         * The TBODY child element of the grouping table.
-         * @type HTMLTableSectionElement
+         * Verifies if relative time period input is valid and raise or clear any warning UI.
+         * @return {boolean} true if valid
          */
-        var groupingTableBody;
-
-        function showHideLogReader() {
-            var debugLogReader = document.getElementById('debugLogReader');
-            if (debugLogReader.style.display == '') {
-                debugLogReader.style.display = 'none';
-            } else {
-                debugLogReader.style.display = '';
-            }
-        }
-
         function validateRelativeTimePeriod() {
-            var textField = document.getElementById('relativeTimePeriodTextField');
-
-            var isValid = false;
-            if (document.getElementById('timePeriodType_relative').checked) {
-                var timePeriod = textField.value;
-                isValid = l7.Util.isIntString(timePeriod) && timePeriod >= 0;
-            } else if (document.getElementById('timePeriodType_absolute').checked) {
-                isValid = true;
+            var valid = false;
+            if (relativeTimePeriodRadioButton.checked) {
+                var timePeriod = relativeTimePeriodTextField.value;
+                valid = l7.Util.isIntString(timePeriod) && timePeriod >= 0;
+            } else if (absoluteTimePeriodRadioButton.checked) {
+                valid = true;
             }
-
-            if (isValid) {
-                l7.Util.removeClass(textField, 'invalid');
-                document.getElementById('relativeTimePeriodHint').innerHTML = '';
-            } else {
-               l7.Util.addClass(textField, 'invalid');
-                document.getElementById('relativeTimePeriodHint').innerHTML = '(' + localizedStrings.RELATIVE_TIME_PERIOD_HINT + ')';
-            }
-
-            return isValid;
+            return valid;
         }
 
-        function validateTimePeriod() {
-            validateRelativeTimePeriod();
-// TODO           validateAbsoluteTimePeriod();
-        }
-
-        function updateTimePeriodUiElements() {
-            var isRelative = document.getElementById('timePeriodType_relative').checked;
-            document.getElementById('relativeTimePeriodTextField').disabled = !isRelative;
-            document.getElementById('relativeTimePeriodUnitList').disabled = !isRelative;
+        /**
+         * Verifies if absolute time period input is valid and raise or clear any warning UI.
+         * @return {boolean} true if valid
+         */
+        function validateAbsoluteTimePeriod() {
             // TODO
+            return true;
         }
 
+        /**
+         * Verifies if time period input is valid and raise or clear any warning UI.
+         * @return {boolean} true if valid
+         */
+        function validateTimePeriod() {
+            return validateRelativeTimePeriod() && validateAbsoluteTimePeriod();
+        }
+
+        /**
+         * Verifies if time interval input is valid and raise or clear any warning UI.
+         * @return {boolean} true if valid
+         */
         function validateTimeInterval() {
-            var textField = document.getElementById('timeIntervalTextField');
-
-            var isValid = false;
-            if (document.getElementById('timeInterval_false').checked) {
-                isValid = true;
-            } else if (document.getElementById('timeInterval_true').checked) {
-                var timeInterval = textField.value;
-                isValid = l7.Util.isIntString(timeInterval) && timeInterval >= 0;
+            var valid = false;
+            if (noTimeIntervalRadioButton.checked) {
+                valid = true;
+            } else if (hasTimeIntervalRadioButton.checked) {
+                var timeInterval = timeIntervalTextField.value;
+                valid = l7.Util.isIntString(timeInterval) && timeInterval >= 0;
             }
 
-            if (isValid) {
-                l7.Util.removeClass(textField, 'invalid');
-                document.getElementById('timeIntervalHint').innerHTML = '';
+            if (valid) {
+                l7.Util.removeClass(timeIntervalTextField, 'invalid');
+                timeIntervalHint.innerHTML = '';
             } else {
-               l7.Util.addClass(textField, 'invalid');
-                document.getElementById('timeIntervalHint').innerHTML = '(' + localizedStrings.TIME_INTERVAL_HINT + ')';
+               l7.Util.addClass(timeIntervalTextField, 'invalid');
+                timeIntervalHint.innerHTML = '(' + localizedStrings.TIME_INTERVAL_HINT + ')';
             }
 
-            return isValid;
+            return valid;
         }
 
+        /**
+         * Verifies if a grouping is valid and raise or clear any warning UI.
+         * It is valid if the SSG Cluster has entities selected.
+         * @return {boolean} true if valid
+         */
         function validateGrouping(tr) {
             var ssgClusterDropDown = tr._ssgClusterDropDown;
-            var isAmongSelected = false;
+            var valid = false;
             for (var j = 0; j < ssgClustersWithSelectedEntities.length; ++j) {
                 if (ssgClustersWithSelectedEntities[j].id == ssgClusterDropDown.value) {
-                    isAmongSelected = true;
+                    valid = true;
                     break;
                 }
             }
-            tr._warningImg.style.display = isAmongSelected ? 'none' : '';
+            tr._warningImg.style.display = valid ? 'none' : '';
+            return valid;
         }
 
+        /**
+         * Verifies if all groupings are valid and raise or clear any warning UI.
+         * @return {boolean} true if valid
+         */
         function validateGroupings() {
+            var valid = true;
             var trs = groupingTableBody.rows;
             for (var i = 0; i < trs.length; ++i) {
                 var tr = trs[i];
-                validateGrouping(tr);
+                valid = valid && validateGrouping(tr);
             }
+            return valid;
         }
 
-        function updateTimeIntervalUiElements() {
-            var disabled = !document.getElementById('timeInterval_true').checked;
-            document.getElementById('timeIntervalTextField').disabled = disabled;
-            document.getElementById('timeIntervalUnitList').disabled = disabled;
-        }
-
-        function updateSaveDefaultButton() {
-            var selected = reportTypeDropDown.options[reportTypeDropDown.selectedIndex];
-            saveDefaultButton.set('label', localizedStrings.SAVE_DEFAULT_BUTTON_LABEL.replace('REPORT_TYPE', selected.text));
+        /**
+         * Verifies if all settings input fields are valid and raise or clear any warning UI.
+         * @return {boolean} true if valid
+         */
+        function validateSettings() {
+            return entitySelectionTableBody.rows.length > 0 &&
+                   validateTimePeriod() &&
+                   validateTimeInterval() &&
+                   validateGroupings() &&
+                   reportNameTextField.value.match('^ *$') == null;
         }
 
         /**
@@ -260,19 +271,127 @@
             }
         }
 
-        function updateUiElements() {
-            var settingsIsValid = false // TODO;
-            saveSettingsButton.set('disabled', !settingsIsValid);
+        function updateSaveSettingsButton() {
+            saveSettingsButton.set('disabled', !validateSettings());
+        }
+
+        function updateSaveDefaultButton() {
+            var selected = reportTypeDropDown.options[reportTypeDropDown.selectedIndex];
+            saveDefaultButton.set('label', localizedStrings.SAVE_DEFAULT_BUTTON_LABEL.replace('REPORT_TYPE', selected.text));
+            saveDefaultButton.set('disabled', !validateSettings());
+        }
+
+        function updateGenerateButton() {
+            generateButton.set('disabled', !validateSettings());
+//*****
+generateButton.set('disabled', false);
+        }
+
+        function onChangeReportType() {
+            updateSaveSettingsButton();
             updateSaveDefaultButton();
+            updateGenerateButton();
+        }
+
+        function onChangeEntityType() {
+            refreshSsgClusterContentSelector();
+
+            // Clears out all entity selections because they would now be the wrong type.
+            while (entitySelectionTableBody.rows.length > 0) {
+                entitySelectionTableBody.deleteRow(-1);
+            }
+            // and all groupings
+            while (groupingTableBody.rows.length > 0) {
+                groupingTableBody.deleteRow(-1);
+            }
+
+            // Updates the add button.
+            var entityTypeText;
+            var entityType = getEntityType();
+            if (entityType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                entityTypeText = localizedStrings.PUBLISHED_SERVICE_S;
+            } else if (entityType == l7.EntityTreeTable.ENTITY.OPERATION) {
+                entityTypeText = localizedStrings.OPERATION_S;
+            }
+            addEntityButton.set('label', localizedStrings.ADD_ENTITY_BUTTON_LABEL.replace('ENTITY_TYPE', entityTypeText));
+        }
+
+        function onChangeSelectedEntities() {
+            updateSsgClustersWithSelectedEntities();
+            loadAvailableMessageContext();
             updateAddGroupingButton();
-            updateTimeIntervalUiElements();
-            generateButton.set('disabled', !settingsIsValid);
+            updateGroupingSsgClusterDropDowns();
+            validateGroupings();
+            updateSaveSettingsButton();
+            updateSaveDefaultButton();
+            updateGenerateButton();
+
+        }
+
+        function onChangeRelativeTimePeriod() {
+            if (validateRelativeTimePeriod()) {
+                l7.Util.removeClass(relativeTimePeriodTextField, 'invalid');
+                relativeTimePeriodHint.innerHTML = '';
+            } else {
+                l7.Util.addClass(relativeTimePeriodTextField, 'invalid');
+                relativeTimePeriodHint.innerHTML = '(' + localizedStrings.RELATIVE_TIME_PERIOD_HINT + ')';
+            }
+            updateSaveSettingsButton();
+            updateSaveDefaultButton();
+            updateGenerateButton();
+        }
+
+        function onChangeAbsoluteTimePeriod() {
             // TODO
+        }
+
+        function onChangeTimePeriodType() {
+            var isRelative = relativeTimePeriodRadioButton.checked;
+            relativeTimePeriodTextField.disabled = !isRelative;
+            relativeTimePeriodUnitDropDown.disabled = !isRelative;
+
+            var isAbsolute = absoluteTimePeriodRadioButton.checked;
+            // TODO
+
+            onChangeRelativeTimePeriod();
+            onChangeAbsoluteTimePeriod();
+        }
+
+        function onChangeTimeInterval() {
+            timeIntervalTextField.disabled = !hasTimeIntervalRadioButton.checked;
+            timeIntervalUnitDropDown.disabled = !hasTimeIntervalRadioButton.checked;
+            updateSaveSettingsButton();
+            updateSaveDefaultButton();
+            updateGenerateButton();
+        }
+
+        function onChangeReportName() {
+            updateSaveSettingsButton();
+            updateSaveDefaultButton();
+            updateGenerateButton();
+        }
+
+        function getTimePeriodType() {
+            var result;
+            if (relativeTimePeriodRadioButton.checked) {
+                result = TimePeriodType.RELATIVE;
+            } else if (absoluteTimePeriodRadioButton.checked) {
+                result = TimePeriodType.ABSOLUTE;
+            }
+            return result;
+        }
+
+        function setTimePeriodType(type) {
+            if (type == TimePeriodType.RELATIVE) {
+                relativeTimePeriodRadioButton.checked = true;
+            } else if (type == TimePeriodType.ABSOLUTE) {
+                absoluteTimePeriodRadioButton.checked = true;
+            }
         }
 
         /**
          * Populates the input fields given a settings.
-         * @param {object} settings     object literal for a settings
+         * @param {object} settings     object literal for a settings; see http://sarek/mediawiki/index.php?title=Standard_Reports_Design#Generate_Report_.28browser_.26rarr.3B_server.29 for object structure
          */
         function setFieldsFromSettings(settings) {
             setReportType(settings.type);
@@ -280,10 +399,52 @@
 
         /**
          * Returns a settings from the input fields.
-         * @return {object}
+         * @return {object} object literal for a settings; see http://sarek/mediawiki/index.php?title=Standard_Reports_Design#Generate_Report_.28browser_.26rarr.3B_server.29 for object structure
          */
         function getSettingsFromFields() {
-
+            // TODO Encapsulate into a Settings class?
+            var settings = {};
+            settings.reportType = reportTypeDropDown.value;
+            settings.entityType = getEntityType();
+            settings.entities = [];
+            for (var i = 0; i < entitySelectionTableBody.rows.length; ++i) {
+                var tr = entitySelectionTableBody.rows[i];
+                var entity = {};
+                entity.clusterId = tr._ssgCluster.id;
+                entity.publishedServiceId = tr._publishedService.id;
+                entity.operation = tr._operation;
+                settings.entities.push(entity);
+            }
+            settings.timePeriod = {};
+            settings.timePeriod.type = getTimePeriodType();
+            if (settings.timePeriod.type == TimePeriodType.RELATIVE) {
+                settings.timePeriod.value = relativeTimePeriodTextField.value;
+                settings.timePeriod.unit = relativeTimePeriodUnitDropDown.value;
+            } else if (settings.timePeriod.type == TimePeriodType.ABSOLUTE) {
+// TODO
+//                settings.timePeriod.start =
+//                settings.timePeriod.end =
+//                settings.timePeriod.timeZone =
+            }
+            if (noTimeIntervalRadioButton.checked) {
+                settings.timeInterval = null;
+            } else if (hasTimeIntervalRadioButton.checked) {
+                settings.timeInterval = {};
+                settings.timeInterval.value = timeIntervalTextField.value;
+                settings.timeInterval.unit = timeIntervalUnitDropDown.value;
+            }
+            settings.groupings = [];
+            for (i = 0; i < groupingTableBody.rows.length; ++i) {
+                tr = groupingTableBody.rows[i];
+                var grouping = {};
+                grouping.clusterId = tr._ssgClusterDropDown.value;
+                grouping.messageContextKey = tr._messageContextDropDown.value;
+                grouping.constraint = tr._constraintTextBox.value;
+                settings.groupings.push(grouping);
+            }
+            settings.summaryChart = summaryChartCheckBox.checked;
+            settings.reportName = reportNameTextField.value;
+            return settings;
         }
 
         function loadSavedSettingsDropDown() {
@@ -292,29 +453,28 @@
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST) + '</p>',
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
                         savedSettings = result;
-                        var list = document.getElementById('savedSettingsDropDown');
-                        while (list.length > 0) {
-                            list.remove(0);
+                        while (savedSettingsDropDown.length > 0) {
+                            savedSettingsDropDown.remove(0);
                         }
                         for (var i = 0; i < result.length; ++i) {
                             var option = document.createElement('option');
                             option.value = savedSettings[i].id
                             option.innerHTML = savedSettings[i].name;
-                            list.appendChild(option); // Note: HTMLSelectElement.add(option, null) doesn't work in IE7.
+                            savedSettingsDropDown.appendChild(option); // Note: HTMLSelectElement.add(option, null) doesn't work in IE7.
                         }
-                        loadSettingsButton.set('disabled', list.length == 0);
+                        loadSettingsButton.set('disabled', savedSettingsDropDown.length == 0);
                     }
                 },
                 failure : function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS + o.statusText, localizedStrings.OK);
                 }
             };
-            var url = 'dataSource/standardReport/settingsList.json';
+            var url = 'dataSource/standardReport/savedSettings.json';
             YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
         }
 
@@ -327,14 +487,14 @@
                     reportTypeDropDown.selectedIndex = i;
                 }
             }
-            updateSaveDefaultButton();
+            onChangeReportType();
         }
 
         function getEntityType() {
             var result;
-            if (document.getElementById('entityType_publishedService').checked) {
+            if (publishedServiceRadioButton.checked) {
                 result = l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE;
-            } else if (document.getElementById('entityType_operation').checked) {
+            } else if (operationRadioButton.checked) {
                 result = l7.EntityTreeTable.ENTITY.OPERATION;
             } else {
                 YAHOO.log('Unexpected entity type selection.', 'error', 'StandardReports.html showSsgClusterContent')
@@ -471,8 +631,7 @@
         }
 
         function onClickLoadSettings() {
-            var list = document.getElementById('savedSettingsDropDown');
-            setFieldsFromSettings(savedSettings[list.selectedIndex]);
+            setFieldsFromSettings(savedSettings[savedSettingsDropDown.selectedIndex]);
         }
 
         function onClickSaveSettings() {
@@ -485,29 +644,6 @@
 
         function onClickSaveDefault() {
             // TODO
-        }
-
-        function onChangeEntityType() {
-            refreshSsgClusterContentSelector();
-
-            // Clears out all entity selections because they would now be the wrong type.
-            while (entitySelectionTableBody.rows.length > 0) {
-                entitySelectionTableBody.deleteRow(-1);
-            }
-            // and all groupings
-            while (groupingTableBody.rows.length > 0) {
-                groupingTableBody.deleteRow(-1);
-            }
-
-            // Updates the add button.
-            var entityTypeText;
-            var entityType = getEntityType();
-            if (entityType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
-                entityTypeText = localizedStrings.PUBLISHED_SERVICE_S;
-            } else if (entityType == l7.EntityTreeTable.ENTITY.OPERATION) {
-                entityTypeText = localizedStrings.OPERATION_S;
-            }
-            addEntityButton.set('label', localizedStrings.ADD_ENTITY_BUTTON_LABEL.replace('ENTITY_TYPE', entityTypeText));
         }
 
         function onClickAddEntity() {
@@ -530,7 +666,7 @@
                 }
 
                 var tr = entitySelectionTableBody.insertRow(-1);
-                tr._ssgCluster = ssgCluster;    // Stash these away for later retrieval.
+                tr._ssgCluster = ssgCluster;    // Stash away for later retrieval.
                 tr._entity = entity;
                 var td;
 
@@ -561,30 +697,24 @@
                 }
                 td = tr.insertCell(-1);
                 td.innerHTML = publishedService.name;
+                tr._publishedService = publishedService;    // Stash away for later retrieval.
 
                 // Operation column.
                 td = tr.insertCell(-1);
                 if (entity.type == l7.EntityTreeTable.ENTITY.OPERATION) {
                     td.innerHTML = entity.name;
+                    tr._operation = entity.name;            // Stash away for later retrieval.
                 } else {
                     td.className = 'notApplicable';
                 }
             }
 
-            updateSsgClustersWithSelectedEntities();
-            loadAvailableMessageContext();
-            updateAddGroupingButton();
-            updateGroupingSsgClusterDropDowns();
-            validateGroupings();
+            onChangeSelectedEntities();
         }
 
         function onClickDeleteEntity(event, tr) {
             entitySelectionTableBody.removeChild(tr);
-            updateSsgClustersWithSelectedEntities();
-            loadAvailableMessageContext();
-            updateAddGroupingButton();
-            updateGroupingSsgClusterDropDowns();
-            validateGroupings();
+            onChangeSelectedEntities();
         }
 
         function onClickAddGrouping() {
@@ -648,7 +778,30 @@
         }
 
         function onClickGenerate() {
-            // TODO
+            var callback = {
+                success : function(o) {
+                    l7.Dialog.hideWaitDialog();
+                    var result = l7.Dialog.parseJSON(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_SUBMIT_GENERATE_REPORT) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (!l7.Util.isException(result)) {
+                        // No return object expected.
+                        l7.Dialog.showInfoDialog('Standard Report', 'Request for standard report has been submitted for generation.', localizedStrings.OK);
+                    }
+                },
+                failure : function(o) {
+                    l7.Dialog.hideWaitDialog();
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_SUBMIT_GENERATE_REPORT + o.statusText, localizedStrings.OK);
+                }
+            };
+            var url = document.forms['generateReportForm'].action;
+            var settings = getSettingsFromFields();
+            var postData = YAHOO.lang.JSON.stringify(settings);
+            l7.Dialog.showWaitDialog(localizedStrings.SUBMITTING_GENERATE_REPORT + '...');
+            YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
         }
 
         function initButtons() {
@@ -683,6 +836,10 @@
             });
         }
 
+        function initDialogs() {
+            // No custom dialog yet.
+        }
+
         function initSsgClusterSelector(iframe) {
             iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
         }
@@ -692,19 +849,33 @@
         }
 
         function init() {
-            var debugLogReader = new YAHOO.widget.LogReader('debugLogReader');
-            debugLogReader.hide();   // Initially hidden.
+            relativeTimePeriodRadioButton  = document.getElementById('relativeTimePeriodRadioButton');
+            relativeTimePeriodTextField    = document.getElementById('relativeTimePeriodTextField');
+            relativeTimePeriodHint         = document.getElementById('relativeTimePeriodHint');
+            relativeTimePeriodUnitDropDown = document.getElementById('relativeTimePeriodUnitDropDown');
+            absoluteTimePeriodRadioButton  = document.getElementById('absoluteTimePeriodRadioButton');
 
-            reportTypeDropDown = document.getElementById('reportTypeDropDown');
-            ssgClusterSelectorWindow = document.getElementById('ssgClusterSelector').contentWindow;
+            hasTimeIntervalRadioButton = document.getElementById('hasTimeIntervalRadioButton');
+            noTimeIntervalRadioButton  = document.getElementById('noTimeIntervalRadioButton');
+            timeIntervalTextField      = document.getElementById('timeIntervalTextField');
+            timeIntervalUnitDropDown   = document.getElementById('timeIntervalUnitDropDown');
+            timeIntervalHint           = document.getElementById('timeIntervalHint');
+
+            savedSettingsDropDown           = document.getElementById('savedSettingsDropDown');
+            reportTypeDropDown              = document.getElementById('reportTypeDropDown');
+            publishedServiceRadioButton     = document.getElementById('publishedServiceRadioButton');
+            operationRadioButton            = document.getElementById('operationRadioButton');
+            ssgClusterSelectorWindow        = document.getElementById('ssgClusterSelector').contentWindow;
             ssgClusterContentSelectorWindow = document.getElementById('ssgClusterContentSelector').contentWindow;
-            entitySelectionTableBody = document.getElementById('entitySelectionTableBody');
-            groupingTableBody = document.getElementById('groupingTableBody');
+            entitySelectionTableBody        = document.getElementById('entitySelectionTableBody');
+            groupingTableBody               = document.getElementById('groupingTableBody');
+            summaryChartCheckBox            = document.getElementById('summaryChartCheckBox');
+            reportNameTextField             = document.getElementById('reportNameTextField');
 
             initButtons();
-//            initDialogs();
+            initDialogs();
             loadSavedSettingsDropDown();
-            updateUiElements();
+// TODO           updateUiElements();
 // TODO           YAHOO.util.Event.addListener(entitySelectionTableBody, 'change', validateGrouping);
         }
 
@@ -848,10 +1019,10 @@
                                         <div class="panel noMargin">
                                             <div class="panelToolbar">
                                                 Select by:
-                                                <input id="entityType_publishedService" type="radio" name="selectionType" value="publishedService" onclick="onChangeEntityType();" checked/>
-                                                <label for="entityType_publishedService">Published Service</label>
-                                                <input id="entityType_operation" type="radio" name="selectionType" value="operation" onclick="onChangeEntityType();"/>
-                                                <label for="entityType_operation">Operation</label>
+                                                <input id="publishedServiceRadioButton" type="radio" name="selectionType" value="publishedService" onclick="onChangeEntityType();" checked/>
+                                                <label for="publishedServiceRadioButton">Published Service</label>
+                                                <input id="operationRadioButton" type="radio" name="selectionType" value="operation" onclick="onChangeEntityType();"/>
+                                                <label for="operationRadioButton">Operation</label>
                                             </div>
                                                 <table class="explorer" width="100%">
                                                     <tr>
@@ -891,15 +1062,15 @@
                                     <td class="middle">
                                         <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
                                             <tr>
-                                                <td class="middle"><input id="timePeriodType_relative" type="radio" name="timePeriodType" value="relative" onclick="updateTimePeriodUiElements(); validateTimePeriod();" checked/></td>
-                                                <td class="middle"><label for="timePeriodType_relative">Last</label></td>
-                                                <td class="middle"><input id="relativeTimePeriodTextField" class="right" type="text" size="9" maxlength="9" value="1" onkeyup="validateTimePeriod();"/></td>
+                                                <td class="middle"><input id="relativeTimePeriodRadioButton" type="radio" name="timePeriodType" value="relative" onclick="onChangeTimePeriodType();" checked/></td>
+                                                <td class="middle"><label for="relativeTimePeriodRadioButton">Last</label></td>
+                                                <td class="middle"><input id="relativeTimePeriodTextField" class="right" type="text" size="9" maxlength="9" value="1" onkeyup="onChangeRelativeTimePeriod();"/></td>
                                                 <td class="middle">
-                                                    <select id="relativeTimePeriodUnitList" name="relativeTimePeriodUnit">
-                                                        <option value="hour">hour</option>
-                                                        <option value="hour" selected>day</option>
-                                                        <option value="hour">week</option>
-                                                        <option value="hour">month</option>
+                                                    <select id="relativeTimePeriodUnitDropDown" name="relativeTimePeriodUnit">
+                                                        <option value="HOUR">hour</option>
+                                                        <option value="DAY" selected>day</option>
+                                                        <option value="WEEK">week</option>
+                                                        <option value="MONTH">month</option>
                                                     </select>
                                                 </td>
                                                 <td class="middle"><span id="relativeTimePeriodHint" class="red"></span></td>
@@ -913,8 +1084,8 @@
                                     <td>
                                         <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
                                             <tr>
-                                                <td class="middle"><input id="timePeriodType_absolute" type="radio" name="timePeriodType" value="absolute" onclick="updateTimePeriodUiElements(); validateTimePeriod();"/></td>
-                                                <td class="middle"><label for="timePeriodType_absolute">From</label></td>
+                                                <td class="middle"><input id="absoluteTimePeriodRadioButton" type="radio" name="timePeriodType" value="absolute" onclick="onChangeTimePeriodType();"/></td>
+                                                <td class="middle"><label for="absoluteTimePeriodRadioButton">From</label></td>
                                                 <td class="middle">To</td>
                                             </tr>
                                         </table>
@@ -925,8 +1096,8 @@
                                     <td class="middle">
                                         <table>
                                             <tr>
-                                                <td class="middle"><input id="timeInterval_false" type="radio" name="timeInterval" value="false" onclick="updateTimeIntervalUiElements(); validateTimeInterval();" checked/></td>
-                                                <td class="middle"><label for="timeInterval_false">None (Summary Report)</label></td>
+                                                <td class="middle"><input id="noTimeIntervalRadioButton" type="radio" name="timeInterval" value="false" onclick="onChangeTimeInterval();" checked/></td>
+                                                <td class="middle"><label for="noTimeIntervalRadioButton">None (Summary Report)</label></td>
                                             </tr>
                                         </table>
                                     </td>
@@ -936,14 +1107,14 @@
                                     <td>
                                         <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
                                             <tr>
-                                                <td class="middle"><input id="timeInterval_true" type="radio" name="timeInterval" value="true" onclick="updateTimeIntervalUiElements(); validateTimeInterval();"/></td>
-                                                <td class="middle"><label for="timeInterval_true">Interval:</label></td>
-                                                <td class="middle"><input id="timeIntervalTextField" class="right" type="text" size="9" maxlength="9" onkeyup="validateTimeInterval();"/></td>
+                                                <td class="middle"><input id="hasTimeIntervalRadioButton" type="radio" name="timeInterval" value="true" onclick="onChangeTimeInterval();"/></td>
+                                                <td class="middle"><label for="hasTimeIntervalRadioButton">Interval:</label></td>
+                                                <td class="middle"><input id="timeIntervalTextField" class="right" type="text" size="9" maxlength="9" onkeyup="onChangeTimeInterval();"/></td>
                                                 <td class="middle">
-                                                    <select id="timeIntervalUnitList" name="timeIntervalUnit">
-                                                        <option value="hour">hour</option>
-                                                        <option value="hour">day</option>
-                                                        <option value="hour">week</option>
+                                                    <select id="timeIntervalUnitDropDown" name="timeIntervalUnit">
+                                                        <option value="HOUR">hour</option>
+                                                        <option value="DAY">day</option>
+                                                        <option value="WEEK">week</option>
                                                     </select>
                                                 </td>
                                                 <td class="middle"><span id="timeIntervalHint" class="red"></span></td>
@@ -979,13 +1150,13 @@
                                 <tr>
                                     <th>Charting:</th>
                                     <td>
-                                        <input id="charting" type="checkbox" checked/>
-                                        <label for="charting">Include Summary Chart</label>
+                                        <input id="summaryChartCheckBox" type="checkbox" checked/>
+                                        <label for="summaryChartCheckBox">Include Summary Chart</label>
                                     </td>
                                 </tr>
                                 <tr>
                                     <th>Report Name:</th>
-                                    <td><input type="text" size="64" maxlength="128"/></td>
+                                    <td><input id="reportNameTextField" type="text" size="64" maxlength="128" onkeyup="onChangeReportName();"/></td>
                                 </tr>
                             </table>
                             <div class="middle nowrap">
@@ -1003,6 +1174,12 @@
                         </div>
                     </div>
                 </div>
+
+                <div style="display: none;">
+                    <form name="generateReportForm" wicket:id="generateReportForm" method="POST">
+                    </form>
+                </div>
+
                 </wicket:extend>
             </div>
             <div class="statusBar">
