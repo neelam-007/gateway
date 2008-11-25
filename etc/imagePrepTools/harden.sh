@@ -18,7 +18,7 @@ ISNCES=""
 ## #%PAM-1.0
 ## # This file is auto-generated.
 ## # User changes will be destroyed the next time authconfig is run.
-## auth        required      /lib/security/$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail unlock_time=1200
+## auth        required      /lib/security/$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail unlock_time=1200 root_unlock_time=1200
 ## auth        required      /lib/security/$ISA/pam_env.so
 ## auth        sufficient    /lib/security/$ISA/pam_unix.so likeauth nullok
 ## auth        required      /lib/security/$ISA/pam_deny.so
@@ -70,13 +70,13 @@ harden() {
   # GEN000460
   sed -i -e '/pam_tally\.so/d' /etc/pam.d/system-auth
 
-  if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9].*unlock_time=1200' /etc/pam.d/system-auth; then
+  if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9].*unlock_time=1200 root_unlock_time=1200' /etc/pam.d/system-auth; then
 
 	 # delete any auth required pam_tally2 lines to be sure
 	 sed -i -e '/auth\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
 
 	 # add in the new line before the pam_env line, use \2 as the substitution to ensure we have the same lib or lib64 line
-	 sed -i -r -e 's/^(.*(auth\s*required\s*.*)\/pam_env\.so.*)$/\2\/pam_tally2\.so deny=5 even_deny_root_account onerr=fail unlock_time=1200\n\1/' /etc/pam.d/system-auth
+	 sed -i -r -e 's/^(.*(auth\s*required\s*.*)\/pam_env\.so.*)$/\2\/pam_tally2\.so deny=5 even_deny_root_account onerr=fail unlock_time=1200 root_unlock_time=1200\n\1/' /etc/pam.d/system-auth
 
 	 # delete any account sufficient pam_tally2 lines to be sure
 	 sed -i -e '/account\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
@@ -325,7 +325,7 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   rm -f /var/log/btmp
 
   # GEN000460
-  sed -i -e '/auth\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so deny=5.* onerr=fail no_magic_root unlock_time=1200/d' /etc/pam.d/system-auth
+  sed -i -e '/auth\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so deny=5.* onerr=fail no_magic_root unlock_time=1200 root_unlock_time=1200/d' /etc/pam.d/system-auth
   sed -i -e '/account\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so no_magic_root.* reset/d' /etc/pam.d/system-auth
   rm -f /etc/ssh/ssh_allowed_users
   sed -i -e '/auth       requisite    pam_listfile.so item=user sense=allow file=\/etc\/ssh\/ssh_allowed_users onerr=succeed/d' /etc/pam.d/sshd
@@ -567,7 +567,7 @@ if [ ! -e /var/log/btmp ] ; then
 fi
 
 # GEN000460
-if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth(.*)required(.*)/lib(.*)/security/\$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail unlock_time=1200')" ] ; then
+if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth(.*)required(.*)/lib(.*)/security/\$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail unlock_time=1200 root_unlock_time=1200')" ] ; then
 	echo "Error - pam_tally2 not set up properly - auth required"
 fi
 
