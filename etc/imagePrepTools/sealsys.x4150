@@ -322,8 +322,8 @@ scaupgrade)
 echo "Updating SCA6000 to latest firmware"
 FIRMWARE_PATH="/opt/sun/sca6000/firmware/sca6000fw"
 RET=0
-if [ ! -d "$FIRMWARE_PATH" ] ; then
-	echo "ERROR - firmware update not present"
+if [ ! -e "$FIRMWARE_PATH" ] ; then
+	echo "WARNING - firmware update not found (SCA driver probably disabled)"
 	RET=1
 else
 	service sca start
@@ -336,8 +336,21 @@ fi
 
 ;;
 
+all)
+echo "Setting the system back to factory defaults and then halting the server."
+rm /root/.bash_history
+$0 customize
+$0 preseal
+$0 scaupgrade
+$0 test
+# last thing to do before sealing is remove myself from the rc.local
+sed -i -e '/sealsys/d' /etc/rc.local
+sh $0 seal
+
+;;
+
 *)
-  echo $"Usage: $0 (preseal|test|seal|customize|update|scaupgrade)"
+  echo $"Usage: $0 (preseal|test|seal|customize|update|scaupgrade|all)"
 
 esac
 
