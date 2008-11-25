@@ -20,7 +20,6 @@ import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
-import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.apache.wicket.util.value.ValueMap;
 
 import java.io.File;
@@ -67,7 +66,7 @@ public class Logs extends EmsPage {
                     vm.add("id", logIdentifier);
                     vm.add("disposition", "attachment");
                     ResourceReference logReference = new ResourceReference("logResource");
-                    RequestCycle.get().setRequestTarget(new RedirectRequestTarget(RequestCycle.get().urlFor(logReference, vm).toString()));
+                    ajaxRequestTarget.appendJavascript("document.location = '" + RequestCycle.get().urlFor(logReference, vm).toString() + "';");
                 }
             }
         };
