@@ -66,8 +66,8 @@ public class TrustInterviewer {
             char[] trustStorePass = null;
 
             boolean enabled = "true".equalsIgnoreCase(hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_ENABLED));
-            String listenIpAddr = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS);
-            String listenPort = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_PORT);
+            String listenIpAddr = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS, "127.0.0.1");
+            String listenPort = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_PORT, "8765");
 
             final MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(etcConfDirectory, "omp.dat") ) );
 
