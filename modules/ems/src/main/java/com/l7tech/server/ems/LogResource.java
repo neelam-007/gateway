@@ -77,7 +77,7 @@ public class LogResource extends SecureResource {
                 resource = new FileResourceStream(logFile){
                     @Override
                     public String getContentType() {
-                        return "text/plain; charset=utf-8";
+                        return "text/plain";
                     }
                 };
             } else {
