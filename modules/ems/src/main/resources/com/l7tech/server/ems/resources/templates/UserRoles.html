@@ -113,83 +113,93 @@
             <div class="content">
                 <wicket:extend>
                     <div wicket:id="secured">
-                    <h4><wicket:message key="label.select.role"/>:</h4>
-                    <div class="panel">
+                        <!--
+                            Role Selection
+                        -->
+                        <div class="panelTitle"><wicket:message key="label.select.role"/>:</div>
                         <form wicket:id="form.selectRole">
-                            <table class="indent spaced">
-                                <tr><select id="rolelist" style ="width:100%" wicket:id="listChoice.roleList" size="5"></select></tr>
-                            </table>
+                            <select id="rolelist" style="width:100%" wicket:id="listChoice.roleList" size="5"/>
                         </form>
-                    </div>
-                    <div id="container.roleManagement" class="sideBySide" wicket:id="container.roleManagement">
-                        <h4><wicket:message key="label.role.description"/>:</h4>
-                        <div class="panel">
-                            <textarea style="width:100%" wicket:id="textarea.roleDescription"></textarea>
-                        </div>
-                        <div class="panel">
+
+                        <!--
+                            Role Management
+                        -->
+                        <div id="container.roleManagement" class="sideBySide" wicket:id="container.roleManagement">
+                            <!-- Title -->
+                            <div class="panelTitle"><wicket:message key="label.role.description"/>:</div>
+
+                            <!-- Role Description -->
+                            <textarea style="width:99%" wicket:id="textarea.roleDescription"></textarea>
+
+                            <!-- Role Management with Assigned User Table and Unassigned User Table -->
                             <div class="panelTitle"><wicket:message key="label.role.management"/>:</div>
-                            <table>
-                                <tr>
-                                    <td width="50%">
-                                        <table width="100%">
-                                            <tr>
-                                                <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                                <td class="srcDestTitleCenter" width="100%"><wicket:message key="label.assigned.users"/></td>
-                                                <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                    <td class="srcDestCenter"> </td>
-                                    <td width="50%">
-                                        <table width="100%">
-                                            <tr>
-                                                <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                                <td class="srcDestTitleCenter" width="100%"><wicket:message key="label.unassigned.users"/></td>
-                                                <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="panelToolbar">
-                                        <div id="assignedUsersPagination"> </div>
-                                    </td>
-                                    <td class="srcDestCenter"></td>
-                                    <td class="panelToolbar">
-                                        <div id="unassignedUsersPagination"> </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="panelToolbar" style="padding: 6px; vertical-align: top;">
-                                        <form wicket:id="form.assignedUsers">
-                                            <div wicket:id="panel.search.assignedUsers"/>
-                                            <div wicket:id="panel.assignedUsers"/>
-                                            <button id="unassignRoleButton" type="button" wicket:id="button.unassignRole">
-                                                <img src="../images/deleteUser.png" alt=""/>
-                                                <wicket:message key="button.name.unassign"/>
-                                            </button>
-                                            <input name="assignedUserId" type="hidden" value="" wicket:id="assignedUserId"/>
-                                        </form>
-                                    </td>
-                                    <td class="srcDestCenter"></td>
-                                    <td class="panelToolbar" style="padding: 6px; vertical-align: top;">
-                                        <form wicket:id="form.unassignedUsers">
-                                            <div wicket:id="panel.search.unassignedUsers"/>
-                                            <div wicket:id="panel.unassignedUsers"/>
-                                            <button id="assignRoleButton" type="button" wicket:id="button.assignRole">
-                                                <img src="../images/addUser.png" alt=""/>
-                                                <wicket:message key="button.name.assign"/>
-                                            </button>
-                                            <input name="unassignedUserId" type="hidden" value="" wicket:id="unassignedUserId"/>
-                                        </form>
-                                    </td>
-                                </tr>
-                            </table>
+                            <div class="panel">
+                                <table>
+                                    <tr>
+                                        <td width="50%">
+                                            <table width="100%">
+                                                <tr>
+                                                    <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt=""/></td>
+                                                    <td class="srcDestTitleCenter" width="100%"><h4><wicket:message key="label.assigned.users"/></h4></td>
+                                                    <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt=""/></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td class="srcDestCenter"></td>
+                                        <td width="50%">
+                                            <table width="100%">
+                                                <tr>
+                                                    <td class="srcDestTitleLeft"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                                                    <td class="srcDestTitleCenter" width="100%"><h4><wicket:message key="label.unassigned.users"/></h4></td>
+                                                    <td class="srcDestTitleRight"><img src="../images/spacer.png" width="8" height="8" alt=""/></td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="panelToolbar">
+                                            <div id="assignedUsersPagination"/>
+                                        </td>
+                                        <td class="srcDestCenter"></td>
+                                        <td class="panelToolbar">
+                                            <div id="unassignedUsersPagination"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="panelToolbar" style="padding: 6px; vertical-align: top;">
+                                            <form wicket:id="form.assignedUsers">
+                                                <div wicket:id="panel.search.assignedUsers"/>
+                                                <div wicket:id="panel.assignedUsers"/>
+                                                <button id="unassignRoleButton" type="button" wicket:id="button.unassignRole">
+                                                    <img src="../images/deleteUser.png" alt=""/>
+                                                    <wicket:message key="button.name.unassign"/>
+                                                </button>
+                                                <input name="assignedUserId" type="hidden" value="" wicket:id="assignedUserId"/>
+                                            </form>
+                                        </td>
+                                        <td class="srcDestCenter"></td>
+                                        <td class="panelToolbar" style="padding: 6px; vertical-align: top;">
+                                            <form wicket:id="form.unassignedUsers">
+                                                <div wicket:id="panel.search.unassignedUsers"/>
+                                                <div wicket:id="panel.unassignedUsers"/>
+                                                <button id="assignRoleButton" type="button" wicket:id="button.assignRole">
+                                                    <img src="../images/addUser.png" alt=""/>
+                                                    <wicket:message key="button.name.assign"/>
+                                                </button>
+                                                <input name="unassignedUserId" type="hidden" value="" wicket:id="unassignedUserId"/>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
-                    </div>
-                    <div id="container.warning.dialog" wicket:id="container.warning.dialog">
-                        <div id="dialog.warning.roleUnassignment" wicket:id="dialog.warning.roleUnassignment"/>
-                    </div>
+
+                        <!--
+                            Warning Dialog
+                        -->
+                        <div id="container.warning.dialog" wicket:id="container.warning.dialog">
+                            <div id="dialog.warning.roleUnassignment" wicket:id="dialog.warning.roleUnassignment"/>
+                        </div>
                     </div>
                 </wicket:extend>
             </div>
