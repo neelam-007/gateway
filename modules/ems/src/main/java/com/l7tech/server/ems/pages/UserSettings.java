@@ -52,7 +52,7 @@ public class UserSettings extends EmsPage {
         Map<String,String> preferences = Collections.emptyMap();
         try {
             preferences = userPropertyManager.getUserProperties(getUser());
-            logger.info("Loaded user preferences: " + preferences);
+            logger.fine("Loaded user preferences: " + preferences);
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error loading user preferences.", fe );       
         }
@@ -114,7 +114,7 @@ public class UserSettings extends EmsPage {
         boolean updated = false;
 
         try {
-            logger.info("Saving user preferences: " + preferences);
+            logger.fine("Saving user preferences: " + preferences);
             userPropertyManager.saveUserProperties( getUser(), preferences );
             updated = true;
 
