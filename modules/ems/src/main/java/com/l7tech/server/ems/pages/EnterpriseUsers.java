@@ -102,7 +102,13 @@ public class EnterpriseUsers extends EmsPage {
                                 if ( button == YuiDialog.Button.OK ) {
                                     try {
                                         emsAccountManager.delete( id );
+
+                                        userContainer1.replace( new EmptyPanel("user.content") );
+                                        userContainer2.replace( new EmptyPanel("user.content") );
+
                                         target.addComponent(tableContainer);
+                                        target.addComponent( userContainer1 );
+                                        target.addComponent( userContainer2 );
                                     } catch (DeleteException de) {
                                         logger.log(Level.WARNING, "Error deleting user.", de);
                                     }
