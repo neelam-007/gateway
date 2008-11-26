@@ -31,7 +31,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.security.*;
 import java.security.cert.*;
 import java.security.interfaces.RSAPrivateKey;
@@ -157,7 +156,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         signCsrButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                signCsr();
+                doSignCsr();
             }
         });
 
@@ -223,7 +222,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, null);
     }
 
-    private void signCsr() {
+    private void doSignCsr() {
         final KeyTableRow subject = getSelectedObject();
         if (subject == null)
             return;
@@ -303,16 +302,16 @@ public class PrivateKeyManagerWindow extends JDialog {
                         "Warning",JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
                 if (result != JOptionPane.YES_OPTION) {
                     return;
-                } else {
-                    FileUtils.save(file, new FileUtils.Saver() {
-                        public void doSave(FileOutputStream fos) throws IOException {
-                            for (String msg : pemCertChain) {
-                                fos.write(msg.getBytes("ASCII")); // it's PEM
-                            }
-                        }
-                    });
                 }
             }
+
+            FileUtils.save(file, new FileUtils.Saver() {
+                public void doSave(FileOutputStream fos) throws IOException {
+                    for (String msg : pemCertChain) {
+                        fos.write(msg.getBytes("ASCII")); // it's PEM
+                    }
+                }
+            });
         } catch (IOException e) {
             showErrorMessage("Unable to Save Certificate Chain", "Unable to save certificate chain: " + ExceptionUtils.getMessage(e), e);
         }
