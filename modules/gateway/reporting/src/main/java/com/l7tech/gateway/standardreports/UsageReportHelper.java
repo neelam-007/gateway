@@ -87,62 +87,8 @@ public class UsageReportHelper extends JRDefaultScriptlet {
 //        }
 //        System.out.println(beans.size()+ " beans found");
         JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(beans);
-
-//        JRField name = new FieldImpl("name");
-//        JRField value = new FieldImpl("value");
-//
-//        while(dataSource.next()){
-//            System.out.println(dataSource.getFieldValue(name) + " " + dataSource.getFieldValue(value));
-//        }
-//
-//        dataSource.moveFirst();
-          return dataSource;
+        return dataSource;
      }
 
-
-//    public static class FieldImpl implements JRField{
-//
-//        private String name;
-//
-//        public FieldImpl(String name) {
-//            this.name = name;
-//        }
-//
-//        public JRPropertiesHolder getParentProperties() {
-//            return null;  //To change body of implemented methods use File | Settings | File Templates.
-//        }
-//
-//        public JRPropertiesMap getPropertiesMap() {
-//            return null;  //To change body of implemented methods use File | Settings | File Templates.
-//        }
-//
-//        public boolean hasProperties() {
-//            return false;  //To change body of implemented methods use File | Settings | File Templates.
-//        }
-//
-//        public Object clone() {
-//            return null;  //To change body of implemented methods use File | Settings | File Templates.
-//        }
-//
-//        public String getDescription() {
-//            return null;  //To change body of implemented methods use File | Settings | File Templates.
-//        }
-//
-//        public String getName() {
-//            return name;
-//        }
-//
-//        public Class getValueClass() {
-//            return null;  //To change body of implemented methods use File | Settings | File Templates.
-//        }
-//
-//        public String getValueClassName() {
-//            return null;  //To change body of implemented methods use File | Settings | File Templates.
-//        }
-//
-//        public void setDescription(String s) {
-//            //To change body of implemented methods use File | Settings | File Templates.
-//        }
-//    }
 
 }

@@ -67,35 +67,12 @@
 	</target>
 
 	<target name="run" description="Runs the report as configured in report.properties and displays the results.">
-        <copy file="../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Styles.jrtx" todir="."/>
+        <copy file="../../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Styles.jrtx" todir="."/>
         <java classname="${class.name}" fork="true">
 			<arg value="run"/>
 			<classpath refid="classpath"/>
 		</java>
 	</target>
-
-    <target name="chart" description="Run a test jrxml with a chart">
-        <java classname="${class.name}" fork="true">
-            <arg value="chart"/>
-            <classpath refid="classpath"/>
-        </java>
-    </target>
-
-    <target name="usage" description="Compiles and fills the canned usage report and produces the .jrprint file.">
-        <copy file="../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Styles.jrtx" todir="."/>
-        <java classname="${class.name}" fork="true">
-            <arg value="usage"/>
-            <classpath refid="classpath"/>
-        </java>
-    </target>
-
-    <target name="u_interval" description="Compiles and fills the canned usage interval report and produces the .jrprint file.">
-        <copy file="../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Styles.jrtx" todir="."/>
-        <java classname="${class.name}" fork="true">
-            <arg value="u_interval"/>
-            <classpath refid="classpath"/>
-        </java>
-    </target>
 
     <target name="test_data" description="Creates test data for the supplied services for the maximum default retention
     period for hourly and daily metric bins">
@@ -109,27 +86,6 @@
             <classpath refid="classpath"/>
         </java>
     </target>
-
-    <target name="view" description="Launches the report viewer to preview the report stored in the .jrprint file.">
-		<java classname="${class.name}" fork="true">
-			<arg value="view"/>
-			<classpath refid="classpath"/>
-		</java>
-	</target>
-
-	<target name="pdf" description="Generates a PDF version of the report by converting the .jrprint file.">
-		<java classname="${class.name}">
-			<arg value="pdf"/>
-    		<classpath refid="classpath"/>
-		</java>
-	</target>
-
-	<target name="html" description="Generates an HTML version of the report by converting the .jrprint file.">
-		<java classname="${class.name}">
-			<arg value="html"/>
-			<classpath refid="classpath"/>
-		</java>
-	</target>
 
 	<target name="clean" description="Deletes all the generated files.">
 		<delete>

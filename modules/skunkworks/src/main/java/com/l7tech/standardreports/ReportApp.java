@@ -37,8 +37,6 @@ public class ReportApp
 	private static final String TASK_PDF = "pdf";
 	private static final String TASK_HTML = "html";
 	private static final String TASK_VIEW = "view";
-    private static final String TASK_CANNED_USAGE = "usage";
-    private static final String TASK_CANNED_INTERVAL_USAGE = "u_interval";
 
     //The following params must be supplied when filling the report
     private static final String REPORT_CONNECTION= "REPORT_CONNECTION";
@@ -94,6 +92,8 @@ public class ReportApp
     private static final String SERVICE_NAMES_LIST = "SERVICE_NAMES_LIST";
     private static final String SERVICE_ID_TO_OPERATIONS_MAP = "SERVICE_ID_TO_OPERATIONS_MAP";
 
+    private static final String SKUNKWORK_RELATIVE_PATH = "reportOutput";
+    private static final String REPORTING_RELATIVE_PATH = "../../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports";
     public ReportApp() {
     }
 
@@ -114,114 +114,25 @@ public class ReportApp
 
     public void run(String taskName) throws Exception
 	{
+
+        File f = new File(SKUNKWORK_RELATIVE_PATH);
+        if(!f.exists()){
+            if(!f.mkdir()){
+                throw new RuntimeException("Cannot create folder: " + SKUNKWORK_RELATIVE_PATH);
+            }else{
+                System.out.println("Creating outupt directory where transformed jrxml and xml documents will be outputted to");                
+            }
+        }
+
         FileInputStream fileInputStream = new FileInputStream("report.properties");
         prop.load(fileInputStream);
-        String fileName = prop.getProperty(REPORT_FILE_NAME_NO_ENDING);
-
         try
 		{
 			long start = System.currentTimeMillis();
             if (TASK_RUN.equals(taskName))
 			{
-                fill(fileName, start);
-			}else if ("chart".equals(taskName)){
-//                List<ReportTotalBean> beans = new ArrayList<ReportTotalBean>();
-//                for(int i = 0; i < 2; i++){
-//                    ReportTotalBean bean = new ReportTotalBean("Bean"+i, Long.valueOf(100+i));
-//                    beans.add(bean);
-//                }
-//
-//                JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(beans);
-//                Map parameters = new HashMap();
-//                parameters.put("REPORT_BEANS", dataSource);
-//
-//                JasperPrint jrPrint = JasperFillManager.fillReport("DataSetTest.jasper", parameters, new JREmptyDataSource());
-//                JasperViewer.viewReport(jrPrint, false);
-            }
-            else if (TASK_PDF.equals(taskName))
-			{
-                JasperExportManager.exportReportToPdfFile(fileName+".jrprint");
-				System.err.println("PDF creation time : " + (System.currentTimeMillis() - start));
+                fill(start);
 			}
-			else if (TASK_HTML.equals(taskName))
-			{
-                JasperExportManager.exportReportToHtmlFile(fileName+".jrprint");
-				System.err.println("HTML creation time : " + (System.currentTimeMillis() - start));
-			}
-            else if (TASK_VIEW.equals(taskName))
-            {
-                JasperViewer.viewReport(fileName+".jrprint", false);
-                System.err.println("View time : " + (System.currentTimeMillis() - start));
-            }
-            else if (TASK_CANNED_USAGE.equals(taskName)){
-                //to run this canned report, only ip address and customers should be supplied and values should be empty
-                LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
-                keyToColumnName.put("127.0.0.1<br>Bronze<br>", "COLUMN_1");
-                keyToColumnName.put("127.0.0.1<br>Gold<br>", "COLUMN_2");
-                keyToColumnName.put("127.0.0.1<br>Silver<br>", "COLUMN_3");
-                keyToColumnName.put("127.0.0.2<br>Bronze<br>", "COLUMN_4");
-                keyToColumnName.put("127.0.0.2<br>Gold<br>", "COLUMN_5");
-                keyToColumnName.put("127.0.0.2<br>Silver<br>", "COLUMN_6");
-
-                Map<String, Object> parameters = getParameters();
-                Object scriplet = parameters.get(REPORT_SCRIPTLET);
-                UsageReportHelper helper = (UsageReportHelper) scriplet;
-                helper.setKeyToColumnMap(keyToColumnName);
-
-                Connection connection = getConnection(prop);
-                JasperPrint jrPrint = null;
-                try{
-                    jrPrint = JasperFillManager.fillReport("Canned_Usage_Report.jasper", parameters, connection);
-                }finally{
-                    connection.close();
-                }
-
-                System.out.println("Viewing...");
-                JasperViewer.viewReport(jrPrint, false);
-            }
-            else if(TASK_CANNED_INTERVAL_USAGE.equals(taskName)){
-                LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
-                keyToColumnName.put("127.0.0.1<br>Bronze<br>", "COLUMN_1");
-                keyToColumnName.put("127.0.0.1<br>Gold<br>", "COLUMN_2");
-                keyToColumnName.put("127.0.0.1<br>Silver<br>", "COLUMN_3");
-                keyToColumnName.put("127.0.0.2<br>Bronze<br>", "COLUMN_4");
-                keyToColumnName.put("127.0.0.2<br>Gold<br>", "COLUMN_5");
-                keyToColumnName.put("127.0.0.2<br>Silver<br>", "COLUMN_6");
-
-                Map<String, Object> parameters = getParameters();
-                Object scriplet = parameters.get(REPORT_SCRIPTLET);
-                UsageReportHelper helper = (UsageReportHelper) scriplet;
-                helper.setKeyToColumnMap(keyToColumnName);
-
-                try {
-                    File reportfile = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/Usage_SubIntervalMasterReport.jasper");                    
-                    ObjectInputStream in = new ObjectInputStream(new FileInputStream( reportfile ));
-                    Object object = in.readObject();
-                    JasperReport subIntervalReport = (JasperReport) object;
-                    parameters.put(SUB_INTERVAL_SUB_REPORT, subIntervalReport);
-
-                    reportfile = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/Usage_SubIntervalMasterReport_subreport0.jasper");
-                    in = new ObjectInputStream(new FileInputStream( reportfile ));
-                    object = in.readObject();
-                    JasperReport subReport = (JasperReport) object;
-                    parameters.put(SUB_REPORT, subReport);
-                    //System.out.println("All subreports loaded");
-                }catch(Exception ex){
-                    System.out.println("Could not load all subreports: " + ex.getMessage());
-                    ex.printStackTrace();
-                }
-
-                Connection connection = getConnection(prop);
-                JasperPrint jrPrint = null;
-                try{
-                    jrPrint = JasperFillManager.fillReport("Usage_IntervalMasterReport.jasper", parameters, connection);
-                }finally{
-                    connection.close();
-                }
-
-                System.out.println("Viewing...");
-                JasperViewer.viewReport(jrPrint, false);
-            }
             else
 			{
 				usage();
@@ -237,7 +148,7 @@ public class ReportApp
 		}
 	}
 
-    private void fill(String fileName, long start) throws Exception{
+    private void fill(long start) throws Exception{
         Map<String, Object> parameters = getParameters();
         String type = parameters.get(REPORT_TYPE).toString();
 
@@ -273,16 +184,16 @@ public class ReportApp
         
         if(!type.equals("Usage") && !type.equals("Usage_Interval")){
             if(type.equals("Performance_Interval")){
-                runPerfStatIntervalReport(isContextMapping, fileName, prop, parameters, sql, keys);                
+                runPerfStatIntervalReport(isContextMapping, prop, parameters, sql, keys);
             }else{
-                runPerfStatSummaryReport(isContextMapping, fileName, prop, parameters, sql, keys);
+                runPerfStatSummaryReport(isContextMapping, prop, parameters, sql, keys);
             }
         }else{
 
             if(type.equals("Usage")){
-                runUsageReport(fileName, prop, parameters, scriplet, sql, keys, useUser);
+                runUsageReport(prop, parameters, scriplet, sql, keys, useUser);
             }else if(type.equals("Usage_Interval")){
-                runUsageIntervalReport(fileName, prop, parameters, scriplet, sql, keys, useUser);
+                runUsageIntervalReport(prop, parameters, scriplet, sql, keys, useUser);
             }
             
         }
@@ -394,7 +305,7 @@ public class ReportApp
         }
     }
 
-    private void runUsageIntervalReport(String fileName, Properties prop, Map parameters, Object scriplet, String sql,
+    private void runUsageIntervalReport(Properties prop, Map parameters, Object scriplet, String sql,
                                        List<String> keys, boolean useUser)
                                                                     throws Exception{
         UsageReportHelper helper = (UsageReportHelper) scriplet;
@@ -413,7 +324,7 @@ public class ReportApp
         //Master report first
         Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
 
-        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageMasterTransformDoc.xml");
+        File f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageMasterTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
         try{
@@ -422,8 +333,8 @@ public class ReportApp
             fos.close();
         }
 
-        String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
-        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
+        String xslStr = getResAsString(REPORTING_RELATIVE_PATH +"/UsageReportIntervalTransform_Master.xsl");
+        String xmlFileName = getResAsString(REPORTING_RELATIVE_PATH +"/Usage_IntervalMasterReport_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 820);
@@ -434,7 +345,7 @@ public class ReportApp
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperMasterDoc = transform(xslStr, xmlFileName, params);
 
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageMasterJasperRuntimeDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageMasterJasperRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
         try{
@@ -445,7 +356,7 @@ public class ReportApp
 
         //MasterSubInterval report
         transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageSubIntervalTransformDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageSubIntervalTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
         try{
@@ -454,8 +365,8 @@ public class ReportApp
             fos.close();
         }
 
-        xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportSubIntervalTransform_Master.xsl");
-        xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
+        xslStr = getResAsString(REPORTING_RELATIVE_PATH +"/UsageReportSubIntervalTransform_Master.xsl");
+        xmlFileName = getResAsString(REPORTING_RELATIVE_PATH +"/Usage_SubIntervalMasterReport_Template.jrxml");
         params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 820);
@@ -463,7 +374,7 @@ public class ReportApp
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperSubIntervalDoc = transform(xslStr, xmlFileName, params);
 
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/SubIntervalJasperRuntimeDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH +"/SubIntervalJasperRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
         try{
@@ -474,7 +385,7 @@ public class ReportApp
 
         //subreport report
         transformDoc = Utilities.getUsageSubReportRuntimeDoc(useUser, keys, distinctMappingSets);
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageSubReportTransformDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageSubReportTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
         try{
@@ -483,8 +394,8 @@ public class ReportApp
             fos.close();
         }
 
-        xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
-        xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+        xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/Usage_SubReport.xsl");
+        xmlFileName = getResAsString(REPORTING_RELATIVE_PATH+"/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
         params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 820);
@@ -492,7 +403,7 @@ public class ReportApp
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperSubReportDoc = transform(xslStr, xmlFileName, params);
 
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageSubReportJasperRuntimeDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH+"UsageSubReportJasperRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
         try{
@@ -543,7 +454,7 @@ public class ReportApp
 
     }
 
-    private void runPerfStatSummaryReport(boolean isContextMapping, String fileName, Properties prop, Map parameters,
+    private void runPerfStatSummaryReport(boolean isContextMapping, Properties prop, Map parameters,
                                            String sql, List<String> keys) throws Exception{
         Connection connection = getConnection(prop);
 
@@ -582,15 +493,15 @@ public class ReportApp
 
         Document transformDoc = Utilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
 
-        String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_SummaryTransform.xsl");
-        String xmlSrc = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
+        String xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SummaryTransform.xsl");
+        String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH+"/PS_Summary_Template.jrxml");
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
 
         Document jasperDoc = transform(xslStr, xmlSrc, params);
 
-        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_SummaryRuntimeDoc.xml");
+        File f = new File(SKUNKWORK_RELATIVE_PATH+"/PS_SummaryRuntimeDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
         try{
@@ -628,15 +539,15 @@ public class ReportApp
     }
 
 
-    private void runPerfStatIntervalReport(boolean isContextMapping, String fileName, Properties prop, Map parameters,
+    private void runPerfStatIntervalReport(boolean isContextMapping, Properties prop, Map parameters,
                                            String sql, List<String> keys) throws Exception{
 
         //Compile both subreports and add to parameters
-        String subIntervalReport = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_SubIntervalMasterReport.jrxml");
+        String subIntervalReport = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SubIntervalMasterReport.jrxml");
         ByteArrayInputStream bais = new ByteArrayInputStream(subIntervalReport.getBytes("UTF-8"));
         JasperReport subIntervalCompiledReport = JasperCompileManager.compileReport(bais);
 
-        String subReport = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_SubIntervalMasterReport_subreport0.jrxml");
+        String subReport = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SubIntervalMasterReport_subreport0.jrxml");
         bais = new ByteArrayInputStream(subReport.getBytes("UTF-8"));
         JasperReport subCompiledReport = JasperCompileManager.compileReport(bais);
 
@@ -678,7 +589,7 @@ public class ReportApp
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
         transformDoc = Utilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
 
-        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_IntervalTransformDoc.xml");
+        File f = new File(SKUNKWORK_RELATIVE_PATH+"/PS_IntervalTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
         try{
@@ -688,15 +599,15 @@ public class ReportApp
         }
 
 
-        String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_IntervalMasterTransform.xsl");
-        String xmlSrc = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
+        String xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/PS_IntervalMasterTransform.xsl");
+        String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH+"/PS_IntervalMasterReport_Template.jrxml");
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
 
         Document jasperDoc = transform(xslStr, xmlSrc, params);
 
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_IntervalRuntimeDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH+"/PS_IntervalRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
         try{
@@ -733,7 +644,7 @@ public class ReportApp
         JasperExportManager.exportReportToPdfFile(jp,"PS_Interval.pdf");
     }
 
-    private void runUsageReport(String fileName, Properties prop, Map parameters, Object scriplet, String sql,
+    private void runUsageReport(Properties prop, Map parameters, Object scriplet, String sql,
                                        List<String> keys, boolean useUser)
                                                                     throws Exception{
         UsageSummaryAndSubReportHelper helper = (UsageSummaryAndSubReportHelper) scriplet;
@@ -747,7 +658,7 @@ public class ReportApp
 
         //todo [Donal] note - if there is no data this throws an exception. Need to create a canned report showing report info to return to user
         Document transformDoc = Utilities.getUsageRuntimeDoc(useUser, keys, distinctMappingSets);
-        File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTransformDoc.xml");
+        File f = new File(SKUNKWORK_RELATIVE_PATH+"/UsageTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
         try{
@@ -757,8 +668,8 @@ public class ReportApp
         }
 
         //get xsl and xml
-        String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
-        String xmlFileName = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/"+fileName+".jrxml");
+        String xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/UsageReportTransform.xsl");
+        String xmlFileName = getResAsString(REPORTING_RELATIVE_PATH+"/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 820);
@@ -770,7 +681,7 @@ public class ReportApp
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperDoc = transform(xslStr, xmlFileName, params);
 
-        f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageRuntimeDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH+"/UsageRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
         try{
