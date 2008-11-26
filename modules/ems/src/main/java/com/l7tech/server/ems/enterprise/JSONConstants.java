@@ -134,8 +134,35 @@ public final class JSONConstants {
     /**
      * Enum of time period types.
      */
-    public final class TimePeriodType {
+    public final class TimePeriodTypeValues {
         public static final String RELATIVE = "relative";
         public static final String ABSOLUTE = "absolute";
     }
+
+    public final class TimePeriodTypeKeys{
+        public static final String TIME_PERIOD_MAIN = "timePeriod";
+        public static final String TYPE = "type";
+    }
+
+    public static final class TimePeriodRelativeKeys{
+        public static final String UNIT_OF_TIME = "unitOfTime";
+        public static final String NUMBER_OF_TIME_UNITS = "numberOfTimeUnits";
+        public static final String [] ALL_KEYS = new String[]{UNIT_OF_TIME, NUMBER_OF_TIME_UNITS};
+    }
+
+    public static final class ReportEntities{
+        public static final String CLUSTER_ID = "clusterId";
+        public static final String PUBLISHED_SERVICE_ID = "publishedServiceId";
+        public static final String PUBLISHED_SERVICE_NAME = "publishedServiceName";
+        public static final String OPERATION = "operation";
+        public static final String [] ALL_KEYS = new String[]{ CLUSTER_ID, PUBLISHED_SERVICE_ID, PUBLISHED_SERVICE_NAME, OPERATION};
+    }
+
+    public final static String REPORT_TYPE = "reportType";
+    public final static String SUMMARY_REPORT = "summaryReport";
+    public final static String REPORT_RAN_BY = "reportRanBy";
+
+    public final static String REPORT_ENTITIES = "entities";
+
+    
 }
