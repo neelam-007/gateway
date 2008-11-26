@@ -67,6 +67,7 @@ public class ReportRunnerTests {
             "    \"reportRanBy\" : \"Donal\"," +
             "    \"reportName\" : \"My Report\"" +
             "}";
+
     @Test
     public void testPerfStatRelativeReport() throws ReportApi.ReportException {
         ReportRunner reportRunner = new ReportRunner(psRelativeJson);
@@ -93,11 +94,26 @@ public class ReportRunnerTests {
 
             //deeper tests
             ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(PerformanceSummary.SERVICE_NAMES_LIST);
-            ReportApi.ReportSubmission.ReportParam serviceIdtoOp = paramMap.get(PerformanceSummary.SERVICE_ID_TO_OPERATIONS_MAP);
-            Map<String, Set<String>> serviceIdToOps = (Map<String, Set<String>>) serviceIdtoOp.getValue();
             Set<String> serviceNames = (Set<String>) reportParam.getValue();
             Assert.assertNotNull(serviceNames);
-            Assert.assertTrue("ServiceNames should be of size 2, it was " + serviceNames.size(), serviceNames.size() == 2);
+
+            Assert.assertTrue("ServiceNames should be of size 1, it was " + serviceNames.size(), serviceNames.size() == 1);
+
+            ReportApi.ReportSubmission.ReportParam serviceIdtoOp = paramMap.get(PerformanceSummary.SERVICE_ID_TO_OPERATIONS_MAP);
+            Map<String, Set<String>> serviceIdToOps = (Map<String, Set<String>>) serviceIdtoOp.getValue();
+            for(Map.Entry<String, Set<String>> me: serviceIdToOps.entrySet()){
+                if(me.getKey().equals("229376")){
+                    Assert.assertTrue("229376 should have 2 operations", me.getValue().size() == 2);
+                }else if(me.getKey().equals("229378")){
+                    Assert.assertTrue("229378 should have 1 operation", me.getValue().size() == 1);
+                }else{
+                    throw new IllegalStateException("Unexpected key found in map: " + me.getKey());
+                }
+
+
+            }
+
+
             
         }
 
