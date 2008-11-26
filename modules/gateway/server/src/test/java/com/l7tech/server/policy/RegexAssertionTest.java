@@ -42,7 +42,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -556,20 +555,18 @@ public class RegexAssertionTest {
         assertEquals(new String(PHRASE_UNICODE_JOSE.getBytes("UTF-8"), "ISO-8859-1"), context.getVariable(VARIABLE));
     }
 
-    //todo [Donal] commented out to fix build
-//
-//    @Test
-//    public void testNewCaptureGroups() throws Exception {
-//        Regex regex = regex("m(.*?o)o");
-//        regex.setCaptureVar("capture");
-//        PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
-//        expect(AssertionStatus.NONE, regex, context);
-//
-//        //noinspection unchecked
-//        List<String> captured = (List<String>) context.getVariable("capture");
-//        assertEquals("mumbletyfoo", captured.get(0));
-//        assertEquals("umbletyfo", captured.get(1));
-//    }
+    @Test
+    public void testNewCaptureGroups() throws Exception {
+        Regex regex = regex("m(.*?o)o");
+        regex.setCaptureVar("capture");
+        PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex, context);
+
+        //noinspection unchecked
+        String[] captured = (String[]) context.getVariable("capture");
+        assertEquals("mumbletyfoo", captured[0]);
+        assertEquals("umbletyfo", captured[1]);
+    }
 
     @Test
     public void testNewCaseInsensitiveMatch() throws Exception {
