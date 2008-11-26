@@ -4,16 +4,13 @@
  * Date: Nov 6, 2008
  * Time: 5:07:43 PM
  */
-package com.l7tech.server.ems.standardreports;
+package com.l7tech.gateway.standardreports;
 
 import net.sf.jasperreports.engine.JRChartCustomizer;
 import net.sf.jasperreports.engine.JRChart;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.labels.ItemLabelPosition;
-import org.jfree.chart.labels.ItemLabelAnchor;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
 import org.jfree.chart.renderer.category.BarRenderer;
-import org.jfree.ui.TextAnchor;
 
 import java.util.List;
 import java.awt.*;

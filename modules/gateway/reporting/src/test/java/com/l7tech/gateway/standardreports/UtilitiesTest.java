@@ -4,7 +4,7 @@
  * Date: Oct 13, 2008
  * Time: 10:11:25 AM
  */
-package com.l7tech.server.ems.standardreports;
+package com.l7tech.gateway.standardreports;
 
 import java.util.*;
 import java.text.ParseException;
@@ -20,6 +20,7 @@ import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXException;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.ResourceMapEntityResolver;
 
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.Transformer;
@@ -2569,11 +2570,7 @@ public class UtilitiesTest{
     private Document getStringAsDocument(String xml) throws Exception{
         DocumentBuilderFactory builderF = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = builderF.newDocumentBuilder();
-        builder.setEntityResolver( new EntityResolver() {
-            public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-                return new InputSource( UtilitiesTest.class.getResourceAsStream("jasperreport.dtd")  );
-            }
-        } );
+        builder.setEntityResolver( getEntityResolver() );
         InputSource is = new InputSource(new StringReader(xml));
         return builder.parse(is);
     }
@@ -3059,8 +3056,15 @@ public class UtilitiesTest{
         DocumentBuilderFactory builderF = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = builderF.newDocumentBuilder();
         InputSource is = new InputSource(new StringReader(xml));
+        builder.setEntityResolver( getEntityResolver() );
         Document doc = builder.parse(is);
         return doc;
+    }
+
+    private EntityResolver getEntityResolver() {
+        Map<String,String> idsToResources = new HashMap<String,String>();
+        idsToResources.put( "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd", "com/l7tech/gateway/standardreports/jasperreport.dtd");
+        return new ResourceMapEntityResolver( null, idsToResources, null );
     }
 
     private void printOutDocument(Document doc){

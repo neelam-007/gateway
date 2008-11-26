@@ -90,6 +90,7 @@ public class GatewayContext {
         cfb.setAddress( url );
 
         Client c = cfb.create();
+        // TODO [steve] remove ...
         c.getInInterceptors().add( new LoggingInInterceptor() );
         c.getOutInterceptors().add( new LoggingOutInterceptor() );
 

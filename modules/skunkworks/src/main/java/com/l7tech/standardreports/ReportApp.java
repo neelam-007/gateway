@@ -14,12 +14,12 @@ import java.sql.Statement;
 import java.util.*;
 
 import net.sf.jasperreports.engine.*;
-import net.sf.jasperreports.engine.design.JRDesignStyle;
-import net.sf.jasperreports.engine.xml.JRAbstractStyleFactory;
 import net.sf.jasperreports.view.JasperViewer;
-import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper;
+import com.l7tech.gateway.standardreports.UsageReportHelper;
+import com.l7tech.gateway.standardreports.Utilities;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 

@@ -67,7 +67,7 @@
 	</target>
 
 	<target name="run" description="Runs the report as configured in report.properties and displays the results.">
-        <copy file="../../../../../../../ems/src/main/resources/com/l7tech/server/ems/standardreports/Styles.jrtx" todir="."/>
+        <copy file="../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Styles.jrtx" todir="."/>
         <java classname="${class.name}" fork="true">
 			<arg value="run"/>
 			<classpath refid="classpath"/>
@@ -82,7 +82,7 @@
     </target>
 
     <target name="usage" description="Compiles and fills the canned usage report and produces the .jrprint file.">
-        <copy file="../../../../../../../ems/src/main/resources/com/l7tech/server/ems/standardreports/Styles.jrtx" todir="."/>
+        <copy file="../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Styles.jrtx" todir="."/>
         <java classname="${class.name}" fork="true">
             <arg value="usage"/>
             <classpath refid="classpath"/>
@@ -90,7 +90,7 @@
     </target>
 
     <target name="u_interval" description="Compiles and fills the canned usage interval report and produces the .jrprint file.">
-        <copy file="../../../../../../../ems/src/main/resources/com/l7tech/server/ems/standardreports/Styles.jrtx" todir="."/>
+        <copy file="../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Styles.jrtx" todir="."/>
         <java classname="${class.name}" fork="true">
             <arg value="u_interval"/>
             <classpath refid="classpath"/>

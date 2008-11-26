@@ -14,7 +14,7 @@ import java.io.File;
 import java.util.*;
 import java.sql.*;
 
-import com.l7tech.server.ems.standardreports.Utilities;
+import com.l7tech.gateway.standardreports.Utilities;
 import com.l7tech.standardreports.ReportApp;
 
 public class CheckTestData{

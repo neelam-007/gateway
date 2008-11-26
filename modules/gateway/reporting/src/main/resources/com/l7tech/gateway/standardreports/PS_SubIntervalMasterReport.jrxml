@@ -34,7 +34,7 @@
 	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
 	<parameter name="SERVICE_NAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ROUTING_URI" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME"/>
+	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
 	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAPPING_VALUE_1" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAPPING_VALUE_2" isForPrompting="false" class="java.lang.String"/>
@@ -113,7 +113,7 @@
 					<textElement>
 						<font fontName="Times-Roman" size="10"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.
+				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.gateway.standardreports.Utilities.
 getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME})]]></textFieldExpression>
 				</textField>
 				<subreport  isUsingCache="false">

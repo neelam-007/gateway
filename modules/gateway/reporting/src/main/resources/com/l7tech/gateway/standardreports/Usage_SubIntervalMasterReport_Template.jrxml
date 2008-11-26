@@ -23,14 +23,14 @@
 	<import value="java.util.*" />
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
-	<import value="com.l7tech.server.ems.standardreports.*" />
+	<import value="com.l7tech.gateway.standardreports.*" />
 	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
 	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
 	<parameter name="SERVICE_NAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ROUTING_URI" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME"/>
+	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
 	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
@@ -48,7 +48,7 @@
 	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
-    <parameter name="SUB_REPORT_HELPER" isForPrompting="false" class="com.l7tech.server.ems.standardreports.UsageSummaryAndSubReportHelper"/>
+    <parameter name="SUB_REPORT_HELPER" isForPrompting="false" class="com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper"/>
 
     <field name="INTERVAL_START" class="java.lang.Long"/>
 	<field name="INTERVAL_END" class="java.lang.Long"/>
@@ -86,7 +86,7 @@
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME})]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.gateway.standardreports.Utilities.getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME})]]></textFieldExpression>
 				</textField>
 				<subreport  isUsingCache="false">
 					<reportElement

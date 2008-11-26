@@ -10,7 +10,7 @@ import java.util.*;
 
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.server.ems.standardreports.Utilities;
+import com.l7tech.gateway.standardreports.Utilities;
 
 public class PerformanceSummary {
 

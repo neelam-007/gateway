@@ -4,15 +4,13 @@
  * Date: Oct 8, 2008
  * Time: 2:39:52 PM
  */
-package com.l7tech.server.ems.standardreports;
+package com.l7tech.gateway.standardreports;
 
 import net.sf.jasperreports.engine.*;
-import net.sf.jasperreports.engine.base.JRBaseStyle;
 import net.sf.jasperreports.engine.fill.*;
 
 import java.util.List;
 import java.util.Map;
-import java.awt.*;
 //todo [Donal] this class is 100% on style names from the report's its called from. Need a unit test to validate string
 //style names
 

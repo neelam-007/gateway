@@ -5,7 +5,7 @@
  * Time: 11:21:44 AM
  * Utility functions used by the implementation of standard reports with Jasper reporting engine
  */
-package com.l7tech.server.ems.standardreports;
+package com.l7tech.gateway.standardreports;
 
 import org.w3c.dom.*;
 

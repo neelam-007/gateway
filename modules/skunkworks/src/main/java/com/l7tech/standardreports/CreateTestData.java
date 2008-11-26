@@ -10,7 +10,7 @@
  */
 package com.l7tech.standardreports;
 
-import com.l7tech.server.ems.standardreports.Utilities;
+import com.l7tech.gateway.standardreports.Utilities;
 
 import java.io.*;
 import java.util.*;

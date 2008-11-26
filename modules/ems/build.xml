@@ -5,7 +5,6 @@
     <!-- Module properties -->
     <property name="module.main" value="com.l7tech.server.ems.EmsMain"/>
     <property name="module.version.target" value="${build.em.version}"/>
-    <property name="module.jasper.available" value="true"/>
 
     <!-- Standard build -->
     <import file="../../etc/build/build-common.xml"/>

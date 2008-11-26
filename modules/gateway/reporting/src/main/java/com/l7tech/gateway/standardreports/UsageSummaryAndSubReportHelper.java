@@ -4,7 +4,7 @@
  * Date: Nov 19, 2008
  * Time: 12:02:44 PM
  */
-package com.l7tech.server.ems.standardreports;
+package com.l7tech.gateway.standardreports;
 
 import net.sf.jasperreports.engine.JRDefaultScriptlet;
 import net.sf.jasperreports.engine.JRScriptletException;

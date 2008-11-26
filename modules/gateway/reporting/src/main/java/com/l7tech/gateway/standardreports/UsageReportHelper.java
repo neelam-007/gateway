@@ -4,11 +4,10 @@
  * Date: Oct 21, 2008
  * Time: 3:14:12 PM
  */
-package com.l7tech.server.ems.standardreports;
+package com.l7tech.gateway.standardreports;
 
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
-import net.sf.jasperreports.engine.fill.JRFillField;
 import net.sf.jasperreports.engine.fill.JRFillVariable;
 
 import java.util.*;

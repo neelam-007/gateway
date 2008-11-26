@@ -13,10 +13,9 @@ import java.util.*;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.SQLException;
-import java.sql.ResultSet;
 import java.io.*;
 
-import com.l7tech.server.ems.standardreports.Utilities;
+import com.l7tech.gateway.standardreports.Utilities;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.standardreports.ReportApp;

@@ -23,7 +23,7 @@
 	<import value="java.util.*" />
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
-	<import value="com.l7tech.server.ems.standardreports.*" />
+	<import value="com.l7tech.gateway.standardreports.*" />
 	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
@@ -36,15 +36,15 @@
 	<parameter name="RELATIVE_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="RELATIVE_TIME_UNIT" isForPrompting="false" class="com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME">
+	<parameter name="RELATIVE_TIME_UNIT" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME">
 		<parameterDescription><![CDATA[Valid values are HOUR, DAY, WEEK and MONTH]]></parameterDescription>
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME.DAY]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME.DAY]]></defaultValueExpression>
 	</parameter>
 	<parameter name="IS_ABSOLUTE" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="ABSOLUTE_START_TIME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ABSOLUTE_END_TIME" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="INTERVAL_TIME_UNIT" isForPrompting="false" class="com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME.HOUR]]></defaultValueExpression>
+	<parameter name="INTERVAL_TIME_UNIT" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME">
+		<defaultValueExpression ><![CDATA[com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME.HOUR]]></defaultValueExpression>
 	</parameter>
 	<parameter name="INTERVAL_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
@@ -262,7 +262,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 						key="frame-31"/>
 					<box></box>
 				<stackedBarChart>
-					<chart evaluationTime="Group" evaluationGroup="CONSTANT_CHART"  hyperlinkTarget="Self"  customizerClass="com.l7tech.server.ems.standardreports.PerformanceSummaryChartCustomizer"  renderType="image" >
+					<chart evaluationTime="Group" evaluationGroup="CONSTANT_CHART"  hyperlinkTarget="Self"  customizerClass="com.l7tech.gateway.standardreports.PerformanceSummaryChartCustomizer"  renderType="image" >
 					<reportElement
 						x="0"
 						y="0"
@@ -375,7 +375,7 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 						stretchType="RelativeToTallestObject"/>
 					<box></box>
 				<stackedBarChart>
-					<chart evaluationTime="Group" evaluationGroup="CONSTANT_MAPPING"  hyperlinkTarget="Self"  customizerClass="com.l7tech.server.ems.standardreports.PerformanceSummaryChartCustomizer"  renderType="image" >
+					<chart evaluationTime="Group" evaluationGroup="CONSTANT_MAPPING"  hyperlinkTarget="Self"  customizerClass="com.l7tech.gateway.standardreports.PerformanceSummaryChartCustomizer"  renderType="image" >
 					<reportElement
 						x="0"
 						y="0"

@@ -1,7 +1,6 @@
 package com.l7tech.server.management.api.node;
 
 import javax.activation.DataHandler;
-import javax.xml.transform.Source;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
@@ -59,7 +58,7 @@ public interface ReportApi {
      * Supported report types.
      */
     @XmlRootElement(name="ReportType", namespace="http://www.layer7tech.com/management/report")
-    enum ReportType { PERFORMANCE, INTERVAL }
+    enum ReportType { PERFORMANCE, USAGE }
 
     /**
      * Supported report output types.
@@ -151,7 +150,6 @@ public interface ReportApi {
         private String name;
         private ReportType type;
         private Collection<ReportParam> parameters; // report generation parameters
-        private ReportTemplate template;
 
         @XmlAttribute
         public String getName() {
@@ -180,15 +178,6 @@ public interface ReportApi {
             this.parameters = parameters;
         }
 
-        @XmlElement
-        public ReportTemplate getTemplate() {
-            return template;
-        }
-
-        public void setTemplate(ReportTemplate template) {
-            this.template = template;
-        }
-
         @XmlRootElement(name="ReportParameter", namespace="http://www.layer7tech.com/management/report")
         public static class ReportParam {
             private String name;
@@ -210,77 +199,6 @@ public interface ReportApi {
 
             public void setValue(Object value) {
                 this.value = value;
-            }
-        }
-    }
-
-    @XmlRootElement(name="ReportTemplate", namespace="http://www.layer7tech.com/management/report")
-    class ReportTemplate {
-        private Source masterSourceXml;
-        private Source masterSourceXsl;
-        private Collection<SubReport> subReports;
-
-        @XmlElement
-        public Source getMasterSourceXml() {
-            return masterSourceXml;
-        }
-
-        public void setMasterSourceXml(Source masterSourceXml) {
-            this.masterSourceXml = masterSourceXml;
-        }
-
-        @XmlElement
-        public Source getMasterSourceXsl() {
-            return masterSourceXsl;
-        }
-
-        public void setMasterSourceXsl(Source masterSourceXsl) {
-            this.masterSourceXsl = masterSourceXsl;
-        }
-
-        @XmlElement
-        public Collection<SubReport> getSubReports() {
-            return subReports;
-        }
-
-        public void setSubReports(Collection<SubReport> subReports) {
-            this.subReports = subReports;
-        }
-
-        // / sub jasper template * X  (o)
-        // Map<paramkey, <xml,xsl>>
-        // xsl * X  (input xml, param keys + db values)
-        @XmlRootElement(name="SubReportTemplate", namespace="http://www.layer7tech.com/management/report")
-        public static class SubReport {
-            private String reportParamName;
-            private Source sourceXml;
-            private Source sourceXsl;
-
-            @XmlAttribute
-            public String getReportParamName() {
-                return reportParamName;
-            }
-
-            public void setReportParamName(String reportParamName) {
-                this.reportParamName = reportParamName;
-            }
-
-            @XmlElement
-            public Source getSourceXml() {
-                return sourceXml;
-            }
-
-            public void setSourceXml(Source sourceXml) {
-                this.sourceXml = sourceXml;
-            }
-
-            @XmlElement
-            public Source getSourceXsl() {
-                return sourceXsl;
-            }
-
-            public void setSourceXsl(Source sourceXsl) {
-                this.sourceXsl = sourceXsl;
             }
         }
     }

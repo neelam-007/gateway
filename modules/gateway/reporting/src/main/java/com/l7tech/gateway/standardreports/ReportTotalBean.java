@@ -4,7 +4,7 @@
 * Date: Nov 18, 2008
 * Time: 11:29:34 AM
 */
-package com.l7tech.server.ems.standardreports;
+package com.l7tech.gateway.standardreports;
 
 public class ReportTotalBean implements Comparable{
     private String name;

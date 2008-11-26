@@ -11,7 +11,7 @@ import java.util.*;
 
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.server.ems.standardreports.Utilities;
+import com.l7tech.gateway.standardreports.Utilities;
 import org.w3c.dom.Document;
 import org.junit.Test;
 import org.junit.Assert;

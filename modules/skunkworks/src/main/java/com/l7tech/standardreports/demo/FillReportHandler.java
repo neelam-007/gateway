@@ -24,8 +24,8 @@ import java.text.SimpleDateFormat;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JRException;
-import com.l7tech.server.ems.standardreports.ScriptletHelper;
-import com.l7tech.server.ems.standardreports.Utilities;
+import com.l7tech.gateway.standardreports.ScriptletHelper;
+import com.l7tech.gateway.standardreports.Utilities;
 
 public class FillReportHandler extends AbstractHandler {
     //db props

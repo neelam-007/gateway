@@ -4,7 +4,7 @@
  * Date: Nov 19, 2008
  * Time: 1:35:19 PM
  */
-package com.l7tech.server.ems.standardreports;
+package com.l7tech.gateway.standardreports;
 
 import net.sf.jasperreports.engine.JRChartCustomizer;
 import net.sf.jasperreports.engine.JRChart;
@@ -14,11 +14,8 @@ import org.jfree.chart.labels.ItemLabelAnchor;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.ui.TextAnchor;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 
 import java.awt.*;
-import java.util.*;
 
 public class UsageIntervalChartCustomizer implements JRChartCustomizer {
     public void customize(JFreeChart jFreeChart, JRChart jrChart) {

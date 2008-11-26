@@ -4,7 +4,7 @@
  * Date: Nov 7, 2008
  * Time: 10:45:28 AM
  */
-package com.l7tech.server.ems.standardreports;
+package com.l7tech.gateway.standardreports;
 
 import net.sf.jasperreports.engine.JRChartCustomizer;
 import net.sf.jasperreports.engine.JRChart;
@@ -13,13 +13,9 @@ import org.jfree.chart.labels.ItemLabelPosition;
 import org.jfree.chart.labels.ItemLabelAnchor;
 import org.jfree.chart.renderer.category.CategoryItemRenderer;
 import org.jfree.chart.renderer.category.BarRenderer;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.ui.TextAnchor;
 
 import java.util.List;
-import java.util.Map;
-import java.util.LinkedHashMap;
 import java.awt.*;
 
 public class UsageSummaryChartCustomizer implements JRChartCustomizer {

@@ -23,7 +23,7 @@
 	<import value="java.util.*" />
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
-	<import value="com.l7tech.server.ems.standardreports.*" />
+	<import value="com.l7tech.gateway.standardreports.*" />
 	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
@@ -33,7 +33,7 @@
 	<parameter name="RELATIVE_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="RELATIVE_TIME_UNIT" isForPrompting="false" class="com.l7tech.server.ems.standardreports.Utilities.UNIT_OF_TIME">
+	<parameter name="RELATIVE_TIME_UNIT" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME">
 		<parameterDescription><![CDATA[Valid values are HOUR, DAY, WEEK and MONTH]]></parameterDescription>
 		<defaultValueExpression ><![CDATA[Utilities.UNIT_OF_TIME.DAY]]></defaultValueExpression>
 	</parameter>
@@ -302,7 +302,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanVal
 						key="frame-34"/>
 					<box></box>
 				<stackedBarChart>
-					<chart evaluationTime="Group" evaluationGroup="CONSTANT_CHART"  hyperlinkTarget="Self"  customizerClass="com.l7tech.server.ems.standardreports.PerformanceSummaryChartCustomizer"  renderType="image" >
+					<chart evaluationTime="Group" evaluationGroup="CONSTANT_CHART"  hyperlinkTarget="Self"  customizerClass="com.l7tech.gateway.standardreports.PerformanceSummaryChartCustomizer"  renderType="image" >
 					<reportElement
 						x="0"
 						y="5"
@@ -408,7 +408,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanVal
 						stretchType="RelativeToTallestObject"/>
 					<box></box>
 				<stackedBarChart>
-					<chart evaluationTime="Group" evaluationGroup="CONSTANT_MAPPING"  hyperlinkTarget="Self"  customizerClass="com.l7tech.server.ems.standardreports.PerformanceSummaryChartCustomizer"  renderType="image" >
+					<chart evaluationTime="Group" evaluationGroup="CONSTANT_MAPPING"  hyperlinkTarget="Self"  customizerClass="com.l7tech.gateway.standardreports.PerformanceSummaryChartCustomizer"  renderType="image" >
 					<reportElement
 						x="0"
 						y="0"

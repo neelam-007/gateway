@@ -4,7 +4,7 @@
  * Date: Oct 14, 2008
  * Time: 9:21:52 AM
  */
-package com.l7tech.server.ems.standardreports;
+package com.l7tech.gateway.standardreports;
 
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JRField;
