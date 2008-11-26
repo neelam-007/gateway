@@ -291,6 +291,12 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
             return null;
         JPopupMenu pm = new JPopupMenu();
         for (final Action action : actions) {
+            //add separator before adding refresh menu item
+            //NOTE: the display of menu items depends on the order of actions (array), so care must be taken for
+            //populating actions array, otherwise there's no way to determine the proper grouping to put the separator
+            if (action instanceof RefreshTreeNodeAction) {
+                pm.addSeparator();
+            }            
             if (action instanceof SecureAction) {
                 final SecureAction secureAction = ((SecureAction) action);
                 if (secureAction.isAuthorized()) {
