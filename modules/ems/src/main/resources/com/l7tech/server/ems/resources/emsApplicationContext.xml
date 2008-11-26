@@ -165,6 +165,7 @@
                             <list>
                                 <value>keyStoreDefaultSslKey</value>
                                 <value>em.server.listenaddr</value>
+                                <value>em.server.listenport</value>
                             </list>
                         </entry>
                     </map>

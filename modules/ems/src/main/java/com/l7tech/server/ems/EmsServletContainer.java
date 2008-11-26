@@ -20,6 +20,7 @@ import org.apache.wicket.protocol.http.WicketFilter;
 import javax.servlet.Filter;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.KeyManager;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Map;
@@ -28,12 +29,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.security.GeneralSecurityException;
+import java.security.cert.X509Certificate;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 
@@ -41,6 +50,8 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.ServerConfig;
@@ -71,6 +82,8 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
     private ApplicationContext applicationContext;
     private Server server;
     private Audit audit;
+    private AtomicReference<ListenerConfiguration> runningConfiguration = new AtomicReference<ListenerConfiguration>();  // config in use
+    private AtomicReference<ListenerConfiguration> configuration = new AtomicReference<ListenerConfiguration>(); // config desired
 
     public EmsServletContainer( final ServerConfig serverConfig,
                                 final DefaultKey defaultKey,
@@ -95,20 +108,80 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if ( server.isStarted() ) {
+        if ( runningConfiguration.get() != null && server.isStarted() ) {
+
+            // schedule change for later so any current HTTP request can complete before the
+            // listener goes offline
             timer.schedule(new TimerTask(){
                 @Override
                 public void run() {
-                    rebuildConnectors();
+                    // build a new config and put it on the config stack, will be
+                    // picked up later.
+                    try {
+                        ListenerConfiguration config = buildConfiguration();
+                        ListenerConfiguration currentConfig = configuration.get();
+
+                        if ( currentConfig != null && !config.equals( currentConfig ) ) {
+                            // the config is updated so use it
+                            if ( configuration.compareAndSet( currentConfig, config ) ) {
+                                logger.info( "Queued updated listener configuration : " + config );    
+                            } else {
+                                logger.warning("Failed to queue updated listener configuration : " + config);
+                            }
+                        } else {
+                            logger.fine( "Ignoring edited listener configuration that matches current configuration : " + config  + " - " + currentConfig);
+                        }
+                        
+                    } catch (IOException e) {
+                        logger.log( Level.WARNING, "Error building new listener configuration.", e );
+                    }
                 }
             }, 500);
         }
     }
 
+    private void persistConfiguration( final ListenerConfiguration configuration ) {
+        String propfilePath = System.getProperty(ServerConfig.PROPS_OVER_PATH_PROPERTY, "var/emconfig.properties");
+        File propertyFile = new File( propfilePath );
+        if ( propertyFile.exists() && propertyFile.canWrite() ) {
+            InputStream in = null;
+            OutputStream out = null;
+            try {
+                // load existing properties
+                Properties properties = new Properties();
+                in = new FileInputStream( propertyFile );
+                properties.load( in );
+                ResourceUtils.closeQuietly( in ); in = null;
+
+                // update
+                properties.setProperty( "em.server.listenport", Integer.toString(configuration.getHttpsPort()) );
+                properties.setProperty( "em.server.listenaddr", configuration.getIpAddress() );
+
+                // save
+                out = new FileOutputStream( propertyFile );
+                properties.store( out, "" );
+            } catch ( IOException ioe ) {
+                logger.log( Level.WARNING, "Error updating emconfig properties.", ioe );
+            } finally {
+                ResourceUtils.closeQuietly( in );
+                ResourceUtils.closeQuietly( out );    
+            }
+        }
+    }
+
     private void initializeServletEngine() throws Exception {
+        timer.schedule( new TimerTask(){
+            @Override
+            public void run() {
+                doRebuildConnectorsIfRequired();
+            }
+        }, 15000, 10000 );
+
         server = new Server();
 
-        rebuildConnectors();
+        final ListenerConfiguration config = buildConfiguration();
+        configuration.set( config );
+        rebuildConnectors( config );
 
         final Context root = new Context(server, "/", Context.SESSIONS);
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources")); //TODO [steve] map root elsewhere and add other mappings for css/images/etc
@@ -145,6 +218,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         root.addServlet(defaultHolder, "/");
 
         server.start();
+        runningConfiguration.set( config );
     }
 
     private void shutdownServletEngine() throws Exception {
@@ -159,12 +233,43 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         initializeServletEngine();
     }
 
-    public void rebuildConnectors() {
+    private ListenerConfiguration buildConfiguration() throws IOException {
         String addr = this.serverConfig.getProperty("em.server.listenaddr");
         int httpPort = this.serverConfig.getIntProperty("em.server.listenportdev", 8181);
         int httpsPort = this.serverConfig.getIntProperty("em.server.listenport", 8182);
 
-        logger.info("Building HTTPS listener '"+addr+":"+httpsPort+"'.");
+        return new ListenerConfiguration( defaultKey, addr, httpPort, httpsPort );
+    }
+
+    private void doRebuildConnectorsIfRequired() {
+        final ListenerConfiguration desiredConfig = configuration.get();
+        final ListenerConfiguration actualConfg = runningConfiguration.get();
+        try {
+
+            if ( actualConfg == null || !desiredConfig.equals(actualConfg) ) {
+                logger.info("Configuration is updated applying new configuration.");
+                rebuildConnectors( desiredConfig );
+                runningConfiguration.set( desiredConfig );
+                persistConfiguration( desiredConfig ); // store updated config on success
+            }
+
+        } catch (IOException e) {
+            logger.log( Level.WARNING, "Error installing listener configuration '"+desiredConfig+"'.", e );
+
+            if ( actualConfg != null ) {
+                logger.log( Level.INFO, "Reverting to previously used listener configuration '"+actualConfg+"'." );
+                try {
+                    rebuildConnectors( actualConfg );
+                    configuration.set( actualConfg );
+                } catch ( IOException ioe2 ) {
+                    logger.log( Level.WARNING, "Error reverting listener configuration '"+desiredConfig+"'.", ioe2 );
+                }
+            }
+        }
+    }
+
+    private void rebuildConnectors( final ListenerConfiguration configuration ) throws IOException {
+        logger.info("Building HTTPS listener '"+configuration.getIpAddress()+":"+configuration.getHttpsPort()+"'.");
 
         boolean enableHttp = SyspropUtil.getBoolean("com.l7tech.ems.enableHttpListener");
 
@@ -182,18 +287,18 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
                     return ctx.getServerSocketFactory();
                 }
             };
-            sslConnector.setPort( httpsPort );
-            sslConnector.setHost( addr );
+            sslConnector.setPort( configuration.getHttpsPort() );
+            sslConnector.setHost( configuration.getIpAddress() );
             connectors.add( sslConnector );
 
             if (enableHttp) {
                 SocketConnector connector = new SocketConnector();
-                connector.setPort( httpPort );
-                connector.setHost( addr );
+                connector.setPort( configuration.getHttpPort() );
+                connector.setHost( configuration.getIpAddress() );
                 connectors.add( connector );
             }
         } catch ( GeneralSecurityException gse ) {
-            logger.log( Level.WARNING, "Error when rebuilding HTTP(S) connector(s).", gse );
+            throw new CausedIOException( "Error when rebuilding HTTP(S) connector(s).", gse );
         }
 
 
@@ -256,12 +361,12 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         if ( server.isStarted() ) {
             currentConnectors = server.getConnectors();
             if ( currentConnectors != null ) {
-                for ( Connector connector : currentConnectors ) {
-                    try {
-                        connector.start();
-                    } catch ( Exception e ) {
-                        logger.log( Level.WARNING, "Error starting HTTP(S) connector.", e);
+                try {
+                    for ( Connector connector : currentConnectors ) {
+                            connector.start();
                     }
+                } catch ( Exception e ) {
+                    throw new CausedIOException("Error starting HTTP(S) connector.", e);
                 }
             }
         }
@@ -310,4 +415,73 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         return instance == null ? null : instance.get();
     }
 
+    private static final class ListenerConfiguration {
+        private final X509Certificate certificate;
+        private final KeyManager[] keyManagers;
+        private final String ipAddress;
+        private final int httpPort;
+        private final int httpsPort;
+
+        ListenerConfiguration( final DefaultKey sslKey,
+                               final String ipaddress,
+                               final int httpPort,
+                               final int httpsPort ) throws IOException {
+            this.certificate = sslKey.getSslInfo().getCertificate();
+            this.keyManagers = sslKey.getSslKeyManagers();
+            this.ipAddress = ipaddress;
+            this.httpPort = httpPort;
+            this.httpsPort = httpsPort;
+        }
+
+        public X509Certificate getCertificate() {
+            return certificate;
+        }
+
+        public KeyManager[] getKeyManagers() {
+            return keyManagers;
+        }
+
+        public String getIpAddress() {
+            return ipAddress;
+        }
+
+        public int getHttpPort() {
+            return httpPort;
+        }
+
+        public int getHttpsPort() {
+            return httpsPort;
+        }
+
+        @Override
+        @SuppressWarnings({"RedundantIfStatement"})
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ListenerConfiguration that = (ListenerConfiguration) o;
+
+            if (httpPort != that.httpPort) return false;
+            if (httpsPort != that.httpsPort) return false;
+            if (!certificate.equals(that.certificate)) return false;
+            if (!ipAddress.equals(that.ipAddress)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            result = certificate.hashCode();
+            result = 31 * result + ipAddress.hashCode();
+            result = 31 * result + httpPort;
+            result = 31 * result + httpsPort;
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Listener Configuration[http="+httpPort+"; https="+httpsPort+"; addr="+ ipAddress +"; sslCert="+certificate.getSubjectDN().getName()+";]";
+        }
+    }
 }
