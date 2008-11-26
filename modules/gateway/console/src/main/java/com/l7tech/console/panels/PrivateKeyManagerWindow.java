@@ -294,6 +294,11 @@ public class PrivateKeyManagerWindow extends JDialog {
         if (file == null)
             return;
 
+        //if user did not append .pem extension, we'll append to it
+        if (!file.getName().endsWith(".pem")){
+            file = new File(file.toString() + ".pem");
+        }
+
         try {
 
             //if file already exists, we need to ask for confirmation to overwrite.
