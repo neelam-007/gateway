@@ -39,8 +39,8 @@ public class EmsConfigurationBeanProvider extends PropertiesConfigurationBeanPro
     }
 
     @Override
-    protected Object onPersist( final String name, final Object value, final Collection<ConfigurationBean> beans ) {
-        Object persistValue;
+    protected String onPersist( final String name, final Object value, final Collection<ConfigurationBean> beans ) {
+        String persistValue;
 
         if ( CONFIG_ADMIN_PASS.equals(name) && value != null ) {
             // encode the password before storing to the properties file

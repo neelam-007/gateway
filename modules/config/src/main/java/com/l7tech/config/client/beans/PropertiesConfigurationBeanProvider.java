@@ -31,10 +31,12 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
         this.propertyPrefix = prefix;
     }
 
+    @Override
     public boolean isValid() {
         return propertiesFile.isFile() && propertiesFile.canWrite();
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public Collection<ConfigurationBean> loadConfiguration() throws ConfigurationException {
         Properties properties = new Properties();
@@ -59,13 +61,14 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
         return configuration;
     }
 
+    @Override
     public void storeConfiguration( final Collection<ConfigurationBean> configuration ) throws ConfigurationException {
         Properties properties = new Properties();
         
         for ( ConfigurationBean configBean : configuration ) {
-            Object toPersist = onPersist(configBean.getConfigName(), configBean.getConfigValue(), configuration);
+            String toPersist = onPersist(configBean.getConfigName(), configBean.getConfigValue(), configuration);
             if ( toPersist != null ) {
-                properties.put( prefix(configBean.getConfigName()), toPersist );
+                properties.setProperty( prefix(configBean.getConfigName()), toPersist );
             } else {
                 properties.remove( prefix(configBean.getConfigName()) );
             }
@@ -104,8 +107,10 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
      * @return The property value
      */
     @SuppressWarnings({"UnusedDeclaration"})
-    protected Object onPersist( final String name, final Object value, final Collection<ConfigurationBean> beans ) {
-        return value;
+    protected String onPersist( final String name, final Object value, final Collection<ConfigurationBean> beans ) {
+        return value instanceof String ? 
+                (String) value :
+                value==null ? null : value.toString();
     }
 
     /**
