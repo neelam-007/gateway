@@ -480,13 +480,12 @@ public class Utilities {
      * @param valueConstraintAndOrLike
      * @param resolution
      * @param isDetail
-     * @param operations
      * @param useUser
      * @param authenticatedUsers
      * @return
      */
     public static String getUsageDistinctMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                            Map<String, List<String>> serviceIdToOperations, List<String> keys,
+                                            Map<String, Set<String>> serviceIdToOperations, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
                                             boolean useUser, List<String> authenticatedUsers){
@@ -543,7 +542,7 @@ public class Utilities {
      * @return
      */
     public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                            Map<String, List<String>> serviceIdToOperations, List<String> keys,
+                                            Map<String, Set<String>> serviceIdToOperations, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
                                             boolean useUser, List<String> authenticatedUsers){
@@ -614,7 +613,7 @@ public class Utilities {
      * @return
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                            Map<String, List<String>> serviceIdToOperations, List<String> keys,
+                                            Map<String, Set<String>> serviceIdToOperations, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
                                             boolean useUser, List<String> authenticatedUsers){
@@ -693,9 +692,9 @@ public class Utilities {
             throw new IllegalArgumentException("operation can be null or empty");
         }
         
-        List<String> operations = new ArrayList<String>();
+        Set<String> operations = new HashSet<String>();
         if(!operation.equals(Utilities.SQL_PLACE_HOLDER)) operations.add(operation);
-        Map<String, List<String>> serviceIdToOperations = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdToOperations = new HashMap<String, Set<String>>();
         serviceIdToOperations.put(String.valueOf(serviceId), operations);
 
         return getUsageQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIdToOperations, keys, keyValueConstraints,
@@ -916,7 +915,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
     public static String createMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                               Map<String, List<String>> serviceIdToOperations,
+                                               Map<String, Set<String>> serviceIdToOperations,
                                             List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
@@ -1003,12 +1002,12 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * @param serviceIdToOperations
      * @param sb
      */
-    public static void addServiceAndOperationConstraint(Map<String, List<String>> serviceIdToOperations, StringBuilder sb) {
+    public static void addServiceAndOperationConstraint(Map<String, Set<String>> serviceIdToOperations, StringBuilder sb) {
         int index = 0;
         //and surrounds the entire constraint
         sb.append(" AND (");
 
-        for(Map.Entry<String, List<String>> me: serviceIdToOperations.entrySet()){
+        for(Map.Entry<String, Set<String>> me: serviceIdToOperations.entrySet()){
             //we know this statement is not true for all elements in the map, but it may be true for some
             //if a service has no op's listed, then it's simply ignored, could log a warning
             //see isBlankedOperationQuery
@@ -1019,11 +1018,14 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             sb.append("( ");
             sb.append(" p.objectid = ").append(me.getKey());
             sb.append(" AND mcmv.service_operation IN (");
-            for (int i = 0; i < me.getValue().size(); i++) {
-                String op = me.getValue().get(i);
-                if(i != 0) sb.append(",");
+
+            int opIndex = 0;
+            for(String op: me.getValue()){
+                if(opIndex != 0) sb.append(",");
                 sb.append("'" + op + "'");
+                opIndex++;
             }
+
             sb.append(")");//close in IN
             sb.append(" ) ");//close the OR
             index++;
@@ -1038,7 +1040,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * @param serviceIdToOperations
      * @return
      */
-    private static boolean isBlanketOperationQuery(Map<String, List<String>> serviceIdToOperations) {
+    private static boolean isBlanketOperationQuery(Map<String, Set<String>> serviceIdToOperations) {
 //        if(serviceIdToOperations == null) throw new NullPointerException("serviceIdToOperations cannot be null");
 //        if(serviceIdToOperations.isEmpty()) throw new IllegalArgumentException("serviceIdToOperations must contain at least one key");
 
@@ -1046,7 +1048,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             return true;
         }
         
-        for(Map.Entry<String, List<String>> me: serviceIdToOperations.entrySet()){
+        for(Map.Entry<String, Set<String>> me: serviceIdToOperations.entrySet()){
             if(me.getValue() == null) continue;
             if(!me.getValue().isEmpty()){
                 return false;
@@ -1090,12 +1092,12 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
                                             String operation, boolean useUser, String authenticatedUser){
 
         if(serviceId == null) throw new IllegalArgumentException("Service Id must be supplied");
-        List<String> operationList = new ArrayList<String>();
+        Set<String> operationSet = new HashSet<String>();
         if(operation != null && !operation.equals("") && !operation.equals(SQL_PLACE_HOLDER)){
-            operationList.add(operation);
+            operationSet.add(operation);
         }
-        Map<String, List<String>> serviceIdToOperations = new HashMap<String, List<String>>();
-        serviceIdToOperations.put(serviceId.toString(), operationList);
+        Map<String, Set<String>> serviceIdToOperations = new HashMap<String, Set<String>>();
+        serviceIdToOperations.put(serviceId.toString(), operationSet);
 
         List<String> authUsers = new ArrayList<String>();
         if(authenticatedUser != null && !authenticatedUser.equals("") && !authenticatedUser.equals(SQL_PLACE_HOLDER)){

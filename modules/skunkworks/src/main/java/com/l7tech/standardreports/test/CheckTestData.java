@@ -100,7 +100,7 @@ public class CheckTestData{
         values.add(null);
         values.add(null);
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String s = Utilities.createMappingQuery(true, null, null, serviceIdsToOps,
                 keys, values, null, 2, true, true, null);
 
@@ -143,7 +143,7 @@ public class CheckTestData{
         values.add(null);
         values.add(null);
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String s = Utilities.createMappingQuery(false, null, null, serviceIdsToOps,
                 keys, values, null, 2, true, true, null);
 
@@ -185,7 +185,7 @@ public class CheckTestData{
      * @throws SQLException
      */
     private int getMappingQueryOverallTotalSpecificValues_Daily(List<String> keys, List<String> values) throws SQLException {
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String s = Utilities.createMappingQuery(false, null, null, serviceIdsToOps,
                 keys, values, null, 2, true, true, null);
 
@@ -203,7 +203,7 @@ public class CheckTestData{
         return rs.getInt("overall_total");
     }
 
-    private int getMappingQueryOverallTotalSpecificValues_DailyNew(Map<String, List<String>> serviceIdToOp,
+    private int getMappingQueryOverallTotalSpecificValues_DailyNew(Map<String, Set<String>> serviceIdToOp,
                                                                    List<String> keys,
                                                                    List<String> values) throws SQLException {
         String s = Utilities.createMappingQuery(false, null, null, serviceIdToOp, keys, values, null, 2, true, true, null);
@@ -275,6 +275,9 @@ public class CheckTestData{
         if(values.size() != 2){
             throw new IllegalArgumentException("This test designed to work with two key values");
         }
+        for(String s: values){
+            if(s == null || s.equals("")) throw new IllegalArgumentException("Test is designed to work with actual key constraint values");
+        }
         int total = getMappingQueryOverallTotalSpecificValues_Daily(keys, values);
         //364
         int rowsPerDistinctValue = getMetricRowsPerDistinctValue();
@@ -301,7 +304,7 @@ public class CheckTestData{
         if(values.size() != 2){
             throw new IllegalArgumentException("This test designed to work with two key values");
         }
-        Map<String, List<String>> serviceIdToOp = new HashMap<String,List<String>>();
+        Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
         List<String> ops = new ArrayList<String>();
         ops.add("listProducts");
         ops.add("listOrders");
@@ -309,7 +312,7 @@ public class CheckTestData{
         String serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID+"_1");
         int index = 2;
         while(serviceOid != null){
-            serviceIdToOp.put(serviceOid, new ArrayList<String>(ops));
+            serviceIdToOp.put(serviceOid, new HashSet<String>(ops));
             serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID+"_"+index);
             index++;
         }

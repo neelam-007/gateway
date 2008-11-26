@@ -14,6 +14,8 @@ import java.sql.Statement;
 import java.util.*;
 
 import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.design.JRDesignStyle;
+import net.sf.jasperreports.engine.xml.JRAbstractStyleFactory;
 import net.sf.jasperreports.view.JasperViewer;
 import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.common.io.XmlUtil;
@@ -247,7 +249,7 @@ public class ReportApp
         List<String> keys = (List<String>) parameters.get(MAPPING_KEYS);
         List<String> values = (List<String>) parameters.get(MAPPING_VALUES);
         List<String> useAnd = (List<String>) parameters.get(VALUE_EQUAL_OR_LIKE);
-        Map<String, List<String>> serivceIdsToOp = (Map<String, List<String>>) parameters.get(SERVICE_ID_TO_OPERATIONS_MAP);
+        Map<String, Set<String>> serivceIdsToOp = (Map<String, Set<String>>) parameters.get(SERVICE_ID_TO_OPERATIONS_MAP);
 
 
         boolean useUser = Boolean.valueOf(parameters.get(USE_USER).toString());
@@ -576,6 +578,8 @@ public class ReportApp
         }
 
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
+
+
         Document transformDoc = Utilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
 
         String xslStr = getResAsString("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_SummaryTransform.xsl");
@@ -909,15 +913,15 @@ public class ReportApp
 
         List<String> operations = loadListFromProperties(OPERATIONS, prop);
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
-        List<String> serviceNames = new ArrayList<String>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
+        Set<String> serviceNames = new HashSet<String>();
 
         String serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_1");
         String serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_1");
         int index = 2;
         while(serviceName != null && serviceOid != null){
             serviceNames.add(serviceName);
-            serviceIdsToOps.put(serviceOid, new ArrayList<String>(operations));
+            serviceIdsToOps.put(serviceOid, new HashSet<String>(operations));
             
             serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_"+index);
             serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_"+index);
@@ -955,5 +959,6 @@ public class ReportApp
 
         return parameters;
     }
-    
+
+
 }

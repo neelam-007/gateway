@@ -57,8 +57,8 @@
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="REPORT_RAN_BY" isForPrompting="false" class="java.lang.String"/>
-    <parameter name="SERVICE_NAMES_LIST" isForPrompting="false" class="java.util.List">
-        <defaultValueExpression><![CDATA[ new ArrayList()]]></defaultValueExpression>
+    <parameter name="SERVICE_NAMES_LIST" isForPrompting="false" class="java.util.Set">
+        <defaultValueExpression><![CDATA[ new HashSet()]]></defaultValueExpression>
     </parameter>
     <parameter name="SERVICE_ID_TO_OPERATIONS_MAP" isForPrompting="false" class="java.util.Map">
 		<defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>

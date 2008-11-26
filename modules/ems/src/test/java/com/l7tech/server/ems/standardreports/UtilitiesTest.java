@@ -54,7 +54,7 @@ public class UtilitiesTest{
         List<String> values = new ArrayList<String>();
         values.add(null);
 
-        Map<String, List<String>> serviceIdToOp = new HashMap<String,List<String>>();
+        Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
 
         String sql =
                 Utilities.createMappingQuery(false, null,null,serviceIdToOp ,keys ,values ,null,1,false, false,null);
@@ -97,7 +97,7 @@ public class UtilitiesTest{
         values.add("127.0.0.1");
         values.add("GOLD");
 
-        Map<String, List<String>> serviceIdToOp = new HashMap<String,List<String>>();
+        Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
 
         String sql = Utilities.createMappingQuery(true, null,null,serviceIdToOp,keys ,values ,null ,1 ,false 
                 ,false ,null);
@@ -123,13 +123,13 @@ public class UtilitiesTest{
         operations.add("listProducts");
         operations.add("listOrders");
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
-        List<String> ops = new ArrayList<String>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
+        Set<String> ops = new HashSet<String>();
         ops.add("listProducts");
-        serviceIdsToOps.put("229376", new ArrayList<String>(ops));
+        serviceIdsToOps.put("229376", new HashSet<String>(ops));
         ops.clear();
         ops.add("listOrders");
-        serviceIdsToOps.put("229382", new ArrayList<String>(ops));
+        serviceIdsToOps.put("229382", new HashSet<String>(ops));
 
         String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps, keys ,values ,null ,1 ,true ,
                 false ,null);
@@ -155,7 +155,7 @@ public class UtilitiesTest{
         values.add("127.0.0.1");
         values.add("GOLD");
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
         String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,keys ,values ,null ,1 ,false
                 ,false ,null);
@@ -211,7 +211,7 @@ public class UtilitiesTest{
         filters.add("LIKE");
         filters.add("like");
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
         String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,keys ,values ,filters, 1 ,false 
                 ,false ,null);
@@ -252,7 +252,7 @@ public class UtilitiesTest{
      */
     @Test
     public void testCreateMappingQuery_OnlyDetail(){
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
         String sql =
                 Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,new ArrayList<String>(),null ,null,1,
@@ -275,7 +275,7 @@ public class UtilitiesTest{
         users.add("Donal");
         users.add("Ldap User 1");
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
         String sql =
                 Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,new ArrayList<String>() ,null ,null,1,
@@ -302,7 +302,7 @@ public class UtilitiesTest{
     @Test
     public void testCreateMappingQuery_Resolution(){
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql =
                 Utilities.createMappingQuery(false, null,null,serviceIdsToOps,new ArrayList<String>() ,null ,null,1,
                         true ,false , null);
@@ -337,7 +337,7 @@ public class UtilitiesTest{
         long startTime = cal.getTimeInMillis() - 1000;
         long endTime = cal.getTimeInMillis();
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql = Utilities.createMappingQuery(false, startTime, endTime ,serviceIdsToOps,new ArrayList<String>() ,
                 null ,null,1,true ,false , null);
 
@@ -366,7 +366,7 @@ public class UtilitiesTest{
     public void testCreateMappingQuery_ServiceIds(){
 
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         serviceIdsToOps.put("12345", null);
         serviceIdsToOps.put("67890", null);
 
@@ -395,16 +395,16 @@ public class UtilitiesTest{
     @Test
     public void testCreateMappingQuery_Operations(){
 
-        List<String> operations = new ArrayList<String>();
+        Set<String> operations = new HashSet<String>();
         operations.add("listProducts");
         operations.add("orderProduct");
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
-        serviceIdsToOps.put("229376", new ArrayList<String>(operations));
-        serviceIdsToOps.put("229378", new ArrayList<String>(operations));
-        serviceIdsToOps.put("229380", new ArrayList<String>(operations));
-        serviceIdsToOps.put("229382", new ArrayList<String>(operations));
-        serviceIdsToOps.put("229384", new ArrayList<String>(operations));
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
+        serviceIdsToOps.put("229376", new HashSet<String>(operations));
+        serviceIdsToOps.put("229378", new HashSet<String>(operations));
+        serviceIdsToOps.put("229380", new HashSet<String>(operations));
+        serviceIdsToOps.put("229382", new HashSet<String>(operations));
+        serviceIdsToOps.put("229384", new HashSet<String>(operations));
 
         String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
                 false, null);
@@ -428,11 +428,11 @@ public class UtilitiesTest{
         //System.out.println("Operation: "+sql);
         Assert.assertTrue(index == -1);
 
-        serviceIdsToOps.put("229376", new ArrayList<String>());
-        serviceIdsToOps.put("229378", new ArrayList<String>());
+        serviceIdsToOps.put("229376", new HashSet<String>());
+        serviceIdsToOps.put("229378", new HashSet<String>());
         serviceIdsToOps.put("229380", null);
         serviceIdsToOps.put("229382", null);
-        serviceIdsToOps.put("229384", new ArrayList<String>());
+        serviceIdsToOps.put("229384", new HashSet<String>());
 
         //also check when just the serivce id's are supplied, but no operations are
         sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
@@ -443,11 +443,11 @@ public class UtilitiesTest{
 
         //make sure that a constraint is provided, if at least one service has operations provided
         serviceIdsToOps.clear();
-        serviceIdsToOps.put("229376", new ArrayList<String>());
-        serviceIdsToOps.put("229378", new ArrayList<String>(operations));
+        serviceIdsToOps.put("229376", new HashSet<String>());
+        serviceIdsToOps.put("229378", new HashSet<String>(operations));
         serviceIdsToOps.put("229380", null);
         serviceIdsToOps.put("229382", null);
-        serviceIdsToOps.put("229384", new ArrayList<String>());
+        serviceIdsToOps.put("229384", new HashSet<String>());
 
         sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
                 false, null);
@@ -463,7 +463,7 @@ public class UtilitiesTest{
     @Test
     public void testCreateMappingQuery_SelectFields(){
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
                 false, null);
 
@@ -560,7 +560,7 @@ public class UtilitiesTest{
      */
     @Test
     public void testCreateMappingQuery_GroupBy(){
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql =
                 Utilities.createMappingQuery(false, null,null,serviceIdsToOps,null ,null,null,1, true, false,null);
         //System.out.println("Group by: "+sql);
@@ -574,7 +574,7 @@ public class UtilitiesTest{
      */
     @Test
     public void testCreateMappingQuery_OrderBy(){
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql =
                 Utilities.createMappingQuery(false, null,null,serviceIdsToOps,null ,null,null,1, true, false,null);
 //        System.out.println("Order by: "+sql);
@@ -606,7 +606,7 @@ public class UtilitiesTest{
     @Test
     public void testCreateMappingQuery_SelectDistinctFields(){
 
-        Map<String, List<String>> serviceIdsToOps = new HashMap<String, List<String>>();
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql = Utilities.createMappingQuery(true, null, null, serviceIdsToOps, null, null, null, 1, true,
                 false, null);
 
