@@ -22,4 +22,15 @@ public interface JsonDataProvider extends Serializable {
      * @see JsonInteraction
      */
     Object getData();
+
+
+    /**
+     * Set the data on this provider. Note the data beign set, is intended to be the payload of uploaded JSON
+     * data from a client. As a result the jsonData object is either this String OR a JSONException, if any exception
+     * was thrown whilst trying to retrieve the json data from the request.
+     * @param jsonData this object can be either 1) a JSON formatted String or 2) a JSONException
+     * @throws IllegalArgumentException If the jsonData object does not fall into one of the 2 above categories, then
+     *  this exception should be thrown
+     */
+    void setData(Object jsonData);
 }

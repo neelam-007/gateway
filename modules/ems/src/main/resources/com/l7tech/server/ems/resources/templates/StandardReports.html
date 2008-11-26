@@ -797,11 +797,16 @@ generateButton.set('disabled', false);
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_SUBMIT_GENERATE_REPORT + o.statusText, localizedStrings.OK);
                 }
             };
-            var url = document.forms['generateReportForm'].action;
+            var url = generateReportUrl;
             var settings = getSettingsFromFields();
             var postData = YAHOO.lang.JSON.stringify(settings);
             l7.Dialog.showWaitDialog(localizedStrings.SUBMITTING_GENERATE_REPORT + '...');
+            YAHOO.util.Connect.setDefaultPostHeader(false);
+		    YAHOO.util.Connect.initHeader("Content-Type","application/json; charset=utf-8");            
             YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
+            YAHOO.util.Connect.setDefaultPostHeader(true);
+            
+
         }
 
         function initButtons() {
@@ -885,6 +890,7 @@ generateButton.set('disabled', false);
 </head>
 <body class="yui-skin-sam">
 <noscript><div class="javascriptWarning">This page requires JavaScript. Your browser either does not have JavaScript support or has disabled it.</div></noscript>
+
 <table width="100%">
     <tr>
         <td>
@@ -1175,12 +1181,11 @@ generateButton.set('disabled', false);
                     </div>
                 </div>
 
-                <div style="display: none;">
-                    <form name="generateReportForm" wicket:id="generateReportForm" method="POST">
-                    </form>
+                <div wicket:id="postReportParameters">
+                    
                 </div>
-
                 </wicket:extend>
+
             </div>
             <div class="statusBar">
                 <table>

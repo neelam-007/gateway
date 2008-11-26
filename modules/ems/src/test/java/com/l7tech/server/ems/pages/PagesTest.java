@@ -114,4 +114,10 @@ public class PagesTest {
         tester.assertRenderedPage(UserSettings.class);
     }
 
+    @Test
+    public void testReportsPage() {
+        tester.startPage(StandardReports.class);
+        tester.assertRenderedPage(StandardReports.class);
+    }
+
 }

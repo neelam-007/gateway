@@ -95,6 +95,10 @@ public class Configure extends EmsPage  {
                 }
             }
 
+            public void setData(Object jsonData) {
+                throw new UnsupportedOperationException("setData not required in JsonInteraction");
+            }
+
             private void addChildren(final List<Object> nodes, final EnterpriseFolder folder) throws FindException {
                 // Display order is alphabetical on name, with folders before clusters.
                 for ( final EnterpriseFolder childFolder : enterpriseFolderManager.findChildFolders(folder)) {
