@@ -21,7 +21,6 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.context.ApplicationContext;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -63,11 +62,11 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
         varNames = ass.getVariablesUsed();
     }
 
-    private static interface RegexInput extends Closeable {
+    private static interface RegexInput {
         CharSequence getInput() throws IOException;
     }
 
-    private static interface RegexOutput extends Closeable {
+    private static interface RegexOutput {
         void setOutput(CharSequence output) throws IOException;
     }
 
@@ -76,17 +75,12 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
         checkPattern();
 
         Pair<RegexInput, RegexOutput> inout = getInputAndOutput(context);
-        try {
 
-            Matcher matcher = regexPattern.matcher(inout.left.getInput());
+        Matcher matcher = regexPattern.matcher(inout.left.getInput());
 
-            return isReplacement
-                    ? doReplace(context, matcher, inout.right)
-                    : doMatch(context, matcher);
-
-        } finally {
-            ResourceUtils.closeQuietly(inout.left, inout.right);
-        }
+        return isReplacement
+                ? doReplace(context, matcher, inout.right)
+                : doMatch(context, matcher);
     }
 
     private Pair<RegexInput, RegexOutput> getInputAndOutput(PolicyEnforcementContext context) throws IOException {
@@ -118,9 +112,9 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
 
     private RegexInput makeInput(final PartInfo part, final String encoding) {
         return new RegexInput() {
-            InputStream is = null;
 
             public CharSequence getInput() throws IOException {
+                InputStream is = null;
                 try {
                     close();
                     byte[] bytes = part.getBytesIfAlreadyAvailable();
@@ -130,12 +124,9 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
 
                 } catch (NoSuchPartException e) {
                     throw new IOException(e);
+                } finally {
+                    ResourceUtils.closeQuietly(is);
                 }
-            }
-
-            public void close() throws IOException {
-                ResourceUtils.closeQuietly(is);
-                is = null;
             }
         };
     }
@@ -144,9 +135,6 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
         return new RegexOutput() {
             public void setOutput(CharSequence output) throws IOException {
                 part.setBodyBytes(output.toString().getBytes(encoding));
-            }
-
-            public void close() throws IOException {
             }
         };
     }
@@ -193,7 +181,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
             for (int i = 1; i <= groupCount; ++i) { // note 1-based
                 captured.add(matcher.group(i));
             }
-            context.setVariable(capvar, captured);
+            context.setVariable(capvar, captured.toArray(new String[captured.size()]));
         }
 
         if (regexAssertion.isProceedIfPatternMatches()) {
