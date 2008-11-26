@@ -2325,7 +2325,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         installInactivityTimerEventListener();
         installCascadingErrorHandler();
         installClosingWindowHandler();
-        installTopMenuRefresh();
+
+        if(!isApplet()) {
+            installTopMenuRefresh();
+        }
     }
 
     /**
