@@ -64,7 +64,7 @@ public class PublishNonSoapServiceAction extends SecureAction {
          */
         public void entityAdded(final EntityEvent ev) {
             EntityHeader eh = (EntityHeader)ev.getEntity();
-            JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+            final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
             if (tree != null) {
                 AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
                 TreeNode[] nodes = root.getPath();
@@ -83,6 +83,9 @@ public class PublishNonSoapServiceAction extends SecureAction {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         new EditPolicyAction((ServiceNode)sn).invoke();
+
+                        //reset filter to ALL
+                        ((ServicesAndPoliciesTree) tree).filterTreeToDefault();
                     }
                 });
             } else {

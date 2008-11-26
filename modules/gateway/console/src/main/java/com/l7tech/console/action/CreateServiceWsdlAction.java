@@ -276,6 +276,9 @@ public class CreateServiceWsdlAction extends SecureAction {
                         model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
                         RootNode rootNode = (RootNode) model.getRoot();
                         rootNode.addEntity(eh.getOid(), sn);
+
+                        //reset filter
+                        tree.filterTreeToDefault();
                     } else {
                         log.log(Level.WARNING, "Service tree unreachable.");
                     }

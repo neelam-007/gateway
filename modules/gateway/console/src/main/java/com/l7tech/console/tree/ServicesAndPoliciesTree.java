@@ -403,5 +403,12 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
             }
             model.nodeStructureChanged(atn);
         }
-   }
+    }
+
+    /**
+     * Sets the services and policies tree back to the default filtering view, which would be no filter is applied.
+     */
+    public void filterTreeToDefault() {
+        sortComponents.selectDefaultFilter();
+    }
 }

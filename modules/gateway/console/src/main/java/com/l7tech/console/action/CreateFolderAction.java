@@ -76,12 +76,19 @@ public class CreateFolderAction extends SecureAction {
             try {
                 folder.setOid(folderAdmin.saveFolder(folder));
 
-                JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     FolderHeader header = new FolderHeader(folder);
                     final AbstractTreeNode sn = new FolderNode(header);
                     model.insertNodeInto(sn, parentNode, parentNode.getInsertPosition(sn, RootNode.getComparator()));
+
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            //reset filter
+                            ((ServicesAndPoliciesTree) tree).filterTreeToDefault();
+                        }
+                    });
                 }
             } catch(ConstraintViolationException e) {
                 DialogDisplayer.showMessageDialog(dialog,

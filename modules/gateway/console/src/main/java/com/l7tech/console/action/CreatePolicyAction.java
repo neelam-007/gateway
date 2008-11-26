@@ -95,7 +95,7 @@ public class CreatePolicyAction extends SecureAction {
                 }
 
                 if ( oid > 0 ) {
-                    JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                    final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree == null) {
                         log.log(Level.WARNING, "Policy tree unreachable.");
                         return;
@@ -114,9 +114,13 @@ public class CreatePolicyAction extends SecureAction {
                     rootNode.addEntity(ph.getOid(), sn);
 
                     tree.setSelectionPath(new TreePath(sn.getPath()));
+                    
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
                             new EditPolicyAction((PolicyEntityNode)sn).invoke();
+
+                            //reset filter to display all
+                            ((ServicesAndPoliciesTree) tree).filterTreeToDefault();
                         }
                     });
                 }

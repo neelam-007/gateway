@@ -161,4 +161,13 @@ public class SortComponents implements LogonListener {
         all.setSelected(true);
         ((AlterFilterAction) all.getAction()).performAction();
     }
+
+    /**
+     * Updates the filter selection accordingly and execute the filter action.
+     * Default filter means no filter is applied to the tree.
+     */
+    public void selectDefaultFilter() {
+        all.setSelected(true);
+        ((AlterFilterAction) all.getAction()).performAction();
+    }
 }
