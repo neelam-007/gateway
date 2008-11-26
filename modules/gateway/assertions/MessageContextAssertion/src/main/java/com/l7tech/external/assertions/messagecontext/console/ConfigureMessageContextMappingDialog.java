@@ -133,6 +133,7 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
                 keyTextField.setText(null);
                 valueTextField.setText(null);
 
+                ConfigureMessageContextMappingDialog.this.pack();
                 enableOrDisableOkButton();
                 keyStatusLabel.setVisible(false);
                 return;
@@ -174,6 +175,7 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
                 valueTextField.setText(value);
             }
 
+            ConfigureMessageContextMappingDialog.this.pack();
             enableOrDisableOkButton();
         }
     }
