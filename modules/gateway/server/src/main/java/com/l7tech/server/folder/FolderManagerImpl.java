@@ -52,6 +52,14 @@ public class FolderManagerImpl extends HibernateEntityManager<Folder, FolderHead
 
     @Override
     protected UniqueType getUniqueType() {
-        return UniqueType.NONE;
+        return UniqueType.OTHER;
+    }
+
+    @Override
+    protected Collection<Map<String, Object>> getUniqueConstraints(Folder entity) {
+        Map<String,Object> map = new HashMap<String, Object>();
+        map.put("parentFolderOid", entity.getParentFolderOid());
+        map.put("name",entity.getName());
+        return Arrays.asList(map);
     }
 }

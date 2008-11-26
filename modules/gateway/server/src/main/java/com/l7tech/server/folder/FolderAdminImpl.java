@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -79,12 +80,24 @@ public class FolderAdminImpl implements FolderAdmin {
             }
         }
 
-        if(folder.getOid() == Folder.DEFAULT_OID) {
-            return folderManager.save(folder);
-        } else {
-            folderManager.update(folder);
-            return folder.getOid();
+        try {
+            if (folder.getOid() == Folder.DEFAULT_OID) {
+                return folderManager.save(folder);
+            } else {
+                folderManager.update(folder);
+                return folder.getOid();
+            }
+        } catch (DuplicateObjectException doe) {
+            //thrown when saving a folder with duplicate folder name
+            throw new ConstraintViolationException("Folder name already exists", doe);
+        } catch (UpdateException ue) {
+            //verify if trying to update with a duplicate folder name
+            if (ExceptionUtils.causedBy(ue, DuplicateObjectException.class)) {
+                throw new ConstraintViolationException("Folder name already exists", ue);
+            } else {
+                //rethrow the exception
+                throw ue;
+            }
         }
-
     }
 }
