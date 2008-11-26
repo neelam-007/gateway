@@ -387,16 +387,14 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
                             // save the file
                             try {
-                                //if file already exists, we need to ask for confirmation to overwrite.
+                                //if file already exists, we need to ask for confirmation to overwrite. (Bug 6026)
                                 if (chooser.getSelectedFile().exists()) {
                                     int result = JOptionPane.showOptionDialog(chooser, "The file '" + chooser.getSelectedFile().getName() + "' already exists.  Overwrite?",
                                                         "Warning",JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
-                                    if (result != JOptionPane.YES_OPTION) {
+                                    if (result != JOptionPane.YES_OPTION)
                                         return;
-                                    } else {
-                                        FileUtils.save(new ByteArrayInputStream(bytes), new File(name));
-                                    }
                                 }
+                                FileUtils.save(new ByteArrayInputStream(bytes), new File(name));
                             } catch (IOException e) {
                                 logger.log(Level.WARNING, "error saving CSR", e);
                                 DialogDisplayer.showMessageDialog(generateCSRButton, "Error Saving CSR " + e.getMessage(),
