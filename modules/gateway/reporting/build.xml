@@ -1,0 +1,5 @@
+<project name="layer7-gateway-reporting" default="compile">
+    <!-- <property name="module.jasper.available" value="true"/> -->
+
+    <import file="../../../etc/build/build-common.xml"/>
+</project>
