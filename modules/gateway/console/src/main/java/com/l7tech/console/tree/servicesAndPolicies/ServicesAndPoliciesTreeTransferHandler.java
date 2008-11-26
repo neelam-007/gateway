@@ -82,6 +82,24 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                 (FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR.equals(transferFlavors[0]));
     }
 
+    @Override
+    public boolean canImport(TransferSupport support) {
+        //determine the drop location
+        JTree.DropLocation dropZone = (JTree.DropLocation) support.getDropLocation();
+        if ( dropZone != null ) {
+            //determine that the drop location is a folder node base.
+            //NOTE: RootNode is also an instance of FolderNodeBase
+            TreePath path = dropZone.getPath();
+            if(!(path.getLastPathComponent() instanceof FolderNodeBase)) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+
     @SuppressWarnings({"unchecked"})
     @Override
     public boolean importData(JComponent component, Transferable transferable) {
