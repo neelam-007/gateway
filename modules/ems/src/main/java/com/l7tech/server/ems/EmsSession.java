@@ -18,6 +18,14 @@ public class EmsSession extends WebSession {
         super(request);
     }
 
+    public String getDateFormatPattern() {
+        return dateFormatPattern;
+    }
+
+    public void setDateFormatPattern( final String pattern ) {
+        dateFormatPattern = pattern;
+    }
+
     public String getDateTimeFormatPattern() {
         return dateTimeFormatPattern;
     }
@@ -43,7 +51,11 @@ public class EmsSession extends WebSession {
     }
 
     public DateFormat buildDateFormat() {
-        SimpleDateFormat format = new SimpleDateFormat( getDateTimeFormatPattern() );
+        return buildDateFormat( true );
+    }
+
+    public DateFormat buildDateFormat( boolean datetime ) {
+        SimpleDateFormat format = new SimpleDateFormat( datetime ? getDateTimeFormatPattern() : getDateFormatPattern() );
         if ( getTimeZoneId() != null ) {
             format.setTimeZone( TimeZone.getTimeZone( getTimeZoneId() ) );
         }
@@ -51,7 +63,8 @@ public class EmsSession extends WebSession {
     }
     //- PRIVATE
 
-    private String dateTimeFormatPattern = EmsApplication.DEFAULT_DATE_FORMAT;
+    private String dateTimeFormatPattern = EmsApplication.DEFAULT_DATETIME_FORMAT;
+    private String dateFormatPattern = EmsApplication.DEFAULT_DATE_FORMAT;
     private String timeZoneId;
     private String preferredPage;
 }

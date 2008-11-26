@@ -10,10 +10,10 @@ import org.apache.wicket.ResourceReference;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.util.convert.IConverter;
 import com.l7tech.server.ems.EmsSession;
+import com.l7tech.server.ems.EmsApplication;
 
-import java.text.SimpleDateFormat;
 import java.text.ParseException;
-import java.util.TimeZone;
+import java.text.DateFormat;
 import java.util.Locale;
 import java.util.Date;
 
@@ -61,20 +61,15 @@ public class YuiDateSelector extends Panel {
 
         add( HeaderContributor.forJavaScript( new ResourceReference( YuiDataTable.class, "../resources/js/dateSelector.js" ) ) );
 
-        EmsSession session = ((EmsSession) RequestCycle.get().getSession());
+        final EmsSession session = ((EmsSession) RequestCycle.get().getSession());
         final String timeZoneId = session.getTimeZoneId();
 
         DateTextField textField = new DateTextField("date", model) {
             @Override
             public IConverter getConverter(final Class aClass) {
                 return new IConverter() {
-                    public SimpleDateFormat getDateFormat() {
-                        SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy");
-                        if ( timeZoneId != null ) {
-                            format.setTimeZone( TimeZone.getTimeZone( timeZoneId ) );
-                        }
-                        format.setLenient( false );
-                        return format;
+                    public DateFormat getDateFormat() {
+                        return session.buildDateFormat( false );
                     }
 
                     @Override
@@ -115,6 +110,17 @@ public class YuiDateSelector extends Panel {
         scriptBuilder.append("', '");
         scriptBuilder.append( calendarBody.getMarkupId() );
         scriptBuilder.append("'");
+
+        // date format (true for long format)
+        scriptBuilder.append(", ");
+        scriptBuilder.append( !EmsApplication.DEFAULT_DATE_FORMAT.equals(session.getDateFormatPattern()) );
+
+        // date selected
+        scriptBuilder.append(", '");
+        scriptBuilder.append( YuiCommon.toYuiDate(((Date)model.getObject()), timeZoneId) );
+        scriptBuilder.append("'");
+
+        // max date if any
         if ( maxDate != null ) {
             scriptBuilder.append(", '");
             scriptBuilder.append( YuiCommon.toYuiDate(maxDate, timeZoneId) );

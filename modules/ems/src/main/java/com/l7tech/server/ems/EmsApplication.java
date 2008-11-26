@@ -39,7 +39,8 @@ public class EmsApplication extends WebApplication {
 
     //- PUBLIC
 
-    public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public static final String DEFAULT_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
 
     /**
      *
@@ -274,11 +275,14 @@ public class EmsApplication extends WebApplication {
         return times.get(key);
     }
 
-    public static String getDateFormat( final String dateKey, final String timeKey ) {
-        String dateValue = "friendly".equals(dateKey) ? "MMM dd, yyyy" : "yyyy-MM-dd";
+    public static String getDateTimeFormat( final String dateKey, final String timeKey ) {
         String timeValue = "friendly".equals(timeKey) ? "hh:mm:ss a" : "HH:mm:ss";
 
-        return dateValue + " " + timeValue;
+        return getDateFormat(dateKey) + " " + timeValue;
+    }
+
+    public static String getDateFormat( final String dateKey ) {
+        return "friendly".equals(dateKey) ? "MMM dd, yyyy" : "yyyy-MM-dd";
     }
 
     public long getTimeStarted() {

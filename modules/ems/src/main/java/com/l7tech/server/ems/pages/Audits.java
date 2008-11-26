@@ -135,6 +135,7 @@ public class Audits extends EmsPage {
 
                 ajaxRequestTarget.addComponent(tableContainer);
                 ajaxRequestTarget.addComponent(detailsContainer);
+                ajaxRequestTarget.addComponent( feedback );
             }
 
             @Override

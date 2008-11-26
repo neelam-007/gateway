@@ -132,7 +132,8 @@ public class Login extends WebPage {
      *
      */
     private void setUserPreferences( final User user, final EmsSession session ) {
-        String format = null;
+        String dateformat = null;
+        String datetimeformat = null;
         String zoneid = null;
 
         try {
@@ -140,16 +141,19 @@ public class Login extends WebPage {
             String dateFormat = props.get("dateformat");
             String timeFormat = props.get("timeformat");
 
-            format = EmsApplication.getDateFormat(dateFormat, timeFormat);
+            dateformat = EmsApplication.getDateFormat(dateFormat);            
+            datetimeformat = EmsApplication.getDateTimeFormat(dateFormat, timeFormat);
             zoneid = props.get("timezone");
         } catch ( FindException fe ) {
             // use default format            
         }
 
-        if ( format == null ) format = EmsApplication.DEFAULT_DATE_FORMAT;
+        if ( dateformat == null ) dateformat = EmsApplication.DEFAULT_DATE_FORMAT;
+        if ( datetimeformat == null ) datetimeformat = EmsApplication.DEFAULT_DATETIME_FORMAT;
         if ( zoneid == null ) zoneid = TimeZone.getDefault().getID();
 
-        session.setDateTimeFormatPattern( format );
+        session.setDateFormatPattern( dateformat );
+        session.setDateTimeFormatPattern( datetimeformat );
         session.setTimeZoneId(zoneid);
     }
 }

@@ -121,7 +121,7 @@ public class UserSettings extends EmsPage {
             String dateFormat = preferences.get("dateformat");
             String timeFormat = preferences.get("timeformat");
 
-            getSession().setDateTimeFormatPattern( EmsApplication.getDateFormat(dateFormat, timeFormat) );
+            getSession().setDateTimeFormatPattern( EmsApplication.getDateTimeFormat(dateFormat, timeFormat) );
             getSession().setTimeZoneId( preferences.get("timezone") );
             getSession().setPreferredPage( preferences.get("homepage") );
         } catch ( UpdateException ue ) {
