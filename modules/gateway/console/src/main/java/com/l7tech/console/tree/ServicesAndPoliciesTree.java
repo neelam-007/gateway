@@ -4,6 +4,7 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.servicesAndPolicies.ServicesAndPoliciesTreeTransferHandler;
+import com.l7tech.console.tree.servicesAndPolicies.SortComponents;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
@@ -32,6 +33,7 @@ import java.util.logging.Logger;
 public class ServicesAndPoliciesTree extends JTree implements Refreshable, FocusListener{
     static Logger log = Logger.getLogger(ServicesAndPoliciesTree.class.getName());
     private boolean ignoreCurrentClipboard = false;
+    private SortComponents sortComponents;
 
     /**
      * component name
@@ -92,6 +94,16 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         putClientProperty(ClipboardActions.PASTE_HINT, "true");
 
         ClipboardActions.replaceClipboardActionMap(this);
+    }
+
+    public void initializeSortComponents(JLabel filterLabel) {
+        if (sortComponents == null ) {
+            sortComponents = new SortComponents(filterLabel);
+        }
+    }
+
+    public SortComponents getSortComponents() {
+        return sortComponents;
     }
 
     public void refresh() {

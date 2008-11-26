@@ -31,8 +31,8 @@ import java.util.logging.Logger;
 public final class RootNode extends FolderNode{
 
     private final static ServicesAndPoliciesNodeComparator comparator = new ServicesAndPoliciesNodeComparator();
-    private final AlterDefaultSortAction nameSort;
-    private final AlterDefaultSortAction typeSort;
+    private SortComponents sortComponents;
+
     /**
      * All operations around oidToAliases are
      * convenience so that we don't need to search the tree to manage the state of displayable aliases to
@@ -71,7 +71,15 @@ public final class RootNode extends FolderNode{
          * @param descending
          */
         public void setTypeDescending(boolean descending){
-            typeDescending = descending;            
+            typeDescending = descending;
+        }
+
+        public boolean isNameAscending() {
+            return nameAscending;
+        }
+
+        public boolean isTypeDescending() {
+            return typeDescending;
         }
 
         public int compare(TreeNode o1, TreeNode o2) {
@@ -106,6 +114,8 @@ public final class RootNode extends FolderNode{
                         if(!nameAscending){
                             compVal = compVal * -1;
                             return compVal;
+                        } else {
+                            return compVal;
                         }
                     }
 
@@ -128,7 +138,6 @@ public final class RootNode extends FolderNode{
     private final ServiceAdmin serviceManager;
     private final PolicyAdmin policyAdmin;
     private final String title;
-    private final JLabel filterLabel;
 
     /**
      * construct the <CODE>ServicesFolderNode</CODE> instance for
@@ -139,9 +148,6 @@ public final class RootNode extends FolderNode{
         this.serviceManager = Registry.getDefault().getServiceManager();
         this.policyAdmin = Registry.getDefault().getPolicyAdmin();
         this.title = name;
-        this.filterLabel = filterLabel;
-        this.nameSort = AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.NAME);
-        this.typeSort = AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.TYPE);
     }
 
     /**
@@ -162,19 +168,18 @@ public final class RootNode extends FolderNode{
         return true;
     }
 
+    public void setSortComponents(SortComponents sortComponents) {
+        this.sortComponents = sortComponents;
+    }
+
     protected JMenu getSortMenu(){
-        JMenu returnMenu = new JMenu("Change sort");
-        returnMenu.add(nameSort);
-        returnMenu.add(typeSort);
-        return returnMenu;                
+        JMenu sortMenu = new JMenu("Sort By");
+        return sortComponents.addSortMenu(sortMenu);
     }
 
     protected JMenu getFilterMenu(){
-        JMenu returnMenu = new JMenu("Filter");
-        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL, filterLabel));
-        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES, filterLabel));
-        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, filterLabel));
-        return returnMenu;                
+        JMenu filterMenu = new JMenu("Filter");
+        return sortComponents.addFilterMenu(filterMenu);
     }
 
     private final Action[] allActions = new Action[]{

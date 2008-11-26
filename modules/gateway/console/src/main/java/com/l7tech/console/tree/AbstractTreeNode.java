@@ -303,14 +303,15 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
                 pm.add(action);
             }
         }
-        JMenu sortMenu = getSortMenu();
-        if(sortMenu != null){
-            pm.add(sortMenu);
-        }
 
         JMenu filterMenu = getFilterMenu();
         if(filterMenu != null){
             pm.add(filterMenu);
+        }
+
+        JMenu sortMenu = getSortMenu();
+        if(sortMenu != null){
+            pm.add(sortMenu);
         }
 
         Utilities.removeToolTipsFromMenuItems(pm);

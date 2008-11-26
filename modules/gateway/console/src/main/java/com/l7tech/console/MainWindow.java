@@ -26,9 +26,7 @@ import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.tree.*;
-import com.l7tech.console.tree.servicesAndPolicies.RootNode;
-import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
-import com.l7tech.console.tree.servicesAndPolicies.AlterDefaultSortAction;
+import com.l7tech.console.tree.servicesAndPolicies.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
@@ -41,9 +39,7 @@ import com.l7tech.objectmodel.FindException;
 import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.border.Border;
-import javax.swing.event.EventListenerList;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.*;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.html.HTMLEditorKit;
@@ -98,6 +94,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenu viewMenu = null;
     private JMenu helpMenu = null;
     private JMenu newProviderSubMenu = null;
+    private JMenu filterServiceAndPolicyTreeMenu = null;
+    private JMenu sortServiceAndPolicyTreeMenu = null;
 
     private JMenuItem connectMenuItem = null;
     private JMenuItem disconnectMenuItem = null;
@@ -554,6 +552,20 @@ public class MainWindow extends JFrame implements SheetHolder {
         return exportMenuItem;
     }
 
+    public JMenu getFilterServiceAndPolicyTreeMenu() {
+        if (filterServiceAndPolicyTreeMenu == null ){
+            filterServiceAndPolicyTreeMenu = new JMenu("Filter Service and Policy Tree");
+        }
+        return filterServiceAndPolicyTreeMenu;
+    }
+
+    public JMenu getSortServiceAndPolicyTreeMenu() {
+        if (sortServiceAndPolicyTreeMenu == null) {
+            sortServiceAndPolicyTreeMenu = new JMenu("Sort Service and Policy Tree By");
+        }
+        return sortServiceAndPolicyTreeMenu;
+    }
+
     /** @return the preferences bean. never null. */
     public SsmPreferences getPreferences() {
         return preferences;
@@ -737,43 +749,32 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         //Add tree filter menu items
         menu.addSeparator();
-        JMenu filterMenu = new JMenu("Filter Tree");
-        AlterFilterAction filterAll = new AlterFilterAction(AlterFilterAction.FilterType.ALL, getFilterStatusLabel());
-        filterAll.setEnabled(false);
-        this.addLogonListener(filterAll);
-
-        AlterFilterAction filterServices = new AlterFilterAction(AlterFilterAction.FilterType.SERVICES, getFilterStatusLabel());
-        filterServices.setEnabled(false);
-        this.addLogonListener(filterServices);
-
-        AlterFilterAction filterPolicies = new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, getFilterStatusLabel());
-        filterPolicies.setEnabled(false);
-        this.addLogonListener(filterPolicies);
-
-        filterMenu.add(filterAll);
-        filterMenu.add(filterServices);
-        filterMenu.add(filterPolicies);
-
-        menu.add(filterMenu);
+        this.addLogonListener(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents());  //register component to logon listener
+        menu.add(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents().addFilterMenu(getFilterServiceAndPolicyTreeMenu()));
         //Add tree sort filter menu items
         menu.addSeparator();
-        JMenu sortMenu = new JMenu("Sort Tree");
-        AlterDefaultSortAction nameSort = AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.NAME);
-        nameSort.setEnabled(false);
-        this.addLogonListener(nameSort);
+        menu.add(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents().addSortMenu(getSortServiceAndPolicyTreeMenu()));
 
-        AlterDefaultSortAction typeSort = AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.TYPE);
-        typeSort.setEnabled(false);
-        this.addLogonListener(typeSort);
-
-        sortMenu.add(nameSort);
-        sortMenu.add(typeSort);
-        menu.add(sortMenu);
-        
         int mnemonic = menu.getText().toCharArray()[0];
         menu.setMnemonic(mnemonic);
 
         viewMenu = menu;
+        viewMenu.addMenuListener(new MenuListener() {
+            public void menuCanceled(MenuEvent e) {
+            }
+
+            public void menuDeselected(MenuEvent e) {
+            }
+
+            public void menuSelected(MenuEvent e) {
+                //when the user clicks sorting options through the root node, it will may change the state and because
+                //the view menu will not get refreshed, we need to get the new state of the sorting
+                getFilterServiceAndPolicyTreeMenu().removeAll();
+                getSortServiceAndPolicyTreeMenu().removeAll();
+                viewMenu.add(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents().addFilterMenu(getFilterServiceAndPolicyTreeMenu()), 9);
+                viewMenu.add(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents().addSortMenu(getSortServiceAndPolicyTreeMenu()), 11);
+            }
+        });
 
         return viewMenu;
     }
@@ -1423,6 +1424,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             return tree;
 
         servicesAndPoliciesTree = new ServicesAndPoliciesTree();
+        servicesAndPoliciesTree.initializeSortComponents(getFilterStatusLabel());
         servicesAndPoliciesTree.setShowsRootHandles(true);
         servicesAndPoliciesTree.setRootVisible(true);
         TopComponents.getInstance().registerComponent(ServicesAndPoliciesTree.NAME, servicesAndPoliciesTree);
@@ -1475,6 +1477,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         final String url = preferences.getString(SsmPreferences.SERVICE_URL);
         rootNode = new RootNode(url, getFilterStatusLabel());
+        rootNode.setSortComponents(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents());
 
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
         servicesTreeModel.setRoot(rootNode);
@@ -2145,6 +2148,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (inactivityTimer.isRunning()) {
             inactivityTimer.stop();
         }
+        getFilterStatusLabel().setText(FILTER_STATUS_NONE);
     }
 
     private void addComponentToGridBagContainer(JComponent container, JComponent component) {
@@ -3073,7 +3077,11 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     private boolean isMenuItemActive(JMenu menu) {
         if (menu.getMenuComponentCount() == 0) {    //no more children
-            return menu.getAction().isEnabled();
+            if (menu.getAction() != null) {
+                return menu.getAction().isEnabled();
+            } else {
+                return false;
+            }
         } else {
             final Component[] components = menu.getMenuComponents();
             for (Component component : components) {
@@ -3082,7 +3090,11 @@ public class MainWindow extends JFrame implements SheetHolder {
                         return true;
                     }
                 } else if (component instanceof JMenuItem) { //a menu item
-                    return ((JMenuItem) component).getAction().isEnabled();
+                    if (((JMenuItem) component).getAction() != null) {
+                        return ((JMenuItem) component).getAction().isEnabled();
+                    } else {
+                        return false;
+                    }
                 }
             }
             return false;

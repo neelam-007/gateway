@@ -53,29 +53,11 @@ public class AlterDefaultSortAction extends BaseAction implements LogonListener 
         }
     }
 
-
-    private static AlterDefaultSortAction nameSort = new AlterDefaultSortAction(AlterDefaultSortAction.SortType.NAME);
-    private static AlterDefaultSortAction typeSort = new AlterDefaultSortAction(AlterDefaultSortAction.SortType.TYPE);
-
-    public static AlterDefaultSortAction getSortAction(SortType sortType){
-        switch(sortType){
-            case NAME:
-                return nameSort;
-            case TYPE:
-                return typeSort;
-            default:
-                log.log(Level.INFO,"Unexpected SortType found");
-                throw new IllegalArgumentException("Illegal SortType");
-        }
-    }
-
     /**
-     * An instance of AlterDefaultSortAction maintains state regarding what the current sort is for it's type.
-     * Across the SSM for each sort type we only want one instance of each sort type. As a result the constructor is
-     * private. Use the getSortAction static method to get an instance
+     * Intialize based on the sort type.
      * @param sortType
      */
-    private AlterDefaultSortAction(SortType sortType) {
+    public AlterDefaultSortAction(SortType sortType) {
         super(true);
         this.sortType = sortType;
         //Calling as not using the default constructor
@@ -86,24 +68,7 @@ public class AlterDefaultSortAction extends BaseAction implements LogonListener 
      * @return the action name
      */
     public String getName() {
-
-        switch(sortType){
-            case NAME:
-                if(defaultOrder){
-                    return "Sort " + sortType+ " desc";
-                }else{
-                     return "Sort " + sortType+ " asc";
-                }
-            case TYPE:
-                if(defaultOrder){
-                    return "Sort " + sortType+ " asc";
-                }else{
-                     return "Sort " + sortType+ " desc";
-                }
-            default:
-                log.log(Level.INFO,"Unexpected SortType found");
-                throw new IllegalArgumentException("Illegal SortType");
-        }
+        return "";  //must be overridden by subclass, would prefer to be abstract
     }
 
     /**
@@ -129,22 +94,12 @@ public class AlterDefaultSortAction extends BaseAction implements LogonListener 
 
         switch (sortType){
             case NAME:
-                if(defaultOrder){
-                    comparator.setNameAscending(false);
-                    defaultOrder = false;
-                }else{
-                     comparator.setNameAscending(true);
-                    defaultOrder = true;
-                }
+                if (isAscending() == comparator.isNameAscending()) return;
+                comparator.setNameAscending(isAscending());
                 break;
             case TYPE:
-                if(defaultOrder){
-                    comparator.setTypeDescending(false);
-                    defaultOrder = false;
-                }else{
-                    comparator.setTypeDescending(true);
-                    defaultOrder = true;
-                }
+                if (!isAscending() == comparator.isTypeDescending()) return;
+                comparator.setTypeDescending(!isAscending());
                 break;
             default:
                 log.log(Level.INFO,"Unexpected SortType found");
@@ -203,5 +158,9 @@ public class AlterDefaultSortAction extends BaseAction implements LogonListener 
 
     public void onLogoff(LogonEvent e) {
         setEnabled(false);
+    }
+
+    public boolean isAscending() {
+        return false;   //must override, prefer to make this abstract
     }
 }
