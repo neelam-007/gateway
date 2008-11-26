@@ -27,9 +27,6 @@
 	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
-	<parameter name="REPORT_TYPE" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA["NA"]]></defaultValueExpression>
-	</parameter>
 	<parameter name="IS_RELATIVE" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(true)]]></defaultValueExpression>
 	</parameter>
@@ -64,7 +61,10 @@
 	</parameter>
 	<parameter name="STYLES_FROM_TEMPLATE" isForPrompting="false" class="java.util.Map"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
+    <parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
+    <parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
+
+    <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
@@ -110,8 +110,6 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanVal
 (false, $P{startTimeMilli},$P{endTimeMilli}, $P{SERVICE_ID_TO_OPERATIONS_MAP}.keySet(),$P{resolution}.intValue())
 )]]></defaultValueExpression>
 	</parameter>
-	<parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
-	<parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
 	<field name="SERVICE_ID" class="java.lang.Long"/>
