@@ -225,6 +225,7 @@
                    validateTimePeriod() &&
                    validateTimeInterval() &&
                    validateGroupings() &&
+                   (reportTypeDropDown.value == ReportType.PERFORMANCE || groupingTableBody.rows.length > 0) &&
                    reportNameTextField.value.match('^ *$') == null;
         }
 
@@ -283,7 +284,7 @@
 
         function updateGenerateButton() {
             generateButton.set('disabled', !validateSettings());
-//*****
+// TODO remove the following line when SSGClusterSelector and SSGClusterContentSelector are working.
 generateButton.set('disabled', false);
         }
 
@@ -325,7 +326,6 @@ generateButton.set('disabled', false);
             updateSaveSettingsButton();
             updateSaveDefaultButton();
             updateGenerateButton();
-
         }
 
         function onChangeRelativeTimePeriod() {
@@ -360,6 +360,12 @@ generateButton.set('disabled', false);
         function onChangeTimeInterval() {
             timeIntervalTextField.disabled = !hasTimeIntervalRadioButton.checked;
             timeIntervalUnitDropDown.disabled = !hasTimeIntervalRadioButton.checked;
+            updateSaveSettingsButton();
+            updateSaveDefaultButton();
+            updateGenerateButton();
+        }
+
+        function onChangeGroupings() {
             updateSaveSettingsButton();
             updateSaveDefaultButton();
             updateGenerateButton();
@@ -771,10 +777,13 @@ generateButton.set('disabled', false);
             tr._messageContextDropDown = messageContextDropDown;
             tr._warningImg = warningImg;
             tr._constraintTextBox = constraintTextBox;
+
+            onChangeGroupings();
         }
 
         function onClickDeleteGrouping(event, tr) {
             groupingTableBody.removeChild(tr);
+            onChangeGroupings();
         }
 
         function onClickGenerate() {
@@ -890,7 +899,6 @@ generateButton.set('disabled', false);
 </head>
 <body class="yui-skin-sam">
 <noscript><div class="javascriptWarning">This page requires JavaScript. Your browser either does not have JavaScript support or has disabled it.</div></noscript>
-
 <table width="100%">
     <tr>
         <td>
@@ -1009,7 +1017,7 @@ generateButton.set('disabled', false);
                                         <table>
                                             <tr>
                                                 <td class="middle">
-                                                    <select id="reportTypeDropDown" onchange="updateSaveDefaultButton();">
+                                                    <select id="reportTypeDropDown" onchange="onChangeReportType();">
                                                         <option value="performance">Performance Statistics</option>
                                                         <option value="usage">Usage Report</option>
                                                     </select>
