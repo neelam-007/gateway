@@ -17,6 +17,7 @@
     <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
     <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
     <script type="text/javascript" src="../yui/button/button-min.js"></script>
+    <script type="text/javascript" src="../yui/calendar/calendar-min.js"></script>
     <script type="text/javascript" src="../yui/connection/connection-min.js"></script>
     <script type="text/javascript" src="../yui/container/container-min.js"></script>
     <script type="text/javascript" src="../yui/json/json-min.js"></script>
@@ -74,6 +75,8 @@
         var addEntityButton;
         var addGroupingButton;
         var generateButton;
+        var downloadOutputButton;
+        var deleteOutputButton;
 
         var relativeTimePeriodRadioButton;
         var absoluteTimePeriodRadioButton;
@@ -84,15 +87,20 @@
 
         var summaryChartCheckBox;
 
-        var relativeTimePeriodTextField;
+        var relativeTimePeriodTextBox;
         var relativeTimePeriodHint;
-        var timeIntervalTextField;
+        var absoluteTimePeriodFromDateTextBox;
+        var absoluteTimePeriodToDateTextBox;
+        var timeIntervalTextBox;
         var timeIntervalHint;
-        var reportNameTextField;
+        var reportNameTextBox;
 
         var savedSettingsDropDown;
         var reportTypeDropDown;
         var relativeTimePeriodUnitDropDown;
+        var absoluteTimePeriodFromHourDropDown;
+        var absoluteTimePeriodToHourDropDown;
+        var absoluteTimePeriodTimeZoneDropDown;
         var timeIntervalUnitDropDown;
 
         var ssgClusterSelectorWindow;
@@ -135,7 +143,7 @@
         function validateRelativeTimePeriod() {
             var valid = false;
             if (relativeTimePeriodRadioButton.checked) {
-                var timePeriod = relativeTimePeriodTextField.value;
+                var timePeriod = relativeTimePeriodTextBox.value;
                 valid = l7.Util.isIntString(timePeriod) && timePeriod >= 0;
             } else if (absoluteTimePeriodRadioButton.checked) {
                 valid = true;
@@ -169,18 +177,9 @@
             if (noTimeIntervalRadioButton.checked) {
                 valid = true;
             } else if (hasTimeIntervalRadioButton.checked) {
-                var timeInterval = timeIntervalTextField.value;
+                var timeInterval = timeIntervalTextBox.value;
                 valid = l7.Util.isIntString(timeInterval) && timeInterval >= 0;
             }
-
-            if (valid) {
-                l7.Util.removeClass(timeIntervalTextField, 'invalid');
-                timeIntervalHint.innerHTML = '';
-            } else {
-               l7.Util.addClass(timeIntervalTextField, 'invalid');
-                timeIntervalHint.innerHTML = '(' + localizedStrings.TIME_INTERVAL_HINT + ')';
-            }
-
             return valid;
         }
 
@@ -226,7 +225,7 @@
                    validateTimeInterval() &&
                    validateGroupings() &&
                    (reportTypeDropDown.value == ReportType.PERFORMANCE || groupingTableBody.rows.length > 0) &&
-                   reportNameTextField.value.match('^ *$') == null;
+                   reportNameTextBox.value.search(/\S/) != -1;
         }
 
         /**
@@ -330,10 +329,10 @@ generateButton.set('disabled', false);
 
         function onChangeRelativeTimePeriod() {
             if (validateRelativeTimePeriod()) {
-                l7.Util.removeClass(relativeTimePeriodTextField, 'invalid');
+                l7.Util.removeClass(relativeTimePeriodTextBox, 'invalid');
                 relativeTimePeriodHint.innerHTML = '';
             } else {
-                l7.Util.addClass(relativeTimePeriodTextField, 'invalid');
+                l7.Util.addClass(relativeTimePeriodTextBox, 'invalid');
                 relativeTimePeriodHint.innerHTML = '(' + localizedStrings.RELATIVE_TIME_PERIOD_HINT + ')';
             }
             updateSaveSettingsButton();
@@ -347,18 +346,30 @@ generateButton.set('disabled', false);
 
         function onChangeTimePeriodType() {
             var isRelative = relativeTimePeriodRadioButton.checked;
-            relativeTimePeriodTextField.disabled = !isRelative;
+            relativeTimePeriodTextBox.disabled = !isRelative;
             relativeTimePeriodUnitDropDown.disabled = !isRelative;
 
             var isAbsolute = absoluteTimePeriodRadioButton.checked;
-            // TODO
+            absoluteTimePeriodFromDateTextBox.disabled = !isAbsolute;
+            absoluteTimePeriodFromHourDropDown.disabled = !isAbsolute;
+            absoluteTimePeriodToDateTextBox.disabled = !isAbsolute;
+            absoluteTimePeriodToHourDropDown.disabled = !isAbsolute;
+            absoluteTimePeriodTimeZoneDropDown.disabled = !isAbsolute;
 
             onChangeRelativeTimePeriod();
             onChangeAbsoluteTimePeriod();
         }
 
         function onChangeTimeInterval() {
-            timeIntervalTextField.disabled = !hasTimeIntervalRadioButton.checked;
+            if (validateTimeInterval()) {
+                l7.Util.removeClass(timeIntervalTextBox, 'invalid');
+                timeIntervalHint.innerHTML = '';
+            } else {
+               l7.Util.addClass(timeIntervalTextBox, 'invalid');
+                timeIntervalHint.innerHTML = '(' + localizedStrings.TIME_INTERVAL_HINT + ')';
+            }
+            
+            timeIntervalTextBox.disabled = !hasTimeIntervalRadioButton.checked;
             timeIntervalUnitDropDown.disabled = !hasTimeIntervalRadioButton.checked;
             updateSaveSettingsButton();
             updateSaveDefaultButton();
@@ -424,7 +435,7 @@ generateButton.set('disabled', false);
             settings.timePeriod = {};
             settings.timePeriod.type = getTimePeriodType();
             if (settings.timePeriod.type == TimePeriodType.RELATIVE) {
-                settings.timePeriod.numberOfTimeUnits = relativeTimePeriodTextField.value;
+                settings.timePeriod.numberOfTimeUnits = relativeTimePeriodTextBox.value;
                 settings.timePeriod.unit = relativeTimePeriodUnitDropDown.value;
             } else if (settings.timePeriod.type == TimePeriodType.ABSOLUTE) {
 // TODO
@@ -436,7 +447,7 @@ generateButton.set('disabled', false);
                 settings.timeInterval = null;
             } else if (hasTimeIntervalRadioButton.checked) {
                 settings.timeInterval = {};
-                settings.timeInterval.value = timeIntervalTextField.value;
+                settings.timeInterval.value = timeIntervalTextBox.value;
                 settings.timeInterval.unit = timeIntervalUnitDropDown.value;
             }
             settings.groupings = [];
@@ -449,7 +460,7 @@ generateButton.set('disabled', false);
                 settings.groupings.push(grouping);
             }
             settings.summaryChart = summaryChartCheckBox.checked;
-            settings.reportName = reportNameTextField.value;
+            settings.reportName = reportNameTextBox.value;
             return settings;
         }
 
@@ -638,18 +649,23 @@ generateButton.set('disabled', false);
 
         function onClickLoadSettings() {
             setFieldsFromSettings(savedSettings[savedSettingsDropDown.selectedIndex]);
+            // TODO
+            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
         }
 
         function onClickSaveSettings() {
             // TODO
+            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
         }
 
         function onClickManageSettings() {
             // TODO
+            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
         }
 
         function onClickSaveDefault() {
             // TODO
+            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
         }
 
         function onClickAddEntity() {
@@ -811,11 +827,19 @@ generateButton.set('disabled', false);
             var postData = YAHOO.lang.JSON.stringify(settings);
             l7.Dialog.showWaitDialog(localizedStrings.SUBMITTING_GENERATE_REPORT + '...');
             YAHOO.util.Connect.setDefaultPostHeader(false);
-		    YAHOO.util.Connect.initHeader("Content-Type","application/json; charset=utf-8");            
+            YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');            
             YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
             YAHOO.util.Connect.setDefaultPostHeader(true);
-            
+        }
 
+        function onClickDownloadOutput() {
+            // TODO
+            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
+        }
+
+        function onClickDeleteOutput() {
+            // TODO
+            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
         }
 
         function initButtons() {
@@ -848,6 +872,14 @@ generateButton.set('disabled', false);
                 onclick : {fn : onClickGenerate},
                 type : 'push'
             });
+            downloadOutputButton = new YAHOO.widget.Button('downloadOutputButton', {
+                onclick : {fn : onClickDownloadOutput},
+                type : 'push'
+            });
+            deleteOutputButton = new YAHOO.widget.Button('deleteOutputButton', {
+                onclick : {fn : onClickDeleteOutput},
+                type : 'push'
+            });
         }
 
         function initDialogs() {
@@ -864,14 +896,19 @@ generateButton.set('disabled', false);
 
         function init() {
             relativeTimePeriodRadioButton  = document.getElementById('relativeTimePeriodRadioButton');
-            relativeTimePeriodTextField    = document.getElementById('relativeTimePeriodTextField');
+            relativeTimePeriodTextBox          = document.getElementById('relativeTimePeriodTextBox');
             relativeTimePeriodHint         = document.getElementById('relativeTimePeriodHint');
             relativeTimePeriodUnitDropDown = document.getElementById('relativeTimePeriodUnitDropDown');
             absoluteTimePeriodRadioButton  = document.getElementById('absoluteTimePeriodRadioButton');
+            absoluteTimePeriodFromDateTextBox  = document.getElementById('absoluteTimePeriodFromDateTextBox');
+            absoluteTimePeriodFromHourDropDown = document.getElementById('absoluteTimePeriodFromHourDropDown');
+            absoluteTimePeriodToHourDropDown   = document.getElementById('absoluteTimePeriodToHourDropDown');
+            absoluteTimePeriodToDateTextBox    = document.getElementById('absoluteTimePeriodToDateTextBox');
+            absoluteTimePeriodTimeZoneDropDown = document.getElementById('absoluteTimePeriodTimeZoneDropDown');
 
             hasTimeIntervalRadioButton = document.getElementById('hasTimeIntervalRadioButton');
             noTimeIntervalRadioButton  = document.getElementById('noTimeIntervalRadioButton');
-            timeIntervalTextField      = document.getElementById('timeIntervalTextField');
+            timeIntervalTextBox        = document.getElementById('timeIntervalTextBox');
             timeIntervalUnitDropDown   = document.getElementById('timeIntervalUnitDropDown');
             timeIntervalHint           = document.getElementById('timeIntervalHint');
 
@@ -884,13 +921,18 @@ generateButton.set('disabled', false);
             entitySelectionTableBody        = document.getElementById('entitySelectionTableBody');
             groupingTableBody               = document.getElementById('groupingTableBody');
             summaryChartCheckBox            = document.getElementById('summaryChartCheckBox');
-            reportNameTextField             = document.getElementById('reportNameTextField');
+            reportNameTextBox               = document.getElementById('reportNameTextBox');
 
+//            l7.Widget.initHourlyDropDown(absoluteTimePeriodFromHourDropDown);
+//            l7.Widget.initHourlyDropDown(absoluteTimePeriodToHourDropDown);
             initButtons();
             initDialogs();
             loadSavedSettingsDropDown();
-// TODO           updateUiElements();
-// TODO           YAHOO.util.Event.addListener(entitySelectionTableBody, 'change', validateGrouping);
+
+            updateSaveDefaultButton();
+            updateGenerateButton();
+            onChangeTimePeriodType();
+            onChangeTimeInterval();
         }
 
         YAHOO.util.Event.onDOMReady(init);
@@ -1078,7 +1120,7 @@ generateButton.set('disabled', false);
                                             <tr>
                                                 <td class="middle"><input id="relativeTimePeriodRadioButton" type="radio" name="timePeriodType" value="relative" onclick="onChangeTimePeriodType();" checked/></td>
                                                 <td class="middle"><label for="relativeTimePeriodRadioButton">Last</label></td>
-                                                <td class="middle"><input id="relativeTimePeriodTextField" class="right" type="text" size="9" maxlength="9" value="1" onkeyup="onChangeRelativeTimePeriod();"/></td>
+                                                <td class="middle"><input id="relativeTimePeriodTextBox" class="right" type="text" size="9" maxlength="9" value="1" onkeyup="onChangeRelativeTimePeriod();"/></td>
                                                 <td class="middle">
                                                     <select id="relativeTimePeriodUnitDropDown" name="relativeTimePeriodUnit">
                                                         <option value="HOUR">hour</option>
@@ -1096,11 +1138,20 @@ generateButton.set('disabled', false);
                                 <tr>
                                     <th></th>
                                     <td>
-                                        <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
+                                        <table>
                                             <tr>
                                                 <td class="middle"><input id="absoluteTimePeriodRadioButton" type="radio" name="timePeriodType" value="absolute" onclick="onChangeTimePeriodType();"/></td>
                                                 <td class="middle"><label for="absoluteTimePeriodRadioButton">From</label></td>
+                                                <td class="middle"><input id="absoluteTimePeriodFromDateTextBox" type="text" size="10"/></td>
+                                                <td class="middle"><select id="absoluteTimePeriodFromHourDropDown"></select></td>
                                                 <td class="middle">To</td>
+                                                <td class="middle"><input id="absoluteTimePeriodToDateTextBox" type="text" size="10"/></td>
+                                                <td class="middle"><select id="absoluteTimePeriodToHourDropDown"></select></td>
+                                                <td class="middle">
+                                                    <select id="absoluteTimePeriodTimeZoneDropDown">
+                                                        <option value="Canada/Pacific" selected="selected">Canada/Pacific (GMT-08:00/-07:00)</option>
+                                                    </select>
+                                                </td>
                                             </tr>
                                         </table>
                                     </td>
@@ -1123,7 +1174,7 @@ generateButton.set('disabled', false);
                                             <tr>
                                                 <td class="middle"><input id="hasTimeIntervalRadioButton" type="radio" name="timeInterval" value="true" onclick="onChangeTimeInterval();"/></td>
                                                 <td class="middle"><label for="hasTimeIntervalRadioButton">Interval:</label></td>
-                                                <td class="middle"><input id="timeIntervalTextField" class="right" type="text" size="9" maxlength="9" onkeyup="onChangeTimeInterval();"/></td>
+                                                <td class="middle"><input id="timeIntervalTextBox" class="right" type="text" size="9" maxlength="9" onkeyup="onChangeTimeInterval();"/></td>
                                                 <td class="middle">
                                                     <select id="timeIntervalUnitDropDown" name="timeIntervalUnit">
                                                         <option value="HOUR">hour</option>
@@ -1170,7 +1221,7 @@ generateButton.set('disabled', false);
                                 </tr>
                                 <tr>
                                     <th>Report Name:</th>
-                                    <td><input id="reportNameTextField" type="text" size="64" maxlength="128" onkeyup="onChangeReportName();"/></td>
+                                    <td><input id="reportNameTextBox" type="text" size="64" maxlength="128" onkeyup="onChangeReportName();"/></td>
                                 </tr>
                             </table>
                             <div class="middle nowrap">
@@ -1180,11 +1231,24 @@ generateButton.set('disabled', false);
                     </div>
                 </div>
                 <div class="panel">
-                    <div class="panelTitle tippy"><img id="oldReportsTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'oldReportsDiv')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('oldReportsTippy', 'oldReportsDiv')">Generated Reports</span></div>
-                    <div id="oldReportsDiv">
+                    <div class="panelTitle tippy">
+                        <img id="generatedReportsTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'generatedReportsDiv')" />
+                        <span class="clickable" onclick="l7.Tippy.toggleTippy('generatedReportsTippy', 'generatedReportsDiv')">Generated Reports</span>
+                        <img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of generated reports" alt="Refresh" onclick="" />
+                    </div>
+                    <div id="generatedReportsDiv">
                         <div class="panelToolbar">
+                            <table class="spaced"> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
+                                <tr>
+                                    <td class="middle">Output Format: </td>
+                                    <td class="middle"><select><option>PDF</option></select></td>
+                                    <td class="middle"><button id="downloadOutputButton" title="Zip and download checked reports">Zip and Download</button></td>
+                                    <td class="middle"><button id="deleteOutputButton" title="Delete checked reports">Delete</button></td>
+                                </tr>
+                            </table>
                         </div>
                         <div class="panelContent">
+                            <!-- TODO Create table of generated reports here. -->
                         </div>
                     </div>
                 </div>

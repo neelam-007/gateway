@@ -683,7 +683,7 @@ table.dataTable td.critical {
 }
 
 .srcDestCenter img {
-    cursor: pointer;
+    margin-bottom: 8px;
     margin-top: 4px;
 }
 

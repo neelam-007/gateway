@@ -467,7 +467,35 @@ if (!l7.Widget) {
             result.name = name;
             return result;
         }
-    })();
+
+        /**
+         * Initializes a drop down with selection for both 24- and 12-hour clock.
+         * @param {HTMLSelectElement} dropDown
+         */
+        l7.Widget.initHourlyDropDown = function(dropDown) {
+            var optGroup = document.createElement('optgroup');
+            optGroup.label = '00 - 23';
+            for (var hr = 0; hr < 24; ++hr) {
+                var option = document.createElement('option');
+                option.value = hr;
+                option.innerHTML = (hr < 10 ? '0' : '') + hr + ':00';
+                optGroup.appendChild(option);
+            }
+            dropDown.appendChild(optGroup);
+
+            optGroup = document.createElement('optgroup');
+            optGroup.label = 'AM/PM';
+            for (hr = 0; hr < 24; ++hr) {
+                var h = hr > 12 ? (hr - 12) : (hr == 0 ? 12 : hr);
+                var ampm = hr < 12 ? 'AM' : 'PM';
+                option = document.createElement('option');
+                option.value = hr;
+                option.innerHTML = h + ':00 ' + ampm;
+                optGroup.appendChild(option);
+            }
+            dropDown.appendChild(optGroup);
+        }
+})();
 }
 
 // -----------------------------------------------------------------------------
@@ -915,14 +943,9 @@ if (!l7.Dialog) {
             } else {
                 try {
                     var o = YAHOO.lang.JSON.parse(s);
-                    var isException = l7.Util.isException(o);
-                    if (isException) {
+                    if (l7.Util.isException(o)) {
                         l7.Dialog.showExceptionDialog(o, errHeader, htmlIfException, errOk);
-                        return o;
-                    } else {
-                        return o;
                     }
-                    var isException = l7.Dialog.showExceptionDialogIfException(o, errHeader, htmlIfException, errOk);
                     return o;
                 } catch (e) {
                     l7.Dialog.showErrorDialog(errHeader, htmlIfBadJSON + ': ' + e, errOk);
