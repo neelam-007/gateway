@@ -231,7 +231,7 @@ public class TrustedCertManagerImp
 
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints(final TrustedCert cert) {
-        Map<String,Object> map1 = new HashMap<String, Object>() {{ put("thumbprintSha1", cert.getSubjectDn()); }};
+        Map<String,Object> map1 = new HashMap<String, Object>() {{ put("thumbprintSha1", cert.getThumbprintSha1()); }};
         return Collections.singletonList(map1);
     }
 
