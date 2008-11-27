@@ -217,6 +217,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         try {
             // In the url adding a time is for solving the problem in IE (since IE caches applet page).
             URL url = new URL(new URL(getDocumentBase().toString()), "?logout=true&" + System.currentTimeMillis());
+            appletRootPane = null;
             getAppletContext().showDocument(url, "_self");
         } catch (MalformedURLException e) {
             DialogDisplayer.showMessageDialog(findAppletContainerFrame(), null,
