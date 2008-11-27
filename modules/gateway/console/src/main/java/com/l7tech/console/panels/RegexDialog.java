@@ -78,6 +78,8 @@ public class RegexDialog extends JDialog {
         contentPane.setLayout(new BorderLayout());
         contentPane.add(mainPanel);
 
+        targetMessagePanel.setTitle("Source");
+
         matchAndReplaceRadioButton.setToolTipText("If the pattern matches, replace the match with the replacement expression, then proceed to process the message");
 
         final ItemListener radioButtonListener = new ItemListener() {
