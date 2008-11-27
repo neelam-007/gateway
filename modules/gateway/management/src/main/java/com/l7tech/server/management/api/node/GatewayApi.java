@@ -23,9 +23,9 @@ public interface GatewayApi {
      * @param entityTypes: the types of entities retrieved
      * @return
      */
-//    @WebMethod(operationName="GetEntityInfo")
-//    @WebResult(name="EntityInfos", targetNamespace="http://www.layer7tech.com/management/gateway")
-//    Collection<EntityInfo> getEntityInfo(Collection<EntityType> entityTypes) throws FindException;
+    @WebMethod(operationName="GetEntityInfo")
+    @WebResult(name="EntityInfos", targetNamespace="http://www.layer7tech.com/management/gateway")
+    Collection<EntityInfo> getEntityInfo(Collection<EntityType> entityTypes) throws GatewayException;
     
     /**
      * Get information on the Cluster
@@ -51,7 +51,7 @@ public interface GatewayApi {
         private int clusterHttpPort;
         private int clusterHttpsPort;
 
-        @XmlAttribute
+        @XmlAttribute(name="clusterHostname")
         public String getClusterHostname() {
             return clusterHostname;
         }
@@ -60,7 +60,7 @@ public interface GatewayApi {
             this.clusterHostname = clusterHostname;
         }                
 
-        @XmlAttribute
+        @XmlAttribute(name="clusterHttpPort")
         public int getClusterHttpPort() {
             return clusterHttpPort;
         }
@@ -69,7 +69,7 @@ public interface GatewayApi {
             this.clusterHttpPort = clusterHttpPort;
         }
 
-        @XmlAttribute
+        @XmlAttribute(name="clusterHttpsPort")
         public int getClusterHttpsPort() {
             return clusterHttpsPort;
         }
@@ -115,7 +115,11 @@ public interface GatewayApi {
         public EntityInfo() {
         }
 
-        public EntityInfo(EntityType entityType, String id, String name, String parentId, Integer version) {
+        public EntityInfo( final EntityType entityType,
+                           final String id,
+                           final String name,
+                           final String parentId,
+                           final int version ) {
             this.entityType = entityType;
             this.id = id;
             this.name = name;
@@ -160,7 +164,7 @@ public interface GatewayApi {
         }
 
         @XmlAttribute(name="version")
-        public Integer getVersion() {
+        public int getVersion() {
             return version;
         }
 
@@ -177,7 +181,7 @@ public interface GatewayApi {
         private String ipAddress;
         private long statusTimestamp;
 
-        @XmlAttribute
+        @XmlAttribute(name="id")
         public String getId() {
             return id;
         }
@@ -186,7 +190,7 @@ public interface GatewayApi {
             this.id = id;
         }
 
-        @XmlAttribute
+        @XmlAttribute(name="name")
         public String getName() {
             return name;
         }
@@ -195,7 +199,7 @@ public interface GatewayApi {
             this.name = name;
         }
 
-        @XmlAttribute
+        @XmlAttribute(name="softwareVersion")
         public String getSoftwareVersion() {
             return softwareVersion;
         }
@@ -204,7 +208,7 @@ public interface GatewayApi {
             this.softwareVersion = softwareVersion;
         }
 
-        @XmlAttribute
+        @XmlAttribute(name="ipAddress")
         public String getIpAddress() {
             return ipAddress;
         }
@@ -213,7 +217,7 @@ public interface GatewayApi {
             this.ipAddress = ipAddress;
         }
 
-        @XmlAttribute
+        @XmlAttribute(name="statusTimestamp")
         public long getStatusTimestamp() {
             return statusTimestamp;
         }
@@ -247,6 +251,16 @@ public interface GatewayApi {
             result = 31 * result + (softwareVersion != null ? softwareVersion.hashCode() : 0);
             result = 31 * result + (ipAddress != null ? ipAddress.hashCode() : 0);
             return result;
+        }
+    }
+
+    static class GatewayException extends Exception {
+        public GatewayException(String message) {
+            super(message);
+        }
+
+        public GatewayException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

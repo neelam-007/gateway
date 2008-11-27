@@ -84,11 +84,6 @@ public enum EntityType implements Comparable<EntityType> {
         return displayedInGui;
     }
 
-    @Override
-    public String toString() {
-        return name;
-    }
-
     public static final NameComparator NAME_COMPARATOR = new NameComparator();
 
     private static class NameComparator implements Comparator<EntityType> {

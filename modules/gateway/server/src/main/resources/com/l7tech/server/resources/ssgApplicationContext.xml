@@ -1147,6 +1147,15 @@
     <bean id="gatewayApiImpl" class="com.l7tech.server.cluster.GatewayApiImpl">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="clusterInfoManager"/>
+        <constructor-arg index="2">
+            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                <property name="targetObject" ref="rbacAdvice"/>
+                <property name="targetMethod" value="getSecurityFilter"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="3" ref="serviceManager"/>
+        <constructor-arg index="4" ref="policyManager"/>
+        <constructor-arg index="5" ref="folderManager"/>
     </bean>
 
     <bean id="reportApiImpl" class="com.l7tech.server.cluster.ReportApiImpl">
