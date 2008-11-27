@@ -23,7 +23,7 @@ public class IntervalReportJsonConvertor extends SummaryReportJsonConvertor {
      * @throws ReportApi.ReportException
      */
     @Override
-    public Collection<ReportSubmissionClusterBean> getReportSubmissions(Map params, String reportRanBy) throws ReportApi.ReportException {
+    public Collection<ReportSubmissionClusterBean> getReportSubmissions(Map params, String reportRanBy) throws ReportException {
         validateParams(params);
         return super.getReportSubmissions(params, reportRanBy);
     }
@@ -36,16 +36,28 @@ public class IntervalReportJsonConvertor extends SummaryReportJsonConvertor {
      * @throws ReportApi.ReportException
      */
     @Override
-    protected Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getReportParams(Map params, String reportRanBy) throws ReportApi.ReportException {
+    protected Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getReportParams(Map params, String reportRanBy) throws ReportException {
         Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = super.getReportParams(params, reportRanBy);
         addIntervalTimeParameters(clusterToReportParams, params);
 
         return clusterToReportParams;
     }
 
+    protected ReportApi.ReportType getReportType(Map params) throws ReportException {
+
+        String reportType = (String) params.get(JSONConstants.REPORT_TYPE);
+        if(reportType.equals(JSONConstants.ReportType.PERFORMANCE)){
+            return ReportApi.ReportType.PERFORMANCE_INTERVAL;
+        }else if(reportType.equals(JSONConstants.ReportType.USAGE)){
+            return ReportApi.ReportType.USAGE_INTERVAL;
+        }
+
+        throw new ReportException("Unknown report type: " + reportType);
+    }
+
     private void addIntervalTimeParameters(
             Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params)
-            throws ReportApi.ReportException {
+            throws ReportException {
 
         Object o = params.get(JSONConstants.TimePeriodTypeKeys.TIME_INTERVAL);
         Map timeIntervalMap = (Map) o;
@@ -56,7 +68,7 @@ public class IntervalReportJsonConvertor extends SummaryReportJsonConvertor {
         try{
             Utilities.getUnitFromString(unitType);
         }catch (IllegalArgumentException e){
-            throw new ReportApi.ReportException(e.getMessage());
+            throw new ReportException(e.getMessage());
         }
         ReportApi.ReportSubmission.ReportParam intervalTimeUnitParam = new ReportApi.ReportSubmission.ReportParam();
         intervalTimeUnitParam.setName(INTERVAL_TIME_UNIT);

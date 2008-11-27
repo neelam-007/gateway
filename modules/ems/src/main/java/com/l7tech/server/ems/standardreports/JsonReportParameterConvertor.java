@@ -57,5 +57,5 @@ public interface JsonReportParameterConvertor {
      * @throws ReportApi.ReportException
      */
     public Collection<ReportSubmissionClusterBean> getReportSubmissions(Map params, String reportRanBy)
-            throws ReportApi.ReportException;
+            throws ReportException;
 }

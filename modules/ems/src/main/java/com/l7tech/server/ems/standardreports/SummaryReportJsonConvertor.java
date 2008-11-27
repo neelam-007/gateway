@@ -17,7 +17,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
 
 
     @Override
-    public Collection<ReportSubmissionClusterBean> getReportSubmissions(Map params, String reportRanBy) throws ReportApi.ReportException {
+    public Collection<ReportSubmissionClusterBean> getReportSubmissions(Map params, String reportRanBy) throws ReportException {
         validateParams(params);
 
         Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getReportParams(params, reportRanBy);
@@ -25,7 +25,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         List<ReportSubmissionClusterBean> clusterBeans = new ArrayList<ReportSubmissionClusterBean>();
         for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
             ReportApi.ReportSubmission reportSub = new ReportApi.ReportSubmission();
-            reportSub.setType(ReportApi.ReportType.PERFORMANCE_SUMMARY);
+            reportSub.setType(getReportType(params));
             reportSub.setParameters(me.getValue());
 
             ReportSubmissionClusterBean clusterBean = new ReportSubmissionClusterBean(me.getKey(), reportSub);
@@ -36,8 +36,19 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
     }
 
 
+    protected ReportApi.ReportType getReportType(Map params) throws ReportException {
 
-    protected Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getReportParams(Map params, String reportRanBy) throws ReportApi.ReportException {
+        String reportType = (String) params.get(JSONConstants.REPORT_TYPE);
+        if(reportType.equals(JSONConstants.ReportType.PERFORMANCE)){
+            return ReportApi.ReportType.PERFORMANCE_SUMMARY;
+        }else if(reportType.equals(JSONConstants.ReportType.USAGE)){
+            return ReportApi.ReportType.USAGE_SUMMARY;
+        }
+
+        throw new ReportException("Unknown report type: " + reportType);
+    }
+
+    protected Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getReportParams(Map params, String reportRanBy) throws ReportException {
 
         Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getClusterMaps(params);
 
@@ -64,7 +75,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
     }
 
     private Map<String, Boolean> getClusterToIsDetailMap(
-            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams) throws ReportApi.ReportException {
+            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams) throws ReportException {
         Map<String, Boolean> clusterIdToIsDetailMap = new HashMap<String, Boolean>();
 
         for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
@@ -83,7 +94,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
                 }
             }
             if(!found){
-                throw new ReportApi.ReportException(
+                throw new ReportException(
                         SERVICE_ID_TO_OPERATIONS_MAP+ " parameter is missing for cluster: " + me.getKey()); 
             }
 
@@ -108,7 +119,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
      * @return
      * @throws ReportApi.ReportException
      */
-    private Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getClusterMaps(Map params) throws ReportApi.ReportException {
+    private Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getClusterMaps(Map params) throws ReportException {
 
         Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> returnMap
                 = new HashMap<String, Collection<ReportApi.ReportSubmission.ReportParam>>();
@@ -191,7 +202,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
 
 
     private void validateParams(Map params){
-    String [] requiredParams = new String[]{JSONConstants.ENTITY_TYPE, JSONConstants.REPORT_ENTITIES,
+    String [] requiredParams = new String[]{JSONConstants.REPORT_TYPE, JSONConstants.ENTITY_TYPE, JSONConstants.REPORT_ENTITIES,
             JSONConstants.TimePeriodTypeKeys.TIME_PERIOD_MAIN,JSONConstants.GROUPINGS, JSONConstants.SUMMARY_CHART,
     JSONConstants.SUMMARY_REPORT, JSONConstants.REPORT_NAME};
 
@@ -210,7 +221,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams,
             Map params,
             boolean setIsContextMapping,
-            Map<String, Boolean> clusterToIsDetail) throws ReportApi.ReportException {
+            Map<String, Boolean> clusterToIsDetail) throws ReportException {
         //MAPPING_KEYS
         Object [] groupings = (Object[]) params.get(JSONConstants.GROUPINGS);
         Map<String, List<String>> clusterToKeys = new HashMap<String, List<String>>();
@@ -239,7 +250,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
 
             String key = (String) currentGrouping.get(JSONConstants.ReportMappings.MESSAGE_CONTEXT_KEY);
             if(key.equals("")){
-                throw new ReportApi.ReportException("Key value cannot be empty");                
+                throw new ReportException("Key value cannot be empty");
             }
             String value = (String) currentGrouping.get(JSONConstants.ReportMappings.CONSTRAINT);
 
@@ -274,13 +285,13 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         for(Map.Entry<String, List<String>> me: clusterToKeys.entrySet()){
 
             if(!clusterToReportParams.containsKey(me.getKey())){
-                throw new ReportApi.ReportException("Unknown cluster: " + me.getKey() +" found in grouping JSON");
+                throw new ReportException("Unknown cluster: " + me.getKey() +" found in grouping JSON");
             }
             Collection<ReportApi.ReportSubmission.ReportParam> clusterParams = clusterToReportParams.get(me.getKey());
 
             Set<String> testKeySet = new HashSet<String>(me.getValue());
             if(testKeySet.size() != me.getValue().size()){
-                throw new ReportApi.ReportException("Groups cannot contain duplicate keys on a per cluster basis");
+                throw new ReportException("Groups cannot contain duplicate keys on a per cluster basis");
             }
             ReportApi.ReportSubmission.ReportParam mappingKeyParam = new ReportApi.ReportSubmission.ReportParam();
             mappingKeyParam.setName(MAPPING_KEYS);
@@ -326,7 +337,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
 
     private void addTimeParameters(
             Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params)
-            throws ReportApi.ReportException {
+            throws ReportException {
 
         Object o = params.get(JSONConstants.TimePeriodTypeKeys.TIME_PERIOD_MAIN);
         Map timePeriodMap = (Map) o;
@@ -347,7 +358,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             try{
                 Utilities.getUnitFromString(unitType);
             }catch (IllegalArgumentException e){
-                throw new ReportApi.ReportException(e.getMessage());
+                throw new ReportException(e.getMessage());
             }
             ReportApi.ReportSubmission.ReportParam relativeUnit = new ReportApi.ReportSubmission.ReportParam();
             relativeUnit.setName(RELATIVE_TIME_UNIT);
@@ -371,7 +382,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             try{
                 Utilities.getAbsoluteMilliSeconds(startTime);
             }catch (ParseException ex){
-                throw new ReportApi.ReportException
+                throw new ReportException
                         ("Cannot parse startTime: " + startTime+" must be in the format: " + Utilities.DATE_STRING);                
             }
             
@@ -384,7 +395,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             try{
                 Utilities.getAbsoluteMilliSeconds(startTime);
             }catch (ParseException ex){
-                throw new ReportApi.ReportException
+                throw new ReportException
                         ("Cannot parse startTime: " + startTime+" must be in the format: " + Utilities.DATE_STRING);
             }
 
@@ -393,7 +404,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             absoluteEndTimeParam.setValue(endTime);
             addParamToAllClusters(clusterToReportParams, absoluteEndTimeParam);
         }else{
-            throw new ReportApi.ReportException("Invalid json value for key:" + JSONConstants.TimePeriodTypeKeys.TYPE);
+            throw new ReportException("Invalid json value for key:" + JSONConstants.TimePeriodTypeKeys.TYPE);
         }
     }
 

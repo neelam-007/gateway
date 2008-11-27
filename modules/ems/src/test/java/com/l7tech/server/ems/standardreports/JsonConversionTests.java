@@ -87,6 +87,96 @@ public class JsonConversionTests {
             "    \"reportName\" : \"My Report\"" +
             "}";
 
+    private final static String usageRelativeJson = "{\"reportType\":\"usage\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"229378\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }" +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"My Report\"" +
+            "}";
+
+    private final static String usageIntervalRelativeJson = "{\"reportType\":\"usage\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"229378\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }" +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : false," +
+            "    \"reportName\" : \"My Report\"" +
+            "}";
+
     private final static String psRelativeJsonWithAuthUser = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
@@ -229,7 +319,7 @@ public class JsonConversionTests {
             SummaryReportJsonConvertor.USE_USER, SummaryReportJsonConvertor.AUTHENTICATED_USERS, SummaryReportJsonConvertor.PRINT_CHART};
 
     @Test
-    public void testNumClustersFound() throws ReportApi.ReportException {
+    public void testNumClustersFound() throws ReportException {
         Object o = JSON.parse(psRelativeJson);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
@@ -239,7 +329,51 @@ public class JsonConversionTests {
     }
 
     @Test
-    public void testPerfStatSummaryIsRelative() throws ReportApi.ReportException {
+    public void testReportType() throws ReportException {
+        Object o = JSON.parse(psRelativeJson);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+            Assert.assertTrue("Report should be performance summary",
+                    reportSubmission.getType() == ReportApi.ReportType.PERFORMANCE_SUMMARY);
+        }
+
+        o = JSON.parse(psRelativeIntervalJson);
+        jsonMap = (Map) o;
+        convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+            Assert.assertTrue("Report should be performance interval",
+                    reportSubmission.getType() == ReportApi.ReportType.PERFORMANCE_INTERVAL);
+        }
+
+        o = JSON.parse(usageRelativeJson);
+        jsonMap = (Map) o;
+        convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+            Assert.assertTrue("Report should be usage summary",
+                    reportSubmission.getType() == ReportApi.ReportType.USAGE_SUMMARY);
+        }
+
+        o = JSON.parse(usageIntervalRelativeJson);
+        jsonMap = (Map) o;
+        convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+            Assert.assertTrue("Report should be usage interval",
+                    reportSubmission.getType() == ReportApi.ReportType.USAGE_INTERVAL);
+        }
+
+    }
+
+    @Test
+    public void testPerfStatSummaryIsRelative() throws ReportException {
         Object o = JSON.parse(psRelativeJson);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
@@ -266,7 +400,7 @@ public class JsonConversionTests {
     }
 
     @Test
-    public void testPerfStatSummaryTimeUnit() throws ReportApi.ReportException {
+    public void testPerfStatSummaryTimeUnit() throws ReportException {
         Object o = JSON.parse(psRelativeJson);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
@@ -307,7 +441,7 @@ public class JsonConversionTests {
     }
 
     @Test
-    public void testPerfStatInterval_IntervalTime() throws ReportApi.ReportException {
+    public void testPerfStatInterval_IntervalTime() throws ReportException {
         Object o = JSON.parse(psRelativeIntervalJson);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
@@ -335,7 +469,7 @@ public class JsonConversionTests {
     }
 
     @Test
-    public void testPerfStatSummary_MappingKeysAndValues() throws ReportApi.ReportException {
+    public void testPerfStatSummary_MappingKeysAndValues() throws ReportException {
         Object o = JSON.parse(psRelativeJson);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
@@ -420,7 +554,7 @@ public class JsonConversionTests {
     }
 
     @Test
-    public void testPerfStatExpectedParameters() throws ReportApi.ReportException {
+    public void testPerfStatExpectedParameters() throws ReportException {
         Object o = JSON.parse(psRelativeJson);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
@@ -448,7 +582,7 @@ public class JsonConversionTests {
     }
 
     @Test
-    public void testPerfStatRelativeReport_NoAuthenticatedUser() throws ReportApi.ReportException {
+    public void testPerfStatRelativeReport_NoAuthenticatedUser() throws ReportException {
         Object o = JSON.parse(psRelativeJson);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
@@ -482,7 +616,7 @@ public class JsonConversionTests {
     }
 
     @Test
-    public void testPerfStatRelativeReport_WithAuthenticatedUser() throws ReportApi.ReportException {
+    public void testPerfStatRelativeReport_WithAuthenticatedUser() throws ReportException {
         Object o = JSON.parse(psRelativeJsonWithAuthUser);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
@@ -521,7 +655,7 @@ public class JsonConversionTests {
 
 
     @Test
-    public void testPerfStatRelativeReport_ServiceAndOperations() throws ReportApi.ReportException {
+    public void testPerfStatRelativeReport_ServiceAndOperations() throws ReportException {
         Object o = JSON.parse(psRelativeJson);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);

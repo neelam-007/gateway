@@ -13,9 +13,9 @@ import java.util.Map;
 
 public class JsonReportParameterConvertorFactory {
 
-    public static JsonReportParameterConvertor getConvertor(Map jsonMap) throws ReportApi.ReportException {
+    public static JsonReportParameterConvertor getConvertor(Map jsonMap) throws ReportException {
         if(!jsonMap.containsKey(JSONConstants.SUMMARY_REPORT)){
-            throw new ReportApi.ReportException("Key: "+JSONConstants.SUMMARY_REPORT+" is missing from JSON data");
+            throw new ReportException("Key: "+JSONConstants.SUMMARY_REPORT+" is missing from JSON data");
         }
         Boolean summaryReport = (Boolean) jsonMap.get(JSONConstants.SUMMARY_REPORT);
 
