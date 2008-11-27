@@ -3,6 +3,7 @@ package com.l7tech.server.ems.enterprise;
 import org.mortbay.util.ajax.JSON;
 
 import java.util.Map;
+import java.io.Serializable;
 
 /**
  * Provides for conversion of a Java Throwable to JSON notation.
@@ -10,7 +11,7 @@ import java.util.Map;
  * @since Enteprise Manager 1.0
  * @author rmak
  */
-public class JSONException implements JSON.Convertible {
+public class JSONException implements JSON.Convertible, Serializable {
 
     private Throwable t;
 

@@ -51,4 +51,6 @@
             </props>
         </constructor-arg>
     </bean>
+
+    <bean id="reportService" class="com.l7tech.server.ems.standardreports.MockReportService" />
 </beans>
