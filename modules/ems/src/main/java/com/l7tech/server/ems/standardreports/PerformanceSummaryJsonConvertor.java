@@ -4,7 +4,7 @@
  * Date: Nov 25, 2008
  * Time: 2:37:55 PM
  */
-package com.l7tech.server.ems.standardreports.reporttypes;
+package com.l7tech.server.ems.standardreports;
 
 import java.util.*;
 import java.text.ParseException;
@@ -12,9 +12,8 @@ import java.text.ParseException;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.gateway.standardreports.Utilities;
-import com.l7tech.server.ems.standardreports.ReportSubmissionClusterBean;
 
-public class PerformanceSummary {
+public class PerformanceSummaryJsonConvertor implements JsonReportParameterConvertor {
 
     //common
     public final static String IS_RELATIVE = "IS_RELATIVE";
@@ -327,8 +326,15 @@ public class PerformanceSummary {
         }
     }
 
+    private void addIntervalParameters(
+            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params)
+            throws ReportApi.ReportException {
 
-    private void addTimeParameters(Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params) throws ReportApi.ReportException {
+    }
+
+    private void addTimeParameters(
+            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params)
+            throws ReportApi.ReportException {
 
         Object o = params.get(JSONConstants.TimePeriodTypeKeys.TIME_PERIOD_MAIN);
         Map timePeriodMap = (Map) o;

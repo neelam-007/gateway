@@ -10,11 +10,12 @@ import org.junit.Test;
 import org.junit.Assert;
 import org.mortbay.util.ajax.JSON;
 import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.server.ems.standardreports.reporttypes.PerformanceSummary;
+import com.l7tech.server.ems.standardreports.PerformanceSummaryJsonConvertor;
+import com.l7tech.gateway.standardreports.Utilities;
 
 import java.util.*;
 
-public class ReportRunnerTests {
+public class JsonConversionTests {
 
     private static final String cluster1 = "c32bb1a9-1538-4792-baa1-566bfd418020";
     private static final String cluster2 = "a14df4d4-0c62-4d8e-ac3a-82cd8a442a26";
@@ -148,24 +149,83 @@ public class ReportRunnerTests {
             "    \"reportName\" : \"My Report\"" +
             "}";
 
-    String [] psSummaryRelativeExpectedParams = new String[]{PerformanceSummary.IS_RELATIVE, PerformanceSummary.RELATIVE_TIME_UNIT,
-            PerformanceSummary.RELATIVE_NUM_OF_TIME_UNITS, PerformanceSummary.REPORT_RAN_BY,
-            PerformanceSummary.SERVICE_NAMES_LIST, PerformanceSummary.SERVICE_ID_TO_OPERATIONS_MAP,
-            PerformanceSummary.IS_DETAIL, PerformanceSummary.MAPPING_KEYS, PerformanceSummary.MAPPING_VALUES,
-            PerformanceSummary.USE_USER, PerformanceSummary.AUTHENTICATED_USERS, PerformanceSummary.PRINT_CHART};
+    String [] psSummaryRelativeExpectedParams = new String[]{PerformanceSummaryJsonConvertor.IS_RELATIVE, PerformanceSummaryJsonConvertor.RELATIVE_TIME_UNIT,
+            PerformanceSummaryJsonConvertor.RELATIVE_NUM_OF_TIME_UNITS, PerformanceSummaryJsonConvertor.REPORT_RAN_BY,
+            PerformanceSummaryJsonConvertor.SERVICE_NAMES_LIST, PerformanceSummaryJsonConvertor.SERVICE_ID_TO_OPERATIONS_MAP,
+            PerformanceSummaryJsonConvertor.IS_DETAIL, PerformanceSummaryJsonConvertor.MAPPING_KEYS, PerformanceSummaryJsonConvertor.MAPPING_VALUES,
+            PerformanceSummaryJsonConvertor.USE_USER, PerformanceSummaryJsonConvertor.AUTHENTICATED_USERS, PerformanceSummaryJsonConvertor.PRINT_CHART};
 
     @Test
     public void testNumClustersFound() throws ReportApi.ReportException {
-        ReportRunner reportRunner = new ReportRunner(psRelativeJson, "Donal");
-        Collection<ReportSubmissionClusterBean> reportClusterBeans = reportRunner.getReportSubmissions();
+        Object o = JSON.parse(psRelativeJson);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
         Assert.assertTrue("There should be 2 reports, one for each cluster", reportClusterBeans.size() == 2);
     }
 
     @Test
+    public void testPerfStatSummaryIsRelative() throws ReportApi.ReportException {
+        Object o = JSON.parse(psRelativeJson);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        Assert.assertNotNull(reportClusterBeans);
+
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+
+            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
+            Assert.assertNotNull(reportParams);
+
+            Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
+                    new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
+            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+                paramMap.put(rP.getName(), rP);
+            }
+
+            ReportApi.ReportSubmission.ReportParam isRelativeParam = paramMap.get(PerformanceSummaryJsonConvertor.IS_RELATIVE);
+            Boolean isRelative = (Boolean) isRelativeParam.getValue();
+            Assert.assertTrue("isRelative should be true", isRelative);
+        }
+    }
+
+    @Test
+    public void testPerfStatSummaryTimeUnit() throws ReportApi.ReportException {
+        Object o = JSON.parse(psRelativeJson);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        Assert.assertNotNull(reportClusterBeans);
+
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+
+            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
+            Assert.assertNotNull(reportParams);
+
+            Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
+                    new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
+            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+                paramMap.put(rP.getName(), rP);
+            }
+
+            ReportApi.ReportSubmission.ReportParam timeUnitParam = paramMap.get(PerformanceSummaryJsonConvertor.RELATIVE_TIME_UNIT);
+            String timeUnit = (String) timeUnitParam.getValue();
+            Utilities.UNIT_OF_TIME unitOfTime = Utilities.getUnitFromString(timeUnit);
+            Assert.assertTrue("Relative time unit should be ", unitOfTime == Utilities.UNIT_OF_TIME.DAY);
+        }
+    }
+
+    @Test
     public void testPerfStatExpectedParameters() throws ReportApi.ReportException {
-        ReportRunner reportRunner = new ReportRunner(psRelativeJson, "Donal");
-        Collection<ReportSubmissionClusterBean> reportClusterBeans = reportRunner.getReportSubmissions();
+        Object o = JSON.parse(psRelativeJson);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
         for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
@@ -190,8 +250,10 @@ public class ReportRunnerTests {
 
     @Test
     public void testPerfStatRelativeReport_NoAuthenticatedUser() throws ReportApi.ReportException {
-        ReportRunner reportRunner = new ReportRunner(psRelativeJson, "Donal");
-        Collection<ReportSubmissionClusterBean> reportClusterBeans = reportRunner.getReportSubmissions();
+        Object o = JSON.parse(psRelativeJson);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
         for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
@@ -208,12 +270,12 @@ public class ReportRunnerTests {
                 paramMap.put(rP.getName(), rP);
             }
 
-            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(PerformanceSummary.AUTHENTICATED_USERS);
+            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(PerformanceSummaryJsonConvertor.AUTHENTICATED_USERS);
             List<String> authUsers = (List<String>) reportParam.getValue();
             Assert.assertNotNull("authUsers should not be null", authUsers);
             Assert.assertTrue("Authusers should be empty", authUsers.size() == 0);
 
-            ReportApi.ReportSubmission.ReportParam useUserParam = paramMap.get(PerformanceSummary.USE_USER);
+            ReportApi.ReportSubmission.ReportParam useUserParam = paramMap.get(PerformanceSummaryJsonConvertor.USE_USER);
             Boolean useUser = (Boolean) useUserParam.getValue();
             Assert.assertFalse("Use user should be false", useUser);
 
@@ -222,8 +284,10 @@ public class ReportRunnerTests {
 
     @Test
     public void testPerfStatRelativeReport_WithAuthenticatedUser() throws ReportApi.ReportException {
-        ReportRunner reportRunner = new ReportRunner(psRelativeJsonWithAuthUser, "Donal");
-        Collection<ReportSubmissionClusterBean> reportClusterBeans = reportRunner.getReportSubmissions();
+        Object o = JSON.parse(psRelativeJsonWithAuthUser);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
         for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
@@ -240,10 +304,10 @@ public class ReportRunnerTests {
                 paramMap.put(rP.getName(), rP);
             }
 
-            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(PerformanceSummary.AUTHENTICATED_USERS);
+            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(PerformanceSummaryJsonConvertor.AUTHENTICATED_USERS);
             List<String> authUsers = (List<String>) reportParam.getValue();
             Assert.assertNotNull("authUsers should not be null", authUsers);
-            ReportApi.ReportSubmission.ReportParam useUserParam = paramMap.get(PerformanceSummary.USE_USER);
+            ReportApi.ReportSubmission.ReportParam useUserParam = paramMap.get(PerformanceSummaryJsonConvertor.USE_USER);
             Boolean useUser = (Boolean) useUserParam.getValue();
 
             if(clusterId.equals(cluster1)){
@@ -259,8 +323,10 @@ public class ReportRunnerTests {
 
     @Test
     public void testPerfStatRelativeReport_ServiceAndOperations() throws ReportApi.ReportException {
-        ReportRunner reportRunner = new ReportRunner(psRelativeJson, "Donal");
-        Collection<ReportSubmissionClusterBean> reportClusterBeans = reportRunner.getReportSubmissions();
+        Object o = JSON.parse(psRelativeJson);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
         for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
@@ -277,7 +343,7 @@ public class ReportRunnerTests {
                 paramMap.put(rP.getName(), rP);
             }
 
-            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(PerformanceSummary.SERVICE_NAMES_LIST);
+            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(PerformanceSummaryJsonConvertor.SERVICE_NAMES_LIST);
             Set<String> serviceNames = (Set<String>) reportParam.getValue();
             Assert.assertNotNull(serviceNames);
 
@@ -289,7 +355,7 @@ public class ReportRunnerTests {
                 throw new IllegalStateException("Unexpected cluster id found :" + clusterId);
             }
 
-            ReportApi.ReportSubmission.ReportParam serviceIdtoOp = paramMap.get(PerformanceSummary.SERVICE_ID_TO_OPERATIONS_MAP);
+            ReportApi.ReportSubmission.ReportParam serviceIdtoOp = paramMap.get(PerformanceSummaryJsonConvertor.SERVICE_ID_TO_OPERATIONS_MAP);
             Map<String, Set<String>> serviceIdToOps = (Map<String, Set<String>>) serviceIdtoOp.getValue();
             for(Map.Entry<String, Set<String>> me: serviceIdToOps.entrySet()){
 
