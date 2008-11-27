@@ -184,7 +184,7 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                                             // Get artifacts
                                             ReportApi.ReportResult result = reportApi.getReportResult( report.getSubmissionId(), ReportApi.ReportOutputType.PDF );
                                             StandardReportArtifact artifact = new StandardReportArtifact();
-                                            artifact.setContentType( "" );
+                                            artifact.setContentType( "application/pdf" );
                                             artifact.setReport( report );
                                             ByteArrayOutputStream out = new ByteArrayOutputStream( 4094 );
                                             result.getData().writeTo( out );

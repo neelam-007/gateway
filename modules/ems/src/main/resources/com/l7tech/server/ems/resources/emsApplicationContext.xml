@@ -415,6 +415,17 @@
         </property>
     </bean>
 
+    <bean id="setReportResourceStandardReportManager"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod"
+                  value="com.l7tech.server.ems.standardreports.ReportResource.setStandardReportManager"/>
+        <property name="arguments">
+            <list>
+                <ref local="standardReportManager"/>
+            </list>
+        </property>
+    </bean>
+
     <bean id="setResourceSecurityManager"
           class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="staticMethod"

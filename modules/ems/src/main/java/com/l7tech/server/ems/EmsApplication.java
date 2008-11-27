@@ -3,6 +3,7 @@ package com.l7tech.server.ems;
 import com.l7tech.server.ems.pages.EmsError;
 import com.l7tech.server.ems.pages.Login;
 import com.l7tech.server.ems.pages.SystemSettings;
+import com.l7tech.server.ems.standardreports.ReportResource;
 import com.l7tech.util.SyspropUtil;
 import org.apache.wicket.*;
 import org.apache.wicket.authorization.Action;
@@ -129,6 +130,7 @@ public class EmsApplication extends WebApplication {
         });
         getSharedResources().add("auditResource", new AuditResource());
         getSharedResources().add("logResource", new LogResource());
+        getSharedResources().add("reportResource", new ReportResource());
 
         IMarkupSettings markupSettings = getMarkupSettings();
         markupSettings.setStripWicketTags(true);

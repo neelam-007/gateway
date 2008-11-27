@@ -65,6 +65,7 @@ public enum EntityType implements Comparable<EntityType> {
     ESM_ENTERPRISE_FOLDER("Folder", false),
     ESM_SSG_CLUSTER("Cluster", false),
     ESM_SSG_NODE("Node", false),
+    ESM_STANDARD_REPORT("Report", false),
     ;
 
     private final String name;
