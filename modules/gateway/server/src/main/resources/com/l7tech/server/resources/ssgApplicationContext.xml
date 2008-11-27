@@ -1149,6 +1149,10 @@
         <constructor-arg index="1" ref="clusterInfoManager"/>
     </bean>
 
+    <bean id="reportApiImpl" class="com.l7tech.server.cluster.ReportApiImpl">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
     <bean id="migrationApiImpl" class="com.l7tech.server.management.migration.MigrationApiImpl">
         <constructor-arg index="0" ref="migrationManager"/>
     </bean>

@@ -1,9 +1,12 @@
 package com.l7tech.server.management.api.node;
 
+import com.l7tech.server.management.api.TypedValue;
+
 import javax.activation.DataHandler;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.ws.soap.MTOM;
 import javax.jws.WebService;
 import javax.jws.WebMethod;
@@ -58,13 +61,13 @@ public interface ReportApi {
      * Supported report types.
      */
     @XmlRootElement(name="ReportType", namespace="http://www.layer7tech.com/management/report")
-    enum ReportType { PERFORMANCE, USAGE }
+    enum ReportType { PERFORMANCE_SUMMARY, PERFORMANCE_INTERVAL, USAGE_SUMMARY, USAGE_INTERVAL }
 
     /**
      * Supported report output types.
      */
     @XmlRootElement(name="ReportOutputType", namespace="http://www.layer7tech.com/management/report")
-    enum ReportOutputType { RAW, PDF, XML, HTML, XLS }
+    enum ReportOutputType { PDF, HTML }
 
     /**
      * Report status data.
@@ -182,6 +185,7 @@ public interface ReportApi {
         public static class ReportParam {
             private String name;
             private Object value;
+            private TypedValue typedValue;
 
             @XmlAttribute
             public String getName() {
@@ -192,13 +196,26 @@ public interface ReportApi {
                 this.name = name;
             }
 
-            @XmlElement
+            @XmlTransient
             public Object getValue() {
+                if ( value == null && typedValue !=null ) {
+                    value = typedValue.value();                    
+                }
                 return value;
             }
 
-            public void setValue(Object value) {
+            public void setValue( final Object value ) {
                 this.value = value;
+                this.typedValue = new TypedValue( value );
+            }
+
+            @XmlElement
+            public TypedValue getTypedValue() {
+                return this.typedValue;
+            }
+
+            public void setTypedValue( final TypedValue typedValue ) {
+                this.typedValue = typedValue;
             }
         }
     }

@@ -37,22 +37,37 @@
     <jaxws:endpoint id="processControllerNodeApiEndpoint" implementor="#processControllerNodeApiImpl"
                     address="/processControllerNodeApi" depends-on="processControllerNodeApiImpl"/>
 
+
+    <bean id="emsSecurityInterceptor" class="com.l7tech.server.admin.ws.EsmApiInterceptor">
+        <constructor-arg index="0" ref="licenseManager"/>
+        <constructor-arg index="1" ref="trustedEmsManager"/>
+        <constructor-arg index="2" ref="trustedEmsUserManager"/>
+        <constructor-arg index="3" ref="adminSessionManager"/>
+    </bean>
+
     <!-- EMS Api -->
     <jaxws:endpoint id="gatewayApiEndpoint" implementor="#gatewayApiImpl"
                     address="/gatewayApi" depends-on="gatewayApiImpl">
         <jaxws:inInterceptors>
-            <bean class="com.l7tech.server.admin.ws.EsmApiInterceptor">
-                <constructor-arg index="0" ref="licenseManager"/>
-                <constructor-arg index="1" ref="trustedEmsManager"/>
-                <constructor-arg index="2" ref="trustedEmsUserManager"/>     
-                <constructor-arg index="3" ref="adminSessionManager"/>
-            </bean>
+            <ref bean="emsSecurityInterceptor"/>
+        </jaxws:inInterceptors>
+    </jaxws:endpoint>
+
+    <!-- EMS Api -->
+    <jaxws:endpoint id="reportApiEndpoint" implementor="#reportApiImpl"
+                    address="/reportApi" depends-on="reportApiImpl">
+        <jaxws:inInterceptors>
+            <ref bean="emsSecurityInterceptor"/>
         </jaxws:inInterceptors>
     </jaxws:endpoint>
 
     <!-- Migration API-->
     <jaxws:endpoint id="migrationApiEndpoint" implementor="#migrationApiImpl"
-                    address="/migrationApi" depends-on="migrationApiImpl"/>
+                    address="/migrationApi" depends-on="migrationApiImpl">
+        <jaxws:inInterceptors>
+            <ref bean="emsSecurityInterceptor"/>
+        </jaxws:inInterceptors>
+    </jaxws:endpoint>
 
 </beans>
 

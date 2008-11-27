@@ -75,7 +75,7 @@ public class GatewayContext {
     private static final String PROP_CONTROLLER_URL = "com.l7tech.esm.controllerUrl";
     private static final String PROP_MIGRATION_URL = "com.l7tech.esm.migrationUrl";
     private static final String GATEWAY_URL = SyspropUtil.getString(PROP_GATEWAY_URL, "https://{0}:{1}/ssg/services/gatewayApi");
-    private static final String REPORT_URL = SyspropUtil.getString(PROP_REPORT_URL, "https://{0}:{1}/ssg/services/reportApi");    
+    private static final String REPORT_URL = SyspropUtil.getString(PROP_REPORT_URL, "https://{0}:{1}/ssg/services/reportApi");
     private static final String CONTROLLER_URL = SyspropUtil.getString(PROP_CONTROLLER_URL, "https://{0}:{1}/services/nodeManagementApi");
     private static final String MIGRATION_URL = SyspropUtil.getString(PROP_MIGRATION_URL, "https://{0}:{1}/ssg/services/migrationApi");
 
@@ -125,7 +125,7 @@ public class GatewayContext {
 
             @Override
             public KeyManager[] getKeyManagers() {
-                return defaultKey.getSslKeyManagers();
+                return defaultKey==null ? new KeyManager[0] : defaultKey.getSslKeyManagers();
             }
 
             @Override

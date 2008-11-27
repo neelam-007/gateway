@@ -16,6 +16,7 @@ import com.l7tech.gateway.standardreports.Utilities;
 public class SummaryReportJsonConvertor implements JsonReportParameterConvertor {
 
 
+    @Override
     public Collection<ReportSubmissionClusterBean> getReportSubmissions(Map params, String reportRanBy) throws ReportApi.ReportException {
         validateParams(params);
 
@@ -24,7 +25,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         List<ReportSubmissionClusterBean> clusterBeans = new ArrayList<ReportSubmissionClusterBean>();
         for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
             ReportApi.ReportSubmission reportSub = new ReportApi.ReportSubmission();
-            reportSub.setType(ReportApi.ReportType.PERFORMANCE);
+            reportSub.setType(ReportApi.ReportType.PERFORMANCE_SUMMARY);
             reportSub.setParameters(me.getValue());
 
             ReportSubmissionClusterBean clusterBean = new ReportSubmissionClusterBean(me.getKey(), reportSub);

@@ -36,7 +36,7 @@ public class GatewayApiImpl implements GatewayApi {
 
     @Override
     public ClusterInfo getClusterInfo() {
-        logger.info("Processing request for cluster info.");
+        logger.fine("Processing request for cluster info.");
         
         ClusterInfo info = new ClusterInfo();
         info.setClusterHostname( config.getProperty("clusterHost", "") );
@@ -48,7 +48,7 @@ public class GatewayApiImpl implements GatewayApi {
 
     @Override
     public Collection<GatewayInfo> getGatewayInfo() {
-        logger.info("Processing request for gateway info.");
+        logger.fine("Processing request for gateway info.");
         
         Set<GatewayInfo> gateways = new LinkedHashSet<GatewayInfo>();
 
