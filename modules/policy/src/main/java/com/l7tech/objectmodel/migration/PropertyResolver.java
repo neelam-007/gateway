@@ -21,7 +21,7 @@ public interface PropertyResolver {
      * @param property the method for which the property value is retrieved
      * @return a map with migration mappings as values, keyed on the (target) dependency header.
      */
-    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, final Method property) throws PropertyResolverException;
+    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, final Method property) throws MigrationException;
 
-    // todo: applyMapping(newValue, propName, entity)
+    public void applyMapping(Entity sourceEntity, String propName, Entity targetEntity) throws MigrationException;
 }

@@ -6,10 +6,7 @@ import com.l7tech.objectmodel.migration.MigrationMappingType;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.*;
 import java.util.*;
 
 /**
@@ -169,5 +166,13 @@ public class MigrationBundle {
         }
 
         return result;
+    }
+
+    public boolean hasItem(EntityHeaderRef headerRef) {
+        return getItemsMap().containsKey(headerRef);
+    }
+
+    public ExportedItem getExportedItem(EntityHeaderRef headerRef) {
+        return getItemsMap().get(headerRef);
     }
 }

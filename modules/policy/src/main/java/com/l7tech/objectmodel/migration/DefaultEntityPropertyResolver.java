@@ -24,18 +24,21 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
     private static final Logger logger = Logger.getLogger(DefaultEntityPropertyResolver.class.getName());
 
 
-    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, final Method property) throws PropertyResolverException {
+    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, final Method property) throws MigrationException {
 
         if (!MigrationUtils.isDefaultDependency(property))
             throw new IllegalArgumentException("Cannot handle property: " + property);
 
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
 
+        String getterName = property.getName();
+        String propName = getterName.startsWith("get") && getterName.length() > 3 ? getterName.substring(3, getterName.length()-1) : getterName;
+
         final Object propertyValue;
         try {
             propertyValue = property.invoke(entity);
         } catch (Exception e) {
-            throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
+            throw new MigrationException("Error getting property value for entity: " + entity, e);
         }
 
         Map<EntityHeader, Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
@@ -45,11 +48,11 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
 
         else if (propertyValue instanceof EntityHeader) {
             addToResult((EntityHeader) propertyValue,
-                new MigrationMapping(source, (EntityHeader) propertyValue, property.getName(), type), result);
+                new MigrationMapping(source, (EntityHeader) propertyValue, propName, type), result);
 
         } else if (propertyValue instanceof Entity) {
             addToResult(MigrationUtils.getHeaderFromEntity((Entity) propertyValue),
-                new MigrationMapping(source, MigrationUtils.getHeaderFromEntity((Entity) propertyValue), property.getName(), type), result);
+                new MigrationMapping(source, MigrationUtils.getHeaderFromEntity((Entity) propertyValue), propName, type), result);
 
         } else { // array or set
             Collection input = null;
@@ -62,14 +65,14 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
 
                 for(Object item : input) {
                     if (item instanceof EntityHeader)
-                        addToResult((EntityHeader) item, new MigrationMapping(source, (EntityHeader) item, property.getName(), type), result);
+                        addToResult((EntityHeader) item, new MigrationMapping(source, (EntityHeader) item, propName, type), result);
                     else if (item instanceof Entity)
                         addToResult(MigrationUtils.getHeaderFromEntity((Entity) item),
-                            new MigrationMapping(source, MigrationUtils.getHeaderFromEntity((Entity) item), property.getName(), type), result);
+                            new MigrationMapping(source, MigrationUtils.getHeaderFromEntity((Entity) item), propName, type), result);
                 }
             } else {
                 // should not happen
-                throw new PropertyResolverException(this.getClass().getName() + " cannot handle properties of type: " + propertyValue.getClass().getName());
+                throw new MigrationException(this.getClass().getName() + " cannot handle properties of type: " + propertyValue.getClass().getName());
             }
         }
 
@@ -85,5 +88,17 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
             result.put(header, mappingsForHeader);
         }
         mappingsForHeader.add(mapping);
+    }
+
+    public void applyMapping(Entity sourceEntity, String propName, Entity targetEntity) throws MigrationException {
+
+        Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName);
+
+        try {
+            // todo: handle multi-value target values
+            method.invoke(sourceEntity, targetEntity);
+        } catch (Exception e) {
+            throw new MigrationException("Error applying mapping: " , e);
+        }
     }
 }

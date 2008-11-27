@@ -2,13 +2,20 @@ package com.l7tech.objectmodel.migration;
 
 import com.l7tech.objectmodel.EntityHeaderRef;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.*;
 
 /**
- * A MigrationMapping represents a dependency and mapping relationship between two entities (source and target),
- * along with its characteristics:
+ * A MigrationMapping captures a dependency and mapping relationship between two entities (source and target);
+ * the following attributes describe a dependency mapping:
+ * <ul>
+ * <li>source entity header reference</li>
+ * <li>
+ *  property name of the source entity; extra semantic can be added to it, as needed by specific property resolvers;
+ *  the delimiter between these and the actual property name is in this case ":"
+ * </li>
+ * <li>mapping type</li>
+ * <li>target entity header reference</li>
+ * </ul>
  * - the property name of the source entity that is
  * - the mapping type
  *
@@ -46,11 +53,17 @@ public class MigrationMapping {
 
     @XmlElement(name = "target")
     public EntityHeaderRef getTarget() {
-        return target;
+        return mappedTarget != null ? mappedTarget : target;
     }
 
     public void setTarget(EntityHeaderRef target) {
+        this.mappedTarget = null;
         this.target = EntityHeaderRef.fromOther(target); // discard subclass info, for clean serialization output
+    }
+
+    @XmlTransient
+    public EntityHeaderRef getOriginalTarget() {
+        return target;
     }
 
     public String getPropName() {
@@ -78,6 +91,11 @@ public class MigrationMapping {
         if (type.getNameMapping() == MigrationMappingSelection.NONE)
             throw new IllegalStateException("Mapping selection set to NONE, cannot set new mapping target for: " + this.toString() );
         this.mappedTarget = EntityHeaderRef.fromOther(mappedTarget);
+    }
+
+    @XmlAttribute
+    public boolean isMappedTarget() {
+        return mappedTarget != null;
     }
 
     public String toString() {

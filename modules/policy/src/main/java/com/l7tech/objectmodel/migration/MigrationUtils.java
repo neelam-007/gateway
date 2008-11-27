@@ -41,6 +41,48 @@ public class MigrationUtils {
         }
     }
 
+    public static PropertyResolver getResolver(Entity sourceEntity, String propName) throws MigrationException {
+
+        // strip extra hints encoded with the property name
+        String name = propName;
+        int sep = propName.indexOf(":");
+        if ( sep > -1 )
+            name = propName.substring(0, sep);
+
+        Method method = getterForPropertyName(sourceEntity, name);
+        if (method == null || !MigrationUtils.isDependency(method))
+            throw new MigrationException("No dependency method found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
+
+        // method points to a dependency, return the resolver for it
+        return getResolver(method);
+    }
+
+    private static Method methodForPropertyName(Object sourceEntity, String name, boolean getter) {
+        String prefix = getter ? "get" : "set";
+        try {
+            // try with prefix first
+            return sourceEntity.getClass().getMethod(name.startsWith(prefix) ? name : prefix + name);
+        } catch (NoSuchMethodException e) {
+            // fall back to non-prefixed name
+            if (! name.startsWith(prefix)) {
+                try {
+                    return sourceEntity.getClass().getMethod(name);
+                } catch (NoSuchMethodException ee) {
+                    // no luck
+                }
+            }
+            return null;
+        }
+    }
+
+    public static Method getterForPropertyName(Object sourceEntity, String name) {
+        return methodForPropertyName(sourceEntity, name, true);
+    }
+
+    public static Method setterForPropertyName(Object sourceEntity, String name) {
+        return methodForPropertyName(sourceEntity, name, false);
+    }
+
     /**
      * Checkes if the given method is marked as a dependency (using the {@link com.l7tech.objectmodel.migration.Migration}
      * annotation, or if qualifies as a default dependency.

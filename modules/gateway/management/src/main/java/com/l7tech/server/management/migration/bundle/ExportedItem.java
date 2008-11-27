@@ -17,7 +17,6 @@ public class ExportedItem {
     private EntityHeaderRef headerRef;
     private Entity value;
     private Entity mappedValue;
-    private boolean isMappedValue = false;
 
     protected ExportedItem() {}
 
@@ -36,17 +35,15 @@ public class ExportedItem {
 
     @XmlAnyElement(lax=true)
     public Entity getValue() {
-        return isMappedValue ? mappedValue : value;
+        return mappedValue != null ? mappedValue : value;
     }
 
     public void setValue(Entity value) {
+        this.mappedValue = null;
         this.value = value;
-        isMappedValue = false;
     }
 
-    @XmlTransient()
     public void setMappedValue(Entity mappedValue) {
-        isMappedValue = true;
         this.mappedValue = mappedValue;
     }
 
@@ -62,10 +59,6 @@ public class ExportedItem {
 
     @XmlAttribute
     public boolean isMappedValue() {
-        return isMappedValue;
-    }
-
-    public void setMappedValue(boolean mappedValue) {
-        isMappedValue = mappedValue;
+        return mappedValue != null;
     }
 }
