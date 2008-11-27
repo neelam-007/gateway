@@ -36,10 +36,10 @@ public class TypedValue {
             stringValue = (String) value;
         } else if ( value instanceof Set ) {
             type = Type.SET_STRING;
-            stringArrayValue = ((Set<String>) value).toArray(new String[((Set<String>) value).size()]);
+            stringArrayValue =  new NamedStringArray((Set<String>) value);
         } else if ( value instanceof List ) {
             type = Type.LIST_STRING;
-            stringArrayValue = ((List<String>) value).toArray(new String[((List<String>) value).size()]);
+            stringArrayValue =  new NamedStringArray((List<String>) value);
         } else if ( value instanceof Map) {
             type = Type.MAP_STRING_SET_STRING;
             Map<String,Set<String>> map = (Map<String,Set<String>>) value;
@@ -90,11 +90,11 @@ public class TypedValue {
     }
 
     @XmlElement
-    public String[] getStringArrayValue() {
+    public NamedStringArray getStringArrayValue() {
         return stringArrayValue;
     }
 
-    public void setStringArrayValue(String[] stringArrayValue) {
+    public void setStringArrayValue(NamedStringArray stringArrayValue) {
         this.stringArrayValue = stringArrayValue;
     }
 
@@ -126,21 +126,21 @@ public class TypedValue {
                 if ( stringArrayValue == null ) {
                     value = new LinkedHashSet<String>();
                 } else {
-                    value = new LinkedHashSet<String>( Arrays.asList( stringArrayValue ) );
+                    value = new LinkedHashSet<String>( Arrays.asList( stringArrayValue.asStringArray() ) );
                 }
                 break;
             case LIST_STRING:
                 if ( stringArrayValue == null ) {
                     value = new ArrayList<String>();
                 } else {
-                    value = new ArrayList<String>( Arrays.asList( stringArrayValue ) );
+                    value = new ArrayList<String>( Arrays.asList( stringArrayValue.asStringArray() ) );
                 }
                 break;
             case MAP_STRING_SET_STRING:
                 Map<String,Set<String>> valueMap = new LinkedHashMap<String,Set<String>>();
                 if ( namedStringArrayValue != null ) {
                     for ( NamedStringArray nsa : namedStringArrayValue ) {
-                        String[] values = nsa.getValues();
+                        String[] values = nsa.asStringArray();
                         if ( values == null ) {
                             valueMap.put( nsa.getName(), new LinkedHashSet<String>() );
                         } else {
@@ -157,19 +157,54 @@ public class TypedValue {
         return value;
     }
 
+    @Override
+    @SuppressWarnings({"RedundantIfStatement"})
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TypedValue that = (TypedValue) o;
+
+        if (booleanValue != null ? !booleanValue.equals(that.booleanValue) : that.booleanValue != null) return false;
+        if (integerValue != null ? !integerValue.equals(that.integerValue) : that.integerValue != null) return false;
+        if (!Arrays.equals(namedStringArrayValue, that.namedStringArrayValue)) return false;
+        if (stringArrayValue != null ? !stringArrayValue.equals(that.stringArrayValue) : that.stringArrayValue != null)
+            return false;
+        if (stringValue != null ? !stringValue.equals(that.stringValue) : that.stringValue != null) return false;
+        if (type != that.type) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        result = (type != null ? type.hashCode() : 0);
+        result = 31 * result + (booleanValue != null ? booleanValue.hashCode() : 0);
+        result = 31 * result + (integerValue != null ? integerValue.hashCode() : 0);
+        result = 31 * result + (stringValue != null ? stringValue.hashCode() : 0);
+        result = 31 * result + (stringArrayValue != null ? stringArrayValue.hashCode() : 0);
+        result = 31 * result + (namedStringArrayValue != null ? Arrays.hashCode(namedStringArrayValue) : 0);
+        return result;
+    }
+
     public static enum Type { BOOLEAN, INTEGER, STRING, SET_STRING, LIST_STRING, MAP_STRING_SET_STRING }
 
     @XmlRootElement
     public static final class NamedStringArray {
         private String name;
-        private String[] values;
+        private NullableString[] values = new NullableString[0];
 
         public NamedStringArray() {
         }
 
+        public NamedStringArray( Collection<String> values ) {
+            this( null, values );            
+        }
+
         public NamedStringArray( String name, Collection<String> values ) {
             this.name = name;
-            this.values = values == null ? new String[0] : values.toArray( new String[values.size()] );
+            this.values = values == null ? null : toArray( values );
         }
 
         @XmlAttribute
@@ -182,12 +217,97 @@ public class TypedValue {
         }
 
         @XmlElement
-        public String[] getValues() {
+        public NullableString[] getValues() {
             return values;
         }
 
-        public void setValues(String[] values) {
+        public void setValues(NullableString[] values) {
             this.values = values;
+        }
+
+        public String[] asStringArray() {
+            String[] stringArray;
+
+            if ( values != null ) {
+                stringArray = new String[ values.length ];
+                for ( int i=0; i<values.length; i++ ) {
+                    stringArray[i] = values[i].getValue();
+                }
+            } else {
+                stringArray = new String[0];
+            }
+
+            return stringArray;            
+        }
+
+        @Override
+        @SuppressWarnings({"RedundantIfStatement"})
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            NamedStringArray that = (NamedStringArray) o;
+
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            if (!Arrays.equals(values, that.values)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            result = (name != null ? name.hashCode() : 0);
+            result = 31 * result + (values != null ? Arrays.hashCode(values) : 0);
+            return result;
+        }
+
+        private NullableString[] toArray( Collection<String> values ) {
+            String[] stringArray = values.toArray( new String[values.size()] );
+            NullableString[] nullableStringArray = new NullableString[stringArray.length];
+            for ( int i=0; i<stringArray.length; i++ ) {
+                nullableStringArray[i] = new NullableString(stringArray[i]);
+            }
+            return nullableStringArray;
+        }
+    }
+
+    @XmlRootElement
+    public static final class NullableString {
+        private String value;
+
+        public NullableString() {
+        }
+
+        public NullableString( final String value ) {
+            this.value = value;
+        }
+
+        @XmlAttribute
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue( final String value ) {
+            this.value = value;
+        }
+
+        @Override
+        @SuppressWarnings({"RedundantIfStatement"})
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            NullableString that = (NullableString) o;
+
+            if (value != null ? !value.equals(that.value) : that.value != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return (value != null ? value.hashCode() : 0);
         }
     }
 
@@ -197,6 +317,7 @@ public class TypedValue {
     private Boolean booleanValue;
     private Integer integerValue;
     private String stringValue;
-    private String[] stringArrayValue;
+    private NamedStringArray stringArrayValue;
     private NamedStringArray[] namedStringArrayValue;
+
 }

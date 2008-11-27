@@ -106,6 +106,30 @@ public interface ReportApi {
         public void setStatus(Status status) {
             this.status = status;
         }
+
+        @Override
+        @SuppressWarnings({"RedundantIfStatement"})
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ReportStatus that = (ReportStatus) o;
+
+            if (time != that.time) return false;
+            if (id != null ? !id.equals(that.id) : that.id != null) return false;
+            if (status != that.status) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            result = (id != null ? id.hashCode() : 0);
+            result = 31 * result + (int) (time ^ (time >>> 32));
+            result = 31 * result + (status != null ? status.hashCode() : 0);
+            return result;
+        }
     }
 
     /**
@@ -142,6 +166,28 @@ public interface ReportApi {
 
         public void setData(DataHandler data) {
             this.data = data;
+        }
+
+        @Override
+        @SuppressWarnings({"RedundantIfStatement"})
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ReportResult that = (ReportResult) o;
+
+            if (id != null ? !id.equals(that.id) : that.id != null) return false;
+            if (type != that.type) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            result = (id != null ? id.hashCode() : 0);
+            result = 31 * result + (type != null ? type.hashCode() : 0);
+            return result;
         }
     }
 
@@ -181,11 +227,43 @@ public interface ReportApi {
             this.parameters = parameters;
         }
 
+        @Override
+        @SuppressWarnings({"RedundantIfStatement"})
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ReportSubmission that = (ReportSubmission) o;
+
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            if (parameters != null ? !parameters.equals(that.parameters) : that.parameters != null) return false;
+            if (type != that.type) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            result = (name != null ? name.hashCode() : 0);
+            result = 31 * result + (type != null ? type.hashCode() : 0);
+            result = 31 * result + (parameters != null ? parameters.hashCode() : 0);
+            return result;
+        }
+
         @XmlRootElement(name="ReportParameter", namespace="http://www.layer7tech.com/management/report")
         public static class ReportParam {
             private String name;
             private Object value;
             private TypedValue typedValue;
+
+            public ReportParam() {
+            }
+
+            public ReportParam( final String name, final Object value ) {
+                setName( name );
+                setValue( value );
+            }
 
             @XmlAttribute
             public String getName() {
@@ -216,6 +294,28 @@ public interface ReportApi {
 
             public void setTypedValue( final TypedValue typedValue ) {
                 this.typedValue = typedValue;
+            }
+
+            @Override
+            @SuppressWarnings({"RedundantIfStatement"})
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+
+                ReportParam that = (ReportParam) o;
+
+                if (name != null ? !name.equals(that.name) : that.name != null) return false;
+                if (typedValue != null ? !typedValue.equals(that.typedValue) : that.typedValue != null) return false;
+
+                return true;
+            }
+
+            @Override
+            public int hashCode() {
+                int result;
+                result = (name != null ? name.hashCode() : 0);
+                result = 31 * result + (typedValue != null ? typedValue.hashCode() : 0);
+                return result;
             }
         }
     }
