@@ -30,14 +30,13 @@ public class PerformanceSummaryJsonConvertor implements JsonReportParameterConve
     public final static String MAPPING_VALUES = "MAPPING_VALUES";
     public final static String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
     public final static String USE_USER = "USE_USER";
-    
+    public final static String AUTHENTICATED_USERS = "AUTHENTICATED_USERS";
+
+    public final static String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
     public final static String IS_DETAIL = "IS_DETAIL";
 
-    public final static String AUTHENTICATED_USERS = "AUTHENTICATED_USERS";
     public final static String PRINT_CHART = "PRINT_CHART";
 
-    //ps only
-    public final static String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
 
     //need to be filled in on the SSG
     public final static String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
@@ -242,6 +241,7 @@ public class PerformanceSummaryJsonConvertor implements JsonReportParameterConve
         Object [] groupings = (Object[]) params.get(JSONConstants.GROUPINGS);
         Map<String, List<String>> clusterToKeys = new HashMap<String, List<String>>();
         Map<String, List<String>> clusterToValues = new HashMap<String, List<String>>();
+        Map<String, List<String>> clusterToValuesEqualOrLike = new HashMap<String, List<String>>();
         Map<String, Set<String>> clusterToAuthUsers = new HashMap<String, Set<String>>();
         //For each cluster, track if auth user key has been set
         //used to determine whether to set is context mapping param to true or not
@@ -257,6 +257,8 @@ public class PerformanceSummaryJsonConvertor implements JsonReportParameterConve
                 clusterToKeys.put(clusterFound, keys);
                 List<String> values = new ArrayList<String>();
                 clusterToValues.put(clusterFound, values);
+                List<String> valuesEqualOrLike = new ArrayList<String>();
+                clusterToValuesEqualOrLike.put(clusterFound, valuesEqualOrLike);
                 Set<String> authUsers = new HashSet<String>();
                 clusterToAuthUsers.put(clusterFound, authUsers);
             }
@@ -274,8 +276,24 @@ public class PerformanceSummaryJsonConvertor implements JsonReportParameterConve
             }else{
                 List<String> clusterKeys = clusterToKeys.get(clusterFound);
                 clusterKeys.add(key);
+                List<String> clusterValuesEqualOrLike = clusterToValuesEqualOrLike.get(clusterFound);
+                if(value.equals("")){
+                    clusterValuesEqualOrLike.add(null);
+                }else{
+                    if(value.indexOf("*") != -1){
+                        value = value.replaceAll("\\*", "%");
+                        clusterValuesEqualOrLike.add("LIKE");
+                    }else{
+                        clusterValuesEqualOrLike.add("AND");                        
+                    }
+                }
                 List<String> clusterValues = clusterToValues.get(clusterFound);
-                clusterValues.add(value);
+                //note value may be udpated above, with *'s replaced with %'s
+                if(value.equals("")){
+                    clusterValues.add(null);
+                }else{
+                    clusterValues.add(value);
+                }
             }
         }
 
@@ -301,6 +319,12 @@ public class PerformanceSummaryJsonConvertor implements JsonReportParameterConve
             mappingValueParam.setValue(mappingValues);
             clusterParams.add(mappingValueParam);
 
+            List<String> mappingValuesEqualOrLike = clusterToValuesEqualOrLike.get(me.getKey());
+            ReportApi.ReportSubmission.ReportParam mappingValueEqualOrLikeParam = new ReportApi.ReportSubmission.ReportParam();
+            mappingValueEqualOrLikeParam.setName(VALUE_EQUAL_OR_LIKE);
+            mappingValueEqualOrLikeParam.setValue(mappingValuesEqualOrLike);
+            clusterParams.add(mappingValueEqualOrLikeParam);
+
             boolean useUser = clusterAuthUserSet.contains(me.getKey());
             ReportApi.ReportSubmission.ReportParam useUserParam = new ReportApi.ReportSubmission.ReportParam();
             useUserParam.setName(USE_USER);
@@ -324,12 +348,6 @@ public class PerformanceSummaryJsonConvertor implements JsonReportParameterConve
                 clusterParams.add(isCtxMappingParam);
             }
         }
-    }
-
-    private void addIntervalParameters(
-            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params)
-            throws ReportApi.ReportException {
-
     }
 
     private void addTimeParameters(

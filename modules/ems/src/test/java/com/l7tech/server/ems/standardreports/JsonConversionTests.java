@@ -73,6 +73,11 @@ public class JsonConversionTests {
             "        }," +
             "        {" +
             "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.*.*.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
             "        }," +
@@ -153,6 +158,7 @@ public class JsonConversionTests {
             PerformanceSummaryJsonConvertor.RELATIVE_NUM_OF_TIME_UNITS, PerformanceSummaryJsonConvertor.REPORT_RAN_BY,
             PerformanceSummaryJsonConvertor.SERVICE_NAMES_LIST, PerformanceSummaryJsonConvertor.SERVICE_ID_TO_OPERATIONS_MAP,
             PerformanceSummaryJsonConvertor.IS_DETAIL, PerformanceSummaryJsonConvertor.MAPPING_KEYS, PerformanceSummaryJsonConvertor.MAPPING_VALUES,
+            PerformanceSummaryJsonConvertor.VALUE_EQUAL_OR_LIKE,
             PerformanceSummaryJsonConvertor.USE_USER, PerformanceSummaryJsonConvertor.AUTHENTICATED_USERS, PerformanceSummaryJsonConvertor.PRINT_CHART};
 
     @Test
@@ -217,6 +223,91 @@ public class JsonConversionTests {
             String timeUnit = (String) timeUnitParam.getValue();
             Utilities.UNIT_OF_TIME unitOfTime = Utilities.getUnitFromString(timeUnit);
             Assert.assertTrue("Relative time unit should be ", unitOfTime == Utilities.UNIT_OF_TIME.DAY);
+        }
+    }
+
+    @Test
+    public void testPerfStatSummary_MappingKeysAndValues() throws ReportApi.ReportException {
+        Object o = JSON.parse(psRelativeJson);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        Assert.assertNotNull(reportClusterBeans);
+
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+
+            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
+            Assert.assertNotNull(reportParams);
+
+            Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
+                    new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
+            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+                paramMap.put(rP.getName(), rP);
+            }
+
+            ReportApi.ReportSubmission.ReportParam
+                    mappingKeyParam = paramMap.get(PerformanceSummaryJsonConvertor.MAPPING_KEYS);
+
+            List<String> mappingKeys = (List<String>) mappingKeyParam.getValue();
+            Assert.assertNotNull("Mapping keys should not be null", mappingKeys);
+
+            ReportApi.ReportSubmission.ReportParam
+                    mappingValueParam = paramMap.get(PerformanceSummaryJsonConvertor.MAPPING_VALUES);
+            List<String> mappingValues = (List<String>) mappingValueParam.getValue();            
+            Assert.assertNotNull("Mapping values should not be null", mappingValues);
+            
+            ReportApi.ReportSubmission.ReportParam
+                    mappingValueEqualOrLikeParam = paramMap.get(PerformanceSummaryJsonConvertor.VALUE_EQUAL_OR_LIKE);
+            List<String> mappingValuesEqualOrLike = (List<String>) mappingValueEqualOrLikeParam.getValue();
+            Assert.assertNotNull("Mapping values equal or like should not be null", mappingValuesEqualOrLike);
+
+            String clusterId = clusterBean.getClusterId();
+            if(clusterId.equals(cluster1)){
+                Assert.assertTrue("cluster 1 should have 2 mapping keys", mappingKeys.size() == 2);
+                String [] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
+                Set<String> keySet = new HashSet<String>(mappingKeys);
+                for(String s: expectedKeys){
+                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keySet.contains(s));                    
+                }
+
+                Assert.assertTrue("cluster 1 should have 2 mapping values", mappingValues.size() == 2);
+                for(String s: mappingValues){
+                    Assert.assertTrue("value should be null, it was: '" + s+"'", s == null);
+                }
+
+                Assert.assertTrue("cluster 1 should have 2 equals or like values", mappingValuesEqualOrLike.size() == 2);
+                for(String s: mappingValuesEqualOrLike){
+                    Assert.assertTrue("equal or like value should be null, it was: '"+s+"'", s == null);
+                }
+
+            }else if(clusterId.equals(cluster2)){
+                Assert.assertTrue("cluster 1 should have 2 mapping keys", mappingKeys.size() == 2);
+                String [] expectedKeys = new String[]{"CUSTOMER"};
+                Set<String> keySet = new HashSet<String>(mappingKeys);
+                for(String s: expectedKeys){
+                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keySet.contains(s));
+                }
+
+                Assert.assertTrue("cluster 2 should have 1 mapping values", mappingValues.size() == 2);
+                String [] expectedValues = new String[]{"127.%.%.1", "GOLD"};
+                Set<String> valueSet = new HashSet<String>(mappingValues);
+                for(String s: expectedValues){
+                    Assert.assertTrue("value should be "+s+", should be in the mapping values", valueSet.contains(s));
+                }
+
+                Assert.assertTrue("cluster 2 should have 2 equals or like values", mappingValuesEqualOrLike.size() == 2);
+                for (int i = 0; i < mappingValuesEqualOrLike.size(); i++) {
+                    String s = mappingValuesEqualOrLike.get(i);
+                    if(i == 0){
+                        Assert.assertTrue("equal or like value should be LIKE, it was: " + s + "", s.equals("LIKE"));
+                    }else{
+                        Assert.assertTrue("equal or like value should be AND, it was: " + s + "", s.equals("AND"));                        
+                    }
+                }
+
+            }
         }
     }
 
