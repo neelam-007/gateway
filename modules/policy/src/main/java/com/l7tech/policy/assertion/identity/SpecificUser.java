@@ -6,7 +6,9 @@ package com.l7tech.policy.assertion.identity;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.IdentityHeader;                                       
+import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 
 /**
  * Asserts that the requester is a particular User.
@@ -59,6 +61,7 @@ public class SpecificUser extends IdentityAssertion {
         this.userName = userName;
     }
 
+    @Migration(mapName = MigrationMappingSelection.REQUIRED)
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = super.getEntitiesUsed();
         EntityHeader[] headers2 = new EntityHeader[headers.length + 1];

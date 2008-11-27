@@ -60,7 +60,6 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
 
     // instance
     protected final ApplicationContext applicationContext;
-    protected final RAT data;
 
     /**
      *
@@ -68,7 +67,6 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     protected ServerRoutingAssertion(RAT data, ApplicationContext applicationContext, Logger logger) {
         super(data);
         this.applicationContext = applicationContext;
-        this.data = data;
         this.logger = logger;
         this.auditor = new Auditor(this, applicationContext, logger);
     }
@@ -111,7 +109,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                     String msg = "this option is not supported for non-soap messages. this message is " +
                                  "supposed to be soap but does not appear to be";
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT, null, e);
-                    throw new PolicyAssertionException(data, msg);
+                    throw new PolicyAssertionException(assertion, msg);
                 }
                 if (defaultSecHeader != null) {
                     defaultSecHeader.getParentNode().removeChild(defaultSecHeader);
@@ -124,7 +122,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                         String msg = "this option is not supported for non-soap messages. this message is " +
                                      "supposed to be soap but does not appear to be";
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT, null, e);
-                        throw new PolicyAssertionException(data, msg);
+                        throw new PolicyAssertionException(assertion, msg);
                     }
                     if (header != null) {
                         if (DomUtils.elementIsEmpty(header)) {
@@ -161,7 +159,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                     String msg = "this option is not supported for non-soap messages. this message is " +
                                  "supposed to be soap but does not appear to be";
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT, null, e);
-                    throw new PolicyAssertionException(data, msg);
+                    throw new PolicyAssertionException(assertion, msg);
                 }
             }
 
@@ -179,7 +177,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                     String msg = "this option is not supported for non-soap messages. " +
                                  "something is wrong with this policy";
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_POLICY, null, e);
-                    throw new PolicyAssertionException(data, msg);
+                    throw new PolicyAssertionException(assertion, msg);
                 }
                 if (secHeaderToPromote != null) {
                     // do it
@@ -223,12 +221,12 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
                 }
             }
-            samlOptions.setVersion(data.getSamlAssertionVersion());
-            samlOptions.setExpiryMinutes(data.getSamlAssertionExpiry());
-            samlOptions.setIssuerKeyInfoType(data.isUseThumbprintInSamlSignature() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT);
-            KeyInfoInclusionType keyInfoType = data.isUseThumbprintInSamlSubject() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
-            if (data.getRecipientContext() != null)
-                samlOptions.setSecurityHeaderActor(data.getRecipientContext().getActor());
+            samlOptions.setVersion(assertion.getSamlAssertionVersion());
+            samlOptions.setExpiryMinutes(assertion.getSamlAssertionExpiry());
+            samlOptions.setIssuerKeyInfoType(assertion.isUseThumbprintInSamlSignature() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT);
+            KeyInfoInclusionType keyInfoType = assertion.isUseThumbprintInSamlSubject() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
+            if (assertion.getRecipientContext() != null)
+                samlOptions.setSecurityHeaderActor(assertion.getRecipientContext().getActor());
             SubjectStatement statement = SubjectStatement.createAuthenticationStatement(
                                                             svInputCredentials,
                                                             SubjectStatement.SENDER_VOUCHES,

@@ -4,7 +4,8 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.Aliasable;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.PolicyXmlPropertyResolver;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
@@ -51,7 +52,7 @@ public class Policy extends NamedEntityImp  implements HasFolder{
         this.soap = soap;
 
         if(this.type == PolicyType.INCLUDE_FRAGMENT || this.type == PolicyType.INTERNAL) {
-            folderOid = new Long(-5002);
+            folderOid = -5002L;
         }
     }
 
@@ -113,6 +114,7 @@ public class Policy extends NamedEntityImp  implements HasFolder{
         assertion = null;
     }
 
+    @Migration(resolver = PolicyXmlPropertyResolver.class)
     public String getXml() {
         return xml;
     }

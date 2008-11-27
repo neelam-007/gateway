@@ -7,6 +7,7 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.util.ExceptionUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -27,10 +28,15 @@ import java.util.logging.Logger;
 public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinder {
     private static final Logger logger = Logger.getLogger(EntityFinderImpl.class.getName());
     private IdentityProviderFactory identityProviderFactory;
+    private PolicyManager policyManager;
     private static final int MAX_RESULTS = 100;
 
     public void setIdentityProviderFactory(IdentityProviderFactory ipf) {
         identityProviderFactory = ipf;        
+    }
+
+    public void setPolicyManager(PolicyManager policyManager) {
+        this.policyManager = policyManager;
     }
 
     @Transactional(readOnly=true)
@@ -38,6 +44,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         final boolean names = NamedEntity.class.isAssignableFrom(entityClass);
         final EntityType type = EntityType.findTypeByEntity(entityClass);
         try {
+            //noinspection unchecked
             return (EntityHeaderSet<EntityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     Criteria crit = session.createCriteria(entityClass);
@@ -89,8 +96,18 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             } else {
                 throw new IllegalArgumentException("EntityHeader is an IdentityHeader, but type is neither USER nor GROUP");
             }
+        } else if (EntityType.POLICY == header.getType()) {
+            // some policies are identified by OID, others by GUID
+            // prefer the strID/GUID, but also handle the cases when the strId is an OID
+            String id = header.getStrId();
+            try {
+                return policyManager.findByPrimaryKey(Long.parseLong(id));
+            } catch (NumberFormatException e) {
+                return policyManager.findByGuid(id);
+            }
+        } else {
+            return find(EntityHeaderUtils.getEntityClass(header), header.getStrId());
         }
-        return find(EntityHeaderUtils.getEntityClass(header), header.getStrId());
     }
 
     @Transactional(readOnly=true)

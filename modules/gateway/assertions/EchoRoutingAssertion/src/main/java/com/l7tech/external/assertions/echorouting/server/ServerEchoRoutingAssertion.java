@@ -52,8 +52,8 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
         if (request.isXml()) {
             try {
                 handleProcessedSecurityHeader(context,
-                                              data.getCurrentSecurityHeaderHandling(),
-                                              data.getXmlSecurityActorToPromote());
+                                              assertion.getCurrentSecurityHeaderHandling(),
+                                              assertion.getXmlSecurityActorToPromote());
             } catch(SAXException se) {
                 logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
             }

@@ -115,10 +115,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
             handleProcessedSecurityHeader(context,
-                                          data.getCurrentSecurityHeaderHandling(),
-                                          data.getXmlSecurityActorToPromote());
+                                          assertion.getCurrentSecurityHeaderHandling(),
+                                          assertion.getXmlSecurityActorToPromote());
 
-            if (data.isAttachSamlSenderVouches()) {
+            if (assertion.isAttachSamlSenderVouches()) {
                 if (senderVouchesSignerInfo == null) {
                     auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_SAML_SIGNER);
                     return AssertionStatus.FAILED;
@@ -167,7 +167,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
             if ( jmsSession == null ) {
                 String msg = "Null session escaped from retry loop!";
-                throw new PolicyAssertionException(data, msg);
+                throw new PolicyAssertionException(assertion, msg);
             }
 
             // Message send retry loop. Reuses oops count from before
@@ -193,7 +193,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         inboundRequestProps = new HashMap<String, Object>();
                     }
                     final Map<String, Object> outboundRequestProps = new HashMap<String, Object>();
-                    enforceJmsMessagePropertyRuleSet(context, data.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
+                    enforceJmsMessagePropertyRuleSet(context, assertion.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
                     for ( String name : outboundRequestProps.keySet() ) {
                         jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
                     }
@@ -206,7 +206,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     MessageProducer jmsProducer = null;
                     try {
                         if ( jmsSession instanceof QueueSession ) {
-                            if ( !(jmsOutboundDest instanceof Queue ) ) throw new PolicyAssertionException(data, "Destination/Session type mismatch" );
+                            if ( !(jmsOutboundDest instanceof Queue ) ) throw new PolicyAssertionException(assertion, "Destination/Session type mismatch" );
                             // the reason for this distinction is that IBM throws java.lang.AbstractMethodError: com.ibm.mq.jms.MQQueueSession.createProducer(Ljavax/jms/Destination;)Ljavax/jms/MessageProducer;
                             jmsProducer = ((QueueSession)jmsSession).createSender( (Queue)jmsOutboundDest );
                         } else if ( jmsSession instanceof TopicSession && routedRequestEndpoint1.getReplyType() != JmsReplyType.NO_REPLY) {
@@ -257,7 +257,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             }
                         }
 
-                        int timeout = data.getResponseTimeout();
+                        int timeout = assertion.getResponseTimeout();
                         MessageConsumer jmsConsumer = null;
                         final Message jmsResponse;
                         try {
@@ -318,7 +318,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         });
 
                         final Map<String, Object> outResJmsMsgProps = new HashMap<String, Object>();
-                        enforceJmsMessagePropertyRuleSet(context, data.getResponseJmsMessagePropertyRuleSet(), inResJmsMsgProps, outResJmsMsgProps);
+                        enforceJmsMessagePropertyRuleSet(context, assertion.getResponseJmsMessagePropertyRuleSet(), inResJmsMsgProps, outResJmsMsgProps);
                         // After enforcing propagation rules, replace the JMS message properties
                         // in the response JmsKnob with enforced/expanded values.
                         context.getResponse().getJmsKnob().getJmsMsgPropMap().clear();
@@ -388,11 +388,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         } catch ( FindException e ) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             String msg = "Caught FindException";
-            throw new PolicyAssertionException(data, msg, e);
+            throw new PolicyAssertionException(assertion, msg, e);
         } catch ( JmsConfigException e ) {
             String msg = "Invalid JMS configuration";
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, e);
-            throw new PolicyAssertionException(data, msg, e);
+            throw new PolicyAssertionException(assertion, msg, e);
         } catch ( Throwable t ) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing"}, t );
 
@@ -567,7 +567,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         if ( routedRequestConnection == null ) {
             if ( endpoint == null ) {
                 auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NON_EXISTENT_ENDPOINT,
-                        String.valueOf(data.getEndpointOid()) + "/" + data.getEndpointName());
+                        String.valueOf(assertion.getEndpointOid()) + "/" + assertion.getEndpointName());
             } else {
                 JmsConnection jmsConn = jmsConnectionManager.findByPrimaryKey( endpoint.getConnectionOid() );
                 synchronized(jmsInfoSync) {

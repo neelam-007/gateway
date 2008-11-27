@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel.folder;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.migration.Migration;
 
 
 /**
@@ -9,6 +10,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 public class Folder extends NamedEntityImp {
     private Folder parentFolder;
 
+    @Migration(dependency=false)
     public Folder getParentFolder() {
         return parentFolder;
     }

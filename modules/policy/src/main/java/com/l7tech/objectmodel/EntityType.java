@@ -3,11 +3,13 @@
  */
 package com.l7tech.objectmodel;
 
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.Comparator;
 
 /**
  * Enum of all entity types known to the RBAC system.
  */
+@XmlJavaTypeAdapter(EntityTypeAdapter.class)
 public enum EntityType implements Comparable<EntityType> {
     ANY("<any>", true),
 

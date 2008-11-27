@@ -12,6 +12,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.util.WsdlComposer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.CreateServiceWsdlAction;
@@ -140,17 +141,17 @@ public class ServicePropertiesDialog extends JDialog {
             noURIRadio.addActionListener(toggleurifield);
             customURIRadio.addActionListener(toggleurifield);
         }
-        Set<String> methods = subject.getHttpMethods();
-        if (methods.contains("GET")) {
+        Set<HttpMethod> methods = subject.getHttpMethodsReadOnly();
+        if (methods.contains(HttpMethod.GET)) {
             getCheck.setSelected(true);
         }
-        if (methods.contains("PUT")) {
+        if (methods.contains(HttpMethod.PUT)) {
             putCheck.setSelected(true);
         }
-        if (methods.contains("POST")) {
+        if (methods.contains(HttpMethod.POST)) {
             postCheck.setSelected(true);
         }
-        if (methods.contains("DELETE")) {
+        if (methods.contains(HttpMethod.DELETE)) {
             deleteCheck.setSelected(true);
         }
 
@@ -429,18 +430,18 @@ public class ServicePropertiesDialog extends JDialog {
         subject.setDisabled(!enableRadio.isSelected());
         if (newURI != null && (newURI.length() < 1 || newURI.equals("/"))) newURI = null;
         subject.setRoutingUri(newURI);
-        Set<String> methods = new HashSet<String>();
+        EnumSet<HttpMethod> methods = EnumSet.noneOf(HttpMethod.class);
         if (getCheck.isSelected()) {
-            methods.add("GET");
+            methods.add(HttpMethod.GET);
         }
         if (putCheck.isSelected()) {
-            methods.add("PUT");
+            methods.add(HttpMethod.PUT);
         }
         if (postCheck.isSelected()) {
-            methods.add("POST");
+            methods.add(HttpMethod.POST);
         }
         if (deleteCheck.isSelected()) {
-            methods.add("DELETE");
+            methods.add(HttpMethod.DELETE);
         }
         subject.setHttpMethods(methods);
         subject.setLaxResolution(laxResolutionCheckbox.isSelected());

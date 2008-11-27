@@ -49,5 +49,14 @@ public final class EntityHeaderUtils {
         return fromHeader(header).getEntityClass();
     }
 
+    public static EntityHeader fromEntity(Entity entity) {
+        String name = null;
+        if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
+        if (name == null) name = "";
+
+        // TODO customize for different specialized types of EntityHeader?
+        return new EntityHeader(entity.getId(), EntityType.findTypeByEntity(entity.getClass()), name, "");
+    }
+
     private EntityHeaderUtils() { }
 }

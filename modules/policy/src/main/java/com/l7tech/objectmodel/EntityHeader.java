@@ -9,7 +9,8 @@
 package com.l7tech.objectmodel;
 
 
-import java.io.Serializable;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * Header objects are used to refer to objects in find methods
@@ -17,18 +18,16 @@ import java.io.Serializable;
  * @version $Revision$
  * @author flascelles
  */
-public class EntityHeader implements Serializable, Comparable {
-
+@XmlRootElement
+public class EntityHeader extends EntityHeaderRef {
     public EntityHeader(String id, EntityType type, String name, String description) {
-        this.strId = id;
-        this.type = type;
+        super(type, id);
         this.name = name;
         this.description = description;
     }
 
     public EntityHeader(long oid, EntityType type, String name, String description) {
-        this.strId = Long.toString(oid);
-        this.type = type;
+        super(type, Long.toString(oid));
         this.name = name;
         this.description = description;
     }
@@ -46,6 +45,7 @@ public class EntityHeader implements Serializable, Comparable {
         this.name = name;
     }
 
+    @XmlAttribute
     public void setOid( long oid ) {
         strId = Long.toString(oid);
     }
@@ -56,14 +56,6 @@ public class EntityHeader implements Serializable, Comparable {
         } catch (Exception e) {
             return DEFAULT_OID;
         }
-    }
-
-    public EntityType getType() {
-        return type;
-    }
-
-    public void setType(EntityType type) {
-        this.type = type;
     }
 
     public String getDescription() {
@@ -100,30 +92,13 @@ public class EntityHeader implements Serializable, Comparable {
         return result;
     }
 
-    /**
-     * if the oid was set but not the StrId, the strId will be returned as Long.toString(oid)
-     * @return the id
-     */
-    public String getStrId() {
-        return strId;
-    }
-
-    /**
-     * oid and strId are interchangeable. setting this will override the oid property if it contains a parseable string.
-     */
-    public void setStrId(String strId) {
-        this.strId = strId;
-    }
-
     // ************************************************
     // PRIVATES
     // ************************************************
 
     private static final long serialVersionUID = -1752153501322477805L;
 
-    private EntityType type;
     private String description;
-    private String strId;
     protected String name;
     private static final long DEFAULT_OID = -1;
 

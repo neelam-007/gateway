@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.common.http.HttpMethod;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,8 +26,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.EnumSet;
 
 /**
  * Wizard that guides the administrator through the publication of a non-soap service.
@@ -71,7 +71,8 @@ public class PublishNonSoapServiceWizard extends Wizard {
             WspWriter.writePolicy(policy, bo);
             service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false));
             service.setSoap(false);
-            service.setHttpMethods(ANYVERBSET);// xml application are not like soap. by default, not just post is allowed
+            // xml application are not like soap. by default, not just post is allowed
+            service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));
             service.setName(panel1.getPublishedServiceName());
             service.setRoutingUri(panel1.getRoutingURI());
 
@@ -127,11 +128,4 @@ public class PublishNonSoapServiceWizard extends Wizard {
 
     private IdentityProviderWizardPanel panel2; // may be null if no authentication enabled by current license
     private NonSoapServicePanel panel1;
-    private static final Set<String> ANYVERBSET = new HashSet<String>();
-    {
-        ANYVERBSET.add("POST");
-        ANYVERBSET.add("GET");
-        ANYVERBSET.add("PUT");
-        ANYVERBSET.add("DELETE");
-    }
 }

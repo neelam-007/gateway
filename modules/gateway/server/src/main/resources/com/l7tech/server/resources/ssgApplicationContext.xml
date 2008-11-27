@@ -557,7 +557,7 @@
     <!-- jms endpoint manager -->
     <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerImpl" parent="hibernateBean" depends-on="jmsInit">
     </bean>
-    <!-- jms property mapper -->
+    <!-- jms property resolver -->
     <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
         <constructor-arg ref="trustedCertManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
@@ -924,6 +924,7 @@
         <!--<constructor-arg ref="identityProviderFactory"/>-->
         <property name="identityProviderFactory" ref="identityProviderFactory" />
         <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="policyManager" ref="policyManager"/>
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy">
@@ -1207,5 +1208,10 @@
         <constructor-arg index="1" ref="transactionManager"/>
         <constructor-arg index="2" ref="clusterPropertyManager"/>
     </bean>
+
+  <bean id="migrationManager" class="com.l7tech.server.migration.MigrationManagerImpl">
+    <constructor-arg ref="entityFinder"/>
+    <constructor-arg ref="transactionManager"/>
+  </bean>
 
 </beans>

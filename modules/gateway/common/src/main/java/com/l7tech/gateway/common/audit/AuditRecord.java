@@ -11,13 +11,11 @@ import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.TextUtils;
-import com.l7tech.util.HexUtils;
 
 import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.CascadeType;
-import javax.crypto.Cipher;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,8 +24,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 
 import org.hibernate.annotations.*;
 
@@ -107,6 +103,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     }
 
     @Transient
+//    @Migration(resolver = Some.class, reassignable = false)
     public String getId() {
         return Long.toString(oid);
     }

@@ -3,11 +3,15 @@ package com.l7tech.policy;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.OrganizationHeader;
 
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+
 /**
  * Extension of EntityHeader with some policy information.
  *
  * @author Steve Jones
  */
+@XmlRootElement(name="policyHeader")
 public class PolicyHeader extends OrganizationHeader {
     //- PUBLIC
     public PolicyHeader(final Policy policy) {
@@ -18,6 +22,12 @@ public class PolicyHeader extends OrganizationHeader {
              policy.getGuid(),
              policy.getFolderOid(),
              false);
+    }
+
+    @Override
+    @XmlTransient
+    public String getStrId() {
+        return super.getStrId();
     }
 
     public PolicyHeader(final PolicyHeader policyHeader){

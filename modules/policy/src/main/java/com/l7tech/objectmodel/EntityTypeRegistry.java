@@ -12,7 +12,6 @@ import java.io.IOException;
  */
 public class EntityTypeRegistry {
 
-//    private static final String ENTITY_TYPES_PROPERTIES = "META-INF/com.l7tech.objectmodel.EntityTypes.properties";
     private static final String ENTITY_TYPES_PROPERTIES = "com/l7tech/EntityTypes.properties";
     private static final Map<EntityType, Class<? extends Entity>> REGISTRY = init();
 
@@ -49,12 +48,16 @@ public class EntityTypeRegistry {
             throw new IllegalStateException("Error initializing the EntityTypeRegistry: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
 
-        return registry;
+        return Collections.unmodifiableMap(registry);
     }
 
     private EntityTypeRegistry() {}
 
     public static Class<? extends Entity> getEntityClass(EntityType type) {
         return REGISTRY.get(type);
+    }
+
+    public static Collection<Class<? extends Entity>> getAllEntityClasses() {
+        return REGISTRY.values();
     }
 }

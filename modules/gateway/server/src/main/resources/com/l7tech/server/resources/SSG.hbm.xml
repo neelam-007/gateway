@@ -16,6 +16,10 @@
         <param name="enumClass">com.l7tech.gateway.common.service.ServiceState</param>
     </typedef>
 
+    <typedef class="com.l7tech.server.util.GenericEnumSetUserType" name="http_methods_type">
+        <param name="enumClass">com.l7tech.common.http.HttpMethod</param>
+    </typedef>
+
     <class name="com.l7tech.gateway.common.service.PublishedService" table="published_service" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
@@ -30,7 +34,7 @@
         <property name="soap" column="soap" type="boolean"/>
         <property name="internal" column="internal" type="boolean"/>
         <property name="routingUri" column="routing_uri" type="string"/>
-        <property name="httpMethodNames" column="http_methods" type="text"/>
+        <property name="httpMethods" column="http_methods" type="http_methods_type"/>
         <property name="laxResolution" column="lax_resolution" type="boolean"/>
         <many-to-one class="com.l7tech.policy.Policy"
                      name="policy" lazy="false" column="policy_oid" unique="true" cascade="persist,merge,save-update,delete"/>

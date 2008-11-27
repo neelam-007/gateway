@@ -11,6 +11,7 @@ import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.common.http.HttpMethod;
+import static com.l7tech.common.http.HttpMethod.*;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
@@ -21,13 +22,11 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap12.SOAP12Operation;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * A service that is published by the SecureSpan Gateway.  Primarily contains references to a WSDL and a policy.
@@ -42,13 +41,10 @@ public class PublishedService extends NamedEntityImp implements HasFolder
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
 
-    public static final String METHODNAMES_SOAP = "POST";
-    public static final String METHODNAMES_REST = "POST,GET,PUT,DELETE,HEAD";
+    public static final EnumSet<HttpMethod> METHODS_SOAP = EnumSet.of(POST);
+    public static final EnumSet<HttpMethod> METHODS_REST = EnumSet.of(POST, GET, PUT, DELETE, HEAD);
 
     private Policy policy;
-
-    /** Used to split up the method name lists. */
-    private static final Pattern SPLIT_COMMAS = Pattern.compile("\\s*,\\s*");
 
     public PublishedService() {
         setVersion(1);
@@ -65,7 +61,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder
     public PublishedService( final PublishedService objToCopy ) {
         super(objToCopy);
         setDisabled(objToCopy.isDisabled());
-        setHttpMethods(objToCopy.getHttpMethods());
+        setHttpMethods(objToCopy.getHttpMethodsReadOnly());
         setLaxResolution(objToCopy.isLaxResolution());
         setPolicy(objToCopy.getPolicy()==null ? null : new Policy(objToCopy.getPolicy()));
         setRoutingUri(objToCopy.getRoutingUri());
@@ -382,39 +378,23 @@ public class PublishedService extends NamedEntityImp implements HasFolder
     }
 
     /**
-     * Accessor for Hibernate use only.  Returns the string name.
-     *
-     * @deprecated for persistence use only; do not call this.
-     * @return comma-separated list of HTTP method names like "GET,POST,PUT,DELETE", or null.
-     */
-    @Deprecated
-    public String getHttpMethodNames() {
-        return httpMethodNames;
-    }
-
-    /**
-     * Setter for Hibernate use only.
-     *
-     * @deprecated for persistence use only; do not call this.
-     * @param httpMethodNames comma-separated list of HTTP method names like "GET,POST,PUT,DELETE", or null.
-     */
-    @Deprecated
-    public void setHttpMethodNames(String httpMethodNames) {
-        if (httpMethodNames == null) httpMethodNames = METHODNAMES_SOAP;
-        this.httpMethodNames = httpMethodNames;
-        this.httpMethods = createSetFromMethods(httpMethodNames);
-    }
-
-    /**
      * Check if the specified HTTP method is allowed with this published service.
      *
      * @param methodName the method name to check.  Must not be null.
      * @return true iff. the specified method is in the set of allowed methods for this published service.
      */
-    public boolean isMethodAllowed(String methodName) {
-        if (httpMethodNames == null) httpMethodNames = METHODNAMES_SOAP;
-        if (httpMethods == null) httpMethods = createSetFromMethods(httpMethodNames);
-        return httpMethods.contains(methodName.trim().toUpperCase());
+    public boolean isMethodAllowed(HttpMethod method) {
+        return httpMethods.contains(method);
+    }
+
+    /**
+     * Get a read-write copy of the set of method names supported by this published service.
+     *
+     * @return a read-only set of zero or more Strings such as "PUT", "GET", "DELETE" and "POST".  May be empty but never null.
+     * @deprecated only meant for serialization (by Hibernate and JAXB)
+     */
+    public Set<HttpMethod>getHttpMethods() {
+        return httpMethods;
     }
 
     /**
@@ -422,10 +402,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder
      *
      * @return a read-only set of zero or more Strings such as "PUT", "GET", "DELETE" and "POST".  May be empty but never null.
      */
-    @XmlTransient
-    public Set<String> getHttpMethods() {
-        if (httpMethodNames == null) httpMethodNames = METHODNAMES_SOAP;
-        if (httpMethods == null) httpMethods = createSetFromMethods(httpMethodNames);
+    public Set<HttpMethod>getHttpMethodsReadOnly() {
         return Collections.unmodifiableSet(httpMethods);
     }
 
@@ -435,14 +412,8 @@ public class PublishedService extends NamedEntityImp implements HasFolder
      *
      * @param set a set of Strings such as "GET", "POST", "PUT".  Will be converted to all upper-case.
      */
-    public void setHttpMethods(Set<String> set) {
-        httpMethods = new HashSet<String>();
-        if (set != null) {
-            for (String s : set) {
-                httpMethods.add(s.trim().toUpperCase());
-            }
-        }
-        httpMethodNames = getMethodsFromSet(httpMethods);
+    public void setHttpMethods(Set<HttpMethod> set) {
+        httpMethods = EnumSet.copyOf(set);
     }
 
     /**
@@ -490,10 +461,6 @@ public class PublishedService extends NamedEntityImp implements HasFolder
 
     public void setFolderOid(Long policyFolderOid) {
         this.folderOid = policyFolderOid;
-    }
-
-    public boolean isMethodAllowed(HttpMethod requestMethod) {
-        return getHttpMethods().contains(requestMethod.name()); // Relies on the fact that the enum names are already upper-case
     }
 
     /**
@@ -548,7 +515,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder
     private boolean soap = true;
     private boolean internal = false;
     private String routingUri;
-    private String httpMethodNames = METHODNAMES_SOAP; // invariants: never null, always in sync with httpMethods
+    private EnumSet<HttpMethod> httpMethods = EnumSet.copyOf(METHODS_SOAP);
     private boolean laxResolution;
     private Long folderOid = -5002L;
 
@@ -557,49 +524,10 @@ public class PublishedService extends NamedEntityImp implements HasFolder
     private transient Port _wsdlPort;
     private transient URL _serviceUrl;
 
-    private transient Set<String> httpMethods; // invariants: never null, always in sync with httpMethodNames
     private transient Boolean multipart;
 
     private static WSDLLocatorFactory WSDL_LOCATOR_FACTORY = null;
 
-    /**
-     * Create a new set from the specified comma-delimited list of HTTP method names.
-     *
-     * @param methods  the methods to include in the set, ie "GET,PUT,POST".  Must not be null but may be empty.
-     * @return a Set containing the uppercased method names.  May be empty but never null.
-     */
-    private static Set<String> createSetFromMethods(String methods) {
-        Set<String> s = new HashSet<String>();
-        addMethodsToSet(s, methods);
-        return s;
-    }
-
-    /**
-     * Add the specified methods to the specified set.
-     *
-     * @param set     the set to add the strings to.  Must not be null but may (probably often will) be empty.
-     * @param methods a comma-separated list of HTTP method names.  Will be converted to upper case.  May
-     *                not be null or empty.
-     */
-    private static void addMethodsToSet(Set<String> set, String methods) {
-        set.addAll(Arrays.asList(SPLIT_COMMAS.split(methods.trim().toUpperCase())));
-    }
-
-    /**
-     * Convert the specified set into a comma-delimited string.
-     *
-     * @param set the set of Strings to join.  Must not be null.  Must contain only Strings.
-     * @return a comma-separated list, ie "POST,GET,PUT".  Order is not guaranteed.  Never null but may be empty.
-     */
-    private static String getMethodsFromSet(Set set) {
-        StringBuffer sb = new StringBuffer();
-        for (Iterator i = set.iterator(); i.hasNext();) {
-            String s = (String)i.next();
-            sb.append(s);
-            if (i.hasNext()) sb.append(",");
-        }
-        return sb.toString();
-    }
 
     /**
      * 

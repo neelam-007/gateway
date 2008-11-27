@@ -41,6 +41,6 @@ public abstract class OrganizationHeader extends EntityHeader implements Aliasab
     }
 
     //PRIVATE
-    protected long folderOid;
+    protected Long folderOid;
     protected boolean alias;
 }

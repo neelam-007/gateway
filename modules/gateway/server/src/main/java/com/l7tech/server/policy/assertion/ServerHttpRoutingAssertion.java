@@ -88,19 +88,19 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         super(assertion, ctx, logger);
 
         // remember if we need to resolve the url at runtime
-        String tmp = data.getProtectedServiceUrl();
+        String tmp = assertion.getProtectedServiceUrl();
         if (tmp != null) {
             urlUsesVariables = tmp.indexOf("${") > -1;
         } else {
             logger.info("this http routing assertion has null url");
             urlUsesVariables = false;
         }
-        if (urlUsesVariables || data.getProtectedServiceUrl()==null) {
+        if (urlUsesVariables || assertion.getProtectedServiceUrl()==null) {
             protectedServiceUrl = null;
         } else {
             URL url = null;
             try {
-                url = new URL(data.getProtectedServiceUrl());
+                url = new URL(assertion.getProtectedServiceUrl());
             } catch (MalformedURLException murle) {
                 logger.log(Level.WARNING, "Invalid protected service URL.", murle);
             }
@@ -152,7 +152,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
         stashManagerFactory = smFactory;
 
-        final String[] addrs = data.getCustomIpAddresses();
+        final String[] addrs = assertion.getCustomIpAddresses();
         customURLList = false;
         if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs)) {
             final String stratName = assertion.getFailoverStrategyName();
@@ -165,18 +165,18 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
             failoverStrategy = AbstractFailoverStrategy.makeSynchronized(strat);
             maxFailoverAttempts = addrs.length;
-        } else if (data.getCustomURLs() != null && data.getCustomURLs().length > 0) {
+        } else if (assertion.getCustomURLs() != null && assertion.getCustomURLs().length > 0) {
             customURLList = true;
             final String stratName = assertion.getFailoverStrategyName();
             FailoverStrategy strat;
             try {
-                strat = FailoverStrategyFactory.createFailoverStrategy(stratName, data.getCustomURLs());
+                strat = FailoverStrategyFactory.createFailoverStrategy(stratName, assertion.getCustomURLs());
             } catch (IllegalArgumentException e) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_STRATEGY_NAME, new String[] { stratName }, e);
-                strat = new StickyFailoverStrategy(data.getCustomURLs());
+                strat = new StickyFailoverStrategy(assertion.getCustomURLs());
             }
             failoverStrategy = AbstractFailoverStrategy.makeSynchronized(strat);
-            maxFailoverAttempts = data.getCustomURLs().length;
+            maxFailoverAttempts = assertion.getCustomURLs().length;
         } else {
             failoverStrategy = null;
             maxFailoverAttempts = 1;
@@ -259,10 +259,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             routedRequestParams.setHostnameVerifier(hostnameVerifier);
 
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
-            handleProcessedSecurityHeader(context, data.getCurrentSecurityHeaderHandling(),
-                                          data.getXmlSecurityActorToPromote());
+            handleProcessedSecurityHeader(context, assertion.getCurrentSecurityHeaderHandling(),
+                                          assertion.getXmlSecurityActorToPromote());
 
-            String userAgent = data.getUserAgent();
+            String userAgent = assertion.getUserAgent();
             if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
             routedRequestParams.addExtraHeader(new GenericHttpHeader(USER_AGENT, userAgent));
 
@@ -276,14 +276,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             HttpRequestKnob httpRequestKnob = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
 
-            if (data.isTaiCredentialChaining()) {
+            if (assertion.isTaiCredentialChaining()) {
                 doTaiCredentialChaining(context, routedRequestParams, url);
             }
 
-            String login = data.getLogin();
-            String password = data.getPassword();
-            String domain = data.getRealm();
-            String host = data.getNtlmHost();
+            String login = assertion.getLogin();
+            String password = assertion.getPassword();
+            String domain = assertion.getRealm();
+            String host = assertion.getNtlmHost();
 
             Map vars = null;
             if (login != null && login.length() > 0 && password != null && password.length() > 0) {
@@ -307,9 +307,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
-            if (data.isAttachSamlSenderVouches()) {
+            if (assertion.isAttachSamlSenderVouches()) {
                 doAttachSamlSenderVouches(context, senderVouchesSignerInfo);
-            } else if (data.isPassthroughHttpAuthentication() && httpRequestKnob != null) {
+            } else if (assertion.isPassthroughHttpAuthentication() && httpRequestKnob != null) {
                 String[] authHeaders = httpRequestKnob.getHeaderValues(HttpConstants.HEADER_AUTHORIZATION);
                 boolean passed = false;
                 for (String authHeader : authHeaders) {
@@ -324,23 +324,23 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             // Outbound Kerberos support (for Windows Integrated Auth only)
-            if (data.isKrbDelegatedAuthentication()) {
+            if (assertion.isKrbDelegatedAuthentication()) {
                 // extract creds from request & get service ticket
                 addKerberosServiceTicketToRequestParam(
                         getDelegatedKerberosTicket(context, url.getHost()), routedRequestParams);
 
-            } else if (data.isKrbUseGatewayKeytab()) {
+            } else if (assertion.isKrbUseGatewayKeytab()) {
                 // obtain a service ticket using the gateway's keytab
                 KerberosRoutingClient client = new KerberosRoutingClient();
                 String svcPrincipal = KerberosClient.getServicePrincipalName(url.getProtocol(), url.getHost());
                 addKerberosServiceTicketToRequestParam(
                         client.getKerberosServiceTicket(svcPrincipal, true), routedRequestParams);
 
-            } else if (data.getKrbConfiguredAccount() != null) {
+            } else if (assertion.getKrbConfiguredAccount() != null) {
                 // obtain a service ticket using the configured account in the assertion
                 KerberosRoutingClient client = new KerberosRoutingClient();
                 addKerberosServiceTicketToRequestParam(
-                        client.getKerberosServiceTicket(url, data.getKrbConfiguredAccount(), data.getKrbConfiguredPassword()),
+                        client.getKerberosServiceTicket(url, assertion.getKrbConfiguredAccount(), assertion.getKrbConfiguredPassword()),
                         routedRequestParams);
             }
 
@@ -461,7 +461,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
 
             Object connectionId = null;
-            if (data.isPassthroughHttpAuthentication() && context.getRequest().isHttpRequest()){
+            if (assertion.isPassthroughHttpAuthentication() && context.getRequest().isHttpRequest()){
                 connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
             }
 
@@ -473,7 +473,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                                                                  connectionId);
 
             if (httpClient instanceof RerunnableGenericHttpClient ||
-                (!data.isPassthroughHttpAuthentication() &&
+                (!assertion.isPassthroughHttpAuthentication() &&
                 routedRequestParams.getNtlmAuthentication() == null &&
                 routedRequestParams.getPasswordAuthentication() == null)) {
                 routedRequestParams.setContentLength(contentLength);
@@ -481,7 +481,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             // this will forward soapaction, content-type, cookies, etc based on assertion settings
             HttpForwardingRuleEnforcer.handleRequestHeaders(routedRequestParams, context, url.getHost(),
-                                                            data.getRequestHeaderRules(), auditor, vars, varNames);
+                                                            assertion.getRequestHeaderRules(), auditor, vars, varNames);
 
             final HttpMethod method = methodFromRequest(context, routedRequestParams);
 
@@ -585,7 +585,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             if (status == HttpConstants.STATUS_OK)
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
-            else if (data.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
+            else if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_CHALLENGE);
             }
 
@@ -596,14 +596,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 HttpForwardingRuleEnforcer.handleResponseHeaders(routedResponse,
                                                                  httpResponseKnob,
                                                                  auditor,
-                                                                 data.getResponseHeaderRules(),
+                                                                 assertion.getResponseHeaderRules(),
                                                                  routedResponseDestinationIsContextVariable,
                                                                  context,
                                                                  routedRequestParams,
                                                                  vars,
                                                                  varNames);
             }
-            if (data.isPassthroughHttpAuthentication()) {
+            if (assertion.isPassthroughHttpAuthentication()) {
                 boolean passed = false;
                 List wwwAuthValues = routedResponse.getHeaders().getValues(HttpConstants.HEADER_WWW_AUTHENTICATE);
                 if (wwwAuthValues != null) {
@@ -732,10 +732,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (status == HttpConstants.STATUS_OK && outerContentType == null) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, Integer.toString(status));
                 responseOk = false;
-            } else if (data.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
+            } else if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
                 responseOk = false;
-            } else if (status >= 400 && data.isFailOnErrorStatus() && !passthroughSoapFault) {
+            } else if (status >= 400 && assertion.isFailOnErrorStatus() && !passthroughSoapFault) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
                 responseOk = false;
             } else if (outerContentType != null) { // response OK
@@ -762,9 +762,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         if (url == null) {
             String psurl;
             if (urlUsesVariables) {
-               psurl = ExpandVariables.process(data.getProtectedServiceUrl(), context.getVariableMap(varNames, auditor), auditor);
+               psurl = ExpandVariables.process(assertion.getProtectedServiceUrl(), context.getVariableMap(varNames, auditor), auditor);
             } else {
-               psurl = data.getProtectedServiceUrl();
+               psurl = assertion.getProtectedServiceUrl();
             }
 
             if (psurl == null) {

@@ -52,7 +52,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
      * @return The connection timeout in millis
      */
     protected int getConnectionTimeout() {
-        Integer timeout = validateTimeout(data.getConnectionTimeout());
+        Integer timeout = validateTimeout(assertion.getConnectionTimeout());
 
         if (timeout == null)
             timeout = super.getConnectionTimeout();
@@ -68,7 +68,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
      * @return The timeout in millis
      */
     protected int getTimeout() {
-        Integer timeout = validateTimeout(data.getTimeout());
+        Integer timeout = validateTimeout(assertion.getTimeout());
 
         if (timeout == null)
             timeout = super.getTimeout();
@@ -82,7 +82,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
      * @return The max
      */
     protected int getMaxConnectionsPerHost() {
-        return data.getMaxConnections();
+        return assertion.getMaxConnections();
     }
 
     /**
@@ -91,7 +91,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
      * @return The max
      */
     protected int getMaxConnectionsAllHosts() {
-        return data.getMaxConnections() * 10;
+        return assertion.getMaxConnections() * 10;
     }
 
     /**

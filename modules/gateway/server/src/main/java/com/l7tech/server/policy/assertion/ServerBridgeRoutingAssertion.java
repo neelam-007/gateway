@@ -195,10 +195,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                 // DELETE CURRENT SECURITY HEADER IF NECESSARY
                 handleProcessedSecurityHeader(context,
-                                              data.getCurrentSecurityHeaderHandling(),
-                                              data.getXmlSecurityActorToPromote());
+                                              assertion.getCurrentSecurityHeaderHandling(),
+                                              assertion.getXmlSecurityActorToPromote());
 
-                if (data.isAttachSamlSenderVouches()) {
+                if (assertion.isAttachSamlSenderVouches()) {
                     doAttachSamlSenderVouches(context, signerInfo);
                 }
 
@@ -261,7 +261,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     HttpResponseKnob httpResponseKnob = (HttpResponseKnob) bridgeResponse.getKnob(HttpResponseKnob.class);
                     if (httpResponseKnob != null) {
                         HttpForwardingRuleEnforcer.handleResponseHeaders(httpResponseKnob, auditor, hh,
-                                                                         data.getResponseHeaderRules(), vars,
+                                                                         assertion.getResponseHeaderRules(), vars,
                                                                          varNames, context);
 
                         httpResponseKnob.setStatus(status);
@@ -362,7 +362,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
     private URL getUrl() {
         try {
-            return new URL(data.getProtectedServiceUrl());
+            return new URL(assertion.getProtectedServiceUrl());
         } catch (MalformedURLException e) {
             throw new IllegalStateException(" URL is invalid; assertion is therefore nonfunctional.");
         }
@@ -371,7 +371,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     private Policy getHardCodedPolicy() {
         Policy hardcodedPolicy = null;
 
-        String policyXml = data.getPolicyXml();
+        String policyXml = assertion.getPolicyXml();
         if (policyXml != null) {
             try {
                 Assertion a = wspReader.parsePermissively(policyXml);
@@ -500,7 +500,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             FailoverStrategy strategy;
             String[] addrs = ssg.getOverrideIpAddresses();
             try {
-                strategy = FailoverStrategyFactory.createFailoverStrategy(data.getFailoverStrategyName(), addrs);
+                strategy = FailoverStrategyFactory.createFailoverStrategy(assertion.getFailoverStrategyName(), addrs);
             } catch (IllegalArgumentException e) {
                 strategy = new StickyFailoverStrategy(addrs);
             }
@@ -513,11 +513,11 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
     private boolean initCredentials() {
         boolean useClientCert;
-        String username = data.getLogin();
+        String username = assertion.getLogin();
         char[] password = null;
 
         if (username != null) {
-            String pass = data.getPassword();
+            String pass = assertion.getPassword();
             password = pass == null ? null : pass.toCharArray();
         }
 
@@ -534,7 +534,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
     private URL getProtectedServiceUrl(PublishedService service) throws WSDLException, MalformedURLException {
         URL url;
-        String psurl = data.getProtectedServiceUrl();
+        String psurl = assertion.getProtectedServiceUrl();
         if (psurl == null) {
             url = service.serviceUrl();
         } else {
@@ -546,7 +546,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     private PolicyApplicationContext newPolicyApplicationContext(final PolicyEnforcementContext context, Message bridgeRequest, Message bridgeResponse, PolicyAttachmentKey pak, URL origUrl, final HeaderHolder hh) {
         return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
             public HttpCookie[] getSessionCookies() {
-                int cookieRule = data.getRequestHeaderRules().ruleForName("cookie");
+                int cookieRule = assertion.getRequestHeaderRules().ruleForName("cookie");
                 Set cookies = Collections.EMPTY_SET;
                 if (cookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
                     cookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
@@ -557,7 +557,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             }
             public void setSessionCookies(HttpCookie[] cookies) {
                 // todo, fla, we need to handle all response http header rules, not just cookies
-                int setcookieRule = data.getResponseHeaderRules().ruleForName("set-cookie");
+                int setcookieRule = assertion.getResponseHeaderRules().ruleForName("set-cookie");
                 if (setcookieRule == HttpPassthroughRuleSet.ORIGINAL_PASSTHROUGH ||
                     setcookieRule == HttpPassthroughRuleSet.CUSTOM_AND_ORIGINAL_PASSTHROUGH) {
                     //add or replace cookies
@@ -639,7 +639,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             HttpForwardingRuleEnforcer.handleRequestHeaders(params, context, assertion.getRequestHeaderRules(),
                                                             auditor, null, varNames);
 
-            if (data.isTaiCredentialChaining()) {
+            if (assertion.isTaiCredentialChaining()) {
                 doTaiCredentialChaining(context, params, params.getTargetUrl());
             }
 
@@ -821,7 +821,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         }
 
         public void installSsgServerCertificate( Ssg ssg, PasswordAuthentication credentials) throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, CertificateException, KeyStoreException {
-            Long loid = data.getServerCertificateOid();
+            Long loid = assertion.getServerCertificateOid();
             if (loid == null) {
                 // Attempt normal cert discovery
                 super.installSsgServerCertificate(ssg, credentials);
