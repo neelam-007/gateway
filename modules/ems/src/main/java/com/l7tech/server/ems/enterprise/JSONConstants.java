@@ -142,6 +142,7 @@ public final class JSONConstants {
     public final class TimePeriodTypeKeys{
         public static final String TIME_PERIOD_MAIN = "timePeriod";
         public static final String TYPE = "type";
+        public static final String TIME_INTERVAL = "timeInterval";
     }
 
     public static final class TimePeriodRelativeKeys{
@@ -149,6 +150,12 @@ public final class JSONConstants {
         public static final String NUMBER_OF_TIME_UNITS = "numberOfTimeUnits";
         public static final String TIME_ZONE = "timeZone";
         public static final String [] ALL_KEYS = new String[]{UNIT_OF_TIME, NUMBER_OF_TIME_UNITS, TIME_ZONE};
+    }
+
+    public static final class TimePeriodIntervalKeys{
+        public static final String INTERVAL_UNIT_OF_TIME = "unit";
+        public static final String NUMBER_OF_INTERVAL_TIME_UNITS = "value";
+        public static final String [] ALL_KEYS = new String[]{INTERVAL_UNIT_OF_TIME, NUMBER_OF_INTERVAL_TIME_UNITS};
     }
 
     public static final class TimePeriodAbsoluteKeys{
@@ -184,5 +191,8 @@ public final class JSONConstants {
 
     public static final String SUMMARY_CHART = "summaryChart";
 
-    
+    public static final String ENTITY_TYPE = "entityType";
+
+    public static final String REPORT_NAME = "reportName";
+
 }

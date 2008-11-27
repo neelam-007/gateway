@@ -34,9 +34,6 @@ import javax.xml.parsers.DocumentBuilder;
 public class ReportApp
 {
 	private static final String TASK_RUN = "run";
-	private static final String TASK_PDF = "pdf";
-	private static final String TASK_HTML = "html";
-	private static final String TASK_VIEW = "view";
 
     //The following params must be supplied when filling the report
     private static final String REPORT_CONNECTION= "REPORT_CONNECTION";

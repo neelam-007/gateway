@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.junit.Assert;
 import org.mortbay.util.ajax.JSON;
 import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.server.ems.standardreports.PerformanceSummaryJsonConvertor;
+import com.l7tech.server.ems.standardreports.SummaryReportJsonConvertor;
 import com.l7tech.gateway.standardreports.Utilities;
 
 import java.util.*;
@@ -154,12 +154,79 @@ public class JsonConversionTests {
             "    \"reportName\" : \"My Report\"" +
             "}";
 
-    String [] psSummaryRelativeExpectedParams = new String[]{PerformanceSummaryJsonConvertor.IS_RELATIVE, PerformanceSummaryJsonConvertor.RELATIVE_TIME_UNIT,
-            PerformanceSummaryJsonConvertor.RELATIVE_NUM_OF_TIME_UNITS, PerformanceSummaryJsonConvertor.REPORT_RAN_BY,
-            PerformanceSummaryJsonConvertor.SERVICE_NAMES_LIST, PerformanceSummaryJsonConvertor.SERVICE_ID_TO_OPERATIONS_MAP,
-            PerformanceSummaryJsonConvertor.IS_DETAIL, PerformanceSummaryJsonConvertor.MAPPING_KEYS, PerformanceSummaryJsonConvertor.MAPPING_VALUES,
-            PerformanceSummaryJsonConvertor.VALUE_EQUAL_OR_LIKE,
-            PerformanceSummaryJsonConvertor.USE_USER, PerformanceSummaryJsonConvertor.AUTHENTICATED_USERS, PerformanceSummaryJsonConvertor.PRINT_CHART};
+    private final static String psRelativeIntervalJson = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229377\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"229378\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }" +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.*.*.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : false," +
+            "    \"reportName\" : \"My Report\"" +
+            "}";
+    
+    String [] psSummaryRelativeExpectedParams = new String[]{SummaryReportJsonConvertor.IS_RELATIVE, SummaryReportJsonConvertor.RELATIVE_TIME_UNIT,
+            SummaryReportJsonConvertor.RELATIVE_NUM_OF_TIME_UNITS, SummaryReportJsonConvertor.REPORT_RAN_BY,
+            SummaryReportJsonConvertor.SERVICE_NAMES_LIST, SummaryReportJsonConvertor.SERVICE_ID_TO_OPERATIONS_MAP,
+            SummaryReportJsonConvertor.IS_DETAIL, SummaryReportJsonConvertor.MAPPING_KEYS, SummaryReportJsonConvertor.MAPPING_VALUES,
+            SummaryReportJsonConvertor.VALUE_EQUAL_OR_LIKE,
+            SummaryReportJsonConvertor.USE_USER, SummaryReportJsonConvertor.AUTHENTICATED_USERS, SummaryReportJsonConvertor.PRINT_CHART};
 
     @Test
     public void testNumClustersFound() throws ReportApi.ReportException {
@@ -192,7 +259,7 @@ public class JsonConversionTests {
                 paramMap.put(rP.getName(), rP);
             }
 
-            ReportApi.ReportSubmission.ReportParam isRelativeParam = paramMap.get(PerformanceSummaryJsonConvertor.IS_RELATIVE);
+            ReportApi.ReportSubmission.ReportParam isRelativeParam = paramMap.get(SummaryReportJsonConvertor.IS_RELATIVE);
             Boolean isRelative = (Boolean) isRelativeParam.getValue();
             Assert.assertTrue("isRelative should be true", isRelative);
         }
@@ -219,10 +286,51 @@ public class JsonConversionTests {
                 paramMap.put(rP.getName(), rP);
             }
 
-            ReportApi.ReportSubmission.ReportParam timeUnitParam = paramMap.get(PerformanceSummaryJsonConvertor.RELATIVE_TIME_UNIT);
+            ReportApi.ReportSubmission.ReportParam timeUnitParam = paramMap.get(SummaryReportJsonConvertor.RELATIVE_TIME_UNIT);
             String timeUnit = (String) timeUnitParam.getValue();
             Utilities.UNIT_OF_TIME unitOfTime = Utilities.getUnitFromString(timeUnit);
             Assert.assertTrue("Relative time unit should be ", unitOfTime == Utilities.UNIT_OF_TIME.DAY);
+        }
+    }
+
+    @Test
+    public void testConvertorFactory() throws Exception{
+        Object o = JSON.parse(psRelativeJson);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Assert.assertTrue(convertor.getClass().getName() == SummaryReportJsonConvertor.class.getName());
+
+        o = JSON.parse(psRelativeIntervalJson);
+        jsonMap = (Map) o;
+        convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Assert.assertTrue(convertor.getClass().getName() == IntervalReportJsonConvertor.class.getName());
+    }
+
+    @Test
+    public void testPerfStatInterval_IntervalTime() throws ReportApi.ReportException {
+        Object o = JSON.parse(psRelativeIntervalJson);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        Assert.assertNotNull(reportClusterBeans);
+
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+
+            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
+            Assert.assertNotNull(reportParams);
+
+            Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
+                    new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
+            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+                paramMap.put(rP.getName(), rP);
+            }
+
+            ReportApi.ReportSubmission.ReportParam intervalTimeUnitParam = paramMap.get(SummaryReportJsonConvertor.INTERVAL_TIME_UNIT);
+            String intervalTimeUnit = (String) intervalTimeUnitParam.getValue();
+            Utilities.UNIT_OF_TIME unitOfTime = Utilities.getUnitFromString(intervalTimeUnit);
+            Assert.assertTrue("Interval time unit should be ", unitOfTime == Utilities.UNIT_OF_TIME.HOUR);
         }
     }
 
@@ -248,18 +356,18 @@ public class JsonConversionTests {
             }
 
             ReportApi.ReportSubmission.ReportParam
-                    mappingKeyParam = paramMap.get(PerformanceSummaryJsonConvertor.MAPPING_KEYS);
+                    mappingKeyParam = paramMap.get(SummaryReportJsonConvertor.MAPPING_KEYS);
 
             List<String> mappingKeys = (List<String>) mappingKeyParam.getValue();
             Assert.assertNotNull("Mapping keys should not be null", mappingKeys);
 
             ReportApi.ReportSubmission.ReportParam
-                    mappingValueParam = paramMap.get(PerformanceSummaryJsonConvertor.MAPPING_VALUES);
+                    mappingValueParam = paramMap.get(SummaryReportJsonConvertor.MAPPING_VALUES);
             List<String> mappingValues = (List<String>) mappingValueParam.getValue();            
             Assert.assertNotNull("Mapping values should not be null", mappingValues);
             
             ReportApi.ReportSubmission.ReportParam
-                    mappingValueEqualOrLikeParam = paramMap.get(PerformanceSummaryJsonConvertor.VALUE_EQUAL_OR_LIKE);
+                    mappingValueEqualOrLikeParam = paramMap.get(SummaryReportJsonConvertor.VALUE_EQUAL_OR_LIKE);
             List<String> mappingValuesEqualOrLike = (List<String>) mappingValueEqualOrLikeParam.getValue();
             Assert.assertNotNull("Mapping values equal or like should not be null", mappingValuesEqualOrLike);
 
@@ -361,12 +469,12 @@ public class JsonConversionTests {
                 paramMap.put(rP.getName(), rP);
             }
 
-            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(PerformanceSummaryJsonConvertor.AUTHENTICATED_USERS);
+            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(SummaryReportJsonConvertor.AUTHENTICATED_USERS);
             List<String> authUsers = (List<String>) reportParam.getValue();
             Assert.assertNotNull("authUsers should not be null", authUsers);
             Assert.assertTrue("Authusers should be empty", authUsers.size() == 0);
 
-            ReportApi.ReportSubmission.ReportParam useUserParam = paramMap.get(PerformanceSummaryJsonConvertor.USE_USER);
+            ReportApi.ReportSubmission.ReportParam useUserParam = paramMap.get(SummaryReportJsonConvertor.USE_USER);
             Boolean useUser = (Boolean) useUserParam.getValue();
             Assert.assertFalse("Use user should be false", useUser);
 
@@ -395,10 +503,10 @@ public class JsonConversionTests {
                 paramMap.put(rP.getName(), rP);
             }
 
-            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(PerformanceSummaryJsonConvertor.AUTHENTICATED_USERS);
+            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(SummaryReportJsonConvertor.AUTHENTICATED_USERS);
             List<String> authUsers = (List<String>) reportParam.getValue();
             Assert.assertNotNull("authUsers should not be null", authUsers);
-            ReportApi.ReportSubmission.ReportParam useUserParam = paramMap.get(PerformanceSummaryJsonConvertor.USE_USER);
+            ReportApi.ReportSubmission.ReportParam useUserParam = paramMap.get(SummaryReportJsonConvertor.USE_USER);
             Boolean useUser = (Boolean) useUserParam.getValue();
 
             if(clusterId.equals(cluster1)){
@@ -434,7 +542,7 @@ public class JsonConversionTests {
                 paramMap.put(rP.getName(), rP);
             }
 
-            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(PerformanceSummaryJsonConvertor.SERVICE_NAMES_LIST);
+            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(SummaryReportJsonConvertor.SERVICE_NAMES_LIST);
             Set<String> serviceNames = (Set<String>) reportParam.getValue();
             Assert.assertNotNull(serviceNames);
 
@@ -446,7 +554,7 @@ public class JsonConversionTests {
                 throw new IllegalStateException("Unexpected cluster id found :" + clusterId);
             }
 
-            ReportApi.ReportSubmission.ReportParam serviceIdtoOp = paramMap.get(PerformanceSummaryJsonConvertor.SERVICE_ID_TO_OPERATIONS_MAP);
+            ReportApi.ReportSubmission.ReportParam serviceIdtoOp = paramMap.get(SummaryReportJsonConvertor.SERVICE_ID_TO_OPERATIONS_MAP);
             Map<String, Set<String>> serviceIdToOps = (Map<String, Set<String>>) serviceIdtoOp.getValue();
             for(Map.Entry<String, Set<String>> me: serviceIdToOps.entrySet()){
 

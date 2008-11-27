@@ -7,22 +7,22 @@
 package com.l7tech.server.ems.standardreports;
 
 import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.server.ems.standardreports.PerformanceSummaryJsonConvertor;
+import com.l7tech.server.management.api.node.ReportApi;
 
 import java.util.Map;
 
 public class JsonReportParameterConvertorFactory {
 
-    public static JsonReportParameterConvertor getConvertor(Map jsonMap){
-        String reportType = (String) jsonMap.get(JSONConstants.REPORT_TYPE);
+    public static JsonReportParameterConvertor getConvertor(Map jsonMap) throws ReportApi.ReportException {
+        if(!jsonMap.containsKey(JSONConstants.SUMMARY_REPORT)){
+            throw new ReportApi.ReportException("Key: "+JSONConstants.SUMMARY_REPORT+" is missing from JSON data");
+        }
         Boolean summaryReport = (Boolean) jsonMap.get(JSONConstants.SUMMARY_REPORT);
 
-        if(reportType.equals(JSONConstants.ReportType.PERFORMANCE)
-                && summaryReport){
-            PerformanceSummaryJsonConvertor ps = new PerformanceSummaryJsonConvertor();
-            return ps;
+        if(summaryReport){
+            return new SummaryReportJsonConvertor();
+        }else {
+            return new IntervalReportJsonConvertor();
         }
-
-        throw new RuntimeException("No implementation yet for supplied report type");
     }
 }
