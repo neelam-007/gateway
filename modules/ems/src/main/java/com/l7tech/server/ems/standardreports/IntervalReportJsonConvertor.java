@@ -66,7 +66,7 @@ public class IntervalReportJsonConvertor extends SummaryReportJsonConvertor {
         String numberOfIntervalUnits = (String) timeIntervalMap.get(JSONConstants.TimePeriodIntervalKeys.NUMBER_OF_INTERVAL_TIME_UNITS);
         ReportApi.ReportSubmission.ReportParam numberIntervalTimeUnitsParam = new ReportApi.ReportSubmission.ReportParam();
         numberIntervalTimeUnitsParam.setName(INTERVAL_NUM_OF_TIME_UNITS);
-        numberIntervalTimeUnitsParam.setValue(numberOfIntervalUnits);
+        numberIntervalTimeUnitsParam.setValue(Integer.valueOf(numberOfIntervalUnits));
         addParamToAllClusters(clusterToReportParams, numberIntervalTimeUnitsParam);
 
     }

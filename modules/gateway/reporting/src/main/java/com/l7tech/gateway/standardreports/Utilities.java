@@ -1581,6 +1581,7 @@ Value is included in all or none, comment is just illustrative
         boolean firstComma = false;
         if(useUser){
             sb.append(AUTHENTICATED_USER_DISPLAY);
+            firstComma = true;
         }
         if(useUser && authUsers != null && !authUsers.isEmpty()){
             sb.append(": (");
@@ -1590,7 +1591,6 @@ Value is included in all or none, comment is just illustrative
                 sb.append(s);
             }
             sb.append(")");
-            firstComma = true;
         }
 
         if(keys == null){

@@ -5,11 +5,12 @@
 	<property name="class.name" value="com.l7tech.standardreports.ReportApp" />
     <property name="test_data_class.name" value="com.l7tech.standardreports.CreateTestData" />
     <property name="demo_class.name" value="com.l7tech.standardreports.demo.RunJetty" />
+    <property name="reporting.classes.dir" value="../../../../../../../../modules/gateway/reporting/build/classes" />
     <property name="ems.classes.dir" value="../../../../../../../../modules/ems/build/classes" />
     <property name="lib" value="../../../../../../../../lib" />
     <property name="ems.dependency.dir" value="../../../../../../../../modules/ems/build/dependency" />
 
-    <property name="jasper.jrxml_files" value="../../../../../../../../modules/ems/src/main/java/com/l7tech/server/ems/standardreports" />
+    <property name="jasper.jrxml_files" value="../../../../../../../../modules/gateway/reporting/src/main/java/com/l7tech/gateway/standardreports" />
     <!--<property name="canned_usage.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Canned_Usage_Report.jrxml" />-->
     <!--<property name="canned_usage_interval_master.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_IntervalMasterReport.jrxml" />-->
     <!--<property name="canned_usage_interval_subreport_1.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_SubIntervalMasterReport.jrxml" />-->
@@ -32,8 +33,10 @@
         <pathelement location="." />
         <!-- Don't want the ems jar as may compile the ems classes during development-->
         <pathelement location="${ems.classes.dir}" />
+        <pathelement location="${reporting.classes.dir}" />
         <fileset dir="${ems.dependency.dir}">
             <include name="**/*.jar"/>
+            <exclude name="layer7-gateway-reporting-5.0-dev-b2.jar"/>
         </fileset>
         <file file="${lib}/repository/junit/junit-4.4.jar"/>
     </path>
