@@ -89,6 +89,29 @@ public class UtilitiesTest{
     }
 
     @Test
+    public void testCreateMappingQuery_DisallowDuplicateKeys(){
+        List<String> keys = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("IP_ADDRESS");
+
+        List<String> values = new ArrayList<String>();
+        values.add(null);
+        values.add(null);
+
+        Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
+        boolean exception = false;
+        try{
+            String sql =
+                    Utilities.createMappingQuery(false, null,null,serviceIdToOp ,keys ,values ,null,1,false, false,null);
+        }catch(Exception e){
+            exception = true;
+        }
+
+        Assert.assertTrue("Exception should be thrown due to duplicate keys", exception);
+
+    }
+
+    @Test
     public void testCreateMasterMappingQuery_KeyValues(){
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");

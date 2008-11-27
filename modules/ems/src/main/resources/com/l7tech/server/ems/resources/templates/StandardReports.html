@@ -424,7 +424,7 @@ generateButton.set('disabled', false);
             settings.timePeriod = {};
             settings.timePeriod.type = getTimePeriodType();
             if (settings.timePeriod.type == TimePeriodType.RELATIVE) {
-                settings.timePeriod.value = relativeTimePeriodTextField.value;
+                settings.timePeriod.numberOfTimeUnits = relativeTimePeriodTextField.value;
                 settings.timePeriod.unit = relativeTimePeriodUnitDropDown.value;
             } else if (settings.timePeriod.type == TimePeriodType.ABSOLUTE) {
 // TODO

@@ -1243,6 +1243,12 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
                 }
             }
             keysOk = false;
+        }else{
+            //ensure all keys are unique
+            Set<String> s = new HashSet<String>(keys);
+            if(s.size() != keys.size()){
+                throw new IllegalArgumentException("keys may not contain any duplicates");
+            }
         }
 
         boolean keyValuesSupplied = false;

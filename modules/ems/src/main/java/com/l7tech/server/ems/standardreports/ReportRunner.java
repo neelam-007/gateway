@@ -19,9 +19,10 @@ public class ReportRunner {
 
     private String jsonData;
     private Map jsonMap;
+    private String reportRanBy;
 
 
-    public ReportRunner(String jsonData) {
+    public ReportRunner(String jsonData, String reportRanBy) {
         this.jsonData = jsonData;
         Object o = JSON.parse(this.jsonData);
         System.out.println(o.getClass().getName());
@@ -31,10 +32,12 @@ public class ReportRunner {
             Map.Entry me = (Map.Entry) o1;
             System.out.println(me.getKey()+" " + me.getValue());            
         }
+
+        this.reportRanBy = reportRanBy;
     }
 
 
-    public Collection<ReportApi.ReportSubmission> getReportSubmissions() throws ReportApi.ReportException {
+    public Collection<ReportSubmissionClusterBean> getReportSubmissions() throws ReportApi.ReportException {
 
         String reportType = (String) jsonMap.get(JSONConstants.REPORT_TYPE);
         Boolean summaryReport = (Boolean) jsonMap.get(JSONConstants.SUMMARY_REPORT);
@@ -42,7 +45,7 @@ public class ReportRunner {
         if(reportType.equals(JSONConstants.ReportType.PERFORMANCE)
                 && summaryReport){
             PerformanceSummary ps = new PerformanceSummary();
-            return ps.getReportSubmissions(jsonMap);
+            return ps.getReportSubmissions(jsonMap, reportRanBy);
             
         }
 

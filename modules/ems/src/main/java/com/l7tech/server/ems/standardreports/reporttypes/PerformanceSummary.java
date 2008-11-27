@@ -7,10 +7,12 @@
 package com.l7tech.server.ems.standardreports.reporttypes;
 
 import java.util.*;
+import java.text.ParseException;
 
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.gateway.standardreports.Utilities;
+import com.l7tech.server.ems.standardreports.ReportSubmissionClusterBean;
 
 public class PerformanceSummary {
 
@@ -24,61 +26,100 @@ public class PerformanceSummary {
     public final static String REPORT_RAN_BY = "REPORT_RAN_BY";
     public final static String SERVICE_NAMES_LIST = "SERVICE_NAMES_LIST";
     public final static String SERVICE_ID_TO_OPERATIONS_MAP = "SERVICE_ID_TO_OPERATIONS_MAP";
-    public final static String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
+
     public final static String MAPPING_KEYS = "MAPPING_KEYS";
     public final static String MAPPING_VALUES = "MAPPING_VALUES";
     public final static String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
-    public final static String IS_DETAIL = "IS_DETAIL";
     public final static String USE_USER = "USE_USER";
+    
+    public final static String IS_DETAIL = "IS_DETAIL";
+
     public final static String AUTHENTICATED_USERS = "AUTHENTICATED_USERS";
     public final static String PRINT_CHART = "PRINT_CHART";
 
     //ps only
     public final static String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
 
-//    public final String [] requiredParams = new String[]{IS_RELATIVE, RELATIVE_NUM_OF_TIME_UNITS, RELATIVE_TIME_UNIT,
-//    IS_ABSOLUTE, ABSOLUTE_START_TIME, ABSOLUTE_END_TIME, REPORT_RAN_BY, SERVICE_NAMES_LIST, SERVICE_ID_TO_OPERATIONS_MAP,
-//    HOURLY_MAX_RETENTION_NUM_DAYS, MAPPING_KEYS, MAPPING_VALUES, VALUE_EQUAL_OR_LIKE, IS_DETAIL, USE_USER,
-//    AUTHENTICATED_USERS, PRINT_CHART};
-
     //need to be filled in on the SSG
     public final static String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
     public final static String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
+    public final static String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
 
 
-
-    public Collection<ReportApi.ReportSubmission> getReportSubmissions(Map params) throws ReportApi.ReportException {
+    public Collection<ReportSubmissionClusterBean> getReportSubmissions(Map params, String reportRanBy) throws ReportApi.ReportException {
         validateParams(params);
-        ReportApi.ReportSubmission reportSubmission = new ReportApi.ReportSubmission();
-        reportSubmission.setType(ReportApi.ReportType.PERFORMANCE);
-        //reportSubmission.setParameters(getReportParams(params));
 
-        Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getReportParams(params);
-        List<ReportApi.ReportSubmission> repSubs = new ArrayList<ReportApi.ReportSubmission>();
-        for(String s: clusterToReportParams.keySet()){
+        Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getReportParams(params, reportRanBy);
+
+        List<ReportSubmissionClusterBean> clusterBeans = new ArrayList<ReportSubmissionClusterBean>();
+        for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
             ReportApi.ReportSubmission reportSub = new ReportApi.ReportSubmission();
-            reportSub.setParameters(clusterToReportParams.get(s));
-            repSubs.add(reportSub);
+            reportSub.setType(ReportApi.ReportType.PERFORMANCE);
+            reportSub.setParameters(me.getValue());
+
+            ReportSubmissionClusterBean clusterBean = new ReportSubmissionClusterBean(me.getKey(), reportSub);
+            clusterBeans.add(clusterBean);
         }
-        return repSubs;
+
+        return clusterBeans;
     }
 
 
 
-    private Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getReportParams(Map params) throws ReportApi.ReportException {
+    private Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getReportParams(Map params, String reportRanBy) throws ReportApi.ReportException {
 
         Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getClusterMaps(params);
+
         //Time Period
         addTimeParameters(clusterToReportParams, params);
 
         //reportRanBy
-        String reportRanBy = (String) params.get(JSONConstants.REPORT_RAN_BY);
         ReportApi.ReportSubmission.ReportParam reportRanByParam = new ReportApi.ReportSubmission.ReportParam();
         reportRanByParam.setName(REPORT_RAN_BY);
         reportRanByParam.setValue(reportRanBy);
-
         addParamToAllClusters(clusterToReportParams, reportRanByParam);
+
+        Map<String, Boolean> clusterIdToIsDetailMap = getClusterToIsDetailMap(clusterToReportParams);
+        //add mapping keys
+        addMappingKeysAndValues(clusterToReportParams, params, true, clusterIdToIsDetailMap);
+
+        ReportApi.ReportSubmission.ReportParam printChartParam = new ReportApi.ReportSubmission.ReportParam();
+        printChartParam.setName(PRINT_CHART);
+        printChartParam.setValue(params.get(JSONConstants.SUMMARY_CHART));
+        addParamToAllClusters(clusterToReportParams, printChartParam);
+
+        
         return clusterToReportParams;
+    }
+
+    private Map<String, Boolean> getClusterToIsDetailMap(
+            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams) throws ReportApi.ReportException {
+        Map<String, Boolean> clusterIdToIsDetailMap = new HashMap<String, Boolean>();
+
+        for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
+            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = me.getValue();
+            boolean isDetail = false;
+            boolean found = false;
+            for(ReportApi.ReportSubmission.ReportParam param: reportParams){
+                if(param.getName().equals(SERVICE_ID_TO_OPERATIONS_MAP)){
+                    found = true;
+                    Map<String, Set<String>> serviceIdtoOps = (Map<String, Set<String>>) param.getValue();
+                    for(Map.Entry<String, Set<String>> sToIds: serviceIdtoOps.entrySet()){
+                        if(!sToIds.getValue().isEmpty()){
+                            isDetail = true;
+                        }
+                    }
+                }
+            }
+            if(!found){
+                throw new ReportApi.ReportException(
+                        SERVICE_ID_TO_OPERATIONS_MAP+ " parameter is missing for cluster: " + me.getKey()); 
+            }
+
+            clusterIdToIsDetailMap.put(me.getKey(), isDetail);
+        }
+
+        return clusterIdToIsDetailMap;
     }
 
     private void addParamToAllClusters(
@@ -154,6 +195,19 @@ public class PerformanceSummary {
             Collection<ReportApi.ReportSubmission.ReportParam> clusterParams = returnMap.get(clusterId);
             clusterParams.add(serviceIdToOperationParam);
 
+            //check if any operations are selected, if they are, then we have a detail query
+            //todo [Donal] the Utility functions can determine this itself, create a utility function determine this
+            //the report still needs the isDetail parameter, so it knows when to display certain bands
+            boolean isDetail = false;
+            for(Map.Entry<String, Set<String>> me: serviceIdToOps.entrySet()){
+                if(!me.getValue().isEmpty()) isDetail = true;
+            }
+
+            ReportApi.ReportSubmission.ReportParam isDetailParam = new ReportApi.ReportSubmission.ReportParam();
+            isDetailParam.setName(IS_DETAIL);
+            isDetailParam.setValue(isDetail);
+            clusterParams.add(isDetailParam);
+
             Set<String> serviceNames = clusterIdToServiceNames.get(clusterId);
             ReportApi.ReportSubmission.ReportParam serviceNameParam = new ReportApi.ReportSubmission.ReportParam();
             serviceNameParam.setName(SERVICE_NAMES_LIST);
@@ -167,13 +221,113 @@ public class PerformanceSummary {
 
     private void validateParams(Map params){
     String [] requiredParams = new String[]{JSONConstants.TimePeriodTypeKeys.TIME_PERIOD_MAIN,
-            JSONConstants.REPORT_RAN_BY, JSONConstants.REPORT_ENTITIES};
+            JSONConstants.REPORT_ENTITIES};
 
         for(String s: requiredParams){
             if(!params.containsKey(s)) throw new IllegalArgumentException("Required param '"+s+"' is missing");
         }
     }
-    
+
+    /**
+     * also determines if IS_CONTEXT_MAPPING param is true or not. This isn't needed for usage reports
+     * @param clusterToReportParams
+     * @param params
+     * @throws ReportApi.ReportException
+     */
+    private void addMappingKeysAndValues(
+            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams,
+            Map params,
+            boolean setIsContextMapping,
+            Map<String, Boolean> clusterToIsDetail) throws ReportApi.ReportException {
+        //MAPPING_KEYS
+        Object [] groupings = (Object[]) params.get(JSONConstants.GROUPINGS);
+        Map<String, List<String>> clusterToKeys = new HashMap<String, List<String>>();
+        Map<String, List<String>> clusterToValues = new HashMap<String, List<String>>();
+        Map<String, Set<String>> clusterToAuthUsers = new HashMap<String, Set<String>>();
+        //For each cluster, track if auth user key has been set
+        //used to determine whether to set is context mapping param to true or not
+        Set<String> clusterAuthUserSet = new HashSet<String>();
+        
+        for(Object o: groupings){
+            Map currentGrouping = (Map) o;
+            validateSubMap(currentGrouping, JSONConstants.ReportMappings.ALL_KEYS);
+
+            String clusterFound = (String) currentGrouping.get(JSONConstants.ReportMappings.CLUSTER_ID);
+            if(!clusterToKeys.containsKey(clusterFound)){
+                List<String> keys = new ArrayList<String>();
+                clusterToKeys.put(clusterFound, keys);
+                List<String> values = new ArrayList<String>();
+                clusterToValues.put(clusterFound, values);
+                Set<String> authUsers = new HashSet<String>();
+                clusterToAuthUsers.put(clusterFound, authUsers);
+            }
+
+            String key = (String) currentGrouping.get(JSONConstants.ReportMappings.MESSAGE_CONTEXT_KEY);
+            if(key.equals("")){
+                throw new ReportApi.ReportException("Key value cannot be empty");                
+            }
+            String value = (String) currentGrouping.get(JSONConstants.ReportMappings.CONSTRAINT);
+
+            if(key.equals(JSONConstants.AUTH_USER_ID)){
+                clusterAuthUserSet.add(clusterFound);
+                Set<String> authUsers = clusterToAuthUsers.get(clusterFound);
+                if(!value.equals("") ) authUsers.add(value);
+            }else{
+                List<String> clusterKeys = clusterToKeys.get(clusterFound);
+                clusterKeys.add(key);
+                List<String> clusterValues = clusterToValues.get(clusterFound);
+                clusterValues.add(value);
+            }
+        }
+
+        for(Map.Entry<String, List<String>> me: clusterToKeys.entrySet()){
+
+            if(!clusterToReportParams.containsKey(me.getKey())){
+                throw new ReportApi.ReportException("Unknown cluster: " + me.getKey() +" found in grouping JSON");
+            }
+            Collection<ReportApi.ReportSubmission.ReportParam> clusterParams = clusterToReportParams.get(me.getKey());
+
+            Set<String> testKeySet = new HashSet<String>(me.getValue());
+            if(testKeySet.size() != me.getValue().size()){
+                throw new ReportApi.ReportException("Groups cannot contain duplicate keys on a per cluster basis");
+            }
+            ReportApi.ReportSubmission.ReportParam mappingKeyParam = new ReportApi.ReportSubmission.ReportParam();
+            mappingKeyParam.setName(MAPPING_KEYS);
+            mappingKeyParam.setValue(me.getValue());
+            clusterParams.add(mappingKeyParam);
+
+            List<String> mappingValues = clusterToValues.get(me.getKey());
+            ReportApi.ReportSubmission.ReportParam mappingValueParam = new ReportApi.ReportSubmission.ReportParam();
+            mappingValueParam.setName(MAPPING_VALUES);
+            mappingValueParam.setValue(mappingValues);
+            clusterParams.add(mappingValueParam);
+
+            boolean useUser = clusterAuthUserSet.contains(me.getKey());
+            ReportApi.ReportSubmission.ReportParam useUserParam = new ReportApi.ReportSubmission.ReportParam();
+            useUserParam.setName(USE_USER);
+            useUserParam.setValue(useUser);
+            clusterParams.add(useUserParam);
+
+            //AUTHENTICATED_USERS
+            List<String> authUsers = new ArrayList<String>(clusterToAuthUsers.get(me.getKey()));
+            ReportApi.ReportSubmission.ReportParam authenticatedUsersParam = new ReportApi.ReportSubmission.ReportParam();
+            authenticatedUsersParam.setName(AUTHENTICATED_USERS);
+            authenticatedUsersParam.setValue(authUsers);
+            clusterParams.add(authenticatedUsersParam);
+
+
+            if(setIsContextMapping){
+                boolean isDetail = clusterToIsDetail.get(me.getKey());
+                boolean isContextMapping = (useUser || me.getValue().size() > 0 || isDetail);
+                ReportApi.ReportSubmission.ReportParam isCtxMappingParam = new ReportApi.ReportSubmission.ReportParam();
+                isCtxMappingParam.setName(IS_CONTEXT_MAPPING);
+                isCtxMappingParam.setValue(isContextMapping);
+                clusterParams.add(isCtxMappingParam);
+            }
+        }
+    }
+
+
     private void addTimeParameters(Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params) throws ReportApi.ReportException {
 
         Object o = params.get(JSONConstants.TimePeriodTypeKeys.TIME_PERIOD_MAIN);
@@ -212,7 +366,34 @@ public class PerformanceSummary {
             isRelative.setValue(false);
             isAbsolute.setValue(true);
             addParamToAllClusters(clusterToReportParams, isAbsolute);
-            throw new UnsupportedOperationException("Absolute time period not yet implemented on ESM");
+
+            validateSubMap(timePeriodMap, JSONConstants.TimePeriodAbsoluteKeys.ALL_KEYS);
+
+            String startTime = (String) timePeriodMap.get(JSONConstants.TimePeriodAbsoluteKeys.START);
+            try{
+                Utilities.getAbsoluteMilliSeconds(startTime);
+            }catch (ParseException ex){
+                throw new ReportApi.ReportException
+                        ("Cannot parse startTime: " + startTime+" must be in the format: " + Utilities.DATE_STRING);                
+            }
+            
+            ReportApi.ReportSubmission.ReportParam absoluteStartTimeParam = new ReportApi.ReportSubmission.ReportParam();
+            absoluteStartTimeParam.setName(ABSOLUTE_START_TIME);
+            absoluteStartTimeParam.setValue(startTime);
+            addParamToAllClusters(clusterToReportParams, absoluteStartTimeParam);
+
+            String endTime = (String) timePeriodMap.get(JSONConstants.TimePeriodAbsoluteKeys.END);
+            try{
+                Utilities.getAbsoluteMilliSeconds(startTime);
+            }catch (ParseException ex){
+                throw new ReportApi.ReportException
+                        ("Cannot parse startTime: " + startTime+" must be in the format: " + Utilities.DATE_STRING);
+            }
+
+            ReportApi.ReportSubmission.ReportParam absoluteEndTimeParam = new ReportApi.ReportSubmission.ReportParam();
+            absoluteEndTimeParam.setName(ABSOLUTE_END_TIME);
+            absoluteEndTimeParam.setValue(endTime);
+            addParamToAllClusters(clusterToReportParams, absoluteEndTimeParam);
         }else{
             throw new ReportApi.ReportException("Invalid json value for key:" + JSONConstants.TimePeriodTypeKeys.TYPE);
         }
