@@ -1,5 +1,7 @@
 package com.l7tech.server.management.api.node;
 
+import com.l7tech.objectmodel.EntityType;
+
 import java.io.Serializable;
 import java.util.Collection;
 import javax.jws.WebMethod;
@@ -15,6 +17,15 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @WebService(name="Gateway", targetNamespace="http://www.layer7tech.com/management/gateway")
 public interface GatewayApi {
+
+    /**
+     * Get entities information
+     * @param entityTypes: the types of entities retrieved
+     * @return
+     */
+//    @WebMethod(operationName="GetEntityInfo")
+//    @WebResult(name="EntityInfos", targetNamespace="http://www.layer7tech.com/management/gateway")
+//    Collection<EntityInfo> getEntityInfo(Collection<EntityType> entityTypes) throws FindException;
     
     /**
      * Get information on the Cluster
@@ -90,6 +101,71 @@ public interface GatewayApi {
             result = 31 * result + clusterHttpPort;
             result = 31 * result + clusterHttpsPort;
             return result;
+        }
+    }
+
+    @XmlRootElement(name="EntityInfo", namespace="http://www.layer7tech.com/management/gateway")
+    static final class EntityInfo implements Serializable {
+        private String id;
+        private String parentId;
+        private String name;
+        private Integer version;
+        private EntityType entityType;
+
+        public EntityInfo() {
+        }
+
+        public EntityInfo(EntityType entityType, String id, String name, String parentId, Integer version) {
+            this.entityType = entityType;
+            this.id = id;
+            this.name = name;
+            this.parentId = parentId;
+            this.version = version;
+        }
+
+        @XmlAttribute(name="entityType")
+        public EntityType getEntityType() {
+            return entityType;
+        }
+
+        public void setEntityType(EntityType entityType) {
+            this.entityType = entityType;
+        }
+
+        @XmlAttribute(name="id")
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        @XmlAttribute(name="name")
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        @XmlAttribute(name="parentId")
+        public String getParentId() {
+            return parentId;
+        }
+
+        public void setParentId(String parentId) {
+            this.parentId = parentId;
+        }
+
+        @XmlAttribute(name="version")
+        public Integer getVersion() {
+            return version;
+        }
+
+        public void setVersion(Integer version) {
+            this.version = version;
         }
     }
     
