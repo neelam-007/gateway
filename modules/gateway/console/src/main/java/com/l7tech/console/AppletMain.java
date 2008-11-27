@@ -88,7 +88,8 @@ public class AppletMain extends JApplet implements SheetHolder {
             // Get existing applet instance (if any)
             AppletMain otherMain = (AppletMain) TopComponents.getInstance().getComponent( COMPONENT_NAME );
 
-            if ( appletRootPane == null ) {
+            if ( appletRootPane == null || TopComponents.getInstance().getAssertionRegistry() == null ) {
+                appletRootPane = null;
                 application.run();
                 initMainWindowContent();
             }
