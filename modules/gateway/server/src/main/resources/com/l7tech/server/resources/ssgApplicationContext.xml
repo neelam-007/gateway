@@ -1149,6 +1149,10 @@
         <constructor-arg index="1" ref="clusterInfoManager"/>
     </bean>
 
+    <bean id="migrationApiImpl" class="com.l7tech.server.management.migration.MigrationApiImpl">
+        <constructor-arg index="0" ref="migrationManager"/>
+    </bean>
+
     <bean id="systemClassLoader" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetClass" value="java.lang.ClassLoader"/>
         <property name="targetMethod" value="getSystemClassLoader"/>

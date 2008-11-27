@@ -3,8 +3,10 @@ package com.l7tech.server.ems.gateway;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.JdkLoggerConfigurator;
 
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
@@ -47,6 +49,7 @@ public class GatewayContext {
         this.api = initApi( GatewayApi.class, defaultKey, MessageFormat.format(GATEWAY_URL, host, Integer.toString(port)));
         this.reportApi = initApi( ReportApi.class, defaultKey, MessageFormat.format(REPORT_URL, host, Integer.toString(port)));
         this.managementApi = initApi( NodeManagementApi.class, defaultKey, MessageFormat.format(CONTROLLER_URL, host, "8765")); //TODO this should be passed in
+        this.migrationApi = initApi(MigrationApi.class, defaultKey, MessageFormat.format(MIGRATION_URL, host, Integer.toString(port)));
     }
 
     public GatewayApi getApi() {
@@ -61,19 +64,26 @@ public class GatewayContext {
         return managementApi;
     }
 
+    public MigrationApi getMigrationApi() {
+        return migrationApi;
+    }
+
     //- PRIVATE
 
     private static final String PROP_GATEWAY_URL = "com.l7tech.esm.gatewayUrl";
     private static final String PROP_REPORT_URL = "com.l7tech.esm.reportUrl";
     private static final String PROP_CONTROLLER_URL = "com.l7tech.esm.controllerUrl";
-    private static final String GATEWAY_URL = SyspropUtil.getString(PROP_GATEWAY_URL, "https://{0}:{1}/ssg/services/gatewayApi");    
+    private static final String PROP_MIGRATION_URL = "com.l7tech.esm.migrationUrl";
+    private static final String GATEWAY_URL = SyspropUtil.getString(PROP_GATEWAY_URL, "https://{0}:{1}/ssg/services/gatewayApi");
     private static final String REPORT_URL = SyspropUtil.getString(PROP_REPORT_URL, "https://{0}:{1}/ssg/services/reportApi");    
     private static final String CONTROLLER_URL = SyspropUtil.getString(PROP_CONTROLLER_URL, "https://{0}:{1}/services/nodeManagementApi");
+    private static final String MIGRATION_URL = SyspropUtil.getString(PROP_MIGRATION_URL, "https://{0}:{1}/ssg/services/migrationApi");
 
     private final String cookie;
     private final GatewayApi api;
     private final ReportApi reportApi;
     private final NodeManagementApi managementApi;
+    private final MigrationApi migrationApi;
 
     private String buildCookie( final String esmId, final String userId ) {
         String cookie =  "EM-UUID=" + esmId;
@@ -90,9 +100,12 @@ public class GatewayContext {
         cfb.setAddress( url );
 
         Client c = cfb.create();
-        // TODO [steve] remove ...
-        c.getInInterceptors().add( new LoggingInInterceptor() );
-        c.getOutInterceptors().add( new LoggingOutInterceptor() );
+        if (JdkLoggerConfigurator.debugState()) {
+            c.getInInterceptors().add( new LoggingInInterceptor() );
+            c.getOutInterceptors().add( new LoggingOutInterceptor() );
+            c.getInFaultInterceptors().add( new LoggingInInterceptor() );
+            c.getOutFaultInterceptors().add( new LoggingOutInterceptor() );
+        }
 
         HTTPConduit hc = (HTTPConduit) c.getConduit();
         HTTPClientPolicy policy = hc.getClient();

@@ -49,5 +49,10 @@
             </bean>
         </jaxws:inInterceptors>
     </jaxws:endpoint>
+
+    <!-- Migration API-->
+    <jaxws:endpoint id="migrationApiEndpoint" implementor="#migrationApiImpl"
+                    address="/migrationApi" depends-on="migrationApiImpl"/>
+
 </beans>
 
