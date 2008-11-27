@@ -482,4 +482,16 @@
 
     <bean id="standardReportManager" class="com.l7tech.server.ems.standardreports.StandardReportManagerImpl" parent="hibernateBean"/>
 
+    <bean id="reportService" class="com.l7tech.server.ems.standardreports.ReportServiceImpl">
+        <constructor-arg index="0" ref="transactionManager"/>
+        <constructor-arg index="1" ref="standardReportManager"/>
+        <constructor-arg index="2" ref="ssgClusterManager" />
+        <constructor-arg index="3" ref="gatewayContextFactory" />
+        <constructor-arg index="4">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Report service timer"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
 </beans>
