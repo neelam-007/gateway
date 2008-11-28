@@ -3,6 +3,8 @@
  */
 package com.l7tech.objectmodel;
 
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.*;
 import java.io.Serializable;
 
@@ -14,6 +16,7 @@ import java.io.Serializable;
  *
  * @author alex
  */
+@XmlJavaTypeAdapter(com.l7tech.objectmodel.EntityHeaderSetType.EntityHeaderSetTypeAdapter.class)
 public class EntityHeaderSet<HT extends EntityHeader> implements Set<HT>, Serializable {
     private volatile Long exceededMax;
     private final Set<HT> delegate;
