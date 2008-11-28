@@ -1,32 +1,30 @@
 package com.l7tech.server.ems.gateway;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.User;
-import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ems.user.UserPropertyManager;
-import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.saml.Attribute;
+import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
-import com.l7tech.security.saml.NameIdentifierInclusionType;
-import com.l7tech.security.saml.Attribute;
 import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.util.Config;
-import com.l7tech.common.io.XmlUtil;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.protocol.http.WebRequest;
+import org.w3c.dom.Document;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
-
-import org.w3c.dom.Document;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.protocol.http.WebRequest;
-
-import javax.servlet.http.HttpSession;
+import java.util.Map;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * 
@@ -79,8 +77,8 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
             SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
             options.setVersion(SamlAssertionGenerator.Options.VERSION_2);
             options.setSignAssertion(true);
-            options.setExpiryMinutes(5);
-            options.setBeforeOffsetMinutes(1);
+            options.setExpiryMinutes(24*60); // Good for one day (including some skew)
+            options.setBeforeOffsetMinutes(60); // Allow up to one hour of clock skew
             options.setProofOfPosessionRequired(false);
             options.setIssuerKeyInfoType(KeyInfoInclusionType.CERT);
 

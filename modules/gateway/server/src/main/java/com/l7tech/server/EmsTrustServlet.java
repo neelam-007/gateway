@@ -32,6 +32,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -134,8 +135,12 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
 
     private void sendError(HttpServletResponse hresp, String message) throws IOException {
         hresp.setStatus(400);
-        hresp.setContentType("text/plain; charset=UTF-8");
-        hresp.getOutputStream().write(message.getBytes("utf8"));
+        hresp.setContentType("text/html; charset=UTF-8");
+        final ServletOutputStream os = hresp.getOutputStream();
+        os.write(message.getBytes("utf8"));
+        for (int i = 0; i < 7; ++i)
+            os.write("\n<!-- Extra text to encourage IE to display our error message instead of one of its useless built-in error pages -->\n".getBytes());
+
     }
 
     private void sendHtml(HttpServletResponse hresp, String html) throws IOException {
@@ -204,6 +209,10 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
                                     }
                                 } else {
                                     logger.warning("Ignoring SAML assertion that is expired or not yet valid ('"+notBefore+"'/'"+notOnOrAfter+"')");
+                                    sendError(hresp, "Unable to establish trust relationship: A security token has expired or is not yet valid.<p>\n\n" +
+                                                     "The ESM system clock may be too far off from this Gateway's system clock.<p>\n\n" +
+                                                     "Please press your Back button to return.");
+                                    return;
                                 }
                             }
                         }
