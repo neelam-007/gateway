@@ -85,8 +85,7 @@ public class SSGClusterContentSelector extends WebPage {
         final SsgCluster ssgCluster = ssgClusterManager.findByGuid(ssgClusterId);
         GatewayContext context = gatewayContextFactory.getGatewayContext(getUser(), ssgCluster.getSslHostName(), ssgCluster.getAdminPort());
         GatewayApi api = context.getApi();
-        // Todo: now select published service only. Later on, the type of entities shown depends on the user's choice.
-        EntityType[] types = new EntityType[] {EntityType.FOLDER, EntityType.SERVICE/*, EntityType.POLICY*/};
+        EntityType[] types = new EntityType[] {EntityType.FOLDER, EntityType.SERVICE, EntityType.POLICY};
         Collection<GatewayApi.EntityInfo> rawEntitiesInfo = api.getEntityInfo(Arrays.asList(types));
         Collections.sort((List<GatewayApi.EntityInfo>)rawEntitiesInfo);
 
