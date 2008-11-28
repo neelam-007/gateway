@@ -16,15 +16,15 @@ function copyCookie() {
 
 function init() {
     if ( document.getElementById('emsinfo').value == '' ) {
-        document.getElementById('emsinforow').style.visibility="collapse";
-        document.getElementById('emsuserdescrow').style.visibility="collapse";
+        document.getElementById('emsinforow').style.display="none";
+        document.getElementById('emsuserdescrow').style.display="none";
     } else {
-        document.getElementById('emsidrow').style.visibility="collapse";
-        document.getElementById('emspemrow').style.visibility="collapse";
-        document.getElementById('emsusernamerow').style.visibility="collapse";
+        document.getElementById('emsidrow').style.display="none";
+        document.getElementById('emspemrow').style.display="none";
+        document.getElementById('emsusernamerow').style.display="none";
     }
 
     if ( document.getElementById('returnurl').value == '' ) {
-        document.getElementById('cancel').style.visibility="collapse";
+        document.getElementById('cancel').style.display="none";
     }
 }
