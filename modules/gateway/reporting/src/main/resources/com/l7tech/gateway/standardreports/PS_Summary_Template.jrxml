@@ -321,21 +321,27 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanVal
 						</dataset>
 						<categorySeries>
 							<seriesExpression><![CDATA["Throughput"]]></seriesExpression>
-							<categoryExpression><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></categoryExpression>
+							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue())?
+Utilities.getServiceFromDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
+$F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$F{THROUGHPUT}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
 						</categorySeries>
 						<categorySeries>
 							<seriesExpression><![CDATA["Policy Violations"]]></seriesExpression>
-							<categoryExpression><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></categoryExpression>
+							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue())?
+Utilities.getServiceFromDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
+$F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$F{POLICY_VIOLATIONS}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
 						</categorySeries>
 						<categorySeries>
 							<seriesExpression><![CDATA["Routing Failures"]]></seriesExpression>
-							<categoryExpression><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></categoryExpression>
+							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue())?
+Utilities.getServiceFromDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
+$F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$F{ROUTING_FAILURES}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>

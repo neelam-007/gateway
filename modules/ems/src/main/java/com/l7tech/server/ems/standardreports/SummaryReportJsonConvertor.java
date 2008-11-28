@@ -226,6 +226,43 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             Map<String, Boolean> clusterToIsDetail) throws ReportException {
         //MAPPING_KEYS
         Object [] groupings = (Object[]) params.get(JSONConstants.GROUPINGS);
+        if(groupings.length == 0){
+
+            for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
+                //add default values
+                ReportApi.ReportSubmission.ReportParam mappingKeyParam = new ReportApi.ReportSubmission.ReportParam();
+                mappingKeyParam.setName(ReportApi.ReportParameters.MAPPING_KEYS);
+                mappingKeyParam.setValue(new ArrayList<String>());
+                me.getValue().add(mappingKeyParam);
+
+                ReportApi.ReportSubmission.ReportParam mappingValueParam = new ReportApi.ReportSubmission.ReportParam();
+                mappingValueParam.setName(ReportApi.ReportParameters.MAPPING_VALUES);
+                mappingValueParam.setValue(new ArrayList<String>());
+                me.getValue().add(mappingValueParam);
+
+                ReportApi.ReportSubmission.ReportParam mappingValueEqualOrLikeParam = new ReportApi.ReportSubmission.ReportParam();
+                mappingValueEqualOrLikeParam.setName(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE);
+                mappingValueEqualOrLikeParam.setValue(new ArrayList<String>());
+                me.getValue().add(mappingValueEqualOrLikeParam);
+
+                ReportApi.ReportSubmission.ReportParam useUserParam = new ReportApi.ReportSubmission.ReportParam();
+                useUserParam.setName(ReportApi.ReportParameters.USE_USER);
+                useUserParam.setValue(false);
+                me.getValue().add(useUserParam);
+
+                ReportApi.ReportSubmission.ReportParam authenticatedUsersParam = new ReportApi.ReportSubmission.ReportParam();
+                authenticatedUsersParam.setName(ReportApi.ReportParameters.AUTHENTICATED_USERS);
+                authenticatedUsersParam.setValue(new ArrayList<String>());
+                me.getValue().add(authenticatedUsersParam);
+
+                ReportApi.ReportSubmission.ReportParam isCtxMappingParam = new ReportApi.ReportSubmission.ReportParam();
+                isCtxMappingParam.setName(ReportApi.ReportParameters.IS_CONTEXT_MAPPING);
+                isCtxMappingParam.setValue(false);
+                me.getValue().add(isCtxMappingParam);
+            }
+            return;
+        }
+        
         Map<String, List<String>> clusterToKeys = new HashMap<String, List<String>>();
         Map<String, List<String>> clusterToValues = new HashMap<String, List<String>>();
         Map<String, List<String>> clusterToValuesEqualOrLike = new HashMap<String, List<String>>();

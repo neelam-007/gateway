@@ -74,6 +74,58 @@ public class TestGatewayReportCompileAndFill {
 
 
     @Test
+    public void testReport_PSSummary_Groupings() throws Exception {
+
+        Object o = JSON.parse(psRelativeJsonSummaryTest);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(ReportApi.ReportType.PERFORMANCE_SUMMARY, reportParams, ReportApp.getConnection(prop));
+
+        ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+
+        Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
+        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+
+        DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+    }
+
+    @Test
+    public void testReport_PSSummary_NoGroupings() throws Exception {
+
+        Object o = JSON.parse(psRelativeJsonSummaryNoGroupingsTest);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(ReportApi.ReportType.PERFORMANCE_SUMMARY, reportParams, ReportApp.getConnection(prop));
+
+        ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+
+        Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
+        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+
+        DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+    }
+
+    @Test
     public void testReport_PSInterval() throws Exception {
 
         Object o = JSON.parse(psRelativeJsonIntervalTest);
@@ -87,6 +139,32 @@ public class TestGatewayReportCompileAndFill {
 
         ReportGenerator reportGenerator = new ReportGenerator();
         ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(ReportApi.ReportType.PERFORMANCE_INTERVAL, reportParams, ReportApp.getConnection(prop));
+
+        ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+
+        Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
+        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+
+        DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+    }
+
+    @Test
+    public void testReport_UsageSummary() throws Exception {
+
+        Object o = JSON.parse(usageRelativeJsonSummaryTest);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(ReportApi.ReportType.USAGE_SUMMARY, reportParams, ReportApp.getConnection(prop));
 
         ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
 
@@ -150,6 +228,149 @@ public class TestGatewayReportCompileAndFill {
             "    \"summaryChart\" : true," +
             "    \"summaryReport\" : false," +
             "    \"reportName\" : \"PS_Interval_Report\"" +
+            "}";
+
+    private final static String psRelativeJsonSummaryTest = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.0.0.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"PS_Summary_Report\"" +
+            "}";
+
+    private final static String psRelativeJsonSummaryNoGroupingsTest = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"PS_Summary_NO_GROUPINGS_Report\"" +
+            "}";
+
+    private final static String usageRelativeJsonSummaryTest = "{\"reportType\":\"usage\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.0.0.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"Usage_Summary_Report\"" +
             "}";
     
 }

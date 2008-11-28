@@ -366,17 +366,25 @@ public interface ReportApi {
         public static final String IS_DETAIL = "IS_DETAIL";
         public static final String PRINT_CHART = "PRINT_CHART";
 
-        //only supplied on a gateway
-        public static final String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
-        public static final String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
-        public static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
-        public static final String TEMPLATE_FILE_ABSOLUTE = "TEMPLATE_FILE_ABSOLUTE";
-
         //only needed for interval reports
         public static final String INTERVAL_TIME_UNIT = "INTERVAL_TIME_UNIT";
         public static final String INTERVAL_NUM_OF_TIME_UNITS = "INTERVAL_NUM_OF_TIME_UNITS";
         public static final String SUB_INTERVAL_SUB_REPORT = "SUB_INTERVAL_SUB_REPORT";
         public static final String SUB_REPORT = "SUB_REPORT";
+        
+        //only supplied on a gateway
+        //keeping here so they are known
+        public static final String TEMPLATE_FILE_ABSOLUTE = "TEMPLATE_FILE_ABSOLUTE";
+        public static final String SUBREPORT_DIRECTORY = "SUBREPORT_DIRECTORY";
+        public static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
+        public static final String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
+        public static final String REPORT_SCRIPTLET = "REPORT_SCRIPTLET";
+        public static final String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
+
+        //used for passing data around in ReportGenerator - //todo [Donal] find another way of doing this
+        public static final String MAPPING_GROUP_TO_DISPLAY_STRING = "MAPPING_GROUP_TO_DISPLAY_STRING";
+        public static final String DISTINCT_MAPPING_SETS = "DISTINCT_MAPPING_SETS";
+
 
         public static final String [] RELATIVE_TIME_PARAMS = new String[]{RELATIVE_NUM_OF_TIME_UNITS,
         RELATIVE_TIME_UNIT};
