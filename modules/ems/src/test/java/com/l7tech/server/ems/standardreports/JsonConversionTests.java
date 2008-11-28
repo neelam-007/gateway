@@ -20,7 +20,7 @@ public class JsonConversionTests {
     private static final String cluster1 = "c32bb1a9-1538-4792-baa1-566bfd418020";
     private static final String cluster2 = "a14df4d4-0c62-4d8e-ac3a-82cd8a442a26";
     
-    private final static String psRelativeJson = "{\"reportType\":\"performance\",    " +
+    private final static String psRelativeJsonSummary = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
@@ -320,7 +320,7 @@ public class JsonConversionTests {
 
     @Test
     public void testNumClustersFound() throws ReportException {
-        Object o = JSON.parse(psRelativeJson);
+        Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
@@ -330,7 +330,7 @@ public class JsonConversionTests {
 
     @Test
     public void testReportType() throws ReportException {
-        Object o = JSON.parse(psRelativeJson);
+        Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
@@ -374,7 +374,7 @@ public class JsonConversionTests {
 
     @Test
     public void testPerfStatSummaryIsRelative() throws ReportException {
-        Object o = JSON.parse(psRelativeJson);
+        Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
@@ -401,7 +401,7 @@ public class JsonConversionTests {
 
     @Test
     public void testPerfStatSummaryTimeUnit() throws ReportException {
-        Object o = JSON.parse(psRelativeJson);
+        Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
@@ -429,7 +429,7 @@ public class JsonConversionTests {
 
     @Test
     public void testConvertorFactory() throws Exception{
-        Object o = JSON.parse(psRelativeJson);
+        Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Assert.assertTrue(convertor.getClass().getName() == SummaryReportJsonConvertor.class.getName());
@@ -468,9 +468,96 @@ public class JsonConversionTests {
         }
     }
 
+    private final static String psRelativeJsonSummaryTest = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"My Report\"" +
+            "}";
+
+    @Test
+    public void testKeysAndValuesSize() throws ReportException{
+        Object o = JSON.parse(psRelativeJsonSummaryTest);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        Assert.assertNotNull(reportClusterBeans);
+
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+
+            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
+            Assert.assertNotNull(reportParams);
+
+            Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
+                    new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
+            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+                paramMap.put(rP.getName(), rP);
+            }
+
+            ReportApi.ReportSubmission.ReportParam
+                    mappingKeyParam = paramMap.get(SummaryReportJsonConvertor.MAPPING_KEYS);
+
+            List<String> mappingKeys = (List<String>) mappingKeyParam.getValue();
+            Assert.assertNotNull("Mapping keys should not be null", mappingKeys);
+
+            ReportApi.ReportSubmission.ReportParam
+                    mappingValueParam = paramMap.get(SummaryReportJsonConvertor.MAPPING_VALUES);
+            List<String> mappingValues = (List<String>) mappingValueParam.getValue();
+            Assert.assertNotNull("Mapping values should not be null", mappingValues);
+
+            Assert.assertTrue("Size of keys must match the size of values", + mappingKeys.size() == mappingValues.size());
+        }
+
+    }
     @Test
     public void testPerfStatSummary_MappingKeysAndValues() throws ReportException {
-        Object o = JSON.parse(psRelativeJson);
+        Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
@@ -499,7 +586,9 @@ public class JsonConversionTests {
                     mappingValueParam = paramMap.get(SummaryReportJsonConvertor.MAPPING_VALUES);
             List<String> mappingValues = (List<String>) mappingValueParam.getValue();            
             Assert.assertNotNull("Mapping values should not be null", mappingValues);
-            
+
+            Assert.assertTrue("Size of keys must match the size of values", + mappingKeys.size() == mappingValues.size());
+
             ReportApi.ReportSubmission.ReportParam
                     mappingValueEqualOrLikeParam = paramMap.get(SummaryReportJsonConvertor.VALUE_EQUAL_OR_LIKE);
             List<String> mappingValuesEqualOrLike = (List<String>) mappingValueEqualOrLikeParam.getValue();
@@ -555,7 +644,7 @@ public class JsonConversionTests {
 
     @Test
     public void testPerfStatExpectedParameters() throws ReportException {
-        Object o = JSON.parse(psRelativeJson);
+        Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
@@ -583,7 +672,7 @@ public class JsonConversionTests {
 
     @Test
     public void testPerfStatRelativeReport_NoAuthenticatedUser() throws ReportException {
-        Object o = JSON.parse(psRelativeJson);
+        Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
@@ -656,7 +745,7 @@ public class JsonConversionTests {
 
     @Test
     public void testPerfStatRelativeReport_ServiceAndOperations() throws ReportException {
-        Object o = JSON.parse(psRelativeJson);
+        Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");

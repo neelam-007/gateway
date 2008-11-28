@@ -12,10 +12,7 @@ import java.util.Set;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
@@ -72,15 +69,19 @@ public class ReportGenerator {
         try {
             // Compile sub-reports
             for ( ReportTemplate subReportTemplate : template.getSubReports() ) {
-                Document runtimeDocument = getRuntimeDocument( template, subReportTemplate, reportParams );
-                Map<String, Object> transformParameterMap = getTransformationParameters( runtimeDocument );
+                Document runtimeDocument = null;
+                Map<String, Object> transformParameterMap = null;
+                //only usage sub reports require transormation, all require compilation
+                if(subReportTemplate.isTransformedRequired()){
+                    runtimeDocument = getRuntimeDocument( subReportTemplate, reportParams );
+                    transformParameterMap = getTransformationParameters( runtimeDocument );
+                }
 
                 JasperReport subJasperReport = compileReportTemplate( transformerFactory, documentBuilderFactory, subReportTemplate, transformParameterMap );
                 reportParams.put( template.getName(), subJasperReport );
             }
-
             // Compile main report
-            Document runtimeDocument = getRuntimeDocument( template, null, reportParams );
+            Document runtimeDocument = getRuntimeDocument( template, reportParams );
             Map<String, Object> transformParameterMap = getTransformationParameters( runtimeDocument );
             jasperReport = compileReportTemplate( transformerFactory, documentBuilderFactory, template, transformParameterMap );
         } catch ( Exception e ) {
@@ -183,6 +184,7 @@ public class ReportGenerator {
         GatewayJavaReportCompiler.registerClass(Utilities.class);
         GatewayJavaReportCompiler.registerClass(Utilities.UNIT_OF_TIME.class);
         GatewayJavaReportCompiler.registerClass(UsageSummaryAndSubReportHelper.class);
+        GatewayJavaReportCompiler.registerClass(TimePeriodDataSource.class);
 
         final Map<String,ReportTemplate> templates = new HashMap<String,ReportTemplate>();
         final String resourcePath = "/com/l7tech/gateway/standardreports";
@@ -192,7 +194,8 @@ public class ReportGenerator {
 
         // Performance interval
         templates.put( "PERFORMANCE_INTERVAL", new ReportTemplate( "PERFORMANCE_INTERVAL", resourcePath+"/PS_IntervalMasterReport_Template.jrxml", resourcePath+"/PS_IntervalMasterTransform.xsl", Arrays.asList(
-            new ReportTemplate( "", "", "", null )
+            new ReportTemplate( "SUB_INTERVAL_SUB_REPORT", resourcePath+"/PS_SubIntervalMasterReport.jrxml", null, null ),
+            new ReportTemplate( "SUB_REPORT", resourcePath+"/PS_SubIntervalMasterReport_subreport0.jrxml", null, null )
         )) );
 
         // Usage summary
@@ -304,7 +307,6 @@ public class ReportGenerator {
      */
     @SuppressWarnings({"unchecked"})
     private Document getRuntimeDocument( final ReportTemplate template,
-                                         final ReportTemplate subTemplate,
                                          final Map<String,Object> reportParameters  ) {
         Document runtimeDocument = null;
 
@@ -344,20 +346,25 @@ public class ReportGenerator {
                                                 final Map<String,Object> params ) throws ReportGenerationException {
         final JasperReport report;
         try {
-            Transformer transformer = transformerFactory.newTransformer( template.getReportXslSource() );
 
-            documentBuilderFactory.setNamespaceAware( true );
-            DocumentBuilder builder = documentBuilderFactory.newDocumentBuilder();
-            builder.setEntityResolver( getEntityResolver() );
-            Document doc = builder.parse( template.getReportXmlSource() );
+            InputStream inputStream = null;
+            if(template.isTransformedRequired()){
+                Transformer transformer = transformerFactory.newTransformer( template.getReportXslSource() );
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            StreamResult result = new StreamResult(baos);
-            XmlUtil.softXSLTransform(doc, result, transformer, params);
+                documentBuilderFactory.setNamespaceAware( true );
+                DocumentBuilder builder = documentBuilderFactory.newDocumentBuilder();
+                builder.setEntityResolver( getEntityResolver() );
+                Document doc = builder.parse( template.getReportXmlSource() );
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                StreamResult result = new StreamResult(baos);
+                XmlUtil.softXSLTransform(doc, result, transformer, params);
+                inputStream = new ByteArrayInputStream(baos.toByteArray());
 
-            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-
-            report = JasperCompileManager.compileReport(bais);
+            }else{
+                inputStream = template.getReportXmlSource().getByteStream();
+            }
+            report = JasperCompileManager.compileReport(inputStream);
+            
         } catch (TransformerException e) {
            logger.log( Level.WARNING, "Error generating report.", e);
             throw new ReportGenerationException( ExceptionUtils.getMessage(e) );
@@ -443,6 +450,7 @@ public class ReportGenerator {
         private final String reportXml;
         private final String reportXsl;
         private final Collection<ReportTemplate> subReports;
+        private final boolean requiresTransform;
 
         ReportTemplate( final String name,
                         final String reportXml,
@@ -454,6 +462,11 @@ public class ReportGenerator {
             this.subReports = subReports == null ?
                     Collections.<ReportTemplate>emptyList() :
                     Collections.unmodifiableCollection(subReports);
+            requiresTransform = (this.reportXsl != null);
+        }
+
+        public boolean isTransformedRequired(){
+            return requiresTransform;
         }
 
         public String getName() {

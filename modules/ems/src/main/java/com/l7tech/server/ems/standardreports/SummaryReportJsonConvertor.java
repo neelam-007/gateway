@@ -22,9 +22,11 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
 
         Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getReportParams(params, reportRanBy);
 
+        String reportName = (String) params.get(JSONConstants.REPORT_NAME);
         List<ReportSubmissionClusterBean> clusterBeans = new ArrayList<ReportSubmissionClusterBean>();
         for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
             ReportApi.ReportSubmission reportSub = new ReportApi.ReportSubmission();
+            reportSub.setName(reportName);
             reportSub.setType(getReportType(params));
             reportSub.setParameters(me.getValue());
 
@@ -155,10 +157,10 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
                 serviceIdToOps.put(serviceId, operations);
             }
             Object opObj = currentEntity.get(JSONConstants.ReportEntities.OPERATION);
-            if(opObj == null || opObj.equals("")) continue;
-
-            Set<String> operations = serviceIdToOps.get(serviceId);
-            operations.add(opObj.toString());
+            if(opObj != null && !opObj.equals("")){
+                Set<String> operations = serviceIdToOps.get(serviceId);
+                operations.add(opObj.toString());
+            }
 
             if(!clusterIdToServiceNames.containsKey(clusterId)){
                 Set<String> serviceNames = new HashSet<String>();
