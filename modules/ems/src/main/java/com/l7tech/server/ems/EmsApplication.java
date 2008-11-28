@@ -1,8 +1,6 @@
 package com.l7tech.server.ems;
 
-import com.l7tech.server.ems.pages.EmsError;
-import com.l7tech.server.ems.pages.Login;
-import com.l7tech.server.ems.pages.SystemSettings;
+import com.l7tech.server.ems.pages.*;
 import com.l7tech.server.ems.standardreports.ReportResource;
 import com.l7tech.util.SyspropUtil;
 import org.apache.wicket.*;
@@ -237,8 +235,8 @@ public class EmsApplication extends WebApplication {
         // mount other pages / templates
         mountTemplate("/Help.html");
         mountPage("/Login.html", Login.class);
-        mountTemplate("/SSGClusterSelector.html");
-        mountTemplate("/SSGClusterContentSelector.html");
+        mountPage("/SSGClusterSelector.html", SSGClusterSelector.class);
+        mountPage("/SSGClusterContentSelector.html", SSGClusterContentSelector.class);
         mountTemplate("/UserSelector.html");
         mountTemplate("/SubmissionReceived.html");
     }

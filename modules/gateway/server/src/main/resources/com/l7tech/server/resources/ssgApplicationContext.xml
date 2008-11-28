@@ -1156,6 +1156,7 @@
         <constructor-arg index="3" ref="serviceManager"/>
         <constructor-arg index="4" ref="policyManager"/>
         <constructor-arg index="5" ref="folderManager"/>
+        <constructor-arg index="6" ref="serviceCache"/>
     </bean>
 
     <bean id="reportApiImpl" class="com.l7tech.server.cluster.ReportApiImpl">

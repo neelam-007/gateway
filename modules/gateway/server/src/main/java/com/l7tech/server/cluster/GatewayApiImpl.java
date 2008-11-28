@@ -5,23 +5,24 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.Config;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.identity.User;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.Policy;
+import com.l7tech.wsdl.Wsdl;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.Collection;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -30,6 +31,8 @@ import org.springframework.transaction.annotation.Propagation;
 
 import javax.jws.WebMethod;
 import javax.jws.WebResult;
+import javax.wsdl.BindingOperation;
+import javax.wsdl.WSDLException;
 
 /**
  * Gateway API implementation.
@@ -46,13 +49,15 @@ public class GatewayApiImpl implements GatewayApi {
                            final SecurityFilter securityFilter,
                            final ServiceManager serviceManager,
                            final PolicyManager policyManager,
-                           final FolderManager folderManager ) {
+                           final FolderManager folderManager,
+                           final ServiceCache serviceCache ) {
         this.config = config;
         this.clusterInfoManager = clusterInfoManager;
         this.securityFilter = securityFilter;
         this.serviceManager = serviceManager;
         this.policyManager = policyManager;
         this.folderManager = folderManager;
+        this.serviceCache = serviceCache;
     }
 
     @Override
@@ -123,6 +128,9 @@ public class GatewayApiImpl implements GatewayApi {
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error finding entities.", fe );
             throw new GatewayException( "Error finding entities." );
+        } catch (WSDLException we) {
+            logger.log( Level.WARNING, "Error parsing wsdl in entities.", we );
+            throw new GatewayException( "Error parsing wsdl in entities." );
         }
 
         return info;
@@ -138,12 +146,26 @@ public class GatewayApiImpl implements GatewayApi {
     private final ServiceManager serviceManager;
     private final PolicyManager policyManager;
     private final FolderManager folderManager;
+    private final ServiceCache serviceCache;
 
-    private void findServiceEntities( final Collection<EntityInfo> info, final User user ) throws FindException {
+    private void findServiceEntities( final Collection<EntityInfo> info, final User user ) throws FindException, WSDLException {
         Collection<ServiceHeader> serviceHeaders = securityFilter.filter( serviceManager.findAllHeaders(false), user, OperationType.READ, null );
 
         for ( ServiceHeader header : serviceHeaders ) {
-            info.add( new EntityInfo( header.getType(), header.getStrId(), header.getDisplayName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), 1 ) );
+            PublishedService service = serviceCache.getCachedService(header.getOid());
+            EntityInfo entityInfo = new EntityInfo(header.getType(), header.getStrId(), header.getDisplayName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), service.getVersion());
+
+            // Get operations
+            Wsdl wsdl = service.parsedWsdl();
+            wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+            ArrayList<String> operations = new ArrayList<String>();
+            for (BindingOperation operation: wsdl.getBindingOperations()) {
+                operations.add(operation.getName());
+            }
+            // Set operations in the published-service entityInfo
+            entityInfo.setOperations(operations.toArray(new String[]{}));
+
+            info.add(entityInfo);
         }
     }
 
@@ -151,7 +173,8 @@ public class GatewayApiImpl implements GatewayApi {
         Collection<PolicyHeader> policyHeaders = securityFilter.filter( policyManager.findHeadersByType( PolicyType.INCLUDE_FRAGMENT ), user, OperationType.READ, null );
 
         for ( PolicyHeader header : policyHeaders ) {
-            info.add( new EntityInfo( header.getType(), header.getStrId(), header.getName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), 1 ) );
+            Policy policy = policyManager.findByGuid(header.getGuid());
+            info.add( new EntityInfo( header.getType(), header.getStrId(), header.getName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), policy.getVersion() ) );
         }
     }
 
@@ -159,7 +182,7 @@ public class GatewayApiImpl implements GatewayApi {
         Collection<FolderHeader> folderHeaders = securityFilter.filter( folderManager.findAllHeaders(), user, OperationType.READ, null );
 
         for ( FolderHeader header : folderHeaders ) {
-            info.add( new EntityInfo( header.getType(), header.getStrId(), header.getName(), header.getParentFolderOid()==null ? null : Long.toString(header.getParentFolderOid()), 1 ) );
+            info.add( new EntityInfo( header.getType(), header.getStrId(), header.getName(), header.getParentFolderOid()==null ? null : Long.toString(header.getParentFolderOid()), null ) );
         }
     }
 }

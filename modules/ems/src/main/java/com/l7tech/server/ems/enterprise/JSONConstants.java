@@ -85,6 +85,7 @@ public final class JSONConstants {
         public static final String OPERATION               = "operation";
         public static final String POLICY_FRAGMENT         = "policyFragment";
         public static final String POLICY_FRAGMENT_ALIAS   = "policyFragmentAlias";
+        public static final String SERVICE_FOLDER          = "serviceFolder";
     }
 
     // Properties for all entities.

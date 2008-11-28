@@ -105,12 +105,13 @@ public interface GatewayApi {
     }
 
     @XmlRootElement(name="EntityInfo", namespace="http://www.layer7tech.com/management/gateway")
-    static final class EntityInfo implements Serializable {
+    static final class EntityInfo implements Serializable, Comparable {
         private String id;
         private String parentId;
         private String name;
         private Integer version;
         private EntityType entityType;
+        private String[] operations;
 
         public EntityInfo() {
         }
@@ -119,12 +120,21 @@ public interface GatewayApi {
                            final String id,
                            final String name,
                            final String parentId,
-                           final int version ) {
+                           final Integer version ) {
             this.entityType = entityType;
             this.id = id;
             this.name = name;
             this.parentId = parentId;
             this.version = version;
+        }
+
+        @XmlAttribute(name="operations")
+        public String[] getOperations() {
+            return operations;
+        }
+
+        public void setOperations(String[] operations) {
+            this.operations = operations;
         }
 
         @XmlAttribute(name="entityType")
@@ -164,12 +174,16 @@ public interface GatewayApi {
         }
 
         @XmlAttribute(name="version")
-        public int getVersion() {
+        public Integer getVersion() {
             return version;
         }
 
         public void setVersion(Integer version) {
             this.version = version;
+        }
+
+        public int compareTo(Object o) {
+            return name.compareTo(((EntityInfo)o).getName());
         }
     }
     
