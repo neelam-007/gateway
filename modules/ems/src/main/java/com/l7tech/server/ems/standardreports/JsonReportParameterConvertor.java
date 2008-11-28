@@ -14,6 +14,8 @@ import java.util.Map;
 
 public interface JsonReportParameterConvertor {
 
+    String DATE_FORMAT = "MM/dd/yyyy";
+
     //end gateway runtime params
 
     //usage interval ssg runtime params

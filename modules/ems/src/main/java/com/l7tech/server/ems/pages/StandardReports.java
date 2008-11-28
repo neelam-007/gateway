@@ -3,27 +3,20 @@ package com.l7tech.server.ems.pages;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.server.ems.enterprise.JSONException;
-import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.TimeUnit;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.link.Link;
-import org.apache.wicket.markup.html.IHeaderResponse;
-import org.apache.wicket.markup.html.WicketEventReference;
-import org.apache.wicket.behavior.AbstractAjaxBehavior;
-import org.apache.wicket.ajax.WicketAjaxReference;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.Component;
+import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.protocol.http.WebRequest;
 import org.mortbay.util.ajax.JSON;
 
-import javax.servlet.ServletInputStream;
 import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Collection;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.IOException;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 /**
  *
@@ -41,10 +34,12 @@ public class StandardReports extends EmsPage  {
 
             Object returnValue = null;
 
+            @Override
             public Object getData() {
                 return returnValue;
             }
 
+            @Override
             public void setData(Object jsonData) {
 
                 if(!(jsonData instanceof JSONException || jsonData instanceof String)){
@@ -96,5 +91,51 @@ public class StandardReports extends EmsPage  {
 
         add( new StandardReportsManagementPanel("generatedReports") );
 
+        Form form = new Form("form");
+        final Date now = new Date();
+        final YuiDateSelector fromDateField = new YuiDateSelector("fromDate", new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), now, true);
+        final YuiDateSelector toDateField = new YuiDateSelector("toDate", new Model(new Date(now.getTime())), now);
+
+        StringBuilder scriptBuilder = new StringBuilder();
+        SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
+        scriptBuilder.append( "YAHOO.util.Event.onDOMReady( function(){ " );
+        scriptBuilder.append( "absoluteTimePeriodFromDate = '"+format.format(fromDateField.getDateTextField().getModelObject())+"'; " );
+        scriptBuilder.append( "absoluteTimePeriodToDate = '"+format.format(toDateField.getDateTextField().getModelObject())+"'; " );
+        scriptBuilder.append( "} );" );
+        Label script = new Label("javascript", scriptBuilder.toString() );
+        script.setEscapeModelStrings(false);
+
+        fromDateField.getDateTextField().setRequired(true);
+        fromDateField.getDateTextField().setMarkupId("absoluteTimePeriodFromDateTextBox");
+        fromDateField.getDateTextField().add(new AjaxFormSubmitBehavior(form, "onchange"){
+            @Override
+            protected void onSubmit(final AjaxRequestTarget target) {
+                // update the hidden form fields with the date in the expected format
+                SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
+                target.appendJavascript("absoluteTimePeriodFromDate = '"+format.format(fromDateField.getDateTextField().getModelObject())+"';");
+            }
+            @Override
+            protected void onError(final AjaxRequestTarget target) {
+            }
+        });
+        toDateField.getDateTextField().setRequired(true);
+        toDateField.getDateTextField().setMarkupId("absoluteTimePeriodToDateTextBox");
+        toDateField.getDateTextField().add(new AjaxFormSubmitBehavior(form, "onchange"){
+            @Override
+            protected void onSubmit(final AjaxRequestTarget target) {
+                // update the hidden form fields with the date in the expected format
+                SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
+                target.appendJavascript("absoluteTimePeriodToDate = '"+format.format(toDateField.getDateTextField().getModelObject())+"';");
+            }
+            @Override
+            protected void onError(final AjaxRequestTarget target) {
+            }
+        });
+
+        form.add( fromDateField );
+        form.add( toDateField );
+
+        add( form );
+        add( script );
     }
 }

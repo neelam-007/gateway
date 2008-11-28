@@ -116,6 +116,12 @@
         var savedSettings;
 
         /**
+         * Current date values
+         */
+        var absoluteTimePeriodFromDate;
+        var absoluteTimePeriodToDate;
+
+        /**
          * Array of SSG Cluster entity object literals that have entities selected.
          * May be empty but never null.
          * @type array
@@ -439,8 +445,8 @@ generateButton.set('disabled', false);
                 settings.timePeriod.unit = relativeTimePeriodUnitDropDown.value;
             } else if (settings.timePeriod.type == TimePeriodType.ABSOLUTE) {
 // TODO
-//                settings.timePeriod.start =
-//                settings.timePeriod.end =
+                settings.timePeriod.start = absoluteTimePeriodFromDate;
+                settings.timePeriod.end = absoluteTimePeriodToDate;
 //                settings.timePeriod.timeZone =
             }
             if (noTimeIntervalRadioButton.checked) {
@@ -1052,6 +1058,7 @@ generateButton.set('disabled', false);
                             </table>
                         </div>
                         <div class="panelContent">
+                        <form wicket:id="form">
                             <table class="spaced">
                                 <tr>
                                     <th class="middle">Report Type:</th>
@@ -1142,10 +1149,10 @@ generateButton.set('disabled', false);
                                             <tr>
                                                 <td class="middle"><input id="absoluteTimePeriodRadioButton" type="radio" name="timePeriodType" value="absolute" onclick="onChangeTimePeriodType();"/></td>
                                                 <td class="middle"><label for="absoluteTimePeriodRadioButton">From</label></td>
-                                                <td class="middle"><input id="absoluteTimePeriodFromDateTextBox" type="text" size="10"/></td>
+                                                <td class="middle"><div wicket:id="fromDate"/></td>
                                                 <td class="middle"><select id="absoluteTimePeriodFromHourDropDown"></select></td>
                                                 <td class="middle">To</td>
-                                                <td class="middle"><input id="absoluteTimePeriodToDateTextBox" type="text" size="10"/></td>
+                                                <td class="middle"><div wicket:id="toDate"/></td>
                                                 <td class="middle"><select id="absoluteTimePeriodToHourDropDown"></select></td>
                                                 <td class="middle">
                                                     <select id="absoluteTimePeriodTimeZoneDropDown">
@@ -1224,12 +1231,14 @@ generateButton.set('disabled', false);
                                     <td><input id="reportNameTextBox" type="text" size="64" maxlength="128" onkeyup="onChangeReportName();"/></td>
                                 </tr>
                             </table>
+                            </form>                    
                             <div class="middle nowrap">
                                 <button id="generateButton">Generate Report</button>
                             </div>
                         </div>
                     </div>
                 </div>
+                <script lanaguge="javascript" wicket:id="javascript"></script>
                 <div wicket:id="generatedReports">
                 <div class="panel">
                     <div class="panelTitle tippy">
@@ -1249,7 +1258,7 @@ generateButton.set('disabled', false);
                             </table>
                         </div>
                         <div class="panelContent">
-                            <!-- TODO Create table of generated reports here. -->
+                            <!-- Table of generated reports goes here. -->
                         </div>
                     </div>
                 </div>
