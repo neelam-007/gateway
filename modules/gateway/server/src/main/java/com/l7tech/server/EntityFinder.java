@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server;
 
@@ -9,6 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 
 /**
+ * Generic read-only access to persistent entities.  
+ *
+ * @see EntityCrud
+ * 
  * @author alex
  */
 public interface EntityFinder {
