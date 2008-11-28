@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.identity.User;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -20,12 +21,17 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.UnknownHostException;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+
+import javax.xml.ws.soap.SOAPFaultException;
 
 /**
  * ReportService handles report submissions and artifact retrieval. 
@@ -78,7 +84,7 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
         report.setStatus( "SUBMITTED" );
         report.setTime( report.getStatusTime() );
 
-        final String host = report.getSubmissionHost();
+        final String host = cluster.getSslHostName();
         final int port = cluster.getAdminPort();
         final String submissionId;
         try {
@@ -208,6 +214,16 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                             logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", ge );
                         } catch ( ReportApi.ReportException re ) {
                             logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", re );                            
+                            report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
+                            report.setStatusTime( System.currentTimeMillis() );
+                        } catch ( SOAPFaultException sfe ) {
+                            if ( isExpectedNetworkException(sfe) ) {
+                                logger.log( Level.FINE, "Connection failed for cluster '"+host+"'." );
+                            } else if ( "Authentication Required".equals(sfe.getMessage()) ){
+                                logger.log( Level.FINE, "Trust failed for cluster '"+host+"'." );
+                            } else{
+                                logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", sfe );
+                            }
                         }
 
                         try {
@@ -221,5 +237,11 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error accessing reports.", fe );        
         }
+    }
+
+    private boolean isExpectedNetworkException( SOAPFaultException sfe ) {
+        return ExceptionUtils.causedBy( sfe, ConnectException.class ) ||
+               ExceptionUtils.causedBy( sfe, NoRouteToHostException.class ) ||
+               ExceptionUtils.causedBy( sfe, UnknownHostException.class );
     }
 }

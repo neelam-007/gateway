@@ -108,6 +108,11 @@ public interface ReportApi {
         }
 
         @Override
+        public String toString() {
+            return "ReportStatus[id='"+id+"'; status='"+status+"']";
+        }
+
+        @Override
         @SuppressWarnings({"RedundantIfStatement"})
         public boolean equals(Object o) {
             if (this == o) return true;

@@ -72,7 +72,7 @@ public class StandardReportsManagementPanel extends Panel {
                     vm.add("reportId", reportIdentifier);
                     vm.add("type", "application/pdf");
                     ResourceReference logReference = new ResourceReference("reportResource");
-                    ajaxRequestTarget.appendJavascript("document.location = '" + RequestCycle.get().urlFor(logReference, vm).toString() + "';");
+                    ajaxRequestTarget.appendJavascript("window.location = '" + RequestCycle.get().urlFor(logReference, vm).toString() + "';");
                 }
             }
         };
@@ -115,11 +115,11 @@ public class StandardReportsManagementPanel extends Panel {
         List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
         columns.add(new PropertyColumn(new Model("id"), "id"));
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.name", this, null), "name", "name"));
-        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.date", this, null), "date", "date"));
+        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.date", this, null), "statusTime", "statusTime"));
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.clusterName", this, null), "clusterName", "clusterName"));
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.status", this, null), "status", "status"));
 
-        YuiDataTable table = new YuiDataTable("reportTable", columns, "date", true,  new ReportDataProvider("date", false), hidden, "id", true, new Button[]{ viewButton, deleteButton });
+        YuiDataTable table = new YuiDataTable("reportTable", columns, "statusTime", true,  new ReportDataProvider("statusTime", false), hidden, "id", true, new Button[]{ viewButton, deleteButton });
         tableContainer.add( table );
     }
 
@@ -168,7 +168,7 @@ public class StandardReportsManagementPanel extends Panel {
             return name;
         }
 
-        public Date getDate() {
+        public Date getStatusTime() {
             return date;
         }
 

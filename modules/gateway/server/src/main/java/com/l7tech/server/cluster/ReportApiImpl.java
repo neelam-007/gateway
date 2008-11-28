@@ -115,7 +115,7 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
             throw re;
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Unexpected error processing report '"+reportId.toString()+"'.", e );
-            throw new ReportException( "Unexpected error in report processing: " + e.getMessage() );
+            throw new ReportException( "Unexpected error in report processing '" + ExceptionUtils.getMessage( e ) +"'." );
         }
 
         return reportId.toString();
@@ -136,7 +136,8 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
                 reportStatus.setStatus( data.hasArtifact() ? ReportStatus.Status.COMPLETED : ReportStatus.Status.FAILED );
                 reportStatus.setTime( data.getTime() );
             }
-            status.add(reportStatus);
+
+            status.add( reportStatus );
         }
 
         logger.info("Reporting status '"+status+"' for ids '"+ids+"'.");

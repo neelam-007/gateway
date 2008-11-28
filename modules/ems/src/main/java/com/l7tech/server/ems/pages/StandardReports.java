@@ -94,5 +94,7 @@ public class StandardReports extends EmsPage  {
             }
         }));
 
+        add( new StandardReportsManagementPanel("generatedReports") );
+
     }
 }

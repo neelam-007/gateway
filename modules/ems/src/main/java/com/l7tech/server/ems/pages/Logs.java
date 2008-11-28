@@ -66,7 +66,7 @@ public class Logs extends EmsPage {
                     vm.add("id", logIdentifier);
                     vm.add("disposition", "attachment");
                     ResourceReference logReference = new ResourceReference("logResource");
-                    ajaxRequestTarget.appendJavascript("document.location = '" + RequestCycle.get().urlFor(logReference, vm).toString() + "';");
+                    ajaxRequestTarget.appendJavascript("window.location = '" + RequestCycle.get().urlFor(logReference, vm).toString() + "';");
                 }
             }
         };

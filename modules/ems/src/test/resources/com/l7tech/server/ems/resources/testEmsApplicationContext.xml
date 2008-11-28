@@ -53,4 +53,6 @@
     </bean>
 
     <bean id="reportService" class="com.l7tech.server.ems.standardreports.MockReportService" />
+
+    <bean id="standardReportManager" class="com.l7tech.server.ems.standardreports.MockStandardReportManager"/>
 </beans>
