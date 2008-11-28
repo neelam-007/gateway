@@ -4,7 +4,6 @@ import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.apache.wicket.util.resource.FileResourceStream;
 import org.apache.wicket.util.value.ValueMap;
-import org.apache.wicket.protocol.http.WebResponse;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -94,16 +93,16 @@ public class LogResource extends SecureResource {
     }
 
     @Override
-    protected void setHeaders(WebResponse webResponse) {
-        super.setHeaders(webResponse);
+    protected String getFilename() {
+        String name = null;
 
         ValueMap parameters = getParameters();
-        if ( "attachment".equals(parameters.getString("disposition"))) {
-            File logFile = getLogFileIfValid( parameters.getString("id") );
-            if ( logFile != null ) {
-                webResponse.setAttachmentHeader( logFile.getName() );
-            }
+        File logFile = getLogFileIfValid( parameters.getString("id") );
+        if ( logFile != null ) {
+            name = logFile.getName();
         }
+
+        return name;
     }
 
     //- PACKAGE

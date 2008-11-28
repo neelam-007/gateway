@@ -4,6 +4,9 @@ import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import org.apache.wicket.markup.html.WebResource;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
+import org.apache.wicket.util.string.Strings;
+import org.apache.wicket.util.value.ValueMap;
+import org.apache.wicket.protocol.http.WebResponse;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -53,6 +56,25 @@ public abstract class SecureResource extends WebResource {
     }
 
     protected abstract IResourceStream getSecureResourceStream();
+
+    @Override
+    protected void setHeaders( final WebResponse webResponse) {
+        super.setHeaders(webResponse);
+
+        String filename = getFilename();
+        if ( !Strings.isEmpty(filename) ) {
+            ValueMap parameters = getParameters();
+            if ( "attachment".equals(parameters.getString("disposition") )) {
+                webResponse.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+            } else {
+                webResponse.setHeader("Content-Disposition", "inline; filename=\"" + filename + "\"");
+            }
+        }
+    }
+
+    protected String getFilename() {
+        return null;
+    }
 
     //- PRIVATE
 

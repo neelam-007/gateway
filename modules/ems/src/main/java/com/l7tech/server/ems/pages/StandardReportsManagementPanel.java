@@ -77,6 +77,21 @@ public class StandardReportsManagementPanel extends Panel {
             }
         };
 
+        Button downloadButton = new YuiAjaxButton("downloadReportButton") {
+            @Override
+            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
+                String reportIdentifier = (String)form.get("reportId").getModel().getObject();
+                if ( reportIdentifier != null && reportIdentifier.length() > 0 ) {
+                    ValueMap vm = new ValueMap();
+                    vm.add("reportId", reportIdentifier);
+                    vm.add("type", "application/pdf");
+                    vm.add("disposition", "attachment");
+                    ResourceReference logReference = new ResourceReference("reportResource");
+                    ajaxRequestTarget.appendJavascript("window.location = '" + RequestCycle.get().urlFor(logReference, vm).toString() + "';");
+                }
+            }
+        };
+
         Button deleteButton = new YuiAjaxButton("deleteReportButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
@@ -109,6 +124,7 @@ public class StandardReportsManagementPanel extends Panel {
         HiddenField hidden = new HiddenField("reportId", new Model(""));
 
         pageForm.add( viewButton );
+        pageForm.add( downloadButton );
         pageForm.add( deleteButton );
         pageForm.add( hidden.setOutputMarkupId(true) );
 

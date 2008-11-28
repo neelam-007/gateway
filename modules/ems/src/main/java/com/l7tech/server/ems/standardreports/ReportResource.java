@@ -107,6 +107,24 @@ public class ReportResource extends SecureResource {
         return resource;
     }
 
+    @Override
+    protected String getFilename() {
+        String name = null;
+
+        ValueMap parameters = getParameters();
+        if ( parameters.containsKey("reportId") &&
+             parameters.containsKey("type")) {
+            String id = parameters.getString("reportId");
+            String type = parameters.getString("type");
+
+            if ( "application/pdf".equals(type) ) {
+                name = "report_" + id + ".pdf";
+            }
+        }
+
+        return name;
+    }
+
     //- PACKAGE
 
     static StandardReportManager getStandardReportManager() {
