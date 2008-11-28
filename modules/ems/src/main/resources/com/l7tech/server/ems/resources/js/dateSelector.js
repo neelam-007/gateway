@@ -108,7 +108,13 @@ function initDateSelector( inputId, calContainerId, calBodyId, longDates, txtDat
             if ( mStr.length == 1 ) mStr = "0" + mStr;
             txtDate = mStr + "/" + dStr + "/" + yStr;
         }
-        YAHOO.util.Dom.get(inputId).value = dateFormat( selDate );
+        var input = YAHOO.util.Dom.get(inputId);
+        if ( input ) {
+            input.value = dateFormat( selDate );
+            if ( input.onchange ) {
+                input.onchange();
+            }
+        }
 
         dialog.hide();
     }
