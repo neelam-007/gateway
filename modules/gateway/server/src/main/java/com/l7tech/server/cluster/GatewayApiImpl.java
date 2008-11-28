@@ -9,6 +9,7 @@ import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.Config;
 import com.l7tech.util.BuildInfo;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -128,10 +129,7 @@ public class GatewayApiImpl implements GatewayApi {
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error finding entities.", fe );
             throw new GatewayException( "Error finding entities." );
-        } catch (WSDLException we) {
-            logger.log( Level.WARNING, "Error parsing wsdl in entities.", we );
-            throw new GatewayException( "Error parsing wsdl in entities." );
-        }
+        } 
 
         return info;
     }
@@ -148,22 +146,33 @@ public class GatewayApiImpl implements GatewayApi {
     private final FolderManager folderManager;
     private final ServiceCache serviceCache;
 
-    private void findServiceEntities( final Collection<EntityInfo> info, final User user ) throws FindException, WSDLException {
+    private void findServiceEntities( final Collection<EntityInfo> info, final User user ) throws FindException {
         Collection<ServiceHeader> serviceHeaders = securityFilter.filter( serviceManager.findAllHeaders(false), user, OperationType.READ, null );
 
         for ( ServiceHeader header : serviceHeaders ) {
-            PublishedService service = serviceCache.getCachedService(header.getOid());
-            EntityInfo entityInfo = new EntityInfo(header.getType(), header.getStrId(), header.getDisplayName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), service.getVersion());
 
-            // Get operations
-            Wsdl wsdl = service.parsedWsdl();
-            wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-            ArrayList<String> operations = new ArrayList<String>();
-            for (BindingOperation operation: wsdl.getBindingOperations()) {
-                operations.add(operation.getName());
+            PublishedService service = serviceCache.getCachedService(header.getOid());
+            EntityInfo entityInfo = new EntityInfo(header.getType(), header.getStrId(), header.getDisplayName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()),
+                    service == null ? 0 : service.getVersion());
+
+            if ( service != null ) {
+                try {
+                    // Get operations
+                    Wsdl wsdl = service.parsedWsdl();
+                    wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+                    ArrayList<String> operations = new ArrayList<String>();
+                    for (BindingOperation operation: wsdl.getBindingOperations()) {
+                        operations.add(operation.getName());
+                    }
+                    // Set operations in the published-service entityInfo
+                    entityInfo.setOperations(operations.toArray(new String[operations.size()]));
+                } catch ( WSDLException we ) {
+                    // ignore WSDL error, skip operations
+                    if ( logger.isLoggable( Level.FINE ) ) {
+                        logger.log( Level.FINE, "Error processing WSDL for service '"+service.getId()+"', '"+ ExceptionUtils.getMessage(we)+"'..", ExceptionUtils.getDebugException(we) );
+                    }
+                }
             }
-            // Set operations in the published-service entityInfo
-            entityInfo.setOperations(operations.toArray(new String[]{}));
 
             info.add(entityInfo);
         }
