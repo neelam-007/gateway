@@ -72,7 +72,7 @@ public class StandardReportsManagementPanel extends Panel {
                     vm.add("reportId", reportIdentifier);
                     vm.add("type", "application/pdf");
                     ResourceReference logReference = new ResourceReference("reportResource");
-                    ajaxRequestTarget.appendJavascript("window.location = '" + RequestCycle.get().urlFor(logReference, vm).toString() + "';");
+                    ajaxRequestTarget.appendJavascript("window.open('" + RequestCycle.get().urlFor(logReference, vm).toString() + "', '_blank');");
                 }
             }
         };
@@ -135,7 +135,7 @@ public class StandardReportsManagementPanel extends Panel {
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.clusterName", this, null), "clusterName", "clusterName"));
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.status", this, null), "status", "status"));
 
-        YuiDataTable table = new YuiDataTable("reportTable", columns, "statusTime", false,  new ReportDataProvider("statusTime", false), hidden, "id", true, new Button[]{ viewButton, deleteButton });
+        YuiDataTable table = new YuiDataTable("reportTable", columns, "statusTime", false,  new ReportDataProvider("statusTime", false), hidden, "id", true, new Button[]{ viewButton, downloadButton, deleteButton });
         tableContainer.add( table );
     }
 
