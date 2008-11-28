@@ -56,16 +56,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Servlet used to handle trust bootstrapping for the EMS.
+ * Servlet used to handle trust bootstrapping for the ESM.
  * <p/>
- * The EMS redirects the user to post to this servlet over SSL.
+ * The ESM redirects the user to post to this servlet over SSL.
  * <p/>
  * This servlet receives:
  * <ul>
  * <li>The admin user's client certificate (if any), from the SSL handshake
  * <li>The admin user's username and password.
- * <li>The EMS server's certificate.
- * <li>The EMS server's user ID which corresponds to the admin user's ID on this cluster.
+ * <li>The ESM server's certificate.
+ * <li>The ESM server's user ID which corresponds to the admin user's ID on this cluster.
  * </ul>
  */
 public class EmsTrustServlet extends AuthenticatableHttpServlet {
@@ -213,7 +213,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
                 }
             }
 
-            param.put("message", intro + " details about the Enterprise Manager Server that you wish to use to manage this Gateway.");
+            param.put("message", intro + " details about the Enterprise Service Manager that you wish to use to manage this Gateway.");
             param.put("returncookiehash", computeReturnCookieHash(returnCookie));
             sendForm(hresp, param);
             return;
@@ -234,31 +234,31 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         try {
             doHandleTrustRequest(hreq, hresponse, param);
         } catch (CertificateException e) {
-            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
-            param.put("message", "Invalid EMS PEM certificate.");
+            logger.log(Level.WARNING, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), e);
+            param.put("message", "Invalid ESM PEM certificate.");
             sendForm(hresponse, param);
         } catch (CertificateMismatchException e) {
-            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            param.put("message", "The specified EMS ID has already been registered with a different EMS certificate.");
+            logger.log(Level.WARNING, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            param.put("message", "The specified ESM ID has already been registered with a different ESM certificate.");
             sendForm(hresponse, param);
         } catch (TrustedEmsUserManager.MappingAlreadyExistsException e) {
-            logger.log(Level.INFO, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            param.put("message", "The specified EMS username on that EMS instance has already been mapped on this Gateway.");
+            logger.log(Level.INFO, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            param.put("message", "The specified ESM username on that ESM instance has already been mapped on this Gateway.");
             sendForm(hresponse, param);
         } catch (LoginException e) {
-            logger.log(Level.INFO, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.INFO, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             param.put("message", "Unable to authenticate Gateway user: Invalid username or password.");
             sendForm(hresponse, param);
         } catch (PolicyAssertionException e) {
-            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), e);
             param.put("message", "Unable to authenticate.");
             sendForm(hresponse, param);
         } catch (ObjectModelException e) {
-            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), e);
             param.put("message", "Unable to access information in database.");
             sendForm(hresponse, param);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), e);
             param.put("message", "An unexpected error occurred.");
             sendForm(hresponse, param);
         }
@@ -453,7 +453,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         hresp.addCookie(cook);
         hresp.setContentType("text/html");
         Map<String, String> params = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
-        params.put("message", "Enter details about the Enterprise Manager Server that you wish to use to manage this Gateway.");
+        params.put("message", "Enter details about the Enterprise Service Manager that you wish to use to manage this Gateway.");
         params.put("returncookiehash", computeReturnCookieHash(returnCookie));
         sendTemplate(hresp.getOutputStream(), params);
     }
