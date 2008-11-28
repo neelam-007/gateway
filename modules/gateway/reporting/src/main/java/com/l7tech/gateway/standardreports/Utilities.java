@@ -14,6 +14,8 @@ import java.text.ParseException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.awt.*;
 
 import com.l7tech.common.io.XmlUtil;
@@ -48,6 +50,8 @@ public class Utilities {
     private static final String CHART_ELEMENT = "chartElement";
     private static final int CONSTANT_HEADER_HEIGHT = 54;
     private static final int FRAME_MIN_WIDTH = 820;
+
+    private static final Logger logger = Logger.getLogger(Utilities.class.getName());
 
     public static enum UNIT_OF_TIME {
         HOUR, DAY, WEEK, MONTH
@@ -991,6 +995,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         //----SECTION M----
         addMappingOrder(sb);
 
+        logger.log(Level.INFO, sb.toString());
         return sb.toString();
     }
 

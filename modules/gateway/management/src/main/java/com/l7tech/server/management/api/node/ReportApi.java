@@ -13,6 +13,9 @@ import javax.jws.WebMethod;
 import javax.jws.WebResult;
 import javax.jws.WebParam;
 import java.util.Collection;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * EMS / Gateway reporting API
@@ -61,7 +64,18 @@ public interface ReportApi {
      * Supported report types.
      */
     @XmlRootElement(name="ReportType", namespace="http://www.layer7tech.com/management/report")
-    enum ReportType { PERFORMANCE_SUMMARY, PERFORMANCE_INTERVAL, USAGE_SUMMARY, USAGE_INTERVAL }
+    enum ReportType { PERFORMANCE_SUMMARY, PERFORMANCE_INTERVAL, USAGE_SUMMARY, USAGE_INTERVAL;
+
+        public static String [] getApplicableParameters(ReportType reportType){
+            if(reportType == PERFORMANCE_SUMMARY || reportType == USAGE_SUMMARY){
+                return ReportParameters.COMMON_PARAMS;
+            }else{
+                List<String> returnList = new ArrayList<String>(Arrays.asList(ReportParameters.COMMON_PARAMS));
+                returnList.addAll(Arrays.asList(ReportParameters.INTERVAL_PARAMS));
+                return returnList.toArray(new String[]{});
+            }
+        }
+    }
 
     /**
      * Supported report output types.
@@ -158,7 +172,7 @@ public interface ReportApi {
         @XmlAttribute
         public ReportOutputType getType() {
             return type;
-        }
+        }                                                                                                                                     
 
         public void setType(ReportOutputType type) {
             this.type = type;
@@ -330,4 +344,51 @@ public interface ReportApi {
             super(message);
         }
     }
+
+    class ReportParameters{
+
+        //common
+        public static final String IS_RELATIVE = "IS_RELATIVE";
+        public static final String RELATIVE_NUM_OF_TIME_UNITS = "RELATIVE_NUM_OF_TIME_UNITS";
+        public static final String RELATIVE_TIME_UNIT = "RELATIVE_TIME_UNIT";
+        public static final String IS_ABSOLUTE = "IS_ABSOLUTE";
+        public static final String ABSOLUTE_START_TIME = "ABSOLUTE_START_TIME";
+        public static final String ABSOLUTE_END_TIME = "ABSOLUTE_END_TIME";
+        public static final String REPORT_RAN_BY = "REPORT_RAN_BY";
+        public static final String SERVICE_NAMES_LIST = "SERVICE_NAMES_LIST";
+        public static final String SERVICE_ID_TO_OPERATIONS_MAP = "SERVICE_ID_TO_OPERATIONS_MAP";
+        public static final String MAPPING_KEYS = "MAPPING_KEYS";
+        public static final String MAPPING_VALUES = "MAPPING_VALUES";
+        public static final String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
+        public static final String USE_USER = "USE_USER";
+        public static final String AUTHENTICATED_USERS = "AUTHENTICATED_USERS";
+        public static final String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
+        public static final String IS_DETAIL = "IS_DETAIL";
+        public static final String PRINT_CHART = "PRINT_CHART";
+
+        //only supplied on a gateway
+        public static final String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
+        public static final String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
+        public static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
+        public static final String TEMPLATE_FILE_ABSOLUTE = "TEMPLATE_FILE_ABSOLUTE";
+
+        //only needed for interval reports
+        public static final String INTERVAL_TIME_UNIT = "INTERVAL_TIME_UNIT";
+        public static final String INTERVAL_NUM_OF_TIME_UNITS = "INTERVAL_NUM_OF_TIME_UNITS";
+        public static final String SUB_INTERVAL_SUB_REPORT = "SUB_INTERVAL_SUB_REPORT";
+        public static final String SUB_REPORT = "SUB_REPORT";
+
+        public static final String [] RELATIVE_TIME_PARAMS = new String[]{RELATIVE_NUM_OF_TIME_UNITS,
+        RELATIVE_TIME_UNIT};
+
+        public static final String [] ABSOLUTE_TIME_PARAMS = new String[]{ABSOLUTE_START_TIME, ABSOLUTE_END_TIME};
+
+        public static final String [] COMMON_PARAMS = new String[]{IS_RELATIVE, IS_ABSOLUTE, REPORT_RAN_BY, SERVICE_NAMES_LIST,
+        SERVICE_ID_TO_OPERATIONS_MAP, MAPPING_KEYS, MAPPING_VALUES, VALUE_EQUAL_OR_LIKE, USE_USER, AUTHENTICATED_USERS,
+        IS_CONTEXT_MAPPING, IS_DETAIL, PRINT_CHART};
+
+        public static final String [] INTERVAL_PARAMS = new String []{INTERVAL_TIME_UNIT, INTERVAL_NUM_OF_TIME_UNITS};
+    }
+
+    
 }

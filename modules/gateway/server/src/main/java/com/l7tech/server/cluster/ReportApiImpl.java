@@ -6,13 +6,7 @@ import com.l7tech.gateway.standardreports.ReportGenerator;
 
 import javax.activation.DataHandler;
 import javax.mail.util.ByteArrayDataSource;
-import java.util.Collection;
-import java.util.UUID;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.sql.Connection;
@@ -32,6 +26,14 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
 
     //- PUBLIC
 
+    private void validateReportParams(String [] expectedParams, Set<String> receivedParamNames) throws ReportException{
+        for(String s: expectedParams){
+            if(!receivedParamNames.contains(s)){
+                logger.info("Expected parameter: '" + s+"' missing from report submission");
+                throw new ReportException("Expected parameter: '" + s+"' missing from report submission");
+            }
+        }
+    }
     @Override
     @Transactional(readOnly=true)
     public String submitReport( final ReportSubmission submission, final Collection<ReportOutputType> types ) throws ReportException {
@@ -41,6 +43,20 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
         try {
             final ReportGenerator generator = new ReportGenerator();
             final Map<String,Object> reportParameters = buildReportParameters( submission.getParameters() );
+
+            String [] expectedParams = ReportApi.ReportType.getApplicableParameters(submission.getType());            
+            validateReportParams(expectedParams, reportParameters.keySet() );
+
+            for(ReportSubmission.ReportParam reportParam: submission.getParameters()){
+                if(reportParam.getName().equals(ReportApi.ReportParameters.IS_RELATIVE)){
+                    Boolean isRelative = (Boolean) reportParam.getValue();
+                    if(isRelative){
+                        validateReportParams(ReportApi.ReportParameters.RELATIVE_TIME_PARAMS, reportParameters.keySet());
+                    }else{
+                        validateReportParams(ReportApi.ReportParameters.INTERVAL_PARAMS, reportParameters.keySet());
+                    }
+                }
+            }
 
             // Compile report
             final ReportGenerator.ReportGenerationException[] compException = new ReportGenerator.ReportGenerationException[1];
@@ -52,7 +68,7 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
                         @Override
                         public void execute( final Connection connection ) throws SQLException {
                             try {
-                                compiledHandle[0] = generator.compileReport( submission.getType().toString(), reportParameters, connection );
+                                compiledHandle[0] = generator.compileReport( submission.getType(), reportParameters, connection );
                             } catch ( ReportGenerator.ReportGenerationException rge ) {
                                 compException[0] = rge;
                             }
@@ -178,9 +194,9 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
 
         for ( ReportSubmission.ReportParam param : parameters ) {
             Object value = param.getValue();
-            if ( value != null ) {
-                logger.info("Accepted report parameter '"+param.getName()+"' = '"+value+"'.");                
-            }
+//            if ( value != null ) {
+                logger.info("Accepted report parameter '"+param.getName()+"' = '"+value+"'.");
+//            }
             params.put( param.getName(), value );
         }
 
