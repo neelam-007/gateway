@@ -27,6 +27,7 @@ import java.io.FileOutputStream;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
+import org.junit.Assert;
 import org.mortbay.util.ajax.JSON;
 
 import javax.activation.DataHandler;
@@ -165,6 +166,59 @@ public class TestGatewayReportCompileAndFill {
 
         ReportGenerator reportGenerator = new ReportGenerator();
         ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(ReportApi.ReportType.USAGE_SUMMARY, reportParams, ReportApp.getConnection(prop));
+
+        ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+
+        Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
+        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+
+        DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+    }
+
+    @Test
+    public void testReport_UsageSummary_JustKeys() throws Exception {
+
+        Object o = JSON.parse(usageRelativeJsonSummaryTest_JustKeys);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(ReportApi.ReportType.USAGE_SUMMARY, reportParams, ReportApp.getConnection(prop));
+
+        ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+
+        Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
+        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+
+        DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+    }
+
+    @Test
+    public void testReport_UsageInterval_JustKeys() throws Exception {
+
+        Object o = JSON.parse(usageRelativeJsonIntervalTest_JustKeys);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        Assert.assertTrue("Type should be usage interval", submission.getType() == ReportApi.ReportType.USAGE_INTERVAL);
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(submission.getType(), reportParams, ReportApp.getConnection(prop));
 
         ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
 
@@ -372,5 +426,107 @@ public class TestGatewayReportCompileAndFill {
             "    \"summaryReport\" : true," +
             "    \"reportName\" : \"Usage_Summary_Report\"" +
             "}";
-    
+
+    private final static String usageRelativeJsonSummaryTest_JustKeys = "{\"reportType\":\"usage\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"Usage_Summary_Report\"" +
+            "}";
+
+    private final static String usageRelativeJsonIntervalTest_JustKeys = "{\"reportType\":\"usage\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : false," +
+            "    \"reportName\" : \"Usage_Interval_Report\"" +
+            "}";
+
 }

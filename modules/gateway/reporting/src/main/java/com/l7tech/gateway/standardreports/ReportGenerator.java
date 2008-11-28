@@ -76,19 +76,19 @@ public class ReportGenerator {
                 Map<String, Object> transformParameterMap = null;
                 //only usage sub reports require transormation, all require compilation
                 if(subReportTemplate.isTransformedRequired()){
-                    runtimeDocument = getRuntimeDocument( subReportTemplate, reportParams );
-                    transformParameterMap = getTransformationParameters( runtimeDocument );
+                    runtimeDocument = getRuntimeDocument( subReportTemplate, subReportTemplate.getParameterMapName(), reportParams );
+                    transformParameterMap = getTransformationParameters( reportType, subReportTemplate.getParameterMapName(), runtimeDocument );
                 }
                 JasperReport subJasperReport = compileReportTemplate( transformerFactory, documentBuilderFactory, subReportTemplate, transformParameterMap );
                 reportParams.put( subReportTemplate.getParameterMapName(), subJasperReport );
             }
             
             // Compile main report
-            Document runtimeDocument = getRuntimeDocument( template, reportParams );
-            Map<String, Object> transformParameterMap = getTransformationParameters( runtimeDocument );
+            Document runtimeDocument = getRuntimeDocument( template, null, reportParams );
+            Map<String, Object> transformParameterMap = getTransformationParameters( reportType, template.getParameterMapName(), runtimeDocument );
             jasperReport = compileReportTemplate( transformerFactory, documentBuilderFactory, template, transformParameterMap );
         } catch ( Exception e ) {
-            throw new ReportGenerationException( "Unexpected error during report compilation.", e );                        
+            throw new ReportGenerationException( "Unexpected error during report compilation: " + e.getMessage(), e );                        
         }
 
         return new ReportHandle( reportType, reportParams, jasperReport, null );
@@ -181,6 +181,7 @@ public class ReportGenerator {
         GatewayJavaReportCompiler.registerClass(TimePeriodDataSource.class);
         GatewayJavaReportCompiler.registerClass(PerformanceSummaryChartCustomizer.class);
         GatewayJavaReportCompiler.registerClass(UsageSummaryAndSubReportHelper.class);
+        GatewayJavaReportCompiler.registerClass(UsageReportHelper.class);
 
         final Map<ReportApi.ReportType,ReportTemplate> templates = new HashMap<ReportApi.ReportType,ReportTemplate>();
         final String resourcePath = "/com/l7tech/gateway/standardreports";
@@ -190,8 +191,8 @@ public class ReportGenerator {
 
         // Performance interval
         templates.put( ReportApi.ReportType.PERFORMANCE_INTERVAL, new ReportTemplate( ReportApi.ReportType.PERFORMANCE_INTERVAL,"not used", resourcePath+"/PS_IntervalMasterReport_Template.jrxml", resourcePath+"/PS_IntervalMasterTransform.xsl", Arrays.asList(
-            new ReportTemplate( ReportApi.ReportType.PERFORMANCE_INTERVAL, "SUB_INTERVAL_SUB_REPORT", resourcePath+"/PS_SubIntervalMasterReport.jrxml", null, null ),
-            new ReportTemplate( ReportApi.ReportType.PERFORMANCE_INTERVAL, "SUB_REPORT", resourcePath+"/PS_SubIntervalMasterReport_subreport0.jrxml", null, null )
+            new ReportTemplate( ReportApi.ReportType.PERFORMANCE_INTERVAL, ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT, resourcePath+"/PS_SubIntervalMasterReport.jrxml", null, null ),
+            new ReportTemplate( ReportApi.ReportType.PERFORMANCE_INTERVAL, ReportApi.ReportParameters.SUB_REPORT, resourcePath+"/PS_SubIntervalMasterReport_subreport0.jrxml", null, null )
         )) );
 
         // Usage summary
@@ -228,14 +229,6 @@ public class ReportGenerator {
         if(sMap == null) throw new ReportGenerationException("Error creating report style template.");
         parameters.put(ReportApi.ReportParameters.STYLES_FROM_TEMPLATE, sMap);
 
-        //add required report scriptlets
-        if(reportType == ReportApi.ReportType.PERFORMANCE_SUMMARY){
-            //Only required because jasper reports for some reason ignores the value of scriptletClass from the
-            //jasperreport element attribute, so specifying it as a parameter explicitly fixes this issue
-            parameters.put(ReportApi.ReportParameters.REPORT_SCRIPTLET, new ScriptletHelper());
-        }else if(reportType == ReportApi.ReportType.USAGE_SUMMARY){
-            parameters.put(ReportApi.ReportParameters.REPORT_SCRIPTLET, new UsageSummaryAndSubReportHelper());
-        }
         return parameters;
     }
 
@@ -293,6 +286,25 @@ public class ReportGenerator {
                 index++;
             }
 
+            if(reportType == ReportApi.ReportType.USAGE_SUMMARY){
+                UsageSummaryAndSubReportHelper helper = new UsageSummaryAndSubReportHelper();
+                LinkedHashMap<String, String> keyToColumnName = Utilities.getKeyToColumnValues(distinctMappingSets);
+                helper.setKeyToColumnMap(keyToColumnName);
+                reportParams.put(ReportApi.ReportParameters.REPORT_SCRIPTLET, helper);
+            }else if(reportType == ReportApi.ReportType.USAGE_INTERVAL){
+                UsageSummaryAndSubReportHelper summaryAndSubReportHelper = new UsageSummaryAndSubReportHelper();
+                LinkedHashMap<String, String> keyToColumnName = Utilities.getKeyToColumnValues(distinctMappingSets);
+                summaryAndSubReportHelper.setKeyToColumnMap(keyToColumnName);
+                reportParams.put(ReportApi.ReportParameters.SUB_REPORT_HELPER, summaryAndSubReportHelper);
+
+                UsageReportHelper reportHelper = new UsageReportHelper();
+                LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend);
+                reportHelper.setKeyToColumnMap(keyToColumnName);
+                reportHelper.setIndexToGroupMap(groupIndexToGroup);
+                reportParams.put(ReportApi.ReportParameters.REPORT_SCRIPTLET, reportHelper);
+
+            }
+
         } else {
             LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sql);
             //We need to look up the mappingValues from both the group value and also the display string value
@@ -308,13 +320,22 @@ public class ReportGenerator {
 
         reportParams.put(ReportApi.ReportParameters.DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
         reportParams.put(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING, groupToDisplayString);
+
+        //add required report scriptlets
+        if(reportType == ReportApi.ReportType.PERFORMANCE_SUMMARY){
+            //Only required because jasper reports for some reason ignores the value of scriptletClass from the
+            //jasperreport element attribute, so specifying it as a parameter explicitly fixes this issue
+            reportParams.put(ReportApi.ReportParameters.REPORT_SCRIPTLET, new ScriptletHelper());
+        }
+
     }
 
     /**
-     * TODO fix runtime document generation for reports and sub reports 
+     * For interval ReportTypes, the master report is identified by the template.getType() and subReportParamName
+     * being null 
      */
     @SuppressWarnings({"unchecked"})
-    private Document getRuntimeDocument( final ReportTemplate template,
+    private Document getRuntimeDocument( final ReportTemplate template, final String subReportParamName,
                                          final Map<String,Object> reportParameters  ) {
         Document runtimeDocument = null;
 
@@ -323,15 +344,29 @@ public class ReportGenerator {
             runtimeDocument = Utilities.getPerfStatAnyRuntimeDoc(
                     Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING).toString()),
                     (LinkedHashMap<String,String>)reportParameters.get(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING) );
-        }else if(template.getType() == ReportApi.ReportType.USAGE_SUMMARY){
-            LinkedHashSet<List<String>> distinctMappingSets =
-                    (LinkedHashSet<List<String>>) reportParameters.get(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS);
-            Boolean useUser = (Boolean) reportParameters.get(ReportApi.ReportParameters.USE_USER);
-            List<String> keys = (List<String>) reportParameters.get(ReportApi.ReportParameters.MAPPING_KEYS);
-            runtimeDocument = Utilities.getUsageRuntimeDoc(useUser, keys, distinctMappingSets);
+            return runtimeDocument;
         }
 
-        //Utilities.getUsageRuntimeDoc(useUser, keys, distinctMappingSets);
+        ReportApi.ReportType templateType = template.getType();
+        if(templateType != ReportApi.ReportType.USAGE_SUMMARY &&
+                templateType != ReportApi.ReportType.USAGE_INTERVAL){
+            throw new IllegalArgumentException("Report type: " + templateType.toString()+" is not currently supported for runtime transformation");
+        }
+
+        LinkedHashSet<List<String>> distinctMappingSets =
+                (LinkedHashSet<List<String>>) reportParameters.get(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS);
+        Boolean useUser = (Boolean) reportParameters.get(ReportApi.ReportParameters.USE_USER);
+        List<String> keys = (List<String>) reportParameters.get(ReportApi.ReportParameters.MAPPING_KEYS);
+        
+        if(template.getType() == ReportApi.ReportType.USAGE_SUMMARY){
+            runtimeDocument = Utilities.getUsageRuntimeDoc(useUser, keys, distinctMappingSets);
+        }else if(template.getType() == ReportApi.ReportType.USAGE_INTERVAL && subReportParamName == null){
+            runtimeDocument = Utilities.getUsageIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
+        }else if(subReportParamName.equals(ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT)){
+            runtimeDocument = Utilities.getUsageSubIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
+        }else if(subReportParamName.equals(ReportApi.ReportParameters.SUB_REPORT)){
+            runtimeDocument = Utilities.getUsageSubReportRuntimeDoc(useUser, keys, distinctMappingSets);
+        }
 
         return runtimeDocument;
     }
@@ -339,16 +374,29 @@ public class ReportGenerator {
     /**
      *
      */
-    private Map<String, Object> getTransformationParameters( final Document document ) {
+    private Map<String, Object> getTransformationParameters( ReportApi.ReportType reportType, String subReportParamName, final Document document ) {
         final Map<String, Object> params = new HashMap<String, Object>();
 
-        if ( document != null ) {
-            params.put("RuntimeDoc", document);
+        if(document == null) throw new NullPointerException("Document cannot be null, as it is required for every transform");
+        //all reports require the runtimedoc        
+        params.put("RuntimeDoc", document);
+
+        if(ReportApi.ReportType.PERFORMANCE_SUMMARY == reportType ||
+                ReportApi.ReportType.PERFORMANCE_INTERVAL == reportType){
+            return params;
         }
 
-        params.put("FrameMinWidth", 535);
-        params.put("PageMinWidth", 595);
-        params.put("ReportInfoStaticTextSize", 128);
+        if(ReportApi.ReportType.USAGE_SUMMARY == reportType ||
+                (ReportApi.ReportType.USAGE_INTERVAL == reportType && subReportParamName == null)){
+            params.put("FrameMinWidth", 820);
+            params.put("PageMinWidth", 850);
+            params.put("ReportInfoStaticTextSize", 128);
+            params.put("TitleInnerFrameBuffer", 7);
+        }else if(ReportApi.ReportType.USAGE_INTERVAL == reportType
+                && (subReportParamName.equals(ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT)
+                || subReportParamName.equals(ReportApi.ReportParameters.SUB_REPORT))){
+            params.put("PageMinWidth", 820);
+        }
 
         return params;
     }
@@ -375,7 +423,6 @@ public class ReportGenerator {
                 StreamResult result = new StreamResult(baos);
                 XmlUtil.softXSLTransform(doc, result, transformer, params);
                 inputStream = new ByteArrayInputStream(baos.toByteArray());
-                IOUtils.spewStream(baos.toByteArray(), new FileOutputStream(new File("Output_" + template.getType().toString()+".xml")));
             }else{
                 inputStream = template.getReportXmlSource().getByteStream();
             }
@@ -406,6 +453,41 @@ public class ReportGenerator {
         Map<String,String> idsToResources = new HashMap<String,String>();
         idsToResources.put( "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd", "com/l7tech/gateway/standardreports/jasperreport.dtd");
         return new ResourceMapEntityResolver( null, idsToResources, null );
+    }
+
+    public static LinkedHashMap<String, String> getKeyToColumnValues(LinkedHashSet<List<String>> distinctMappingSets) {
+        LinkedHashSet<String> mappingValues = getMappingValues(distinctMappingSets);
+        LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
+        int count = 1;
+        //System.out.println("Key to column map");
+        for (String s : mappingValues) {
+            keyToColumnName.put(s, "COLUMN_"+count);
+            //System.out.println(s+" " + "COLUMN_"+count);
+            count++;
+        }
+        return keyToColumnName;
+    }
+    
+    private static LinkedHashSet<String> getMappingValues(LinkedHashSet<List<String>> distinctMappingSets){
+        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+
+        for(List<String> set: distinctMappingSets){
+            List<String> mappingStrings = new ArrayList<String>();
+            boolean first = true;
+            String authUser = null;
+            for(String s: set){
+                if(first){
+                    authUser = s;
+                    first = false;
+                    continue;
+                }
+                mappingStrings.add(s);
+            }
+            String mappingValue = Utilities.getMappingValueString(authUser, mappingStrings.toArray(new String[]{}));
+            mappingValues.add(mappingValue);
+        }
+
+        return mappingValues;
     }
 
     /**
@@ -472,6 +554,16 @@ public class ReportGenerator {
 
         //todo [Donal] Master templates don't need a parameter map name, we care about their type, sub reports need a
         //todo [Donal] parameter map name, and we don't care about their type need to split out
+        /**
+         *
+         * @param type
+         * @param parameterMapName this is an important param which has two purposes: 1) it is the parameter name required
+         * in a master report for identifiying a sub report 2) it is used in ReportGenerator for making run time decisions
+         * when getting transformation parameters
+         * @param reportXml
+         * @param reportXsl
+         * @param subReports
+         */
         ReportTemplate( final ReportApi.ReportType type,
                         final String parameterMapName,
                         final String reportXml,

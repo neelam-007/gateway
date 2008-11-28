@@ -12,8 +12,12 @@ import net.sf.jasperreports.engine.fill.JRFillField;
 import net.sf.jasperreports.engine.fill.JRFillVariable;
 
 import java.util.LinkedHashMap;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class UsageSummaryAndSubReportHelper extends JRDefaultScriptlet {
+
+    private static final Logger logger = Logger.getLogger(UsageSummaryAndSubReportHelper.class.getName());
 
     public static final String COLUMN_MAPPING_TOTAL = "COLUMN_MAPPING_TOTAL_";
     

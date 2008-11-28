@@ -228,6 +228,10 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         Object [] groupings = (Object[]) params.get(JSONConstants.GROUPINGS);
         if(groupings.length == 0){
 
+            if(getReportType(params) == ReportApi.ReportType.USAGE_SUMMARY){
+                throw new ReportException("Usage reports must have at least one grouping specified, per cluster");
+            }
+            
             for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
                 //add default values
                 ReportApi.ReportSubmission.ReportParam mappingKeyParam = new ReportApi.ReportSubmission.ReportParam();
@@ -372,6 +376,22 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
                 clusterParams.add(isCtxMappingParam);
             }
         }
+
+        //Usage reports MUST have at least one grouping
+        if(getReportType(params) == ReportApi.ReportType.USAGE_SUMMARY
+                || getReportType(params) == ReportApi.ReportType.USAGE_INTERVAL){
+            for(String s: clusterToReportParams.keySet()){
+                if(!clusterToKeys.containsKey(s)){
+                    throw new ReportException("Required cluster: " + s +" has no grouping infomration in JSON data");
+                }
+
+                List<String> mappingKeys = clusterToKeys.get(s);
+                if(mappingKeys == null || mappingKeys.isEmpty()){
+                    throw new ReportException("Cluster: " + s +" must have at least one mapping key specified in the JSON data");                    
+                }
+            }
+        }
+
     }
 
     private void addTimeParameters(

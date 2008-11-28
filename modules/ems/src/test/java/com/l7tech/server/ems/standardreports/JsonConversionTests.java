@@ -526,6 +526,38 @@ public class JsonConversionTests {
         Assert.assertNotNull("Exception should have been thrown by JSON.parse", ex);
     }
 
+    @Test
+    public void testGroupingEmptyKey() throws Exception {
+        Object o = JSON.parse(usageRelativeJsonSummaryTest_MissingKey);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        boolean exception = false;
+        try{
+            convertor.getReportSubmissions(jsonMap, "Donal");
+        }catch(ReportException e){
+            exception = true;
+        }
+
+        Assert.assertTrue("Exception should have been thrown as key is empty string", exception);
+    }
+
+    @Test
+    public void testUsage_ClusterMissingGrouping() throws Exception {
+        Object o = JSON.parse(usageRelativeJsonSummaryTest_ClusterMissingKey);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        boolean exception = false;
+        try{
+            convertor.getReportSubmissions(jsonMap, "Donal");
+        }catch(ReportException e){
+            exception = true;
+        }
+
+        Assert.assertTrue("Exception should have been thrown as cluster2 has no groupings", exception);
+    }
+
+
+
     private final static String psRelativeJsonSummary = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
@@ -816,4 +848,124 @@ public class JsonConversionTests {
             "    \"summaryReport\" : false," +
             "    \"reportName\" : \"My Report\"" +
             "}";
+
+    private final static String usageRelativeJsonSummaryTest_MissingKey = "{\"reportType\":\"usage\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.0.0.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"Usage_Summary_Report\"" +
+            "}";
+
+    private final static String usageRelativeJsonSummaryTest_ClusterMissingKey = "{\"reportType\":\"usage\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.0.0.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"Usage_Summary_Report\"" +
+            "}";
+
 }

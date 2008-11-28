@@ -63,7 +63,6 @@ public class UsageReportHelper extends JRDefaultScriptlet {
 
     public JRDataSource getChartDataSource() throws JRException {
 
-        System.out.println("Getting data source");
         List<ReportTotalBean> beans = new ArrayList<ReportTotalBean>();
 
         for(Object o: this.variablesMap.keySet()){
