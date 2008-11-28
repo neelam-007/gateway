@@ -237,6 +237,7 @@ public class EmsApplication extends WebApplication {
         mountPage("/Login.html", Login.class);
         mountPage("/SSGClusterSelector.html", SSGClusterSelector.class);
         mountPage("/SSGClusterContentSelector.html", SSGClusterContentSelector.class);
+        mountPage("/SSGClusterServiceContentSelector.html", SSGClusterServiceContentSelector.class);
         mountTemplate("/UserSelector.html");
         mountTemplate("/SubmissionReceived.html");
     }

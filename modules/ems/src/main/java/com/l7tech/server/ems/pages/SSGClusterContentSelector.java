@@ -44,6 +44,12 @@ public class SSGClusterContentSelector extends WebPage {
     @SpringBean
     private UserPropertyManager userPropertyManager;
 
+    private EntityType[] entityTypes = new EntityType[] {
+        EntityType.FOLDER,
+        EntityType.SERVICE,
+        EntityType.POLICY
+    };
+
     public SSGClusterContentSelector() {
         Map<String,String> up = Collections.emptyMap();
         try {
@@ -72,6 +78,10 @@ public class SSGClusterContentSelector extends WebPage {
         add(interaction);
     }
 
+    protected void setEntityTypes(EntityType[] entityTypes) {
+        this.entityTypes = entityTypes;
+    }
+
     /**
      * Build a list of SSG Cluster content for entities (folder, published service, and policy fragment)
      * @return a list of entities content
@@ -85,8 +95,7 @@ public class SSGClusterContentSelector extends WebPage {
         final SsgCluster ssgCluster = ssgClusterManager.findByGuid(ssgClusterId);
         GatewayContext context = gatewayContextFactory.getGatewayContext(getUser(), ssgCluster.getSslHostName(), ssgCluster.getAdminPort());
         GatewayApi api = context.getApi();
-        EntityType[] types = new EntityType[] {EntityType.FOLDER, EntityType.SERVICE, EntityType.POLICY};
-        Collection<GatewayApi.EntityInfo> rawEntitiesInfo = api.getEntityInfo(Arrays.asList(types));
+        Collection<GatewayApi.EntityInfo> rawEntitiesInfo = api.getEntityInfo(Arrays.asList(entityTypes));
         Collections.sort((List<GatewayApi.EntityInfo>)rawEntitiesInfo);
 
         // Find the root folder and sort the raw entities data to have an ordered tree.
