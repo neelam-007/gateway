@@ -569,19 +569,18 @@ generateButton.set('disabled', false);
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
                         availableMessageContext = result;
-                    }
+                    } 
                 },
                 failure : function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST + o.statusText, localizedStrings.OK);
                 }
             };
-            var postData;
+            var postData = '';
             for (var i = 0; i < ssgClustersWithSelectedEntities.length; ++i) {
                 if (i != 0) postData += '&';
                 postData += 'clusterGuid=' + encodeURIComponent(ssgClustersWithSelectedEntities[i].id);
             }
-            // TODO pass array of published service OIDs in each cluster
-            var url = 'dataSource/standardReport/messageContextList.json';
+            var url = jsonMappingUrl;
             YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
         }
 
@@ -602,22 +601,30 @@ generateButton.set('disabled', false);
 
             // Populates the drop down list with each available SSG Cluster.
             var entities = ssgClusterSelectorWindow.getEntityTreeTable().getEntities();
-            for (var i = 0; i < entities.length; ++i) {
-                var entity = entities[i];
-                if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
-                    var option = document.createElement('option');
-                    option.value = entity.id;
-                    option.innerHTML = entity.ancestors.join(' / ') + ' / ' + entity.name;
-                    option.disabled = ssgClusterIdsWithSelectedEntities[option.value] == undefined;
-                    dropDown.appendChild(option);
-                    if (option.value == prevValue) {
-                        dropDown.selectedIndex = option.index; // Restores previously selected SSG Cluster.
-                    }
-                    // The disabled attribute does not work properly in IE7. We have to
-                    // manually set default selection to the first enabled OPTION.
-                    if (prevValue == null) {
-                        if (ssgClusterIdsWithSelectedEntities[dropDown.value] == undefined) {
-                            dropDown.selectedIndex = option.index;
+            if ( entities ) {
+                for (var i = 0; i < entities.length; ++i) {
+                    var entity = entities[i];
+
+                    if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                        var option = document.createElement('option');
+
+                        option.value = entity.id;
+                        if ( entity.ancestors ) {
+                            option.innerHTML = entity.ancestors.join(' / ') + ' / ' +  entity.name;
+                        } else {
+                            option.innerHTML = entity.name;
+                        }
+                        option.disabled = ssgClusterIdsWithSelectedEntities[option.value] == undefined;
+                        dropDown.appendChild(option);
+                        if (option.value == prevValue) {
+                            dropDown.selectedIndex = option.index; // Restores previously selected SSG Cluster.
+                        }
+                        // The disabled attribute does not work properly in IE7. We have to
+                        // manually set default selection to the first enabled OPTION.
+                        if (prevValue == null) {
+                            if (ssgClusterIdsWithSelectedEntities[dropDown.value] == undefined) {
+                                dropDown.selectedIndex = option.index;
+                            }
                         }
                     }
                 }
@@ -1278,6 +1285,7 @@ generateButton.set('disabled', false);
                 </div>
                 </div>
 
+                <div wicket:id="jsonMappings"/>
                 <div wicket:id="postReportParameters">
                     
                 </div>

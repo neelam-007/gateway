@@ -1,20 +1,35 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.gateway.GatewayContextFactory;
+import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.server.ems.enterprise.JSONException;
+import com.l7tech.server.ems.enterprise.SsgClusterManager;
+import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.TimeUnit;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.DropDownChoice;
+import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.RequestCycle;
 import org.mortbay.util.ajax.JSON;
 
 import java.util.logging.Logger;
-import java.util.*;
+import java.util.logging.Level;
+import java.util.Map;
+import java.util.Collection;
+import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Collections;
+import java.util.TimeZone;
+import java.util.Arrays;
 import java.text.SimpleDateFormat;
 
 /**
@@ -26,6 +41,12 @@ public class StandardReports extends EmsPage  {
 
     @SpringBean
     private ReportService reportService;
+
+    @SpringBean
+    private SsgClusterManager ssgClusterManager;
+
+    @SpringBean
+    private GatewayContextFactory gatewayContextFactory;
 
     public StandardReports() {
 
@@ -94,7 +115,17 @@ public class StandardReports extends EmsPage  {
 
         List<String> zoneIds = Arrays.asList(TimeZone.getAvailableIDs());
         Collections.sort(zoneIds);
-        form.add(new DropDownChoice("timezone", zoneIds));
+        form.add(new DropDownChoice("timezone", zoneIds, new IChoiceRenderer(){
+            @Override
+            public Object getDisplayValue(Object object) {
+                return object;
+            }
+
+            @Override
+            public String getIdValue(Object object, int index) {
+                return object.toString();
+            }
+        }));
 
         final Date now = new Date();
         final YuiDateSelector fromDateField = new YuiDateSelector("fromDate", new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), now, true);
@@ -141,5 +172,86 @@ public class StandardReports extends EmsPage  {
 
         add( form );
         add( script );
+
+        add( new JsonInteraction("jsonMappings", "jsonMappingUrl", new MappingDataProvider() ) );
+    }
+
+    private final class MappingDataProvider implements JsonDataProvider {
+        @Override
+        public Object getData() {
+            Object[] data = new Object[0];
+
+            String[] clusterGuids = RequestCycle.get().getRequest().getParameters("clusterGuid");
+            if ( clusterGuids != null ) {
+                Collection<MappingKey> clusterKeys = new ArrayList<MappingKey>();
+                for ( String clusterGuid : clusterGuids ) {
+                    Collection<String> standardValues = new ArrayList<String>();
+                    Collection<String> customValues = new ArrayList<String>();
+                    try {
+                        SsgCluster cluster = ssgClusterManager.findByGuid( clusterGuid );
+                        if ( cluster != null ) {
+                            GatewayContext context = gatewayContextFactory.getGatewayContext( getUser(), cluster.getSslHostName(), cluster.getAdminPort() );
+                            ReportApi reportApi = context.getReportApi();
+                            Collection<ReportApi.GroupingKey> keys = reportApi.getGroupingKeys();
+                            if ( keys != null ) {
+                                for ( ReportApi.GroupingKey key : keys ) {
+                                    if ( key.getType() == ReportApi.GroupingKey.GroupingKeyType.STANDARD ) {
+                                        standardValues.add( key.getName() );
+                                    } else if ( key.getType() == ReportApi.GroupingKey.GroupingKeyType.CUSTOM ) {
+                                        customValues.add( key.getName() );
+                                    }
+                                }
+                            }
+                        }
+                    } catch ( Exception e ) {
+                        logger.log( Level.WARNING, "Error getting mapping keys", e );
+                    }
+                    clusterKeys.add( new MappingKey( clusterGuid, standardValues, customValues ) );
+                }
+                data = clusterKeys.toArray(new Object[clusterKeys.size()]);
+            }
+
+            return data;
+        }
+
+        @Override
+        public void setData(Object jsonData) {
+        }
+    }
+
+    private static final class MappingKey implements JSON.Convertible {
+        private final String id;
+        private final String[] standard;
+        private final String[] custom;
+
+        private MappingKey( String id, Collection<String> standard, Collection<String> custom ) {
+            this.id = id;
+            this.standard = standard.toArray( new String[standard.size()] );
+            this.custom = custom.toArray( new String[custom.size()] );
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String[] getStandard() {
+            return standard;
+        }
+
+        public String[] getCustom() {
+            return custom;
+        }
+
+        @Override
+        public void toJSON(final JSON.Output out) {
+            out.add("id", id);
+            out.add("standard", standard);
+            out.add("custom", custom);
+        }
+
+        @Override
+        public void fromJSON(final Map object) {
+            throw new UnsupportedOperationException();
+        }
     }
 }
