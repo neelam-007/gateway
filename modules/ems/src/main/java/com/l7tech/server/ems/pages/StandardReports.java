@@ -5,6 +5,7 @@ import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.server.ems.enterprise.JSONException;
 import com.l7tech.util.TimeUnit;
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
@@ -13,9 +14,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.mortbay.util.ajax.JSON;
 
 import java.util.logging.Logger;
-import java.util.Map;
-import java.util.Collection;
-import java.util.Date;
+import java.util.*;
 import java.text.SimpleDateFormat;
 
 /**
@@ -92,6 +91,11 @@ public class StandardReports extends EmsPage  {
         add( new StandardReportsManagementPanel("generatedReports") );
 
         Form form = new Form("form");
+
+        List<String> zoneIds = Arrays.asList(TimeZone.getAvailableIDs());
+        Collections.sort(zoneIds);
+        form.add(new DropDownChoice("timezone", zoneIds));
+
         final Date now = new Date();
         final YuiDateSelector fromDateField = new YuiDateSelector("fromDate", new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), now, true);
         final YuiDateSelector toDateField = new YuiDateSelector("toDate", new Model(new Date(now.getTime())), now);

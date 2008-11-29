@@ -942,7 +942,7 @@ generateButton.set('disabled', false);
             l7.Widget.initHourlyDropDown(absoluteTimePeriodToHourDropDown);
             initButtons();
             initDialogs();
-            loadSavedSettingsDropDown();
+            // loadSavedSettingsDropDown();
 
             updateSaveDefaultButton();
             updateGenerateButton();
@@ -1133,7 +1133,8 @@ generateButton.set('disabled', false);
                                 <tr>
                                     <th class="middle">Time Period:</th>
                                     <td class="middle">
-                                        <select id="timePeriodTimeZoneDropDown">
+                                        Time Zone: 
+                                        <select id="timePeriodTimeZoneDropDown" wicket:id="timezone">
                                             <option value="Canada/Pacific" selected="selected">Canada/Pacific (GMT-08:00/-07:00)</option>
                                         </select>
                                     </td>
