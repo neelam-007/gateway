@@ -1,13 +1,13 @@
 /*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
-import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -26,6 +26,7 @@ import com.l7tech.util.ExceptionUtils;
 import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The <code>SavePolicyAction</code> action saves the policy and it's
@@ -34,7 +35,7 @@ import java.util.HashMap;
 public class SavePolicyAction extends EntityWithPolicyNodeAction<PolicyEntityNode> {
     protected AssertionTreeNode node;
     private final boolean activateAsWell;
-    private HashMap<String, String> fragmentNameGuidMap;
+    private Map<String, String> fragmentNameGuidMap;
 
     public SavePolicyAction(boolean activateAsWell) {
         super(null);
@@ -187,7 +188,7 @@ public class SavePolicyAction extends EntityWithPolicyNodeAction<PolicyEntityNod
         return Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell, fragments);
     }
 
-    public HashMap<String, String> getFragmentNameGuidMap() {
+    public Map<String, String> getFragmentNameGuidMap() {
         return fragmentNameGuidMap;
     }
 }

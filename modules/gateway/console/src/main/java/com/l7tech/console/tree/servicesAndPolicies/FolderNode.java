@@ -9,11 +9,11 @@ import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import java.util.List;
 import java.util.ArrayList;
-
 
 /**
  * The class represents a node element in the TreeModel.
@@ -22,29 +22,35 @@ import java.util.ArrayList;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class FolderNode extends AbstractTreeNode implements FolderNodeBase{
- 
-    private FolderHeader folderHeader;
-    private final FolderAdmin folderAdmin;
+public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
+    private final FolderHeader folderHeader;
     private final Folder folder;
     private final Action[] allActions;
 
-    public FolderNode(FolderHeader folderHeader) {
+    public FolderNode(FolderHeader folderHeader, Folder parentFolder) {
         super(folderHeader, RootNode.getComparator());
         this.folderHeader = folderHeader;
 
-        folder = new Folder(folderHeader.getName(), folderHeader.getParentFolderOid());
+        final FolderAdmin folderAdmin = Registry.getDefault().getFolderAdmin();
+
+        if (parentFolder == null && folderHeader.getParentFolderOid() != null) {
+            try {
+                parentFolder = folderAdmin.findByPrimaryKey(folderHeader.getParentFolderOid());
+            } catch (FindException e) {
+                throw new RuntimeException("Couldn't find parent folder", e);
+            }
+        }
+
+        folder = new Folder(folderHeader.getName(), parentFolder);
         folder.setOid(folderHeader.getOid());
 
-        folderAdmin = Registry.getDefault().getFolderAdmin();
-
         allActions = new Action[]{
-        new EditFolderAction(folder, folderHeader, this, folderAdmin),
-        new CreateFolderAction(folderHeader.getOid(), this, folderAdmin),
-        new DeleteFolderAction(folderHeader.getOid(), this, folderAdmin),
-        new PasteAsAliasAction(this),
-        new RefreshTreeNodeAction(this)
-    };
+            new EditFolderAction(folder, folderHeader, this, folderAdmin),
+            new CreateFolderAction(folder, this, folderAdmin),
+            new DeleteFolderAction(folderHeader.getOid(), this, folderAdmin),
+            new PasteAsAliasAction(this),
+            new RefreshTreeNodeAction(this)
+        };
     }
 
     public String getName() {
@@ -133,5 +139,9 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase{
             }
         }
         return false;
+    }
+
+    public Folder getFolder() {
+        return folder;
     }
 }

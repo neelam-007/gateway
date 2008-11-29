@@ -1,10 +1,5 @@
 package com.l7tech.console.security.rbac;
 
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DocumentSizeFilter;
-import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
 import com.l7tech.console.panels.identity.finder.Options;
@@ -13,30 +8,35 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gui.util.DocumentSizeFilter;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
-import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
-import javax.swing.text.AbstractDocument;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.ResourceBundle;
+import java.util.Set;
 
 public class EditRoleDialog extends JDialog {
-    private static final Logger logger = Logger.getLogger(EditRoleDialog.class.getName());
-
     private Role role;
 
     private JPanel contentPane;
@@ -229,11 +229,10 @@ public class EditRoleDialog extends JDialog {
                         return perm.getOperation().getName();
                     }
                 case 1:
-                    StringBuilder sb = new StringBuilder();
                     EntityType etype = perm.getEntityType();
                     switch(perm.getScope().size()) {
                         case 0:
-                            sb.append("<Any");
+                            StringBuilder sb = new StringBuilder("<Any");
                             if (etype == EntityType.ANY)
                                 sb.append(" Object");
                             else {
@@ -242,9 +241,7 @@ public class EditRoleDialog extends JDialog {
                             sb.append(">");
                             return sb.toString();
                         case 1:
-                            sb.append(etype.getName()).append(" ").append(
-                                    perm.getScope().iterator().next().toString());
-                            return sb.toString();
+                            return perm.getScope().iterator().next().toString();
                         default:
                             return "<Complex Scope>";
                     }

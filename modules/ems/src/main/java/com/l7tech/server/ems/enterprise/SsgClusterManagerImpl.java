@@ -200,7 +200,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         newRole.setName(name);
 
         // R this cluster
-        newRole.addPermission(READ, ESM_SSG_CLUSTER, id.toString()); // Read this cluster
+        newRole.addEntityPermission(READ, ESM_SSG_CLUSTER, id.toString()); // Read this cluster
 
         newRole.setEntityType(ESM_SSG_CLUSTER);
         newRole.setEntityOid(id);

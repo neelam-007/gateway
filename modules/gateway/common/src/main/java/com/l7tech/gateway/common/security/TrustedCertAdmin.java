@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.gateway.common.security;
 
@@ -48,7 +48,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException if there was a server-side problem accessing the requested information
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(stereotype=FIND_ENTITY)
     public TrustedCert findCertByPrimaryKey(long oid) throws FindException;
 
     /**
@@ -59,7 +59,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException if there is a problem finding the certs
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype= FIND_ENTITY_BY_ATTRIBUTE)
+    @Secured(stereotype=FIND_ENTITY)
     public Collection<TrustedCert> findCertsBySubjectDn(String dn) throws FindException;
 
     /**
@@ -100,7 +100,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException if there was a server-side problem accessing the requested information
      */
     @Transactional(readOnly=true)
-    @Secured(types=REVOCATION_CHECK_POLICY,stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(types=REVOCATION_CHECK_POLICY, stereotype=FIND_ENTITY)
     public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(long oid) throws FindException;
 
     /**

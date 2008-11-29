@@ -1,24 +1,18 @@
 package com.l7tech.server.identity;
 
-import com.l7tech.identity.*;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.EntityManagerStub;
-
 import org.springframework.beans.factory.InitializingBean;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author emil
- * @version 14-Dec-2004
- */
 public class TestIdentityProviderConfigManager
         extends EntityManagerStub<IdentityProviderConfig, EntityHeader>
         implements IdentityProviderConfigManager, InitializingBean
@@ -44,14 +38,6 @@ public class TestIdentityProviderConfigManager
 
     public Class getInterfaceClass() {
         return IdentityProviderConfig.class;
-    }
-
-    public EntityType getEntityType() {
-        return EntityType.ID_PROVIDER_CONFIG;
-    }
-
-    public String getTableName() {
-        return "identity_provider";
     }
 
     public void afterPropertiesSet() throws Exception {

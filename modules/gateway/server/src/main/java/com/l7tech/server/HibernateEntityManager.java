@@ -1,11 +1,8 @@
 /*
- * Copyright (c) 2003 Layer 7 Technologies Inc.
+ * Copyright (c) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
@@ -35,7 +32,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The default {@link com.l7tech.objectmodel.EntityManager} implementation for Hibernate-managed {@link com.l7tech.objectmodel.PersistentEntity persistent entities}.
+ * The default {@link com.l7tech.objectmodel.EntityManager} implementation for Hibernate-managed
+ * {@link com.l7tech.objectmodel.PersistentEntity persistent entities}.
+ *
  * @author alex
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
@@ -74,9 +73,20 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     protected PlatformTransactionManager transactionManager; // required for TransactionTemplate
 
     @Transactional(readOnly=true)
-    @Secured(operation=OperationType.READ)
-    public ET findByPrimaryKey(long oid) throws FindException {
-        return findEntity(oid);
+    public ET findByPrimaryKey(final long oid) throws FindException {
+        try {
+            //noinspection unchecked
+            return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
+                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_FIND_BY_OID);
+                    q.setLong(0, oid);
+                    return q.uniqueResult();
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException(e.toString(), e);
+        }
     }
 
     /**
@@ -213,7 +223,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
-    @Secured(operation=OperationType.CREATE)
     public long save(ET entity) throws SaveException {
         if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString() });
         try {
@@ -298,24 +307,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_VERSION_BY_OID);
-                    q.setLong(0, oid);
-                    return q.uniqueResult();
-                }
-            });
-        } catch (Exception e) {
-            throw new FindException(e.toString(), e);
-        }
-    }
-
-    @Transactional(readOnly=true)
-    @Secured(operation=OperationType.READ)
-    public ET findEntity(final long oid) throws FindException {
-        try {
-            //noinspection unchecked
-            return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
-                @Override
-                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Query q = session.createQuery(HQL_FIND_BY_OID);
                     q.setLong(0, oid);
                     return q.uniqueResult();
                 }
@@ -421,7 +412,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     @Transactional(readOnly=true)
-    @Secured(operation=OperationType.READ)
     public Collection<ET> findAll() throws FindException {
         try {
             //noinspection unchecked
@@ -462,13 +452,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         return "from " + alias + " in class " + getImpClass().getName();
     }
 
-    @Secured(operation=OperationType.DELETE)
     public void delete(long oid) throws DeleteException, FindException {
         //getHibernateTemplate().d
         delete(getImpClass(), oid);
     }
 
-    @Secured(operation=OperationType.DELETE)
     public void delete(final ET et) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
@@ -507,7 +495,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @SuppressWarnings({"unchecked"})
     @Transactional(propagation=SUPPORTS)
-    @Secured(operation=OperationType.READ)
     public ET getCachedEntityByName(final String name, int maxAge) throws FindException {
         if (name == null) throw new NullPointerException();
         if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
@@ -541,7 +528,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     @Transactional(readOnly=true)
-    @Secured(operation=OperationType.READ)
     public ET findByUniqueName(final String name) throws FindException {
         if (name == null) throw new NullPointerException();
         if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
@@ -583,7 +569,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @throws CacheVeto
      */
     @Transactional(propagation=SUPPORTS, readOnly=true)
-    @Secured(operation=OperationType.READ)
     public ET getCachedEntity(final long objectid, int maxAge) throws FindException, CacheVeto {
         ET entity;
 
@@ -600,7 +585,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 entity = (ET)new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
                     public Object doInTransaction(TransactionStatus transactionStatus) {
                         try {
-                            return findEntity(objectid);
+                            return findByPrimaryKey(objectid);
                         } catch (FindException e) {
 //                            transactionStatus.setRollbackOnly();
                             throw new RuntimeException(e);
@@ -630,7 +615,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 return null;
             } else if (currentVersion != cacheInfo.version) {
                 // Updated
-                ET thing = findEntity(cacheInfo.entity.getOid());
+                ET thing = findByPrimaryKey(cacheInfo.entity.getOid());
                 return thing == null ? null : checkAndCache(thing);
             }
         }

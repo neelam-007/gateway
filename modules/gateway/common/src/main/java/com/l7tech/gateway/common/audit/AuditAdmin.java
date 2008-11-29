@@ -1,7 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.gateway.common.audit;
 
 import static com.l7tech.objectmodel.EntityType.AUDIT_RECORD;
@@ -40,7 +39,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @throws FindException if there was a problem retrieving Audit records from the database
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(stereotype=FIND_ENTITY)
     @Administrative(licensed=false)
     AuditRecord findByPrimaryKey(long oid) throws FindException;
 
@@ -114,7 +113,7 @@ public interface AuditAdmin extends GenericLogAdmin {
     /**
      * Retrieves the Audit Archiver FTP destination configured for the cluster.
      */
-    @Secured(stereotype=FIND_ENTITY_BY_ATTRIBUTE)
+    @Secured(stereotype=FIND_ENTITY)
     ClusterProperty getFtpAuditArchiveConfig();
 
     /**

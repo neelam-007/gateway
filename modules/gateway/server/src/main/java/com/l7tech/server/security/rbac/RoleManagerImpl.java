@@ -1,18 +1,18 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.objectmodel.EntityType;
-import static com.l7tech.objectmodel.EntityType.ANY;
-import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.ExceptionUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -32,11 +32,10 @@ import java.util.regex.Pattern;
  * @author alex
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor = Throwable.class)
-public class RoleManagerImpl
-        extends HibernateEntityManager<Role, EntityHeader>
-        implements RoleManager
-{
+public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> implements RoleManager, RbacServices {
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
+
+    private RbacServices rbacServices;
 
     private static RoleManagerIdentitySource groupProvider = new RoleManagerIdentitySource(){
         public void validateRoleAssignments() throws UpdateException {}
@@ -113,31 +112,7 @@ public class RoleManagerImpl
                                                  final Set<EntityType> requiredTypes)
             throws FindException
     {
-        if (authenticatedUser == null) throw new IllegalArgumentException();
-        if (requiredTypes == null || requiredTypes.isEmpty()) throw new IllegalArgumentException();
-        if (requiredOperation == null || !OperationType.ALL_CRUD.contains(requiredOperation)) throw new IllegalArgumentException();
-
-        final Map<EntityType, Boolean> permittedTypes = new HashMap<EntityType, Boolean>();
-
-        for (Role role : getAssignedRoles(authenticatedUser)) {
-            for (Permission perm : role.getPermissions()) {
-                if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
-                if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
-                EntityType ptype = perm.getEntityType();
-
-                if (ptype == ANY) return true; // Permitted against all types
-                permittedTypes.put(ptype, true); // Permitted for this type
-            }
-        }
-
-        if (permittedTypes.isEmpty()) return false; // Not permitted on any type
-
-        for (EntityType requiredType : requiredTypes) {
-            Boolean permittedType = permittedTypes.get(requiredType);
-            if (permittedType == null) return false; // Required type is not permitted
-        }
-
-        return true;
+        return rbacServices.isPermittedForEntitiesOfTypes(authenticatedUser, requiredOperation, requiredTypes);
     }
 
 
@@ -147,17 +122,7 @@ public class RoleManagerImpl
                                                  final EntityType requiredType)
             throws FindException
     {
-        if (authenticatedUser == null || requiredType == null) throw new NullPointerException();
-        logger.log(Level.FINE, "Checking for permission to {0} any {1}", new Object[] { requiredOperation.getName(), requiredType.getName()});
-        for (Role role : getAssignedRoles(authenticatedUser)) {
-            for (Permission perm : role.getPermissions()) {
-                if (perm.getScope() != null && !perm.getScope().isEmpty()) continue; // This permission is too restrictive
-                if (perm.getOperation() != requiredOperation) continue; // This permission is for a different operation
-                EntityType ptype = perm.getEntityType();
-                if (ptype == ANY || ptype == requiredType) return true;
-            }
-        }
-        return false;
+        return rbacServices.isPermittedForAnyEntityOfType(authenticatedUser, requiredOperation, requiredType);
     }
 
     @Override
@@ -187,6 +152,7 @@ public class RoleManagerImpl
                 }
             } catch (FindException fe) {
                 // fail on update below
+                //noinspection ThrowableResultOfMethodCallIgnored
                 logger.log(Level.FINE, "Find error when merging assignments for role", ExceptionUtils.getDebugException(fe));
             }
         }
@@ -208,25 +174,10 @@ public class RoleManagerImpl
 
     @Transactional(readOnly=true)
     public boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException {
-        if (user == null || entity == null || operation == null) throw new NullPointerException();
-        if (operation == OperationType.OTHER && otherOperationName == null) throw new IllegalArgumentException("otherOperationName must be specified when operation == OTHER");
-        logger.log(Level.FINE, "Checking for permission to {0} {1} #{2}", new Object[] { operation.getName(), entity.getClass().getSimpleName(), entity.getId()});
-
-        Collection<Role> assignedRoles = getAssignedRoles(user);
-        for (Role role : assignedRoles) {
-            for (Permission perm : role.getPermissions()) {
-                if (perm.matches(entity) && perm.getOperation() == operation) {
-                    if (operation != OperationType.OTHER && operation != OperationType.NONE) {
-                        return true;
-                    } else {
-                        if (otherOperationName.equals(perm.getOtherOperationName())) return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return rbacServices.isPermittedForEntity(user, entity, operation, otherOperationName);
     }
 
+    @Transactional(readOnly=true)
     public Role findByTag(final Role.Tag tag) throws FindException {
         if ( tag == null ) throw new IllegalArgumentException("tag must not be null");
 
@@ -240,20 +191,7 @@ public class RoleManagerImpl
         return role;
     }
 
-    public Role findEntitySpecificRole(PermissionMatchCallback callback) throws FindException {
-        for (Role role : findAll()) {
-            boolean match = !role.getPermissions().isEmpty();
-            for (Permission perm : role.getPermissions()) {
-                match = match && callback.matches(perm);
-                if (!match) break;
-            }
-
-            if (match) return role;
-        }
-
-        return null;
-    }
-
+    @Transactional(readOnly=true)
     public Role findEntitySpecificRole(final EntityType etype, final long entityId) throws FindException {
         return (Role) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
             protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
@@ -263,17 +201,6 @@ public class RoleManagerImpl
                 return crit.uniqueResult();
             }
         });
-    }
-
-    public void deleteEntitySpecificRole(PermissionMatchCallback callback) throws DeleteException {
-        try {
-            Role role = findEntitySpecificRole(callback);
-            if (role == null) return;
-            logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
-            delete(role);
-        } catch (FindException e) {
-            throw new DeleteException("Couldn't find Roles for this Entity", e);
-        }
     }
 
     public void deleteEntitySpecificRole(EntityType etype, final long entityOid) throws DeleteException {
@@ -303,6 +230,7 @@ public class RoleManagerImpl
         }
     }
 
+    @Transactional(readOnly=true)
     private long getOidForAssignment(Set<RoleAssignment> roleAssignments, RoleAssignment assignment) {
         long oid = RoleAssignment.DEFAULT_OID;
 
@@ -317,58 +245,18 @@ public class RoleManagerImpl
         return oid;
     }
 
-    private boolean isPermitted(Collection<Role> assignedRoles, Entity entity, OperationType operation, String otherOperationName) {
-        for (Role role : assignedRoles) {
-            for (Permission perm : role.getPermissions()) {
-                if (perm.matches(entity) && perm.getOperation() == operation) {
-                    if (operation != OperationType.OTHER && operation != OperationType.NONE) {
-                        return true;
-                    } else {
-                        if (otherOperationName.equals(perm.getOtherOperationName())) return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
 
+    @Transactional(readOnly=true)
     public <T extends OrganizationHeader> Iterable<T> filterPermittedHeaders(User authenticatedUser,
                                                                        OperationType requiredOperation,
                                                                        Iterable<T> headers,
                                                                        EntityFinder entityFinder)
             throws FindException
     {
-        if (authenticatedUser == null) throw new IllegalArgumentException();
-        if (requiredOperation == null || !OperationType.ALL_CRUD.contains(requiredOperation)) throw new IllegalArgumentException();
-
-        // If we already have blanket permission for this type, just return the original collection
-        // however as the SSM now shows services and policies together, blanket only applies if the user has it on
-        // all entites which can be shown in the tree
-        if (isPermittedForAnyEntityOfType(authenticatedUser, requiredOperation, EntityType.SERVICE)
-                && isPermittedForAnyEntityOfType(authenticatedUser, requiredOperation, EntityType.POLICY)) return headers;
-
-        // Do this outside the loop so performance isn't appalling
-        final Collection<Role> userRoles = getAssignedRoles(authenticatedUser);
-        if (userRoles.isEmpty()) return Collections.emptyList();
-
-        final List<T> result = new LinkedList<T>();
-        for (final T header : headers) {
-            final Entity entity;
-            try {
-                entity = entityFinder.find(header);
-                if (entity == null) continue;
-            } catch (FindException e) {
-                logger.log(Level.WARNING, MessageFormat.format("Unable to find entity for header: {0}; skipping", header), e);
-                continue;
-            }
-
-            if (isPermitted(userRoles, entity, requiredOperation, null))
-                result.add(header);
-        }
-
-        return result;
+        return rbacServices.filterPermittedHeaders(authenticatedUser, requiredOperation, headers, entityFinder);
     }
 
+    @SuppressWarnings({ "ThrowInsideCatchBlockWhichIgnoresCaughtException" })
     public void deleteRoleAssignmentsForUser(final User user) throws DeleteException {
         try {
             Collection<Role> roles = getAssignedRoles(user);
@@ -383,5 +271,15 @@ public class RoleManagerImpl
             logger.log(Level.INFO, "Failed to update role for assigned roles deletion");
             throw new DeleteException("Failed to delete role assignment for user '" + user.getLogin() +"'", ue.getCause());
         }
+    }
+
+    public void setRbacServices(RbacServicesImpl rbacServices) {
+        this.rbacServices = rbacServices;
+    }
+
+    @Override
+    protected void initDao() throws Exception {
+        super.initDao();
+        if (rbacServices == null) throw new IllegalStateException("rbacServices component is missing");
     }
 }

@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.identity.cert;
 
@@ -16,13 +14,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Collection;
 
-/**
- * @author emil
- * @version Dec 15, 2004
- */
 public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager {
-    
-
     public Collection<TrustedCert> findBySubjectDn(String dn) throws FindException {
         throw new RuntimeException("Not implemented");
     }
@@ -56,13 +48,5 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,Entity
 
     public Class getInterfaceClass() {
         return TrustedCert.class;
-    }
-
-    public EntityType getEntityType() {
-        return EntityType.TRUSTED_CERT;
-    }
-
-    public String getTableName() {
-        return "trusted_certs";
     }
 }

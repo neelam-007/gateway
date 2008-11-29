@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server;
 
@@ -13,6 +13,7 @@ import java.util.*;
 public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends EntityHeader> implements EntityManager<ET, EH> {
     protected final Map<Long, ET> entities;
     protected final Map<Long, EH> headers;
+    private final boolean canHasNames = NamedEntity.class.isAssignableFrom(getImpClass());
     
     private long nextOid;
 
@@ -22,17 +23,17 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         this.nextOid = 1;
     }
 
-    public EntityManagerStub(ET[] entities) {
+    public EntityManagerStub(ET... entitiesIn) {
         long maxOid = 0;
-        Map<Long, ET> es = new LinkedHashMap<Long, ET>();
-        Map<Long, EH> hs = new LinkedHashMap<Long, EH>();
-        for (ET entity : entities) {
-            es.put(entity.getOid(), entity);
-            hs.put(entity.getOid(), header(entity));
+        Map<Long, ET> entities = new LinkedHashMap<Long, ET>();
+        Map<Long, EH> headers = new LinkedHashMap<Long, EH>();
+        for (ET entity : entitiesIn) {
+            entities.put(entity.getOid(), entity);
+            headers.put(entity.getOid(), header(entity));
             maxOid = Math.max(maxOid, entity.getOid());
         }
-        this.entities = es;
-        this.headers = hs;
+        this.entities = entities;
+        this.headers = headers;
         this.nextOid = ++maxOid;
     }
 
@@ -60,14 +61,25 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     }
 
     public synchronized Collection<EH> findAllHeaders(int offset, int limit) throws FindException {
-        EH[] dest = (EH[])  new EntityHeader[limit];
+        EH[] dest = (EH[]) new EntityHeader[limit];
         EH[] all = (EH[]) headers.values().toArray(new EntityHeader[limit]);
         System.arraycopy(all, offset, dest, 0, limit);
         return Arrays.asList(dest);
     }
 
     public ET findByUniqueName(String name) throws FindException {
-        throw new UnsupportedOperationException();
+        if (!canHasNames) throw new FindException(getImpClass() + " has no name");
+        ET got = null;
+        for (ET et : entities.values()) {
+            if (!(et instanceof NamedEntity)) throw new FindException(String.format("I was told that I would get NamedEntities but I found a %s and I'm going to burn down the building", et.getClass().getSimpleName()));
+
+            NamedEntity namedEntity = (NamedEntity)et;
+            if (name.equals(namedEntity.getName())) {
+                if (got != null) throw new FindException(String.format("Found two %s with name %s", getImpClass().getSimpleName(), name));
+                got = et;
+            }
+        }
+        return got;
     }
 
     public synchronized Collection<ET> findAll() throws FindException {
@@ -87,7 +99,7 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         return Collections.unmodifiableMap(versions);
     }
 
-    public ET getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
+    public ET getCachedEntity(long o, int maxAge) throws FindException {
         return entities.get(o);
     }
 
@@ -115,10 +127,6 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         headers.remove(entity.getOid());
     }
 
-    public ET findEntity(long l) throws FindException {
-        return entities.get(l);
-    }
-
     public Class<? extends Entity> getImpClass() {
         return PersistentEntity.class;
     }
@@ -128,10 +136,10 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     }
 
     public EntityType getEntityType() {
-        return EntityType.ANY;
+        return EntityTypeRegistry.getEntityType(getImpClass());
     }
 
     public String getTableName() {
-        throw new UnsupportedOperationException();
+        return getEntityType().name().toLowerCase();
     }
 }

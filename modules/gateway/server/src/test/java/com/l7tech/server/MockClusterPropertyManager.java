@@ -6,9 +6,6 @@ import com.l7tech.server.cluster.ClusterPropertyManager;
 
 /**
  * Mock CPM, not currently functional, should probably use serverconfig.properties to get default values.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class MockClusterPropertyManager
         extends EntityManagerStub<ClusterProperty,EntityHeader>
@@ -30,10 +27,6 @@ public class MockClusterPropertyManager
         return null;
     }
 
-    public ClusterProperty findByUniqueName(String name) throws FindException {
-        return null;
-    }
-
     public Class getImpClass() {
         return ClusterProperty.class;
     }
@@ -42,11 +35,4 @@ public class MockClusterPropertyManager
         return ClusterProperty.class;
     }
 
-    public EntityType getEntityType() {
-        return EntityType.ANY;
-    }
-
-    public String getTableName() {
-        return "cluster_properties";
-    }
 }

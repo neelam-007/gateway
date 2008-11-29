@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.policy;
 
@@ -77,11 +77,11 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         }
     }
 
-    public Collection<PolicyHeader> findHeadersWithTypes(final EnumSet<PolicyType> types) throws FindException{
+    public Collection<PolicyHeader> findHeadersWithTypes(final Set<PolicyType> types) throws FindException{
         return this.findHeadersWithTypes(types, false);
     }
 
-    public Collection<PolicyHeader> findHeadersWithTypes(final EnumSet<PolicyType> types, boolean includeAliases)
+    public Collection<PolicyHeader> findHeadersWithTypes(final Set<PolicyType> types, boolean includeAliases)
             throws FindException{
 
         //noinspection unchecked
@@ -128,7 +128,7 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
                 for(PolicyAlias pa: aliases){
                     PolicyHeader newSH = new PolicyHeader(ph);
                     newSH.setAlias(true);
-                    newSH.setFolderOid(pa.getFolderOid());
+                    newSH.setFolderOid(pa.getFolder().getOid());
                     returnHeaders.add(newSH);
                 }
             }
@@ -210,10 +210,10 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         newRole.setEntityOid(policy.getOid());
 
         // RUD this policy
-        newRole.addPermission(READ, POLICY, policy.getId()); // Read this policy
-        newRole.addPermission(UPDATE, POLICY, policy.getId()); // Update this policy
-        newRole.addPermission(DELETE, POLICY, policy.getId()); // Delete this policy
-        newRole.addPermission(READ, SERVICE_TEMPLATE, null);
+        newRole.addEntityPermission(READ, POLICY, policy.getId()); // Read this policy
+        newRole.addEntityPermission(UPDATE, POLICY, policy.getId()); // Update this policy
+        newRole.addEntityPermission(DELETE, POLICY, policy.getId()); // Delete this policy
+        newRole.addEntityPermission(READ, SERVICE_TEMPLATE, null);
 
         if (currentUser != null) {
             // See if we should give the current user admin permission for this policy

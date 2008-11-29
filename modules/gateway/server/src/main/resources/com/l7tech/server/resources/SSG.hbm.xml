@@ -1,12 +1,11 @@
 <?xml version="1.0"?>
-<!DOCTYPE hibernate-mapping PUBLIC
-    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
-    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!DOCTYPE hibernate-mapping
+        PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <!--
-  This is the unified (PostgreSQL & MySQL) version of the Hibernate mapping file.
+  This is the vestigial Hibernate mapping file for the remaining non-annotation-driven persistent entities.
 -->
-
 <hibernate-mapping>
     <typedef class="com.l7tech.server.util.GenericEnumUserType" name="policy_type">
         <param name="enumClass">com.l7tech.policy.PolicyType</param>
@@ -36,9 +35,11 @@
         <property name="routingUri" column="routing_uri" type="string"/>
         <property name="httpMethods" column="http_methods" type="http_methods_type"/>
         <property name="laxResolution" column="lax_resolution" type="boolean"/>
+
         <many-to-one class="com.l7tech.policy.Policy"
                      name="policy" lazy="false" column="policy_oid" unique="true" cascade="persist,merge,save-update,delete"/>
-        <property name="folderOid" column="folder_oid" type="long"/>
+
+        <many-to-one name="folder" column="folder_oid"/>
     </class>
 
     <class name="com.l7tech.gateway.common.service.PublishedServiceAlias" table="published_service_alias" lazy="false">
@@ -46,8 +47,10 @@
             <generator class="hilo"/>
         </id>
         <version name="version" type="int"/>
-        <property name="folderOid" column="folder_oid" type="long"/>
+
         <property name="entityOid" column="published_service_oid" type="long"/>
+
+        <many-to-one name="folder" column="folder_oid"/>
     </class>
 
     <class name="com.l7tech.policy.Policy" table="policy" lazy="false">
@@ -61,7 +64,8 @@
         <property name="xml" column="xml" type="text"/>
         <property name="soap" column="soap" type="boolean"/>
         <property name="internalTag" column="internal_tag" type="string" length="64"/>
-        <property name="folderOid" column="folder_oid" type="long"/>
+
+        <many-to-one name="folder" column="folder_oid"/>
     </class>
 
     <class name="com.l7tech.policy.PolicyVersion" table="policy_version" lazy="false">
@@ -83,20 +87,22 @@
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
+
         <version name="version" type="int"/>
-        <property name="folderOid" column="folder_oid" type="long"/>
+
         <property name="entityOid" column="policy_oid" type="long"/>
+
+        <many-to-one name="folder" column="folder_oid"/>
     </class>
 
     <class name="com.l7tech.objectmodel.folder.Folder" table="folder" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
-        <property name="name" column="name" type="string"/>
-        <property name="parentFolderOid" column="parent_folder_oid" type="long"/>
-        <many-to-one class="com.l7tech.objectmodel.folder.Folder"
-                     name="parentFolder" lazy="false" column="parent_folder_oid" unique="true" insert="false" update="false"/>
 
+        <property name="name" column="name" type="string"/>
+
+        <many-to-one class="com.l7tech.objectmodel.folder.Folder" name="parentFolder" lazy="false" column="parent_folder_oid"/>
     </class>
 
     <class name="com.l7tech.server.service.resolution.ResolutionParameters" table="service_resolution" lazy="false">

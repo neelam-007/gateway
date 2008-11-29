@@ -3,29 +3,35 @@
  */
 package com.l7tech.gateway.common.service;
 
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.common.http.HttpMethod;
 import static com.l7tech.common.http.HttpMethod.*;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import org.xml.sax.InputSource;
 
+import javax.wsdl.BindingOperation;
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
-import javax.wsdl.BindingOperation;
-import javax.wsdl.xml.WSDLLocator;
 import javax.wsdl.extensions.ExtensibilityElement;
-import javax.wsdl.extensions.soap12.SOAP12Operation;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.soap12.SOAP12Operation;
+import javax.wsdl.xml.WSDLLocator;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -36,8 +42,7 @@ import java.util.logging.Logger;
  */
 @SuppressWarnings( { "NonJaxWsWebServices" } )
 @XmlRootElement
-public class PublishedService extends NamedEntityImp implements HasFolder
-{
+public class PublishedService extends NamedEntityImp implements HasFolder {
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
 
@@ -380,7 +385,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder
     /**
      * Check if the specified HTTP method is allowed with this published service.
      *
-     * @param methodName the method name to check.  Must not be null.
+     * @param method the method to check.  Must not be null.
      * @return true iff. the specified method is in the set of allowed methods for this published service.
      */
     public boolean isMethodAllowed(HttpMethod method) {
@@ -455,12 +460,12 @@ public class PublishedService extends NamedEntityImp implements HasFolder
         this.laxResolution = laxResolution;
     }
 
-    public Long getFolderOid() {
-        return folderOid;
+    public Folder getFolder() {
+        return folder;
     }
 
-    public void setFolderOid(Long policyFolderOid) {
-        this.folderOid = policyFolderOid;
+    public void setFolder(Folder folder) {
+        this.folder = folder;
     }
 
     /**
@@ -515,9 +520,9 @@ public class PublishedService extends NamedEntityImp implements HasFolder
     private boolean soap = true;
     private boolean internal = false;
     private String routingUri;
-    private EnumSet<HttpMethod> httpMethods = EnumSet.copyOf(METHODS_SOAP);
+    private Set<HttpMethod> httpMethods = EnumSet.copyOf(METHODS_SOAP);
     private boolean laxResolution;
-    private Long folderOid = -5002L;
+    private Folder folder;
 
     private transient WsdlStrategy wsdlStrategy;
     private transient Wsdl _parsedWsdl;
@@ -528,10 +533,6 @@ public class PublishedService extends NamedEntityImp implements HasFolder
 
     private static WSDLLocatorFactory WSDL_LOCATOR_FACTORY = null;
 
-
-    /**
-     * 
-     */
     private static class DefaultWsdlStrategy implements WsdlStrategy {
         public Wsdl parseWsdl(String uri, String wsdl) throws WSDLException {
             WSDLLocatorFactory wsdlLocatorFactory = WSDL_LOCATOR_FACTORY;

@@ -60,10 +60,12 @@ public class EditPermissionsDialog extends JDialog {
         setupButtonListeners();
         setupActionListeners();
 
-        if (permission.getOid() == Permission.DEFAULT_OID)
+        if (permission.getOid() == Permission.DEFAULT_OID) {
             setTitle("Create new Permission");
-        else
+        } else {
             setTitle("Edit Permission");
+            scopeField.setText(getScopeString(permission));
+        }
 
         pack();
         enableDisable();

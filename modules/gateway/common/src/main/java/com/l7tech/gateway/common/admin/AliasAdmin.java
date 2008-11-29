@@ -6,20 +6,14 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.SAVE_OR_UPDATE;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_HEADERS;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 
 /**
- * Created by IntelliJ IDEA.
- * User: darmstrong
- * Date: Aug 25, 2008
- * Time: 6:26:17 PM
- * To change this template use File | Settings | File Templates.
- */
-/**
  * Admin interface for managing aliased entities
+ *
+ * @author darmstrong
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types= {EntityType.SERVICE_ALIAS, EntityType.POLICY_ALIAS})
@@ -51,7 +45,7 @@ public interface AliasAdmin<HT extends Alias> {
      * @throws com.l7tech.objectmodel.FindException
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype= MethodStereotype.FIND_ENTITY_BY_ATTRIBUTE)
+    @Secured(stereotype= MethodStereotype.FIND_ENTITY)
     @Administrative(licensed=false)
     public HT findAliasByEntityAndFolder(final Long entityOid, final Long folderOid) throws FindException;
 

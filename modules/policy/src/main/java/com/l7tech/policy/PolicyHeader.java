@@ -20,7 +20,7 @@ public class PolicyHeader extends OrganizationHeader {
              policy.getName(),
              policy.getInternalTag(),
              policy.getGuid(),
-             policy.getFolderOid(),
+             policy.getFolder() == null ? null : policy.getFolder().getOid(),
              false);
     }
 

@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.*;
@@ -12,9 +15,6 @@ import java.io.Serializable;
 
 /**
  * The SecureSpan Gateway's API for managaging JMS connections and endpoints.
- *
- * @author alex
- * @version $Revision$
  */
 @Secured
 @Administrative
@@ -80,7 +80,7 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the connection from being retrieved
      */
     @Transactional(readOnly=true)
-    @Secured(types=JMS_CONNECTION, stereotype=MethodStereotype.FIND_BY_PRIMARY_KEY)
+    @Secured(types=JMS_CONNECTION, stereotype=MethodStereotype.FIND_ENTITY)
     JmsConnection findConnectionByPrimaryKey(long oid) throws FindException;
 
     /**
@@ -91,7 +91,7 @@ public interface JmsAdmin {
      * @throws FindException   if a database problem prevented the endpoint from being retrieved
      */
     @Transactional(readOnly=true)
-    @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_BY_PRIMARY_KEY)
+    @Secured(types=JMS_ENDPOINT, stereotype=MethodStereotype.FIND_ENTITY)
     JmsEndpoint findEndpointByPrimaryKey(long oid) throws FindException;
 
     /**

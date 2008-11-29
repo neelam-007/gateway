@@ -1,28 +1,28 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.util.TextUtils;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.regex.Matcher;
-
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.Cascade;
 
 /**
  * A Role groups zero or more {@link Permission}s so they can be assigned as a whole
@@ -32,12 +32,11 @@ import org.hibernate.annotations.Cascade;
  * <li>They can be assigned to multiple identites;
  * <li>They may in future be assigned at runtime, rather than statically.
  * </ul>
- * @author alex
  */
 @javax.persistence.Entity
 @Table(name="rbac_role")
 public class Role extends NamedEntityImp implements Comparable<Role> {
-    public static enum Tag { ADMIN };
+    public static enum Tag { ADMIN }
 
     private Set<Permission> permissions = new HashSet<Permission>();
     private Set<RoleAssignment> roleAssignments = new HashSet<RoleAssignment>();
@@ -90,9 +89,26 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * {@link ObjectIdentityPredicate} for the provided ID, or no scope (allowing any instance of the supplied type)
      * if id == null.
      */
-    public void addPermission(OperationType operation, EntityType etype, String id) {
+    public void addEntityPermission(OperationType operation, EntityType etype, String id) {
         Permission perm = new Permission(this, operation, etype);
         if (id != null) perm.getScope().add(new ObjectIdentityPredicate(perm, id));
+        permissions.add(perm);
+    }
+
+    /**
+     * Adds a new Permission granting the specified privilege with its scope set to a {@link FolderPredicate} for the
+     * provided folder.
+     *
+     * @param operation  the operation that the permission grants access to
+     * @param etype      the type of entity to which the permission applies
+     * @param folder     the folder containing entities to which the permission applies
+     * @param transitive <code>true</code> if the permission should also apply to entities in subfolders of the
+     *                   provided folder; <code>false</code> if it only applies to entities directly in the provided
+     *                   folder.
+     */
+    public void addFolderPermission(OperationType operation, EntityType etype, Folder folder, boolean transitive) {
+        Permission perm = new Permission(this, operation, etype);
+        perm.getScope().add(new FolderPredicate(perm, folder, transitive));
         permissions.add(perm);
     }
 
@@ -102,11 +118,9 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * @throws IllegalArgumentException if the provided attribute name doesn't match a getter on the class represented 
      *         by the provided EntityType.
      */
-    public void addPermission(OperationType operation,
-                              EntityType etype,
-                              String attr,
-                              String name)
-                       throws IllegalArgumentException {
+    public void addAttributePermission(OperationType operation, EntityType etype, String attr, String name)
+        throws IllegalArgumentException
+    {
         Permission perm = new Permission(this, operation, etype);
         perm.getScope().add(new AttributePredicate(perm, attr, name));
         permissions.add(perm);

@@ -26,18 +26,15 @@ import java.awt.*;
  * Action for creating a new service/policy folder.
  */
 public class CreateFolderAction extends SecureAction {
-    static Logger log = Logger.getLogger(CreateFolderAction.class.getName());
+    private static Logger log = Logger.getLogger(CreateFolderAction.class.getName());
 
-    private long parentFolderOid;
-    private AbstractTreeNode parentNode;
-    private FolderAdmin folderAdmin;
+    private final AbstractTreeNode parentNode;
+    private final FolderAdmin folderAdmin;
+    private final Folder parentFolder;
 
-    public CreateFolderAction(long parentFolderOid,
-                                    AbstractTreeNode parentNode,
-                                    FolderAdmin folderAdmin)
-    {
+    public CreateFolderAction(Folder parentFolder, AbstractTreeNode parentNode, FolderAdmin folderAdmin) {
         super(new AttemptedCreate(EntityType.FOLDER), UI_PUBLISH_SERVICE_WIZARD);
-        this.parentFolderOid = parentFolderOid;
+        this.parentFolder = parentFolder;
         this.parentNode = parentNode;
         this.folderAdmin = folderAdmin;
     }
@@ -63,8 +60,6 @@ public class CreateFolderAction extends SecureAction {
         return "com/l7tech/console/resources/folder.gif";
     }
 
-    /**
-     */
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
         PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, "");
@@ -72,7 +67,7 @@ public class CreateFolderAction extends SecureAction {
         dialog.setVisible(true);
 
         if(dialog.isConfirmed()) {
-            Folder folder = new Folder(dialog.getName(), parentFolderOid);
+            Folder folder = new Folder(dialog.getName(), parentFolder);
             try {
                 folder.setOid(folderAdmin.saveFolder(folder));
 
@@ -80,7 +75,7 @@ public class CreateFolderAction extends SecureAction {
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     FolderHeader header = new FolderHeader(folder);
-                    final AbstractTreeNode sn = new FolderNode(header);
+                    final AbstractTreeNode sn = new FolderNode(header, parentFolder);
                     model.insertNodeInto(sn, parentNode, parentNode.getInsertPosition(sn, RootNode.getComparator()));
 
                     SwingUtilities.invokeLater(new Runnable() {

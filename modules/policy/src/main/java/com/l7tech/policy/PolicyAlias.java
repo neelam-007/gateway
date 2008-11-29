@@ -1,20 +1,16 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.Alias;
+import com.l7tech.objectmodel.folder.Folder;
 
 /**
- * Created by IntelliJ IDEA.
- * User: darmstrong
- * Date: Aug 25, 2008
- * Time: 9:14:36 AM
+ * @author darmstrong
  */
 public class PolicyAlias extends Alias<Policy> {
-
     @Deprecated // For Serialization and persistence only
-    public PolicyAlias(){
-    }
+    protected PolicyAlias() { }
 
-    public PolicyAlias(Policy policy, long folderOid) {
-        super(policy, folderOid);
+    public PolicyAlias(Policy policy, Folder folder) {
+        super(policy, folder);
     }
 }

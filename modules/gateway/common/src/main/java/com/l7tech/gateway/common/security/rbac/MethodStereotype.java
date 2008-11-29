@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.gateway.common.security.rbac;
 
@@ -35,21 +35,10 @@ public enum MethodStereotype {
     FIND_ENTITIES,
 
     /**
-     * The method returns one {@link com.l7tech.objectmodel.Entity}, and takes a primary key (e.g. a long)
-     * as a {@link Secured#relevantArg} argument.  Caller must hold {@link OperationType#READ} permission
-     * on the returned entity.
-     */
-    FIND_BY_PRIMARY_KEY,
-
-    /**
-     * The method returns one {@link com.l7tech.objectmodel.Entity}, and takes an attribute value as a
-     * {@link Secured#relevantArg} argument.  Caller must hold {@link OperationType#READ} permission
-     * on the returned entity.
-     *
-     * The method returns one {@link com.l7tech.objectmodel.Entity}.  Caller must hold {@link OperationType#READ}
+     * The method returns one {@link com.l7tech.objectmodel.Entity}. Caller must hold {@link OperationType#READ}
      * permission on the returned entity.
      */
-    FIND_ENTITY_BY_ATTRIBUTE,
+    FIND_ENTITY,
 
     /**
      * A {@link Secured#relevantArg} argument must be an {@link com.l7tech.objectmodel.Entity}, and the caller must hold 
@@ -138,6 +127,5 @@ public enum MethodStereotype {
      * An {@link com.l7tech.gateway.common.security.rbac.Secured#entityResolverClass()} must be specified,
      * otherwise an exception will be thrown.
      */
-    NONE,
-    ;
+    NONE
 }

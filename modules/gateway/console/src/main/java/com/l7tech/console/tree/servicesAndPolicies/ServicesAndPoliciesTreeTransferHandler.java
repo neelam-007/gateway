@@ -2,25 +2,25 @@ package com.l7tech.console.tree.servicesAndPolicies;
 
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.gateway.common.admin.AliasAdmin;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.admin.AliasAdmin;
+import com.l7tech.objectmodel.folder.HasFolderOid;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
-import javax.swing.tree.*;
-import java.awt.datatransfer.Transferable;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.awt.datatransfer.DataFlavor;
-import java.util.List;
+import java.awt.datatransfer.Transferable;
 import java.util.Enumeration;
+import java.util.List;
 
 /**
  * TransferHandler for the Services and Policies tree.
@@ -53,7 +53,6 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
             //Before showing what transferNodes were just cut, we need to uncut any transferNodes currently cut
             ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)c;
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             tree.setAllChildrenUnCut();
 
             for(AbstractTreeNode atn: transferNodes){
@@ -90,11 +89,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             //determine that the drop location is a folder node base.
             //NOTE: RootNode is also an instance of FolderNodeBase
             TreePath path = dropZone.getPath();
-            if(!(path.getLastPathComponent() instanceof FolderNodeBase)) {
-                return false;
-            } else {
-                return true;
-            }
+            return path.getLastPathComponent() instanceof FolderNodeBase;
         } else {
             return false;
         }
@@ -128,16 +123,17 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
                     for(AbstractTreeNode transferNode : nodes) {
                         AbstractTreeNode oldParent = (AbstractTreeNode)transferNode.getParent();
-                        
+
+                        final Folder newParentFolder = newParent.getFolder();
                         if(transferNode instanceof FolderNode) {
                             FolderNode child = (FolderNode) transferNode;
-                            Folder folder = new Folder(child.getName(), newParent.getOid());
-                            folder.setOid(child.getOid());
+                            Folder movedFolder = child.getFolder();
+                            movedFolder.setParentFolder(newParentFolder);
                             try {
-                                Registry.getDefault().getFolderAdmin().saveFolder(folder);
+                                Registry.getDefault().getFolderAdmin().saveFolder(movedFolder);
                             } catch(ConstraintViolationException e) {
                                 DialogDisplayer.showMessageDialog(tree,
-                                                 "Folder '"+folder.getName()+"' already exists.",
+                                                 "Folder '"+movedFolder.getName()+"' already exists.",
                                                  "Folder Already Exists",
                                                  JOptionPane.WARNING_MESSAGE, null);
                                 return false;
@@ -149,10 +145,10 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             OrganizationHeader oH = (OrganizationHeader) childObj;
 
                             //See if an node already representing this entity already exists in this folder location for this service
-                            if(parentNode instanceof FolderNode){
+                            if (parentNode instanceof FolderNode) {
                                 FolderNode fn = (FolderNode) parentNode;
-                                if(fn.isEntityAChildNode(oH.getOid())){
-                                    if(tree != null){
+                                if (fn.isEntityAChildNode(oH.getOid())) {
+                                    if (tree != null) {
                                         DialogDisplayer.showMessageDialog(tree,
                                                                          "Cannot move an entity with another entity (alias or original) in the same folder",
                                                                          "Move Error",
@@ -168,30 +164,27 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             }
 
                             Entity entity = childTransferNode.getEntity();
-                            if(!(entity instanceof HasFolder)) return false;
+                            if (!(entity instanceof HasFolderOid || entity instanceof HasFolder)) return false;
 
-                            if(childTransferNode instanceof ServiceNodeAlias || childTransferNode instanceof PolicyEntityNodeAlias){
+                            if (childTransferNode instanceof ServiceNodeAlias || childTransferNode instanceof PolicyEntityNodeAlias) {
                                 //With the entity oid and the old folder oid we can find the actual alias
                                 //which we need to update
                                 Object userObj = oldParent.getUserObject();
                                 if(!(userObj instanceof FolderHeader)) return false;
                                 FolderHeader fh = (FolderHeader) userObj;
                                 AliasAdmin aliasAdmin = null;
-                                if(childTransferNode instanceof ServiceNode){
+                                if(childTransferNode instanceof ServiceNode) {
                                     aliasAdmin = Registry.getDefault().getServiceManager();
-                                }else if(childTransferNode instanceof PolicyEntityNode){
+                                } else if(childTransferNode instanceof PolicyEntityNode) {
                                     aliasAdmin = Registry.getDefault().getPolicyAdmin();
                                 }
                                 Alias alias = aliasAdmin.findAliasByEntityAndFolder(Long.valueOf(entity.getId()), fh.getOid());
-                                if(alias == null){
-                                    DialogDisplayer.showMessageDialog(tree,
-                                      "Cannot find alias",
-                                      "Find Error",
-                                      JOptionPane.ERROR_MESSAGE, null);
+                                if(alias == null) {
+                                    DialogDisplayer.showMessageDialog(tree, "Cannot find alias", "Find Error", JOptionPane.ERROR_MESSAGE, null);
                                     return false;
                                 }
                                 //now update the alias
-                                alias.setFolderOid(newParent.getOid());
+                                alias.setFolder(newParentFolder);
                                 aliasAdmin.saveAlias(alias);
 
                                 //Update the OrganizationHeader representing the alias
@@ -200,14 +193,14 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                                 //folder and alias properties
                                 OrganizationHeader header = (OrganizationHeader) childTransferNode.getUserObject();
                                 header.setFolderOid(newParent.getOid());
-                            }else{
-                                HasFolder o = (HasFolder) entity;
+                            } else if (entity instanceof HasFolderOid) {
+                                HasFolderOid o = (HasFolderOid) entity;
                                 o.setFolderOid(newParent.getOid());
-                                if(childTransferNode instanceof ServiceNode){
-                                    Registry.getDefault().getServiceManager().savePublishedService((PublishedService) entity);
-                                }else if(childTransferNode instanceof PolicyEntityNode){
-                                    Registry.getDefault().getPolicyAdmin().savePolicy((Policy) entity);
-                                }
+                                saveIt(childTransferNode, entity);
+                            } else if (entity instanceof HasFolder) {
+                                HasFolder o = (HasFolder)entity;
+                                o.setFolder(newParentFolder);
+                                saveIt(childTransferNode, entity);
                             }
                             childTransferNode.updateUserObject();
                         }
@@ -256,5 +249,14 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             }
         }
         return true;
+    }
+
+    private void saveIt(EntityWithPolicyNode childTransferNode, Entity entity)
+        throws UpdateException, SaveException, VersionException, PolicyAssertionException {
+        if (childTransferNode instanceof ServiceNode) {
+            Registry.getDefault().getServiceManager().savePublishedService((PublishedService) entity);
+        } else if(childTransferNode instanceof PolicyEntityNode) {
+            Registry.getDefault().getPolicyAdmin().savePolicy((Policy) entity);
+        }
     }
 }

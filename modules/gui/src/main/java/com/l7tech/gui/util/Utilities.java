@@ -1,6 +1,3 @@
-/*
- * $Header$
- */
 package com.l7tech.gui.util;
 
 import javax.swing.*;
@@ -24,7 +21,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 /**
  * This class is a bag of utilites shared by panels.
@@ -33,8 +29,6 @@ import java.util.logging.Logger;
  * @noinspection unchecked,RedundantArrayCreation,UnnecessaryUnboxing,ForLoopReplaceableByForEach
  */
 public class Utilities {
-    private static final Logger logger = Logger.getLogger(Utilities.class.getName());
-
     public static final String CONTEXT_CUT = "Cut";
     public static final String CONTEXT_COPY = "Copy";
     public static final String CONTEXT_PASTE = "Paste";
@@ -56,11 +50,8 @@ public class Utilities {
      *
      * @param labels an array of labels to set the same size.
      */
-    public static void equalizeLabelSizes(JLabel[] labels) {
-
-        if (labels == null || labels.length == 0) {
-            return;
-        }
+    public static void equalizeLabelSizes(JLabel... labels) {
+        if (labels == null || labels.length == 0) return;
         // Get the largest width and height
         Dimension maxSize = new Dimension(0, 0);
         Rectangle2D textBounds;
@@ -97,7 +88,7 @@ public class Utilities {
      *
      * @param buttons the array of buttons to eqalize the size for.
      */
-    public static void equalizeButtonSizes(javax.swing.AbstractButton[] buttons) {
+    public static void equalizeButtonSizes(javax.swing.AbstractButton... buttons) {
         if (buttons == null || buttons.length == 0) {
             return;
         }
@@ -167,7 +158,7 @@ public class Utilities {
      *
      * @param components instances of JComponent
      */
-    public static void equalizeComponentSizes(JComponent[] components) {
+    public static void equalizeComponentSizes(JComponent... components) {
         // Get the largest width and height
         int i;
         Dimension maxPreferred = new Dimension(0, 0);
@@ -196,7 +187,7 @@ public class Utilities {
      *
      * @param components instances of JComponent
      */
-    public static void equalizeComponentWidth(JComponent[] components) {
+    public static void equalizeComponentWidth(JComponent... components) {
         // Get the largest width and height
         int i;
         Dimension maxPreferred = new Dimension(0, 0);
@@ -227,7 +218,7 @@ public class Utilities {
      *
      * @param components instances of Component
      */
-    public static void equalizeComponentSizes(Component[] components) {
+    public static void equalizeComponentSizes(Component... components) {
         // Get the largest width and height
         int i;
         Dimension maxPreferred = new Dimension(0, 0);
@@ -644,6 +635,7 @@ public class Utilities {
      * @throws InterruptedException if the task was canceled by the user, or the Swing thread was interrupted
      * @throws java.lang.reflect.InvocationTargetException if the callable terminated with any exception other than InterruptedException
      */
+    @SuppressWarnings({ "SynchronizationOnLocalVariableOrMethodParameter" })
     public static <T> T doWithDelayedCancelDialog(final Callable<T> callable, final JDialog cancelDlg, long msBeforeDlg)
             throws InterruptedException, InvocationTargetException
     {
@@ -1226,7 +1218,7 @@ public class Utilities {
      * @param listeners The listeners to pass the event
      * @return The dispatching listener           
      */
-    public static ActionListener getDispatchingActionListener(final Component component, final ActionListener[] listeners) {
+    public static ActionListener getDispatchingActionListener(final Component component, final ActionListener... listeners) {
         return new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if ( component.isEnabled() ) {

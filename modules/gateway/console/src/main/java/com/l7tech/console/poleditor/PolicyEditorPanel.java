@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.poleditor;
 
@@ -583,13 +583,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 JButton buttonUDDIImport = new JButton(getUDDIImportAction());
                 this.add(buttonUDDIImport);
             }
-        }
-
-        private void renderPolicyView() {
-            policyTree.getModel().removeTreeModelListener(policyTreeModellistener);
-            renderPolicy();
-            validatePolicy();
-            policyTree.getModel().addTreeModelListener(policyTreeModellistener);
         }
 
         private void setSaveButtonsEnabled(boolean enabled) {
@@ -1184,7 +1177,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
     }
 
-    private void updateIncludeAssertions(Assertion rootAssertion, HashMap<String, String> fragmentNameGuidMap) {
+    private void updateIncludeAssertions(Assertion rootAssertion, Map<String, String> fragmentNameGuidMap) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {

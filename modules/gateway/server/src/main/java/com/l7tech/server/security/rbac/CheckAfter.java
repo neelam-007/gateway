@@ -13,6 +13,9 @@ enum CheckAfter {
     /** Return value must be Entity; check permission to execute operation against it */
     ENTITY,
 
+    /** Return value must be EntityHeader; check permission to execute operation against its referent Entity */
+    HEADER,
+
     /**
      * Return value is a Collection&lt;Entity&gt;; check permission to execute operation
      * against all entities in collection

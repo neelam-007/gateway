@@ -12,8 +12,7 @@ import java.net.InetAddress;
 import java.util.Collection;
 
 /**
- * Provides a remote interface for creating, reading, updating and deleting
- * Gateway HTTP/HTTPS/FTP/FTPS listen ports.
+ * Provides a remote interface for creating, reading, updating and deleting Gateway HTTP/HTTPS/FTP/FTPS listen ports.
  *
  * @see SsgConnector
  * @see EntityHeader
@@ -43,7 +42,7 @@ public interface TransportAdmin {
      *                       if there is a problem reading from the database
      */
     @Transactional(readOnly=true)
-    @Secured(types=SSG_CONNECTOR, stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(types=SSG_CONNECTOR, stereotype=FIND_ENTITY)
     SsgConnector findSsgConnectorByPrimaryKey(long oid) throws FindException;
 
     /**

@@ -1,54 +1,70 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 
-import java.util.*;
-import java.net.URL;
 import java.io.IOException;
+import java.net.URL;
+import java.util.*;
 
 /**
  * Static access and initialization (from jar resources) of EntityType's implementation classes.
- *
  */
+@SuppressWarnings({ "ThrowableResultOfMethodCallIgnored", "ThrowInsideCatchBlockWhichIgnoresCaughtException" })
 public class EntityTypeRegistry {
-
     private static final String ENTITY_TYPES_PROPERTIES = "com/l7tech/EntityTypes.properties";
-    private static final Map<EntityType, Class<? extends Entity>> REGISTRY = init();
+    private static final Map<EntityType, Class<? extends Entity>> REGISTRY;
+    private static final Map<Class<? extends Entity>, EntityType> YRTSIGER;
 
-    private static Map<EntityType, Class<? extends Entity>> init() {
+    static {
+        Pair<Map<EntityType, Class<? extends Entity>>, Map<Class<? extends Entity>, EntityType>> foo = init();
+        REGISTRY = foo.left;
+        YRTSIGER = foo.right;
+    }
 
-        HashMap<EntityType, Class<? extends Entity>> registry = new HashMap<EntityType,Class<? extends Entity>>();
+    private static Pair<Map<EntityType, Class<? extends Entity>>, Map<Class<? extends Entity>, EntityType>> init() {
+        final Map<EntityType, Class<? extends Entity>> registry = new HashMap<EntityType,Class<? extends Entity>>();
+        final Map<Class<? extends Entity>, EntityType> yrtsiger = new HashMap<Class<? extends Entity>, EntityType>();
 
         try {
-            Enumeration<URL> urls = EntityTypeRegistry.class.getClassLoader().getResources(ENTITY_TYPES_PROPERTIES);
+            final Enumeration<URL> urls = EntityTypeRegistry.class.getClassLoader().getResources(ENTITY_TYPES_PROPERTIES);
             while (urls.hasMoreElements()) {
-                Properties props = new Properties();
+                final Properties props = new Properties();
                 props.load(urls.nextElement().openStream());
-                Enumeration<String> propNames = (Enumeration<String>) props.propertyNames();
+                final Enumeration<String> propNames = (Enumeration<String>) props.propertyNames();
                 while (propNames.hasMoreElements()) {
-                    String name = propNames.nextElement();
-                    Class clazz;
+                    final String name = propNames.nextElement();
+                    final Class clazz;
                     try {
                         clazz = Class.forName(props.getProperty(name));
                     } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException("Implementation class not found for EntityType: " + name + " : " + ExceptionUtils.getMessage(e),
+                        throw new IllegalArgumentException(
+                            String.format("Implementation class not found for EntityType: %s : %s", name, ExceptionUtils.getMessage(e)),
                                                            ExceptionUtils.getDebugException(e));
                     }
 
-                    if (registry.keySet().contains(EntityType.valueOf(name)))
-                        throw new IllegalStateException("Implementation class for entity type already initialized to: " + registry.get(EntityType.valueOf(name)));
+                    final EntityType type = EntityType.valueOf(name);
+                    if (registry.containsKey(type))
+                        throw new IllegalStateException(String.format("Implementation class for entity type %s already initialized to: %s", type, registry.get(type)));
 
                     if (! Entity.class.isAssignableFrom(clazz))
-                        throw new IllegalArgumentException("Implementation class is not an Entity: " + clazz);
+                        throw new IllegalArgumentException(String.format("Implementation class is not an Entity: %s", clazz));
 
-                    registry.put(EntityType.valueOf(name), clazz);
+                    registry.put(type, clazz);
+
+                    if (yrtsiger.containsKey(clazz))
+                        throw new IllegalStateException(String.format("Entity type for implementation class %s already initialized to: %s", clazz.getSimpleName(), yrtsiger.get(clazz)));
+                    yrtsiger.put(clazz, type);
                 }
             }
+            return new Pair<Map<EntityType, Class<? extends Entity>>, Map<Class<? extends Entity>, EntityType>>(
+                Collections.unmodifiableMap(registry),
+                Collections.unmodifiableMap(yrtsiger)
+            );
         } catch (IOException e) {
-            throw new IllegalStateException("Error initializing the EntityTypeRegistry: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new IllegalStateException(String.format("Error initializing the EntityTypeRegistry: %s", ExceptionUtils.getMessage(e)), ExceptionUtils.getDebugException(e));
         }
 
-        return Collections.unmodifiableMap(registry);
     }
 
     private EntityTypeRegistry() {}
@@ -59,5 +75,9 @@ public class EntityTypeRegistry {
 
     public static Collection<Class<? extends Entity>> getAllEntityClasses() {
         return REGISTRY.values();
+    }
+
+    public static EntityType getEntityType(Class<? extends Entity> clazz) {
+        return YRTSIGER.get(clazz);
     }
 }

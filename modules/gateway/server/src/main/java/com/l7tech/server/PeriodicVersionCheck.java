@@ -90,7 +90,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
                     if (checkAddOrUpdate(createdOid, 0)) {
                         PersistentEntity createdEntity;
                         try {
-                            createdEntity = manager.findEntity(createdOid);
+                            createdEntity = manager.findByPrimaryKey(createdOid);
                         } catch (FindException e) {
                             createdEntity = null;
                             logger.log(Level.WARNING, "Entity that was created cannot be retrieved", e);
@@ -106,7 +106,7 @@ public abstract class PeriodicVersionCheck extends TimerTask {
                     if (checkAddOrUpdate(updatedOid, newVersion)) {
                         PersistentEntity updatedEntity;
                         try {
-                            updatedEntity = manager.findEntity(updatedOid.longValue());
+                            updatedEntity = manager.findByPrimaryKey(updatedOid.longValue());
                         } catch (FindException e) {
                             updatedEntity = null;
                             logger.log(Level.WARNING, "Entity that was updated cannot be retrieved", e);

@@ -1,12 +1,13 @@
 /**
- * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.policy;
 
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PolicyXmlPropertyResolver;
-import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -14,6 +15,8 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -24,7 +27,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 @XmlRootElement
-public class Policy extends NamedEntityImp  implements HasFolder{
+public class Policy extends NamedEntityImp implements HasFolder {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
     private String guid;
@@ -32,7 +35,7 @@ public class Policy extends NamedEntityImp  implements HasFolder{
     private PolicyType type;
     private boolean soap;
     private String internalTag;
-    private Long folderOid;
+    private Folder folder;
 
     private long versionOrdinal;   // Not persisted -- filled in by admin layer
     private boolean versionActive; // Not persisted -- filled in by admin layer
@@ -42,18 +45,13 @@ public class Policy extends NamedEntityImp  implements HasFolder{
     private static final String DISABLED_POLICY_XML = WspWriter.getPolicyXml(DISABLED_POLICY).trim();
 
     @Deprecated // For Serialization and persistence only
-    public Policy() {
-    }
+    protected Policy() { }
 
     public Policy(PolicyType type, String name, String xml, boolean soap) {
         this.type = type;
         this._name = name;
         this.xml = xml;
         this.soap = soap;
-
-        if(this.type == PolicyType.INCLUDE_FRAGMENT || this.type == PolicyType.INTERNAL) {
-            folderOid = -5002L;
-        }
     }
 
     /**
@@ -86,7 +84,7 @@ public class Policy extends NamedEntityImp  implements HasFolder{
         setVersionOrdinal(getVersionOrdinal());
         setXml(policy.getXml());
         setGuid(policy.getGuid());
-        setFolderOid(policy.getFolderOid());
+        setFolder(policy.getFolder());
         if ( lock ) lock();
     }
 
@@ -215,7 +213,7 @@ public class Policy extends NamedEntityImp  implements HasFolder{
      * This is used for display purposes only.  It is not persisted to the database;
      * instead it is filled in by the admin layer when a single policy is returned and
      * by the SSM UI as needed.
-     *  
+     *
      * @param active the new state of the VersionActive flag
      */
     public void setVersionActive(boolean active) {
@@ -239,20 +237,14 @@ public class Policy extends NamedEntityImp  implements HasFolder{
         this.internalTag = internalTag;
     }
 
-    /*
-    * @return Long can be null as not all policies are associated with a folder, only policies of type
-    * INCLUDE_FRAGMENT or INTERNAL are. 
-    * */
-    public Long getFolderOid() {
-        return folderOid;
+    @ManyToOne
+    @JoinColumn(name="folder_oid")
+    public Folder getFolder() {
+        return folder;
     }
 
-    /*
-    * @param folderOid, can be null as not all policies are associated with a folder, only policies of type
-    * INCLUDE_FRAGMENT or INTERNAL are.
-    * */
-    public void setFolderOid(Long folderOid) {
-        this.folderOid = folderOid;
+    public void setFolder(Folder folder) {
+        this.folder = folder;
     }
 
     @SuppressWarnings({ "RedundantIfStatement" })

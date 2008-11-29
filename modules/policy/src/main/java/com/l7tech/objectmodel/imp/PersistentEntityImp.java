@@ -1,28 +1,26 @@
 /*
- * Created on 7-May-2003
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.PersistentEntity;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.io.Serializable;
-
-import org.hibernate.annotations.GenericGenerator;
 
 /**
  * @author alex
  */
 @MappedSuperclass
 public abstract class PersistentEntityImp implements PersistentEntity, Serializable {
-
-    public PersistentEntityImp() {
+    protected PersistentEntityImp() {
         _oid = DEFAULT_OID;
         _loadTime = System.currentTimeMillis();
         _locked = false;
     }
 
-    protected PersistentEntityImp(final PersistentEntityImp entity) {
+    protected PersistentEntityImp(final PersistentEntity entity) {
         this();
         setOid(entity.getOid());
         setVersion(entity.getVersion());

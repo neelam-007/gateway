@@ -1,20 +1,17 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Alias;
+import com.l7tech.objectmodel.folder.Folder;
 
 /**
- * Created by IntelliJ IDEA.
- * User: darmstrong
- * Date: Aug 6, 2008
- * Time: 9:06:59 AM
+ * @author darmstrong
  */
 public class PublishedServiceAlias extends Alias<PublishedService> {
-
     @Deprecated // For Serialization and persistence only
-    public PublishedServiceAlias(){
+    protected PublishedServiceAlias() {
     }
 
-    public PublishedServiceAlias(PublishedService pService, long folderOid) {
-        super(pService, folderOid);
+    public PublishedServiceAlias(PublishedService pService, Folder folder) {
+        super(pService, folder);
     }
 }

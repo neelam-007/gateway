@@ -1,40 +1,38 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
-import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.logging.Logger;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
- * User: darmstrong
- * Date: Aug 20, 2008
- * Time: 10:24:04 AM
  * Paste the list of entities stored in RootNode.getEntitiesToAlias() as new aliases.
+ *
+ * @author darmstrong
  */
 public class PasteAsAliasAction extends SecureAction {
-    static Logger log = Logger.getLogger(PasteAsAliasAction.class.getName());
+    private final FolderNode parentNode;
 
-    private AbstractTreeNode parentNode;
-
-    public PasteAsAliasAction(AbstractTreeNode parentNode)
-    {
+    public PasteAsAliasAction(FolderNode parentNode) {
         super(new AttemptedCreate(EntityType.FOLDER), UI_PUBLISH_SERVICE_WIZARD);
         this.parentNode = parentNode;
     }
@@ -82,49 +80,63 @@ public class PasteAsAliasAction extends SecureAction {
         RootNode rootNode = (RootNode) model.getRoot();
         FolderHeader parentFolderHeader = (FolderHeader) this.parentNode.getUserObject();
         long parentFolderOid = parentFolderHeader.getOid();
+        Folder parentFolder = parentNode.getFolder();
         //Create an alias of each node selected
         for(AbstractTreeNode atn: abstractTreeNodes){
-
             if(!(atn instanceof EntityWithPolicyNode)) return;
             EntityWithPolicyNode ewpn = (EntityWithPolicyNode) atn;
             Entity e;
             try {
                 e = ewpn.getEntity();
             } catch (FindException e1) {
-                throw new RuntimeException(e1.getMessage());
+                throw new RuntimeException("Unable to load entity", e1);
             }
-            OrganizationHeader header = null;
-            if(e instanceof PublishedService){
+
+            final OrganizationHeader header;
+            if (e instanceof PublishedService) {
                 PublishedService ps = (PublishedService) e;
                 //check if an alias already exists here
+                PublishedServiceAlias checkAlias;
                 try {
-                    PublishedServiceAlias checkAlias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(ps.getOid(), parentFolderOid);
+                    checkAlias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(ps.getOid(), parentFolderOid);
                     if(checkAlias != null){
                         DialogDisplayer.showMessageDialog(tree,"Alias of service " + ps.displayName() + " already exists in folder " + parentFolderHeader.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
                         return;
                     }
+                } catch (FindException e1) {
+                    throw new RuntimeException("Unable to check for existing alias", e1);
+                }
+
+                try {
                     header = new ServiceHeader(ps);
-                    PublishedServiceAlias psa = new PublishedServiceAlias(ps, parentFolderOid);
+                    PublishedServiceAlias psa = new PublishedServiceAlias(ps, parentFolder);
                     Registry.getDefault().getServiceManager().saveAlias(psa);
                 } catch (Exception e1) {
-                    throw new RuntimeException(e1.getMessage());
+                    throw new RuntimeException("Unable to save alias", e1);
                 } 
-            }
-            if(e instanceof Policy){
+            } else if (e instanceof Policy) {
                 Policy policy = (Policy) e;
                 //check if an alias already exists here
+                PolicyAlias checkAlias;
                 try {
-                    PolicyAlias checkAlias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(policy.getOid(), parentFolderOid);
+                    checkAlias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(policy.getOid(), parentFolderOid);
                     if(checkAlias != null){
                         DialogDisplayer.showMessageDialog(tree,"Alias of policy " + policy.getName() + " already exists in folder " + parentFolderHeader.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
                         return;
                     }
-                    header = new PolicyHeader(policy);
-                    PolicyAlias pa = new PolicyAlias(policy, parentFolderOid);
-                    Registry.getDefault().getPolicyAdmin().saveAlias(pa);
-                } catch (Exception e1) {
-                    throw new RuntimeException(e1.getMessage());
+                } catch (FindException e1) {
+                    throw new RuntimeException("Unable to check for existing alias", e1);
                 }
+
+                try {
+                    header = new PolicyHeader(policy);
+                    PolicyAlias pa = new PolicyAlias(policy, parentFolder);
+                    Registry.getDefault().getPolicyAdmin().saveAlias(pa);
+                } catch (SaveException e1) {
+                    throw new RuntimeException("Unable to save alias", e1);
+                }
+            } else {
+                throw new IllegalStateException("Referent was neither a Policy nor a Service");
             }
 
             header.setAlias(true);

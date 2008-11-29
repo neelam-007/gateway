@@ -19,7 +19,7 @@ public class ServiceHeader extends OrganizationHeader {
               svc.getOid(),
               svc.getName(),
               svc.getName(),
-              svc.getFolderOid(),
+              svc.getFolder() == null ? null : svc.getFolder().getOid(),
               false);
     }
 
@@ -40,7 +40,7 @@ public class ServiceHeader extends OrganizationHeader {
                          final Long serviceOid,
                          final String name,
                          final String description,
-                         final long folderOid,
+                         final Long folderOid,
                          final boolean alias) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description);
         this.isSoap = isSoap;

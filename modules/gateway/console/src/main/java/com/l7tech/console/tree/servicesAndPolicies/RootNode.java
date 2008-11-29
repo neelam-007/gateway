@@ -1,35 +1,33 @@
 package com.l7tech.console.tree.servicesAndPolicies;
 
+import com.l7tech.console.action.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.action.*;
+import com.l7tech.gateway.common.admin.FolderAdmin;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.admin.FolderAdmin;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.objectmodel.folder.FolderHeader;
-import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 
-import javax.swing.tree.TreeNode;
 import javax.swing.*;
+import javax.swing.tree.TreeNode;
 import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * Created by IntelliJ IDEA.
- * User: darmstrong
- * Date: Aug 13, 2008
- * Time: 4:10:28 PM
- * This class IS the root node in the services and policies tree
- * This AbstractTreeNode loads all children shown in this tree
- * It has no subclasses
+ * This class IS the root node in the services and policies tree; it loads all children shown in this tree and has no
+ * subclasses
+ * 
+ * @author darmstrong
  */
-public final class RootNode extends FolderNode{
-
+public final class RootNode extends FolderNode {
     private final static ServicesAndPoliciesNodeComparator comparator = new ServicesAndPoliciesNodeComparator();
     private SortComponents sortComponents;
 
@@ -89,7 +87,7 @@ public final class RootNode extends FolderNode{
                     return -1;
                 } else if(!(o1 instanceof FolderNode) && o2 instanceof FolderNode) {
                     return 1;
-                } else if(o1 instanceof FolderNode && o2 instanceof FolderNode) {
+                } else if(o1 instanceof FolderNode) {
                     String name1 = ((FolderNode)o1).getName();
                     String name2 = ((FolderNode)o2).getName();
                     int compVal = name1.compareToIgnoreCase(name2);
@@ -107,7 +105,7 @@ public final class RootNode extends FolderNode{
                     String eT1 = eH1.getType().toString();
                     String eT2 = eH2.getType().toString();
 
-                    int compVal = 0;
+                    int compVal;
                     if(eT1.equals(eT2)){
                         //entites are the same, just use the name
                         compVal = name1.compareToIgnoreCase(name2);
@@ -143,8 +141,8 @@ public final class RootNode extends FolderNode{
      * construct the <CODE>ServicesFolderNode</CODE> instance for
      * a given service manager with the name.
      */
-    public RootNode(String name, JLabel filterLabel) {
-        super(new FolderHeader(OID, name, null));
+    public RootNode(String name) {
+        super(new FolderHeader(OID, name, null), null);
         this.serviceManager = Registry.getDefault().getServiceManager();
         this.policyAdmin = Registry.getDefault().getPolicyAdmin();
         this.title = name;
@@ -188,7 +186,7 @@ public final class RootNode extends FolderNode{
         new PublishNonSoapServiceAction(),
         new PublishInternalServiceAction(),
         new CreatePolicyAction(),
-        new CreateFolderAction(OID, this, Registry.getDefault().getFolderAdmin()),
+        new CreateFolderAction(getFolder(), this, Registry.getDefault().getFolderAdmin()),
         new PasteAsAliasAction(this),
         new RefreshTreeNodeAction(this)
     };
@@ -311,11 +309,12 @@ public final class RootNode extends FolderNode{
             }
 
             //if this user has no permission to view any folders they will see an empty tree
-            if(root == null) return;
+            if (root == null) return;
 
-            for(Iterator<OrganizationHeader> it = allFolderEntities.iterator();it.hasNext();) {
+            for (Iterator<OrganizationHeader> it = allFolderEntities.iterator();it.hasNext();) {
                 OrganizationHeader header = it.next();
-                if(header.getFolderOid() == root.getOid()) {
+                final Long foid = header.getFolderOid();
+                if(foid != null && foid == root.getOid()) {
                     AbstractTreeNode child = TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
                     insert(child, getInsertPosition(child, RootNode.getComparator()));
                     it.remove();
@@ -376,7 +375,7 @@ public final class RootNode extends FolderNode{
                                                 List<OrganizationHeader> organizationHeaders,
                                                 Collection<FolderHeader> foldersHeaders)
     {
-        FolderNode node = new FolderNode(root);
+        FolderNode node = new FolderNode(root, null);
         for(Iterator<OrganizationHeader> it = organizationHeaders.iterator();it.hasNext();) {
             OrganizationHeader header = it.next();
             if(header.getFolderOid() == root.getOid()) {
@@ -434,6 +433,6 @@ public final class RootNode extends FolderNode{
      * @return
      */
     public static boolean isAliasSet(){
-       return (!entitiesToAlias.isEmpty())? true: false;
+       return !entitiesToAlias.isEmpty();
     }
 }

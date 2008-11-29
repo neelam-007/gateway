@@ -1,19 +1,16 @@
 package com.l7tech.server.service;
 
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.policy.PolicyManager;
-import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.service.ServiceManager;
-import com.l7tech.server.StubDataStore;
-import com.l7tech.server.EntityManagerStub;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.policy.Policy;
-
+import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.StubDataStore;
+import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.wsdl.Wsdl;
 import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
@@ -31,7 +28,11 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
     private ApplicationContext applicationContext;
 
     public ServiceManagerStub(PolicyManager policyManager) {
-        super(toArray( StubDataStore.defaultStore().getPublishedServices().values()));
+        this(policyManager, toArray( StubDataStore.defaultStore().getPublishedServices().values()));
+    }
+
+    public ServiceManagerStub(PolicyManager policyManager, PublishedService... services) {
+        super(services);
         this.policyManager = policyManager;
     }
 
@@ -45,8 +46,7 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
      */
     public String resolveWsdlTarget(String url) {
         try {
-            Wsdl wsdl =
-              Wsdl.newInstance(null, new InputStreamReader(new URL(url).openStream()));
+            Wsdl wsdl = Wsdl.newInstance(null, new InputStreamReader(new URL(url).openStream()));
             StringWriter sw = new StringWriter();
             wsdl.toWriter(sw);
             return sw.toString();
@@ -131,21 +131,11 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
     }
 
     @Override
-    public EntityType getEntityType() {
-        return EntityType.SERVICE;
-    }
-
-    @Override
-    public String getTableName() {
-        return "published_service";
-    }
-
-    @Override
     protected ServiceHeader header(PublishedService entity) {
         return new ServiceHeader( entity );
     }
 
     private static PublishedService[] toArray( Collection<PublishedService> publishedServices ) {
         return publishedServices.toArray( new PublishedService[publishedServices.size()] );
-    }    
+    }
 }

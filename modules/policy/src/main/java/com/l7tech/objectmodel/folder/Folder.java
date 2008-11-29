@@ -10,22 +10,24 @@ import com.l7tech.objectmodel.migration.Migration;
 public class Folder extends NamedEntityImp {
     private Folder parentFolder;
 
+    public Folder(String name, Folder parentFolder) {
+        this._name = name;
+        this.parentFolder = parentFolder;
+    }
+
+    @Deprecated // For Serialization and persistence only
+    public Folder() { }
+
     @Migration(dependency=false)
     public Folder getParentFolder() {
         return parentFolder;
     }
 
+    /**
+     * Not deprecated, because setting the parent is the cleanest way to move a folder around.
+     */
     public void setParentFolder(Folder parentFolder) {
         this.parentFolder = parentFolder;
-    }
-
-    @Deprecated // For Serialization and persistence only
-    public Folder() {
-    }
-
-    public Folder(String name, Long parentFolderOid) {
-        this._name = name;
-        this.parentFolderOid = parentFolderOid;
     }
 
     /**
@@ -38,16 +40,7 @@ public class Folder extends NamedEntityImp {
      */
     public Folder(final Folder folder) {
         super(folder);
-        setParentFolderOid(folder.getParentFolderOid());
+        setParentFolder(folder.getParentFolder());
     }
 
-    private Long parentFolderOid;
-
-    public Long getParentFolderOid() {
-        return parentFolderOid;
-    }
-
-    public void setParentFolderOid(Long parentFolderOid) {
-        this.parentFolderOid = parentFolderOid;
-    }
 }

@@ -65,7 +65,7 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information.
      */
     @Transactional(readOnly=true)
-    @Secured(types=ID_PROVIDER_CONFIG, stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(types=ID_PROVIDER_CONFIG, stereotype=FIND_ENTITY)
     @Administrative(licensed=false)
     IdentityProviderConfig findIdentityProviderConfigByID(long oid) throws FindException;
 
@@ -150,7 +150,7 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information
      */
     @Transactional(readOnly=true)
-    @Secured(types=USER, stereotype=FIND_BY_PRIMARY_KEY, relevantArg=1)
+    @Secured(types=USER, stereotype=FIND_ENTITY, relevantArg=1)
     User findUserByID(long idProvCfgId, String userId)
       throws FindException;
 
@@ -163,7 +163,7 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information
      */
     @Transactional(readOnly=true)
-    @Secured(types=USER, stereotype=FIND_ENTITY_BY_ATTRIBUTE)
+    @Secured(types=USER, stereotype=FIND_ENTITY)
     User findUserByLogin(long idProvCfgId, String login)
       throws FindException;
 
@@ -230,7 +230,7 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information
      */
     @Transactional(readOnly=true)
-    @Secured(types=GROUP, stereotype=FIND_BY_PRIMARY_KEY, relevantArg=1)
+    @Secured(types=GROUP, stereotype=FIND_ENTITY, relevantArg=1)
     Group findGroupByID(long idProvCfgId, String groupId)
       throws FindException;
 
@@ -243,7 +243,7 @@ public interface IdentityAdmin {
      * @throws FindException   if there was a problem accessing the requested information
      */
     @Transactional(readOnly=true)
-    @Secured(types=GROUP, stereotype=FIND_ENTITY_BY_ATTRIBUTE)
+    @Secured(types=GROUP, stereotype=FIND_ENTITY)
     Group findGroupByName(long idProvCfgId, String name)
       throws FindException;
 

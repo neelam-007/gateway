@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.gateway.common.security.rbac;
 
@@ -35,7 +35,7 @@ public interface RbacAdmin {
      * Returns the single Role with the specified OID, or null if no Role with the given OID exists.
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(stereotype=FIND_ENTITY)
     Role findRoleByPrimaryKey(long oid) throws FindException;
 
     /**

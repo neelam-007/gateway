@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.policy;
 
@@ -44,11 +44,11 @@ public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> im
         return null;
     }
 
-    public Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types, boolean includeAliases) {
+    public Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types, boolean includeAliases) {
         return findHeadersWithTypes(types);        
     }
 
-    public Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types) {
+    public Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types) {
         Set<PolicyHeader> hs = new HashSet<PolicyHeader>();
         for (Policy policy : entities.values()) {
             if (types.contains(policy.getType())) hs.add(new PolicyHeader(policy));
@@ -58,5 +58,15 @@ public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> im
 
     public void addManagePolicyRole(Policy policy) throws SaveException {
         // No-op for stub mode
+    }
+
+    @Override
+    public Class<? extends Entity> getImpClass() {
+        return Policy.class;
+    }
+
+    @Override
+    protected PolicyHeader header(Policy entity) {
+        return new PolicyHeader(entity);
     }
 }

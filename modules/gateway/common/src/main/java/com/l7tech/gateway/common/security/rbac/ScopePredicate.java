@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.gateway.common.security.rbac;
 
@@ -30,8 +30,8 @@ public abstract class ScopePredicate extends PersistentEntityImp {
         this.permission = permission;
     }
 
-    protected ScopePredicate() {
-    }
+    @Deprecated
+    protected ScopePredicate() { }
 
     @Override
     @Version

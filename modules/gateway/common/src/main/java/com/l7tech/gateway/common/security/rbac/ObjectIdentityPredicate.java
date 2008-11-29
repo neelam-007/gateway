@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.gateway.common.security.rbac;
 
@@ -61,7 +61,7 @@ public class ObjectIdentityPredicate extends ScopePredicate {
 
     public String toString() {
         if (header != null)
-            return header.toString();
+            return header.toString() + " " + header.getType().getName();
         
         StringBuilder sb = new StringBuilder(permission.getEntityType().getName());
         sb.append(" #").append(targetEntityId);

@@ -1,34 +1,29 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.identity;
 
-import com.l7tech.identity.*;
+import com.l7tech.identity.PersistentGroup;
+import com.l7tech.identity.PersistentUser;
+import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.logon.LogonInfoManager;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
-import org.hibernate.*;
-import org.hibernate.criterion.Restrictions;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
 
-/**
- * @author alex
- * @version $Revision$
- */
 public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT extends PersistentGroup, UMT extends PersistentUserManager<UT>, GMT extends PersistentGroupManager<UT, GT>>
         extends HibernateEntityManager<UT, IdentityHeader>
         implements PersistentUserManager<UT>
@@ -52,7 +47,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         this.logonInfoManager = logonInfoManager;
     }
 
-    @Secured(operation=OperationType.READ)
     public UT findByPrimaryKey(String oid) throws FindException {
         try {
             if (oid == null) {
@@ -69,7 +63,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
-    @Secured(operation=OperationType.READ)
     public UT findByLogin(final String login) throws FindException {
         try {
             //noinspection unchecked
@@ -134,7 +127,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         return identityProvider.getConfig().getOid();
     }
 
-    @Secured(operation=OperationType.DELETE)
     @Override
     public void delete( long oid ) throws DeleteException, FindException {
         findAndDelete( oid );
@@ -143,7 +135,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     /**
      * Must be called in a transaction!
      */
-    @Secured(operation=OperationType.DELETE)
     @Override
     public void delete(UT user) throws DeleteException {
         final UT userImp = cast(user);
@@ -201,7 +192,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      * @param ipoid The identity provider id
      * @throws DeleteException
      */
-    @Secured(operation=OperationType.DELETE)
     public void deleteAll(final long ipoid) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
@@ -222,7 +212,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         postDelete( null );
     }
 
-    @Secured(operation=OperationType.DELETE)
     public void delete(final String identifier) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
@@ -243,14 +232,12 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         postDelete( null );
     }
 
-    @Secured(operation=OperationType.CREATE)
     @Override
     public long save(UT entity) throws SaveException {
         String id = save(entity, null);
         return Long.parseLong(id);
     }
 
-    @Secured(operation=OperationType.CREATE)
     public String save(UT user, Set<IdentityHeader> groupHeaders) throws SaveException {
         UT imp = cast(user);
         imp.setProviderId(getProviderOid());
@@ -280,7 +267,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
-    @Secured(operation=OperationType.UPDATE)
     @Override
     public void update(UT user) throws UpdateException {
         update(user, null);
@@ -292,7 +278,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      *
      * @param user existing user
      */
-    @Secured(operation=OperationType.UPDATE)
     public void update(UT user, Set<IdentityHeader> groupHeaders) throws UpdateException {
         UT imp = cast(user);
 

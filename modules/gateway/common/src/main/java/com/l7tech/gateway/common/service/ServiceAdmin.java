@@ -180,7 +180,7 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      * Finds the {@link SampleMessage} instance with the specified OID, or null if it does not exist.
      * @return the {@link SampleMessage} instance with the specified OID.  May be null if not present.
      */
-    @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(types=EntityType.SAMPLE_MESSAGE, stereotype=FIND_ENTITY)
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
     SampleMessage findSampleMessageById(long oid) throws FindException;

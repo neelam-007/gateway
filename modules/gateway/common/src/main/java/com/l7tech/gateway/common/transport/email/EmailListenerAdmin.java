@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_BY_PRIMARY_KEY;
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_ENTITY;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_HEADERS;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.SAVE_OR_UPDATE;
 import com.l7tech.gateway.common.admin.Administrative;
@@ -60,7 +60,7 @@ public interface EmailListenerAdmin {
      * @param oid the OID of the EmailListener to retrieve
      * @return the EmailListener with the specified OID, or null if no such email listener can be found.
      */
-    @Secured(stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(stereotype=FIND_ENTITY)
     @Transactional(readOnly=true)
     @Administrative(licensed = false)
     EmailListener findEmailListenerByPrimaryKey(long oid) throws FindException;

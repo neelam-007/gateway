@@ -152,7 +152,7 @@ public interface ClusterStatusAdmin {
      * @return may return null if the property is not set. will return the property value otherwise
      */
     @Transactional(readOnly=true)
-    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITY_BY_ATTRIBUTE)
+    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITY)
     @Administrative(licensed=false)
     ClusterProperty findPropertyByName(String name) throws FindException;
 

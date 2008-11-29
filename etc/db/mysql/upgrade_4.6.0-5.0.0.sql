@@ -1,5 +1,5 @@
 ---
---- Script to update mysql ssg database from 4.6 to 4.7
+--- Script to update mysql ssg database from 4.6 to 5.0
 ---
 --- Layer 7 Technologies, inc
 ---
@@ -274,6 +274,18 @@ INSERT INTO email_listener_state (objectid, version, owner_node_id, last_poll_ti
 ALTER TABLE email_listener DROP COLUMN owner_node_id;
 ALTER TABLE email_listener DROP COLUMN last_poll_time;
 ALTER TABLE email_listener DROP COLUMN last_message_id;
+
+--
+-- Create table for RBAC folder predicates
+--
+CREATE TABLE rbac_predicate_folder (
+  objectid bigint(20) NOT NULL,
+  folder_oid bigint(20) NOT NULL,
+  transitive boolean NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Reenable FK at very end of script

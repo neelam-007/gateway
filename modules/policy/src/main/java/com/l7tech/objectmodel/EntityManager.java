@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.objectmodel;
 
@@ -7,6 +7,7 @@ import java.util.Map;
 
 /**
  * Interface for DAOs that provide CRUD services for {@link PersistentEntity} instances.
+ *
  * @param <ET> is the Entity type
  * @param <HT> is the EntityHeader type
  * @author alex
@@ -34,8 +35,6 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
      * @throws CacheVeto thrown by an implementor
      */
     public ET getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto;
-
-    ET findEntity(long l) throws FindException;
 
     Class<? extends Entity> getImpClass();
 

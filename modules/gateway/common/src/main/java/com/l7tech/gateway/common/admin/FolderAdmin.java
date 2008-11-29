@@ -1,20 +1,14 @@
 package com.l7tech.gateway.common.admin;
 
-import org.springframework.transaction.annotation.Transactional;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
-
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.folder.FolderHeader;
-import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ConstraintViolationException;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 
 
 /**
@@ -59,4 +53,12 @@ public interface FolderAdmin {
      */
     @Secured(types=EntityType.FOLDER, stereotype=MethodStereotype.DELETE_BY_ID)
     void deleteFolder(long oid) throws FindException, DeleteException;
+
+    /**
+     * Find the folder with the specified OID.  May be null, indicating that no such folder exists.
+     * @param oid the OID of the folder to search for
+     * @return the folder with the specified OID, or null if no such folder exists.
+     */
+    @Secured(types=EntityType.FOLDER, stereotype=MethodStereotype.FIND_ENTITY)
+    Folder findByPrimaryKey(long oid) throws FindException;
 }

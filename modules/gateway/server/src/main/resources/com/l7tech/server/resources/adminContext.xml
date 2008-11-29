@@ -103,9 +103,8 @@
     </bean>
 
     <bean id="rbacAdvice" class="com.l7tech.server.security.rbac.SecuredMethodInterceptor">
-        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="rbacServices"/>
         <constructor-arg ref="cachingEntityFinder"/>
-        <constructor-arg ref="policyManager"/>
     </bean>
 
     <bean id="rbacAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
@@ -228,7 +227,7 @@
     </bean>
 
     <bean id="folderAdmin" class="com.l7tech.server.folder.FolderAdminImpl">
-        <constructor-arg ref="folderManager" />
+        <constructor-arg ref="folderManager"/>
     </bean>
 
     <!-- schema admin servant -->

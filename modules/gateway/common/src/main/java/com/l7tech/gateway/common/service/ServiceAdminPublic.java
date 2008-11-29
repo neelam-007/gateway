@@ -1,7 +1,6 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
+ * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
@@ -56,7 +55,7 @@ public interface ServiceAdminPublic {
      * @return the requested {@link PublishedService}, or null if no service with that service ID was found
      * @throws FindException   if there was a problem accessing the requested information.
      */
-    @Secured(stereotype=MethodStereotype.FIND_BY_PRIMARY_KEY)
+    @Secured(stereotype=MethodStereotype.FIND_ENTITY)
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
     PublishedService findServiceByID(String oid) throws FindException;

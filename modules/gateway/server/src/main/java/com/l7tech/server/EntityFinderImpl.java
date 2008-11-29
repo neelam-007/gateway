@@ -106,7 +106,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
                 return policyManager.findByGuid(id);
             }
         } else {
-            return find(EntityHeaderUtils.getEntityClass(header), header.getStrId());
+            return find(EntityTypeRegistry.getEntityClass(header.getType()), header.getStrId());
         }
     }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.gateway.common.admin;
 
@@ -31,9 +31,9 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      */
     public static class SavePolicyWithFragmentsResult implements Serializable {
         public PolicyCheckpointState policyCheckpointState;
-        public HashMap<String, String> fragmentNameGuidMap;
+        public Map<String, String> fragmentNameGuidMap;
 
-        public SavePolicyWithFragmentsResult(PolicyCheckpointState policyCheckpointState, HashMap<String, String> fragmentNameGuidMap) {
+        public SavePolicyWithFragmentsResult(PolicyCheckpointState policyCheckpointState, Map<String, String> fragmentNameGuidMap) {
             this.policyCheckpointState = policyCheckpointState;
             this.fragmentNameGuidMap = fragmentNameGuidMap;
         }
@@ -47,7 +47,7 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      * @param oid the OID of the Policy to retrieve
      * @return the Policy with the specified OID, or null if no such policy can be found.
      */
-    @Secured(stereotype=FIND_BY_PRIMARY_KEY)
+    @Secured(stereotype=FIND_ENTITY)
     @Transactional(readOnly=true)
     @Administrative(licensed = false)
     Policy findPolicyByPrimaryKey(long oid) throws FindException;
@@ -57,7 +57,7 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      * @param name the unique name of the Policy to retrieve
      * @return the Policy with the specified OID, or null if no such policy can be found.
      */
-    @Secured(stereotype=FIND_ENTITY_BY_ATTRIBUTE)
+    @Secured(stereotype=FIND_ENTITY)
     @Transactional(readOnly=true)
     @Administrative(licensed = false)
     Policy findPolicyByUniqueName(String name) throws FindException;
@@ -67,7 +67,7 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      * @param guid the GUID of the Policy to retrieve
      * @return the Policy with the specified GUID, or null if no such policy can be found.
      */
-    @Secured(stereotype=FIND_ENTITY_BY_ATTRIBUTE)
+    @Secured(stereotype=FIND_ENTITY)
     @Transactional(readOnly=true)
     @Administrative(licensed = false)
     Policy findPolicyByGuid(String guid) throws FindException;

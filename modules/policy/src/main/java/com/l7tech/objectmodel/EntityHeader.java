@@ -1,11 +1,6 @@
 /*
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: May 9, 2003
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.objectmodel;
 
 
@@ -15,7 +10,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 /**
  * Header objects are used to refer to objects in find methods
  * of all managers
- * @version $Revision$
+ *
  * @author flascelles
  */
 @XmlRootElement
@@ -51,6 +46,7 @@ public class EntityHeader extends EntityHeaderRef {
     }
 
     public long getOid() {
+        if (strId == null || strId.isEmpty()) return DEFAULT_OID;
         try {
             return Long.parseLong(strId);
         } catch (Exception e) {

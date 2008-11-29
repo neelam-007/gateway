@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.gateway.common.security.rbac;
 
@@ -110,7 +110,7 @@ public class AttributePredicate extends ScopePredicate {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(permission.getEntityType().getName());
+        sb.append(permission.getEntityType().getPluralName());
         sb.append(" with ").append(attribute).append(" = ").append(value);
         return sb.toString(); 
     }

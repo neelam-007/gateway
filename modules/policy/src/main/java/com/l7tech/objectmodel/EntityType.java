@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.objectmodel;
 
@@ -11,18 +11,18 @@ import java.util.Comparator;
  */
 @XmlJavaTypeAdapter(EntityTypeAdapter.class)
 public enum EntityType implements Comparable<EntityType> {
-    ANY("<any>", true),
+    ANY("<any>", "Objects", true),
 
     ID_PROVIDER_CONFIG("Identity Provider", true),
-    USER("User", true),
-    GROUP("Group", true),
+    USER("User", true), // TODO Don't change the string "User", it's in customer databases.
+    GROUP("Group", true), // TODO Don't change the string "Group", it's in customer databases.
     SERVICE("Published Service", true),
     SERVICE_ALIAS("Published Service Alias", true),
     JMS_CONNECTION("JMS Connection", true),
     JMS_ENDPOINT("JMS Endpoint", true),
     TRUSTED_CERT("Trusted Certificate", true),
     REVOCATION_CHECK_POLICY("Revocation Check Policy", true),
-    SSG_KEY_ENTRY("Private Key", true),
+    SSG_KEY_ENTRY("Private Key", "Private Keys", true),
     ALERT_TRIGGER("Alert Event", false),
     ALERT_ACTION("Alert Notification", false),
     SAMPLE_MESSAGE("Sample Message", true),
@@ -37,17 +37,17 @@ public enum EntityType implements Comparable<EntityType> {
     MAP_TOKEN("Security Token Attribute Mapping", false),
 
     CLUSTER_PROPERTY("Cluster Property", true),
-    CLUSTER_INFO("Cluster Node Information", true),
+    CLUSTER_INFO("Cluster Node Information", "Cluster Node Info Records", true),
     SERVICE_USAGE("Service Usage Record", true),
     SCHEMA_ENTRY("Schema Entry", true),
     METRICS_BIN("Service Metrics Bin", true),
 
     RBAC_ROLE("Access Control Role", true),
 
-    AUDIT_MESSAGE("Audit Record (Message)", true),
-    AUDIT_ADMIN("Audit Record (Admin)", true),
-    AUDIT_SYSTEM("Audit Record (System)", true),
-    AUDIT_RECORD("Audit Record <any type>", true),
+    AUDIT_MESSAGE("Audit Record (Message)", "Message Audit Records", true),
+    AUDIT_ADMIN("Audit Record (Admin)", "Admin Audit Records", true),
+    AUDIT_SYSTEM("Audit Record (System)", "System Audit Records", true),
+    AUDIT_RECORD("Audit Record <any type>", "Audit Records", true),
 
     LOG_RECORD("Log Record", true),
 
@@ -70,14 +70,32 @@ public enum EntityType implements Comparable<EntityType> {
 
     private final String name;
     private final boolean displayedInGui;
+    private final String pluralName;
 
     public String getName() {
         return name;
     }
 
+    public String getPluralName() {
+        return pluralName;
+    }
+
     private EntityType(String name, boolean displayInGui) {
         this.name = name;
+        if (name.endsWith("y"))
+            this.pluralName = name.substring(0, name.length()-1) + "ies";
+        else if (name.toLowerCase().endsWith("s")) {
+            this.pluralName = name + "es";
+        } else {
+            this.pluralName = name + "s";
+        }
         this.displayedInGui = displayInGui;
+    }
+
+    private EntityType(String name, String pluralName, boolean displayedInGui) {
+        this.name = name;
+        this.pluralName = pluralName;
+        this.displayedInGui = displayedInGui;
     }
 
     public boolean isDisplayedInGui() {

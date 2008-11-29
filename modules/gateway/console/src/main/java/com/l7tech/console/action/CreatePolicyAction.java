@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.action;
 
@@ -70,6 +70,8 @@ public class CreatePolicyAction extends SecureAction {
             public void run() {
                 if (!dlg.wasOKed()) return;
 
+                AbstractTreeNode root = TopComponents.getInstance().getPoliciesFolderNode();
+
                 Policy policy = dlg.getValue();
                 long oid = -1;
                 try {
@@ -78,6 +80,7 @@ public class CreatePolicyAction extends SecureAction {
                         String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new AuditDetailAssertion("Policy Fragment: " + policy.getName()))));
                         policy.setXml( xml );
                     }
+                    policy.setFolder(((RootNode)root).getFolder());
                     oid = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
                     policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
                 } catch ( DuplicateObjectException doe) {
@@ -101,7 +104,6 @@ public class CreatePolicyAction extends SecureAction {
                         return;
                     }
 
-                    AbstractTreeNode root = TopComponents.getInstance().getPoliciesFolderNode();
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
 
                     //Remove any filter before insert

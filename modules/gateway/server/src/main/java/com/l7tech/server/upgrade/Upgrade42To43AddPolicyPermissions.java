@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.upgrade;
 
@@ -53,8 +53,8 @@ public class Upgrade42To43AddPolicyPermissions implements UpgradeTask {
                     continue;
                 }
 
-                role.addPermission(OperationType.READ, EntityType.POLICY, policy.getId());
-                role.addPermission(OperationType.UPDATE, EntityType.POLICY, policy.getId());
+                role.addEntityPermission(OperationType.READ, EntityType.POLICY, policy.getId());
+                role.addEntityPermission(OperationType.UPDATE, EntityType.POLICY, policy.getId());
                 roleManager.update(role);
             }
         } catch (ObjectModelException e) {

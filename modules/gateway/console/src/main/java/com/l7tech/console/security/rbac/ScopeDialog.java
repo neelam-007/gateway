@@ -1,29 +1,32 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.security.rbac;
 
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.folder.Folder;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.text.MessageFormat;
-import java.lang.reflect.Method;
-import java.beans.*;
 
-/**
- * @author alex
- */
-public class ScopeDialog extends JDialog {
+class ScopeDialog extends JDialog {
     private JPanel mainPanel;
     private JButton okButton;
     private JButton cancelButton;
@@ -48,6 +51,10 @@ public class ScopeDialog extends JDialog {
     private JLabel attrNameLabel;
     private JLabel attrValueLabel;
     private JComboBox attrNamesList;
+    private JTextField folderText;
+    private JButton folderFindButton;
+    private JRadioButton folderRadioButton;
+    private JCheckBox transitiveCheckBox;
 
     public ScopeDialog(Frame owner, Permission perm, EntityType etype) throws HeadlessException {
         super(owner);
@@ -76,18 +83,28 @@ public class ScopeDialog extends JDialog {
         setModal(true);
         radioListener = new RadioListener();
 
-        setRadioText(allRadioButton);
-        setRadioText(specificRadioButton);
-        setRadioText(attributeRadioButton);
+        Utilities.equalizeButtonSizes(okButton, cancelButton);
 
-        ButtonGroup rbGroup = new ButtonGroup();
-        rbGroup.add(allRadioButton);
-        rbGroup.add(specificRadioButton);
-        rbGroup.add(attributeRadioButton);
+        setRadioText(allRadioButton, true);
+        setRadioText(specificRadioButton, false);
+        setRadioText(attributeRadioButton, true);
+        setRadioText(folderRadioButton, true);
 
         allRadioButton.addActionListener(radioListener);
         specificRadioButton.addActionListener(radioListener);
         attributeRadioButton.addActionListener(radioListener);
+        folderRadioButton.addActionListener(radioListener);
+        transitiveCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (scope.isEmpty()) return;
+                ScopePredicate pred = scope.get(0);
+                if (pred instanceof FolderPredicate) {
+                    FolderPredicate fp = (FolderPredicate)pred;
+                    fp.setTransitive(transitiveCheckBox.isSelected());
+                }
+            }
+        });
 
         if (scope.size() == 0) {
             allRadioButton.setSelected(true);
@@ -96,6 +113,15 @@ public class ScopeDialog extends JDialog {
                 if (scope.size() > 1) throw new RuntimeException("Found an ObjectIdentityPredicate in a scope with size > 1");
                 specificRadioButton.setSelected(true);
                 specificText.setText(getSpecificLabel());
+            } else if (scope.get(0) instanceof FolderPredicate) {
+                folderRadioButton.setSelected(true);
+                folderText.setText(getFolderLabel());
+                transitiveCheckBox.setSelected(((FolderPredicate)scope.get(0)).isTransitive());
+            } else if (scope.get(0) instanceof AttributePredicate) {
+                AttributePredicate ap = (AttributePredicate)scope.get(0);
+                attributeRadioButton.setSelected(true);
+                attrNamesList.setSelectedItem(ap.getAttribute());
+                attrValue.setText(ap.getValue());
             }
         }
 
@@ -130,6 +156,30 @@ public class ScopeDialog extends JDialog {
             }
         });
 
+        folderFindButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                final FindEntityDialog fed = new FindEntityDialog(ScopeDialog.this, EntityType.FOLDER);
+                fed.pack();
+                Utilities.centerOnScreen(fed);
+                DialogDisplayer.display(fed, new Runnable() {
+                    public void run() {
+                        EntityHeader header = fed.getSelectedEntityHeader();
+                        if (header != null) {
+                            Folder folder;
+                            try {
+                                folder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(header.getOid());
+                            } catch (FindException e1) {
+                                throw new RuntimeException("Couldn't lookup Folder", e1);
+                            }
+                            scope.clear();
+                            scope.add(new FolderPredicate(permission, folder, transitiveCheckBox.isSelected()));
+                            folderText.setText(header.getName());
+                        }
+                    }
+                });
+            }
+        });
+
         enableDisable();
 
         add(mainPanel);
@@ -152,11 +202,10 @@ public class ScopeDialog extends JDialog {
         } catch (IntrospectionException e) {
             e.printStackTrace();
         }
-        Method[] getters = eClazz.getMethods();
     }
 
-    private void setRadioText(JRadioButton rb) {
-        rb.setText(MessageFormat.format(rb.getText(), entityType.getName()));
+    private void setRadioText(JRadioButton rb, boolean plural) {
+        rb.setText(MessageFormat.format(rb.getText(), plural ? entityType.getPluralName() : entityType.getName()));
     }
 
     private String getSpecificLabel() {
@@ -165,21 +214,32 @@ public class ScopeDialog extends JDialog {
         return oidp.toString();
     }
 
+    private String getFolderLabel() {
+        if (scope.size() != 1  || !(scope.get(0) instanceof FolderPredicate)) return "";
+        FolderPredicate fp = (FolderPredicate) scope.get(0);
+        return fp.getFolder().getName();
+    }
+
     private void enableDisable() {
         specificFindButton.setEnabled(specificRadioButton.isSelected());
         specificText.setText(specificRadioButton.isSelected() ? getSpecificLabel() : "");
         specificText.setEnabled(specificRadioButton.isSelected());
+
         attrNameLabel.setEnabled(attributeRadioButton.isSelected());
         attrValueLabel.setEnabled(attributeRadioButton.isSelected());
         attrNamesList.setEnabled(attributeRadioButton.isSelected());
         attrValue.setEnabled(attributeRadioButton.isSelected());
+
+        folderFindButton.setEnabled(folderRadioButton.isSelected());
+        folderText.setText(folderRadioButton.isSelected() ? getFolderLabel() : "");
+        folderText.setEnabled(folderRadioButton.isSelected());
+        transitiveCheckBox.setEnabled(folderRadioButton.isSelected());
     }
 
     void ok() {
-
-        if (attributeRadioButton.isSelected())
+        if (attributeRadioButton.isSelected()) {
             addAttributePredicate();
-
+        }
         permission.getScope().clear();
         permission.getScope().addAll(scope);
         dispose();

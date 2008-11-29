@@ -3,13 +3,16 @@
  */
 package com.l7tech.server.policy;
 
+import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyHeader;
-import com.l7tech.objectmodel.*;
+import com.l7tech.policy.PolicyType;
 
 import java.util.Collection;
-import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * @author alex
@@ -44,7 +47,7 @@ public interface PolicyManager extends EntityManager<Policy, PolicyHeader>, Guid
      */
     Policy findByGuid(String guid) throws FindException;
 
-    Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types) throws FindException;
+    Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types) throws FindException;
 
-    Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types, boolean includeAliases) throws FindException;
+    Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types, boolean includeAliases) throws FindException;
 }

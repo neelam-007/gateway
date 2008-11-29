@@ -937,6 +937,19 @@ CREATE TABLE rbac_predicate_oid (
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+--
+-- Table structure for table rbac_predicate_folder
+--
+DROP TABLE IF EXISTS rbac_predicate_folder;
+CREATE TABLE rbac_predicate_folder (
+  objectid bigint(20) NOT NULL,
+  folder_oid bigint(20) NOT NULL,
+  transitive boolean NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 -- Create Administrator role
 -- XXX NOTE!! COPIED in Role#ADMIN_ROLE_OID
 

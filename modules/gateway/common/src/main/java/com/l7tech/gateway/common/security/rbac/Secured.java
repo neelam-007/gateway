@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.gateway.common.security.rbac;
 
@@ -32,10 +32,6 @@ public @interface Secured {
     EntityType[] types() default EntityType.ANY;
 
     MethodStereotype stereotype() default MethodStereotype.NONE;
-
-    OperationType operation() default OperationType.NONE;
-
-    String otherOperationName() default "";
 
     int relevantArg() default -1;
 }

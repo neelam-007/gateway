@@ -1,60 +1,46 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
- * Created by IntelliJ IDEA.
- * User: darmstrong
- * Date: Aug 25, 2008
- * Time: 2:14:03 PM
  * Alias was created as a means of referring to any class which can be aliases generically.
- * @param <HT> represents the entity being aliased, we need it's oid only
+ *
+ * @param <ET> the type of entity that this is an alias to
+ * @author darmstrong
  */
-public abstract class Alias<HT extends NamedEntityImp> extends PersistentEntityImp implements EntityAlias {
-
+public abstract class Alias<ET extends PersistentEntity> extends PersistentEntityImp implements EntityAlias {
     private long entityOid;
-    private long folderOid;
+    private Folder folder;
 
     @Deprecated // For Serialization and persistence only
-    public Alias() {
-    }
+    protected Alias() { }
 
-    public Alias(HT entity, long folderOid) {
-        this.folderOid = folderOid;
+    protected Alias(ET entity, Folder folder) {
         this.entityOid = entity.getOid();
+        this.folder = folder;
     }
 
-    /**
-     * Create a copy of the given AliasEntity.
-     *
-     * <p>This will copy the identity of the orginal, if you don't want this
-     * you will need to reset the id and version.</p>
-     *
-     * @param entity The AliasEntity to duplicate.
-     */
-    public Alias(final HT entity) {
-        super(entity);
-    }
-
-    /*
-   * entityOid is the entity oid of the real entity an instance of this interface
-   * is aliasing
-   * */
+    /** The OID of the entity to which this alias refers. */
     public long getEntityOid() {
         return entityOid;
     }
 
-    public void setEntityOid(long entityOid) {
+    @Deprecated
+    protected void setEntityOid(long entityOid) {
         this.entityOid = entityOid;
     }
 
-    public void setFolderOid(long folderOid) {
-        this.folderOid = folderOid;
+    /** The folder where this alias lives. */
+    public Folder getFolder() {
+        return folder;
     }
 
-    public long getFolderOid() {
-        return folderOid;
+    /**
+     * Not deprecated, because modifying the folder is a convenient way to move aliases.
+     */
+    public void setFolder(Folder folder) {
+        this.folder = folder;
     }
 }
 

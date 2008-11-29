@@ -1,14 +1,17 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server;
 
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
 
-/**
- * @author alex
- */
 public final class EntityHeaderUtils {
     /**
      * Creates and returns an {@link com.l7tech.objectmodel.AnonymousEntityReference} that's as close a reflection of the given
@@ -30,10 +33,8 @@ public final class EntityHeaderUtils {
 
             if (type == EntityType.USER) {
                 return new AnonymousUserReference(header.getStrId(), providerOid, header.getName());
-            } else if (type == EntityType.GROUP) {
-                return new AnonymousGroupReference(header.getStrId(), providerOid, header.getName());
             } else {
-                throw new IllegalStateException(); // Covered by outer if
+                return new AnonymousGroupReference(header.getStrId(), providerOid, header.getName());
             }
         } else {
             Class<? extends Entity> entityClass = EntityTypeRegistry.getEntityClass(type);
@@ -45,17 +46,33 @@ public final class EntityHeaderUtils {
         }
     }
 
-    public static Class<? extends Entity> getEntityClass(EntityHeader header) {
-        return fromHeader(header).getEntityClass();
+    /**
+     * Creates an EntityHeader from the provided Entity.  
+     */
+    public static EntityHeader fromEntity(Entity e) {
+        if (e instanceof Policy) {
+            return new PolicyHeader((Policy)e);
+        } else if (e instanceof PublishedService) {
+            return new ServiceHeader((PublishedService)e);
+        } else if (e instanceof Folder) {
+            return new FolderHeader((Folder)e);
+        } else if (e instanceof User) {
+            User user = (User)e;
+            return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getLogin(), null, user.getName());
+        } else if (e instanceof Group) {
+            Group group = (Group)e;
+            return new IdentityHeader(group.getProviderId(), group.getId(), EntityType.GROUP, group.getName(), null, group.getName());
+        } else {
+            return new EntityHeader(e.getId(),
+                                    EntityTypeRegistry.getEntityType(e.getClass()),
+                                    e instanceof NamedEntity ? ((NamedEntity)e).getName() : null,
+                                    null);
+        }
     }
 
-    public static EntityHeader fromEntity(Entity entity) {
-        String name = null;
-        if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
-        if (name == null) name = "";
 
-        // TODO customize for different specialized types of EntityHeader?
-        return new EntityHeader(entity.getId(), EntityType.findTypeByEntity(entity.getClass()), name, "");
+    public static Class<? extends Entity> getEntityClass(EntityHeader header) {
+        return EntityTypeRegistry.getEntityClass(header.getType());
     }
 
     private EntityHeaderUtils() { }

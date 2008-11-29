@@ -1476,7 +1476,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         identitiesTree.setModel(treeModel);
 
         final String url = preferences.getString(SsmPreferences.SERVICE_URL);
-        rootNode = new RootNode(url, getFilterStatusLabel());
+        rootNode = new RootNode(url);
         rootNode.setSortComponents(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents());
 
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.upgrade;
 
@@ -88,10 +88,10 @@ public class Upgrade365To37AddSampleMessagePermissions implements UpgradeTask {
                 }
             }
 
-            if (!canCreate) role.addPermission(CREATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
-            if (!canRead)   role.addPermission(READ,   SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
-            if (!canUpdate) role.addPermission(UPDATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
-            if (!canDelete) role.addPermission(DELETE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
+            if (!canCreate) role.addAttributePermission(CREATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
+            if (!canRead)   role.addAttributePermission(READ,   SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
+            if (!canUpdate) role.addAttributePermission(UPDATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
+            if (!canDelete) role.addAttributePermission(DELETE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
 
             roleManager.update(role);
         }

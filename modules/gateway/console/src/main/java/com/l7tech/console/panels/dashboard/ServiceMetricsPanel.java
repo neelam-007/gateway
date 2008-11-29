@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.panels.dashboard;
 
@@ -46,7 +46,6 @@ import java.util.logging.Logger;
  * @author rmak
  */
 public class ServiceMetricsPanel extends JPanel {
-
     private JPanel mainPanel;
     private JPanel chartPanel;
     private JLabel statusLabel;
@@ -159,7 +158,7 @@ public class ServiceMetricsPanel extends JPanel {
 
     /** Combobox item to represent all published services selected. */
     private static final ServiceHeader ALL_SERVICES = new ServiceHeader(false, false,
-            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1, false);
+            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1L, false);
 
     private final DefaultComboBoxModel _publishedServicesComboModel =
             new DefaultComboBoxModel() {
@@ -278,7 +277,7 @@ public class ServiceMetricsPanel extends JPanel {
         rightTabbedPane.setSelectedIndex(LATEST_TAB_INDEX);
         statusLabel.setText(" ");
 
-        int fineInterval = getClusterStatusAdmin().getMetricsFineInterval();;
+        int fineInterval = getClusterStatusAdmin().getMetricsFineInterval();
 
         _fineResolution = new Resolution(MetricsBin.RES_FINE, fineInterval, FINE_CHART_TIME_RANGE);
         _hourlyResolution = new Resolution(MetricsBin.RES_HOURLY, 60 * 60 * 1000, HOURLY_CHART_TIME_RANGE);
@@ -495,7 +494,7 @@ public class ServiceMetricsPanel extends JPanel {
             // Updates the chart.
             // -----------------------------------------------------------------
 
-            Collection<MetricsSummaryBin> newBins = null;
+            Collection<MetricsSummaryBin> newBins;
             if (_latestDownloadedPeriodStart == -1) {
                 newBins = clusterStatusAdmin.summarizeLatestByPeriod(nodeId,
                                                                      serviceOids,
@@ -568,7 +567,7 @@ public class ServiceMetricsPanel extends JPanel {
                     final boolean hasRF = latestBin.getServicesWithRoutingFailure().contains(svc.getOid());
                     final boolean hasPV = latestBin.getServicesWithPolicyViolation().contains(svc.getOid());
                     if (hasRF || hasPV) {
-                        ImageIcon icon = null;
+                        ImageIcon icon;
                         if (hasRF && hasPV) {
                             icon = BOTH_PROBLEMS_ICON;
                         } else if (hasRF) {
@@ -655,7 +654,7 @@ public class ServiceMetricsPanel extends JPanel {
                 final boolean hasRF = bin.getServicesWithRoutingFailure().contains(publishedService.getOid());
                 final boolean hasPV = bin.getServicesWithPolicyViolation().contains(publishedService.getOid());
                 if (hasRF || hasPV) {
-                    ImageIcon icon = null;
+                    ImageIcon icon;
                     if (hasRF && hasPV) {
                         icon = BOTH_PROBLEMS_ICON;
                     } else if (hasRF) {

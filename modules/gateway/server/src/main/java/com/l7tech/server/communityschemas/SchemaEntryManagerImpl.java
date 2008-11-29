@@ -1,26 +1,26 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.communityschemas;
 
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.util.ExceptionUtils;
+import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.xml.sax.SAXException;
@@ -101,7 +101,7 @@ public class SchemaEntryManagerImpl
     }
 
     private Collection<SchemaEntry> addSoapEnv( final Collection<SchemaEntry> collection, final String name, final String tns ) {
-        ArrayList<SchemaEntry> completeList = new ArrayList<SchemaEntry>(collection);
+        List<SchemaEntry> completeList = new ArrayList<SchemaEntry>(collection);
 
         if ( schemaMatch( XMLNS_SCHEMA_NAME, XMLNS_SCHEMA_TNS, name, tns ) ) {
             completeList.add(XMLNS_SCHEMA_ENTRY);
@@ -156,13 +156,11 @@ public class SchemaEntryManagerImpl
     @SuppressWarnings({"unchecked"})
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public Collection<SchemaEntry> findByTNS(final String tns) throws FindException {
-        final String querytns = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
-                          " where " + TABLE_NAME + ".tns = ?";
         Collection output = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             @Override
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                Query q = session.createQuery(querytns);
-                q.setString(0, tns);
+                Criteria q = session.createCriteria(getImpClass());
+                q.add(Restrictions.eq("tns", tns));
                 return q.list();
             }});
 
@@ -192,13 +190,6 @@ public class SchemaEntryManagerImpl
         completeList.addAll(super.findAllHeaders());
         completeList.add(SOAP11_SCHEMA_HEADER);
         return completeList;
-    }
-
-    @Transactional(readOnly=true)
-    @Override
-    public SchemaEntry findEntity(long oid) throws FindException {
-        SchemaEntry result = getInternalSchema(oid);
-        return result != null ? result : super.findEntity(oid);
     }
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
@@ -269,7 +260,7 @@ public class SchemaEntryManagerImpl
                             try {
                                 // See if it still exists (i.e. it's updated, not deleted)
 
-                                SchemaEntry entry = findEntity(oid);
+                                SchemaEntry entry = findByPrimaryKey(oid);
                                 if (entry == null) {
                                     invalidateCompiledSchema(oid);
                                     continue;

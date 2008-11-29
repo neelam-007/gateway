@@ -12,35 +12,35 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: darmstrong
- * Date: Aug 20, 2008
- * Time: 3:21:27 PM
  * Common base class for Entities which can be aliases. Paramaterized so that any caller will get the correct
  * type from find methods and we can process any aliases entity generically.
  * Note the abstract method getNewEntityHeader, when we want to create a new EntityHeader we need to get this
  * from the subclass as we can't create a new instance from the paramaratized type alone.
+ *
+ * @author darmstrong
  */
-public abstract class AliasManagerImpl<ET extends Alias, HT extends OrganizationHeader>
-        extends HibernateEntityManager<ET, HT> implements AliasManager<ET, HT>{
+public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
+    extends HibernateEntityManager<AT, HT> 
+    implements AliasManager<AT, ET, HT>
+{
 
     @Override
     protected UniqueType getUniqueType() {
         return UniqueType.NONE;
     }
 
-    public ET findAliasByEntityAndFolder(final Long serviceOid, final Long folderOid) throws FindException {
+    public AT findAliasByEntityAndFolder(final Long serviceOid, final Long folderOid) throws FindException {
         if (serviceOid == null || folderOid == null) throw new NullPointerException();
         if (!(PersistentEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not PersistentEntity!");
 
         try {
             //noinspection unchecked
-            return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            return (AT)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
                     crit.add(Restrictions.eq("entityOid", serviceOid));
-                    crit.add(Restrictions.eq("folderOid", folderOid));
+                    crit.add(Restrictions.eq("folder.oid", folderOid));
                     return crit.uniqueResult();
                 }
             });
@@ -49,13 +49,13 @@ public abstract class AliasManagerImpl<ET extends Alias, HT extends Organization
         }
     }
 
-    public Collection<ET> findAllAliasesForEntity(final Long serviceOid) throws FindException {
+    public Collection<AT> findAllAliasesForEntity(final Long serviceOid) throws FindException {
         if (serviceOid == null) throw new NullPointerException();
         if (!(PersistentEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not PersistentEntity!");
 
         try {
             //noinspection unchecked
-            return (Collection<ET>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            return (Collection<AT>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
@@ -78,16 +78,16 @@ public abstract class AliasManagerImpl<ET extends Alias, HT extends Organization
 
     public Collection<HT> expandEntityWithAliases(Collection<HT> originalHeaders)
             throws FindException{
-        Collection<ET> allAliases = findAll();
+        Collection<AT> allAliases = findAll();
 
-        Map<Long, Set<ET>> entityIdToAllItsAliases = new HashMap<Long, Set<ET>>();
-        for(ET et: allAliases){
-            Long origServiceId = et.getEntityOid();
+        Map<Long, Set<AT>> entityIdToAllItsAliases = new HashMap<Long, Set<AT>>();
+        for(AT AT : allAliases){
+            Long origServiceId = AT.getEntityOid();
             if(!entityIdToAllItsAliases.containsKey(origServiceId)){
-                Set<ET> aliasSet = new HashSet<ET>();
+                Set<AT> aliasSet = new HashSet<AT>();
                 entityIdToAllItsAliases.put(origServiceId, aliasSet);
             }
-            entityIdToAllItsAliases.get(origServiceId).add(et);
+            entityIdToAllItsAliases.get(origServiceId).add(AT);
         }
 
         Collection<HT> returnHeaders = new ArrayList<HT>();
@@ -95,11 +95,11 @@ public abstract class AliasManagerImpl<ET extends Alias, HT extends Organization
             Long serviceId = ht.getOid();
             returnHeaders.add(ht);
             if(entityIdToAllItsAliases.containsKey(serviceId)){
-                Set<ET> aliases = entityIdToAllItsAliases.get(serviceId);
-                for(ET pa: aliases){
+                Set<AT> aliases = entityIdToAllItsAliases.get(serviceId);
+                for(AT pa: aliases){
                     HT newHT = getNewEntityHeader(ht);
                     newHT.setAlias(true);
-                    newHT.setFolderOid(pa.getFolderOid());
+                    newHT.setFolderOid(pa.getFolder().getOid());
                     returnHeaders.add(newHT);
                 }
             }
