@@ -22,6 +22,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.identity.User;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.ws.soap.SOAPFaultException;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -64,6 +65,13 @@ public class SSGClusterContentSelector extends WebPage {
             public Object getData() {
                 try {
                     return buildSsgClusterContent();
+                } catch (SOAPFaultException e) {
+                    if ( GatewayContext.isNetworkException(e) ) {
+                        return new JSONException( new Exception("Gateway not available.") );                        
+                    } else {
+                        logger.warning(e.toString());
+                        return new JSONException(e);
+                    }
                 } catch (Exception e) {
                     logger.warning(e.toString());
                     return new JSONException(e);

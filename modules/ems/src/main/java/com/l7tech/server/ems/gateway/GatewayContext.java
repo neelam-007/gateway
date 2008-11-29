@@ -7,14 +7,19 @@ import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.ExceptionUtils;
 
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.text.MessageFormat;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.UnknownHostException;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.KeyManager;
+import javax.xml.ws.soap.SOAPFaultException;
 
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
@@ -66,6 +71,12 @@ public class GatewayContext {
 
     public MigrationApi getMigrationApi() {
         return migrationApi;
+    }
+
+    public static boolean isNetworkException( final SOAPFaultException sfe ) {
+        return ExceptionUtils.causedBy( sfe, ConnectException.class ) ||
+               ExceptionUtils.causedBy( sfe, NoRouteToHostException.class ) ||
+               ExceptionUtils.causedBy( sfe, UnknownHostException.class );
     }
 
     //- PRIVATE

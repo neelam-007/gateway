@@ -10,6 +10,7 @@ import java.util.logging.Level;
 
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
@@ -18,6 +19,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.identity.User;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.ws.soap.SOAPFaultException;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -64,6 +66,13 @@ public class SSGClusterSelector extends WebPage {
                     } );
                     addChildren(entities, rootFolder);
                     return entities;
+                } catch (SOAPFaultException e) {
+                    if ( GatewayContext.isNetworkException(e) ) {
+                        return new JSONException( new Exception("Gateway not available.") );
+                    } else {
+                        logger.warning(e.toString());
+                        return new JSONException(e);
+                    }
                 } catch (FindException e) {
                     logger.warning(e.toString());
                     return new JSONException(e);

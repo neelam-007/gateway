@@ -226,7 +226,7 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                             report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
                             report.setStatusTime( System.currentTimeMillis() );
                         } catch ( SOAPFaultException sfe ) {
-                            if ( isExpectedNetworkException(sfe) ) {
+                            if ( GatewayContext.isNetworkException(sfe) ) {
                                 logger.log( Level.FINE, "Connection failed for cluster '"+host+"'." );
                             } else if ( "Authentication Required".equals(sfe.getMessage()) ){
                                 logger.log( Level.FINE, "Trust failed for cluster '"+host+"'." );
@@ -246,11 +246,5 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error accessing reports.", fe );        
         }
-    }
-
-    private boolean isExpectedNetworkException( SOAPFaultException sfe ) {
-        return ExceptionUtils.causedBy( sfe, ConnectException.class ) ||
-               ExceptionUtils.causedBy( sfe, NoRouteToHostException.class ) ||
-               ExceptionUtils.causedBy( sfe, UnknownHostException.class );
     }
 }

@@ -340,7 +340,12 @@
         <property name="logonService" ref="logonService"/>
     </bean>
 
-    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean"/>
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
+        <property name="rbacServices" ref="rbacServices"/>
+    </bean>
+    <bean id="rbacServices" class="com.l7tech.server.security.rbac.RbacServicesImpl">
+        <property name="roleManager" ref="roleManager"/>
+    </bean>
 
     <bean id="roleManagerHelper" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.security.rbac.RoleManagerImpl"/>
