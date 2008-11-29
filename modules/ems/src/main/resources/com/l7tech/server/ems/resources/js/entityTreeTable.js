@@ -1006,7 +1006,7 @@ if (!l7.EntityTreeTable) {
 
             /**
              * @public
-             * @type {array} array of entity types to filter; null for no filter
+             * @param {array} types     array of entity types (l7.EntityTreeTable.ENTITY values) to filter; null for no filter
              * @return {array} array of entity object literals whose checkbox is selected; may be empty but never null
              */
             this.getEntitiesWithTristateCheckboxSelected = function(types) {
