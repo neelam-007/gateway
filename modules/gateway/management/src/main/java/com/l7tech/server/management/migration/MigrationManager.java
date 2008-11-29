@@ -13,14 +13,14 @@ import java.util.Collection;
 
 public interface MigrationManager {
 
-    public EntityHeaderSet<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException;
+    public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException;
 
     // is this one optional? maybe remove from interface
     public MigrationMetadata findDependencies(Collection<EntityHeader> headers) throws MigrationException;
 
-    public MigrationBundle exportBundle(Set<EntityHeader> headers) throws MigrationException;
+    public MigrationBundle exportBundle(Collection<EntityHeader> headers) throws MigrationException;
 
-    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Set<EntityHeader> mappables) throws MigrationException;
+    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables) throws MigrationException;
 
     public void importBundle(MigrationBundle bundle) throws MigrationException;
 }
