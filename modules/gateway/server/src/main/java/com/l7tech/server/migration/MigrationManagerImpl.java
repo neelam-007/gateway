@@ -4,6 +4,7 @@ import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.ExportedItem;
 import com.l7tech.server.management.migration.MigrationManager;
+import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.*;
@@ -12,17 +13,25 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 import static com.l7tech.objectmodel.migration.MigrationException.*;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.EntityCrud;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.gateway.common.service.PublishedService;
 
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.lang.reflect.Method;
+import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
 
 
 /**
@@ -34,13 +43,15 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private EntityFinder entityFinder;
     private PlatformTransactionManager transactionManager;
+    private EntityCrud entityCrud;
 
-    public MigrationManagerImpl(EntityFinder entityFinder, PlatformTransactionManager transactionManager) {
+    public MigrationManagerImpl(EntityFinder entityFinder, PlatformTransactionManager transactionManager, EntityCrud entityCrud) {
         this.entityFinder = entityFinder;
         this.transactionManager = transactionManager;
+        this.entityCrud = entityCrud;
     }
 
-    public EntityHeaderSet<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
+    public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
         try {
             return entityFinder.findAll(clazz);
         } catch (FindException e) {
@@ -59,7 +70,7 @@ public class MigrationManagerImpl implements MigrationManager {
         return result;
     }
 
-    public MigrationBundle exportBundle(final Set<EntityHeader> headers) throws MigrationException {
+    public MigrationBundle exportBundle(final Collection<EntityHeader> headers) throws MigrationException {
 
         final MigrationException[] thrown = new MigrationException[1];
         MigrationBundle result = (MigrationBundle) new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
@@ -89,7 +100,7 @@ public class MigrationManagerImpl implements MigrationManager {
             return result;
     }
 
-    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Set<EntityHeader> mappables) throws MigrationException {
+    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables) throws MigrationException {
 
         Map<EntityHeader,EntityHeaderSet> result = new HashMap<EntityHeader,EntityHeaderSet>();
 
@@ -104,12 +115,17 @@ public class MigrationManagerImpl implements MigrationManager {
         return result;
     }
 
+
+    @Transactional(rollbackFor = Throwable.class)
     public void importBundle(MigrationBundle bundle) throws MigrationException {
 
-        // bundle validation
-        MigrationErrors errors = validateBundle(bundle);
+        MigrationErrors errors = new MigrationErrors();
+/*
+        // todo: enable bundle validation
+        errors = validateBundle(bundle);
         if (! errors.isEmpty())
             throw new MigrationException("Migration bundle validation failed.", errors);
+*/
 
         // load entities
         Map<EntityHeaderRef, Entity> entities = new HashMap<EntityHeaderRef, Entity>();
@@ -149,8 +165,17 @@ public class MigrationManagerImpl implements MigrationManager {
         if (! errors.isEmpty())
             throw new MigrationException("Errors while applying mappings for the entities to import.", errors);
 
+        try {
+            doUpload(entitiesToImport);
+        } catch (SaveException e) {
+            throw new MigrationException("Import failed.", e);
+        }
+    }
 
-        // todo: upload entities ( entitiesToImport )
+    private void doUpload(Map<EntityHeader, Entity> entitiesToImport) throws SaveException {
+        for (Entity entity : entitiesToImport.values()) {
+            entityCrud.save(entity);
+        }
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
@@ -201,22 +226,28 @@ public class MigrationManagerImpl implements MigrationManager {
     private void findDependenciesRecursive(MigrationMetadata result, EntityHeader header) throws MigrationException {
         logger.log(Level.FINE, "Finding dependencies for: " + header.toStringVerbose());
         result.addHeader(header);// marks header as processed
-        Entity entity = loadEntity(header);
+        Entity entity;
+        try {
+            entity = loadEntity(header);
+        } catch (Exception e) {
+            return;
+        }
         for (Method method : entity.getClass().getMethods()) {
             if (MigrationUtils.isDependency(method)) {
                 PropertyResolver resolver = MigrationUtils.getResolver(method);
+                Map<EntityHeader, Set<MigrationMapping>> deps;
                 try {
-                    Map<EntityHeader, Set<MigrationMapping>> deps = resolver.getDependencies(header, entity, method);
-                    for (EntityHeader depHeader : deps.keySet()) {
-                        for (MigrationMapping mapping : deps.get(depHeader)) {
-                            result.addMapping(mapping);
-                            logger.log(Level.FINE, "Added mapping: " + mapping);
-                            if (!result.hasHeader(depHeader))
-                                findDependenciesRecursive(result, depHeader);
-                        }
-                    }
+                    deps = resolver.getDependencies(header, entity, method);
                 } catch (MigrationException e) {
                     throw new MigrationException("Error getting dependencies for property: " + method, e);
+                }
+                for (EntityHeader depHeader : deps.keySet()) {
+                    for (MigrationMapping mapping : deps.get(depHeader)) {
+                        result.addMapping(mapping);
+                        logger.log(Level.FINE, "Added mapping: " + mapping);
+                        if (!result.hasHeader(depHeader))
+                            findDependenciesRecursive(result, depHeader);
+                    }
                 }
             }
         }
@@ -230,4 +261,37 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
+    private void test() {
+        try {
+            Collection<EntityHeader> headers = listEntities(PublishedService.class);
+            logger.log(Level.FINE, "Retrieved " + headers.size() + " entities.");
+
+            MigrationBundle bundle = exportBundle(new HashSet(headers));
+
+            //Collection<Class<? extends Entity>> entityClasses = EntityTypeRegistry.getAllEntityClasses();
+            Collection<Class> jaxbClasses = new HashSet<Class>() {{
+                add(MigrationBundle.class);
+                add(EntityType.POLICY.getEntityClass());
+                add(EntityType.SERVICE.getEntityClass());
+            }};
+
+            JAXBContext jaxbc = JAXBContext.newInstance(jaxbClasses.toArray(new Class[jaxbClasses.size()]));
+            Marshaller marshaller = jaxbc.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+
+            OutputStream out = new ByteArrayOutputStream();
+            marshaller.marshal(bundle, out);
+            System.out.println(out.toString());
+
+/*
+            Unmarshaller unmarshaller = jaxbc.createUnmarshaller();
+            MigrationBundle bundle2 = (MigrationBundle) unmarshaller.unmarshal(new ByteArrayInputStream(out.toString().getBytes()));
+            logger.log(Level.FINE, "Unmarshalling done: " + bundle2);
+*/
+
+
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error listing entities,", e);
+        }
+    }
 }

@@ -9,7 +9,6 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.migration.MigrationException;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.Map;
 
 /**
@@ -24,7 +23,7 @@ public class MigrationApiImpl implements MigrationApi {
         this.manager = manager;
     }
 
-    public EntityHeaderSet<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
+    public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
         return manager.listEntities(clazz);
     }
 
@@ -32,11 +31,11 @@ public class MigrationApiImpl implements MigrationApi {
         return manager.findDependencies(headers);
     }
 
-    public MigrationBundle exportBundle(Set<EntityHeader> headers) throws MigrationException {
+    public MigrationBundle exportBundle(Collection<EntityHeader> headers) throws MigrationException {
         return manager.exportBundle(headers);
     }
 
-    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Set<EntityHeader> mappables) throws MigrationException {
+    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables) throws MigrationException {
         return manager.retrieveMappingCandidates(mappables);
     }
 

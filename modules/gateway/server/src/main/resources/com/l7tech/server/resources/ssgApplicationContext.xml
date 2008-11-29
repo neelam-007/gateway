@@ -1227,9 +1227,50 @@
         <constructor-arg index="2" ref="clusterPropertyManager"/>
     </bean>
 
+  <bean id="entityCrud" class="com.l7tech.server.EntityCrudImpl">
+      <property name="sessionFactory" ref="sessionFactory"/>
+      <constructor-arg ref="entityFinder"/>
+      <constructor-arg>
+          <list>
+              <ref bean="trustedEmsManager"/>
+              <ref bean="trustedEmsUserManager"/>
+              <ref bean="auditRecordManager"/>
+              <ref bean="clusterPropertyManager"/>
+              <ref bean="schemaEntryManager"/>
+              <ref bean="folderManager"/>
+              <ref bean="identityProviderConfigManager"/>
+              <ref bean="revocationCheckPolicyManager"/>
+              <ref bean="trustedCertManager"/>
+              <ref bean="federatedUserManager"/>
+              <ref bean="federatedGroupManager"/>
+              <ref bean="internalUserManager"/>
+              <ref bean="internalGroupManager"/>
+              <ref bean="attributeConfigManager"/>
+              <ref bean="identityMappingManager"/>
+              <ref bean="securityTokenMappingManager"/>
+              <!--<ref bean="sinkLogManager"/>-->
+              <!--<ref bean="logonInfoManager"/>-->
+              <ref bean="messageContextMappingKeyManager"/>
+              <ref bean="messageContextMappingValueManager"/>
+              <ref bean="policyManager"/>
+              <ref bean="policyAliasManager"/>
+              <ref bean="keystoreFileManager"/>
+              <ref bean="roleManager"/>
+              <ref bean="serviceAliasManager"/>
+              <ref bean="serviceDocumentManager"/>
+              <ref bean="serviceManager"/>
+              <ref bean="ssgConnectorManager"/>
+              <ref bean="emailListenerManager"/>
+              <ref bean="jmsConnectionManager"/>
+              <ref bean="jmsEndpointManager"/>
+          </list>
+      </constructor-arg>
+  </bean>
+
   <bean id="migrationManager" class="com.l7tech.server.migration.MigrationManagerImpl">
-    <constructor-arg ref="entityFinder"/>
-    <constructor-arg ref="transactionManager"/>
+      <constructor-arg ref="entityFinder"/>
+      <constructor-arg ref="transactionManager"/>
+      <constructor-arg ref="entityCrud"/>
   </bean>
 
 </beans>

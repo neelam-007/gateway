@@ -31,7 +31,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
         Assertion assertion = getRootAssertion(entity, property);
 
         String getterName = property.getName();
-        String propName = getterName.startsWith("get") && getterName.length() > 3 ? getterName.substring(3, getterName.length()-1) : getterName;
+        String propName = getterName.startsWith("get") && getterName.length() > 3 ? getterName.substring(3, getterName.length()) : getterName;
 
         Map<EntityHeader, Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
         getHeadersRecursive(source, assertion, result, propName);

@@ -32,7 +32,7 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
 
         String getterName = property.getName();
-        String propName = getterName.startsWith("get") && getterName.length() > 3 ? getterName.substring(3, getterName.length()-1) : getterName;
+        String propName = getterName.startsWith("get") && getterName.length() > 3 ? getterName.substring(3, getterName.length()) : getterName;
 
         final Object propertyValue;
         try {
