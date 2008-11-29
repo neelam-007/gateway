@@ -20,9 +20,6 @@ import javax.xml.ws.soap.SOAPFaultException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.net.ConnectException;
-import java.net.NoRouteToHostException;
-import java.net.UnknownHostException;
 
 /**
  * 
@@ -98,7 +95,7 @@ public class GatewayPoller implements InitializingBean {
                                     }
                                     newInfoSet = new HashSet<GatewayApi.GatewayInfo>(api.getGatewayInfo());
                                 } catch ( SOAPFaultException sfe ) {
-                                    if ( isExpectedNetworkException(sfe) ) {
+                                    if ( GatewayContext.isNetworkException(sfe) ) {
                                         logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                     } else {
                                         throw sfe;
@@ -135,7 +132,7 @@ public class GatewayPoller implements InitializingBean {
                             } catch ( GatewayException ge ) {
                                 logger.log( Level.WARNING, "Gateway error when polling gateways", ge );
                             } catch ( SOAPFaultException sfe ) {
-                                if ( isExpectedNetworkException(sfe) ) {
+                                if ( GatewayContext.isNetworkException(sfe) ) {
                                     logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                 } else if ( "Authentication Required".equals(sfe.getMessage()) ){
                                     if ( cluster.getTrustStatus() ) {
