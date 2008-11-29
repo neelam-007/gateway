@@ -69,9 +69,25 @@ public class ReportApiTest {
         roundTrip( result );
     }
 
+    @Test
+    public void testGroupingKeySerialization() throws Exception {
+        ReportApi.GroupingKey groupingKey = new ReportApi.GroupingKey();
+        groupingKey.setType( ReportApi.GroupingKey.GroupingKeyType.CUSTOM );
+        groupingKey.setName( "ADSF" );
+
+        roundTrip( groupingKey );
+    }
+
     private Object roundTrip( Object object ) throws Exception {
         StringWriter out = new StringWriter();
-        JAXBContext context = JAXBContext.newInstance( ReportApi.ReportSubmission.class, ReportApi.ReportType.class, ReportApi.ReportStatus.class, ReportApi.ReportResult.class, ReportApi.ReportOutputType.class );
+        JAXBContext context = JAXBContext.newInstance(
+                ReportApi.ReportSubmission.class,
+                ReportApi.ReportType.class,
+                ReportApi.ReportStatus.class,
+                ReportApi.ReportResult.class,
+                ReportApi.ReportOutputType.class,
+                ReportApi.GroupingKey.class
+        );
         Marshaller marshaller = context.createMarshaller();
         marshaller.setEventHandler( new ValidationEventHandler(){
             @Override

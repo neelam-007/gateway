@@ -61,6 +61,69 @@ public interface ReportApi {
                                   @WebParam(name="ReportOutputType") ReportOutputType type ) throws ReportException;
 
     /**
+     * Get grouping keys.
+     *
+     * @throws ReportException on error
+     */
+    @WebMethod(operationName="GetGroupingKeys")
+    @WebResult(name="GroupingKeys", targetNamespace="http://www.layer7tech.com/management/report")
+    Collection<GroupingKey> getGroupingKeys() throws ReportException;
+
+    @XmlRootElement(name="GroupingKey", namespace="http://www.layer7tech.com/management/report")
+    class GroupingKey {
+        public enum GroupingKeyType { STANDARD, CUSTOM }
+
+        private GroupingKeyType type;
+        private String name;
+
+        public GroupingKey() {
+        }
+
+        public GroupingKey( final GroupingKeyType type, final String name ) {
+            this.type = type;
+            this.name = name;
+        }
+
+        public GroupingKeyType getType() {
+            return type;
+        }
+
+        public void setType(GroupingKeyType type) {
+            this.type = type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        @Override
+        @SuppressWarnings({"RedundantIfStatement"})
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            GroupingKey that = (GroupingKey) o;
+
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            if (type != that.type) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            result = (type != null ? type.hashCode() : 0);
+            result = 31 * result + (name != null ? name.hashCode() : 0);
+            return result;
+        }
+    }
+
+    /**
      * Supported report types.
      */
     @XmlRootElement(name="ReportType", namespace="http://www.layer7tech.com/management/report")

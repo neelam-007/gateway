@@ -2,15 +2,22 @@ package com.l7tech.server.cluster;
 
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.gateway.standardreports.ReportGenerator;
+import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
 
 import javax.activation.DataHandler;
 import javax.mail.util.ByteArrayDataSource;
+import javax.jws.WebMethod;
+import javax.jws.WebResult;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
 
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
@@ -182,10 +189,53 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
         return result;
     }
 
+    @Override
+    public Collection<GroupingKey> getGroupingKeys() throws ReportException {
+        final Collection<GroupingKey> keys = new ArrayList<GroupingKey>();
+        keys.add( new GroupingKey( GroupingKey.GroupingKeyType.STANDARD, MessageContextMapping.MappingType.AUTH_USER.toString()) );
+        keys.add( new GroupingKey( GroupingKey.GroupingKeyType.STANDARD, MessageContextMapping.MappingType.IP_ADDRESS.toString() ) );
+
+        getHibernateTemplate().execute( new HibernateCallback(){
+            @Override
+            public Object doInHibernate( final Session session ) throws HibernateException, SQLException {
+                session.doWork( new Work(){
+                    @Override
+                    public void execute( final Connection connection ) throws SQLException {
+                        Statement statement = null;
+                        ResultSet results = null;
+                        try {
+                            statement = connection.createStatement();
+                            results = statement.executeQuery( MAPPING_SQL );
+
+                            while ( results.next() ) {
+                                keys.add( new GroupingKey( GroupingKey.GroupingKeyType.CUSTOM, results.getString(1) ) );
+                            }
+                        } catch ( SQLException se ) {
+                            logger.log( Level.WARNING, "Error loading context mapping keys.", se );
+                        } finally {
+                            ResourceUtils.closeQuietly( results );
+                            ResourceUtils.closeQuietly( statement );
+                        }
+                    }
+                });
+                return null;
+            }
+        } );
+
+        return keys;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( ReportApiImpl.class.getName() );
-    
+
+    private static final String MAPPING_SQL =
+            "SELECT mapping1_key FROM message_context_mapping_keys WHERE mapping1_type='CUSTOM_MAPPING' UNION\n" +
+            "SELECT mapping2_key FROM message_context_mapping_keys WHERE mapping2_type='CUSTOM_MAPPING' UNION\n" +
+            "SELECT mapping3_key FROM message_context_mapping_keys WHERE mapping3_type='CUSTOM_MAPPING' UNION\n" +
+            "SELECT mapping4_key FROM message_context_mapping_keys WHERE mapping4_type='CUSTOM_MAPPING' UNION\n" +
+            "SELECT mapping5_key FROM message_context_mapping_keys WHERE mapping5_type='CUSTOM_MAPPING'";
+
     //TODO implement gateway report storage / retrieval
     private Map<String,ReportData> reports = new HashMap<String,ReportData>();
 
