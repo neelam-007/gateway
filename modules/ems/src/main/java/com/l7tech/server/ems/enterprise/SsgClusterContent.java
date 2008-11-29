@@ -12,6 +12,8 @@ import com.l7tech.objectmodel.EntityType;
  * @Date: Nov 26, 2008
  */
 public class SsgClusterContent implements JSON.Convertible {
+    private static final String ROOT = "Root Node";
+
     private String id;
     private String parentId;
     private EntityType entityType;
@@ -22,10 +24,11 @@ public class SsgClusterContent implements JSON.Convertible {
         this.id = id;
         this.parentId = parentId;
         this.entityType = entityType;
-        this.name = name;
+        this.name = ROOT.equals(name) && (parentId==null||parentId.isEmpty()) ? "/" : name;
         this.version = version;
     }
 
+    @Override
     public void toJSON(JSON.Output output) {
         output.add(JSONConstants.ID, id);
         output.add(JSONConstants.PARENT_ID, parentId);
@@ -34,6 +37,7 @@ public class SsgClusterContent implements JSON.Convertible {
         if (version != null) output.add(JSONConstants.VERSION, version.toString());
     }
 
+    @Override
     public void fromJSON(Map map) {
         throw new UnsupportedOperationException("Mapping from JSON not supported.");
     }

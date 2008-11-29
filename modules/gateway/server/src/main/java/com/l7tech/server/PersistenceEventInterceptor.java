@@ -80,6 +80,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
 
         ignoredClassNames.add(LogonInfo.class.getName());
         ignoredClassNames.add(EmailListenerState.class.getName());
+        
+        ignoredClassNames.add("com.l7tech.server.ems.standardreports.StandardReportArtifact");
 
         auditContext = context;
     }

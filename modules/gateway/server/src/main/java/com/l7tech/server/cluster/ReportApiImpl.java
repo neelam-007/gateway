@@ -4,13 +4,10 @@ import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.gateway.standardreports.ReportGenerator;
-import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 
 import javax.activation.DataHandler;
 import javax.mail.util.ByteArrayDataSource;
-import javax.jws.WebMethod;
-import javax.jws.WebResult;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -244,9 +241,9 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
 
         for ( ReportSubmission.ReportParam param : parameters ) {
             Object value = param.getValue();
-//            if ( value != null ) {
-                logger.info("Accepted report parameter '"+param.getName()+"' = '"+value+"'.");
-//            }
+            if ( logger.isLoggable(Level.FINE) ) {
+                logger.fine("Accepted report parameter '"+param.getName()+"' = '"+value+"'.");
+            }
             params.put( param.getName(), value );
         }
 

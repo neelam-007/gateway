@@ -6,6 +6,7 @@ import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.ems.gateway.GatewayContext;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
@@ -15,7 +16,6 @@ import com.l7tech.util.ExceptionUtils;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -44,12 +44,14 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                               final StandardReportManager reportManager,
                               final SsgClusterManager clusterManager,
                               final GatewayContextFactory contextFactory,
-                              final Timer timer ) {
+                              final Timer timer,
+                              final AuditContext auditContext ) {
         this.transactionManager = transactionManager;
         this.reportManager = reportManager;
         this.clusterManager = clusterManager;
         this.contextFactory = contextFactory;
         this.timer = timer;
+        this.auditContext = auditContext;
     }
 
     /**
@@ -75,8 +77,8 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
         if ( !cluster.getTrustStatus() )  throw new ReportException( "Cluster trust not established '"+clusterId+"'." );
 
         StandardReport report = new StandardReport();
-        report.setName( "Report " + new Date() );
-        report.setDescription( "Report submitted " + new Date() ); //TODO [Donal] report description and name
+        report.setName( reportSubmission.getName() != null && reportSubmission.getName().trim().length()>0 ? reportSubmission.getName().trim() : "Unnamed Report" );
+        report.setDescription( "" );
         report.setProvider( user.getProviderId() );
         report.setUserId( user.getId() );
         report.setSsgCluster( cluster );
@@ -128,15 +130,22 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
     private final SsgClusterManager clusterManager;
     private final GatewayContextFactory contextFactory;
     private final Timer timer;
+    private final AuditContext auditContext;
 
     private void processReport() {
-        TransactionTemplate template = new TransactionTemplate(transactionManager);
-        template.execute( new TransactionCallbackWithoutResult(){
-            @Override
-            protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
-                processReportsWithTransaction();
-            }
-        } );
+        boolean wasSystem = auditContext.isSystem();
+        auditContext.setSystem(true);
+        try {
+            TransactionTemplate template = new TransactionTemplate(transactionManager);
+            template.execute( new TransactionCallbackWithoutResult(){
+                @Override
+                protected void doInTransactionWithoutResult(final TransactionStatus transactionStatus) {
+                        processReportsWithTransaction();
+                }
+            } );
+        } finally {
+            auditContext.setSystem(wasSystem);
+        }
     }
 
     /**

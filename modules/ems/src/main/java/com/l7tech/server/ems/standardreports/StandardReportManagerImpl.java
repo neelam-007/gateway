@@ -42,6 +42,13 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
         return "report";
     }
 
+    //- PROTECTED
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE; 
+    }
+
     //- PRIVATE
 
     private Criterion[] asCriterion( final User user ) {

@@ -503,6 +503,7 @@
                 <constructor-arg value="Report service timer"/>
             </bean>
         </constructor-arg>
+        <constructor-arg index="5" ref="auditContext" />
     </bean>
 
 </beans>
