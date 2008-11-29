@@ -86,11 +86,12 @@ public class ReportApp
     private static final String PRINT_CHART = "PRINT_CHART";
     private static final String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
     private static final String SUB_REPORT_HELPER = "SUB_REPORT_HELPER";
-    private static final String SERVICE_NAMES_LIST = "SERVICE_NAMES_LIST";
     private static final String SERVICE_ID_TO_OPERATIONS_MAP = "SERVICE_ID_TO_OPERATIONS_MAP";
 
     private static final String SKUNKWORK_RELATIVE_PATH = "reportOutput";
     private static final String REPORTING_RELATIVE_PATH = "../../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports";
+    private static final String SERVICE_ID_TO_NAME_MAP = "SERVICE_ID_TO_NAME_MAP";
+
     public ReportApp() {
     }
 
@@ -491,7 +492,8 @@ public class ReportApp
         Document transformDoc = Utilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
 
         String xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SummaryTransform.xsl");
-        String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH+"/PS_Summary_Template.jrxml");
+        //String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH+"/PS_Summary_Template.jrxml");
+        String xmlSrc = getResAsString(SKUNKWORK_RELATIVE_PATH+"/PS_Summary_Template_New_Title.jrxml");
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
@@ -653,7 +655,6 @@ public class ReportApp
         LinkedHashMap<String, String> displayStringToGroup = Utilities.getLegendDisplayStringToGroupMap(mappingValuesLegend);
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
-        //todo [Donal] note - if there is no data this throws an exception. Need to create a canned report showing report info to return to user
         Document transformDoc = Utilities.getUsageRuntimeDoc(useUser, keys, distinctMappingSets);
         File f = new File(SKUNKWORK_RELATIVE_PATH+"/UsageTransformDoc.xml");
         f.createNewFile();
@@ -822,22 +823,22 @@ public class ReportApp
         List<String> operations = loadListFromProperties(OPERATIONS, prop);
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        Set<String> serviceNames = new HashSet<String>();
+        Map<String, String> serviceIdsToName = new HashMap<String, String>();
 
         String serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_1");
         String serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_1");
         int index = 2;
         while(serviceName != null && serviceOid != null){
-            serviceNames.add(serviceName);
             serviceIdsToOps.put(serviceOid, new HashSet<String>(operations));
-            
+            serviceIdsToName.put(serviceOid, serviceName);
+
             serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_"+index);
             serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_"+index);
             index++;
         }
 
-        parameters.put(SERVICE_NAMES_LIST, serviceNames);
         parameters.put(SERVICE_ID_TO_OPERATIONS_MAP, serviceIdsToOps);
+        parameters.put(SERVICE_ID_TO_NAME_MAP, serviceIdsToName);
 
         List<String> keys  = loadListFromProperties(MAPPING_KEY, prop);
         List<String> values = loadListFromProperties(MAPPING_VALUE, prop);

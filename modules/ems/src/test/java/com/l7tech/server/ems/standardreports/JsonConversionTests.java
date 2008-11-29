@@ -22,7 +22,7 @@ public class JsonConversionTests {
     
     String [] psSummaryRelativeExpectedParams = new String[]{ReportApi.ReportParameters.IS_RELATIVE, ReportApi.ReportParameters.RELATIVE_TIME_UNIT,
             ReportApi.ReportParameters.RELATIVE_NUM_OF_TIME_UNITS, ReportApi.ReportParameters.REPORT_RAN_BY,
-            ReportApi.ReportParameters.SERVICE_NAMES_LIST, ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP,
+            ReportApi.ReportParameters.SERVICE_ID_TO_NAME_MAP, ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP,
             ReportApi.ReportParameters.IS_DETAIL, ReportApi.ReportParameters.MAPPING_KEYS, ReportApi.ReportParameters.MAPPING_VALUES,
             ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE,
             ReportApi.ReportParameters.USE_USER, ReportApi.ReportParameters.AUTHENTICATED_USERS, ReportApi.ReportParameters.PRINT_CHART};
@@ -474,14 +474,14 @@ public class JsonConversionTests {
                 paramMap.put(rP.getName(), rP);
             }
 
-            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(ReportApi.ReportParameters.SERVICE_NAMES_LIST);
-            Set<String> serviceNames = (Set<String>) reportParam.getValue();
-            Assert.assertNotNull(serviceNames);
+            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(ReportApi.ReportParameters.SERVICE_ID_TO_NAME_MAP);
+            Map<String, String> serviceIdToNameMap = (Map<String, String>) reportParam.getValue();
+            Assert.assertNotNull(serviceIdToNameMap);
 
             if(clusterId.equals(cluster1)){
-                Assert.assertTrue("ServiceNames should be of size 2, it was " + serviceNames.size(), serviceNames.size() == 2);
+                Assert.assertTrue("ServiceNames should be of size 2, it was " + serviceIdToNameMap.values().size(), serviceIdToNameMap.values().size() == 2);
             }else if(clusterId.equals(cluster2)){
-                Assert.assertTrue("ServiceNames should be of size 1, it was " + serviceNames.size(), serviceNames.size() == 1);
+                Assert.assertTrue("ServiceNames should be of size 1, it was " + serviceIdToNameMap.values().size(), serviceIdToNameMap.values().size() == 1);
             }else{
                 throw new IllegalStateException("Unexpected cluster id found :" + clusterId);
             }

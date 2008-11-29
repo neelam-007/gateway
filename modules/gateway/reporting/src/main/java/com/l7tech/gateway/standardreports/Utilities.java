@@ -1670,7 +1670,7 @@ Value is included in all or none, comment is just illustrative
         LinkedHashSet<String> distinctMappingValues = getMappingValues(distinctMappingSets);
         
         if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
-            throw new IllegalArgumentException("distinctMappingValues must not be null or empty");
+            distinctMappingValues = new LinkedHashSet<String>();
         }
 
         Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
@@ -1741,7 +1741,7 @@ Value is included in all or none, comment is just illustrative
         LinkedHashSet<String> distinctMappingValues = getMappingValues(distinctMappingSets);
 
         if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
-            throw new IllegalArgumentException("distinctMappingValues must not be null or empty");
+            distinctMappingValues = new LinkedHashSet<String>();
         }
 
         Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
@@ -1919,7 +1919,7 @@ Value is included in all or none, comment is just illustrative
         LinkedHashSet<String> distinctMappingValues = getMappingValues(distinctMappingSets);
         
         if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
-            throw new IllegalArgumentException("distinctMappingValues must not be null or empty");
+            distinctMappingValues = new LinkedHashSet<String>();
         }
 
         Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
@@ -2164,7 +2164,7 @@ Value is included in all or none, comment is just illustrative
         LinkedHashSet<String> distinctMappingValues = getMappingValues(distinctMappingSets);
 
         if(distinctMappingValues == null || distinctMappingValues.isEmpty()){
-            throw new IllegalArgumentException("distinctMappingValues must not be null or empty");
+            distinctMappingValues = new LinkedHashSet<String>();
         }
         
         Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
@@ -2419,6 +2419,54 @@ Value is included in all or none, comment is just illustrative
             }
             first = false;
             if(!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append(s);
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     *
+     * @param serviceIdToOperationMap
+     * @param printOperations this should be the result of isDetail && isContextMapping from the report's params
+     * @return
+     */
+    public static String getServiceAndIdDisplayString(Map serviceIdToOperationMap, Map serviceIdToNameMap, boolean printOperations){
+        Map<String, Set<String>> sIdToOpMap = serviceIdToOperationMap;
+
+        if(!printOperations){
+            if(serviceIdToNameMap == null) serviceIdToNameMap = new HashMap();
+            List sortedList = new ArrayList(serviceIdToNameMap.values());
+            Collections.sort(sortedList);
+            return getStringNamesFromCollection(sortedList);
+        }
+
+        if(serviceIdToOperationMap == null || serviceIdToOperationMap.isEmpty()) return "";
+        
+
+        Map<String, String> idToDisplayString = new HashMap<String, String>();
+        for(Map.Entry<String, Set<String>> me: sIdToOpMap.entrySet()){
+            String serviceName = (String) serviceIdToNameMap.get(me.getKey());
+            StringBuilder sb = new StringBuilder();
+            int index = 0;
+            for(String s: me.getValue()){
+                if(index != 0) sb.append(", ");
+                sb.append(s);
+                index++;
+            }
+            idToDisplayString.put(serviceName, sb.toString());
+        }
+
+        //sb.append(serviceName+": -> ");
+        List<String> serviceNames = new ArrayList<String>(idToDisplayString.keySet());
+        Collections.sort(serviceNames);
+
+        StringBuilder sb = new StringBuilder();
+        int rowIndex = 0;
+        int maxRows = sIdToOpMap.size();
+        for(String s: serviceNames){
+            sb.append(s).append(" -> ").append(idToDisplayString.get(s));
+            if(rowIndex < maxRows-1) sb.append("<br>");
+            rowIndex++;
         }
 
         return sb.toString();

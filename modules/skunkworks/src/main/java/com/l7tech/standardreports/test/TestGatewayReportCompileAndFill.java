@@ -10,8 +10,6 @@ import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.server.ems.standardreports.JsonReportParameterConvertor;
 import com.l7tech.server.ems.standardreports.JsonReportParameterConvertorFactory;
 import com.l7tech.server.ems.standardreports.ReportSubmissionClusterBean;
-import com.l7tech.server.ems.standardreports.ReportException;
-import com.l7tech.server.cluster.ReportApiImpl;
 import com.l7tech.standardreports.ReportApp;
 import com.l7tech.gateway.standardreports.ReportGenerator;
 
@@ -101,6 +99,32 @@ public class TestGatewayReportCompileAndFill {
     }
 
     @Test
+    public void testReport_PSSummary_NoData() throws Exception {
+
+        Object o = JSON.parse(psRelativeJsonSummaryTest_NoData);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(ReportApi.ReportType.PERFORMANCE_SUMMARY, reportParams, ReportApp.getConnection(prop));
+
+        ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+
+        Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
+        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+
+        DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+    }
+
+    @Test
     public void testReport_PSSummary_NoGroupings() throws Exception {
 
         Object o = JSON.parse(psRelativeJsonSummaryNoGroupingsTest);
@@ -153,6 +177,32 @@ public class TestGatewayReportCompileAndFill {
     }
 
     @Test
+    public void testReport_PSInterval_NoData() throws Exception {
+
+        Object o = JSON.parse(psAbsoluteJsonIntervalTest_NoData);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(ReportApi.ReportType.PERFORMANCE_INTERVAL, reportParams, ReportApp.getConnection(prop));
+
+        ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+
+        Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
+        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+
+        DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+    }
+    
+    @Test
     public void testReport_UsageSummary() throws Exception {
 
         Object o = JSON.parse(usageRelativeJsonSummaryTest);
@@ -178,6 +228,32 @@ public class TestGatewayReportCompileAndFill {
         dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
     }
 
+    @Test
+    public void testReport_UsageSummary_NoData() throws Exception {
+
+        Object o = JSON.parse(usageAbsoluteJsonSummaryTest_NoData);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(ReportApi.ReportType.USAGE_SUMMARY, reportParams, ReportApp.getConnection(prop));
+
+        ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+
+        Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
+        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+
+        DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+    }
+    
     @Test
     public void testReport_UsageSummary_JustKeys() throws Exception {
 
@@ -231,6 +307,33 @@ public class TestGatewayReportCompileAndFill {
         dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
     }
 
+    @Test
+    public void testReport_UsageInterval_NoData() throws Exception {
+
+        Object o = JSON.parse(usageAbsoluteJsonIntervalTest_NoData);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        Assert.assertTrue("Type should be usage interval", submission.getType() == ReportApi.ReportType.USAGE_INTERVAL);
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(submission.getType(), reportParams, ReportApp.getConnection(prop));
+
+        ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+
+        Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
+        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+
+        DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+    }
+    
     private final static String clusterId = "f7f6bf457e1346e5a842efc7f5aff75d";
     
     private final static String psRelativeJsonIntervalTest = "{\"reportType\":\"performance\",    " +
@@ -240,19 +343,19 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listProducts\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listProducts\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listOrders\"" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -284,6 +387,55 @@ public class TestGatewayReportCompileAndFill {
             "    \"reportName\" : \"PS_Interval_Report\"" +
             "}";
 
+    private final static String psAbsoluteJsonIntervalTest_NoData = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"absolute\"," +
+            "        \"start\"    : \"2007/07/30 13:00\"," +
+            "        \"end\"      : \"2007/07/31 13:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.0.0.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : false," +
+            "    \"reportName\" : \"PS_Interval_Absolute_NoData_Report\"" +
+            "}";
+
     private final static String psRelativeJsonSummaryTest = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
@@ -291,19 +443,19 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listProducts\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listOrders\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listProducts\"" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -333,6 +485,55 @@ public class TestGatewayReportCompileAndFill {
             "    \"summaryChart\" : true," +
             "    \"summaryReport\" : true," +
             "    \"reportName\" : \"PS_Summary_Report\"" +
+            "}";
+
+    private final static String psRelativeJsonSummaryTest_NoData = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"absolute\"," +
+            "        \"start\"    : \"2007/07/29 13:00\"," +
+            "        \"end\"      : \"2007/07/31 13:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.0.0.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"PS_Absolute_NoData_Report\"" +
             "}";
 
     private final static String psRelativeJsonSummaryNoGroupingsTest = "{\"reportType\":\"performance\",    " +
@@ -414,7 +615,7 @@ public class TestGatewayReportCompileAndFill {
             "        {" +
             "            \"clusterId\"         : \""+clusterId+"\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
-            "            \"constraint\"        : \"127.0.0.1\"" +
+            "            \"constraint\"        : \"127.0.0.*\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"         : \""+clusterId+"\"," +
@@ -427,6 +628,55 @@ public class TestGatewayReportCompileAndFill {
             "    \"reportName\" : \"Usage_Summary_Report\"" +
             "}";
 
+    private final static String usageAbsoluteJsonSummaryTest_NoData = "{\"reportType\":\"usage\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"absolute\"," +
+            "        \"start\"    : \"2007/07/30 13:00\"," +
+            "        \"end\"      : \"2007/07/31 13:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.0.0.*\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"Usage_Summary_No_Data_Report\"" +
+            "}";
+
     private final static String usageRelativeJsonSummaryTest_JustKeys = "{\"reportType\":\"usage\",    " +
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
@@ -434,19 +684,19 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listProducts\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listProducts\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listProducts\"" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -485,19 +735,19 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listProducts\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listProducts\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"listOrders\"" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -529,4 +779,53 @@ public class TestGatewayReportCompileAndFill {
             "    \"reportName\" : \"Usage_Interval_Report\"" +
             "}";
 
+    private final static String usageAbsoluteJsonIntervalTest_NoData = "{\"reportType\":\"usage\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"absolute\"," +
+            "        \"start\"    : \"2007/07/30 13:00\"," +
+            "        \"end\"      : \"2007/07/31 13:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : false," +
+            "    \"reportName\" : \"Usage_Interval_NoData_Report\"" +
+            "}";
+    
 }

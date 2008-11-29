@@ -418,8 +418,8 @@ public interface ReportApi {
         public static final String ABSOLUTE_START_TIME = "ABSOLUTE_START_TIME";
         public static final String ABSOLUTE_END_TIME = "ABSOLUTE_END_TIME";
         public static final String REPORT_RAN_BY = "REPORT_RAN_BY";
-        public static final String SERVICE_NAMES_LIST = "SERVICE_NAMES_LIST";
         public static final String SERVICE_ID_TO_OPERATIONS_MAP = "SERVICE_ID_TO_OPERATIONS_MAP";
+        public static final String SERVICE_ID_TO_NAME_MAP = "SERVICE_ID_TO_NAME_MAP";        
         public static final String MAPPING_KEYS = "MAPPING_KEYS";
         public static final String MAPPING_VALUES = "MAPPING_VALUES";
         public static final String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
@@ -459,7 +459,7 @@ public interface ReportApi {
 
         public static final String [] ABSOLUTE_TIME_PARAMS = new String[]{ABSOLUTE_START_TIME, ABSOLUTE_END_TIME};
 
-        public static final String [] COMMON_PARAMS = new String[]{IS_RELATIVE, IS_ABSOLUTE, REPORT_RAN_BY, SERVICE_NAMES_LIST,
+        public static final String [] COMMON_PARAMS = new String[]{IS_RELATIVE, IS_ABSOLUTE, REPORT_RAN_BY, SERVICE_ID_TO_NAME_MAP,
         SERVICE_ID_TO_OPERATIONS_MAP, MAPPING_KEYS, MAPPING_VALUES, VALUE_EQUAL_OR_LIKE, USE_USER, AUTHENTICATED_USERS,
         IS_CONTEXT_MAPPING, IS_DETAIL, PRINT_CHART};
 

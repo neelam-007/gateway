@@ -50,9 +50,6 @@
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="REPORT_RAN_BY" isForPrompting="false" class="java.lang.String"/>
-    <parameter name="SERVICE_NAMES_LIST" isForPrompting="false" class="java.util.Set">
-        <defaultValueExpression><![CDATA[ new HashSet()]]></defaultValueExpression>
-    </parameter>
     <parameter name="SERVICE_ID_TO_OPERATIONS_MAP" isForPrompting="false" class="java.util.Map">
 		<defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
 	</parameter>
@@ -72,7 +69,11 @@
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
+    <parameter name="SERVICE_ID_TO_NAME_MAP" isForPrompting="false" class="java.util.Map">
+        <defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
+    </parameter>
+    
+    <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
@@ -101,10 +102,12 @@
 	<parameter name="timePeriodAsString" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[$P{RELATIVE_NUM_OF_TIME_UNITS} + " " + Utilities.getIntervalAsString($P{RELATIVE_TIME_UNIT},$P{RELATIVE_NUM_OF_TIME_UNITS}.intValue())]]></defaultValueExpression>
 	</parameter>
-	<parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[Utilities.getStringNamesFromCollection((java.util.Collection)$P{SERVICE_NAMES_LIST})]]></defaultValueExpression>
-	</parameter>
-	<parameter name="serviceIdValueToDisplay" isForPrompting="false" class="java.lang.String">
+    <parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
+        <defaultValueExpression ><![CDATA[Utilities.getServiceAndIdDisplayString($P{SERVICE_ID_TO_OPERATIONS_MAP},
+$P{SERVICE_ID_TO_NAME_MAP},
+$P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())]]></defaultValueExpression>
+    </parameter>
+    <parameter name="serviceIdValueToDisplay" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[($P{serviceIdDisplayText} == null || $P{serviceIdDisplayText}.equals(""))
 ? "All Available"
 : $P{serviceIdDisplayText}]]></defaultValueExpression>
@@ -1252,7 +1255,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 			</band>
 		</background>
 		<title>
-			<band height="186"  isSplitAllowed="true" >
+			<band height="166"  isSplitAllowed="true" >
 				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
@@ -1276,14 +1279,16 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
-				</frame>				<frame>					<reportElement
+				</frame>
+                <frame>					<reportElement
 						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
 						y="18"
 						width="820"
-						height="150"
+						height="130"
 						key="frame-5"
+						stretchType="RelativeToTallestObject"
 						isPrintRepeatedValues="false"/>
 					<box></box>
 				<frame>					<reportElement
@@ -1532,10 +1537,11 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="84"
+						y="104"
 						width="820"
 						height="18"
 						key="frame-19"
+						stretchType="RelativeToTallestObject"
 						positionType="Float"/>
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
@@ -1548,30 +1554,30 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						key="textField-141"
 						positionType="Float"/>
 					<box></box>
-					<textElement>
+					<textElement markup="html">
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$P{serviceIdValueToDisplay}]]></textFieldExpression>
 				</textField>
-				<staticText>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="ReportInfo"
 						x="0"
 						y="0"
 						width="120"
 						height="18"
-						key="staticText-106"
-						positionType="Float"/>
+						key="textField1-199"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
-				<text><![CDATA[Selected Services:]]></text>
-				</staticText>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())
+?"Selected Services & Operations":"Selected Services"]]></textFieldExpression>
+				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="104"
+						y="84"
 						width="820"
 						height="18"
 						key="frame-25"
@@ -1610,46 +1616,8 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<text><![CDATA[Groupings:]]></text>
 				</staticText>
-				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="124"
-						width="820"
-						height="18"
-						key="frame-26"
-						positionType="Float">
-							<printWhenExpression><![CDATA[new Boolean($P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())]]></printWhenExpression>
-						</reportElement>
-					<box></box>
-				<staticText>
-					<reportElement
-						style="ReportInfo"
-						x="0"
-						y="0"
-						width="120"
-						height="18"
-						key="staticText-124"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Operations:]]></text>
-				</staticText>
-				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="699"
-						height="18"
-						key="textField-162"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["TO BE DETERMINED"]]></textFieldExpression>
-				</textField>
-				</frame>				</frame>			</band>
+				</frame>				</frame>
+            </band>
 		</title>
 		<pageHeader>
 			<band height="0"  isSplitAllowed="true" >
@@ -1959,7 +1927,7 @@ Utilities.getMappingReportInfoDisplayString
 				</frame>			</band>
 		</summary>
 		<noData>
-			<band height="500"  isSplitAllowed="true" >
+			<band height="300"  isSplitAllowed="true" >
 				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
@@ -1982,15 +1950,16 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
-				</frame>				<frame>					<reportElement
-						style="FrameTableBottom"
+				</frame>
+                <frame>					<reportElement
+						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
 						y="18"
 						width="820"
-						height="207"
-						backcolor="#F8F8F8"
+						height="150"
 						key="frame-5"
+						stretchType="RelativeToTallestObject"
 						isPrintRepeatedValues="false"/>
 					<box></box>
 				<frame>					<reportElement
@@ -2004,9 +1973,10 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<staticText>
 					<reportElement
+						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-107"/>
 					<box></box>
@@ -2020,7 +1990,7 @@ Utilities.getMappingReportInfoDisplayString
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="699"
+						width="280"
 						height="18"
 						key="textField-142"/>
 					<box></box>
@@ -2028,6 +1998,36 @@ Utilities.getMappingReportInfoDisplayString
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Performance Statistics Interval Report"]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						style="ReportInfo"
+						x="419"
+						y="0"
+						width="120"
+						height="18"
+						key="staticText-121"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Report Generated At:]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="false" pattern="yyyy/MM/dd hh:mm" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="540"
+						y="0"
+						width="280"
+						height="18"
+						key="textField-159"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.util.Date"><![CDATA[new Date()]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
@@ -2040,9 +2040,10 @@ Utilities.getMappingReportInfoDisplayString
 					<box></box>
 				<staticText>
 					<reportElement
+						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-108"/>
 					<box></box>
@@ -2056,7 +2057,7 @@ Utilities.getMappingReportInfoDisplayString
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="699"
+						width="280"
 						height="18"
 						key="textField-143"/>
 					<box></box>
@@ -2065,6 +2066,36 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_TIME_ZONE}.getDisplayName()]]></textFieldExpression>
 				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="540"
+						y="0"
+						width="280"
+						height="18"
+						key="textField-160"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_RAN_BY}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						style="ReportInfo"
+						x="419"
+						y="0"
+						width="120"
+						height="18"
+						key="staticText-122"
+						positionType="Float"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Report Ran By:]]></text>
+				</staticText>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
@@ -2079,7 +2110,7 @@ Utilities.getMappingReportInfoDisplayString
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="699"
+						width="280"
 						height="18"
 						key="textField-144"/>
 					<box></box>
@@ -2095,9 +2126,10 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 				</textField>
 				<staticText>
 					<reportElement
+						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-109"/>
 					<box></box>
@@ -2105,6 +2137,34 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						<font/>
 					</textElement>
 				<text><![CDATA[Time Period:]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="DefaultStyle"
+						x="540"
+						y="0"
+						width="280"
+						height="18"
+						key="textField-161"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())?"Yes":"No"]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						style="ReportInfo"
+						x="419"
+						y="0"
+						width="120"
+						height="18"
+						key="staticText-123"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Detail Report:]]></text>
 				</staticText>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
@@ -2120,7 +2180,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="699"
+						width="280"
 						height="18"
 						key="textField-141"
 						positionType="Float"/>
@@ -2132,9 +2192,10 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 				</textField>
 				<staticText>
 					<reportElement
+						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-106"
 						positionType="Float"/>
@@ -2147,10 +2208,11 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="84"
+						y="104"
 						width="820"
 						height="18"
 						key="frame-19"
+						stretchType="RelativeToTallestObject"
 						positionType="Float"/>
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
@@ -2163,29 +2225,30 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						key="textField-141"
 						positionType="Float"/>
 					<box></box>
-					<textElement>
+					<textElement markup="html">
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$P{serviceIdValueToDisplay}]]></textFieldExpression>
 				</textField>
-				<staticText>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
-						key="staticText-106"
-						positionType="Float"/>
+						key="textField1-199"/>
 					<box></box>
 					<textElement>
 						<font/>
 					</textElement>
-				<text><![CDATA[Selected Services:]]></text>
-				</staticText>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())
+?"Selected Services & Operations":"Selected Services"]]></textFieldExpression>
+				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="104"
+						y="84"
 						width="820"
 						height="18"
 						key="frame-25"
@@ -2211,9 +2274,10 @@ Utilities.getMappingReportInfoDisplayString
 				</textField>
 				<staticText>
 					<reportElement
+						style="ReportInfo"
 						x="0"
 						y="0"
-						width="121"
+						width="120"
 						height="18"
 						key="staticText-112"
 						positionType="Float"/>
@@ -2221,164 +2285,16 @@ Utilities.getMappingReportInfoDisplayString
 					<textElement>
 						<font/>
 					</textElement>
-				<text><![CDATA[Context Mapping:]]></text>
+				<text><![CDATA[Groupings:]]></text>
 				</staticText>
-				</frame>				<frame>					<reportElement
+				</frame>				</frame>
+
+                <frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="124"
+						y="168"
 						width="820"
-						height="18"
-						key="frame-26"
-						positionType="Float"/>
-					<box></box>
-				<textField isStretchWithOverflow="false" pattern="yyyy/MM/dd hh:mm" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="699"
-						height="18"
-						key="textField-148"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.util.Date"><![CDATA[new Date()]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement
-						x="0"
-						y="0"
-						width="121"
-						height="18"
-						key="staticText-113"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Report Generated At:]]></text>
-				</staticText>
-				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="144"
-						width="820"
-						height="18"
-						key="frame-27"
-						positionType="Float"/>
-					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="699"
-						height="18"
-						key="textField-149"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_RAN_BY}]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement
-						x="0"
-						y="0"
-						width="121"
-						height="18"
-						key="staticText-114"
-						positionType="Float"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Report Ran By:]]></text>
-				</staticText>
-				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="164"
-						width="820"
-						height="18"
-						key="frame-28"
-						positionType="Float"/>
-					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="699"
-						height="18"
-						key="textField-152"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())?"Yes":"No"]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement
-						x="0"
-						y="0"
-						width="121"
-						height="18"
-						key="staticText-117"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Detail Report:]]></text>
-				</staticText>
-				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="184"
-						width="820"
-						height="18"
-						key="frame-29"
-						positionType="Float">
-							<printWhenExpression><![CDATA[new Boolean($P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())]]></printWhenExpression>
-						</reportElement>
-					<box></box>
-				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="DefaultStyle"
-						x="121"
-						y="0"
-						width="699"
-						height="18"
-						key="textField-153"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["TO BE DETERMINED"]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement
-						x="0"
-						y="0"
-						width="121"
-						height="18"
-						key="staticText-118"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Operations:]]></text>
-				</staticText>
-				</frame>				</frame>				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="252"
-						width="820"
-						height="246"
+						height="118"
 						key="frame-9"/>
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
@@ -2386,13 +2302,13 @@ Utilities.getMappingReportInfoDisplayString
 						x="0"
 						y="0"
 						width="820"
-						height="246"
+						height="118"
 						key="textField-84"/>
 					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["There were no service metrics for the time period chosen for services: "
+                    <textElement markup="html">
+                        <font/>
+                    </textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["There were no service metrics for the time period chosen for services:<br> "
 + $P{serviceIdValueToDisplay}]]></textFieldExpression>
 				</textField>
 				</frame>			</band>

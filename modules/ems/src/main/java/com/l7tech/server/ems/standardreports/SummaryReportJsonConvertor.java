@@ -129,7 +129,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         Map<String, Map<String, Set<String>>> clusterIdToServicesAndOperations
                 = new HashMap<String, Map<String, Set<String>>>();
 
-        Map<String, Set<String>> clusterIdToServiceNames = new HashMap<String, Set<String>>();
+        Map<String,Map<String, String>> clusterIdToServiceIdsToNameMap = new HashMap<String, Map<String, String>>();
 
         Object [] entities = (Object[]) params.get(JSONConstants.REPORT_ENTITIES);
 
@@ -162,13 +162,13 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
                 operations.add(opObj.toString());
             }
 
-            if(!clusterIdToServiceNames.containsKey(clusterId)){
-                Set<String> serviceNames = new HashSet<String>();
-                clusterIdToServiceNames.put(clusterId, serviceNames);
+            if(!clusterIdToServiceIdsToNameMap.containsKey(clusterId)){
+                Map<String, String> serviceIdToName = new HashMap<String, String>();
+                clusterIdToServiceIdsToNameMap.put(clusterId, serviceIdToName);
             }
 
-            Set<String> serviceNames = clusterIdToServiceNames.get(clusterId);
-            serviceNames.add((String) currentEntity.get(JSONConstants.ReportEntities.PUBLISHED_SERVICE_NAME));
+            Map<String, String> serviceIdToName = clusterIdToServiceIdsToNameMap.get(clusterId);
+            serviceIdToName.put(serviceId,(String) currentEntity.get(JSONConstants.ReportEntities.PUBLISHED_SERVICE_NAME));
         }
 
         for(String clusterId: returnMap.keySet()){
@@ -192,10 +192,10 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             isDetailParam.setValue(isDetail);
             clusterParams.add(isDetailParam);
 
-            Set<String> serviceNames = clusterIdToServiceNames.get(clusterId);
+            Map<String, String> serviceIdToName = clusterIdToServiceIdsToNameMap.get(clusterId);
             ReportApi.ReportSubmission.ReportParam serviceNameParam = new ReportApi.ReportSubmission.ReportParam();
-            serviceNameParam.setName(ReportApi.ReportParameters.SERVICE_NAMES_LIST);
-            serviceNameParam.setValue(serviceNames);
+            serviceNameParam.setName(ReportApi.ReportParameters.SERVICE_ID_TO_NAME_MAP);
+            serviceNameParam.setValue(serviceIdToName);
             clusterParams.add(serviceNameParam);
         }
 

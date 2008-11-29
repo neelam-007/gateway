@@ -17,6 +17,7 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -238,11 +239,27 @@ public class ReportGenerator {
     @SuppressWarnings({"unchecked"})
     private void processReportParameters( final ReportApi.ReportType reportType, final Connection connection, final Map<String, Object> reportParams ) throws ReportGenerationException {
 
-        int numRelativeTimeUnits = (Integer)reportParams.get(ReportApi.ReportParameters.RELATIVE_NUM_OF_TIME_UNITS);
-        Utilities.UNIT_OF_TIME relUnitOfTime = Utilities.getUnitFromString(reportParams.get(ReportApi.ReportParameters.RELATIVE_TIME_UNIT).toString());
-        reportParams.put( ReportApi.ReportParameters.RELATIVE_TIME_UNIT, relUnitOfTime );
-        long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime );
-        long endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime);
+        Boolean isRelative = (Boolean) reportParams.get(ReportApi.ReportParameters.IS_RELATIVE);
+
+        Long startTimeInPast = null;
+        Long endTimeInPast = null;
+
+        if(isRelative){
+            int numRelativeTimeUnits = (Integer)reportParams.get(ReportApi.ReportParameters.RELATIVE_NUM_OF_TIME_UNITS);
+            Utilities.UNIT_OF_TIME relUnitOfTime = Utilities.getUnitFromString(reportParams.get(ReportApi.ReportParameters.RELATIVE_TIME_UNIT).toString());
+            reportParams.put( ReportApi.ReportParameters.RELATIVE_TIME_UNIT, relUnitOfTime );
+            startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime );
+            endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime);
+        }else{
+            String absoluteStartTime = (String) reportParams.get(ReportApi.ReportParameters.ABSOLUTE_START_TIME);
+            String absoluteEndTime = (String) reportParams.get(ReportApi.ReportParameters.ABSOLUTE_END_TIME);
+            try{
+                startTimeInPast = Utilities.getAbsoluteMilliSeconds(absoluteStartTime);
+                endTimeInPast = Utilities.getAbsoluteMilliSeconds(absoluteEndTime);
+            }catch(ParseException pe){
+                throw new ReportGenerationException("Could not parse absolute time. " + pe.getMessage());
+            }
+        }
 
         if(reportType == ReportApi.ReportType.PERFORMANCE_INTERVAL || reportType == ReportApi.ReportType.USAGE_INTERVAL){
             Utilities.UNIT_OF_TIME intervalUnitOfTime = Utilities.getUnitFromString(reportParams.get(ReportApi.ReportParameters.INTERVAL_TIME_UNIT).toString());
@@ -423,6 +440,7 @@ public class ReportGenerator {
                 StreamResult result = new StreamResult(baos);
                 XmlUtil.softXSLTransform(doc, result, transformer, params);
                 inputStream = new ByteArrayInputStream(baos.toByteArray());
+                IOUtils.spewStream(baos.toByteArray(), new FileOutputStream(new File("Output_" + template.getParameterMapName()+".xml")));
             }else{
                 inputStream = template.getReportXmlSource().getByteStream();
             }

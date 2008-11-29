@@ -41,13 +41,29 @@ public class TypedValue {
             type = Type.LIST_STRING;
             stringArrayValue =  new NamedStringArray((List<String>) value);
         } else if ( value instanceof Map) {
-            type = Type.MAP_STRING_SET_STRING;
-            Map<String,Set<String>> map = (Map<String,Set<String>>) value;
-            Collection<NamedStringArray> values = new ArrayList<NamedStringArray>();
-            for ( Map.Entry<String,Set<String>> entry : map.entrySet() ) {
-                values.add( new NamedStringArray( entry.getKey(), entry.getValue() ) );
+            Map testMap = (Map) value;
+            Object testVal = testMap.values().iterator().next();
+            if(testVal instanceof Collection){
+                type = Type.MAP_STRING_SET_STRING;
+                Map<String,Set<String>> map = (Map<String,Set<String>>) value;
+                Collection<NamedStringArray> values = new ArrayList<NamedStringArray>();
+                for ( Map.Entry<String,Set<String>> entry : map.entrySet() ) {
+                    values.add( new NamedStringArray( entry.getKey(), entry.getValue() ) );
+                }
+                namedStringArrayValue = values.toArray( new NamedStringArray[values.size()] );
+            }else if(testVal instanceof String){
+                type = Type.MAP_STRING_STRING;
+                Map<String, String> map = (Map<String, String>) value;
+                Collection<NamedStringArray> values = new ArrayList<NamedStringArray>();
+                for ( Map.Entry<String,String> entry : map.entrySet() ) {
+                    List<String> oneString = new ArrayList<String>();
+                    oneString.add(entry.getValue());
+                    values.add( new NamedStringArray( entry.getKey(), oneString) );
+                }
+                namedStringArrayValue = values.toArray( new NamedStringArray[values.size()] );
+            }else{
+                throw new IllegalArgumentException( "Type not supported" );
             }
-            namedStringArrayValue = values.toArray( new NamedStringArray[values.size()] );
         } else {
             throw new IllegalArgumentException( "Type not supported" );
         }
@@ -150,6 +166,20 @@ public class TypedValue {
                 }
                 value = valueMap;
                 break;
+            case MAP_STRING_STRING:
+                Map<String,String> valueMapString = new LinkedHashMap<String,String>();
+                if ( namedStringArrayValue != null ) {
+                    for ( NamedStringArray nsa : namedStringArrayValue ) {
+                        String[] values = nsa.asStringArray();
+                        if ( values == null ) {
+                            valueMapString.put( nsa.getName(), null);
+                        } else {
+                            valueMapString.put( nsa.getName(), values[0] );
+                        }
+                    }
+                }
+                value = valueMapString;
+                break;
             default:
                 throw new IllegalArgumentException("Unknown type : " + type);
         }
@@ -188,7 +218,7 @@ public class TypedValue {
         return result;
     }
 
-    public static enum Type { BOOLEAN, INTEGER, STRING, SET_STRING, LIST_STRING, MAP_STRING_SET_STRING }
+    public static enum Type { BOOLEAN, INTEGER, STRING, SET_STRING, LIST_STRING, MAP_STRING_SET_STRING, MAP_STRING_STRING }
 
     @XmlRootElement
     public static final class NamedStringArray {
