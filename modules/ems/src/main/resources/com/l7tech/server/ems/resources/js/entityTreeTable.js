@@ -1006,14 +1006,19 @@ if (!l7.EntityTreeTable) {
 
             /**
              * @public
+             * @type {array} array of entity types to filter; null for no filter
              * @return {array} array of entity object literals whose checkbox is selected; may be empty but never null
              */
-            this.getEntitiesWithTristateCheckboxSelected = function() {
+            this.getEntitiesWithTristateCheckboxSelected = function(types) {
                 var result = [];
                 for (var i in this._entities) {
                     var entity = this._entities[i];
                     if (entity._tristateCheckbox && entity._tristateCheckbox.checked) {
-                        result.push(entity);
+                        if (types == undefined ||
+                            types == null ||
+                            l7.Util.arrayContains(types, entity.type)) {
+                            result.push(entity);
+                        }
                     }
                 }
                 return result;

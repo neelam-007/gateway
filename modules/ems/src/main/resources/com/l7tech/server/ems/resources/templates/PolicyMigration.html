@@ -12,10 +12,15 @@
     <wicket:head>
         <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
 
-        <!-- Required YUI modules: animation, event, logger -->
-        <link rel="stylesheet" type="text/css" href="../yui/logger/assets/skins/sam/logger.css">
+        <!-- Required YUI modules: animation, button, connection, container, event, json, logger -->
+        <link rel="stylesheet" type="text/css" href="../yui/assets/skins/sam/skin.css">
         <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
         <script type="text/javascript" src="../yui/animation/animation-min.js"></script>
+        <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
+        <script type="text/javascript" src="../yui/button/button-min.js"></script>
+        <script type="text/javascript" src="../yui/connection/connection-min.js"></script>
+        <script type="text/javascript" src="../yui/container/container-min.js"></script>
+        <script type="text/javascript" src="../yui/json/json-min.js"></script>
         <script type="text/javascript" src="../yui/logger/logger-min.js"></script>
 
         <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css" /> <!-- modifies YUI sam skin; must come after YUI CSS files -->
@@ -26,7 +31,7 @@
                 text-align: left;
                 white-space: nowrap;
             }
-    
+
             td.dependencyExplorer {
                 text-align: left;
                 vertical-align: top;
@@ -35,28 +40,28 @@
         <script type="text/javascript" src="../js/l7.js"></script>
         <script type="text/javascript" src="../js/entityTreeTable.js"></script>
         <script type="text/javascript">
+            /** Localized strings for local HTML markups, e.g., error dialogs. */
+            var localizedStrings = {
+                OK : 'OK',
+                CANCEL : 'Cancel',
+                ERROR : 'Error',
+                CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server: ',
+                CANNOT_DOWNLOAD_DEPENDENCIES : 'Failed to download list of dependencies for selected source items: '
+            }
+        </script>
+        <script type="text/javascript">
             var MIN_FRAME_HEIGHT = 150;
             var MAX_FRAME_HEIGHT = 500;
             var INCR_FRAME_HEIGHT = 50;
             var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
 
-            /**
-             * @type HTMLIFrameElement
-             */
+            var identifyDependenciesImageButton;
             var srcSSGClusterContentSelectorWindow;
-
-            /**
-             * @type HTMLIFrameElement
-             */
             var destSSGClusterContentSelectorWindow;
 
             function initSSGClusterSelector(iframe) {
                 iframe.contentWindow.setCallbackId(iframe.id);
                 iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
-            }
-
-            function initSSGClusterContentSelector(iframe) {
-                iframe.contentWindow.setCallbackId(iframe.id);
             }
 
             /**
@@ -109,9 +114,71 @@
                 }
             }
 
+            /**
+             * @return {array}
+             */
+            function getSelectedSrcItems() {
+                var result = [];
+                var entities = srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected(
+                    [
+                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
+                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
+                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
+                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS,
+                    ]);
+                for (var i = 0; i < entities.length; ++i) {
+                    var entity = entities[i];
+                    var o = {};
+                    o.id = entity.id;
+                    o.type = entity.type;
+                    o.name = entity.name;
+                    result.push(o);
+                }
+                return result;
+            }
+
+            function onClickIdentifyDependencies() {
+                var callback = {
+                    success : function(o) {
+                        var result = l7.Dialog.parseJSON(
+                                o.responseText,
+                                localizedStrings.ERROR,
+                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_DEPENDENCIES) + '</p>',
+                                localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                localizedStrings.OK);
+                        if (!l7.Util.isException(result)) {
+                            // No return object expected.
+                            l7.Dialog.showInfoDialog('Standard Report', 'Request for standard report has been submitted for generation.', localizedStrings.OK);
+                        }
+                    },
+                    failure : function(o) {
+                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_DEPENDENCIES + o.statusText, localizedStrings.OK);
+                    }
+                };
+                var url = 'dataSource/policyMigration/identifyDependencies.json';
+                var postObject = {};
+                postObject.clusterId = srcSSGClusterContentSelectorWindow.getSsgCluster().id;
+                postObject.entities = getSelectedSrcItems();
+                var postData = YAHOO.lang.JSON.stringify(postObject);
+                YAHOO.util.Connect.setDefaultPostHeader(false);
+                YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');
+                YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
+                YAHOO.util.Connect.setDefaultPostHeader(true);
+            }
+
+            function initSSGClusterSelector(iframe) {
+                iframe.contentWindow.setCallbackId(iframe.id);
+                iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
+            }
+
+            function initSSGClusterContentSelector(iframe) {
+                iframe.contentWindow.setCallbackId(iframe.id);
+            }
+
             function init() {
                 srcSSGClusterContentSelectorWindow = document.getElementById('srcSSGClusterContentSelector').contentWindow;
                 destSSGClusterContentSelectorWindow = document.getElementById('destSSGClusterContentSelector').contentWindow;
+                identifyDependenciesImageButton = document.getElementById('identifyDependenciesImageButton');
             }
 
             YAHOO.util.Event.onDOMReady(init);
@@ -328,9 +395,12 @@
                             scrolling="yes" height="150" width="100%"
                             onload="initSSGClusterContentSelector(this);"></iframe>
                 </td>
-                <td class="srcDestCenter">Dep.<img class="clickable" src="../images/resolveDependencies.png"
-                                                   title="Identify Dependencies" alt="" /><br />Copy<br /><img
-                        class="disabled" src="../images/copy.png" alt="" /></td>
+                <td class="srcDestCenter">
+                    Dep.<br />
+                    <img id="identifyDependenciesImageButton" class="clickable" src="../images/resolveDependencies.png" title="Identify Dependencies" alt="" onclick="onClickIdentifyDependencies();" /><br />
+                    Copy<br />
+                    <img class="disabled" src="../images/copy.png" alt="" />
+                </td>
                 <td class="srcDest">
                     <iframe id="destSSGClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0"
                             scrolling="yes" height="150" width="100%"
