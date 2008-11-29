@@ -2,6 +2,8 @@
  * Javascript for YUI Calendar component
  */
 
+var showing_dialog = null;
+
 /**
  * Initialize a DateSelector
  *
@@ -137,28 +139,77 @@ function initDateSelector( inputId, calContainerId, calBodyId, longDates, txtDat
             }
 
             calendar.render();
+
             dialog.render();
             dialog.align("tl", "bl");
-            dialog.show();
-            
+            doShow();
+
             if (YAHOO.env.ua.opera && document.documentElement) {
                 document.documentElement.className += "";
             }
         }
     });
 
+    var inputFoc = false;
+    var calMouse = false;
+
     YAHOO.util.Event.on(inputId, "blur", function() {
-        if ( !over_cal ) dialog.hide();
+        inputFoc = false;
+        checkClose();
     });
 
-    function overCal() {
-        over_cal = true;
+    YAHOO.util.Event.on(inputId, "focus", function() {
+        inputFoc = true;
+        checkClose();
+    });
+
+    YAHOO.util.Event.addListener(calContainerId, 'mouseover', function() {
+        calMouse = true;
+        checkClose();
+    });
+
+    YAHOO.util.Event.addListener(calContainerId, 'mouseout', function() {
+        calMouse = false;
+        checkClose();
+    });
+
+    var usingCal = true;
+    
+    function checkClose() {
+        var using = inputFoc || calMouse;
+        if (using != usingCal) {
+            usingCal = using;
+            if (!usingCal)
+                setCloseTimer();
+        }
     }
 
-    function outCal() {
-        over_cal = false;
+    var timer = null;
+
+    function clearCloseTimer() {
+        if ( timer != null ) {
+            window.clearTimeout(timer);
+            timer = null;
+        }
     }
 
-    YAHOO.util.Event.addListener(calContainerId, 'mouseover', overCal);
-    YAHOO.util.Event.addListener(calContainerId, 'mouseout', outCal);    
+    function setCloseTimer() {
+        clearCloseTimer();
+        timer = window.setTimeout(function() {
+                if (!usingCal)
+                    doHide();
+        }, 660);
+    }
+
+    function doShow() {
+        if ( showing_dialog != null) showing_dialog.hide();
+        dialog.show();
+        showing_dialog = dialog;
+    }
+
+    function doHide() {
+        dialog.hide();
+        if ( dialog == showing_dialog )
+            showing_dialog = null;
+    }
 };
