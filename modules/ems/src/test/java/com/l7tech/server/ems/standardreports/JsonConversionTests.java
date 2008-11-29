@@ -177,6 +177,21 @@ public class JsonConversionTests {
         }
     }
 
+    @Test
+    public void testTimeZone() throws ReportException {
+        Object o = JSON.parse(invalidTimeZone);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        boolean exception = false;
+        try{
+            convertor.getReportSubmissions(jsonMap, "Donal");
+        }catch(ReportException e){
+            exception = true;
+        }
+
+        Assert.assertTrue("Timezone should not have been found", exception);
+    }
+
     private final static String psRelativeJsonSummaryTest = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
@@ -966,6 +981,71 @@ public class JsonConversionTests {
             "    \"summaryChart\" : true," +
             "    \"summaryReport\" : true," +
             "    \"reportName\" : \"Usage_Summary_Report\"" +
+            "}";
+
+    private final static String invalidTimeZone = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229377\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"229378\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }" +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"timeZone\" : \"invalidtimezone\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.*.*.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : false," +
+            "    \"reportName\" : \"My Report\"" +
             "}";
 
 }

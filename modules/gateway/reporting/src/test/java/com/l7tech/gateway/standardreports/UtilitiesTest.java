@@ -43,6 +43,7 @@ import net.sf.jasperreports.engine.JasperCompileManager;
 public class UtilitiesTest{
 
     private SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(Utilities.DATE_STRING);
+
     /**
      * Tests the minimum requirement for a mapping query - one key supplied.
      * Checks that only 1 case statement exists in the returned sql
@@ -696,18 +697,100 @@ public class UtilitiesTest{
 
 
     /**
-     * Tests that the value returned from getAbsoluteMilliSeconds is correct  
+     * Tests that the value returned from getAbsoluteMilliSeconds is correct
      */
     @Test
-    public void testGetAbsoluteMilliSeconds() throws Exception{
-        String date = "2008/10/13 14:12";
-        Date d = DATE_FORMAT.parse(date);
-        long controlTime = d.getTime();
+    public void testGetAbsoluteMilliSeconds_TZ() throws Exception{
+        String date = "2008/11/28 23:00";
+        long parisTime = Utilities.getAbsoluteMilliSeconds(date, "Europe/Paris");
+        System.out.println(parisTime);
 
-        long testTime = Utilities.getAbsoluteMilliSeconds(date);
-        Assert.assertTrue(controlTime == testTime);
+        date = "2008/11/28 14:00";
+        long canadaTime = Utilities.getAbsoluteMilliSeconds(date, "Canada/Pacific");
+        System.out.println(canadaTime);
+
+        Assert.assertTrue("GMT equivilents of 23:00 Paris time and 14:00 Canada time should equal", parisTime == canadaTime);
     }
 
+
+    @Test
+    public void testGetCalendarForUnit() throws Exception{
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+        String date = "2008/11/28 23:00";
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
+        System.out.println("Equiv time in Paris:  " + dateFormat.parse(date).getTime());
+        Date parisTime = dateFormat.parse(date);
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(parisTime.getTime());
+
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Canada/Pacific"));
+        System.out.println("Equiv time in Canada:  " + dateFormat.format(cal.getTime()));
+
+
+    }
+    /**
+     * Tests that the value returned from getAbsoluteMilliSeconds is correct
+     */
+    @Test
+    public void testGetAbsoluteMilliSeconds_TimeZone() throws Exception{
+
+
+        //relative
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_MONTH,2);
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+//        System.out.println("Time in Canada: " + dateFormat.format(cal.getTime()));
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
+//        System.out.println("Equiv time in Paris: " + dateFormat.format(cal.getTime()));
+
+        //absolute
+        //Calendar greg = new GregorianCalendar(TimeZone.getTimeZone("Europe/Paris"));
+
+        String date = "2008/11/28 23:00";
+        System.out.println("Equiv time in Paris:  " + dateFormat.parse(date).getTime());
+        Date parisTime = dateFormat.parse(date);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Canada/Pacific"));
+        date = "2008/11/28 14:00";
+        System.out.println("Equiv time in Canada: " + dateFormat.parse(date).getTime());
+        Date canadaTime = dateFormat.parse(date);
+
+        System.out.println("Paris Time: " + dateFormat.format(parisTime));
+        System.out.println("Canada Time: " + dateFormat.format(canadaTime));
+
+
+        //relative - give me 1 hour ago, paris time
+        //Calendar greg = new GregorianCalendar(TimeZone.getTimeZone("Europe/Paris"));
+        Calendar greg = Calendar.getInstance();
+        greg.add(Calendar.HOUR_OF_DAY, -1);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
+        System.out.println("One hour ago in Paris: " + dateFormat.format(greg.getTime()));
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Canada/Pacific"));
+        System.out.println("One hour ago in Canada: " + dateFormat.format(greg.getTime()));
+
+        cal = Calendar.getInstance();
+        greg = new GregorianCalendar(TimeZone.getTimeZone("Europe/Paris"));
+        System.out.println("Canada milli: " + cal.getTimeInMillis());
+        System.out.println("Paris milli: " + greg.getTimeInMillis());
+
+//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+//        dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/London"));
+//        Calendar greg = new GregorianCalendar(TimeZone.getTimeZone("Europe/London"));
+//        System.out.println("Time in London: " + dateFormat.format(greg.getTime()));
+//
+//        System.out.println("Current time: " + greg.getTimeInMillis());
+//        System.out.println("Current time: " + Calendar.getInstance().getTimeInMillis());
+
+//        greg.add(Calendar.DAY_OF_MONTH, 2);
+//        System.out.println("Time in London: " + dateFormat.format(greg.getTime()));
+
+
+//        Assert.assertTrue(controlTime == testTime);
+//        TimeZone tz = TimeZone.getTimeZone("Canada/Pacific");
+//        System.out.println(tz.getID());
+//
+    }
     /**
      * Test that the Calendar instance returned from getCalendarForTimeUnit has the correct settings
      * based on the unit of time supplied

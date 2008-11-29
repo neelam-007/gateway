@@ -253,9 +253,10 @@ public class ReportGenerator {
         }else{
             String absoluteStartTime = (String) reportParams.get(ReportApi.ReportParameters.ABSOLUTE_START_TIME);
             String absoluteEndTime = (String) reportParams.get(ReportApi.ReportParameters.ABSOLUTE_END_TIME);
+            String timeZone = (String) reportParams.get(ReportApi.ReportParameters.SPECIFIC_TIME_ZONE);
             try{
-                startTimeInPast = Utilities.getAbsoluteMilliSeconds(absoluteStartTime);
-                endTimeInPast = Utilities.getAbsoluteMilliSeconds(absoluteEndTime);
+                startTimeInPast = Utilities.getAbsoluteMilliSeconds(absoluteStartTime, timeZone);
+                endTimeInPast = Utilities.getAbsoluteMilliSeconds(absoluteEndTime, timeZone);
             }catch(ParseException pe){
                 throw new ReportGenerationException("Could not parse absolute time. " + pe.getMessage());
             }

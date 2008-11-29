@@ -411,6 +411,7 @@ public interface ReportApi {
     class ReportParameters{
 
         //common
+        public static final String SPECIFIC_TIME_ZONE = "SPECIFIC_TIME_ZONE";
         public static final String IS_RELATIVE = "IS_RELATIVE";
         public static final String RELATIVE_NUM_OF_TIME_UNITS = "RELATIVE_NUM_OF_TIME_UNITS";
         public static final String RELATIVE_TIME_UNIT = "RELATIVE_TIME_UNIT";
@@ -459,9 +460,9 @@ public interface ReportApi {
 
         public static final String [] ABSOLUTE_TIME_PARAMS = new String[]{ABSOLUTE_START_TIME, ABSOLUTE_END_TIME};
 
-        public static final String [] COMMON_PARAMS = new String[]{IS_RELATIVE, IS_ABSOLUTE, REPORT_RAN_BY, SERVICE_ID_TO_NAME_MAP,
-        SERVICE_ID_TO_OPERATIONS_MAP, MAPPING_KEYS, MAPPING_VALUES, VALUE_EQUAL_OR_LIKE, USE_USER, AUTHENTICATED_USERS,
-        IS_CONTEXT_MAPPING, IS_DETAIL, PRINT_CHART};
+        public static final String [] COMMON_PARAMS = new String[]{SPECIFIC_TIME_ZONE, IS_RELATIVE, IS_ABSOLUTE,
+                REPORT_RAN_BY, SERVICE_ID_TO_NAME_MAP, SERVICE_ID_TO_OPERATIONS_MAP, MAPPING_KEYS, MAPPING_VALUES,
+                VALUE_EQUAL_OR_LIKE, USE_USER, AUTHENTICATED_USERS, IS_CONTEXT_MAPPING, IS_DETAIL, PRINT_CHART};
 
         public static final String [] INTERVAL_PARAMS = new String []{INTERVAL_TIME_UNIT, INTERVAL_NUM_OF_TIME_UNITS};
     }

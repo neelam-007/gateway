@@ -406,6 +406,17 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         ReportApi.ReportSubmission.ReportParam isAbsolute = new ReportApi.ReportSubmission.ReportParam();
         isAbsolute.setName(ReportApi.ReportParameters.IS_ABSOLUTE);
 
+        String timeZone = (String) timePeriodMap.get(JSONConstants.TimePeriodAbsoluteKeys.TIME_ZONE);
+        TimeZone tz = TimeZone.getTimeZone(timeZone);
+        if(!tz.getID().equals(timeZone)){
+            throw new ReportException("Timezone: " + timeZone+" is not valid");
+        }
+
+        ReportApi.ReportSubmission.ReportParam timeZoneParam = new ReportApi.ReportSubmission.ReportParam();
+        timeZoneParam.setName(ReportApi.ReportParameters.SPECIFIC_TIME_ZONE);
+        timeZoneParam.setValue(timeZone);
+
+
         if(type.equals(JSONConstants.TimePeriodTypeValues.RELATIVE)){
             isRelative.setValue(true);
             isAbsolute.setValue(false);
@@ -441,7 +452,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
 
             String startTime = (String) timePeriodMap.get(JSONConstants.TimePeriodAbsoluteKeys.START);
             try{
-                Utilities.getAbsoluteMilliSeconds(startTime);
+                Utilities.getAbsoluteMilliSeconds(startTime, timeZone);
             }catch (ParseException ex){
                 throw new ReportException
                         ("Cannot parse startTime: " + startTime+" must be in the format: " + Utilities.DATE_STRING);                
@@ -454,7 +465,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
 
             String endTime = (String) timePeriodMap.get(JSONConstants.TimePeriodAbsoluteKeys.END);
             try{
-                Utilities.getAbsoluteMilliSeconds(startTime);
+                Utilities.getAbsoluteMilliSeconds(startTime, timeZone);
             }catch (ParseException ex){
                 throw new ReportException
                         ("Cannot parse startTime: " + startTime+" must be in the format: " + Utilities.DATE_STRING);

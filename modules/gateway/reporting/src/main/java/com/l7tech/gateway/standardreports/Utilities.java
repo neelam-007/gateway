@@ -12,6 +12,7 @@ import org.w3c.dom.*;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.text.MessageFormat;
+import java.text.DateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
@@ -24,6 +25,7 @@ import com.l7tech.common.io.XmlUtil;
 public class Utilities {
 
     public static final String DATE_STRING = "yyyy/MM/dd HH:mm";
+    public static final String DATE_STRING_TIME_ZONE = "yyyy/MM/dd HH:mm z";
     private static final String HOUR_DATE_STRING = "HH:mm";
     private static final String DAY_HOUR_DATE_STRING = "MM/dd HH:mm";
     private static final String DAY_DATE_STRING = "E MM/dd";
@@ -378,13 +380,20 @@ public class Utilities {
 
     /**
      * Return a millisecond value from the start of epoch up to the date
-     * represented by the date parameter.
+     * represented by the date parameter. If you specify Europe/Paris as the timezone, then the date will be parsed
+     * and the GMT millisecond value represented by that paris date time will be returned.
+     * Any date parsed with a timezone is returning the millisecond value since epoch relative to the specified timezone
+     * If you specify 2008/11/28 23:00 with Europe/Paris and then 2008/11/28 14:00 Canada/Pacific, you will get the
+     * same millisecond value, as they both translate to the same GMT value
+     *
      * @param date The format MUST BE in the format 'yyyy/MM/dd HH:mm'
-     * @return The number of milliseconds since epoch represented by the supplied date
+     * @param timeZone timezone in which the date supplied belongs
+     * @return The number of milliseconds since epoch represented by the supplied date and timezone
      */
-    public static long getAbsoluteMilliSeconds(String date) throws ParseException {
-        SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_STRING);
-        Date d = DATE_FORMAT.parse(date);
+    public static long getAbsoluteMilliSeconds(String date, String timeZone) throws ParseException {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_STRING);
+        dateFormat.setTimeZone(TimeZone.getTimeZone(timeZone));
+        Date d = dateFormat.parse(date);
         return d.getTime();
     }
 

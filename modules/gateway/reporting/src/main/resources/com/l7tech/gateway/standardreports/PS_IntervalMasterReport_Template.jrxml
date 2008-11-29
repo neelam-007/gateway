@@ -72,6 +72,10 @@
     <parameter name="SERVICE_ID_TO_NAME_MAP" isForPrompting="false" class="java.util.Map">
         <defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
     </parameter>
+    <parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
+        <defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
+    </parameter>
+    
     
     <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
@@ -82,10 +86,10 @@
 : null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="absoluteStartTimeMilli" isForPrompting="false" class="java.lang.Long">
-		<defaultValueExpression ><![CDATA[new Long(Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_START_TIME}))]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[new Long(Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_START_TIME}, $P{SPECIFIC_TIME_ZONE}))]]></defaultValueExpression>
 	</parameter>
 	<parameter name="absoluteEndTimeMilli" isForPrompting="false" class="java.lang.Long">
-		<defaultValueExpression ><![CDATA[new Long(Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_END_TIME}))]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[new Long(Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_END_TIME}, $P{SPECIFIC_TIME_ZONE}))]]></defaultValueExpression>
 	</parameter>
 	<parameter name="startTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?$P{relativeStartTimeMilli}:$P{absoluteStartTimeMilli}]]></defaultValueExpression>
