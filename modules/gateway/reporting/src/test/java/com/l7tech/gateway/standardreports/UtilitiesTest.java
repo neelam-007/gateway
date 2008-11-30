@@ -357,8 +357,10 @@ public class UtilitiesTest{
      */
     @Test
     public void testCreateMappingQuery_Time(){
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
 
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(tz);
         long startTime = cal.getTimeInMillis() - 1000;
         long endTime = cal.getTimeInMillis();
 
@@ -700,97 +702,31 @@ public class UtilitiesTest{
      * Tests that the value returned from getAbsoluteMilliSeconds is correct
      */
     @Test
-    public void testGetAbsoluteMilliSeconds_TZ() throws Exception{
+    public void testGetAbsoluteMilliSeconds() throws Exception{
         String date = "2008/11/28 23:00";
         long parisTime = Utilities.getAbsoluteMilliSeconds(date, "Europe/Paris");
-        System.out.println(parisTime);
-
         date = "2008/11/28 14:00";
         long canadaTime = Utilities.getAbsoluteMilliSeconds(date, "Canada/Pacific");
-        System.out.println(canadaTime);
-
         Assert.assertTrue("GMT equivilents of 23:00 Paris time and 14:00 Canada time should equal", parisTime == canadaTime);
     }
 
-
+    /**
+     * Tests that the relative time returned for a time unit is correct for the specified time zone
+     * @throws Exception
+     */
     @Test
     public void testGetCalendarForUnit() throws Exception{
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-        String date = "2008/11/28 23:00";
+        long milli2DaysAgo = Utilities.getRelativeMilliSecondsInPast(1, Utilities.UNIT_OF_TIME.DAY, "Europe/Paris");
+        Calendar twoDays = Calendar.getInstance();
+        twoDays.setTimeInMillis(milli2DaysAgo);
+        
         dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
-        System.out.println("Equiv time in Paris:  " + dateFormat.parse(date).getTime());
-        Date parisTime = dateFormat.parse(date);
-
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(parisTime.getTime());
-
+        Assert.assertTrue("Two days ago in Paris relative time should be 2008/11/29 00:00", dateFormat.format(twoDays.getTime()).equals("2008/11/29 00:00"));
         dateFormat.setTimeZone(TimeZone.getTimeZone("Canada/Pacific"));
-        System.out.println("Equiv time in Canada:  " + dateFormat.format(cal.getTime()));
-
-
+        Assert.assertTrue("Two days ago in Canada relative time to Paris should be 2008/11/28 15:00", dateFormat.format(twoDays.getTime()).equals("2008/11/28 15:00"));
     }
-    /**
-     * Tests that the value returned from getAbsoluteMilliSeconds is correct
-     */
-    @Test
-    public void testGetAbsoluteMilliSeconds_TimeZone() throws Exception{
 
-
-        //relative
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_MONTH,2);
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-//        System.out.println("Time in Canada: " + dateFormat.format(cal.getTime()));
-        dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
-//        System.out.println("Equiv time in Paris: " + dateFormat.format(cal.getTime()));
-
-        //absolute
-        //Calendar greg = new GregorianCalendar(TimeZone.getTimeZone("Europe/Paris"));
-
-        String date = "2008/11/28 23:00";
-        System.out.println("Equiv time in Paris:  " + dateFormat.parse(date).getTime());
-        Date parisTime = dateFormat.parse(date);
-        dateFormat.setTimeZone(TimeZone.getTimeZone("Canada/Pacific"));
-        date = "2008/11/28 14:00";
-        System.out.println("Equiv time in Canada: " + dateFormat.parse(date).getTime());
-        Date canadaTime = dateFormat.parse(date);
-
-        System.out.println("Paris Time: " + dateFormat.format(parisTime));
-        System.out.println("Canada Time: " + dateFormat.format(canadaTime));
-
-
-        //relative - give me 1 hour ago, paris time
-        //Calendar greg = new GregorianCalendar(TimeZone.getTimeZone("Europe/Paris"));
-        Calendar greg = Calendar.getInstance();
-        greg.add(Calendar.HOUR_OF_DAY, -1);
-        dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
-        System.out.println("One hour ago in Paris: " + dateFormat.format(greg.getTime()));
-        dateFormat.setTimeZone(TimeZone.getTimeZone("Canada/Pacific"));
-        System.out.println("One hour ago in Canada: " + dateFormat.format(greg.getTime()));
-
-        cal = Calendar.getInstance();
-        greg = new GregorianCalendar(TimeZone.getTimeZone("Europe/Paris"));
-        System.out.println("Canada milli: " + cal.getTimeInMillis());
-        System.out.println("Paris milli: " + greg.getTimeInMillis());
-
-//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-//        dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/London"));
-//        Calendar greg = new GregorianCalendar(TimeZone.getTimeZone("Europe/London"));
-//        System.out.println("Time in London: " + dateFormat.format(greg.getTime()));
-//
-//        System.out.println("Current time: " + greg.getTimeInMillis());
-//        System.out.println("Current time: " + Calendar.getInstance().getTimeInMillis());
-
-//        greg.add(Calendar.DAY_OF_MONTH, 2);
-//        System.out.println("Time in London: " + dateFormat.format(greg.getTime()));
-
-
-//        Assert.assertTrue(controlTime == testTime);
-//        TimeZone tz = TimeZone.getTimeZone("Canada/Pacific");
-//        System.out.println(tz.getID());
-//
-    }
     /**
      * Test that the Calendar instance returned from getCalendarForTimeUnit has the correct settings
      * based on the unit of time supplied
@@ -798,29 +734,32 @@ public class UtilitiesTest{
      */
     @Test
     public void testGetCalendarForTimeUnit() throws Exception{
-        Calendar control = Calendar.getInstance();
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
+        Calendar control = Calendar.getInstance(tz);
         control.set(Calendar.MINUTE, 0);
         control.set(Calendar.MILLISECOND, 0);
 
-        Calendar cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.HOUR);
+        Calendar cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.HOUR, timeZone);
         Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
-        cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.DAY);
-        control = Calendar.getInstance();
+        cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.DAY, timeZone);
+        control = Calendar.getInstance(tz);
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
         control.set(Calendar.MILLISECOND, 0);
         Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
-        cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.WEEK);
-        control = Calendar.getInstance();
+        cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.WEEK, timeZone);
+        control = Calendar.getInstance(tz);
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
         control.set(Calendar.MILLISECOND, 0);
         Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
-        cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.MONTH);
-        control = Calendar.getInstance();
+        cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.MONTH, timeZone);
+        control = Calendar.getInstance(tz);
         control.set(Calendar.DAY_OF_MONTH, 1);
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
@@ -834,23 +773,27 @@ public class UtilitiesTest{
      */
     @Test
     public void testGetIntervalDisplayDate() throws Exception{
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
         String startDate = "2008/08/01 14:12";
         String endDate = "2008/10/13 15:12";
+        DATE_FORMAT.setTimeZone(tz);
         Date d = DATE_FORMAT.parse(startDate);
         long startTime = d.getTime();
         d = DATE_FORMAT.parse(endDate);
         long endTime = d.getTime();
 
-        String timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.HOUR);
+        String timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         Assert.assertTrue(timeDisplay.equals("08/01 14:12 - 15:12"));
 
-        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY);
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, timeZone);
         Assert.assertTrue(timeDisplay.equals("Fri 08/01"));
         
-        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.WEEK);
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.WEEK, timeZone);
         Assert.assertTrue(timeDisplay.equals("08/01 - 10/13"));
 
-        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.MONTH);
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.MONTH, timeZone);
         Assert.assertTrue(timeDisplay.equals("2008 Aug"));
 
         //System.out.println("timeDisplay: "+ timeDisplay);
@@ -864,8 +807,10 @@ public class UtilitiesTest{
      */
     @Test
     public void testGetIntervalsForTimePeriod() throws Exception{
+        String timeZone = "Canada/Pacific";
         String startDate = "2008/10/12 00:00";
         String endDate = "2008/10/13 00:00";
+        DATE_FORMAT.setTimeZone(Utilities.getTimeZone(timeZone));
         Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
         d = DATE_FORMAT.parse(endDate);
@@ -873,13 +818,13 @@ public class UtilitiesTest{
 
         //Hour
         List<Long> intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.HOUR);
+                1, Utilities.UNIT_OF_TIME.HOUR, timeZone);
 
         //00:00 - 00:00, 24 hours but 25 is the interval size as it is 0 based and end time is exclusive.
         Assert.assertTrue(intervals.size() == 25);
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.UNIT_OF_TIME.HOUR);
+                2, Utilities.UNIT_OF_TIME.HOUR, timeZone);
 
         Assert.assertTrue(intervals.size() == 13);
 
@@ -892,12 +837,12 @@ public class UtilitiesTest{
         timePeriodEndExclusive = d.getTime();
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.DAY);
+                1, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         Assert.assertTrue(intervals.size() == 13);
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.UNIT_OF_TIME.DAY);
+                3, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         Assert.assertTrue(intervals.size() == 5);
 
@@ -910,11 +855,11 @@ public class UtilitiesTest{
         timePeriodEndExclusive = d.getTime();
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.WEEK);
+                1, Utilities.UNIT_OF_TIME.WEEK, timeZone);
         Assert.assertTrue(intervals.size() == 7);
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.UNIT_OF_TIME.WEEK);
+                2, Utilities.UNIT_OF_TIME.WEEK, timeZone);
         Assert.assertTrue(intervals.size() == 4);
 
         //Month
@@ -926,11 +871,11 @@ public class UtilitiesTest{
         timePeriodEndExclusive = d.getTime();
 
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.MONTH);
+                1, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         Assert.assertTrue(intervals.size() == 10);
         intervals = Utilities.getIntervalsForTimePeriod(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.UNIT_OF_TIME.MONTH);
+                3, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         Assert.assertTrue(intervals.size() == 4);
     }
@@ -1056,30 +1001,36 @@ public class UtilitiesTest{
 
     @Test
     public void testGetMilliSecondAsStringDate() throws Exception{
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+        
         String date = "2008/10/13 16:38";
+        DATE_FORMAT.setTimeZone(tz);
         Date d = DATE_FORMAT.parse(date);
         long timeMili = d.getTime();
 
-        String milliAsDate = Utilities.getMilliSecondAsStringDate(timeMili);
+        String milliAsDate = Utilities.getMilliSecondAsStringDate(timeMili, timeZone);
         Assert.assertTrue(date.equals(milliAsDate));
     }
 
     @Test
     public void testGetMillisForEndTimePeriod(){
-        Calendar calendar = Calendar.getInstance();
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+        Calendar calendar = Calendar.getInstance(tz);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        long endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.HOUR);
+        long endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.HOUR, timeZone);
         Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
 
         calendar.set(Calendar.HOUR_OF_DAY, 0);
-        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.DAY);
+        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.DAY, timeZone);
         Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
-        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.WEEK);
+        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.WEEK, timeZone);
         Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
 
         calendar.set(Calendar.DAY_OF_MONTH, 1);
-        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.MONTH);
+        endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.MONTH, timeZone);
         Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
     }
 
@@ -1326,29 +1277,31 @@ public class UtilitiesTest{
         //Calendar is retrieved for each time unit tested, to minimize the chance of this happening
 
         //hour
-        Calendar calendar = Calendar.getInstance();
+        String timeZone = "Europe/London";
+        TimeZone tz = TimeZone.getTimeZone(timeZone);
+        Calendar calendar = Calendar.getInstance(tz);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
         calendar.add(Calendar.HOUR_OF_DAY, -1);
-        long timeInPast = Utilities.getRelativeMilliSecondsInPast(1, Utilities.UNIT_OF_TIME.HOUR);
+        long timeInPast = Utilities.getRelativeMilliSecondsInPast(1, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         calendar.add(Calendar.HOUR_OF_DAY, -1);
-        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.HOUR);
+        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         //day
-        calendar = Calendar.getInstance();
+        calendar = Calendar.getInstance(tz);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
 
         calendar.add(Calendar.DAY_OF_MONTH, -2);
-        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.DAY);
+        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         System.out.println("Calendar date: " + DATE_FORMAT.format(calendar.getTime()));
-        Calendar testCal = Calendar.getInstance();
+        Calendar testCal = Calendar.getInstance(tz);
         testCal.setTimeInMillis(timeInPast);
         System.out.println("Test Calendar date: " + DATE_FORMAT.format(testCal.getTime()));        
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
@@ -1356,24 +1309,24 @@ public class UtilitiesTest{
 
 
         //week
-        calendar = Calendar.getInstance();
+        calendar = Calendar.getInstance(tz);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
 
         calendar.add(Calendar.WEEK_OF_YEAR, -2);
-        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.WEEK);
+        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.WEEK, timeZone);
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         //month
-        calendar = Calendar.getInstance();
+        calendar = Calendar.getInstance(tz);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.DAY_OF_MONTH, 1);
 
         calendar.add(Calendar.MONTH, -2);
-        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.MONTH);
+        timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.MONTH, timeZone);
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
     }
 

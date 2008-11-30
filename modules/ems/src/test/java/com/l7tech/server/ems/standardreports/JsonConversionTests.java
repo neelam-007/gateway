@@ -533,7 +533,7 @@ public class JsonConversionTests {
         Exception ex = null;
         try{
             String badData = "asdjhfasd;fsda";
-            Object o = JSON.parse(badData);
+            JSON.parse(badData);
         }catch(Exception e){
             ex = e;
         }

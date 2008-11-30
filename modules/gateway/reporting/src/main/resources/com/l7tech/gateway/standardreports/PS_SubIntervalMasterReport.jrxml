@@ -54,6 +54,9 @@
 	</parameter>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
+    <parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
+        <defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
+    </parameter>
 
 	<field name="INTERVAL_START" class="java.lang.Long"/>
 	<field name="INTERVAL_END" class="java.lang.Long"/>
@@ -114,7 +117,7 @@
 						<font fontName="Times-Roman" size="10"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.gateway.standardreports.Utilities.
-getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME})]]></textFieldExpression>
+getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME}, $P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
 				</textField>
 				<subreport  isUsingCache="false">
 					<reportElement

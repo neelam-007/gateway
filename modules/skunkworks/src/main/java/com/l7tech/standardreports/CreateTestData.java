@@ -232,7 +232,7 @@ public class CreateTestData {
             throw new IllegalArgumentException("Unsupported unit of time supplied: " + unitOfTime);
         }
         this.unitOfTime = unitOfTime;
-        cal = Utilities.getCalendarForTimeUnit(unitOfTime);
+        cal = Utilities.getCalendarForTimeUnit(unitOfTime, "Canada/Pacific");
         currentDay = cal.get(Calendar.DAY_OF_MONTH);
         currentMonth = cal.get(Calendar.MONTH);
 

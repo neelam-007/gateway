@@ -22,8 +22,13 @@ public class TimePeriodDataSource implements JRDataSource{
     private int intervalIndex = 0;
     private boolean first = true;
 
-    public TimePeriodDataSource(long timePeriodStart, long timePeriodEnd, int intervalNumberOfUnits, Utilities.UNIT_OF_TIME intervalUnitOfTime ) {
-        intervals = Utilities.getIntervalsForTimePeriod(timePeriodStart, timePeriodEnd, intervalNumberOfUnits, intervalUnitOfTime );
+    public TimePeriodDataSource(long timePeriodStart, 
+                                long timePeriodEnd,
+                                int intervalNumberOfUnits,
+                                Utilities.UNIT_OF_TIME intervalUnitOfTime,
+                                String timeZone ) {
+        intervals = Utilities.getIntervalsForTimePeriod(timePeriodStart,
+                        timePeriodEnd, intervalNumberOfUnits, intervalUnitOfTime, timeZone );
     }
 
     public TimePeriodDataSource(){

@@ -73,11 +73,11 @@
     </parameter>
     
     <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
-		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())
-?new Long(Utilities.getMillisForEndTimePeriod($P{RELATIVE_TIME_UNIT}))
+?new Long(Utilities.getMillisForEndTimePeriod($P{RELATIVE_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE}))
 : null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="absoluteStartTimeMilli" isForPrompting="false" class="java.lang.Long">
@@ -571,7 +571,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_TIME_ZONE}.getDisplayName()]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getTimeZone($P{SPECIFIC_TIME_ZONE}).getDisplayName()]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -625,11 +625,11 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_RELATIVE}.booleanValue())?("Last " + $P{timePeriodAsString} +
-" (" + Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
+" (" + Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}, $P{SPECIFIC_TIME_ZONE}) + ")")
 :
-Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
+Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}, $P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -954,7 +954,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_TIME_ZONE}.getDisplayName()]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getTimeZone($P{SPECIFIC_TIME_ZONE}).getDisplayName()]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -1008,11 +1008,11 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_RELATIVE}.booleanValue())?("Last " + $P{timePeriodAsString} +
-" (" + Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
+" (" + Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}, $P{SPECIFIC_TIME_ZONE}) + ")")
 :
-Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
+Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE}) +
+" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}, $P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement

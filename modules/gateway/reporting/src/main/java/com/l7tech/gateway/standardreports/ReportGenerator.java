@@ -241,6 +241,7 @@ public class ReportGenerator {
 
         Boolean isRelative = (Boolean) reportParams.get(ReportApi.ReportParameters.IS_RELATIVE);
 
+        String timeZone = (String) reportParams.get(ReportApi.ReportParameters.SPECIFIC_TIME_ZONE);
         Long startTimeInPast = null;
         Long endTimeInPast = null;
 
@@ -248,12 +249,11 @@ public class ReportGenerator {
             int numRelativeTimeUnits = (Integer)reportParams.get(ReportApi.ReportParameters.RELATIVE_NUM_OF_TIME_UNITS);
             Utilities.UNIT_OF_TIME relUnitOfTime = Utilities.getUnitFromString(reportParams.get(ReportApi.ReportParameters.RELATIVE_TIME_UNIT).toString());
             reportParams.put( ReportApi.ReportParameters.RELATIVE_TIME_UNIT, relUnitOfTime );
-            startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime );
-            endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime);
+            startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime, timeZone );
+            endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime, timeZone);
         }else{
             String absoluteStartTime = (String) reportParams.get(ReportApi.ReportParameters.ABSOLUTE_START_TIME);
             String absoluteEndTime = (String) reportParams.get(ReportApi.ReportParameters.ABSOLUTE_END_TIME);
-            String timeZone = (String) reportParams.get(ReportApi.ReportParameters.SPECIFIC_TIME_ZONE);
             try{
                 startTimeInPast = Utilities.getAbsoluteMilliSeconds(absoluteStartTime, timeZone);
                 endTimeInPast = Utilities.getAbsoluteMilliSeconds(absoluteEndTime, timeZone);

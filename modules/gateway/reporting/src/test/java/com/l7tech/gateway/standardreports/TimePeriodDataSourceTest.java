@@ -13,6 +13,7 @@ import net.sf.jasperreports.engine.JRPropertiesMap;
 
 import java.util.Date;
 import java.util.Calendar;
+import java.util.TimeZone;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
@@ -30,15 +31,21 @@ public class TimePeriodDataSourceTest {
      */
     @Test
     public void testTimeSource_Hour() throws ParseException, JRException {
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
         String startDate = "2008/10/12 00:00";
         String endDate = "2008/10/13 00:00";
+
+        DATE_FORMAT.setTimeZone(tz);
         Date d = DATE_FORMAT.parse(startDate);
+
         long timePeriodStartInclusive = d.getTime();
         d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.HOUR);
+                1, Utilities.UNIT_OF_TIME.HOUR, timeZone);
 
         int counter = 0;
         while(dataSource.next()){
@@ -48,7 +55,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 24);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.UNIT_OF_TIME.HOUR);
+                2, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         counter = 0;
         while(dataSource.next()){
             counter++;
@@ -57,7 +64,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 12);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.UNIT_OF_TIME.HOUR);
+                3, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         counter = 0;
         while(dataSource.next()){
             counter++;
@@ -66,7 +73,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 8);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.UNIT_OF_TIME.HOUR);
+                5, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         counter = 0;
         while(dataSource.next()){
             counter++;
@@ -83,15 +90,21 @@ public class TimePeriodDataSourceTest {
      */
     @Test
     public void testTimeSource_Day() throws ParseException, JRException {
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
         String startDate = "2008/09/01 00:00";
         String endDate = "2008/10/01 00:00";
+
+        DATE_FORMAT.setTimeZone(tz);
+
         Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
         d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.DAY);
+                1, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         int counter = 0;
         while(dataSource.next()){
@@ -101,7 +114,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 30);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.UNIT_OF_TIME.DAY);
+                2, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         counter = 0;
         while(dataSource.next()){
@@ -111,7 +124,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 15);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.UNIT_OF_TIME.DAY);
+                3, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         counter = 0;
         while(dataSource.next()){
@@ -121,7 +134,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 10);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                7, Utilities.UNIT_OF_TIME.DAY);
+                7, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         counter = 0;
         while(dataSource.next()){
@@ -139,15 +152,21 @@ public class TimePeriodDataSourceTest {
      */
     @Test
     public void testTimeSource_Week() throws ParseException, JRException {
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
         String startDate = "2008/08/01 00:00";
         String endDate = "2008/10/01 00:00";
+
+        DATE_FORMAT.setTimeZone(tz);
+
         Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
         d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.WEEK);
+                1, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         int counter = 0;
         while(dataSource.next()){
@@ -158,7 +177,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.UNIT_OF_TIME.WEEK);
+                2, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         counter = 0;
         while(dataSource.next()){
@@ -169,7 +188,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.UNIT_OF_TIME.WEEK);
+                3, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         counter = 0;
         while(dataSource.next()){
@@ -179,7 +198,7 @@ public class TimePeriodDataSourceTest {
         Assert.assertTrue(counter == 3);
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.UNIT_OF_TIME.WEEK);
+                5, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         counter = 0;
         while(dataSource.next()){
@@ -197,15 +216,21 @@ public class TimePeriodDataSourceTest {
      */
     @Test
     public void testTimeSource_Month() throws ParseException, JRException {
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
         String startDate = "2007/10/01 00:00";
         String endDate = "2008/10/01 00:00";
+
+        DATE_FORMAT.setTimeZone(tz);
+
         Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
         d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.MONTH);
+                1, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         int counter = 0;
         while(dataSource.next()){
@@ -216,7 +241,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.UNIT_OF_TIME.MONTH);
+                2, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         counter = 0;
         while(dataSource.next()){
@@ -227,7 +252,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.UNIT_OF_TIME.MONTH);
+                3, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         counter = 0;
         while(dataSource.next()){
@@ -238,7 +263,7 @@ public class TimePeriodDataSourceTest {
         
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.UNIT_OF_TIME.MONTH);
+                5, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         counter = 0;
         while(dataSource.next()){
@@ -256,15 +281,21 @@ public class TimePeriodDataSourceTest {
      */
     @Test
     public void testTimeSourceFields_Hour() throws ParseException, JRException {
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
         String startDate = "2008/10/12 00:00";
         String endDate = "2008/10/13 00:00";
+
+        DATE_FORMAT.setTimeZone(tz);
+
         Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
         d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.HOUR);
+                1, Utilities.UNIT_OF_TIME.HOUR, timeZone);
 
         long hourInMilli = 3600000L;
         while(dataSource.next()){
@@ -278,7 +309,7 @@ public class TimePeriodDataSourceTest {
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.UNIT_OF_TIME.HOUR);
+                2, Utilities.UNIT_OF_TIME.HOUR, timeZone);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -291,7 +322,7 @@ public class TimePeriodDataSourceTest {
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.UNIT_OF_TIME.HOUR);
+                3, Utilities.UNIT_OF_TIME.HOUR, timeZone);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -305,7 +336,7 @@ public class TimePeriodDataSourceTest {
 
         //5 doesn't go into 24, so the last interval is a remainder
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.UNIT_OF_TIME.HOUR);
+                5, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         int counter = 0;
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -330,15 +361,22 @@ public class TimePeriodDataSourceTest {
      */
     @Test
     public void testTimeSourceFields_Day() throws ParseException, JRException {
+
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
         String startDate = "2008/09/01 00:00";
         String endDate = "2008/10/01 00:00";
+
+        DATE_FORMAT.setTimeZone(tz);
+
         Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
         d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.DAY);
+                1, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         long dayInMilli = 86400000L; 
         while(dataSource.next()){
@@ -353,7 +391,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.UNIT_OF_TIME.DAY);
+                2, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -366,7 +404,7 @@ public class TimePeriodDataSourceTest {
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.UNIT_OF_TIME.DAY);
+                3, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -379,7 +417,7 @@ public class TimePeriodDataSourceTest {
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                7, Utilities.UNIT_OF_TIME.DAY);
+                7, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         int counter = 0;
         while(dataSource.next()){
@@ -407,15 +445,21 @@ public class TimePeriodDataSourceTest {
      */
     @Test
     public void testTimeSourceFields_Week() throws ParseException, JRException {
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
         String startDate = "2008/08/01 00:00";
         String endDate = "2008/10/03 00:00";
+
+        DATE_FORMAT.setTimeZone(tz);
+
         Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
         d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.WEEK);
+                1, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         long weekInMilli = 604800000L;
         while(dataSource.next()){
@@ -430,7 +474,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.UNIT_OF_TIME.WEEK);
+                2, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         int counter = 0;
         while(dataSource.next()){
@@ -447,7 +491,7 @@ public class TimePeriodDataSourceTest {
         
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.UNIT_OF_TIME.WEEK);
+                3, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -461,7 +505,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.UNIT_OF_TIME.WEEK);
+                5, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         counter = 0;
         while(dataSource.next()){
@@ -491,17 +535,23 @@ public class TimePeriodDataSourceTest {
      */
     @Test
     public void testTimeSourceFields_Month() throws ParseException, JRException {
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
         String startDate = "2007/10/01 00:00";
         String endDate = "2008/10/01 00:00";
+
+        DATE_FORMAT.setTimeZone(tz);
+
         Date d = DATE_FORMAT.parse(startDate);
         long timePeriodStartInclusive = d.getTime();
         d = DATE_FORMAT.parse(endDate);
         long timePeriodEndExclusive = d.getTime();
 
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                1, Utilities.UNIT_OF_TIME.MONTH);
+                1, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(tz);
         
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -517,7 +567,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                2, Utilities.UNIT_OF_TIME.MONTH);
+                2, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -533,7 +583,7 @@ public class TimePeriodDataSourceTest {
 
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                3, Utilities.UNIT_OF_TIME.MONTH);
+                3, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         while(dataSource.next()){
             Long start = (Long) dataSource.getFieldValue(fieldStart);
@@ -548,7 +598,7 @@ public class TimePeriodDataSourceTest {
         }
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
-                5, Utilities.UNIT_OF_TIME.MONTH);
+                5, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         int counter = 0;
         while(dataSource.next()){

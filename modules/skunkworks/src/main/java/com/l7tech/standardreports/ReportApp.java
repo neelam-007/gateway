@@ -92,6 +92,7 @@ public class ReportApp
     private static final String REPORTING_RELATIVE_PATH = "../../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports";
     private static final String SERVICE_ID_TO_NAME_MAP = "SERVICE_ID_TO_NAME_MAP";
 
+    private static final String SPECIFIC_TIME_ZONE = "SPECIFIC_TIME_ZONE";
     public ReportApp() {
     }
 
@@ -152,8 +153,9 @@ public class ReportApp
 
         int numRelativeTimeUnits = Integer.valueOf(parameters.get(RELATIVE_NUM_OF_TIME_UNITS).toString());
         Utilities.UNIT_OF_TIME relUnitOfTime = Utilities.getUnitFromString(prop.getProperty(RELATIVE_TIME_UNIT));
-        long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime );
-        long endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime);
+        String timeZone = "Canada/Pacific";
+        long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime, timeZone);
+        long endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime, timeZone);
 
         List<String> keys = (List<String>) parameters.get(MAPPING_KEYS);
         List<String> values = (List<String>) parameters.get(MAPPING_VALUES);
@@ -492,8 +494,8 @@ public class ReportApp
         Document transformDoc = Utilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
 
         String xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SummaryTransform.xsl");
-        //String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH+"/PS_Summary_Template.jrxml");
-        String xmlSrc = getResAsString(SKUNKWORK_RELATIVE_PATH+"/PS_Summary_Template_New_Title.jrxml");
+        String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH+"/PS_Summary_Template.jrxml");
+        //String xmlSrc = getResAsString(SKUNKWORK_RELATIVE_PATH+"/PS_Summary_Template_New_Title.jrxml");
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
@@ -800,6 +802,8 @@ public class ReportApp
         Boolean isDetail = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
         parameters.put(IS_DETAIL, isDetail);
 
+        String timeZone = prop.getProperty(SPECIFIC_TIME_ZONE);
+        parameters.put(SPECIFIC_TIME_ZONE, timeZone);
         //relative and absolute time
         b = Boolean.parseBoolean(prop.getProperty(IS_RELATIVE));
         parameters.put(IS_RELATIVE, b);

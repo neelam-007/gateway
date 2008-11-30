@@ -12,7 +12,6 @@ import org.w3c.dom.*;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.text.MessageFormat;
-import java.text.DateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
@@ -179,11 +178,12 @@ public class Utilities {
      * In calculations a week = 7 days.
      * Month uses whole months, not including any time from the current month.
      * @param numberOfUnits How many unitOfTime to use
+     * @param timeZone when determing the end of the previous day, week or month
      * @param unitOfTime valid values are HOUR, DAY, WEEK and MONTH
      * @return
      */
-    public static long getRelativeMilliSecondsInPast(int numberOfUnits, UNIT_OF_TIME unitOfTime){
-        Calendar calendar = getCalendarForTimeUnit(unitOfTime);
+    public static long getRelativeMilliSecondsInPast(int numberOfUnits, UNIT_OF_TIME unitOfTime, String timeZone){
+        Calendar calendar = getCalendarForTimeUnit(unitOfTime, timeZone);
 
         int calendarTimeUnit = getCalendarTimeUnit(unitOfTime);
         calendar.add(calendarTimeUnit, numberOfUnits * -1);
@@ -264,13 +264,17 @@ public class Utilities {
     /**
      * Get the date string representation of a time value in milliseconds
      * @param timeMilliSeconds the number of milliseconds since epoch
+     * @param timeZone
      * @return a date in the format yyyy/MM/dd HH:mm
      */
-    public static String getMilliSecondAsStringDate(Long timeMilliSeconds){
-        SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_STRING);
-        Calendar cal = Calendar.getInstance();
+    public static String getMilliSecondAsStringDate(Long timeMilliSeconds, String timeZone){
+        TimeZone tz = getTimeZone(timeZone);
+        SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_STRING);
+        dateFormat.setTimeZone(tz);
+        //timezone not really needed as we don't modify the calendar with add() operations
+        Calendar cal = Calendar.getInstance(tz);
         cal.setTimeInMillis(timeMilliSeconds);
-        return DATE_FORMAT.format(cal.getTime());
+        return dateFormat.format(cal.getTime());
     }
 
     public static String getIntervalAsString(UNIT_OF_TIME unitOfTime, int numIntervalUnits){
@@ -291,43 +295,52 @@ public class Utilities {
      * @param startIntervalMilliSeconds milli second value since epoch
      * @param endIntervalMilliSeconds milli second value since epoch 
      * @param intervalUnitOfTime HOUR, DAY, WEEK or MONTH
+     * @param timeZone
      * @return String representing the date, to be displayed to the viewer of the report
      */
     public static String getIntervalDisplayDate(Long startIntervalMilliSeconds, Long endIntervalMilliSeconds,
-                                        UNIT_OF_TIME intervalUnitOfTime){
-        
-        Calendar calStart = Calendar.getInstance();
+                                        UNIT_OF_TIME intervalUnitOfTime, String timeZone){
+
+        TimeZone tz = getTimeZone(timeZone);
+        Calendar calStart = Calendar.getInstance(tz);
         calStart.setTimeInMillis(startIntervalMilliSeconds);
 
-        Calendar calEnd = Calendar.getInstance();
+        Calendar calEnd = Calendar.getInstance(tz);
         calEnd.setTimeInMillis(endIntervalMilliSeconds);
 
-        SimpleDateFormat WEEK_DATE_FORMAT = new SimpleDateFormat(WEEK_DATE_STRING);
+        SimpleDateFormat weekDateFormat = new SimpleDateFormat(WEEK_DATE_STRING);
+        weekDateFormat.setTimeZone(tz);
         //todo [Donal] could validate that the end time is an hour, day..etc from the start time
         switch( intervalUnitOfTime){
             case HOUR:
-                SimpleDateFormat HOUR_DATE_FORMAT = new SimpleDateFormat(HOUR_DATE_STRING);
-                SimpleDateFormat DAY_HOUR_DATE_FORMAT = new SimpleDateFormat(DAY_HOUR_DATE_STRING);
-                return DAY_HOUR_DATE_FORMAT.format(calStart.getTime()) + " - " +
-                            HOUR_DATE_FORMAT.format(calEnd.getTime());
+                SimpleDateFormat hourDateFormat = new SimpleDateFormat(HOUR_DATE_STRING);
+                hourDateFormat.setTimeZone(tz);
+                SimpleDateFormat dateHourDateFormat = new SimpleDateFormat(DAY_HOUR_DATE_STRING);
+                dateHourDateFormat.setTimeZone(tz);
+                return dateHourDateFormat.format(calStart.getTime()) + " - " +
+                            hourDateFormat.format(calEnd.getTime());
             case DAY:
                 if(calStart.get(Calendar.MONTH) == Calendar.JANUARY){
-                    SimpleDateFormat DAY_MONTH_DATE_FORMAT = new SimpleDateFormat(DAY_MONTH_DATE_STRING);
-                    return DAY_MONTH_DATE_FORMAT.format(calStart.getTime());
+                    SimpleDateFormat dayMonthDateFormat = new SimpleDateFormat(DAY_MONTH_DATE_STRING);
+                    dayMonthDateFormat.setTimeZone(tz);
+                    return dayMonthDateFormat.format(calStart.getTime());
                 }
-                SimpleDateFormat DAY_DATE_FORMAT = new SimpleDateFormat(DAY_DATE_STRING);
-                return DAY_DATE_FORMAT.format(calStart.getTime());
+                SimpleDateFormat dateDateFormat = new SimpleDateFormat(DAY_DATE_STRING);
+                dateDateFormat.setTimeZone(tz);
+                return dateDateFormat.format(calStart.getTime());
             case WEEK:
                 if(calStart.get(Calendar.MONTH) == Calendar.JANUARY){
-                    SimpleDateFormat WEEK_YEAR_DATE_FORMAT = new SimpleDateFormat(WEEK_YEAR_DATE_STRING);
-                    return WEEK_YEAR_DATE_FORMAT.format(calStart.getTime())+ " - " +
-                            WEEK_DATE_FORMAT.format(calEnd.getTime());
+                    SimpleDateFormat weekYearDateFormat = new SimpleDateFormat(WEEK_YEAR_DATE_STRING);
+                    weekYearDateFormat.setTimeZone(tz);
+                    return weekYearDateFormat.format(calStart.getTime())+ " - " +
+                            weekDateFormat.format(calEnd.getTime());
                 }
-                return WEEK_DATE_FORMAT.format(calStart.getTime())+ " - " +
-                            WEEK_DATE_FORMAT.format(calEnd.getTime());
+                return weekDateFormat.format(calStart.getTime())+ " - " +
+                            weekDateFormat.format(calEnd.getTime());
             case MONTH:
-                SimpleDateFormat MONTH_DATE_FORMAT = new SimpleDateFormat(MONTH_DATE_STRING);
-                return MONTH_DATE_FORMAT.format(calStart.getTime());
+                SimpleDateFormat monthDateFormat = new SimpleDateFormat(MONTH_DATE_STRING);
+                monthDateFormat.setTimeZone(tz);
+                return monthDateFormat.format(calStart.getTime());
 
         }
         return null;
@@ -340,8 +353,8 @@ public class Utilities {
      * @param unitOfTime
      * @return
      */
-    public static long getMillisForEndTimePeriod(UNIT_OF_TIME unitOfTime){
-        return Utilities.getCalendarForTimeUnit(unitOfTime).getTimeInMillis();
+    public static long getMillisForEndTimePeriod(UNIT_OF_TIME unitOfTime, String timeZone){
+        return Utilities.getCalendarForTimeUnit(unitOfTime, timeZone).getTimeInMillis();
     }
 
     private static void checkUnitOfTime(String unitSupplied, String [] allowableUnits){
@@ -358,8 +371,8 @@ public class Utilities {
                 + allUnits.toString());
     }
 
-    public static Calendar getCalendarForTimeUnit(UNIT_OF_TIME unitOfTime){
-        Calendar calendar = Calendar.getInstance();
+    public static Calendar getCalendarForTimeUnit(UNIT_OF_TIME unitOfTime, String timeZone){
+        Calendar calendar = Calendar.getInstance(getTimeZone(timeZone));
 
         //Set the calendar to be the correct end of time period
         if(unitOfTime != UNIT_OF_TIME.HOUR){
@@ -378,6 +391,7 @@ public class Utilities {
         return calendar;
     }
 
+
     /**
      * Return a millisecond value from the start of epoch up to the date
      * represented by the date parameter. If you specify Europe/Paris as the timezone, then the date will be parsed
@@ -392,9 +406,20 @@ public class Utilities {
      */
     public static long getAbsoluteMilliSeconds(String date, String timeZone) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_STRING);
-        dateFormat.setTimeZone(TimeZone.getTimeZone(timeZone));
+        dateFormat.setTimeZone(getTimeZone(timeZone));
         Date d = dateFormat.parse(date);
         return d.getTime();
+    }
+
+    public static TimeZone getTimeZone(String timeZone){
+
+        TimeZone tz = TimeZone.getTimeZone(timeZone);
+        //if we ask for an invlaid timezone, no exception is thrown, we just get GMT as the default.
+        //throwing an exception if the timezone found is not the same as requested
+        if(!tz.getID().equals(timeZone)){
+            throw new IllegalArgumentException("Timezone '"+timeZone+"' is not valid");            
+        }
+        return tz;
     }
 
     /**
@@ -409,18 +434,22 @@ public class Utilities {
      * @param timePeriodEndExclusive end of time period
      * @param intervalNumberOfUnits The length of an interval is numberOfUnits x unitOfTime
      * @param intervalUnitOfTime valid values are HOUR, DAY, WEEK and MONTH
+     * @param timeZone
      * @return List<Long> the ordered list of long's representing the start of each interval. The last long represents
      * the end of the last interval.
      */
     public static List<Long> getIntervalsForTimePeriod(Long timePeriodStartInclusive, Long timePeriodEndExclusive,
-                                                               int intervalNumberOfUnits, UNIT_OF_TIME intervalUnitOfTime){
+                                                               int intervalNumberOfUnits,
+                                                               UNIT_OF_TIME intervalUnitOfTime, String timeZone){
+        TimeZone tz = getTimeZone(timeZone);
         if(timePeriodStartInclusive >= timePeriodEndExclusive){
-            Calendar test = Calendar.getInstance();
+            Calendar test = Calendar.getInstance(tz);
             test.setTimeInMillis(timePeriodStartInclusive);
-            SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(DATE_STRING);
-            String startDate =  DATE_FORMAT.format(test.getTime());
+            SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_STRING);
+            dateFormat.setTimeZone(tz);
+            String startDate =  dateFormat.format(test.getTime());
             test.setTimeInMillis(timePeriodEndExclusive);
-            String endDate =  DATE_FORMAT.format(test.getTime());
+            String endDate =  dateFormat.format(test.getTime());
 
             throw new IllegalArgumentException("End of time period must be after the time period start time: start: " +
             startDate+" value = "+ timePeriodStartInclusive+" end: " + endDate+" value = " + timePeriodEndExclusive);
@@ -433,13 +462,13 @@ public class Utilities {
 
         List<Long> returnList = new ArrayList<Long>();
 
-        Calendar endOfTimePeriod = Calendar.getInstance();
+        Calendar endOfTimePeriod = Calendar.getInstance(tz);
         endOfTimePeriod.setTimeInMillis(timePeriodEndExclusive);
 
-        Calendar startOfTimePeriod = Calendar.getInstance();
+        Calendar startOfTimePeriod = Calendar.getInstance(tz);
         startOfTimePeriod.setTimeInMillis(timePeriodStartInclusive);
 
-        Calendar temp = Calendar.getInstance();
+        Calendar temp = Calendar.getInstance(tz);
         temp.setTimeInMillis(timePeriodStartInclusive);
         temp.add(calendarUnitOfTime, intervalNumberOfUnits);
 
@@ -1005,6 +1034,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         addMappingOrder(sb);
 
         logger.log(Level.INFO, sb.toString());
+        System.out.println(sb.toString());
         return sb.toString();
     }
 
