@@ -15,7 +15,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Collection;
 import java.sql.SQLException;
 
 /**
@@ -24,13 +23,12 @@ import java.sql.SQLException;
  *
  * @author alex
  */
-@SuppressWarnings({"unchecked"})
 @Transactional(propagation = Propagation.REQUIRED)
 public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     private final EntityFinder entityFinder;
     private final Map<Class<? extends Entity>, EntityManager<? extends Entity, ? extends EntityHeader>> managersByClass;
 
-    public EntityCrudImpl( final EntityFinder entityFinder, final EntityManager... managers) {
+    public EntityCrudImpl(EntityFinder entityFinder, EntityManager... managers) {
         this.entityFinder = entityFinder;
 
         final Map<Class<? extends Entity>, EntityManager<? extends Entity, ? extends EntityHeader>> managersByClass = new HashMap<Class<? extends Entity>, EntityManager<? extends Entity,? extends EntityHeader>>();
@@ -40,48 +38,26 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         this.managersByClass = Collections.unmodifiableMap(managersByClass);
     }
 
-    @Override
-    public EntityHeaderSet<EntityHeader> findAll(final Class<? extends Entity> entityClass) throws FindException {
+    public EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass) throws FindException {
         EntityManager manager = getManager(entityClass);
-        if (manager != null){
-            Collection<EntityHeader> headers = manager.findAllHeaders();
-            return new EntityHeaderSet<EntityHeader>((EntityHeader[])headers.toArray(new EntityHeader[headers.size()]));
-        }
+        if (manager != null) return new EntityHeaderSet<EntityHeader>((EntityHeader[])manager.findAllHeaders().toArray(new EntityHeader[0]));
         return entityFinder.findAll(entityClass);
     }
 
-    @Override
-    public EntityHeaderSet<EntityHeader> findAll(final Class<? extends Entity> entityClass, final String filter, final int offset, final int max) throws FindException {
-        EntityManager manager = getManager(entityClass);
-        if ( manager != null ){
-            Collection<EntityHeader> headers;
-            if ( manager instanceof SearchableEntityManager ) {
-                headers = ((SearchableEntityManager)manager).findHeaders( offset, max, filter );
-            } else {
-                headers = manager.findAllHeaders( offset, max );
-            }
-            return new EntityHeaderSet<EntityHeader>((EntityHeader[])headers.toArray(new EntityHeader[headers.size()]));
-        }
-        return entityFinder.findAll(entityClass);
-    }
-
-    @Override
-    public Entity find(final EntityHeader header) throws FindException {
+    public Entity find(EntityHeader header) throws FindException {
         EntityManager manager = getManager(EntityTypeRegistry.getEntityClass(header.getType()));
         if (manager != null) return manager.findByPrimaryKey(header.getOid());
         return entityFinder.find(header);
     }
 
-    @Override
-    public <ET extends Entity> ET find(final Class<ET> clazz, final Serializable pk) throws FindException {
+    public <ET extends Entity> ET find(Class<ET> clazz, Serializable pk) throws FindException {
         EntityManager manager = getManager(clazz);
         if (manager != null)
             return (ET)manager.findByPrimaryKey(Long.valueOf(pk.toString()));
         return entityFinder.find(clazz, pk);
     }
 
-    @Override
-    public EntityHeader findHeader(final EntityType etype, final Serializable pk) throws FindException {
+    public EntityHeader findHeader(EntityType etype, Serializable pk) throws FindException {
         EntityManager manager = getManager(EntityTypeRegistry.getEntityClass(etype));
         if (manager != null) {
             return EntityHeaderUtils.fromEntity(manager.findByPrimaryKey(Long.valueOf(pk.toString())));
@@ -137,7 +113,7 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         });
     }
 
-    private EntityManager getManager(final Class<? extends Entity> clazz) {
+    private EntityManager getManager(Class<? extends Entity> clazz) {
         final EntityManager<? extends Entity, ? extends EntityHeader> manager = managersByClass.get(clazz);
         if (manager != null && !(PersistentEntity.class.isAssignableFrom(clazz)))
             throw new IllegalArgumentException(clazz.getSimpleName() + " is not a PersistentEntity");

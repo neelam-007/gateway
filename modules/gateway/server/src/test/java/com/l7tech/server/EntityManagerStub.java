@@ -60,10 +60,6 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         return Collections.unmodifiableCollection(headers.values());
     }
 
-    public synchronized Collection<EH> findHeaders(int offset, int max, String filter) throws FindException {
-        return Collections.unmodifiableCollection(headers.values());
-    }
-
     public synchronized Collection<EH> findAllHeaders(int offset, int limit) throws FindException {
         EH[] dest = (EH[]) new EntityHeader[limit];
         EH[] all = (EH[]) headers.values().toArray(new EntityHeader[limit]);
