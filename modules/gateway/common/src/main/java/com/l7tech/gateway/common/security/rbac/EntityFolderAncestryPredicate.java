@@ -50,6 +50,11 @@ public class EntityFolderAncestryPredicate extends ScopePredicate {
     }
 
     @Override
+    public String toString() {
+        return String.format("Folder ancestry of %s #%s", entityType.getName(), getEntityId());
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
