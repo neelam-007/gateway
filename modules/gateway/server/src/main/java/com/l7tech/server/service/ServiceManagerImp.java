@@ -235,6 +235,10 @@ public class ServiceManagerImp
         newRole.addEntityPermission(READ, JMS_CONNECTION, null);
         newRole.addEntityPermission(READ, JMS_ENDPOINT, null);
 
+        // Read this service's folder ancestry
+        newRole.addEntityFolderAncestryPermission(EntityType.SERVICE, service.getId());
+
+        // Set role as entity-specific
         newRole.setEntityType(SERVICE);
         newRole.setEntityOid(service.getOid());
         newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the {1} service.");

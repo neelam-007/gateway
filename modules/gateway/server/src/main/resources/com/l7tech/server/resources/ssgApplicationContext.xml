@@ -232,6 +232,7 @@
     </bean>
     <bean id="rbacServices" class="com.l7tech.server.security.rbac.RbacServicesImpl">
         <property name="roleManager" ref="roleManager"/>
+        <property name="entityFinder" ref="entityFinder"/>
     </bean>
 
     <!-- server side identity provider factory -->

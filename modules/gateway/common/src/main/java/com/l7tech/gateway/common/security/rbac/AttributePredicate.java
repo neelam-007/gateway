@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  */
 @javax.persistence.Entity
 @Table(name="rbac_predicate_attribute")
-public class AttributePredicate extends ScopePredicate {
+public class AttributePredicate extends ScopePredicate implements ScopeEvaluator {
     private static final Logger logger = Logger.getLogger(AttributePredicate.class.getName());
 
     private String attribute;
@@ -92,8 +92,7 @@ public class AttributePredicate extends ScopePredicate {
         this.value = value;
     }
 
-    boolean matches(Entity entity, Class<? extends Entity> eclass) {
-        if (!permission.getEntityType().getEntityClass().isAssignableFrom(eclass)) return false;
+    public boolean matches(Entity entity) {
         setupGetter();
         try {
             Object got = getter.invoke(entity);

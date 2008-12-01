@@ -3,15 +3,12 @@
  */
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.EntityType.ANY;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.factory.InitializingBean;
@@ -20,21 +17,28 @@ import org.springframework.context.ApplicationListener;
 
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /** @author alex */
 public class RbacServicesImpl implements RbacServices, InitializingBean, ApplicationListener {
     private static final Logger logger = Logger.getLogger(RbacServicesImpl.class.getName());
+              
+    private final Map<Class<? extends ScopePredicate>, ScopeEvaluatorFactory> scopeEvaluatorFactories = new HashMap<Class<? extends ScopePredicate>, ScopeEvaluatorFactory>() {{
+        put(EntityFolderAncestryPredicate.class, new EntityFolderAncestryEvaluatorFactory());
+    }};
+    private final Map<ScopePredicate, ScopeEvaluator> evaluatorCache = new ConcurrentHashMap<ScopePredicate, ScopeEvaluator>();
 
     private RoleManager roleManager;
+    private EntityFinder entityFinder;
 
-    public RbacServicesImpl(RoleManager roleManager) {
+    public RbacServicesImpl(RoleManager roleManager, EntityFinder entityFinder) {
         this.roleManager = roleManager;
+        this.entityFinder = entityFinder;
     }
 
-    public RbacServicesImpl() {
-    }
+    public RbacServicesImpl() { }
 
     @Override
     public boolean isPermittedForEntitiesOfTypes(User authenticatedUser, OperationType requiredOperation, Set<EntityType> requiredTypes)
@@ -87,21 +91,9 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, Applica
         throws FindException {
         if (user == null || entity == null || operation == null) throw new NullPointerException();
         if (operation == OperationType.OTHER && otherOperationName == null) throw new IllegalArgumentException("otherOperationName must be specified when operation == OTHER");
-        logger.log(Level.FINE, "Checking for permission to {0} {1} #{2}", new Object[] { operation.getName(), entity.getClass().getSimpleName(), entity.getId()});
+        logger.log(Level.FINE, String.format("Checking for permission to %s %s #%s", operation.getName(), entity.getClass().getSimpleName(), entity.getId()));
 
-        Collection<Role> assignedRoles = roleManager.getAssignedRoles(user);
-        for (Role role : assignedRoles) {
-            for (Permission perm : role.getPermissions()) {
-                if (perm.matches(entity) && perm.getOperation() == operation) {
-                    if (operation != OperationType.OTHER && operation != OperationType.NONE) {
-                        return true;
-                    } else {
-                        if (otherOperationName.equals(perm.getOtherOperationName())) return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return isPermitted(roleManager.getAssignedRoles(user), entity, operation, otherOperationName);
     }
 
     @Override
@@ -138,18 +130,63 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, Applica
         return result;
     }
 
-    private boolean isPermitted(Collection<Role> assignedRoles, Entity entity, OperationType operation, String otherOperationName) {
+    private boolean isPermitted(final Collection<Role> assignedRoles,
+                                final Entity entity,
+                                final OperationType attemptedOperation,
+                                final String otherOperationName)
+    {
         for (Role role : assignedRoles) {
             for (Permission perm : role.getPermissions()) {
-                if (perm.matches(entity) && perm.getOperation() == operation) {
-                    if (operation != OperationType.OTHER && operation != OperationType.NONE) {
-                        return true;
-                    } else {
-                        if (otherOperationName.equals(perm.getOtherOperationName())) return true;
-                    }
+                if (!perm.matches(entity) || perm.getOperation() != attemptedOperation)
+                    continue;
+
+                if (!checkScope(entity, perm)) return false;
+
+                if (attemptedOperation == OperationType.OTHER || attemptedOperation == OperationType.NONE) {
+                    if (otherOperationName.equals(perm.getOtherOperationName())) return true;
+                } else {
+                    return true;
                 }
             }
         }
+        return false;
+    }
+
+    private boolean checkScope(final Entity entity, final Permission perm) {
+        if (perm.getScope().isEmpty())
+            return true;
+
+        boolean allmatch = true;
+
+        for (ScopePredicate predicate : perm.getScope()) {
+            allmatch &= eval(predicate, entity);
+        }
+
+        return allmatch;
+    }
+
+    private boolean eval(final ScopePredicate predicate, final Entity entity) {
+        ScopeEvaluator evaluator;
+        if (predicate instanceof ScopeEvaluator) {
+            evaluator = (ScopeEvaluator) predicate;
+        } else {
+            evaluator = evaluatorCache.get(predicate);
+            if (evaluator == null) {
+                final ScopeEvaluatorFactory evaluatorFactory = scopeEvaluatorFactories.get(predicate.getClass());
+                if (evaluatorFactory == null) throw new IllegalStateException("No evaluator factory for " + predicate.getClass().getName());
+
+                //noinspection unchecked
+                evaluator = evaluatorFactory.makeEvaluator(predicate);
+                if (evaluator == null) throw new IllegalStateException(evaluatorFactory.getClass().getName() + " produced a null evaluator");
+
+                evaluatorCache.put(predicate, evaluator);
+            }
+        }
+
+        if (evaluator.matches(entity))
+            return true;
+
+        logger.fine(String.format("%s did not match the entity", evaluator.getClass().getSimpleName()));
         return false;
     }
 
@@ -157,9 +194,14 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, Applica
         this.roleManager = roleManager;
     }
 
+    public void setEntityFinder(EntityFinder entityFinder) {
+        this.entityFinder = entityFinder;
+    }
+
     @Override
     public void afterPropertiesSet() throws Exception {
         if (roleManager == null) throw new IllegalStateException("RoleManager is required");
+        if (entityFinder == null) throw new IllegalStateException("EntityFinder is required");
     }
 
     @Override
@@ -179,4 +221,52 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, Applica
         }
     }
 
+    private class EntityAncestryEvaluator implements ScopeEvaluator {
+        private final EntityFolderAncestryPredicate predicate;
+
+        public EntityAncestryEvaluator(EntityFolderAncestryPredicate predicate) {
+            this.predicate = predicate;
+        }
+
+        @Override
+        public boolean matches(final Entity subjectEntity) {
+            if (!(subjectEntity instanceof Folder)) return false;
+
+            final EntityType type = predicate.getEntityType();
+            final String id = predicate.getEntityId();
+            final Entity targetEntity;
+            try {
+                targetEntity = entityFinder.find(EntityTypeRegistry.getEntityClass(type), id);
+            } catch (FindException e) {
+                logger.log(Level.WARNING, String.format("Unable to find target %s #%s", type, id), e);
+                return false;
+            }
+
+            if (targetEntity == null) {
+                logger.log(Level.INFO, String.format("Target %s #%s no longer exists", type, id));
+                return false;
+            } else if (!(targetEntity instanceof HasFolder)) {
+                logger.log(Level.INFO, String.format("Target %s #%s has no folder", type, id));
+                return false;
+            }
+
+            // Start from the target entity's folder and work upward. If the subject folder is encountered
+            // in the entity's ancestry, it's permitted.
+            final Folder subjectFolder = (Folder) subjectEntity;
+
+            Folder nextFolder = ((HasFolder) targetEntity).getFolder();
+            while (nextFolder != null) {
+                if (subjectFolder.getOid() == nextFolder.getOid()) return true;
+                nextFolder = nextFolder.getParentFolder();
+            }
+            return false;
+        }
+    }
+
+    private class EntityFolderAncestryEvaluatorFactory implements ScopeEvaluatorFactory<EntityFolderAncestryPredicate> {
+        @Override
+            public ScopeEvaluator makeEvaluator(final EntityFolderAncestryPredicate predicate) {
+            return new EntityAncestryEvaluator(predicate);
+        }
+    }
 }

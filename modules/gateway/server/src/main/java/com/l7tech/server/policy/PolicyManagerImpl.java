@@ -5,9 +5,9 @@ package com.l7tech.server.policy;
 
 import static com.l7tech.objectmodel.EntityType.POLICY;
 import static com.l7tech.objectmodel.EntityType.SERVICE_TEMPLATE;
+import static com.l7tech.objectmodel.EntityType.*;
 import static com.l7tech.gateway.common.security.rbac.OperationType.*;
-import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
@@ -215,6 +215,9 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         newRole.addEntityPermission(DELETE, POLICY, policy.getId()); // Delete this policy
         newRole.addEntityPermission(READ, SERVICE_TEMPLATE, null);
 
+        // Read this policy's folder ancestry
+        newRole.addEntityFolderAncestryPermission(POLICY, policy.getId());
+
         if (currentUser != null) {
             // See if we should give the current user admin permission for this policy
             boolean omnipotent;
@@ -222,6 +225,7 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
                 omnipotent = roleManager.isPermittedForAnyEntityOfType(currentUser, READ, POLICY);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, UPDATE, POLICY);
                 omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, DELETE, POLICY);
+                omnipotent &= roleManager.isPermittedForAnyEntityOfType(currentUser, READ, FOLDER);
             } catch (FindException e) {
                 throw new SaveException("Coudln't get existing permissions", e);
             }

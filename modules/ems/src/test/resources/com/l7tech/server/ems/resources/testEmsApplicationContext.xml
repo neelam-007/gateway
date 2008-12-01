@@ -33,8 +33,21 @@
     <!-- Mock test key -->
     <bean id="defaultKey" class="com.l7tech.server.TestDefaultKey"/>
 
-    <bean id="roleManager" class="com.l7tech.server.security.rbac.MockRoleManager"/>
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.MockRoleManager">
+        <constructor-arg ref="entityFinder"/>
+    </bean>
 
+    <bean id="rbacServices" class="com.l7tech.server.security.rbac.RbacServicesImpl">
+        <property name="roleManager" ref="roleManager"/>
+        <property name="entityFinder" ref="entityFinder"/>
+    </bean>
+
+    <bean id="entityFinder" class="com.l7tech.server.EntityFinderStub">
+        <constructor-arg>
+            <list/>
+        </constructor-arg>
+    </bean>
+    
     <bean id="gatewayTrustTokenFactory" class="com.l7tech.server.ems.gateway.MockGatewayTrustTokenFactory"/>
 
     <bean id="gatewayContextFactory" class="com.l7tech.server.ems.gateway.MockGatewayContextFactory"/>

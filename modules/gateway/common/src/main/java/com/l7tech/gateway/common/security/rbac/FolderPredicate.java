@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 @javax.persistence.Entity
 @Table(name="rbac_predicate_folder")
-public class FolderPredicate extends ScopePredicate {
+public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
     private static final Logger logger = Logger.getLogger(FolderPredicate.class.getName());
 
     private Folder folder;
@@ -36,14 +36,14 @@ public class FolderPredicate extends ScopePredicate {
     protected FolderPredicate() { }
 
     @Override
-    boolean matches(final Entity entity, final Class<? extends Entity> eclass) {
+    public boolean matches(final Entity entity) {
         final Folder entityFolder;
         if (entity instanceof HasFolder) {
             entityFolder = ((HasFolder)entity).getFolder();
         } else if (entity instanceof Folder) {
             entityFolder = (Folder)entity;
         } else {
-            logger.log(Level.INFO, String.format("%s #%s has no folder", eclass.getSimpleName(), entity.getId()));
+            logger.log(Level.INFO, String.format("%s #%s has no folder", entity.getClass().getSimpleName(), entity.getId()));
             return false;
         }
 

@@ -3,16 +3,9 @@
  */
 package com.l7tech.gateway.common.security.rbac;
 
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
-import javax.persistence.Table;
-import javax.persistence.ManyToOne;
-import javax.persistence.JoinColumn;
-import javax.persistence.Version;
-import javax.persistence.Column;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
+import javax.persistence.*;
 
 /**
  * A predicate in the "scope expression" of a {@link Permission}.
@@ -49,12 +42,4 @@ public abstract class ScopePredicate extends PersistentEntityImp {
     protected void setPermission(Permission permission) {
         this.permission = permission;
     }
-
-    /**
-     * @param entity the Entity to evaluate against the predicate
-     * @param eclass the "real" class of the entity, which may be different from entity.getClass() if entity is an
-     *        AnonymousEntityReference
-     * @return true if this predicate matches the given entity.
-     */
-    abstract boolean matches(Entity entity, Class<? extends Entity> eclass);
 }

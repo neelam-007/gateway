@@ -213,9 +213,9 @@ CREATE TABLE policy (
   INDEX (policy_type)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
----
---- Policy XML rollback support
----
+--
+-- Policy XML rollback support
+--
 
 DROP TABLE IF EXISTS policy_version;
 CREATE TABLE policy_version (
@@ -949,6 +949,19 @@ CREATE TABLE rbac_predicate_folder (
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
   FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Table structure for table rbac_predicate_entityfolder
+--
+DROP TABLE IF EXISTS rbac_predicate_entityfolder;
+CREATE TABLE rbac_predicate_entityfolder (
+  objectid bigint(20) NOT NULL,
+  entity_type VARCHAR(64) NOT NULL,
+  entity_id VARCHAR(255) NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 
 -- Create Administrator role
 -- XXX NOTE!! COPIED in Role#ADMIN_ROLE_OID

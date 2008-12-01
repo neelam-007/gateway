@@ -16,7 +16,11 @@ import java.util.regex.Pattern;
 public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implements RoleManager, RbacServices {
     private GroupManager groupManager;
 
-    private final RbacServices rbacServices = new RbacServicesImpl(this);
+    public MockRoleManager(EntityFinder entityFinder) {
+        rbacServices = new RbacServicesImpl(this, entityFinder);
+    }
+
+    private final RbacServices rbacServices;
 
     @Override
     public Collection<Role> getAssignedRoles(User thisGuy) throws FindException {

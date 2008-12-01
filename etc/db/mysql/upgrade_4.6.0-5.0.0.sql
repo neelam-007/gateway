@@ -276,7 +276,7 @@ ALTER TABLE email_listener DROP COLUMN last_poll_time;
 ALTER TABLE email_listener DROP COLUMN last_message_id;
 
 --
--- Create table for RBAC folder predicates
+-- Create tables for RBAC folder predicates
 --
 CREATE TABLE rbac_predicate_folder (
   objectid bigint(20) NOT NULL,
@@ -285,6 +285,14 @@ CREATE TABLE rbac_predicate_folder (
   PRIMARY KEY (objectid),
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE,
   FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+CREATE TABLE rbac_predicate_entityfolder (
+  objectid bigint(20) NOT NULL,
+  entity_type VARCHAR(64) NOT NULL,
+  entity_id VARCHAR(255) NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

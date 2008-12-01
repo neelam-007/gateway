@@ -17,7 +17,7 @@ import javax.persistence.Transient;
  */
 @javax.persistence.Entity
 @Table(name="rbac_predicate_oid")
-public class ObjectIdentityPredicate extends ScopePredicate {
+public class ObjectIdentityPredicate extends ScopePredicate implements ScopeEvaluator {
     private String targetEntityId;
     private EntityHeader header;
 
@@ -42,7 +42,7 @@ public class ObjectIdentityPredicate extends ScopePredicate {
         this.targetEntityId = targetEntityId;
     }
 
-    boolean matches(Entity entity, Class<? extends Entity> eclass) {
+    public boolean matches(Entity entity) {
         EntityType etype = permission.getEntityType();
         if (etype == null || etype == EntityType.ANY)
             throw new IllegalStateException("Can't evaluate an ObjectIdentityPredicate without a specific EntityType");

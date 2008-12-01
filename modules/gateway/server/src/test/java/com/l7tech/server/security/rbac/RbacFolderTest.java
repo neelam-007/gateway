@@ -3,10 +3,7 @@
  */
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.User;
@@ -43,22 +40,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 
 /** @author alex */
 public class RbacFolderTest extends TestCase {
-    private static final Logger logger = Logger.getLogger(RbacFolderTest.class.getName());
-
-    private final MockRoleManager roleManager = new MockRoleManager();
     private final PolicyManager policyManager = new PolicyManagerStub();
     private final FolderManager folderManager = new FolderManagerStub();
     private final PolicyAliasManagerStub policyAliasManager = new PolicyAliasManagerStub();
     private final ServiceAliasManagerStub serviceAliasManager = new ServiceAliasManagerStub();
-    private final RbacServices rbacServices = new RbacServicesImpl(roleManager);
 
     private ServiceManager serviceManager;
-    private EntityFinderStub entityFinder;
+    private RbacServices rbacServices;
     private SecuredMethodInterceptor interceptor;
+    private MockRoleManager roleManager;
 
     private GenericMethodInvocation<Collection<PolicyHeader>> findAllPolicies;
     private GenericMethodInvocation<Collection<ServiceHeader>> findAllServices;
@@ -94,7 +87,7 @@ public class RbacFolderTest extends TestCase {
             for (Object arg : args) {
                 argTypes.add(arg.getClass());
             }
-            this.method = thiss.getClass().getMethod(methodName, argTypes.toArray(new Class<?>[0]));
+            this.method = thiss.getClass().getMethod(methodName, argTypes.toArray(new Class<?>[argTypes.size()]));
             this.args = args;
         }
 
@@ -110,6 +103,7 @@ public class RbacFolderTest extends TestCase {
 
         @Override
         public RT proceed() throws Throwable {
+            //noinspection unchecked
             return (RT)method.invoke(thiss, args);
         }
 
@@ -176,8 +170,11 @@ public class RbacFolderTest extends TestCase {
         aService.setName("A service in the root folder");
         aService.setFolder(rootFolder);
         aService.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, "policy for a service", WspWriter.getPolicyXml(new CommentAssertion("A service policy")), false));
+
         serviceManager = new ServiceManagerStub(policyManager, aService);
-        entityFinder = new EntityFinderStub(roleManager, policyManager, serviceManager, folderManager, policyAliasManager, serviceAliasManager);
+        EntityFinderStub entityFinder = new EntityFinderStub(policyManager, serviceManager, folderManager, policyAliasManager, serviceAliasManager);
+        roleManager = new MockRoleManager(entityFinder);
+        rbacServices = new RbacServicesImpl(roleManager, entityFinder);
         interceptor = new SecuredMethodInterceptor(rbacServices, entityFinder);
     }
 
@@ -240,7 +237,7 @@ public class RbacFolderTest extends TestCase {
         assertTrue(rbacServices.isPermittedForEntity(jimbo, aPolicy, OperationType.READ, null));
         assertTrue(rbacServices.isPermittedForEntity(jimbo, aliasToBPolicy, OperationType.READ, null));
 
-        List all = new ArrayList();
+        List<Object> all = new ArrayList<Object>();
         all.addAll(runAs(jimbo, findAllPolicies));
         all.addAll(runAs(jimbo, findAllPolicyAliases));
 
@@ -248,7 +245,7 @@ public class RbacFolderTest extends TestCase {
     }
 
     public void testFolderNonTransitiveRoot() throws Throwable {
-        canReadStuffInFolder(jimbo, folder1, false, EntityType.ANY);
+        canReadStuffInFolder(jimbo, rootFolder, false, EntityType.ANY);
         assertTrue(rbacServices.isPermittedForEntity(jimbo, aService, OperationType.READ, null));
 
         Collection<ServiceHeader> all = runAs(jimbo, findAllServices);
@@ -263,11 +260,35 @@ public class RbacFolderTest extends TestCase {
         assertTrue("Can read BAlias", rbacServices.isPermittedForEntity(jimbo, aliasToBPolicy, OperationType.READ, null));
         assertTrue("Can read AAlias", rbacServices.isPermittedForEntity(jimbo, aliasToAPolicy, OperationType.READ, null));
 
-        List all = new ArrayList();
+        List<Object> all = new ArrayList<Object>();
         all.addAll(runAs(jimbo, findAllPolicies));
         all.addAll(runAs(jimbo, findAllPolicyAliases));
 
         assertEquals("Number of things read", 4, all.size());
+    }
+
+    public void testFolderAncestry() throws Throwable {
+        Role role = new Role();
+        role.addAssignedUser(jimbo);
+        {
+            Permission perm = new Permission(role, OperationType.READ, EntityType.FOLDER);
+            perm.getScope().add(new EntityFolderAncestryPredicate(perm, EntityType.POLICY, aPolicy.getOid()));
+            role.getPermissions().add(perm);
+        }
+
+        roleManager.save(role);
+
+        assertTrue("Can read folder1 due to EntityFolderAncestryPredicate",
+                rbacServices.isPermittedForEntity(jimbo, folder1, OperationType.READ, null));
+
+        assertFalse("Can't read aPolicy (a folder ancestry permission does not extend to the entity itself)", 
+                rbacServices.isPermittedForEntity(jimbo, aPolicy, OperationType.READ, null));
+
+        Collection<Folder> folders = runAs(jimbo, findAllFolders);
+        assertEquals(2, folders.size());
+        assertTrue("found folder1", folders.contains(folder1));
+        assertTrue("Found root", folders.contains(rootFolder));
+        assertFalse("Shouldn't find folder2", folders.contains(folder2));
     }
 
     private <T> T runAs(final User user, final GenericMethodInvocation<T> invocation) throws PrivilegedActionException {
@@ -275,6 +296,7 @@ public class RbacFolderTest extends TestCase {
             @Override
             public T run() {
                 try {
+                    //noinspection unchecked
                     return (T)interceptor.invoke(invocation);
                 } catch (Throwable throwable) {
                     throw new RuntimeException(throwable); // Can't happen

@@ -7,22 +7,13 @@ import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
-
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.OneToMany;
-import javax.persistence.CascadeType;
-import javax.persistence.FetchType;
-import javax.persistence.Transient;
-import javax.persistence.Version;
-import java.util.HashSet;
-import java.util.Set;
-
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.Cascade;
+
+import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A permission that belongs to a {@link Role}.
@@ -61,8 +52,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
      * In order to be considered applicable, one of the following conditions must be met:
      * <ul>
      * <li>This Permission's {@link #entityType} is {@link EntityType#ANY}, <strong>or:</strong></li>
-     * <li>This Permission's {@link #entityType} matches the specified Entity, and {@link ScopePredicate#matches}
-     * returns <code>true</code> for <em>every</em> predicate in {@link #scope}.</li>
+     * <li>This Permission's {@link #entityType} matches the specified Entity</li>
      * </ul>
      * @param entity the entity to test for applicability
      * @return true if this Permission applies to the specified Entity; false otherwise.
@@ -78,11 +68,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
             eclass = entity.getClass();
         }
 
-        if (!entityType.getEntityClass().isAssignableFrom(eclass)) return false;
-        for (ScopePredicate predicate : scope) {
-            if (!predicate.matches(entity, eclass)) return false;
-        }
-        return true;
+        return entityType.getEntityClass().isAssignableFrom(eclass);
     }
 
     @Override
@@ -206,12 +192,14 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         }
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (role != null ? role.hashCode() : 0);
         result = 31 * result + (operation != null ? operation.hashCode() : 0);
         result = 31 * result + (otherOperationName != null ? otherOperationName.hashCode() : 0);
         result = 31 * result + (entityType != null ? entityType.hashCode() : 0);
+        result = 31 * result + (scope != null ? scope.hashCode() : 0);
         return result;
     }
 
