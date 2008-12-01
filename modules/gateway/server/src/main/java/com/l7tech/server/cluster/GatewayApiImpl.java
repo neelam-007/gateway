@@ -64,74 +64,88 @@ public class GatewayApiImpl implements GatewayApi {
     @Override
     public ClusterInfo getClusterInfo() {
         logger.fine("Processing request for cluster info.");
-        
-        ClusterInfo info = new ClusterInfo();
-        info.setClusterHostname( config.getProperty("clusterHost", "") );
-        info.setClusterHttpPort( config.getIntProperty("clusterhttpport", 8080) );
-        info.setClusterHttpsPort( config.getIntProperty("clusterhttpsport", 8443) );
-        
-        return info;
+        try {
+
+            ClusterInfo info = new ClusterInfo();
+            info.setClusterHostname( config.getProperty("clusterHost", "") );
+            info.setClusterHttpPort( config.getIntProperty("clusterhttpport", 8080) );
+            info.setClusterHttpsPort( config.getIntProperty("clusterhttpsport", 8443) );
+
+            return info;
+        } catch  ( RuntimeException re ) {
+            logger.log(Level.WARNING, "Unexpected exception in Gateway API.", re);
+            throw re;
+        }
     }
 
     @Override
     public Collection<GatewayInfo> getGatewayInfo() {
         logger.fine("Processing request for gateway info.");
-        
-        Set<GatewayInfo> gateways = new LinkedHashSet<GatewayInfo>();
-
         try {
-            Collection<ClusterNodeInfo> clusterNodeInfos = clusterInfoManager.retrieveClusterStatus();
-            if ( clusterNodeInfos != null ) {
-                for( ClusterNodeInfo info : clusterNodeInfos ) {
-                    GatewayInfo gatewayInfo = new GatewayInfo();
-                    gatewayInfo.setId( info.getNodeIdentifier() );
-                    gatewayInfo.setName( info.getName() );
-                    gatewayInfo.setIpAddress( info.getAddress() );
-                    gatewayInfo.setSoftwareVersion( BuildInfo.getProductVersion() );
-                    gatewayInfo.setStatusTimestamp( info.getLastUpdateTimeStamp() );
-                    gateways.add(gatewayInfo);
-                }
-            }
-        } catch ( FindException fe ) {
-            logger.log( Level.WARNING, "Error accessing node status", fe );   
-        }
+            Set<GatewayInfo> gateways = new LinkedHashSet<GatewayInfo>();
 
-        return gateways;
+            try {
+                Collection<ClusterNodeInfo> clusterNodeInfos = clusterInfoManager.retrieveClusterStatus();
+                if ( clusterNodeInfos != null ) {
+                    for( ClusterNodeInfo info : clusterNodeInfos ) {
+                        GatewayInfo gatewayInfo = new GatewayInfo();
+                        gatewayInfo.setId( info.getNodeIdentifier() );
+                        gatewayInfo.setName( info.getName() );
+                        gatewayInfo.setIpAddress( info.getAddress() );
+                        gatewayInfo.setSoftwareVersion( BuildInfo.getProductVersion() );
+                        gatewayInfo.setStatusTimestamp( info.getLastUpdateTimeStamp() );
+                        gateways.add(gatewayInfo);
+                    }
+                }
+            } catch ( FindException fe ) {
+                logger.log( Level.WARNING, "Error accessing node status", fe );
+            }
+
+            return gateways;
+        } catch  ( RuntimeException re ) {
+            logger.log(Level.WARNING, "Unexpected exception in Gateway API.", re);
+            throw re;
+        }
     }
 
     @Override
     @WebMethod(operationName = "GetEntityInfo")
     @WebResult(name = "EntityInfos", targetNamespace = "http://www.layer7tech.com/management/gateway")
     public Collection<EntityInfo> getEntityInfo( final Collection<EntityType> entityTypes ) throws GatewayException {
-        Collection<EntityInfo> info = new ArrayList<EntityInfo>();
-        User user = JaasUtils.getCurrentUser();
-        if ( user == null ) {
-            throw new GatewayException( "Authentication required." );            
-        }
-
         try {
-            for ( EntityType type : entityTypes ) {
-                switch ( type ) {
-                    case SERVICE:
-                        findServiceEntities( info, user );
-                        break;
-                    case POLICY:
-                        findPolicyEntities( info, user );
-                        break;
-                    case FOLDER:
-                        findFolderEntities( info, user );
-                        break;
-                    default:
-                        logger.warning("Unsupported entity type requested '"+type+"'.");
-                        break;
-                }
+            Collection<EntityInfo> info = new ArrayList<EntityInfo>();
+            User user = JaasUtils.getCurrentUser();
+            if ( user == null ) {
+                throw new GatewayException( "Authentication required." );
             }
-        } catch ( FindException fe ) {
-            logger.log( Level.WARNING, "Error finding entities.", fe );
-            throw new GatewayException( "Error finding entities." );
-        } 
 
-        return info;
+            try {
+                for ( EntityType type : entityTypes ) {
+                    switch ( type ) {
+                        case SERVICE:
+                            findServiceEntities( info, user );
+                            break;
+                        case POLICY:
+                            findPolicyEntities( info, user );
+                            break;
+                        case FOLDER:
+                            findFolderEntities( info, user );
+                            break;
+                        default:
+                            logger.warning("Unsupported entity type requested '"+type+"'.");
+                            break;
+                    }
+                }
+            } catch ( FindException fe ) {
+                logger.log( Level.WARNING, "Error finding entities.", fe );
+                throw new GatewayException( "Error finding entities." );
+            }
+
+            return info;
+        } catch  ( RuntimeException re ) {
+            logger.log(Level.WARNING, "Unexpected exception in Gateway API.", re);
+            throw re;
+        }
     }
 
     //- PRIVATE
@@ -155,17 +169,19 @@ public class GatewayApiImpl implements GatewayApi {
             EntityInfo entityInfo = new EntityInfo(header.getType(), header.getStrId(), header.getDisplayName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()),
                     service == null ? 0 : service.getVersion());
 
-            if ( service != null ) {
+            if ( service != null && service.isSoap() ) {
                 try {
                     // Get operations
                     Wsdl wsdl = service.parsedWsdl();
-                    wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-                    ArrayList<String> operations = new ArrayList<String>();
-                    for (BindingOperation operation: wsdl.getBindingOperations()) {
-                        operations.add(operation.getName());
+                    if ( wsdl != null ) {
+                        wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+                        ArrayList<String> operations = new ArrayList<String>();
+                        for (BindingOperation operation: wsdl.getBindingOperations()) {
+                            operations.add(operation.getName());
+                        }
+                        // Set operations in the published-service entityInfo
+                        entityInfo.setOperations(operations.toArray(new String[operations.size()]));
                     }
-                    // Set operations in the published-service entityInfo
-                    entityInfo.setOperations(operations.toArray(new String[operations.size()]));
                 } catch ( WSDLException we ) {
                     // ignore WSDL error, skip operations
                     if ( logger.isLoggable( Level.FINE ) ) {
