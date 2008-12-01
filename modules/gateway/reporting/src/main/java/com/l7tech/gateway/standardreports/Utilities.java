@@ -558,7 +558,8 @@ public class Utilities {
             addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
         }
         addUsageDistinctMappingOrder(sb);
-        
+
+        logger.log(Level.FINER,"getUsageDistinctMappingQuery: " +sb.toString());
         return sb.toString();
     }
 
@@ -620,6 +621,7 @@ public class Utilities {
 
         sb.append(" ORDER BY SERVICE_ID, SERVICE_OPERATION_VALUE");
 
+        logger.log(Level.FINER,"getUsageMasterIntervalQuery: " +sb.toString());
         return sb.toString();
     }
 
@@ -707,6 +709,7 @@ public class Utilities {
         //----SECTION M----
         addUsageMappingOrder(sb);
 
+        logger.log(Level.FINER,"getUsageQuery: " +sb.toString());
         return sb.toString();
     }
 
@@ -1019,7 +1022,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         //----SECTION M----
         addMappingOrder(sb);
 
-        logger.log(Level.INFO, sb.toString());
+        logger.log(Level.FINER,"createMappingQuery: " + sb.toString());
         return sb.toString();
     }
 
@@ -1185,7 +1188,8 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         }else{
             sb.append(" GROUP BY p.objectid ");
         }
-        //System.out.println("Sql: " + sb.toString());
+
+        logger.log(Level.FINER, "getNoMappingQuery: " + sb.toString());
         return sb.toString();
     }
 
@@ -1498,11 +1502,9 @@ Value is included in all or none, comment is just illustrative
                                                                String authUser, List<String> keys, String [] keyValues){
 
         String displayString = getMappingValueDisplayString(keys, authUser, keyValues, false, null);
-        //System.out.println("getCategoryMappingDisplayString: " + displayString);
         if(!displayStringToMappingGroup.containsKey(displayString)) throw new IllegalArgumentException("Group for " +
                 "display string not found: " + displayString);
 
-        //System.out.println("Found: " + displayStringToMappingGroup.get(displayString));
         return displayStringToMappingGroup.get(displayString);
     }
 
@@ -1514,11 +1516,9 @@ Value is included in all or none, comment is just illustrative
                                                  String routingURI){
 
         String displayString = getServiceDisplayString(serviceName, routingURI);
-        //System.out.println("getServiceFromDisplayString: " + displayString);
         if(!displayStringToService.containsKey(displayString)) throw new IllegalArgumentException("Service for " +
                 "display string not found: " + displayString);
 
-        //System.out.println("Found: " + displayStringToService.get(displayString));
         return displayStringToService.get(displayString);
     }
 
@@ -2118,10 +2118,8 @@ Value is included in all or none, comment is just illustrative
         LinkedHashSet<String> mappingValues = getMappingValues(distinctMappingSets);
         LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
         int count = 1;
-        //System.out.println("Key to column map");
         for (String s : mappingValues) {
             keyToColumnName.put(s, "COLUMN_"+count);
-            //System.out.println(s+" " + "COLUMN_"+count);
             count++;
         }
         return keyToColumnName;
