@@ -4,7 +4,6 @@ import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.ExportedItem;
 import com.l7tech.server.management.migration.MigrationManager;
-import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.*;
@@ -29,7 +28,6 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
-import org.hibernate.exception.*;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
@@ -120,20 +118,15 @@ public class MigrationManagerImpl implements MigrationManager {
     @Transactional(rollbackFor = Throwable.class)
     public void importBundle(MigrationBundle bundle) throws MigrationException {
 
-        MigrationErrors errors = new MigrationErrors();
-/*
-        // todo: enable bundle validation
-        errors = validateBundle(bundle);
+        MigrationErrors errors = validateBundle(bundle);
         if (! errors.isEmpty())
+            //logger.log(Level.WARNING, "Migration bundle validation failed.", errors);
             throw new MigrationException("Migration bundle validation failed.", errors);
-*/
 
         // load entities
         Map<EntityHeaderRef, Entity> entities = new HashMap<EntityHeaderRef, Entity>();
         Map<EntityHeader, Entity> entitiesToImport = new HashMap<EntityHeader, Entity>();
         for (EntityHeader header : bundle.getMetadata().getHeaders()) {
-
-
             Entity ent;
             try {
                 // try the local ssg first
@@ -158,17 +151,18 @@ public class MigrationManagerImpl implements MigrationManager {
                     try {
                         resolver.applyMapping(sourceEntity, mapping.getPropName(), targetEntity);
                     } catch (MigrationException e) {
+                        logger.log(Level.WARNING, "Errors while applying mapping: ", e);
                         errors.add(mapping, e);
                     }
                 }
             } catch (MigrationException e) {
+                logger.log(Level.WARNING, "Errors while applying mapping: ", e);
                 errors.add(header, e);
             }
         }
-/*
         if (! errors.isEmpty())
+            //logger.log(Level.WARNING, "Errors while applying mappings for the entities to import.", errors);
             throw new MigrationException("Errors while applying mappings for the entities to import.", errors);
-*/
 
         try {
             doUpload(entitiesToImport);

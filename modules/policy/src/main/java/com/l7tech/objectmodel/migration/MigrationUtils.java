@@ -32,8 +32,10 @@ public class MigrationUtils {
      * @see com.l7tech.objectmodel.migration.Migration, PropertyResolver
      */
     public static PropertyResolver getResolver(Method property) throws MigrationException {
-        Class<? extends PropertyResolver> resolverClass = property.isAnnotationPresent(Migration.class) ?
-            property.getAnnotation(Migration.class).resolver() : DefaultEntityPropertyResolver.class;
+        Class<? extends PropertyResolver> resolverClass = isDefaultDependency(property) ? DefaultEntityPropertyResolver.class :
+            isDependency(property) ? property.getAnnotation(Migration.class).resolver() : null;
+        if (resolverClass == null)
+            throw new MigrationException("Property " + property + " is not a dependency.");
         try {
             return resolverClass.newInstance();
         } catch (Exception e) {
@@ -50,23 +52,28 @@ public class MigrationUtils {
             name = propName.substring(0, sep);
 
         Method method = getterForPropertyName(sourceEntity, name);
-        if (method == null || !MigrationUtils.isDependency(method))
-            throw new MigrationException("No dependency method found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
+        if (method == null)
+            throw new MigrationException("No getter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
 
-        // method points to a dependency, return the resolver for it
+        // we have the method, get the resolver for it (if it's a dependency etc)
         return getResolver(method);
     }
 
-    private static Method methodForPropertyName(Object sourceEntity, String name, boolean getter) {
-        String prefix = getter ? "get" : "set";
+    private static Method methodForPropertyName(Object sourceEntity, String name) {
+        return methodForPropertyName(sourceEntity, name, null);
+    }
+
+    private static Method methodForPropertyName(Object sourceEntity, String name, Class setterParam) {
+        String prefix = setterParam == null ? "get" : "set";
         try {
             // try with prefix first
-            return sourceEntity.getClass().getMethod(name.startsWith(prefix) ? name : prefix + name);
+            return setterParam == null ? sourceEntity.getClass().getMethod(name.startsWith(prefix) ? name : prefix + name) :
+                sourceEntity.getClass().getMethod(name.startsWith(prefix) ? name : prefix + name, setterParam);
         } catch (NoSuchMethodException e) {
             // fall back to non-prefixed name
             if (! name.startsWith(prefix)) {
                 try {
-                    return sourceEntity.getClass().getMethod(name);
+                    return sourceEntity.getClass().getMethod(name, setterParam);
                 } catch (NoSuchMethodException ee) {
                     // no luck
                 }
@@ -76,11 +83,11 @@ public class MigrationUtils {
     }
 
     public static Method getterForPropertyName(Object sourceEntity, String name) {
-        return methodForPropertyName(sourceEntity, name, true);
+        return methodForPropertyName(sourceEntity, name);
     }
 
-    public static Method setterForPropertyName(Object sourceEntity, String name) {
-        return methodForPropertyName(sourceEntity, name, false);
+    public static Method setterForPropertyName(Object sourceEntity, String name, Class setterParam) {
+        return methodForPropertyName(sourceEntity, name, setterParam);
     }
 
     /**

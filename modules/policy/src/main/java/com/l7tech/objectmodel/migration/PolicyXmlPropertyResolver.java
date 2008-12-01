@@ -63,7 +63,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
         if (!(assertion.getOrdinal() == targetOrdinal))
             throw new MigrationException("Assertion with ordinal " + targetOrdinal + " not found in poilcy.");
 
-        Method setter = MigrationUtils.setterForPropertyName(assertion, assertionPropName);
+        Method setter = MigrationUtils.setterForPropertyName(assertion, assertionPropName, targetEntity.getClass());
         try {
             // todo: handle multi-value targets, e.g. UsesEntities.getEntitiesUsed()
             setter.invoke(assertion, targetEntity);

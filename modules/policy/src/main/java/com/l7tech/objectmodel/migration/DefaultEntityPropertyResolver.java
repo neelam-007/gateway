@@ -93,13 +93,13 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
 
     public void applyMapping(Entity sourceEntity, String propName, Entity targetEntity) throws MigrationException {
 
-        Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName);
+        Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, targetEntity.getClass());
 
         try {
             // todo: handle multi-value target values
             method.invoke(sourceEntity, targetEntity);
         } catch (Exception e) {
-            throw new MigrationException("Error applying mapping: " , e);
+            throw new MigrationException("Error applying mapping for property name: " + propName, e);
         }
     }
 }
