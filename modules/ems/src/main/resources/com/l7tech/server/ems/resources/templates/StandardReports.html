@@ -306,6 +306,7 @@ generateButton.set('disabled', false);
             while (entitySelectionTableBody.rows.length > 0) {
                 entitySelectionTableBody.deleteRow(-1);
             }
+            updateSsgClustersWithSelectedEntities();
             // and all groupings
             while (groupingTableBody.rows.length > 0) {
                 groupingTableBody.deleteRow(-1);
@@ -320,6 +321,11 @@ generateButton.set('disabled', false);
                 entityTypeText = localizedStrings.OPERATION_S;
             }
             addEntityButton.set('label', localizedStrings.ADD_ENTITY_BUTTON_LABEL.replace('ENTITY_TYPE', entityTypeText));
+
+            updateAddGroupingButton();
+            updateSaveSettingsButton();
+            updateSaveDefaultButton();
+            updateGenerateButton();
         }
 
         function onChangeSelectedEntities() {
@@ -569,7 +575,7 @@ generateButton.set('disabled', false);
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
                         availableMessageContext = result;
-                    } 
+                    }
                 },
                 failure : function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST + o.statusText, localizedStrings.OK);
@@ -604,10 +610,8 @@ generateButton.set('disabled', false);
             if ( entities ) {
                 for (var i = 0; i < entities.length; ++i) {
                     var entity = entities[i];
-
                     if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
                         var option = document.createElement('option');
-
                         option.value = entity.id;
                         if ( entity.ancestors ) {
                             option.innerHTML = entity.ancestors.join(' / ') + ' / ' +  entity.name;
@@ -849,7 +853,7 @@ generateButton.set('disabled', false);
             var postData = YAHOO.lang.JSON.stringify(settings);
             l7.Dialog.showWaitDialog(localizedStrings.SUBMITTING_GENERATE_REPORT + '...');
             YAHOO.util.Connect.setDefaultPostHeader(false);
-            YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');            
+            YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');
             YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
             YAHOO.util.Connect.setDefaultPostHeader(true);
         }
@@ -949,12 +953,13 @@ generateButton.set('disabled', false);
             l7.Widget.initHourlyDropDown(absoluteTimePeriodToHourDropDown);
             initButtons();
             initDialogs();
-            // loadSavedSettingsDropDown();
+            // loadSavedSettingsDropDown(); TODO uncomment this when saved settings is implemented
 
-            updateSaveDefaultButton();
-            updateGenerateButton();
             onChangeTimePeriodType();
             onChangeTimeInterval();
+            updateAddGroupingButton();
+            updateSaveDefaultButton();
+            updateGenerateButton();
         }
 
         YAHOO.util.Event.onDOMReady(init);
