@@ -415,6 +415,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         ReportApi.ReportSubmission.ReportParam timeZoneParam = new ReportApi.ReportSubmission.ReportParam();
         timeZoneParam.setName(ReportApi.ReportParameters.SPECIFIC_TIME_ZONE);
         timeZoneParam.setValue(timeZone);
+        addParamToAllClusters(clusterToReportParams, timeZoneParam);
 
 
         if(type.equals(JSONConstants.TimePeriodTypeValues.RELATIVE)){

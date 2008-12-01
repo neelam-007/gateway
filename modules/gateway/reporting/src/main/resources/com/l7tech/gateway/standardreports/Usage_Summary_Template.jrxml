@@ -68,11 +68,10 @@
 	<parameter name="SERVICE_ID_TO_NAME_MAP" isForPrompting="false" class="java.util.Map">
 		<defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
 	</parameter>
-    <parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
-        <defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
-    </parameter>
-    
-    <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
+	<parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
+		<defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
@@ -345,7 +344,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getServiceDisplayStringNotTruncated($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -400,7 +399,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
 					<box></box>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						style="SummaryRowHeading"
+						style="SummaryRowHeadingHtml"
 						x="0"
 						y="0"
 						width="113"
@@ -408,7 +407,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
 						key="textField-159"/>
 					<box></box>
 					<textElement>
-						<font/>
+						<font size="8"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?$F{SERVICE_OPERATION_VALUE}:
 Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
@@ -457,8 +456,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
-				</frame>
-                <frame>					<reportElement
+				</frame>				<frame>					<reportElement
 						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
@@ -789,8 +787,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					</textElement>
 				<text><![CDATA[Groupings:]]></text>
 				</staticText>
-				</frame>				</frame>
-            </band>
+				</frame>				</frame>			</band>
 		</title>
 		<pageHeader>
 			<band height="0"  isSplitAllowed="true" >
@@ -840,8 +837,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
-				</frame>
-<frame>					<reportElement
+				</frame>				<frame>					<reportElement
 						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
@@ -1172,8 +1168,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					</textElement>
 				<text><![CDATA[Groupings:]]></text>
 				</staticText>
-				</frame>				</frame>                	
-                <frame>					<reportElement
+				</frame>				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="168"

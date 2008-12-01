@@ -19,6 +19,7 @@ import java.util.logging.Level;
 import java.awt.*;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.TextUtils;
 
 
 public class Utilities {
@@ -1509,13 +1510,23 @@ Value is included in all or none, comment is just illustrative
     }
 
     public static String getServiceDisplayString(String serviceName, String serviceRoutingURI){
+        String serviceNameDisplay = TextUtils.truncStringMiddle(serviceName, 26);
+        String displayRoutingURI = TextUtils.truncStringMiddle(serviceRoutingURI, 26);
+
+        //return "<font size=\"10\">"+serviceNameDisplay +"<br>" + "[" + displayRoutingURI+"]"+"</font>";
+        return serviceNameDisplay +"<br>" + "[" + displayRoutingURI+"]";
+        //return serviceName+"["+serviceRoutingURI+"]";
+    }
+
+
+    public static String getServiceDisplayStringNotTruncated(String serviceName, String serviceRoutingURI){
         return serviceName+"["+serviceRoutingURI+"]";
     }
 
     public static String getServiceFromDisplayString(Map<String, String> displayStringToService, String serviceName,
                                                  String routingURI){
 
-        String displayString = getServiceDisplayString(serviceName, routingURI);
+        String displayString = getServiceDisplayStringNotTruncated(serviceName, routingURI);
         if(!displayStringToService.containsKey(displayString)) throw new IllegalArgumentException("Service for " +
                 "display string not found: " + displayString);
 

@@ -41,7 +41,7 @@
 	<parameter name="ABSOLUTE_START_TIME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ABSOLUTE_END_TIME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="REPORT_RAN_BY" isForPrompting="false" class="java.lang.String"/>
-    <parameter name="SERVICE_ID_TO_OPERATIONS_MAP" isForPrompting="false" class="java.util.Map">
+	<parameter name="SERVICE_ID_TO_OPERATIONS_MAP" isForPrompting="false" class="java.util.Map">
 		<defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
 	</parameter>
 	<parameter name="HOURLY_MAX_RETENTION_NUM_DAYS" isForPrompting="false" class="java.lang.Integer">
@@ -58,17 +58,15 @@
 	</parameter>
 	<parameter name="STYLES_FROM_TEMPLATE" isForPrompting="false" class="java.util.Map"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
-    <parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
-    <parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
-    <parameter name="SERVICE_ID_TO_NAME_MAP" isForPrompting="false" class="java.util.Map">
-        <defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
-    </parameter>
-    <parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
-        <defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
-    </parameter>
-
-
-    <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
+	<parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
+	<parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
+	<parameter name="SERVICE_ID_TO_NAME_MAP" isForPrompting="false" class="java.util.Map">
+		<defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
+		<defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
@@ -94,11 +92,11 @@
 	<parameter name="resolution" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[Utilities.getSummaryResolutionFromTimePeriod($P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
 	</parameter>
-    <parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
-        <defaultValueExpression ><![CDATA[Utilities.getServiceAndIdDisplayString($P{SERVICE_ID_TO_OPERATIONS_MAP},
+	<parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
+		<defaultValueExpression ><![CDATA[Utilities.getServiceAndIdDisplayString($P{SERVICE_ID_TO_OPERATIONS_MAP},
 $P{SERVICE_ID_TO_NAME_MAP},
 $P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())]]></defaultValueExpression>
-    </parameter>
+	</parameter>
 	<parameter name="serviceIdValueToDisplay" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[($P{serviceIdDisplayText} == null || $P{serviceIdDisplayText}.equals(""))
 ? "All Available"
@@ -355,7 +353,6 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 					</categoryDataset>
 					<barPlot isShowLabels="true" >
 						<plot orientation="Horizontal" />
-					<categoryAxisLabelExpression><![CDATA["Services"]]></categoryAxisLabelExpression>
 						<categoryAxisFormat>
 							<axisFormat >
 							</axisFormat>
@@ -1312,7 +1309,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+Utilities.getServiceDisplayStringNotTruncated($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -1441,17 +1438,17 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 					</textElement>
 				<textFieldExpression   class="java.lang.Double"><![CDATA[$V{AP_SERVICE_AVG}]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						style="RowTotalHeading"
+						style="RowTotalHeadingHtml"
 						x="0"
 						y="0"
 						width="110"
 						height="18"
 						key="textField-120"/>
 					<box></box>
-					<textElement>
-						<font/>
+					<textElement markup="html">
+						<font size="8"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[((Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))?Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})
 :"Service Totals")]]></textFieldExpression>
@@ -1695,8 +1692,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() &&
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
-				</frame>
-                <frame>					<reportElement
+				</frame>				<frame>					<reportElement
 						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
@@ -2032,8 +2028,7 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<text><![CDATA[Groupings:]]></text>
 				</staticText>
-				</frame>				</frame>
-            </band>
+				</frame>				</frame>			</band>
 		</title>
 		<pageHeader>
 			<band height="0"  isSplitAllowed="true" >
@@ -2055,17 +2050,17 @@ Utilities.getMappingReportInfoDisplayString
 						height="18"
 						key="frame-32"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
-						style="SummaryRowHeading"
+						style="SummaryRowHeadingHtml"
 						x="0"
 						y="0"
 						width="110"
 						height="18"
 						key="textField-164"/>
 					<box></box>
-					<textElement>
-						<font/>
+					<textElement markup="html">
+						<font size="8"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
@@ -2415,8 +2410,7 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
-				</frame>
-<frame>					<reportElement
+				</frame>				<frame>					<reportElement
 						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
@@ -2752,8 +2746,7 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<text><![CDATA[Groupings:]]></text>
 				</staticText>
-				</frame>				</frame>                		
-                <frame>					<reportElement
+				</frame>				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="168"
@@ -2769,9 +2762,9 @@ Utilities.getMappingReportInfoDisplayString
 						height="118"
 						key="textField-84"/>
 					<box></box>
-                    <textElement markup="html">
-                        <font/>
-                    </textElement>
+					<textElement markup="html">
+						<font/>
+					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["There were no service metrics for the time period chosen for services: <br>"
 + $P{serviceIdValueToDisplay}]]></textFieldExpression>
 				</textField>

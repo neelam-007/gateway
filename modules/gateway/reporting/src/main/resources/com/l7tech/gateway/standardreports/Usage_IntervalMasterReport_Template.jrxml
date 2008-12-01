@@ -57,7 +57,7 @@
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="REPORT_RAN_BY" isForPrompting="false" class="java.lang.String"/>
-    <parameter name="SERVICE_ID_TO_OPERATIONS_MAP" isForPrompting="false" class="java.util.Map">
+	<parameter name="SERVICE_ID_TO_OPERATIONS_MAP" isForPrompting="false" class="java.util.Map">
 		<defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
 	</parameter>
 	<parameter name="HOURLY_MAX_RETENTION_NUM_DAYS" isForPrompting="false" class="java.lang.Integer">
@@ -77,14 +77,13 @@
 	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport">
 		<parameterDescription><![CDATA[Subreport, for the 3rd level report. Not used directly by this report, but passes to its subreport]]></parameterDescription>
 	</parameter>
-    <parameter name="SERVICE_ID_TO_NAME_MAP" isForPrompting="false" class="java.util.Map">
-        <defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
-    </parameter>
-    <parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
-        <defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
-    </parameter>
-    
-    <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
+	<parameter name="SERVICE_ID_TO_NAME_MAP" isForPrompting="false" class="java.util.Map">
+		<defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
+		<defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.gateway.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
@@ -113,11 +112,11 @@
 	<parameter name="timePeriodAsString" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[$P{RELATIVE_NUM_OF_TIME_UNITS} + " " + Utilities.getIntervalAsString($P{RELATIVE_TIME_UNIT},$P{RELATIVE_NUM_OF_TIME_UNITS}.intValue())]]></defaultValueExpression>
 	</parameter>
-    <parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
-        <defaultValueExpression ><![CDATA[Utilities.getServiceAndIdDisplayString($P{SERVICE_ID_TO_OPERATIONS_MAP},
+	<parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
+		<defaultValueExpression ><![CDATA[Utilities.getServiceAndIdDisplayString($P{SERVICE_ID_TO_OPERATIONS_MAP},
 $P{SERVICE_ID_TO_NAME_MAP},
 $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
-    </parameter>
+	</parameter>
 	<parameter name="serviceIdValueToDisplay" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[($P{serviceIdDisplayText} == null || $P{serviceIdDisplayText}.equals(""))
 ? "All Available"
@@ -301,7 +300,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanVal
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+Utilities.getServiceDisplayStringNotTruncated($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="FrameDetailTableRow"
@@ -450,9 +449,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanVal
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
-				</frame>
-                <frame>					
-                    <reportElement
+				</frame>				<frame>					<reportElement
 						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
@@ -735,7 +732,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						y="0"
 						width="120"
 						height="18"
-						key="staticText-106" />
+						key="staticText-106"/>
 					<box></box>
 					<textElement>
 						<font/>
@@ -783,8 +780,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					</textElement>
 				<text><![CDATA[Groupings:]]></text>
 				</staticText>
-				</frame>				</frame>
-            </band>
+				</frame>				</frame>			</band>
 		</title>
 		<pageHeader>
 			<band height="0"  isSplitAllowed="true" >
@@ -864,10 +860,10 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					<subreportParameter  name="SUB_REPORT">
 						<subreportParameterExpression><![CDATA[$P{SUB_REPORT}]]></subreportParameterExpression>
 					</subreportParameter>
-                    <subreportParameter  name="SPECIFIC_TIME_ZONE">
-                        <subreportParameterExpression><![CDATA[$P{SPECIFIC_TIME_ZONE}]]></subreportParameterExpression>
-                    </subreportParameter>
-                    <dataSourceExpression><![CDATA[$V{TIME_PERIOD_DS}]]></dataSourceExpression>
+					<subreportParameter  name="SPECIFIC_TIME_ZONE">
+						<subreportParameterExpression><![CDATA[$P{SPECIFIC_TIME_ZONE}]]></subreportParameterExpression>
+					</subreportParameter>
+					<dataSourceExpression><![CDATA[$V{TIME_PERIOD_DS}]]></dataSourceExpression>
 					<returnValue subreportVariable="TOTAL" toVariable="ROW_OPERATION_TOTAL" calculation="Sum"/>
 					<returnValue subreportVariable="TOTAL" toVariable="ROW_SERVICE_TOTAL" calculation="Sum"/>
 					<returnValue subreportVariable="TOTAL" toVariable="ROW_REPORT_TOTAL" calculation="Sum"/>
@@ -935,9 +931,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
-				</frame>
-<frame>
-                    <reportElement
+				</frame>				<frame>					<reportElement
 						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
@@ -1220,7 +1214,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						y="0"
 						width="120"
 						height="18"
-						key="staticText-106" />
+						key="staticText-106"/>
 					<box></box>
 					<textElement>
 						<font/>
@@ -1268,8 +1262,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					</textElement>
 				<text><![CDATA[Groupings:]]></text>
 				</staticText>
-				</frame>				</frame>
-                <frame>					<reportElement
+				</frame>				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="168"

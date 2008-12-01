@@ -294,7 +294,9 @@ public class ReportApp
             ResultSet rs = stmt.executeQuery(sql);
 
             while(rs.next()){
-                String service = rs.getString(Utilities.SERVICE_NAME) + "[" + rs.getString(Utilities.ROUTING_URI) +"]";
+                String serviceName = rs.getString(Utilities.SERVICE_NAME);
+                String routingUri = rs.getString(Utilities.ROUTING_URI);
+                String service = Utilities.getServiceDisplayStringNotTruncated(serviceName, routingUri);
                 set.add(service);
             }
             return set;
