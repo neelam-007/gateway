@@ -228,16 +228,12 @@ public class Configure extends EmsPage  {
             protected Object getJsonResponseData() {
                 String newClusterName = addSSGClusterInputName.getModelObjectAsString();
                 String parentFolderGuid = addSSGClusterDialogInputParentId.getModelObjectAsString();
+                String hostname = addSSGClusterInputHostName.getModelObjectAsString();
+                int port = Integer.parseInt(addSSGClusterInputPort.getModelObjectAsString());
                 try {
                     logger.info("Adding SSG Cluster \""+ addSSGClusterInputName.getModelObjectAsString() +
                         "\" (parent folder GUID = "+ addSSGClusterDialogInputParentId.getModelObjectAsString() + ").");
-                    //noinspection UnnecessaryLocalVariable
-                    final SsgCluster newCluster = ssgClusterManager.create(
-                            newClusterName,
-                            addSSGClusterInputHostName.getModelObjectAsString(),
-                            Integer.parseInt(addSSGClusterInputPort.getModelObjectAsString()),
-                            parentFolderGuid);
-                    return newCluster;
+                    return ssgClusterManager.create(newClusterName, hostname, port, parentFolderGuid);
                 } catch (Exception e) {
                     logger.warning(e.toString());
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
@@ -249,6 +245,10 @@ public class Configure extends EmsPage  {
                         } catch (FindException e1) {
                             return new JSONException(e1);
                         }
+                    } else if (ExceptionUtils.causedBy(e, DuplicateHostnameAndPortException.class)) {
+                        String errorMsg = "A cluster with the hostname (" + hostname + ") and the port ("
+                            + port + ") already exists in the enterprise tree.";
+                        return new JSONException(new DuplicateObjectException(errorMsg, e));
                     } else {
                         return new JSONException(e);
                     }

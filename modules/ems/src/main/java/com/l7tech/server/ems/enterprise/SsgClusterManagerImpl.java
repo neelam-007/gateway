@@ -63,6 +63,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     @Override
     public SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException {
         verifyLegalClusterName(name);
+        verifyHostnameAndPort(sslHostName, adminPort);
         final SsgCluster result = new SsgCluster(name, sslHostName, adminPort, parentFolder);
         long id = save(result);
         addManageClusterRole( id, result );
@@ -179,6 +180,22 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
             throw new InvalidNameException("Name must not exceed " + SsgCluster.MAX_NAME_LENGTH + " characters");
         if (name.matches(SsgCluster.ILLEGAL_CHARACTERS))
             throw new InvalidNameException("Name must not contain these characters: " + SsgCluster.ILLEGAL_CHARACTERS);
+    }
+
+    /**
+     * Verify if both of the hostname and the port are used by a SSG cluster.
+     * @param hostname
+     * @param port
+     * @throws FindException
+     * @throws DuplicateHostnameAndPortException: throw if there exists one cluster with such hostname and port.
+     */
+    private void verifyHostnameAndPort(String hostname, int port) throws FindException, DuplicateHostnameAndPortException {
+        for (SsgCluster cluster: findAll()) {
+            if (cluster.getSslHostName().equals(hostname) && cluster.getAdminPort() == port) {
+                throw new DuplicateHostnameAndPortException(
+                    "Find an existing SSG Cluster with the same hostname (" + hostname + ") and port number (" + port + ").");
+            }
+        }
     }
 
     /**
