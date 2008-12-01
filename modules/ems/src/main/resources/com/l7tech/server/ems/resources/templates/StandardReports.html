@@ -289,8 +289,6 @@
 
         function updateGenerateButton() {
             generateButton.set('disabled', !validateSettings());
-// TODO remove the following line when SSGClusterSelector and SSGClusterContentSelector are working.
-generateButton.set('disabled', false);
         }
 
         function onChangeReportType() {
@@ -1063,22 +1061,22 @@ generateButton.set('disabled', false);
                 <div class="panel">
                     <div class="panelTitle tippy"><img id="newReportTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'newReportDiv')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('newReportTippy', 'newReportDiv')">New Report</span></div>
                     <div id="newReportDiv">
-                        <!-- temporarily remove the below commented-out part -->
-                        <!--<div class="panelToolbar">-->
-                            <!--<table> --><!-- Any other way to middle-align SELECT and BUTTON elements? -->
-                                <!--<tr>-->
-                                    <!--<td class="middle"><button id="loadSettingsButton" title="Load a previously saved settings">Load Settings:</button></td>-->
-                                    <!--<td class="middle">-->
-                                        <!--<select id="savedSettingsDropDown">-->
-                                            <!--<option></option> --><!-- Workaround for IE7 bug: Weird overlap without this. -->
-                                        <!--</select>-->
-                                    <!--</td>-->
-                                    <!--<td class="middle"><img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of saved settings" alt="Refresh" onclick="loadSavedSettingsDropDown();" /></td>-->
-                                    <!--<td class="middle"><button id="saveSettingsButton" title="Save as a named setttings">Save Settings ...</button></td>-->
-                                    <!--<td class="middle"><button id="manageSettingsButton" title="Save as a named setttings">Manage Settings ...</button></td>-->
-                                <!--</tr>-->
-                            <!--</table>-->
-                        <!--</div>-->
+                        <!-- TODO remove "display: none" when saved settings is implemented  -->
+                        <div class="panelToolbar" style="display: none;">
+                            <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
+                                <tr>
+                                    <td class="middle"><button id="loadSettingsButton" title="Load a previously saved settings">Load Settings:</button></td>
+                                    <td class="middle">
+                                        <select id="savedSettingsDropDown">
+                                            <option></option>  <!-- Workaround for IE7 bug: Weird overlap without this. --> 
+                                        </select>
+                                    </td>
+                                    <td class="middle"><img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of saved settings" alt="Refresh" onclick="loadSavedSettingsDropDown();" /></td>
+                                    <td class="middle"><button id="saveSettingsButton" title="Save as a named setttings">Save Settings ...</button></td>
+                                    <td class="middle"><button id="manageSettingsButton" title="Save as a named setttings">Manage Settings ...</button></td>
+                                </tr>
+                            </table>
+                        </div>
                         <div class="panelContent">
                         <form wicket:id="form">
                             <table class="spaced">
