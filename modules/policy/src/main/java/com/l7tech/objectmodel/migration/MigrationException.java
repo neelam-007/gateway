@@ -6,11 +6,15 @@ import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author jbufu
  */
 public class MigrationException extends ObjectModelException {
+
+    private static final Logger logger = Logger.getLogger(MigrationException.class.getName());
 
     private MigrationErrors errors = new MigrationErrors();
 
@@ -52,6 +56,7 @@ public class MigrationException extends ObjectModelException {
         private Map<Object,Set<MigrationException>> errors = new HashMap<Object, Set<MigrationException>>();
 
         public void add(Object source, MigrationException e) {
+            logger.log(Level.FINEST, e.getMessage());
             Set<MigrationException> errorsForSource = errors.get(source);
             if (errorsForSource == null) {
                 errorsForSource = new HashSet<MigrationException>();

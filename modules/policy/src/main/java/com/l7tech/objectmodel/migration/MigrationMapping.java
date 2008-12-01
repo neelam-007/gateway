@@ -15,11 +15,12 @@ import javax.xml.bind.annotation.*;
  * </li>
  * <li>mapping type</li>
  * <li>target entity header reference</li>
+ * <li>
+ *  flag that specifies whether the dependency is uploaded on the target cluster by its parent (true),
+ *  or by its own entity manager (false)</li>
  * </ul>
- * - the property name of the source entity that is
- * - the mapping type
  *
- * @see MigrationMappingType
+ * @see Migration, MigrationMappingType
  * @author jbufu
  */
 @XmlRootElement

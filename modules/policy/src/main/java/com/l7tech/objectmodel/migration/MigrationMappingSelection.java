@@ -8,13 +8,8 @@ package com.l7tech.objectmodel.migration;
 public enum MigrationMappingSelection {
 
     /**
-     * No mapping is required for the specified property.
-     *
-     * For export, it signifies that the value form the source cluster must be exported and used on the target cluster.
-     *
-     * At import time, it means that no (further) mapping operation is required for the referred property.
-     * If the property was marked as mappable at export, mapping must have been resolved.
-     * The value for the referred property must exist either in the migration bundle, or on the target cluster.
+     * Mapping MUST NOT be performed for the specified property's name or value.
+     * The value form the source cluster must be exported and used on the target cluster.
      */
     NONE,
 

@@ -23,5 +23,12 @@ public interface PropertyResolver {
      */
     public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, final Method property) throws MigrationException;
 
+    /**
+     * Applies a mapped value to a property of an entity.
+     *
+     * @param sourceEntity the entity on which a new property value is set.
+     * @param propName the property of the sourceEntity for which a new value is set.
+     * @param targetEntity the new value that is set for the sourceEntity's propName
+     */
     public void applyMapping(Entity sourceEntity, String propName, Entity targetEntity) throws MigrationException;
 }

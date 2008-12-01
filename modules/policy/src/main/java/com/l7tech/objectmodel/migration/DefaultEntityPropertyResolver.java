@@ -23,9 +23,8 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
 
     private static final Logger logger = Logger.getLogger(DefaultEntityPropertyResolver.class.getName());
 
-
     public Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, final Method property) throws MigrationException {
-
+        logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
         if (!MigrationUtils.isDefaultDependency(property))
             throw new IllegalArgumentException("Cannot handle property: " + property);
 
@@ -63,7 +62,6 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
                 input = (Collection) propertyValue;
 
             if (input != null) {
-
                 for(Object item : input) {
                     if (item instanceof EntityHeader)
                         addToResult((EntityHeader) item, new MigrationMapping(source, (EntityHeader) item, propName, type, uploadedByParent), result);
@@ -88,11 +86,12 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
             mappingsForHeader = new HashSet<MigrationMapping>();
             result.put(header, mappingsForHeader);
         }
+        logger.log(Level.FINEST, "Found dependency mapping: {0}", mapping);
         mappingsForHeader.add(mapping);
     }
 
     public void applyMapping(Entity sourceEntity, String propName, Entity targetEntity) throws MigrationException {
-
+        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{MigrationUtils.getHeaderFromEntity(sourceEntity), propName});
         Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, targetEntity.getClass());
 
         try {

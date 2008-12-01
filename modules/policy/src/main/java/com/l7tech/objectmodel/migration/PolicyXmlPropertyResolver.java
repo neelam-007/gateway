@@ -27,7 +27,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
 
     @Override
     public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, final Method property) throws MigrationException {
-
+        logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
         Assertion assertion = getRootAssertion(entity, property);
 
         String getterName = property.getName();
@@ -42,7 +42,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
     }
 
     public void applyMapping(Entity sourceEntity, String propName, Entity targetEntity) throws MigrationException {
-
+        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{MigrationUtils.getHeaderFromEntity(sourceEntity), propName});
         String policyXmlPropName, assertionPropName;
         int targetOrdinal;
         try {
@@ -65,6 +65,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
 
         Method setter = MigrationUtils.setterForPropertyName(assertion, assertionPropName, targetEntity.getClass());
         try {
+            logger.log(Level.FINEST, "Applying mapping for assertion {0} : {1}.", new Object[]{assertion, assertionPropName});
             // todo: handle multi-value targets, e.g. UsesEntities.getEntitiesUsed()
             setter.invoke(assertion, targetEntity);
         } catch (Exception e) {

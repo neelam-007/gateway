@@ -14,13 +14,14 @@ import java.util.logging.Level;
 /**
  * Summary of a Migration Bundle, consisting of:
  * <ul>
- * <li>Manifest: a set of headers for all exported entities in the bundle, including dependencies.</li>
- * <li>Dependencies: map of dependency headers, for easier manipulation of the bundle.</li>
+ * <li>A set of headers for all exported entities in the bundle, including dependencies.</li>
+ * <li>Migration Mappings, describing the dependencies and mapping types for the entities in the bundle.</li>
  * <li></li>
  * </ul>
  *
  * Not thread-safe. 
  *
+ * @see com.l7tech.objectmodel.migration.MigrationMapping
  * @author jbufu
  */
 @XmlRootElement

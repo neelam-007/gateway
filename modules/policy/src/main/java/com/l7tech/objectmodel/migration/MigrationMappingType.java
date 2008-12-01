@@ -3,6 +3,14 @@ package com.l7tech.objectmodel.migration;
 import javax.xml.bind.annotation.XmlAttribute;
 
 /**
+ * Describes a dependency's mapping properties.
+ *
+ * A dependency can be mapped on the target cluster:
+ * <ul>
+ * <li>to a different entity (name mapping)</li>
+ * <li>the original dependency's identity (type, id, and name) can be preserved, but its value can be modified</li>
+ * </ul>
+ *
  * @author jbufu
  */
 public class MigrationMappingType {

@@ -29,7 +29,6 @@ public @interface Migration {
      */
     MigrationMappingSelection mapValue() default MigrationMappingSelection.OPTIONAL;
 
-
     /**
      * Specifies the DependencyResolver implementation that can be used to extract dependencies
      * for the annotated property.
@@ -38,5 +37,11 @@ public @interface Migration {
      */
     Class<? extends PropertyResolver> resolver() default DefaultEntityPropertyResolver.class;
 
+    /**
+     * Specifies if the entity representing the target of the annotated property is uploaded
+     * on the target cluster by the manager of the entity that depends on it.
+     *
+     * @return true if the dependency is uploaded by its parent, false otherwise.
+     */
     boolean uploadedByParent() default false;
 }

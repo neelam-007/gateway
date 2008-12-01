@@ -22,13 +22,14 @@ import java.util.*;
  * <ul>
  * <li>Migration Metadata</li>
  *   <ul>
- *   <li>Migration Manifest (set of all the headers)</li>
- *   <li>Dependencies</li>
+ *   <li>Set of all the headers</li>
+ *   <li>Migration Mappings</li>
  *   </ul>
- * <li>Exported Items (optional)</li>
+ * <li>Exported Items (entity values)</li>
  * </ul>
  *
  * @see com.l7tech.server.management.migration.bundle.MigrationMetadata
+ * @see com.l7tech.objectmodel.migration.MigrationMapping
  * @see com.l7tech.server.management.migration.bundle.ExportedItem
  * @author jbufu
  */

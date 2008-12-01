@@ -6,7 +6,8 @@ import com.l7tech.objectmodel.EntityHeaderRef;
 import javax.xml.bind.annotation.*;
 
 /**
- * An entity value exported for migration, wrapped together with its header in an ExportedItem.
+ * An entity value exported for migration, wrapped together with its header, and optionally a mapped value,
+ * in an ExportedItem.
  *
  * @author jbufu
  */
