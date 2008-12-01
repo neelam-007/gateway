@@ -3,10 +3,13 @@ package com.l7tech.objectmodel.folder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 
 /**
  * Represents a service/policy folder.
  */
+@XmlRootElement
 public class Folder extends NamedEntityImp {
     private Folder parentFolder;
 

@@ -41,8 +41,8 @@ public class MigrationMetadata {
 
     private Set<MigrationMapping> mappings = new HashSet<MigrationMapping>();
     // easy access to dependencies / dependents
-    private Map<EntityHeaderRef, Set<MigrationMapping>> mappingsBySource = new HashMap<EntityHeaderRef, Set<MigrationMapping>>();
-    private Map<EntityHeaderRef, Set<MigrationMapping>> mappingsByTarget = new HashMap<EntityHeaderRef, Set<MigrationMapping>>();
+    private Map<EntityHeaderRef, Set<MigrationMapping>> mappingsBySource;
+    private Map<EntityHeaderRef, Set<MigrationMapping>> mappingsByTarget;
 
     // --- header operations ---
 
@@ -171,14 +171,14 @@ public class MigrationMetadata {
             mapping.setMappedTarget(newDependency);
         }
         addMappingsForTarget(newDependency, mappingsForDependency);
-        mappingsByTarget.remove(dependency); // nobody will depend on the old one
+        mappingsByTarget.remove(EntityHeaderRef.fromOther(dependency)); // nobody will depend on the old one
 
         // outgoing dependencies
         for(MigrationMapping mapping : getMappingsForSource(dependency)) {
             getMappingsForTarget(mapping.getTarget()).remove(mapping);
             mappings.remove(mapping);
         }
-        mappingsBySource.remove(dependency);
+        mappingsBySource.remove(EntityHeaderRef.fromOther(dependency));
 
         removeHeader(dependency);
     }
@@ -217,19 +217,19 @@ public class MigrationMetadata {
     public Set<MigrationMapping> getMappingsForSource(EntityHeaderRef source) throws MigrationException {
         if (mappingsBySource == null) initMappingsCache();
 
-        if ( ! mappingsBySource.containsKey(source))
-            mappingsBySource.put(source, new HashSet<MigrationMapping>());
+        if ( ! mappingsBySource.containsKey(EntityHeaderRef.fromOther(source)))
+            mappingsBySource.put(EntityHeaderRef.fromOther(source), new HashSet<MigrationMapping>());
 
-        return mappingsBySource.get(source);
+        return mappingsBySource.get(EntityHeaderRef.fromOther(source));
     }
 
     public Set<MigrationMapping> getMappingsForTarget(EntityHeaderRef target) throws MigrationException {
         if (mappingsByTarget == null) initMappingsCache();
 
-        if ( ! mappingsByTarget.containsKey(target))
-            mappingsByTarget.put(target, new HashSet<MigrationMapping>());
+        if ( ! mappingsByTarget.containsKey(EntityHeaderRef.fromOther(target)))
+            mappingsByTarget.put(EntityHeaderRef.fromOther(target), new HashSet<MigrationMapping>());
 
-        return mappingsByTarget.get(target);
+        return mappingsByTarget.get(EntityHeaderRef.fromOther(target));
     }
 
     public void addMappingsForSource(EntityHeaderRef source, Set<MigrationMapping> mappings) throws MigrationException {
@@ -238,5 +238,13 @@ public class MigrationMetadata {
 
     public void addMappingsForTarget(EntityHeaderRef target, Set<MigrationMapping> mappings) throws MigrationException {
         getMappingsForTarget(target).addAll(mappings);
+    }
+
+    public boolean isUploadedByParent(EntityHeader header) throws MigrationException {
+        for(MigrationMapping m : getMappingsForTarget(header)) {
+            if (m.isUploadedByParent())
+                return true;
+        }
+        return false;
     }
 }

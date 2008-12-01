@@ -30,16 +30,18 @@ public class MigrationMapping {
     private EntityHeaderRef target;
     private String propName;
     private MigrationMappingType type;
+    private boolean uploadedByParent;
 
     private EntityHeaderRef mappedTarget;  // name-mapping
 
     protected MigrationMapping() {}
 
-    public MigrationMapping(EntityHeaderRef source, EntityHeaderRef target, String propName, MigrationMappingType type) {
+    public MigrationMapping(EntityHeaderRef source, EntityHeaderRef target, String propName, MigrationMappingType type, boolean uploadByParent) {
         this.source = EntityHeaderRef.fromOther(source);
         this.target = EntityHeaderRef.fromOther(target);
         this.propName = propName;
         this.type = type;
+        this.uploadedByParent = uploadByParent;
     }
 
     @XmlElement(name = "source")
@@ -80,6 +82,15 @@ public class MigrationMapping {
 
     public void setType(MigrationMappingType type) {
         this.type = type;
+    }
+
+    @XmlAttribute
+    public boolean isUploadedByParent() {
+        return uploadedByParent;
+    }
+
+    public void setUploadedByParent(boolean uploadedByParent) {
+        this.uploadedByParent = uploadedByParent;
     }
 
     @XmlElement(name = "mappedTarget")

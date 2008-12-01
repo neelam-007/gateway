@@ -29,6 +29,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.hibernate.exception.*;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
@@ -132,6 +133,7 @@ public class MigrationManagerImpl implements MigrationManager {
         Map<EntityHeader, Entity> entitiesToImport = new HashMap<EntityHeader, Entity>();
         for (EntityHeader header : bundle.getMetadata().getHeaders()) {
 
+
             Entity ent;
             try {
                 // try the local ssg first
@@ -140,7 +142,8 @@ public class MigrationManagerImpl implements MigrationManager {
                 // load it from the bundle
                 ent = bundle.getExportedItem(header).getValue();
                 entities.put(header, ent);
-                entitiesToImport.put(header, ent);
+                if (! bundle.getMetadata().isUploadedByParent(header))
+                    entitiesToImport.put(header, ent);
             }
         }
 
@@ -162,18 +165,32 @@ public class MigrationManagerImpl implements MigrationManager {
                 errors.add(header, e);
             }
         }
+/*
         if (! errors.isEmpty())
             throw new MigrationException("Errors while applying mappings for the entities to import.", errors);
+*/
 
         try {
             doUpload(entitiesToImport);
-        } catch (SaveException e) {
-            throw new MigrationException("Import failed.", e);
+        } catch (org.hibernate.exception.ConstraintViolationException e1) {
+            logger.log(Level.FINE, "test for duplicate entity on upload...", e1);
+        } catch (DuplicateObjectException e2) {
+            logger.log(Level.FINE, "Duplicate entity during import.", e2);
+        } catch (SaveException e3) {
+            throw new MigrationException("Import failed.", e3);
         }
     }
 
     private void doUpload(Map<EntityHeader, Entity> entitiesToImport) throws SaveException {
         for (Entity entity : entitiesToImport.values()) {
+            try {
+                if (entityFinder.find(EntityHeaderUtils.fromEntity(entity)) != null) {
+                    logger.log(Level.FINE, "Entity already exists or has been uploaded, skipping." + entity);
+                    continue;
+                }
+            } catch (FindException e) {
+                // not found, upload new
+            }
             entityCrud.save(entity);
         }
     }
@@ -255,7 +272,10 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private Entity loadEntity(EntityHeader header) throws MigrationException {
         try {
-            return entityFinder.find(header); // load the entity
+            Entity ent = entityFinder.find(header); // load the entity
+            if (ent == null)
+                throw new MigrationException("Error loading the entity for header: " + header);
+            return ent;
         } catch (FindException e) {
             throw new MigrationException("Error loading the entity for header: " + header, e);
         }

@@ -168,4 +168,8 @@ public class MigrationUtils {
         Migration annotation = property.getAnnotation(Migration.class);
         return new MigrationMappingType(annotation.mapName(), annotation.mapValue());
     }
+
+    public static boolean getUploadedByParent(Method property) {
+        return property.isAnnotationPresent(Migration.class) && property.getAnnotation(Migration.class).uploadedByParent();
+    }
 }

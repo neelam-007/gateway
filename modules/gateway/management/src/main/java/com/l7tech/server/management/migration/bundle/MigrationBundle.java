@@ -89,8 +89,16 @@ public class MigrationBundle {
         return exportedItemsMap;
     }
 
+    public boolean hasItem(EntityHeaderRef headerRef) {
+        return getItemsMap().containsKey(EntityHeaderRef.fromOther(headerRef));
+    }
+
+    public ExportedItem getExportedItem(EntityHeaderRef headerRef) {
+        return getItemsMap().get(EntityHeaderRef.fromOther(headerRef));
+    }
+
     public void addExportedItem(ExportedItem item) {
-        getItemsMap().put(item.getHeaderRef(), item);
+        getItemsMap().put(EntityHeaderRef.fromOther(item.getHeaderRef()), item);
     }
 
     private void addExporteditems(Set<ExportedItem> exportedItems) {
@@ -115,27 +123,27 @@ public class MigrationBundle {
         }
 
         // update mapping
-        ExportedItem item = getItemsMap().get(dependency);
+        ExportedItem item = getExportedItem(dependency);
         if (item == null) {
             item = new ExportedItem(dependency, null);
-            getItemsMap().put(dependency, item);
+            addExportedItem(item);
         }
         item.setMappedValue(newValue);
     }
 
     public Set<MigrationMapping> getUnresolvedMappings() throws MigrationException {
         Set<MigrationMapping> result = new HashSet<MigrationMapping>();
-        Map<EntityHeaderRef,ExportedItem> itemsMap = getItemsMap();
         for(MigrationMapping m : metadata.getMappings()) {
-
             MigrationMappingType type = m.getType();
-            boolean hasSourceValue = itemsMap.get(m.getTarget()) != null && itemsMap.get(m.getTarget()).getSourceValue() != null;
-            boolean hasMappedValue = itemsMap.get(m.getTarget()) != null && itemsMap.get(m.getTarget()).getMappedValue() != null;
+            EntityHeaderRef targetHeaderRef = m.getTarget();
+            ExportedItem targetItem = getExportedItem(targetHeaderRef);
+            boolean hasSourceValue = targetItem != null && targetItem.getSourceValue() != null;
+            boolean hasMappedValue = targetItem != null && targetItem.getMappedValue() != null;
 
             switch (type.getNameMapping()) {
                 case NONE:
                     if ( ! hasSourceValue )
-                        throw new MigrationException("Source value required but not present in the bundle for: " + m.getTarget());
+                        throw new MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
                     break;
                 case OPTIONAL:
                     if ( ! hasSourceValue && m.getMappedTarget() == null)
@@ -152,7 +160,7 @@ public class MigrationBundle {
             switch (type.getValueMapping()) {
                 case NONE: // requirement only if there's no name-mapping
                     if ( ! hasSourceValue && type.getNameMapping() != MigrationMappingSelection.NONE && m.getMappedTarget() == null)
-                        throw new MigrationException("Source value required but not present in the bundle for: " + m.getTarget());
+                        throw new MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
                     break;
                 case OPTIONAL:
                     if ( ! hasSourceValue && ! hasMappedValue)
@@ -168,13 +176,5 @@ public class MigrationBundle {
         }
 
         return result;
-    }
-
-    public boolean hasItem(EntityHeaderRef headerRef) {
-        return getItemsMap().containsKey(headerRef);
-    }
-
-    public ExportedItem getExportedItem(EntityHeaderRef headerRef) {
-        return getItemsMap().get(headerRef);
     }
 }

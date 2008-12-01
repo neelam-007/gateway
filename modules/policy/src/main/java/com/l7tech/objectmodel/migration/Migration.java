@@ -38,4 +38,5 @@ public @interface Migration {
      */
     Class<? extends PropertyResolver> resolver() default DefaultEntityPropertyResolver.class;
 
+    boolean uploadedByParent() default false;
 }
