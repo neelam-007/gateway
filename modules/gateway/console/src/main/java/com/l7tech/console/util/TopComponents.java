@@ -7,6 +7,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.gui.util.SheetHolder;
@@ -88,6 +89,10 @@ public class TopComponents {
 
     public AbstractTreeNode getServicesFolderNode() {
         return getMainWindow().getServicesFolderNode();
+    }
+
+    public RootNode getRootNode() {
+        return (RootNode)getMainWindow().getServicesFolderNode();
     }
 
     public void updateNodeNameInStatusMessage(String oldGatewayName, String newName) {

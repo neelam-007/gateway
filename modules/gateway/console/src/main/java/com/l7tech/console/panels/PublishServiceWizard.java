@@ -1,20 +1,21 @@
 /*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
@@ -22,8 +23,8 @@ import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.wsdl.Wsdl;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -181,6 +182,7 @@ public class PublishServiceWizard extends Wizard {
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
                 WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
             }
+            saBundle.service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
             long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(saBundle.getService(), saBundle.getServiceDocuments());
             saBundle.service.setOid(oid);
             Registry.getDefault().getSecurityProvider().refreshPermissionCache();
@@ -249,10 +251,10 @@ public class PublishServiceWizard extends Wizard {
       pruneEmptyCompositeAssertions(CompositeAssertion oom) {
         // fla, added, i have't found how, but the wizard somehow populates all children with null elements
         // this causes problems later on since we now support returning an empty policy (all with no children)
-        ArrayList children = new ArrayList();
+        List<Assertion> children = new ArrayList<Assertion>();
         for (Object o : oom.getChildren()) {
             if (o != null && o instanceof Assertion) {
-                children.add(o);
+                children.add((Assertion)o);
             }
         }
         oom.setChildren(children);

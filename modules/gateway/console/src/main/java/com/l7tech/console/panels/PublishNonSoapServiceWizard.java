@@ -1,24 +1,25 @@
 /*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.common.http.HttpMethod;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -69,6 +70,7 @@ public class PublishNonSoapServiceWizard extends Wizard {
                 policy.addChild(new HttpRoutingAssertion(panel1.getDownstreamURL()));
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(policy, bo);
+            service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
             service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false));
             service.setSoap(false);
             // xml application are not like soap. by default, not just post is allowed

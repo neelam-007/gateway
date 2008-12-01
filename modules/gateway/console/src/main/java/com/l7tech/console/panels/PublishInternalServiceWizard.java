@@ -1,25 +1,26 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.console.action.Actions;
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.action.Actions;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.util.Set;
 import java.util.logging.Level;
@@ -32,8 +33,6 @@ public class PublishInternalServiceWizard extends Wizard {
     private static final Logger logger = Logger.getLogger(PublishInternalServiceWizard.class.getName());
 
     private ServiceTemplateHolder templateHolder;
-    private ServiceAdmin svcManager;
-    private Set<ServiceTemplate> templates;
 
     private EventListenerList localListenerList = new EventListenerList();
 
@@ -45,8 +44,8 @@ public class PublishInternalServiceWizard extends Wizard {
         super(parent, panel);
 
         setTitle("Publish Internal Service Wizard");
-        svcManager = Registry.getDefault().getServiceManager();
-        templates = svcManager.findAllTemplates();
+        ServiceAdmin svcManager = Registry.getDefault().getServiceManager();
+        Set<ServiceTemplate> templates = svcManager.findAllTemplates();
         templateHolder = new ServiceTemplateHolder(templates);
         wizardInput = templateHolder;
 
@@ -79,6 +78,7 @@ public class PublishInternalServiceWizard extends Wizard {
 
         if (service == null) {
             service = new PublishedService();
+            service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
 
             service.setName(toSave.getName());
             service.getPolicy().setXml(toSave.getDefaultPolicyXml());

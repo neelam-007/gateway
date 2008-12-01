@@ -141,6 +141,7 @@ public class CreateServiceWsdlAction extends SecureAction {
             boolean isEdit = false;
             if (existingService == null) {
                 service = new PublishedService();
+                service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
             } else {
                 service = existingService;
                 isEdit = true;
