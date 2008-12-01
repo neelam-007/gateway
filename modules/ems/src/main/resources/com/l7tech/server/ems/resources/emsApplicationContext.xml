@@ -345,7 +345,10 @@
     </bean>
     <bean id="rbacServices" class="com.l7tech.server.security.rbac.RbacServicesImpl">
         <property name="roleManager" ref="roleManager"/>
+        <property name="entityFinder" ref="esmEntityFinder"/>
     </bean>
+
+    <bean id="esmEntityFinder" class="com.l7tech.server.ems.EsmEntityFinderImpl"/>
 
     <bean id="roleManagerHelper" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.security.rbac.RoleManagerImpl"/>
