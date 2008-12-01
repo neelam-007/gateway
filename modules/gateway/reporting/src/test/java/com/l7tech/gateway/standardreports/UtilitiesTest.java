@@ -711,23 +711,6 @@ public class UtilitiesTest{
     }
 
     /**
-     * Tests that the relative time returned for a time unit is correct for the specified time zone
-     * @throws Exception
-     */
-    @Test
-    public void testGetCalendarForUnit() throws Exception{
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-        long milli2DaysAgo = Utilities.getRelativeMilliSecondsInPast(1, Utilities.UNIT_OF_TIME.DAY, "Europe/Paris");
-        Calendar twoDays = Calendar.getInstance();
-        twoDays.setTimeInMillis(milli2DaysAgo);
-        
-        dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
-        Assert.assertTrue("Two days ago in Paris relative time should be 2008/11/29 00:00", dateFormat.format(twoDays.getTime()).equals("2008/11/29 00:00"));
-        dateFormat.setTimeZone(TimeZone.getTimeZone("Canada/Pacific"));
-        Assert.assertTrue("Two days ago in Canada relative time to Paris should be 2008/11/28 15:00", dateFormat.format(twoDays.getTime()).equals("2008/11/28 15:00"));
-    }
-
-    /**
      * Test that the Calendar instance returned from getCalendarForTimeUnit has the correct settings
      * based on the unit of time supplied
      * @throws Exception
@@ -1305,8 +1288,6 @@ public class UtilitiesTest{
         testCal.setTimeInMillis(timeInPast);
         System.out.println("Test Calendar date: " + DATE_FORMAT.format(testCal.getTime()));        
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
-
-
 
         //week
         calendar = Calendar.getInstance(tz);

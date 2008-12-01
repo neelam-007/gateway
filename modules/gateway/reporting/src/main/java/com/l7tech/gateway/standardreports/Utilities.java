@@ -357,20 +357,6 @@ public class Utilities {
         return Utilities.getCalendarForTimeUnit(unitOfTime, timeZone).getTimeInMillis();
     }
 
-    private static void checkUnitOfTime(String unitSupplied, String [] allowableUnits){
-        for(String s: allowableUnits){
-            if(unitSupplied.equals(s)){
-                return;
-            }
-        }
-        StringBuilder allUnits = new StringBuilder();
-        for(String s: allowableUnits){
-            allUnits.append(s).append(" ");
-        }
-        throw new IllegalArgumentException(unitSupplied + " is not a supported unit of time. Allowable units are: "
-                + allUnits.toString());
-    }
-
     public static Calendar getCalendarForTimeUnit(UNIT_OF_TIME unitOfTime, String timeZone){
         Calendar calendar = Calendar.getInstance(getTimeZone(timeZone));
 
@@ -1034,7 +1020,6 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         addMappingOrder(sb);
 
         logger.log(Level.INFO, sb.toString());
-        System.out.println(sb.toString());
         return sb.toString();
     }
 
