@@ -2853,6 +2853,7 @@
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/lib"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var/logs"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var/db"/>
+        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/web"/>
 
         <!-- copy files to install locations -->
         <copy file="${src.root}/etc/enterprisemanager/ssem-initd" tofile="${install.src.em}/etc/init.d/ssem"/>
@@ -2865,6 +2866,13 @@
             <fileset dir="${build.dir}/emsconfigwizard"/>
         </copy>
         <copy file="${src.root}/etc/omp.dat" tofile="${install.src.em}/opt/SecureSpan/EnterpriseManager/etc/omp.dat"/>
+
+        <!-- help files -->
+        <unzip src="${src.root}/webhelp/esm/help.zip"
+               dest="${install.src.em}/opt/SecureSpan/EnterpriseManager/web"/>
+        <!-- allow for inconsistently named ESM help directory -->
+        <move file="${install.src.em}/opt/SecureSpan/EnterpriseManager/web/WebHelp" 
+              tofile="${install.src.em}/opt/SecureSpan/EnterpriseManager/web/help" failonerror="false"/>
 
         <!-- package -->
         <property name="emtarball" value="${build.dir}/enterprisemanager-b${install.build.number}.tar.gz"/>

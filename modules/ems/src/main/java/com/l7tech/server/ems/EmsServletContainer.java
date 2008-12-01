@@ -212,8 +212,32 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         fHolder.setName("wicketFilter");
         root.addFilter(fHolder, "/*", Handler.REQUEST);
 
+        File webRoot = serverConfig.getLocalDirectoryProperty("em.server.webDirectory", false);
+        if ( webRoot.exists() ) {
+            final Resource _resourceBase = Resource.newResource( webRoot.toURI().toURL(), false );
+            DefaultServlet resourceServlet = new DefaultServlet(){
+                @Override
+                public Resource getResource( final String pathInContext )
+                {
+                    if (_resourceBase==null) return null;
+                    Resource r=null;
+                    try {
+                        r = _resourceBase.addPath(pathInContext);
+                    } catch (IOException e) {
+                        logger.log( Level.INFO, "Missing resource.", e );
+                    }                    
+                    return r;
+                }
+            };
+            ServletHolder resourceHolder = new ServletHolder(resourceServlet);
+            root.addServlet(resourceHolder, "/help/*");
+        } else {
+            logger.config("Ignoring invalid static content directory '"+webRoot.getAbsolutePath()+"'.");
+        }
+
+
         //Set DefaultServlet to handle all static resource requests
-        DefaultServlet defaultServlet = new DefaultServlet();         
+        DefaultServlet defaultServlet = new DefaultServlet();
         ServletHolder defaultHolder = new ServletHolder(defaultServlet);
         root.addServlet(defaultHolder, "/");
 

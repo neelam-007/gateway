@@ -46,6 +46,10 @@ rm -fr %{buildroot}
 /opt/SecureSpan/EnterpriseManager/config/lib
 /opt/SecureSpan/EnterpriseManager/lib
 
+# Resources
+%defattr(0444,layer7,layer7,0755)
+/opt/SecureSpan/EnterpriseManager/web
+
 # Configuration files
 %defattr(0644,layer7,layer7,0755)
 %config(noreplace) /opt/SecureSpan/EnterpriseManager/etc
