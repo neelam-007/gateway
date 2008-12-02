@@ -10,6 +10,8 @@ import com.l7tech.objectmodel.migration.MigrationException;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * 
@@ -17,29 +19,61 @@ import java.util.Map;
  */
 public class MigrationApiImpl implements MigrationApi {
 
+    private static final Logger logger = Logger.getLogger(MigrationApiImpl.class.getName());
+
     private MigrationManager manager;
 
     public MigrationApiImpl(MigrationManager manager) {
         this.manager = manager;
     }
 
+    @Override
     public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
-        return manager.listEntities(clazz);
+        try {
+            return manager.listEntities(clazz);
+        } catch ( RuntimeException re ) {
+            logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
+            throw re;
+        }
     }
 
+    @Override
     public MigrationMetadata findDependencies(Collection<EntityHeader> headers) throws MigrationException {
-        return manager.findDependencies(headers);
+        try {
+            return manager.findDependencies(headers);
+        } catch ( RuntimeException re ) {
+            logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
+            throw re;
+        }
     }
 
+    @Override
     public MigrationBundle exportBundle(Collection<EntityHeader> headers) throws MigrationException {
-        return manager.exportBundle(headers);
+        try {
+            return manager.exportBundle(headers);
+        } catch ( RuntimeException re ) {
+            logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
+            throw re;
+        }
     }
 
+    @Override
     public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables) throws MigrationException {
-        return manager.retrieveMappingCandidates(mappables);
+        try {
+            return manager.retrieveMappingCandidates(mappables);
+        } catch ( RuntimeException re ) {
+            logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
+            throw re;
+        }
     }
 
+    @Override
     public void importBundle(MigrationBundle bundle) throws MigrationException {
-        manager.importBundle(bundle);
+        try {
+            manager.importBundle(bundle);
+        } catch ( RuntimeException re ) {
+            logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
+            throw re;
+        }            
     }
 }

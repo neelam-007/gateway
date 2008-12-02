@@ -1,5 +1,11 @@
 package com.l7tech.server.ems.enterprise;
 
+import com.l7tech.objectmodel.EntityType;
+
+import java.util.Map;
+import java.util.Collections;
+import java.util.HashMap;
+
 /**
  * JSON string constants to match those defined in JavaScripts.
  *
@@ -10,7 +16,7 @@ public final class JSONConstants {
     /**
      * For conversion of a Java Throwable to JSON notation.
      */
-    public final class Exception {
+    public static final class Exception {
         public static final String EXCEPTION         = "exception";
         public static final String MESSAGE           = "message";
         public static final String LOCALIZED_MESSAGE = "localizedMessage";
@@ -22,7 +28,7 @@ public final class JSONConstants {
      * Monitoring property names for SSG Cluster entities.
      * Defined as l7.EntityTreeTable.SSG_CLUSTER_MONITORING_PROPERTY in entityTreeTable.js.
      */
-    public final class SsgClusterMonitoringProperty {
+    public static final class SsgClusterMonitoringProperty {
         public static final String AUDIT_SIZE = "auditSize";
     }
 
@@ -30,7 +36,7 @@ public final class JSONConstants {
      * Monitoring property names for SSG Node entities.
      * Defined as l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY in entityTreeTable.js.
      */
-    public final class SsgNodeMonitoringProperty {
+    public static final class SsgNodeMonitoringProperty {
         public static final String LOG_SIZE    = "logSize";
         public static final String DISK_USED   = "diskUsed";
         public static final String DISK_FREE   = "diskFree";
@@ -54,7 +60,7 @@ public final class JSONConstants {
      * Enum of SSG Cluster online states.
      * Defined as l7.EntityTreeTable.SSG_CLUSTER_ONLINE_STATE in entityTreeTable.js.
      */
-    public final class SsgClusterOnlineState {
+    public static final class SsgClusterOnlineState {
         public static final String UP      = "up";
         public static final String PARTIAL = "partial";
         public static final String DOWN    = "down";
@@ -64,7 +70,7 @@ public final class JSONConstants {
      * Enum of SSG Node online states.
      * Defined as l7.EntityTreeTable.SSG_NODE_ONLINE_STATE in entityTreeTable.js.
      */
-    public final class SsgNodeOnlineState {
+    public static final class SsgNodeOnlineState {
         public static final String ON      = "on";
         public static final String OFF     = "off";
         public static final String DOWN    = "down";
@@ -75,7 +81,7 @@ public final class JSONConstants {
      * Entity types.
      * Defined as l7.EntityTreeTable.ENTITY in entityTreeTable.js.
      */
-    public final class Entity {
+    public static final class Entity {
         public static final String ENTERPRISE_FOLDER       = "enterpriseFolder";
         public static final String SSG_CLUSTER             = "ssgCluster";
         public static final String SSG_NODE                = "ssgNode";
@@ -86,6 +92,21 @@ public final class JSONConstants {
         public static final String POLICY_FRAGMENT         = "policyFragment";
         public static final String POLICY_FRAGMENT_ALIAS   = "policyFragmentAlias";
         public static final String SERVICE_FOLDER          = "serviceFolder";
+
+        public static final Map<String, EntityType> ENTITY_TYPE_MAP;
+        static {
+            Map<String,EntityType> entityTypeMap = new HashMap<String,EntityType>();
+            entityTypeMap.put( ENTERPRISE_FOLDER, EntityType.ESM_ENTERPRISE_FOLDER );
+            entityTypeMap.put( SSG_CLUSTER, EntityType.ESM_SSG_CLUSTER );
+            entityTypeMap.put( SSG_NODE, EntityType.ESM_SSG_NODE );
+            entityTypeMap.put( SSG_FOLDER, EntityType.FOLDER );
+            entityTypeMap.put( PUBLISHED_SERVICE, EntityType.SERVICE );
+            entityTypeMap.put( PUBLISHED_SERVICE_ALIAS, EntityType.SERVICE_ALIAS );
+            entityTypeMap.put( POLICY_FRAGMENT, EntityType.POLICY );
+            entityTypeMap.put( POLICY_FRAGMENT_ALIAS, EntityType.POLICY_ALIAS );
+            entityTypeMap.put( SERVICE_FOLDER, EntityType.FOLDER );
+            ENTITY_TYPE_MAP = Collections.unmodifiableMap(entityTypeMap);
+        }
     }
 
     // Properties for all entities.
@@ -127,7 +148,7 @@ public final class JSONConstants {
      * Enum of standard report types.
      * Defined in StandardReports.html.
      */
-    public final class ReportType {
+    public static final class ReportType {
         public static final String PERFORMANCE = "performance";
         public static final String USAGE       = "usage";
     }
@@ -135,12 +156,12 @@ public final class JSONConstants {
     /**
      * Enum of time period types.
      */
-    public final class TimePeriodTypeValues {
+    public static final class TimePeriodTypeValues {
         public static final String RELATIVE = "relative";
         public static final String ABSOLUTE = "absolute";
     }
 
-    public final class TimePeriodTypeKeys{
+    public static final class TimePeriodTypeKeys{
         public static final String TIME_PERIOD_MAIN = "timePeriod";
         public static final String TYPE = "type";
         public static final String TIME_INTERVAL = "timeInterval";

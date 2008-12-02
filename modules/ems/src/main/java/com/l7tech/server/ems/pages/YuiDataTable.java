@@ -41,6 +41,9 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.logging.Level;
 
+import com.l7tech.util.ResolvingComparator;
+import com.l7tech.util.Resolver;
+
 /**
  * Wicket component for YUI table
  */
@@ -365,10 +368,31 @@ public class YuiDataTable extends Panel {
     private final List<PropertyColumn> columns;
     private final ISortableDataProvider provider;
 
+    @SuppressWarnings({"unchecked"})
     private static ISortableDataProvider asSortableDataProvider(
             final Collection<?> data,
             final String sortProperty,
             final boolean sortAscending ) {
+        final List sortedData = new ArrayList(data);
+        Collections.sort( sortedData, new ResolvingComparator(new Resolver(){
+            @SuppressWarnings({"unchecked"})
+            @Override
+            public Object resolve(Object dataObject) {
+                Object object = new PropertyModel(dataObject, sortProperty).getObject();
+                if ( object == null ) {
+                    return "";
+                } else {
+                    String propValue = object.toString();
+                    if ( propValue==null ) {
+                        propValue = "";
+                    } else {
+                        propValue = propValue.toLowerCase();    
+                    }
+                    return propValue;
+                }
+            }
+        }, false) );
+
         return new SortableDataProvider(){
             {
                 setSort( sortProperty, sortAscending );
@@ -376,12 +400,12 @@ public class YuiDataTable extends Panel {
 
             @Override
             public Iterator iterator(int first, int count) {
-                return newDataIter(data, first,first+count);
+                return newDataIter(sortedData, first,first+count);
             }
 
             @Override
             public int size() {
-                return data.size();
+                return sortedData.size();
             }
 
             @Override

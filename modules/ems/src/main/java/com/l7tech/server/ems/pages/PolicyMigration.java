@@ -1,6 +1,18 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.enterprise.SsgClusterManager;
+import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.ems.enterprise.JSONConstants;
+import com.l7tech.server.ems.gateway.GatewayContextFactory;
+import com.l7tech.server.ems.gateway.GatewayContext;
+import com.l7tech.server.management.api.node.MigrationApi;
+import com.l7tech.server.management.migration.bundle.MigrationMetadata;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.EntityHeaderRef;
+import com.l7tech.objectmodel.migration.MigrationMapping;
+import com.l7tech.objectmodel.migration.MigrationMappingType;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -10,12 +22,12 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
+import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.mortbay.util.ajax.JSON;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Collection;
 import java.util.ArrayList;
@@ -47,12 +59,13 @@ public class PolicyMigration extends EmsPage  {
                     DependencyItemsRequest dir = new DependencyItemsRequest();
                     dir.fromJSON(jsonMap);
 
-                    Collection deps = Arrays.asList(dir.entities);
+                    Collection deps = retrieveDependencies(dir);
                     YuiDataTable ydt = new YuiDataTable(
                             "dependenciesTable",
                             Arrays.asList(
-                                    new PropertyColumn(new Model("Name"), "name"),
-                                    new PropertyColumn(new Model("Type"), "type")
+                                    new PropertyColumn(new Model("Required"), "optional", "optional"),
+                                    new PropertyColumn(new Model("Name"), "name", "name"),
+                                    new PropertyColumn(new Model("Type"), "type", "type")
                             ),
                             "name",
                             true,
@@ -86,25 +99,34 @@ public class PolicyMigration extends EmsPage  {
 
     private static final Logger logger = Logger.getLogger( PolicyMigration.class.getName() );
 
-    /*
-{
-    "clusterId" : "c32bb1a9-1538-4792-baa1-566bfd418020",       // the source SSG Cluster
-    "entities"  : [
-        {
-            "id"   : "229376",
-            "type" : "publishedService",
-            "name" : "Warehouse"
-        },
-        {
-            "id"   : "b4fce666-d83f-4533-af06-6ea086271fcf"
-            "type" : "policyFragment",
-            "name" : "Policy Fragment 1"
-        },
-        ...
-    ]
-}
+    @SpringBean
+    private SsgClusterManager ssgClusterManager;
 
-     */
+    @SpringBean
+    private GatewayContextFactory gatewayContextFactory;
+
+    private Collection<DependencyItem> retrieveDependencies( final DependencyItemsRequest request ) throws Exception {
+        Collection<DependencyItem> deps = new ArrayList<DependencyItem>();
+
+        SsgCluster cluster = ssgClusterManager.findByGuid(request.clusterId);
+        if ( cluster != null ) {
+            if ( cluster.getTrustStatus() ) {
+                GatewayContext context = gatewayContextFactory.getGatewayContext( getUser(), cluster.getSslHostName(), cluster.getAdminPort() );
+                MigrationApi api = context.getMigrationApi();
+                MigrationMetadata metadata = api.findDependencies( request.asEntityHeaders() );
+                if ( metadata != null && metadata.getMappableDependencies() != null ) {
+                    for ( MigrationMapping mapping : metadata.getMappings() ) {
+                        EntityHeaderRef sourceRef = mapping.getSource();
+                        EntityHeader header = metadata.getHeader( sourceRef );
+                        deps.add( new DependencyItem( header.getStrId(), header.getType().toString(), header.getName(), mapping.getType()==MigrationMappingType.BOTH_OPTIONAL ) );
+                    }
+                }
+            } 
+        }
+
+        return deps;
+    }
+
     private static class DependencyItemsRequest implements JSON.Convertible {
         private String clusterId;
         private DependencyItem[] entities;
@@ -134,16 +156,42 @@ public class PolicyMigration extends EmsPage  {
                 }
             }
         }
+
+        public Collection<EntityHeader> asEntityHeaders() {
+            Collection<EntityHeader> headers = new ArrayList<EntityHeader>();
+
+            for ( DependencyItem entity : entities ) {
+                EntityType type = JSONConstants.Entity.ENTITY_TYPE_MAP.get( entity.type );
+                if ( type != null ) {
+                    headers.add( new EntityHeader( entity.id, type, entity.name, null) );
+                } else {
+                    logger.warning("Entity with unknown type '"+entity.type+"' requested.");
+                }
+            }
+
+            return headers;
+        }
     }
 
     private static class DependencyItem implements JSON.Convertible, Serializable {
         private String id;
         private String type;
         private String name;
+        private boolean optional;
+
+        public DependencyItem(){
+        }
+
+        public DependencyItem( final String id, final String type, final String name, final boolean optional ) {
+            this.id = id;
+            this.type = type;
+            this.name = name;
+            this.optional = optional;
+        }
 
         @Override
         public String toString() {
-            return "DependencyItem[id='"+id+"'; type='"+type+"'; name='"+name+"']";
+            return "DependencyItem[id='"+id+"'; type='"+type+"'; name='"+name+"'; optional="+optional+"]";
         }
 
         @Override
