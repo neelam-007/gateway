@@ -18,6 +18,7 @@ import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.model.*;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -114,6 +115,7 @@ public class UserRoles extends EmsPage {
                     role.removeAssignedUser(emsAccountManager.findByLogin(userId));
                     roleManager.update(role);
                     roleModel.selectedRole = role;
+                    rebuildSelectedUsers();
 
                     // Render the role management container
                     this.setEnabled(false);
@@ -134,7 +136,7 @@ public class UserRoles extends EmsPage {
             }
         };
         buttonToUnassignRole.setEnabled(false);
-        Panel assignedUserTable = getUserTablePanel(true, hiddenFieldForAssignedUser,  buttonToUnassignRole);
+        Panel assignedUserTable = getPlaceholderUserTablePanel(true);
         Panel searchAssignedUsersPanel = new EnterpriseSearchUsersPanel("panel.search.assignedUsers",
             searchAssignedUsersModel, Collections.singleton(assignedUserTable));
 
@@ -155,6 +157,7 @@ public class UserRoles extends EmsPage {
                     role.addAssignedUser(emsAccountManager.findByLogin(userId));
                     roleManager.update(role);
                     roleModel.selectedRole = role;
+                    rebuildSelectedUsers();
 
                     // Render the role management container
                     this.setEnabled(false);
@@ -175,7 +178,7 @@ public class UserRoles extends EmsPage {
             }
         };
         buttonToAssignRole.setEnabled(false);
-        Panel unassignedUserTable = getUserTablePanel(false, hiddenFieldForUnassignedUser, buttonToAssignRole);
+        Panel unassignedUserTable = getPlaceholderUserTablePanel(false);
         Panel searchUnassignedUsersPanel = new EnterpriseSearchUsersPanel("panel.search.unassignedUsers",
             searchUnassignedUsersModel, Collections.singleton(unassignedUserTable));
 
@@ -260,6 +263,7 @@ public class UserRoles extends EmsPage {
                         if (roleModel.getSelectedRole() == null) {
                             roleManagementContainer.setVisible(false);
                         } else {
+                            rebuildSelectedUsers();
                             roleManagementContainer.setVisible(true);
                         }
 
@@ -272,6 +276,28 @@ public class UserRoles extends EmsPage {
                 logger.warning("Cannot find roles.");
             }
         }
+    }
+
+    private void rebuildSelectedUsers() {
+        Form assignedUserForm = (Form)roleManagementContainer.get("form.assignedUsers");
+        Form unassignedUserForm = (Form)roleManagementContainer.get("form.unassignedUsers");
+        assignedUserForm.replace(getUserTablePanel(true, (HiddenField)assignedUserForm.get("assignedUserId"), (Button)assignedUserForm.get("button.unassignRole")));
+        unassignedUserForm.replace(getUserTablePanel(false, (HiddenField)unassignedUserForm.get("unassignedUserId"), (Button)unassignedUserForm.get("button.assignRole")));        
+    }
+
+    private Collection newArrayList( final Iterator iterator ) {
+        Collection<Object> collection = new ArrayList<Object>(100);
+
+        while ( iterator.hasNext() ) {
+            collection.add( iterator.next() );            
+        }
+
+        return collection;
+    }
+
+    private Panel getPlaceholderUserTablePanel(boolean usersAssigned) {
+        String panelId = "panel." + (usersAssigned? "" : "un") + "assignedUsers";
+        return new EmptyPanel(panelId);
     }
 
     /**
@@ -288,7 +314,7 @@ public class UserRoles extends EmsPage {
         columns.add(new PropertyColumn(new StringResourceModel("usertable.column.firstName", this, null), "firstName", "firstName"));
 
         String panelId = "panel." + (usersAssigned? "" : "un") + "assignedUsers";
-        return new YuiDataTable(panelId, columns, "login", true, new UserDataProvider("login", true, usersAssigned), hidden,
+        return new YuiDataTable(panelId, columns, "login", true, newArrayList(new UserDataProvider("login", true, usersAssigned).iterator(0,1000)), hidden,
             "login", false, new Button[]{button}) {
             @Override
             @SuppressWarnings({"UnusedDeclaration"})

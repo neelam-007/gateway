@@ -6,6 +6,7 @@ import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.Component;
 import org.apache.wicket.util.string.Strings;
+import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.WicketAjaxReference;
 import org.apache.wicket.behavior.AbstractAjaxBehavior;
@@ -13,6 +14,7 @@ import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.ISortableDataProvider;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
+import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WicketEventReference;
@@ -22,6 +24,8 @@ import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.model.AbstractReadOnlyModel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.mortbay.util.ajax.JSON;
@@ -31,6 +35,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Locale;
+import java.util.logging.Level;
 
 /**
  * Wicket component for YUI table
@@ -45,14 +54,36 @@ public class YuiDataTable extends Panel {
         component.add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_DATATABLE ) );
     }
 
+    /**
+     * Create a YUI DataTable component with server side sort/page.
+     *
+     * @param id The component identifier
+     * @param columns The table column definitions
+     * @param sortProperty The property to sort by
+     * @param sortAscending True to sort in ascending order
+     * @param sortableDataProvider The data provider for the table data
+     */
     public YuiDataTable( final String id,
                          final List<PropertyColumn> columns,
                          final String sortProperty,
                          final boolean sortAscending,
                          final ISortableDataProvider sortableDataProvider ) {
-        this( id, columns, sortProperty, sortAscending, sortableDataProvider, null, null, false, null );
+        this( id, columns, sortProperty, sortAscending, sortableDataProvider, true, null, null, false, null );
     }
 
+    /**
+     * Create a YUI DataTable component with server side sort/page.
+     *
+     * @param id The component identifier
+     * @param columns The table column definitions
+     * @param sortProperty The property to sort by
+     * @param sortAscending True to sort in ascending order
+     * @param sortableDataProvider The data provider for the table data
+     * @param selectionComponent The component to hold row selection values
+     * @param idProperty The property to use as the selection id
+     * @param hideIdColumn True if the id column should be hidden
+     * @param selectionSensitiveComponents Buttons that are sensitive to row selection
+     */
     public YuiDataTable( final String id,
                          final List<PropertyColumn> columns,
                          final String sortProperty,
@@ -62,6 +93,66 @@ public class YuiDataTable extends Panel {
                          final String idProperty,
                          final boolean hideIdColumn,
                          final Button[] selectionSensitiveComponents ) {
+        this( id, columns, sortProperty, sortAscending, sortableDataProvider,
+              true, selectionComponent, idProperty, hideIdColumn, selectionSensitiveComponents );
+    }
+
+    /**
+     * Create a YUI DataTable component with client side sort.
+     *
+     * @param id The component identifier
+     * @param columns The table column definitions
+     * @param sortProperty The property to sort by
+     * @param sortAscending True to sort in ascending order
+     * @param data The table data
+     */
+    public YuiDataTable( final String id,
+                         final List<PropertyColumn> columns,
+                         final String sortProperty,
+                         final boolean sortAscending,
+                         final Collection<?> data ) {
+        this( id, columns, sortProperty, sortAscending, asSortableDataProvider(data, sortProperty, sortAscending), false, null, null, false, null );
+    }
+
+    /**
+     * Create a YUI DataTable component with client side sort.
+     *
+     * @param id The component identifier
+     * @param columns The table column definitions
+     * @param sortProperty The property to sort by
+     * @param sortAscending True to sort in ascending order
+     * @param data The table data
+     * @param selectionComponent The component to hold row selection values
+     * @param idProperty The property to use as the selection id
+     * @param hideIdColumn True if the id column should be hidden
+     * @param selectionSensitiveComponents Buttons that are sensitive to row selection
+     */
+    public YuiDataTable( final String id,
+                         final List<PropertyColumn> columns,
+                         final String sortProperty,
+                         final boolean sortAscending,
+                         final Collection<?> data,
+                         final HiddenField selectionComponent,
+                         final String idProperty,
+                         final boolean hideIdColumn,
+                         final Button[] selectionSensitiveComponents ) {
+        this( id, columns, sortProperty, sortAscending, asSortableDataProvider(data, sortProperty, sortAscending),
+              false, selectionComponent, idProperty, hideIdColumn, selectionSensitiveComponents );
+    }
+
+    /**
+     * Internal constructor.
+     */
+    private YuiDataTable( final String id,
+                          final List<PropertyColumn> columns,
+                          final String sortProperty,
+                          final boolean sortAscending,
+                          final ISortableDataProvider sortableDataProvider,
+                          final boolean isServerSortAndPage,
+                          final HiddenField selectionComponent,
+                          final String idProperty,
+                          final boolean hideIdColumn,
+                          final Button[] selectionSensitiveComponents ) {
         super(id);
 
         this.columns = columns;
@@ -74,27 +165,34 @@ public class YuiDataTable extends Panel {
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM_EVENT ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_ELEMENT ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_BUTTON ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_EVENT ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_MENU ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DRAGDROP ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONTAINER ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATASOURCE ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATATABLE ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_PAGINATOR ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONNECTION ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_JSON ) );
+        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATASOURCE ) );
+        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATATABLE ) );
 
         add( HeaderContributor.forJavaScript( new ResourceReference( YuiDataTable.class, "../resources/js/dataTable.js" ) ) );
 
         JSON json = new JSON();
         json.addConvertor( PropertyColumn.class, new PropertyColumnConvertor( hideIdColumn ? idProperty : null ) );
+        json.addConvertor( Level.class, new LevelConverter() );
+        json.addConvertor( Date.class, new DateConverter() );
+        json.addConvertor( Model.class, new PropertyModelConvertor() );
 
         final StringBuffer columnBuffer = new StringBuffer();
         json.append(columnBuffer, columns);
 
         final StringBuffer fieldsBuffer = new StringBuffer();
         json.append(fieldsBuffer, fieldsList(columns));
+
+        final StringBuffer dataBuffer;
+        if ( !isServerSortAndPage ) {
+            dataBuffer = new StringBuffer();
+            json.append(dataBuffer, dataTable(sortableDataProvider, 0, 1000));
+        } else {
+            dataBuffer = null;
+        }
 
         final String buttons;
         if ( selectionSensitiveComponents != null ) {
@@ -154,6 +252,8 @@ public class YuiDataTable extends Panel {
                 scriptBuilder.append( getCallbackUrl(true) );
                 scriptBuilder.append( "&data=true&', " );
                 scriptBuilder.append( fieldsBuffer );
+                scriptBuilder.append( ", " );
+                scriptBuilder.append( dataBuffer == null ? "null" : "'" + dataBuffer + "'" ); 
                 scriptBuilder.append( ", '" );
                 scriptBuilder.append( sortProperty );
                 scriptBuilder.append( "', '");
@@ -265,6 +365,53 @@ public class YuiDataTable extends Panel {
     private final List<PropertyColumn> columns;
     private final ISortableDataProvider provider;
 
+    private static ISortableDataProvider asSortableDataProvider(
+            final Collection<?> data,
+            final String sortProperty,
+            final boolean sortAscending ) {
+        return new SortableDataProvider(){
+            {
+                setSort( sortProperty, sortAscending );
+            }
+
+            @Override
+            public Iterator iterator(int first, int count) {
+                return newDataIter(data, first,first+count);
+            }
+
+            @Override
+            public int size() {
+                return data.size();
+            }
+
+            @Override
+            public IModel model(final Object dataObject) {
+                if ( dataObject instanceof IModel ) {
+                    return (IModel) dataObject;
+                } else {
+                    return new AbstractReadOnlyModel() {
+                        @Override
+                        public Object getObject() {
+                            return dataObject;
+                        }
+                    };
+                }
+            }
+
+            @Override
+            public void detach() {
+            }
+        };
+    }
+
+    private static Iterator newDataIter(
+            final Collection<?> data,
+            final int start,
+            final int end ) {
+        List<?> list = new ArrayList<Object>( data );
+        return list.subList(start, Math.min(end, data.size())).iterator();
+    }
+
     private String columnToSortProperty( final String columnName ) {
         String sort = columns.get(0).getSortProperty();
 
@@ -332,6 +479,57 @@ public class YuiDataTable extends Panel {
         }
 
         return fieldsList;
+    }
+
+    private Map dataTable( final ISortableDataProvider provider, int startIndex, int results ) {
+        return Collections.singletonMap("data", dataList(provider, startIndex, results));
+    }
+
+    private List<IModel> dataList( final ISortableDataProvider provider, int startIndex, int results ) {
+        List<IModel> dataList = new ArrayList<IModel>(results);
+
+        Iterator iter = provider.iterator( startIndex, results );
+        while ( iter.hasNext() ) {
+            dataList.add(new Model((Serializable)iter.next()));
+        }
+
+        return dataList;
+    }
+
+    private static final class LevelConverter implements JSON.Convertor {
+        @Override
+        public void toJSON(Object o, JSON.Output output) {
+            Level level = (Level) o;
+            output.add( "order", level.intValue() );
+            output.add( "label", level.getName() );
+        }
+
+        @Override
+        public Object fromJSON(Map map) {
+           throw new UnsupportedOperationException("Mapping fom JSON not supported.");
+        }
+    }
+
+    private final class DateConverter implements JSON.Convertor {
+        @Override
+        public void toJSON(Object o, JSON.Output output) {
+            Date date = (Date) o;
+            String label;
+            IConverter converter = getConverter( Date.class );
+            if ( converter != null ) {
+                label = converter.convertToString( date, Locale.getDefault() );
+            } else {
+                label = o.toString();
+            }
+
+            output.add( "order", date.getTime() );
+            output.add( "label", label );
+        }
+
+        @Override
+        public Object fromJSON(Map map) {
+           throw new UnsupportedOperationException("Mapping fom JSON not supported.");
+        }
     }
 
     /**
