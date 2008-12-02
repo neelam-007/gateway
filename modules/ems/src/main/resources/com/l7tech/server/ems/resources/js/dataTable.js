@@ -151,7 +151,7 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
             tableId,             // The dom element to contain the DataTable
             tableColumns,        // What columns will display
             myDataSource,        // The DataSource for our records
-            {scrollable: true, height: "18em", sortedBy:{key:sortBy, dir:sortDir}}
+            {scrollable: true, selectionMode : 'single', height: "18em", sortedBy:{key:sortBy, dir:sortDir}}
         );
     } else {
         // Create the DataSource for server side data
