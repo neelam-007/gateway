@@ -441,7 +441,6 @@ public class ReportGenerator {
                 StreamResult result = new StreamResult(baos);
                 XmlUtil.softXSLTransform(doc, result, transformer, params);
                 inputStream = new ByteArrayInputStream(baos.toByteArray());
-                IOUtils.spewStream(baos.toByteArray(), new FileOutputStream(new File("Output_" + template.getParameterMapName()+".xml")));
             }else{
                 inputStream = template.getReportXmlSource().getByteStream();
             }
