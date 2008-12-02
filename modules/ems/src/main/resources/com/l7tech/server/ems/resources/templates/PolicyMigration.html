@@ -138,31 +138,11 @@
             }
 
             function onClickIdentifyDependencies() {
-                var callback = {
-                    success : function(o) {
-                        var result = l7.Dialog.parseJSON(
-                                o.responseText,
-                                localizedStrings.ERROR,
-                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_DEPENDENCIES) + '</p>',
-                                localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                                localizedStrings.OK);
-                        if (!l7.Util.isException(result)) {
-                            // No return object expected.
-                        }
-                    },
-                    failure : function(o) {
-                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_DEPENDENCIES + o.statusText, localizedStrings.OK);
-                    }
-                };
-                var url = 'dataSource/policyMigration/identifyDependencies.json';
                 var postObject = {};
                 postObject.clusterId = srcSSGClusterContentSelectorWindow.getSsgCluster().id;
                 postObject.entities = getSelectedSrcItems();
                 var postData = YAHOO.lang.JSON.stringify(postObject);
-                YAHOO.util.Connect.setDefaultPostHeader(false);
-                YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');
-                YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
-                YAHOO.util.Connect.setDefaultPostHeader(true);
+                document.getElementById('selectionJson').value = postData;
             }
 
             function initSSGClusterSelector(iframe) {
@@ -178,6 +158,13 @@
                 srcSSGClusterContentSelectorWindow = document.getElementById('srcSSGClusterContentSelector').contentWindow;
                 destSSGClusterContentSelectorWindow = document.getElementById('destSSGClusterContentSelector').contentWindow;
                 identifyDependenciesImageButton = document.getElementById('identifyDependenciesImageButton');
+
+                var wicketOnclick = identifyDependenciesImageButton.onclick;
+                identifyDependenciesImageButton.onclick = function(){
+                    onClickIdentifyDependencies();
+                    wicketOnclick();
+                    return true;
+                };
             }
 
             YAHOO.util.Event.onDOMReady(init);
@@ -393,7 +380,7 @@
                 </td>
                 <td class="srcDestCenter">
                     Dep.<br />
-                    <img id="identifyDependenciesImageButton" class="clickable" src="../images/resolveDependencies.png" title="Identify Dependencies" alt="" onclick="onClickIdentifyDependencies();" /><br />
+                    <img id="identifyDependenciesImageButton" wicket:id="identifyDependenciesImageButton" class="clickable" src="../images/resolveDependencies.png" title="Identify Dependencies" alt=""/><br />
                     Copy<br />
                     <img class="disabled" src="../images/copy.png" alt="" />
                 </td>
@@ -443,10 +430,13 @@
             </tr>
             </table>
             </div>
+            <form wicket:id="selectionForm">
+                <input id="selectionJson" type="hidden" wicket:id="selectionJson"/>
+            </form>
             <div class="panel">
                 <div class="panelTitle">Dependencies Mapping</div>
                 <div class="panelContent">
-                    <table width="100%">
+                    <table width="100%" wicket:id="dependencies">
                         <tr>
                             <th width="50%"><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width -->
                             </th>
@@ -459,22 +449,7 @@
                         </tr>
                         <tr>
                             <td class="dependencyExplorer">
-                                <table class="dataTable">
-                                    <thead>
-                                        <tr>
-                                            <th><!-- resolution status --></th>
-                                            <th>Name</th>
-                                            <th>Type</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><img src="../images/unresolved.png" alt="" /></td>
-                                            <td>bart</td>
-                                            <td>USER</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                               <div wicket:id="dependenciesTable"/>
                             </td>
                             <td class="dependencyExplorer">
                                 <div id="mappingCandidatesPagination" class="panelToolbar"></div>
