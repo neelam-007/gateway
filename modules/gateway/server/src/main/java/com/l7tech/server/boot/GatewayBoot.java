@@ -30,6 +30,7 @@ public class GatewayBoot {
     private static final long DB_CHECK_DELAY = 30;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean destroyRequested = new AtomicBoolean(false);
 
     private ClassPathXmlApplicationContext applicationContext;
     private ShutdownWatcher shutdowner;
@@ -52,6 +53,7 @@ public class GatewayBoot {
         }
 
         logger.info("Starting " + BuildInfo.getLongBuildString());
+        destroyRequested.set(false);
 
         // This thread is responsible for attempting to start the server, and for clearing "running" flag if it fails
         boolean itworked = false;
@@ -75,6 +77,7 @@ public class GatewayBoot {
      * @throws LifecycleException if there is a problem shutting down the server
      */
     public void destroy() throws LifecycleException {
+        destroyRequested.set(true);
         if (!running.get())
             return;
 
@@ -104,11 +107,13 @@ public class GatewayBoot {
     }
 
     // Launch a background thread that warns if no DB connections appear within a reasonable period of time (Bug #4271)
-    private static void spawnDbWarner() {
+    private void spawnDbWarner() {
         Thread dbcheck = new Thread("Database Check") {
             public void run() {
                 try {
                     Thread.sleep(DB_CHECK_DELAY * 1000L);
+                    if (destroyRequested.get())
+                        return;
                     int connections = getNumDbConnections();
                     if (connections >= 1) {
                         logger.log(Level.FINE, "Database check: " + connections + " database connections open after " + DB_CHECK_DELAY + " seconds");

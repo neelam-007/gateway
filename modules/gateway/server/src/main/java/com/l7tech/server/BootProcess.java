@@ -131,7 +131,11 @@ public class BootProcess
 
         for (ServerComponentLifecycle component : stnenopmocDerevocsid) {
             logger.info("Closing discovered component " + component);
-            component.close();
+            try {
+                component.close();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Exception while closing component: " + ExceptionUtils.getMessage(e), e);
+            }
         }
 
         ShutdownExceptionHandler.getInstance().shutdownNotify();
@@ -142,16 +146,18 @@ public class BootProcess
 
     /**
      * Invoked by a BeanFactory on destruction of a singleton.
-     *
-     * @throws Exception in case of shutdown errors.
-     *                   Exceptions will get logged but not rethrown to allow
-     *                   other beans to release their resources too.
      */
-    public void destroy() throws Exception {
+    public void destroy() {
         try {
             stop();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Exception while destroying BootProcess: " + ExceptionUtils.getMessage(e), e);
         } finally {
-            close();
+            try {
+                close();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Exception while closing BootProcess: " + ExceptionUtils.getMessage(e), e);
+            }
         }
     }
 

@@ -16,13 +16,13 @@ import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
+import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
-import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.MasterPasswordManager;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
@@ -30,6 +30,7 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardThreadExecutor;
 import org.apache.catalina.core.StandardWrapper;
 import org.apache.catalina.servlets.DefaultServlet;
+import org.apache.catalina.session.ManagerBase;
 import org.apache.catalina.startup.Embedded;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.Http11Protocol;
@@ -53,6 +54,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -159,6 +161,30 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         engine.addChild(host);
 
         context = (StandardContext)embedded.createContext("", s);
+
+        String ssgVarPath = serverConfig.getProperty(ServerConfig.PARAM_VAR_DIRECTORY);
+        if (ssgVarPath != null)
+            context.setWorkDir(ssgVarPath + File.separatorChar + "work");
+
+        // Turn off persistent/distributed session support, since we aren't even using them (Bug #6124)
+        context.setManager(new ManagerBase() {
+            AtomicInteger rejects = new AtomicInteger(0);
+
+            public int getRejectedSessions() {
+                return rejects.get();
+            }
+
+            public void setRejectedSessions(int i) {
+                rejects.set(i);
+            }
+
+            public void load() throws ClassNotFoundException, IOException {
+            }
+
+            public void unload() throws IOException {
+            }
+        });
+
         context.addParameter(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
         context.setName("");
         context.setResources(createHybridDirContext(inf));
@@ -323,6 +349,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         try {
             embedded.stop();
             running.set(false);
+            if (executor != null)
+                executor.stop();
         } catch (org.apache.catalina.LifecycleException e) {
             throw new LifecycleException(e);
         }

@@ -50,6 +50,7 @@ import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -76,7 +77,7 @@ import java.util.logging.Logger;
  * Date: Jun 6, 2003
  * @noinspection OverloadedMethodsWithSameNumberOfParameters,ValidExternallyBoundObject,NonJaxWsWebServices
  */
-public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
+public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware, DisposableBean {
     private static final ServiceHeader[] EMPTY_ENTITY_HEADER_ARRAY = new ServiceHeader[0];
 
     private SSLContext sslContext;
@@ -668,4 +669,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         this.auditor = new Auditor(this, applicationContext, logger);
     }
 
+    public void destroy() throws Exception {
+        if (validatorExecutor != null) validatorExecutor.shutdown();
+    }
 }

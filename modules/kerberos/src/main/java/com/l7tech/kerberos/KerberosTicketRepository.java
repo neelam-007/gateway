@@ -1,10 +1,10 @@
 package com.l7tech.kerberos;
 
-import javax.security.auth.kerberos.KerberosTicket;
+import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import javax.security.auth.Subject;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +32,11 @@ public class KerberosTicketRepository {
     private static KerberosTicketRepository instance;
 
     /**
+     * Used to number threads created for {@link #maintenanceThread}'s thread pool.
+     */
+    private static final AtomicInteger threadCount = new AtomicInteger(0);
+
+    /**
      * Hashmap used to store the cached credentials.
      */
     private HashMap<String, CachedCredential> _map;
@@ -37,7 +44,13 @@ public class KerberosTicketRepository {
     /**
      * Maintenance thread for removing old tickets.
      */
-    private ExecutorService maintenanceThread = Executors.newFixedThreadPool(1);
+    private ExecutorService maintenanceThread = Executors.newFixedThreadPool(1, new ThreadFactory() {
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r, "KerberosTicketRepository-Maint-" + threadCount.incrementAndGet());
+            t.setDaemon(true);
+            return t;
+        }
+    });
 
     /**
      * Kerberos ticket lifetime for cached entries (ms) - this parameter is configued by a the system property.

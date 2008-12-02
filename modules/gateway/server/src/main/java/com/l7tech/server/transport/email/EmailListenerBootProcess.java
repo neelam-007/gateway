@@ -1,24 +1,22 @@
 package com.l7tech.server.transport.email;
 
-import com.l7tech.server.*;
-import com.l7tech.server.transport.email.asynch.EmailListenerThreadPool;
-import com.l7tech.server.event.system.ReadyForMessages;
-import com.l7tech.server.event.MessageProcessed;
-import com.l7tech.server.event.FaultProcessed;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.AuditDetailEvent;
 import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.server.*;
+import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.event.system.ReadyForMessages;
+import com.l7tech.server.transport.email.asynch.EmailListenerThreadPool;
+import org.springframework.context.ApplicationEvent;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-
-import org.springframework.context.ApplicationEvent;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Starts up the email listeners and periodically checks for new, removed or modified email listeners.
@@ -213,6 +211,9 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
         synchronized(listenerLock) {
             if (emailListenerChecker != null)
                 emailListenerChecker.cancel();
+
+            if (backgroundTimer != null)
+                backgroundTimer.cancel();
 
             for (PollingEmailListener listener : activeListeners) {
                 logger.info("Stopping email listener '" + listener.toString() + "'");

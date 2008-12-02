@@ -909,6 +909,8 @@ public class ServiceCache
      */
     public void destroy() throws Exception {
         checker.cancel();
+        if (threadPool != null)
+            threadPool.shutdown();
     }
 
     private void checkIntegrity() {

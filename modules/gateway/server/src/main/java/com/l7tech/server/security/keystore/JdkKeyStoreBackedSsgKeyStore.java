@@ -6,9 +6,12 @@ import com.l7tech.gateway.common.security.BouncyCastleCertUtils;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.server.event.system.Started;
+import com.l7tech.server.event.system.Stopped;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.NotFuture;
-import com.l7tech.server.event.system.Started;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -24,9 +27,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationEvent;
-
 /**
  * Base class for SsgKeyStore implementations that are based on a JDK KeyStore instance.
  */
@@ -34,8 +34,8 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
     private static final Logger logger = Logger.getLogger(JdkKeyStoreBackedSsgKeyStore.class.getName());
 
-    private BlockingQueue<Runnable> mutationQueue = new LinkedBlockingQueue<Runnable>();
-    private ExecutorService mutationExecutor = new ThreadPoolExecutor(1, 1, 5 * 60, TimeUnit.SECONDS, mutationQueue);
+    private static BlockingQueue<Runnable> mutationQueue = new LinkedBlockingQueue<Runnable>();
+    private static ExecutorService mutationExecutor = new ThreadPoolExecutor(1, 1, 5 * 60, TimeUnit.SECONDS, mutationQueue);
     private static final AtomicBoolean startedRef = new AtomicBoolean(false);
 
     public static final class StartupListener implements ApplicationListener {
@@ -43,6 +43,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             if ( event instanceof Started) {
                 logger.info("Switching to executor for keystore mutation.");
                 startedRef.set(true);
+            } else if ( event instanceof Stopped) {
+                logger.info("Shutting down keystore mutation executor.");
+                startedRef.set(false);
+                mutationExecutor.shutdown();
             }
         }
     }
