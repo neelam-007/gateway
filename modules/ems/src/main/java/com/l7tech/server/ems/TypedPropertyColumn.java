@@ -12,24 +12,37 @@ public class TypedPropertyColumn extends PropertyColumn {
 
     public TypedPropertyColumn( final IModel displayModel,
                                 final String propertyExpression,
-                                final Class columnClass ) {
+                                final Class columnClass,
+                                final boolean escapePropertyValue ) {
         super( displayModel, propertyExpression );
         this.columnClass = columnClass;
+        this.escapePropertyValue = escapePropertyValue;
     }
 
     public TypedPropertyColumn( final IModel displayModel,
                                 final String sortProperty,
                                 final String propertyExpression,
-                                final Class columnClass ) {
+                                final Class columnClass,
+                                final boolean escapePropertyValue ) {
         super( displayModel, sortProperty, propertyExpression );
         this.columnClass = columnClass;
+        this.escapePropertyValue = escapePropertyValue;
     }
 
     public Class getColumnClass() {
-        return columnClass;
+        return this.columnClass;
+    }
+
+    public boolean isEscapePropertyValue() {
+        return this.escapePropertyValue;
+    }
+
+    public void setEscapePropertyValue( final boolean escapePropertyValue ) {
+        this.escapePropertyValue = escapePropertyValue;          
     }
 
     //- PRIVATE
 
     private final Class columnClass;
+    private boolean escapePropertyValue;
 }

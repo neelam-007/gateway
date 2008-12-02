@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.TypedPropertyColumn;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.JSONConstants;
@@ -12,7 +13,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.migration.MigrationMapping;
-import com.l7tech.objectmodel.migration.MigrationMappingType;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -63,7 +63,7 @@ public class PolicyMigration extends EmsPage  {
                     YuiDataTable ydt = new YuiDataTable(
                             "dependenciesTable",
                             Arrays.asList(
-                                    new PropertyColumn(new Model("Required"), "optional", "optional"),
+                                    new TypedPropertyColumn(new Model(""), "optional", "optional", String.class, false),
                                     new PropertyColumn(new Model("Name"), "name", "name"),
                                     new PropertyColumn(new Model("Type"), "type", "type")
                             ),
@@ -118,13 +118,23 @@ public class PolicyMigration extends EmsPage  {
                     for ( MigrationMapping mapping : metadata.getMappings() ) {
                         EntityHeaderRef sourceRef = mapping.getSource();
                         EntityHeader header = metadata.getHeader( sourceRef );
-                        deps.add( new DependencyItem( header.getStrId(), header.getType().toString(), header.getName(), mapping.getType()==MigrationMappingType.BOTH_OPTIONAL ) );
+                        deps.add( new DependencyItem( header.getStrId(), header.getType().toString(), header.getName(), toImgIcon(metadata.isMappingRequired(sourceRef)) ) );
                     }
                 }
             } 
         }
 
         return deps;
+    }
+
+    private String toImgIcon( final boolean required ) {
+        String icon = "";
+
+        if ( required ) {
+            icon = "<img src=/images/unresolved.png />"; //TODO JSON quote escaping
+        }
+
+        return icon;
     }
 
     private static class DependencyItemsRequest implements JSON.Convertible {
@@ -177,12 +187,13 @@ public class PolicyMigration extends EmsPage  {
         private String id;
         private String type;
         private String name;
-        private boolean optional;
+        @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
+        private String optional; // accessed via property model
 
         public DependencyItem(){
         }
 
-        public DependencyItem( final String id, final String type, final String name, final boolean optional ) {
+        public DependencyItem( final String id, final String type, final String name, final String optional ) {
             this.id = id;
             this.type = type;
             this.name = name;
@@ -191,7 +202,7 @@ public class PolicyMigration extends EmsPage  {
 
         @Override
         public String toString() {
-            return "DependencyItem[id='"+id+"'; type='"+type+"'; name='"+name+"'; optional="+optional+"]";
+            return "DependencyItem[id='"+id+"'; type='"+type+"'; name='"+name+"']";
         }
 
         @Override

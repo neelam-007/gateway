@@ -43,6 +43,7 @@ import java.util.logging.Level;
 
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
+import com.l7tech.server.ems.TypedPropertyColumn;
 
 /**
  * Wicket component for YUI table
@@ -576,6 +577,21 @@ public class YuiDataTable extends Panel {
                 output.add( "label", column.getDisplayModel().getObject() );
                 output.add( "sortable", column.isSortable() );
                 output.add( "resizeable", true );
+
+                if ( column instanceof TypedPropertyColumn ) {
+                    TypedPropertyColumn typedPropertyColumn = (TypedPropertyColumn) column;
+                    if ( typedPropertyColumn.getColumnClass() != null ) {
+                        if ( Date.class.isAssignableFrom(typedPropertyColumn.getColumnClass()) ) {
+                            output.add( "formatter", "ordered" );
+                            output.add( "sortOptions", Collections.singletonMap("sortFunction", "ordered") );
+                        } else if ( Level.class.isAssignableFrom(typedPropertyColumn.getColumnClass()) ) {
+                            output.add( "formatter", "ordered" );
+                            output.add( "sortOptions", Collections.singletonMap("sortFunction", "ordered") );
+                        } else if ( Number.class.isAssignableFrom(typedPropertyColumn.getColumnClass()) ) {
+                            output.add( "formatter", "number" );
+                        }
+                    }
+                }
             }
         }
 
@@ -618,7 +634,9 @@ public class YuiDataTable extends Panel {
                 } else {
                     String dataString = getConverter(object.getClass()).convertToString(object, null);
                     if ( dataString != null ) {
-                        dataString = Strings.escapeMarkup(dataString, false, false).toString();
+                        if ( !(column instanceof TypedPropertyColumn) || ((TypedPropertyColumn)column).isEscapePropertyValue() ) {
+                            dataString = Strings.escapeMarkup(dataString, false, false).toString();
+                        }
                     }
                     output.add( column.getPropertyExpression(), dataString);
                 }
