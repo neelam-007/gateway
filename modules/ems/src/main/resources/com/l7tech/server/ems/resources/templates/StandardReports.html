@@ -52,7 +52,9 @@
             STANDARD_MESSAGE_CONTEXT_MAPPING : 'Standard Mapping',
             CUSTOM_MESSAGE_CONTEXT_MAPPING : 'Custom Mapping',
             RELATIVE_TIME_PERIOD_HINT : 'Must be positive integer',
+            ABSOLUTE_TIME_PERIOD_HINT : 'From time must be earlier than To time',
             TIME_INTERVAL_HINT : 'Must be positive integer',
+            NUM_GROUPING_HINT : 'There must be at least one message context grouping for Usage Report.',
             SUBMITTING_GENERATE_REPORT : 'Submitting standard report generation',
             CANNOT_SUBMIT_GENERATE_REPORT : 'Failed to submit standard report generation: '
         }
@@ -91,8 +93,10 @@
         var relativeTimePeriodHint;
         var absoluteTimePeriodFromDateTextBox;
         var absoluteTimePeriodToDateTextBox;
+        var absoluteTimePeriodHint;
         var timeIntervalTextBox;
         var timeIntervalHint;
+        var groupingHint;
         var reportNameTextBox;
 
         var savedSettingsDropDown;
@@ -143,7 +147,7 @@
         var availableMessageContext;
 
         /**
-         * Verifies if relative time period input is valid and raise or clear any warning UI.
+         * Verifies if relative time period input is valid.
          * @return {boolean} true if valid
          */
         function validateRelativeTimePeriod() {
@@ -158,24 +162,35 @@
         }
 
         /**
-         * Verifies if absolute time period input is valid and raise or clear any warning UI.
+         * Verifies if absolute time period input is valid.
          * @return {boolean} true if valid
          */
         function validateAbsoluteTimePeriod() {
-            // TODO
-            return true;
+            var valid = false;
+            if (relativeTimePeriodRadioButton.checked) {
+                valid = true;
+            } else if (absoluteTimePeriodRadioButton.checked) {
+                if (absoluteTimePeriodFromDate == absoluteTimePeriodToDate) {
+                    var fromHour = absoluteTimePeriodFromHourDropDown.value;
+                    var toHour = absoluteTimePeriodToHourDropDown.value;
+                    valid = fromHour < toHour;
+                } else {
+                    valid = true;
+                }
+            }
+            return valid;
         }
 
         /**
-         * Verifies if time period input is valid and raise or clear any warning UI.
+         * Verifies if time period input is valid.
          * @return {boolean} true if valid
          */
         function validateTimePeriod() {
-            return validateRelativeTimePeriod() && validateAbsoluteTimePeriod();
+            return timePeriodTimeZoneDropDown.value != '' && validateRelativeTimePeriod() && validateAbsoluteTimePeriod();
         }
 
         /**
-         * Verifies if time interval input is valid and raise or clear any warning UI.
+         * Verifies if time interval input is valid.
          * @return {boolean} true if valid
          */
         function validateTimeInterval() {
@@ -218,19 +233,27 @@
                 var tr = trs[i];
                 valid = valid && validateGrouping(tr);
             }
+
+            if (reportTypeDropDown.value == ReportType.USAGE && trs.length == 0) {
+                groupingHint.innerHTML = '(' + localizedStrings.NUM_GROUPING_HINT + ')';
+                valid = false;
+            } else {
+                groupingHint.innerHTML = '';
+            }
+
             return valid;
         }
 
         /**
-         * Verifies if all settings input fields are valid and raise or clear any warning UI.
+         * Verifies if all settings input fields are valid.
          * @return {boolean} true if valid
          */
         function validateSettings() {
-            return entitySelectionTableBody.rows.length > 0 &&
+            var valid = validateGroupings();
+            return valid &&
+                   entitySelectionTableBody.rows.length > 0 &&
                    validateTimePeriod() &&
                    validateTimeInterval() &&
-                   validateGroupings() &&
-                   (reportTypeDropDown.value == ReportType.PERFORMANCE || groupingTableBody.rows.length > 0) &&
                    reportNameTextBox.value.search(/\S/) != -1;
         }
 
@@ -350,8 +373,25 @@
             updateGenerateButton();
         }
 
+        function onChangeAbsoluteTimePeriodFromDate() {
+            // TODO set mindate of To calendar
+            onChangeAbsoluteTimePeriod();
+        }
+
+        function onChangeAbsoluteTimePeriodToDate() {
+            // TODO set maxdate of From calendar
+            onChangeAbsoluteTimePeriod();
+        }
+
         function onChangeAbsoluteTimePeriod() {
-            // TODO
+            if (validateAbsoluteTimePeriod()) {
+                absoluteTimePeriodHint.innerHTML = '';
+            } else {
+                absoluteTimePeriodHint.innerHTML = '(' + localizedStrings.ABSOLUTE_TIME_PERIOD_HINT + ')';
+            }
+            updateSaveSettingsButton();
+            updateSaveDefaultButton();
+            updateGenerateButton();
         }
 
         function onChangeTimePeriodType() {
@@ -421,6 +461,7 @@
          */
         function setFieldsFromSettings(settings) {
             setReportType(settings.type);
+            // TODO
         }
 
         /**
@@ -453,9 +494,14 @@
                 settings.timePeriod.numberOfTimeUnits = relativeTimePeriodTextBox.value;
                 settings.timePeriod.unitOfTime = relativeTimePeriodUnitDropDown.value;
             } else if (settings.timePeriod.type == TimePeriodType.ABSOLUTE) {
-// TODO
-                settings.timePeriod.start = absoluteTimePeriodFromDate;
-                settings.timePeriod.end = absoluteTimePeriodToDate;
+                var fromDate = new Date();
+                fromDate.setTime(Date.parse(absoluteTimePeriodFromDate));
+                var fromHour = absoluteTimePeriodFromHourDropDown.value;
+                settings.timePeriod.start = l7.Util.formatDate(fromDate, 'yyyy/MM/dd') + ' ' + l7.Util.formatInteger(fromHour, 2) + ':00';
+                var toDate = new Date();
+                toDate.setTime(Date.parse(absoluteTimePeriodToDate));
+                var toHour = absoluteTimePeriodToHourDropDown.value;
+                settings.timePeriod.end = l7.Util.formatDate(toDate, 'yyyy/MM/dd') + ' ' + l7.Util.formatInteger(toHour, 2) + ':00';
             }
             if (noTimeIntervalRadioButton.checked) {
                 settings.timeInterval = null;
@@ -474,11 +520,7 @@
                 settings.groupings.push(grouping);
             }
             settings.summaryChart = summaryChartCheckBox.checked;
-            if (noTimeIntervalRadioButton.checked) {
-                settings.summaryReport = true;
-            } else {
-                settings.summaryReport = false;
-            }
+            settings.summaryReport = noTimeIntervalRadioButton.checked;
             settings.reportName = reportNameTextBox.value;
             return settings;
         }
@@ -919,16 +961,17 @@
         }
 
         function init() {
-            relativeTimePeriodRadioButton  = document.getElementById('relativeTimePeriodRadioButton');
+            relativeTimePeriodRadioButton      = document.getElementById('relativeTimePeriodRadioButton');
             relativeTimePeriodTextBox          = document.getElementById('relativeTimePeriodTextBox');
-            relativeTimePeriodHint         = document.getElementById('relativeTimePeriodHint');
-            relativeTimePeriodUnitDropDown = document.getElementById('relativeTimePeriodUnitDropDown');
-            absoluteTimePeriodRadioButton  = document.getElementById('absoluteTimePeriodRadioButton');
+            relativeTimePeriodHint             = document.getElementById('relativeTimePeriodHint');
+            relativeTimePeriodUnitDropDown     = document.getElementById('relativeTimePeriodUnitDropDown');
+            absoluteTimePeriodRadioButton      = document.getElementById('absoluteTimePeriodRadioButton');
             absoluteTimePeriodFromDateTextBox  = document.getElementById('absoluteTimePeriodFromDateTextBox');
             absoluteTimePeriodFromHourDropDown = document.getElementById('absoluteTimePeriodFromHourDropDown');
             absoluteTimePeriodToHourDropDown   = document.getElementById('absoluteTimePeriodToHourDropDown');
             absoluteTimePeriodToDateTextBox    = document.getElementById('absoluteTimePeriodToDateTextBox');
-            timePeriodTimeZoneDropDown = document.getElementById('timePeriodTimeZoneDropDown');
+            absoluteTimePeriodHint             = document.getElementById('absoluteTimePeriodHint');
+            timePeriodTimeZoneDropDown         = document.getElementById('timePeriodTimeZoneDropDown');
 
             hasTimeIntervalRadioButton = document.getElementById('hasTimeIntervalRadioButton');
             noTimeIntervalRadioButton  = document.getElementById('noTimeIntervalRadioButton');
@@ -943,6 +986,7 @@
             ssgClusterSelectorWindow        = document.getElementById('ssgClusterSelector').contentWindow;
             ssgClusterContentSelectorWindow = document.getElementById('ssgClusterServiceContentSelector').contentWindow;
             entitySelectionTableBody        = document.getElementById('entitySelectionTableBody');
+            groupingHint                    = document.getElementById('groupingHint');
             groupingTableBody               = document.getElementById('groupingTableBody');
             summaryChartCheckBox            = document.getElementById('summaryChartCheckBox');
             reportNameTextBox               = document.getElementById('reportNameTextBox');
@@ -1179,10 +1223,11 @@
                                                 <td class="middle"><input id="absoluteTimePeriodRadioButton" type="radio" name="timePeriodType" value="absolute" onclick="onChangeTimePeriodType();"/></td>
                                                 <td class="middle"><label for="absoluteTimePeriodRadioButton">From</label></td>
                                                 <td class="middle"><div wicket:id="fromDate"/></td>
-                                                <td class="middle"><select id="absoluteTimePeriodFromHourDropDown"></select></td>
+                                                <td class="middle"><select id="absoluteTimePeriodFromHourDropDown" onchange="onChangeAbsoluteTimePeriod();"></select></td>
                                                 <td class="middle">To</td>
                                                 <td class="middle"><div wicket:id="toDate"/></td>
-                                                <td class="middle"><select id="absoluteTimePeriodToHourDropDown"></select></td>
+                                                <td class="middle"><select id="absoluteTimePeriodToHourDropDown" onchange="onChangeAbsoluteTimePeriod();"></select></td>
+                                                <td class="middle"><span id="absoluteTimePeriodHint" class="red"></span></td>
                                             </tr>
                                         </table>
                                     </td>
@@ -1205,7 +1250,7 @@
                                             <tr>
                                                 <td class="middle"><input id="hasTimeIntervalRadioButton" type="radio" name="timeInterval" value="true" onclick="onChangeTimeInterval();"/></td>
                                                 <td class="middle"><label for="hasTimeIntervalRadioButton">Interval:</label></td>
-                                                <td class="middle"><input id="timeIntervalTextBox" class="right" type="text" size="9" maxlength="9" onkeyup="onChangeTimeInterval();"/></td>
+                                                <td class="middle"><input id="timeIntervalTextBox" class="right" type="text" size="9" maxlength="9" value="1" onkeyup="onChangeTimeInterval();"/></td>
                                                 <td class="middle">
                                                     <select id="timeIntervalUnitDropDown" name="timeIntervalUnit">
                                                         <option value="HOUR">hour</option>
@@ -1224,7 +1269,7 @@
                                         <div class="panel noMargin">
                                             <div class="panelToolbar">
                                                 <button id="addGroupingButton">Add Group by Message Context</button>
-                                                <span class="note">Note: There must be at least one message context group for Usage Report.</span>
+                                                <span id="groupingHint" class="red note"></span>
                                             </div>
                                             <div class="panelContent smallPadding">
                                                 <table class="dataTable">

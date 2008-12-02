@@ -2,6 +2,7 @@
  * @module l7
  * @namespace l7
  * @requires l7.css
+ * @requires YUI module "container", "event" if using l7.Widget
  * @requires YUI module "animation" if using l7.Resize
  * @requires YUI modules "button", "container", "json" if using l7.Dialog
  */
@@ -399,6 +400,64 @@ if (!l7.Util) {
         }
 
         /**
+         * Formats an integer into a string with leading zero padded to at least the specified number of digits.
+         * E.g., formatInteger(7, 3) results in "007".
+         * @static
+         * @param {integer} n
+         * @param {integer} numDigits
+         */
+        l7.Util.formatInteger = function(n, numDigits) {
+            var result = '' + n;
+            for (var i = numDigits - result.length; i > 0; --i) {
+                result = '0' + result;
+            }
+            return result;
+        }
+
+        /**
+         * Formats a date object into a string.
+         * @static
+         * @param {Date} date
+         * @param {string} format   "yyyy-MM-dd", "MMM d, yyyy", "MM/dd/yyyy", or "yyyy/MM/dd"
+         */
+        l7.Util.formatDate = function(date, format) {
+            var result = null;
+            if (format == 'yyyy-MM-dd') {
+                result = date.getFullYear() + '-'
+                       + l7.Util.formatInteger(date.getMonth(), 2) + '-'
+                       + l7.Util.formatInteger(date.getDate(), 2);
+            } else if (format == 'MMM d, yyyy') {
+                result = _monthShortNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+            } else if (format == 'MM/dd/yyyy') {
+                result = l7.Util.formatInteger(date.getMonth(), 2) + '/'
+                       + l7.Util.formatInteger(date.getDate(), 2) + '/'
+                       + date.getFullYear();
+            } else if (format == 'yyyy/MM/dd') {
+                result = date.getFullYear() + '/'
+                       + l7.Util.formatInteger(date.getMonth(), 2) + '/'
+                       + l7.Util.formatInteger(date.getDate(), 2);
+            }
+            return result;
+        }
+
+        /**
+         * @private
+         * @type array
+         */
+        var _monthShortNames = [
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+
+        /**
+         * Overrides default month short names for localization purpose.
+         * @static
+         * @param {array} names     array of strings
+         */
+        l7.Util.setMonthShortNames = function(names) {
+            _monthShortNames = names;
+        }
+
+        /**
          * Tests if an object literal is an l7-style exception object.
          * See http://sarek/mediawiki/index.php?title=Enterprise_Organization_LLD#JSON_format_for_exception.
          *
@@ -470,6 +529,7 @@ if (!l7.Widget) {
 
         /**
          * Initializes a drop down with selection for both 24- and 12-hour clock.
+         * The resulting selection values are integer 0 to 23.
          * @param {HTMLSelectElement} dropDown
          */
         l7.Widget.initHourlyDropDown = function(dropDown) {
@@ -494,6 +554,86 @@ if (!l7.Widget) {
                 optGroup.appendChild(option);
             }
             dropDown.appendChild(optGroup);
+        }
+
+        /**
+         * Turns a plain text input element into a date picker by popping up a
+         * calendar dialog whenever in focus.
+         * On return, the YAHOO.widget.Calendar object can be retrieved by calling
+         * textBox.getCalendar(). This is useful for localization or changing min/max dates (see YUI doc).
+         * Upon date change, the onkeyup event handler of textBox will be called.
+         * @static
+         * @param {HTMLInputElement} textBox    INPUT element of type="text"
+         * @param {string} format               "yyyy-MM-dd", "MMM d, yyyy", "MM/dd/yyyy", or "yyyy/MM/dd"
+         * @param {string|Date|null} minDate    can also be set later by calling textBox.getCalendar().cfg.setProperty('mindate', aDate)
+         * @param {string|Date|null} maxDate    can also be set later by calling textBox.getCalendar().cfg.setProperty('maxdate', aDate)
+         * @param {string|Date|null} selected   can also be set later by calling textBox.getCalendar().cfg.setProperty('selected', aDate)
+         * @param {string|null} title           dialog title HTML; null will default to "Choose a date:"
+         */
+        l7.Widget.initCalendarTextBox = function(textBox, format, minDate, maxDate, selected, title) {
+            var calendarDiv = document.createElement('div');
+            calendarDiv.style.border = 'none';
+            calendarDiv.style.cssFloat = 'none';    // Override: calender is float:left normally.
+            var calendar = new YAHOO.widget.Calendar(calendarDiv, {
+                iframe           : false,   // Because container has IFRAME support.
+                hide_blank_weeks : true,
+                mindate          : minDate,
+                maxdate          : maxDate,
+                selected         : selected
+            });
+            calendar.render();
+
+            var dialogHeadDiv = document.createElement('div');
+            dialogHeadDiv.className = 'hd';
+            dialogHeadDiv.innerHTML = title == null ? 'Choose a date:' : title;
+
+            var dialogBodyDiv = document.createElement('div');
+            dialogBodyDiv.className = 'bd';
+            dialogBodyDiv.style.padding = '0';
+            dialogBodyDiv.appendChild(calendarDiv);
+
+            var dialogDiv = document.createElement('div');
+            dialogDiv.appendChild(dialogHeadDiv);
+            dialogDiv.appendChild(dialogBodyDiv);
+            document.body.appendChild(dialogDiv);
+            var dialog = new YAHOO.widget.Dialog(dialogDiv, {
+                context   : [textBox, 'tl', 'bl'],
+                draggable : false,
+                close     : true
+            });
+            dialog.render();
+            dialog.hide();  // Using dialog.hide() instead of visible:false is a workaround for an IE6/7 container known issue with border-collapse:collapse.
+
+            calendar.renderEvent.subscribe(function(event) {
+                // Tell Dialog it's contents have changed, Currently used by container for IE6/Safari2 to sync underlay size.
+                dialog.fireEvent('changeContent');
+            });
+            calendar.selectEvent.subscribe(function(event) {
+                dialog.hide();
+                var date = calendar.getSelectedDates()[0];
+                textBox.value = l7.Util.formatDate(date, format);
+                textBox.onkeyup();
+            });
+
+            var mouseOverDialog = false;
+            YAHOO.util.Event.addListener(dialogDiv, 'mouseover', function() {
+                mouseOverDialog = true;
+            });
+            YAHOO.util.Event.addListener(dialogDiv, 'mouseout', function() {
+                mouseOverDialog = false;
+            });
+
+            YAHOO.util.Event.addListener(textBox, 'focus', function() {
+                calendar.render();          // mindate and maxdate may have changed
+                dialog.align('tl', 'bl');   // Why is this necessary?
+                dialog.show();
+            });
+            YAHOO.util.Event.addListener(textBox, 'blur', function() {
+                if (!mouseOverDialog) dialog.hide();
+            });
+
+            textBox.readOnly = true;
+            textBox.getCalendar = function() { return calendar; }
         }
 })();
 }
