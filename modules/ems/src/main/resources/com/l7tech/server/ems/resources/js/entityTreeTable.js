@@ -835,7 +835,7 @@ if (!l7.EntityTreeTable) {
             }
 
             /**
-             * Hide all rows except those entities at root level (i.e., those without parent).
+             * Hide all rows except those entities at tree level zero.
              * @public
              */
             this.collapseAll = function() {
@@ -845,7 +845,7 @@ if (!l7.EntityTreeTable) {
                         var toggler = entity._toggler;
                         toggler.src = l7.Util.getParent(toggler.src) + TOGGLER_COLLAPSED_IMG_NAME;
                     }
-                    if (entity.parentId != null) {
+                    if (entity._treeLevel > 0) {
                         entity._tr.style.display = 'none';
                     }
                 }
