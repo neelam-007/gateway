@@ -396,6 +396,12 @@
             updateGenerateButton();
         }
 
+        function onChangeTimePeriodTimeZone() {
+            updateSaveSettingsButton();
+            updateSaveDefaultButton();
+            updateGenerateButton();
+        }
+
         function onChangeTimePeriodType() {
             var isRelative = relativeTimePeriodRadioButton.checked;
             relativeTimePeriodTextBox.disabled = !isRelative;
@@ -1190,7 +1196,7 @@
                                     <th class="middle">Time Period:</th>
                                     <td class="middle">
                                         Time Zone: 
-                                        <select id="timePeriodTimeZoneDropDown" wicket:id="timezone">
+                                        <select id="timePeriodTimeZoneDropDown" wicket:id="timezone" onchange="onChangeTimePeriodTimeZone();">
                                             <option value="Canada/Pacific" selected="selected">Canada/Pacific (GMT-08:00/-07:00)</option>
                                         </select>
                                     </td>
