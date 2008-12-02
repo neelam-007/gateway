@@ -525,7 +525,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanVal
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.util.Date"><![CDATA[new Date()]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getCurrentDateAndTime($P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
@@ -1007,7 +1007,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.util.Date"><![CDATA[new Date()]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getCurrentDateAndTime($P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"

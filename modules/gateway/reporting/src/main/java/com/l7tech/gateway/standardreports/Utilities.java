@@ -12,6 +12,7 @@ import org.w3c.dom.*;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.text.MessageFormat;
+import java.text.DateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
@@ -24,8 +25,8 @@ import com.l7tech.util.TextUtils;
 
 public class Utilities {
 
+    public static final String REPORT_DISPLAY_DATE_STRING = "MMM dd, yyyy HH:mm";
     public static final String DATE_STRING = "yyyy/MM/dd HH:mm";
-    public static final String DATE_STRING_TIME_ZONE = "yyyy/MM/dd HH:mm z";
     private static final String HOUR_DATE_STRING = "HH:mm";
     private static final String DAY_HOUR_DATE_STRING = "MM/dd HH:mm";
     private static final String DAY_DATE_STRING = "E MM/dd";
@@ -270,7 +271,7 @@ public class Utilities {
      */
     public static String getMilliSecondAsStringDate(Long timeMilliSeconds, String timeZone){
         TimeZone tz = getTimeZone(timeZone);
-        SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_STRING);
+        SimpleDateFormat dateFormat = new SimpleDateFormat(REPORT_DISPLAY_DATE_STRING);
         dateFormat.setTimeZone(tz);
         //timezone not really needed as we don't modify the calendar with add() operations
         Calendar cal = Calendar.getInstance(tz);
@@ -1507,6 +1508,20 @@ Value is included in all or none, comment is just illustrative
                 "display string not found: " + displayString);
 
         return displayStringToMappingGroup.get(displayString);
+    }
+
+    /**
+     * Get the string to display to the user, for the time at which the report was ran
+     * @param timeZone
+     * @return
+     */
+    public static String getCurrentDateAndTime(String timeZone){
+        TimeZone tz = getTimeZone(timeZone);
+        Calendar cal = Calendar.getInstance(tz);
+        Date currentDate = cal.getTime();
+        DateFormat dateFormat = new SimpleDateFormat(REPORT_DISPLAY_DATE_STRING);
+        dateFormat.setTimeZone(tz);
+        return dateFormat.format(currentDate);
     }
 
     public static String getServiceDisplayString(String serviceName, String serviceRoutingURI){

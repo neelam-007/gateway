@@ -986,14 +986,16 @@ public class UtilitiesTest{
     public void testGetMilliSecondAsStringDate() throws Exception{
         String timeZone = "Canada/Pacific";
         TimeZone tz = Utilities.getTimeZone(timeZone);
-        
-        String date = "2008/10/13 16:38";
+
+        String parseDate = "2008/10/13 16:38";
+        String expectedDate = "Oct 13, 2008 16:38";
+        //MMM dd, yyyy HH:mm
         DATE_FORMAT.setTimeZone(tz);
-        Date d = DATE_FORMAT.parse(date);
+        Date d = DATE_FORMAT.parse(parseDate);
         long timeMili = d.getTime();
 
         String milliAsDate = Utilities.getMilliSecondAsStringDate(timeMili, timeZone);
-        Assert.assertTrue(date.equals(milliAsDate));
+        Assert.assertTrue("milliAsDate should equal: " + expectedDate+", actual value was: " + milliAsDate,expectedDate.equals(milliAsDate));
     }
 
     @Test
