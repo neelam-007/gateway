@@ -40,6 +40,7 @@
 
         /** Localized strings for local HTML markups, e.g., error dialogs. */
         var localizedStrings = {
+            ACCESSING_SERVER : 'Accessing server...',
             OK : 'OK',
             ERROR : 'Error',
             CANNOT_DOWNLOAD_ENTITY_DATA : 'Failed to get array of SSG Cluster entities from server: ',
@@ -129,6 +130,7 @@
         function loadSsgClusterContent(ssgCluster, entitiesWithTristateCheckbox, entitiesWithRadioButton) {
             var callback = {
                 success : function(o) {
+                    l7.Dialog.hideWaitDialog();
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
@@ -143,6 +145,7 @@
                     }
                 },
                 failure : function(o) {
+                    l7.Dialog.hideWaitDialog();
                     entityTreeTable.displayDataError();
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText, localizedStrings.OK);
                 }
@@ -154,6 +157,7 @@
             currentSsgCluster = ssgCluster;
             if (ssgCluster != null) {
                 var postData = 'ssgClusterId=' + ssgCluster.id;
+                l7.Dialog.showWaitDialog(localizedStrings.ACCESSING_SERVER);
                 YAHOO.util.Connect.asyncRequest('POST', clusterContentJasonUrl, callback, postData);
             }
         }
