@@ -453,20 +453,24 @@
                             </td>
                             <td class="dependencyExplorer">
                                 <div id="mappingCandidatesPagination" class="panelToolbar"></div>
-                                <table class="dataTable">
-                                    <thead>
-                                        <tr>
-                                            <th><!-- resolution status --></th>
-                                            <th>Name</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><input type="radio" /></td>
-                                            <td>lisa</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                <div wicket:id="dependencyOptionsContainer">
+                                    <table class="dataTable" wicket:id="dependencyOptions">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th>Name</th>
+                                                <th>Version</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr wicket:id="optionRepeater">
+                                                <td><option type="radio"/></td>
+                                                <td><div wicket:id="name"/></td>
+                                                <td><div wicket:id="type"/></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </td>
                         </tr>
                     </table>

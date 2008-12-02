@@ -228,17 +228,18 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
                 }
             }
 
+            var selectedValue = "";
+            if ( hasSelectedRows ) {
+                selectedValue = this.getRecord( selectedRows[0] ).getData(idProperty);
+            }
+
             var selectionControl = document.getElementById( selectionId );
             if ( selectionControl ) {
-                if ( hasSelectedRows ) {
-                    selectionControl.value = this.getRecord( selectedRows[0] ).getData(idProperty);
-                } else {
-                    selectionControl.value = "";
-                }
+                selectionControl.value = selectedValue;
+            }
 
-                if( selectionCallback ) {
-                    selectionCallback( selectionControl.value );
-                }
+            if( selectionCallback ) {
+                selectionCallback( selectedValue );
             }
         }
         

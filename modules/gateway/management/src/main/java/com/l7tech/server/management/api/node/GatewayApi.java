@@ -7,6 +7,7 @@ import java.util.Collection;
 import javax.jws.WebMethod;
 import javax.jws.WebResult;
 import javax.jws.WebService;
+import javax.jws.WebParam;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -25,7 +26,7 @@ public interface GatewayApi {
      */
     @WebMethod(operationName="GetEntityInfo")
     @WebResult(name="EntityInfos", targetNamespace="http://www.layer7tech.com/management/gateway")
-    Collection<EntityInfo> getEntityInfo(Collection<EntityType> entityTypes) throws GatewayException;
+    Collection<EntityInfo> getEntityInfo(  @WebParam(name="EntityTypes") Collection<EntityType> entityTypes) throws GatewayException;
     
     /**
      * Get information on the Cluster
@@ -182,6 +183,7 @@ public interface GatewayApi {
             this.version = version;
         }
 
+        @Override
         public int compareTo(Object o) {
             return name.compareTo(((EntityInfo)o).getName());
         }
