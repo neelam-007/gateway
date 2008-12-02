@@ -19,6 +19,7 @@ class YuiCommon {
     static final ResourceReference RES_CSS_SAM_DATATABLE = new CompressedResourceReference(YuiCommon.class, "../resources/yui/datatable/assets/skins/sam/datatable.css" );
     static final ResourceReference RES_CSS_SAM_CALENDAR = new CompressedResourceReference(YuiCommon.class, "../resources/yui/calendar/assets/skins/sam/calendar.css" );
     static final ResourceReference RES_CSS_SAM_CONTAINER = new CompressedResourceReference(YuiCommon.class, "../resources/yui/container/assets/skins/sam/container.css" );
+    static final ResourceReference RES_CSS_SAM_SKIN = new CompressedResourceReference(YuiCommon.class, "../resources/yui/assets/skins/sam/skin.css" );
 
     static final ResourceReference RES_JS_DOM_EVENT = new CompressedResourceReference(YuiCommon.class, "../resources/yui/yahoo-dom-event/yahoo-dom-event.js" );
     static final ResourceReference RES_JS_ANIMATION = new CompressedResourceReference(YuiCommon.class, "../resources/yui/animation/animation-min.js" );
@@ -35,6 +36,7 @@ class YuiCommon {
     static final ResourceReference RES_JS_JSON = new CompressedResourceReference(YuiCommon.class, "../resources/yui/json/json-min.js" );
     static final ResourceReference RES_JS_DOM = new CompressedResourceReference(YuiCommon.class, "../resources/yui/dom/dom-min.js" );
     static final ResourceReference RES_JS_CALENDAR = new CompressedResourceReference(YuiCommon.class, "../resources/yui/calendar/calendar-min.js" );
+    static final ResourceReference RES_JS_LOGGER = new CompressedResourceReference(YuiCommon.class, "../resources/yui/logger/logger-min.js" );
 
     static String toYuiDate( final Date date, final String timeZoneId ) {
         SimpleDateFormat format = new SimpleDateFormat(YUI_DATE_FORMAT);

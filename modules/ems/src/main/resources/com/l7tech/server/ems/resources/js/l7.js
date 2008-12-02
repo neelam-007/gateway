@@ -424,17 +424,17 @@ if (!l7.Util) {
             var result = null;
             if (format == 'yyyy-MM-dd') {
                 result = date.getFullYear() + '-'
-                       + l7.Util.formatInteger(date.getMonth(), 2) + '-'
+                       + l7.Util.formatInteger(date.getMonth() + 1, 2) + '-'
                        + l7.Util.formatInteger(date.getDate(), 2);
             } else if (format == 'MMM d, yyyy') {
                 result = _monthShortNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
             } else if (format == 'MM/dd/yyyy') {
-                result = l7.Util.formatInteger(date.getMonth(), 2) + '/'
+                result = l7.Util.formatInteger(date.getMonth() + 1, 2) + '/'
                        + l7.Util.formatInteger(date.getDate(), 2) + '/'
                        + date.getFullYear();
             } else if (format == 'yyyy/MM/dd') {
                 result = date.getFullYear() + '/'
-                       + l7.Util.formatInteger(date.getMonth(), 2) + '/'
+                       + l7.Util.formatInteger(date.getMonth() + 1, 2) + '/'
                        + l7.Util.formatInteger(date.getDate(), 2);
             }
             return result;

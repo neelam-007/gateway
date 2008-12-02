@@ -34,18 +34,43 @@ public class YuiDateSelector extends Panel {
      * @param maxDate Maximumn permitted date (may be null)
      */
     public YuiDateSelector( final String id, final Model model, final Date maxDate ) {
-        this( id, model, maxDate, false ) ;
+        this( id, null, model, maxDate, false ) ;
     }
 
     /**
      * Create a DateSelector with the given model.
-     * 
+     *
      * @param id The component identifier.
      * @param model The {@link java.util.Date Date} model.
      * @param maxDate Maximumn permitted date (may be null)
      * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
      */
     public YuiDateSelector( final String id, final Model model, final Date maxDate, final boolean ignoreFirstSelect ) {
+        this(id, null, model, maxDate, ignoreFirstSelect);
+    }
+
+    /**
+     * Create a DateSelector with the given model.
+     *
+     * @param id The component identifier.
+     * @param dateFieldMarkupId The html markup id of the date text field (may be null)
+     * @param model The {@link java.util.Date Date} model.
+     * @param maxDate Maximumn permitted date (may be null)
+     */
+    public YuiDateSelector( final String id, final String dateFieldMarkupId, final Model model, final Date maxDate ) {
+        this( id, dateFieldMarkupId, model, maxDate, false ) ;
+    }
+
+    /**
+     * Create a DateSelector with the given model.
+     * 
+     * @param id The component identifier.
+     * @param dateFieldMarkupId The html markup id of the date text field (may be null)
+     * @param model The {@link java.util.Date Date} model.
+     * @param maxDate Maximumn permitted date (may be null)
+     * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
+     */
+    public YuiDateSelector( final String id, final String dateFieldMarkupId, final Model model, final Date maxDate, final boolean ignoreFirstSelect ) {
         super( id, model );
 
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CONTAINER ) );
@@ -90,6 +115,9 @@ public class YuiDateSelector extends Panel {
                 };
             }
         };
+        if (dateFieldMarkupId != null && !dateFieldMarkupId.isEmpty()) {
+            textField.setMarkupId(dateFieldMarkupId);
+        }
         textField.setRequired(true);
         WebMarkupContainer calendarDiv = new WebMarkupContainer("calendar");
         WebMarkupContainer calendarBody = new WebMarkupContainer("calendar-body");        
