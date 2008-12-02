@@ -234,7 +234,9 @@
                 valid = valid && validateGrouping(tr);
             }
 
-            if (reportTypeDropDown.value == ReportType.USAGE && trs.length == 0) {
+            if (reportTypeDropDown.value == ReportType.USAGE &&
+                getEntityType() == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE &&
+                trs.length == 0) {
                 groupingHint.innerHTML = '(' + localizedStrings.NUM_GROUPING_HINT + ')';
                 valid = false;
             } else {
