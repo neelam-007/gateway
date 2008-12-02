@@ -41,6 +41,7 @@ public class EnterpriseSearchUsersPanel extends Panel {
         form.add(new YuiAjaxButton("button.searchUsers") {
             @Override
             protected void onSubmit(final AjaxRequestTarget target, final Form form) {
+                onSearch();
                 for (Component component : refreshComponents) {
                     target.addComponent(component);
                 }
@@ -48,6 +49,9 @@ public class EnterpriseSearchUsersPanel extends Panel {
         });
         
         add(form);
+    }
+
+    protected void onSearch() {
     }
 
     /**

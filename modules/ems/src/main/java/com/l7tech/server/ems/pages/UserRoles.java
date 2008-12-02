@@ -138,7 +138,12 @@ public class UserRoles extends EmsPage {
         buttonToUnassignRole.setEnabled(false);
         Panel assignedUserTable = getPlaceholderUserTablePanel(true);
         Panel searchAssignedUsersPanel = new EnterpriseSearchUsersPanel("panel.search.assignedUsers",
-            searchAssignedUsersModel, Collections.singleton(assignedUserTable));
+            searchAssignedUsersModel, Collections.singleton(assignedUsersRoleForm)){
+            @Override
+            protected void onSearch() {
+                rebuildSelectedUsers();
+            }
+        };
 
         assignedUsersRoleForm.add(buttonToUnassignRole);
         assignedUsersRoleForm.add(hiddenFieldForAssignedUser);
@@ -180,7 +185,12 @@ public class UserRoles extends EmsPage {
         buttonToAssignRole.setEnabled(false);
         Panel unassignedUserTable = getPlaceholderUserTablePanel(false);
         Panel searchUnassignedUsersPanel = new EnterpriseSearchUsersPanel("panel.search.unassignedUsers",
-            searchUnassignedUsersModel, Collections.singleton(unassignedUserTable));
+            searchUnassignedUsersModel, Collections.singleton(unassignedUsersRoleForm)){
+            @Override
+            protected void onSearch() {
+                rebuildSelectedUsers();
+            }
+        };
 
         unassignedUsersRoleForm.add(buttonToAssignRole);
         unassignedUsersRoleForm.add(hiddenFieldForUnassignedUser);
@@ -189,8 +199,8 @@ public class UserRoles extends EmsPage {
 
         // Step 4: create a container including all above components to manage roles.
         roleManagementContainer.add(roleDescriptionTextArea);
-        roleManagementContainer.add(assignedUsersRoleForm);
-        roleManagementContainer.add(unassignedUsersRoleForm);
+        roleManagementContainer.add(assignedUsersRoleForm.setOutputMarkupId(true));
+        roleManagementContainer.add(unassignedUsersRoleForm).setOutputMarkupId(true);
 
         // Initially, set the container to be invisible, since the components in the container display until the user
         // selects a role from the choice list.
