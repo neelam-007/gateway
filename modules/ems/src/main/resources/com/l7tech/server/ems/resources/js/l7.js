@@ -932,7 +932,11 @@ if (!l7.Dialog) {
                     buttons     : [
                         {
                             text      : 'OK',
-                            handler   : function() { this.hide(); },
+                            handler   : function() {
+                                this.hide();
+                                this.setBody('');       // This is to prevent the hidden dialog from
+                                this.moveTo(0, 0);      //     taking up phantom space.
+                            },
                             isDefault : true
                         }
                     ],
@@ -970,7 +974,11 @@ if (!l7.Dialog) {
                     buttons     : [
                         {
                             text      : 'OK',
-                            handler   : function() { this.hide(); },
+                            handler   : function() {
+                                this.hide();
+                                this.setBody('');       // This is to prevent the hidden dialog from
+                                this.moveTo(0, 0);      //     taking up phantom space.
+                            },
                             isDefault : true
                         }
                     ],
