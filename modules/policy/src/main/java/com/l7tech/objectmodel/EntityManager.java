@@ -4,6 +4,7 @@
 package com.l7tech.objectmodel;
 
 import java.util.Map;
+import java.util.Collection;
 
 /**
  * Interface for DAOs that provide CRUD services for {@link PersistentEntity} instances.
@@ -15,6 +16,18 @@ import java.util.Map;
 public interface EntityManager<ET extends PersistentEntity, HT extends EntityHeader>
         extends ReadOnlyEntityManager<ET,HT>
 {
+    @Override
+    ET findByPrimaryKey(long oid) throws FindException;
+
+    @Override
+    Collection<HT> findAllHeaders() throws FindException;
+
+    @Override
+    Collection<HT> findAllHeaders(int offset, int windowSize) throws FindException;
+
+    @Override
+    Collection<ET> findAll() throws FindException;
+
     long save(ET entity) throws SaveException;
 
     Integer getVersion( long oid ) throws FindException;
@@ -35,8 +48,6 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
      * @throws CacheVeto thrown by an implementor
      */
     public ET getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto;
-
-    Class<? extends Entity> getImpClass();
 
     Class<? extends Entity> getInterfaceClass();
 

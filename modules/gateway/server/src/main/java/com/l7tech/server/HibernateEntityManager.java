@@ -385,6 +385,42 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     /**
+     * Helper for implementing findHeaders in SearchableEntityProviders 
+     */
+    protected EntityHeaderSet<HT> doFindHeaders( final int offset, final int windowSize, final String filter, final String... filterProperties ) {
+        //noinspection unchecked
+        List<ET> entities = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            @Override
+            protected Object doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
+                Criteria crit = session.createCriteria(getImpClass());
+                crit.setFirstResult(offset);
+                crit.setFetchSize(windowSize);
+
+                Criterion likeRestriction = null;
+                for ( String filterProperty : filterProperties ) {
+                    if ( likeRestriction == null ) {
+                        likeRestriction = Restrictions.like( filterProperty, filter );
+                    } else {
+                        likeRestriction = Restrictions.or( likeRestriction, Restrictions.like( filterProperty, filter ));
+                    }
+                }
+
+                if ( likeRestriction != null ) {
+                    crit.add( likeRestriction );
+                }
+
+                return crit.list();
+            }
+        });
+
+        EntityHeaderSet<HT> headers = new EntityHeaderSet<HT>();
+        for (ET entity : entities) {
+            headers.add(newHeader(entity));
+        }
+        return headers;
+    }
+
+    /**
      * Override this method to customize how EntityHeaders get created
      * (if {@link HT} is a subclass of {@link EntityHeader} it's mandatory)
      *

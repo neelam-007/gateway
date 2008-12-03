@@ -20,7 +20,7 @@ public interface MigrationManager {
 
     public MigrationBundle exportBundle(Collection<EntityHeader> headers) throws MigrationException;
 
-    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables) throws MigrationException;
+    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables, String filter) throws MigrationException;
 
     public void importBundle(MigrationBundle bundle) throws MigrationException;
 }

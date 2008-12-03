@@ -8,7 +8,7 @@ import java.util.Collection;
 /**
  * @author alex
  */
-public interface ReadOnlyEntityManager<ET extends PersistentEntity, HT extends EntityHeader> {
+public interface ReadOnlyEntityManager<ET extends Entity, HT extends EntityHeader> {
     ET findByPrimaryKey(long oid) throws FindException;
 
     /**
@@ -24,4 +24,6 @@ public interface ReadOnlyEntityManager<ET extends PersistentEntity, HT extends E
      * @return A <code>Collection</code> of Entity objects.
      */
     Collection<ET> findAll() throws FindException;
+
+    Class<? extends Entity> getImpClass();    
 }

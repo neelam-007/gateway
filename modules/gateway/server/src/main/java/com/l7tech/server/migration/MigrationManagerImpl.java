@@ -39,6 +39,7 @@ public class MigrationManagerImpl implements MigrationManager {
         this.resolverFactory = resolverFactory;
     }
 
+    @Override
     public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
         logger.log(Level.FINEST, "Listing entities for class: {0}", clazz.getName());
         try {
@@ -48,7 +49,8 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
-    public MigrationMetadata findDependencies(Collection<EntityHeader> headers) throws MigrationException {
+    @Override
+    public MigrationMetadata findDependencies(Collection<EntityHeader> headers ) throws MigrationException {
         logger.log(Level.FINEST, "Finding dependencies for headers: {0}", headers);
         MigrationMetadata result = new MigrationMetadata();
         result.setHeaders(headers);
@@ -60,6 +62,7 @@ public class MigrationManagerImpl implements MigrationManager {
         return result;
     }
 
+    @Override
     public MigrationBundle exportBundle(final Collection<EntityHeader> headers) throws MigrationException {
         MigrationMetadata metadata = findDependencies(headers);
         MigrationBundle bundle = new MigrationBundle(metadata);
@@ -76,7 +79,8 @@ public class MigrationManagerImpl implements MigrationManager {
         return bundle;
     }
 
-    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables) throws MigrationException {
+    @Override
+    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables, String filter) throws MigrationException {
         logger.log(Level.FINEST, "Retrieving mapping candidates for {0}.", mappables);
         Map<EntityHeader,EntityHeaderSet> result = new HashMap<EntityHeader,EntityHeaderSet>();
 
@@ -94,6 +98,8 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
 
+    @Override
+    @Transactional(rollbackFor = Throwable.class)
     public void importBundle(MigrationBundle bundle) throws MigrationException {
         logger.log(Level.FINEST, "Importing bundle: {0}", bundle);
         MigrationErrors errors = validateBundle(bundle);

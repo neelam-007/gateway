@@ -453,7 +453,12 @@
                             </td>
                             <td class="dependencyExplorer">
                                 <div id="mappingCandidatesPagination" class="panelToolbar"></div>
-                                <div wicket:id="dependencyOptionsContainer">
+                                <form wicket:id="dependencyOptionsContainer">
+                                    Mapping <select wicket:id="dependencySearchManner"/>
+                                    :
+                                    <input type="text" wicket:id="dependencySearchText" value="" size="30" />
+                                    <button type="submit" wicket:id="dependencySearchButton">Search</button>
+
                                     <table class="dataTable" wicket:id="dependencyOptions">
                                         <thead>
                                             <tr>
@@ -470,7 +475,7 @@
                                             </tr>
                                         </tbody>
                                     </table>
-                                </div>
+                                </form>
                             </td>
                         </tr>
                     </table>

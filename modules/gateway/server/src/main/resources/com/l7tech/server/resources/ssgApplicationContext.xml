@@ -1269,6 +1269,14 @@
               <ref bean="emailListenerManager"/>
               <ref bean="jmsConnectionManager"/>
               <ref bean="jmsEndpointManager"/>
+              <bean class="com.l7tech.server.migration.IdentityEntityManager">
+                  <constructor-arg index="0" value="com.l7tech.identity.User"/>
+                  <constructor-arg index="1" ref="identityProviderFactory"/>
+              </bean>
+              <bean class="com.l7tech.server.migration.IdentityEntityManager">
+                  <constructor-arg index="0" value="com.l7tech.identity.Group"/>
+                  <constructor-arg index="1" ref="identityProviderFactory"/>
+              </bean>
           </list>
       </constructor-arg>
   </bean>

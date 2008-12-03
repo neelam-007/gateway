@@ -3,9 +3,10 @@
  */
 package com.l7tech.server.service;
 
-import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SearchableEntityManager;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.PublishedService;
 
@@ -14,7 +15,7 @@ import java.util.Collection;
 /**
  * Service API. Get instance of this through the Locator class.
  */
-public interface ServiceManager extends EntityManager<PublishedService, ServiceHeader> {
+public interface ServiceManager extends SearchableEntityManager<PublishedService, ServiceHeader>, EntityManager<PublishedService, ServiceHeader> {
     /**
      * Get what the server sees at that url.
      * Meant to be used by admin console entity.

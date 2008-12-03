@@ -65,16 +65,23 @@ public class ServiceManagerImp
         return new ServiceHeader( entity );   
     }
 
+    @Override
     @Transactional(propagation=SUPPORTS)
     public String resolveWsdlTarget(String url) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Collection<ServiceHeader> findAllHeaders(boolean includeAliases) throws FindException {
         Collection<ServiceHeader> origHeaders = super.findAllHeaders();
         if(!includeAliases) return origHeaders;
 
         return serviceAliasManager.expandEntityWithAliases(origHeaders);
+    }
+
+    @Override
+    public Collection<ServiceHeader> findHeaders(int offset, int windowSize, String filter) throws FindException {
+        return doFindHeaders( offset, windowSize, filter, "name", "routingUri" );
     }
 
     @Override
@@ -170,6 +177,7 @@ public class ServiceManagerImp
         return PublishedService.class;
     }
 
+    @Override
     @Transactional(propagation=SUPPORTS)
     public String getTableName() {
         return "published_service";
@@ -192,6 +200,7 @@ public class ServiceManagerImp
      * @param service      the PublishedService that is in need of a Role.  Must not be null.
      * @throws SaveException  if the new Role could not be saved
      */
+    @Override
     public void addManageServiceRole(PublishedService service) throws SaveException {
         User currentUser = JaasUtils.getCurrentUser();
 
@@ -277,6 +286,7 @@ public class ServiceManagerImp
         roleManager.save(newRole);
     }
 
+    @Override
     @Transactional(propagation = Propagation.SUPPORTS)
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.spring = applicationContext;

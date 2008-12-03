@@ -21,6 +21,7 @@ public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyE
     public ManagerPolicyCache() {
     }
 
+    @Override
     public Policy findByPrimaryKey(long oid) throws FindException {
         Policy p = cache.get(oid);
         if (p != null) return p;
@@ -33,6 +34,7 @@ public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyE
         return p;
     }
 
+    @Override
     public Policy findByGuid(String guid) throws FindException {
         Long oid = guidToOidMap.get(guid);
         if(oid == null) {
@@ -51,24 +53,34 @@ public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyE
         }
     }
 
+    @Override
     public Collection<EntityHeader> findAllHeaders() throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Collection<Policy> findAll() throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Collection<EntityHeader> findAllHeaders(int offset, int windowSize) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void notifyDelete( final EntityHeader entityHeader ) {
         invalidate( entityHeader );
     }
 
+    @Override
     public void notifyUpdate( final EntityHeader entityHeader ) {
         invalidate( entityHeader );
+    }
+
+    @Override
+    public Class<Policy> getImpClass() {
+        return Policy.class;
     }
 
     private void invalidate( final EntityHeader entityHeader ) {
