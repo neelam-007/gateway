@@ -16,6 +16,22 @@ var showing_dialog = null;
  * @param ignoreFirstSelect set true to suppress pop-up on first select (for form focus issue)
  */
 function initDateSelector( inputId, calContainerId, calBodyId, longDates, txtDate, enddate, ignoreFirstSelect ) {
+    initDateSelector( inputId, calContainerId, calBodyId, longDates, txtDate, null, enddate, ignoreFirstSelect );
+}
+
+/**
+ * Initialize a DateSelector
+ *
+ * @param inputId DOM id for related form text input control
+ * @param calContainerId DOM id for div holding the calendar.
+ * @param calBodyId DOM id for div holding the calendar body.
+ * @param longDates true to use the long date format
+ * @param txtDate the date to display (mm/dd/yyyy)
+ * @param startdate the lowest selectable date
+ * @param enddate the highest selectable date
+ * @param ignoreFirstSelect set true to suppress pop-up on first select (for form focus issue)
+ */
+function initDateSelector( inputId, calContainerId, calBodyId, longDates, txtDate, startdate, enddate, ignoreFirstSelect ) {
     var over_cal = false;
     var dialog, calendar;
 
@@ -88,7 +104,11 @@ function initDateSelector( inputId, calContainerId, calBodyId, longDates, txtDat
 
     var dateFormat = longDates ? emstdateFormat : emsdateFormat;
 
-    calendar = new YAHOO.widget.Calendar(calBodyId, {iframe:false,hide_blank_weeks:true,maxdate:enddate});
+    if (startdate != null) {
+        calendar = new YAHOO.widget.Calendar(calBodyId, {iframe:false,hide_blank_weeks:true,mindate:startdate,maxdate:enddate});
+    } else {
+        calendar = new YAHOO.widget.Calendar(calBodyId, {iframe:false,hide_blank_weeks:true,maxdate:enddate});
+    }
 
     dialog = new YAHOO.widget.Dialog(calContainerId, {
         context:[ inputId, "tl", "bl" ],
