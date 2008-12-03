@@ -12,10 +12,10 @@ public class FailoverStrategyFactory {
     /** fake server list for creating prototype strategy instances. */
     private static final String[] FS = new String[] { "a", "b", "c" };
 
-    public static final OrderedStickyFailoverStrategy ORDERED = new OrderedStickyFailoverStrategy(FS);
-    public static final StickyFailoverStrategy STICKY = new StickyFailoverStrategy(FS);
-    public static final RoundRobinFailoverStrategy ROBIN = new RoundRobinFailoverStrategy(FS);
-    public static final RandomFailoverStrategy RANDOM = new RandomFailoverStrategy(FS);
+    public static final OrderedStickyFailoverStrategy<?> ORDERED = new OrderedStickyFailoverStrategy<String>(FS);
+    public static final StickyFailoverStrategy<?> STICKY = new StickyFailoverStrategy<String>(FS);
+    public static final RoundRobinFailoverStrategy<?> ROBIN = new RoundRobinFailoverStrategy<String>(FS);
+    public static final RandomFailoverStrategy<?> RANDOM = new RandomFailoverStrategy<String>(FS);
 
     private static final FailoverStrategy[] STRATEGIES = new FailoverStrategy[] {
         ORDERED,
@@ -38,9 +38,9 @@ public class FailoverStrategyFactory {
      */
     public static <ST> FailoverStrategy<ST> createFailoverStrategy(String name, ST[] servers) {
         if (ORDERED.getName().equalsIgnoreCase(name)) return new OrderedStickyFailoverStrategy<ST>(servers);
-        if (STICKY.getName().equalsIgnoreCase(name)) return new StickyFailoverStrategy(servers);
-        if (ROBIN.getName().equalsIgnoreCase(name)) return new RoundRobinFailoverStrategy(servers);
-        if (RANDOM.getName().equalsIgnoreCase(name)) return new RandomFailoverStrategy(servers);
+        if (STICKY.getName().equalsIgnoreCase(name)) return new StickyFailoverStrategy<ST>(servers);
+        if (ROBIN.getName().equalsIgnoreCase(name)) return new RoundRobinFailoverStrategy<ST>(servers);
+        if (RANDOM.getName().equalsIgnoreCase(name)) return new RandomFailoverStrategy<ST>(servers);
         throw new IllegalArgumentException("Unknown failover strategy name: " + name);
     }
 }
