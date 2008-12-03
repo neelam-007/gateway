@@ -18,10 +18,6 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.lang.reflect.Method;
 
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -30,18 +26,15 @@ import org.springframework.transaction.annotation.Transactional;
  * @see com.l7tech.server.management.migration.MigrationManager
  * @author jbufu
  */
+@Transactional(rollbackFor = Throwable.class)
 public class MigrationManagerImpl implements MigrationManager {
 
     private static final Logger logger = Logger.getLogger(MigrationManagerImpl.class.getName());
 
-    private PlatformTransactionManager transactionManager;
-    private EntityFinder entityFinder;
     private EntityCrud entityCrud;
     private PropertyResolverFactory resolverFactory;
 
-    public MigrationManagerImpl(PlatformTransactionManager transactionManager, EntityFinder entityFinder, EntityCrud entityCrud, PropertyResolverFactory resolverFactory) {
-        this.entityFinder = entityFinder;
-        this.transactionManager = transactionManager;
+    public MigrationManagerImpl(EntityCrud entityCrud, PropertyResolverFactory resolverFactory) {
         this.entityCrud = entityCrud;
         this.resolverFactory = resolverFactory;
     }
@@ -49,7 +42,7 @@ public class MigrationManagerImpl implements MigrationManager {
     public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
         logger.log(Level.FINEST, "Listing entities for class: {0}", clazz.getName());
         try {
-            return entityFinder.findAll(clazz);
+            return entityCrud.findAll(clazz);
         } catch (FindException e) {
             throw new MigrationException("Error listing entities for " + clazz + " : " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
@@ -68,36 +61,19 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     public MigrationBundle exportBundle(final Collection<EntityHeader> headers) throws MigrationException {
-
-        final MigrationException[] thrown = new MigrationException[1];
-        MigrationBundle result = (MigrationBundle) new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
-            @Override
-            public Object doInTransaction(TransactionStatus transactionStatus) {
-                try {
-                    MigrationMetadata metadata = findDependencies(headers);
-                    MigrationBundle bundle = new MigrationBundle(metadata);
-                    for (EntityHeader header : metadata.getHeaders()) {
-                        if (metadata.isMappingRequired(header)) {
-                            logger.log(Level.FINEST, "Mapping required for {0}, not exporting.", header);
-                            continue;
-                        }
-
-                        Entity ent = loadEntity(header);
-                        logger.log(Level.FINE, "Entity value for header {0} : {1}", new Object[] {header.toStringVerbose(), ent});
-                        bundle.addExportedItem(new ExportedItem(header, ent));
-                    }
-                    return bundle;
-                } catch (MigrationException e) {
-                    thrown[0] = e;
-                    return null;
-                }
+        MigrationMetadata metadata = findDependencies(headers);
+        MigrationBundle bundle = new MigrationBundle(metadata);
+        for (EntityHeader header : metadata.getHeaders()) {
+            if (metadata.isMappingRequired(header)) {
+                logger.log(Level.FINEST, "Mapping required for {0}, not exporting.", header);
+                continue;
             }
-        });
 
-        if (thrown[0] != null)
-            throw thrown[0];
-        else
-            return result;
+            Entity ent = loadEntity(header);
+            logger.log(Level.FINE, "Entity value for header {0} : {1}", new Object[] {header.toStringVerbose(), ent});
+            bundle.addExportedItem(new ExportedItem(header, ent));
+        }
+        return bundle;
     }
 
     public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables) throws MigrationException {
@@ -106,7 +82,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
         for (EntityHeader header : mappables) {
             try {
-                EntityHeaderSet<EntityHeader> candidates = entityFinder.findAll(EntityHeaderUtils.getEntityClass(header));
+                EntityHeaderSet<EntityHeader> candidates = entityCrud.findAll(EntityHeaderUtils.getEntityClass(header));
                 logger.log(Level.FINEST, "Found {0} mapping candidates for header {1}.", new Object[]{candidates != null ? candidates.size() : 0,header});
                 result.put(header, candidates);
             } catch (FindException e) {
@@ -118,7 +94,6 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
 
-    @Transactional(rollbackFor = Throwable.class)
     public void importBundle(MigrationBundle bundle) throws MigrationException {
         logger.log(Level.FINEST, "Importing bundle: {0}", bundle);
         MigrationErrors errors = validateBundle(bundle);
@@ -139,10 +114,9 @@ public class MigrationManagerImpl implements MigrationManager {
                 // load it from the bundle
                 exportedItem = bundle.getExportedItem(header);
                 ent = exportedItem == null ? null : exportedItem.getValue();
-                if (ent == null) { // should have been caught by bundle validation
-                    logger.log(Level.WARNING, "Entity not found for header {0}. (unresolved mapping not validated?).", header);
-                    continue;
-                    // todo: throw new MigrationException("Entity not found for header {0}. (unresolved mapping not validated?).");
+                if (ent == null) {
+                    // should have been caught by bundle validation
+                    throw new MigrationException("Entity not found for header {0}. (unresolved mapping not validated?).");
                 }
                 entities.put(header, ent);
                 if (! bundle.getMetadata().isUploadedByParent(header))
@@ -272,7 +246,7 @@ public class MigrationManagerImpl implements MigrationManager {
     private Entity loadEntity(EntityHeader header) throws MigrationException {
         logger.log(Level.FINEST, "Loading entity for header: {0}", header);
         try {
-            Entity ent = entityFinder.find(header); // load the entity
+            Entity ent = entityCrud.find(header); // load the entity
             if (ent == null)
                 throw new MigrationException("Error loading the entity for header: " + header);
             return ent;

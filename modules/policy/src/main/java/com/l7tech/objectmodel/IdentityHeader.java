@@ -3,12 +3,20 @@
  */
 package com.l7tech.objectmodel;
 
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlAttribute;
+
 /**
  * Extends EntityHeader to include an Identity Provider OID.
  */
+@XmlRootElement
 public class IdentityHeader extends EntityHeader {
-    private final long providerOid;
+    private long providerOid;
     private String commonName = "";
+
+    @Deprecated // use for serialization only
+    protected IdentityHeader() {}
 
     public IdentityHeader(long providerOid, String identityId, EntityType type, String loginName, String description) {
         super(identityId, type, loginName, description);
@@ -31,11 +39,18 @@ public class IdentityHeader extends EntityHeader {
         this(providerOid, header.getStrId(), header.getType(), header.getName(), header.getDescription());
     }
 
+    @XmlAttribute
     public long getProviderOid() {
         return providerOid;
     }
 
-    //added for bug #5321
+    @Deprecated // use for serialization only
+    public void setProviderOid(long providerOid) {
+        this.providerOid = providerOid;
+    }
+
+    // /added for bug #5321
+    @XmlTransient
     public String getCommonName() {
         return commonName;
     }

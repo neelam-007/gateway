@@ -6,6 +6,7 @@ package com.l7tech.objectmodel;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
 
 /**
  * Header objects are used to refer to objects in find methods
@@ -14,6 +15,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @author flascelles
  */
 @XmlRootElement
+@XmlSeeAlso(IdentityHeader.class)
 public class EntityHeader extends EntityHeaderRef {
     public EntityHeader(String id, EntityType type, String name, String description) {
         super(type, id);

@@ -11,10 +11,12 @@ import java.util.Collection;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import org.springframework.transaction.annotation.Transactional;
+
 /**
- * 
  * @author jbufu
  */
+@Transactional( rollbackFor = Throwable.class)
 public class MigrationApiImpl implements MigrationApi {
 
     private static final Logger logger = Logger.getLogger(MigrationApiImpl.class.getName());
