@@ -39,7 +39,8 @@ public interface MigrationApi {
                                                             @WebParam(name="Filter") String filter ) throws MigrationException;
 
     @WebMethod(operationName="ImportBundle")
-    void importBundle( @WebParam(name="Bundle") MigrationBundle bundle ) throws MigrationException;
+    void importBundle( @WebParam(name="Bundle") MigrationBundle bundle,
+                       @WebParam(name="OverwriteExisting") boolean overwriteExisting ) throws MigrationException;
 
     @XmlRootElement(name="MappingCandidate", namespace="http://www.layer7tech.com/management/migration")
     final class MappingCandidate {

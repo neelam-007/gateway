@@ -22,5 +22,5 @@ public interface MigrationManager {
 
     public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables, String filter) throws MigrationException;
 
-    public void importBundle(MigrationBundle bundle) throws MigrationException;
+    public void importBundle(MigrationBundle bundle, boolean overwriteExisting) throws MigrationException;
 }

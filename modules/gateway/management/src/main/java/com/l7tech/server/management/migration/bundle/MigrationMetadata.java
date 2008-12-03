@@ -241,8 +241,8 @@ public class MigrationMetadata {
         getMappingsForTarget(target).addAll(mappings);
     }
 
-    public boolean isUploadedByParent(EntityHeader header) throws MigrationException {
-        for(MigrationMapping m : getMappingsForTarget(header)) {
+    public boolean isUploadedByParent(EntityHeaderRef headerRef) throws MigrationException {
+        for(MigrationMapping m : getMappingsForTarget(headerRef)) {
             if (m.isUploadedByParent())
                 return true;
         }

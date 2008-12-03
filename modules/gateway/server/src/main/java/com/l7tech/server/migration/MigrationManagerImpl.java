@@ -100,7 +100,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
     @Override
     @Transactional(rollbackFor = Throwable.class)
-    public void importBundle(MigrationBundle bundle) throws MigrationException {
+    public void importBundle(MigrationBundle bundle, boolean overwriteExisting) throws MigrationException {
         logger.log(Level.FINEST, "Importing bundle: {0}", bundle);
         MigrationErrors errors = validateBundle(bundle);
         if (! errors.isEmpty())
@@ -108,35 +108,47 @@ public class MigrationManagerImpl implements MigrationManager {
             // todo: enable strict validation : throw new MigrationException("Migration bundle validation failed.", errors);
 
         // load entities
-        Map<EntityHeaderRef, Entity> entities = new HashMap<EntityHeaderRef, Entity>();
-        Map<EntityHeader, Entity> entitiesToImport = new HashMap<EntityHeader, Entity>();
-        for (EntityHeader header : bundle.getMetadata().getHeaders()) {
-            ExportedItem exportedItem;
-            Entity ent;
+        Entity current, existing, fromBundle;
+        ExportedItem item;
+        Map<EntityHeaderRef, Entity> target,
+            allEntities = new HashMap<EntityHeaderRef, Entity>(),
+            newEntities = new HashMap<EntityHeaderRef, Entity>(),
+            updateEntities = new HashMap<EntityHeaderRef, Entity>();
+        MigrationMetadata metadata = bundle.getMetadata();
+        for (EntityHeader header : metadata.getHeaders()) {
+
             try {
-                // try the local ssg first
-                entities.put(header, loadEntity(header));
+                existing = loadEntity(header);
             } catch (MigrationException e) {
-                // load it from the bundle
-                exportedItem = bundle.getExportedItem(header);
-                ent = exportedItem == null ? null : exportedItem.getValue();
-                if (ent == null) {
-                    // should have been caught by bundle validation
-                    throw new MigrationException("Entity not found for header {0}. (unresolved mapping not validated?).");
-                }
-                entities.put(header, ent);
-                if (! bundle.getMetadata().isUploadedByParent(header))
-                    entitiesToImport.put(header, ent);
+                existing = null;
             }
+            item = bundle.getExportedItem(header);
+            fromBundle = item == null ? null : item.getValue();
+
+            // check
+            if (fromBundle == null && existing == null) {
+                throw new MigrationException("Entity not found for header {0}. (unresolved mapping not validated?).");
+            }
+
+            // which one?
+            current = existing == null ? fromBundle : overwriteExisting ? fromBundle : existing;
+            allEntities.put(header, current);
+
+            // where
+            target = existing == null ? newEntities : updateEntities;
+            target.put(header, current);
         }
 
         // apply mappings
         Entity sourceEntity, targetEntity;
-        for (EntityHeader header : entitiesToImport.keySet()) {
-            sourceEntity = entitiesToImport.get(header);
+        for (EntityHeaderRef header : allEntities.keySet()) {
+            if (!newEntities.containsKey(header) && !updateEntities.containsKey(header))
+                continue;
+
+            sourceEntity = newEntities.get(header);
             try {
-                for (MigrationMapping mapping : bundle.getMetadata().getMappingsForSource(header)) {
-                    targetEntity = entities.get(mapping.getTarget());
+                for (MigrationMapping mapping : metadata.getMappingsForSource(header)) {
+                    targetEntity = allEntities.get(mapping.getTarget());
                     PropertyResolver resolver = getResolver(sourceEntity, mapping.getPropName());
                     try {
                         resolver.applyMapping(sourceEntity, mapping.getPropName(), targetEntity);
@@ -154,12 +166,24 @@ public class MigrationManagerImpl implements MigrationManager {
             logger.log(Level.WARNING, "Errors while applying mappings for the entities to import.", errors);
             // todo: throw new MigrationException("Errors while applying mappings for the entities to import.", errors);
 
+        // todo: process folders
+        
         // upload
-        for (Entity entity : entitiesToImport.values()) {
+        for (EntityHeaderRef headerRef : newEntities.keySet()) {
             try {
-                entityCrud.save(entity);
+                if ( ! metadata.isUploadedByParent(headerRef) )
+                    entityCrud.save(newEntities.get(headerRef));
             } catch (SaveException e) {
-                throw new MigrationException("Import failed.", e);
+                throw new MigrationException("Import failed, save error.", e);
+            }
+        }
+        if (overwriteExisting) {
+            for (Entity entity : updateEntities.values()) {
+                try {
+                    entityCrud.update(entity);
+                } catch (UpdateException e) {
+                    throw new MigrationException("Import failed, update error", e);
+                }
             }
         }
     }

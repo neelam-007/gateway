@@ -68,9 +68,9 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public void importBundle(MigrationBundle bundle) throws MigrationException {
+    public void importBundle(MigrationBundle bundle, boolean overwriteExisting) throws MigrationException {
         try {
-            manager.importBundle(bundle);
+            manager.importBundle(bundle, overwriteExisting);
         } catch ( RuntimeException re ) {
             logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
             throw re;
