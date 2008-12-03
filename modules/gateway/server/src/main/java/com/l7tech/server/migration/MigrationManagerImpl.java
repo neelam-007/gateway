@@ -10,9 +10,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.*;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 import static com.l7tech.objectmodel.migration.MigrationException.*;
-import com.l7tech.server.EntityFinder;
-import com.l7tech.server.EntityHeaderUtils;
-import com.l7tech.server.EntityCrud;
+import com.l7tech.server.*;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
@@ -36,14 +34,16 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private static final Logger logger = Logger.getLogger(MigrationManagerImpl.class.getName());
 
-    private EntityFinder entityFinder;
     private PlatformTransactionManager transactionManager;
+    private EntityFinder entityFinder;
     private EntityCrud entityCrud;
+    private PropertyResolverFactory resolverFactory;
 
-    public MigrationManagerImpl(EntityFinder entityFinder, PlatformTransactionManager transactionManager, EntityCrud entityCrud) {
+    public MigrationManagerImpl(PlatformTransactionManager transactionManager, EntityFinder entityFinder, EntityCrud entityCrud, PropertyResolverFactory resolverFactory) {
         this.entityFinder = entityFinder;
         this.transactionManager = transactionManager;
         this.entityCrud = entityCrud;
+        this.resolverFactory = resolverFactory;
     }
 
     public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
@@ -123,20 +123,27 @@ public class MigrationManagerImpl implements MigrationManager {
         logger.log(Level.FINEST, "Importing bundle: {0}", bundle);
         MigrationErrors errors = validateBundle(bundle);
         if (! errors.isEmpty())
-            //logger.log(Level.WARNING, "Migration bundle validation failed.", errors);
-            throw new MigrationException("Migration bundle validation failed.", errors);
+            logger.log(Level.WARNING, "Migration bundle validation failed.", errors);
+            // todo: enable strict validation : throw new MigrationException("Migration bundle validation failed.", errors);
 
         // load entities
         Map<EntityHeaderRef, Entity> entities = new HashMap<EntityHeaderRef, Entity>();
         Map<EntityHeader, Entity> entitiesToImport = new HashMap<EntityHeader, Entity>();
         for (EntityHeader header : bundle.getMetadata().getHeaders()) {
+            ExportedItem exportedItem;
             Entity ent;
             try {
                 // try the local ssg first
                 entities.put(header, loadEntity(header));
             } catch (MigrationException e) {
                 // load it from the bundle
-                ent = bundle.getExportedItem(header).getValue();
+                exportedItem = bundle.getExportedItem(header);
+                ent = exportedItem == null ? null : exportedItem.getValue();
+                if (ent == null) { // should have been caught by bundle validation
+                    logger.log(Level.WARNING, "Entity not found for header {0}. (unresolved mapping not validated?).", header);
+                    continue;
+                    // todo: throw new MigrationException("Entity not found for header {0}. (unresolved mapping not validated?).");
+                }
                 entities.put(header, ent);
                 if (! bundle.getMetadata().isUploadedByParent(header))
                     entitiesToImport.put(header, ent);
@@ -150,7 +157,7 @@ public class MigrationManagerImpl implements MigrationManager {
             try {
                 for (MigrationMapping mapping : bundle.getMetadata().getMappingsForSource(header)) {
                     targetEntity = entities.get(mapping.getTarget());
-                    PropertyResolver resolver = MigrationUtils.getResolver(sourceEntity, mapping.getPropName());
+                    PropertyResolver resolver = getResolver(sourceEntity, mapping.getPropName());
                     try {
                         resolver.applyMapping(sourceEntity, mapping.getPropName(), targetEntity);
                     } catch (MigrationException e) {
@@ -164,8 +171,8 @@ public class MigrationManagerImpl implements MigrationManager {
             }
         }
         if (! errors.isEmpty())
-            //logger.log(Level.WARNING, "Errors while applying mappings for the entities to import.", errors);
-            throw new MigrationException("Errors while applying mappings for the entities to import.", errors);
+            logger.log(Level.WARNING, "Errors while applying mappings for the entities to import.", errors);
+            // todo: throw new MigrationException("Errors while applying mappings for the entities to import.", errors);
 
         // upload
         for (Entity entity : entitiesToImport.values()) {
@@ -175,6 +182,16 @@ public class MigrationManagerImpl implements MigrationManager {
                 throw new MigrationException("Import failed.", e);
             }
         }
+    }
+
+    private PropertyResolver getResolver(Entity sourceEntity, String propName) throws MigrationException {
+
+        PropertyResolver annotatedResolver = MigrationUtils.getResolver(sourceEntity, propName);
+
+        if (annotatedResolver != null && ! annotatedResolver.getClass().equals(DefaultEntityPropertyResolver.class))
+            return annotatedResolver;
+        else
+            return resolverFactory.getPropertyResolver(MigrationUtils.getTargetType(sourceEntity, propName));
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
@@ -197,7 +214,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
         // dependency-check covered by the above and mapping targets check below
 
-        // mapping requirements
+        // mapping requirements                                                                                                                                s
         for(MigrationMapping mapping : metadata.getMappings()) {
 
             // all headers present in the metadata
@@ -233,7 +250,7 @@ public class MigrationManagerImpl implements MigrationManager {
         }
         for (Method method : entity.getClass().getMethods()) {
             if (MigrationUtils.isDependency(method)) {
-                PropertyResolver resolver = MigrationUtils.getResolver(method);
+                PropertyResolver resolver = getResolver(entity, method.getName());
                 Map<EntityHeader, Set<MigrationMapping>> deps;
                 try {
                     deps = resolver.getDependencies(header, entity, method);

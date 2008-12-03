@@ -8,6 +8,7 @@ import com.l7tech.policy.wsp.*;
 import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.migration.Migration;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,6 +57,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
         }
     }
 
+    @Migration(dependency = false)
     public IdentityMapping[] getLookupAttributes() {
         return lookupAttributes;
     }

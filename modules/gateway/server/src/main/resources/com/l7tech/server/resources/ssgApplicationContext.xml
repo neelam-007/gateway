@@ -1273,10 +1273,15 @@
       </constructor-arg>
   </bean>
 
-  <bean id="migrationManager" class="com.l7tech.server.migration.MigrationManagerImpl">
+  <bean id="propertyResolverFactory" class="com.l7tech.server.migration.PropertyResolverFactory">
       <constructor-arg ref="entityFinder"/>
+  </bean>
+
+  <bean id="migrationManager" class="com.l7tech.server.migration.MigrationManagerImpl">
       <constructor-arg ref="transactionManager"/>
+      <constructor-arg ref="entityFinder"/>
       <constructor-arg ref="entityCrud"/>
+      <constructor-arg ref="propertyResolverFactory"/>
   </bean>
 
 </beans>

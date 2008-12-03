@@ -1,11 +1,15 @@
 package com.l7tech.objectmodel.migration;
 
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.objectmodel.EntityType;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
 public @interface Migration {
 
     /**
@@ -36,6 +40,11 @@ public @interface Migration {
      * @return DependencyResolver implementation for the annotated property.
      */
     Class<? extends PropertyResolver> resolver() default DefaultEntityPropertyResolver.class;
+
+    /**
+     * Specifies the entity type of the dependency that the annotated property points to.
+     */
+    EntityType targetType() default EntityType.ANY;
 
     /**
      * Specifies if the entity representing the target of the annotated property is uploaded

@@ -45,18 +45,34 @@ public class MigrationUtils {
 
     public static PropertyResolver getResolver(Entity sourceEntity, String propName) throws MigrationException {
 
-        // strip extra hints encoded with the property name
-        String name = propName;
-        int sep = propName.indexOf(":");
-        if ( sep > -1 )
-            name = propName.substring(0, sep);
-
+        String name = stripPropertyName(propName);
         Method method = getterForPropertyName(sourceEntity, name);
         if (method == null)
             throw new MigrationException("No getter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
 
         // we have the method, get the resolver for it (if it's a dependency etc)
         return getResolver(method);
+    }
+
+    private static String stripPropertyName(String propName) {
+        String name = propName;
+        int sep = propName.indexOf(":");
+        if ( sep > -1 )
+            name = propName.substring(0, sep);
+        return name;
+    }
+
+    public static EntityType getTargetType(Entity sourceEntity, String propName) throws MigrationException {
+        String name = stripPropertyName(propName);
+        Method method = getterForPropertyName(sourceEntity, name);
+        if (method == null)
+            throw new MigrationException("No getter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
+
+        // we have the method, get the target type for it
+        if (method.isAnnotationPresent(Migration.class))
+            return method.getAnnotation(Migration.class).targetType();
+        else
+            return EntityType.ANY;
     }
 
     private static Method methodForPropertyName(Object sourceEntity, String name) {
@@ -108,9 +124,9 @@ public class MigrationUtils {
     }
 
     /**
-     * Checks if the given method qualifies a dependency by default (i.e. without being annotated).
+     * Checks if the given method is a dependency that can be handled by the default property resolver.
      *
-     * This applies for methods with the return type one of:
+     * This applies for methods that are not explicitly marked as non-dependencies and with the return type one of:
      * <ul>
      * <li>Entity</li>
      * <li>EntityHeader</li>
@@ -126,6 +142,9 @@ public class MigrationUtils {
     public static boolean isDefaultDependency(Method property) {
 
         if (property == null) return false;
+
+        if (property.isAnnotationPresent(Migration.class) && ! property.getAnnotation(Migration.class).dependency())
+            return false;
 
         // returns an EntityHeader or Entity, or an array of either
         Class returnType = property.getReturnType();
@@ -178,5 +197,9 @@ public class MigrationUtils {
 
     public static boolean getUploadedByParent(Method property) {
         return property.isAnnotationPresent(Migration.class) && property.getAnnotation(Migration.class).uploadedByParent();
+    }
+
+    public static String propertyNameFromGetter(String getterName) {
+        return getterName == null ? null : getterName.startsWith("get") && getterName.length() > 3 ? getterName.substring(3, getterName.length()) : getterName;
     }
 }

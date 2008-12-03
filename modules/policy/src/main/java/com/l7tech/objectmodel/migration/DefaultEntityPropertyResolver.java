@@ -29,10 +29,8 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
             throw new IllegalArgumentException("Cannot handle property: " + property);
 
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
-        final boolean uploadedByParent =MigrationUtils.getUploadedByParent(property);
-
-        String getterName = property.getName();
-        String propName = getterName.startsWith("get") && getterName.length() > 3 ? getterName.substring(3, getterName.length()) : getterName;
+        final boolean uploadedByParent = MigrationUtils.getUploadedByParent(property);
+        String propName = MigrationUtils.propertyNameFromGetter(property.getName());
 
         final Object propertyValue;
         try {

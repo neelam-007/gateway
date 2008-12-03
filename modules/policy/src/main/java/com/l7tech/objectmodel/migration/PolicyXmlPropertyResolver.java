@@ -30,9 +30,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
         Assertion assertion = getRootAssertion(entity, property);
 
-        String getterName = property.getName();
-        String propName = getterName.startsWith("get") && getterName.length() > 3 ? getterName.substring(3, getterName.length()) : getterName;
-
+        String propName = MigrationUtils.propertyNameFromGetter(property.getName());
         Map<EntityHeader, Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
         getHeadersRecursive(source, assertion, result, propName);
 
@@ -79,6 +77,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
 
         // process direct dependencies of this assertion
         for (Method method : assertion.getClass().getMethods()) {
+            // todo: handle non-default dependencies here?
             if (MigrationUtils.isDefaultDependency(method)) {
                 Map<EntityHeader, Set<MigrationMapping>> deps = super.getDependencies(source, assertion, method);
                 for (EntityHeader depHeader : deps.keySet()) {

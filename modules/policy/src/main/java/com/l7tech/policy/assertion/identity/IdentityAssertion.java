@@ -6,6 +6,8 @@ package com.l7tech.policy.assertion.identity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesEntities;
 
@@ -44,6 +46,7 @@ public abstract class IdentityAssertion extends Assertion implements UsesEntitie
         return _identityProviderOid;
     }
 
+    @Migration(mapName = MigrationMappingSelection.REQUIRED)
     public EntityHeader[] getEntitiesUsed() {
         return new EntityHeader[] { new EntityHeader(Long.toString(_identityProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
     }

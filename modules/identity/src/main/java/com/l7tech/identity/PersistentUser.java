@@ -4,6 +4,9 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
@@ -57,6 +60,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
     /**
      * this is not persisted, it is set at run time by the provider who creates the object
      */
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, targetType = EntityType.ID_PROVIDER_CONFIG)
     @Transient
     public long getProviderId() {
         return providerOid;
