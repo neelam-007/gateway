@@ -127,9 +127,9 @@ public class StandardReports extends EmsPage  {
 
         final Date now = new Date();
         final YuiDateSelector fromDateField = new YuiDateSelector("fromDate", "absoluteTimePeriodFromDateTextBox",
-            new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), null, now);
+            new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(1))), null, now);
         final YuiDateSelector toDateField = new YuiDateSelector("toDate", "absoluteTimePeriodToDateTextBox",
-            new Model(new Date(now.getTime())), new Date(now.getTime() - TimeUnit.DAYS.toMillis(7)), now);
+            new Model(new Date(now.getTime())), new Date(now.getTime() - TimeUnit.DAYS.toMillis(1)), now);
 
         StringBuilder scriptBuilder = new StringBuilder();
         SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
