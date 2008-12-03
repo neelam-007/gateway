@@ -127,9 +127,9 @@ public class StandardReports extends EmsPage  {
 
         final Date now = new Date();
         final YuiDateSelector fromDateField = new YuiDateSelector("fromDate", "absoluteTimePeriodFromDateTextBox",
-            new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), now);
+            new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), null, now);
         final YuiDateSelector toDateField = new YuiDateSelector("toDate", "absoluteTimePeriodToDateTextBox",
-            new Model(new Date(now.getTime())), now);
+            new Model(new Date(now.getTime())), new Date(now.getTime() - TimeUnit.DAYS.toMillis(7)), now);
 
         StringBuilder scriptBuilder = new StringBuilder();
         SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
@@ -146,6 +146,9 @@ public class StandardReports extends EmsPage  {
                 // update the hidden form fields with the date in the expected format
                 SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
                 target.appendJavascript("absoluteTimePeriodFromDate = '"+format.format(fromDateField.getDateTextField().getModelObject())+"';");
+
+                toDateField.updateJavascriptLabelByDates((Date)fromDateField.getModelObject(), now);
+                target.addComponent(toDateField);
             }
         });
         toDateField.getDateTextField().add(new AjaxFormComponentUpdatingBehavior("onchange"){
@@ -154,11 +157,14 @@ public class StandardReports extends EmsPage  {
                 // update the hidden form fields with the date in the expected format
                 SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
                 target.appendJavascript("absoluteTimePeriodToDate = '"+format.format(toDateField.getDateTextField().getModelObject())+"';");
+
+                fromDateField.updateJavascriptLabelByDates(null, (Date)toDateField.getModelObject());
+                target.addComponent(fromDateField);
             }
         });
 
-        form.add( fromDateField );
-        form.add( toDateField );
+        form.add( fromDateField.setOutputMarkupId(true) );
+        form.add( toDateField.setOutputMarkupId(true) );
 
         add( form );
         add( script );

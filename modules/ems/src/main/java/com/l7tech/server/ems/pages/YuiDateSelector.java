@@ -34,7 +34,7 @@ public class YuiDateSelector extends Panel {
      * @param maxDate Maximumn permitted date (may be null)
      */
     public YuiDateSelector( final String id, final Model model, final Date maxDate ) {
-        this( id, null, model, maxDate, false ) ;
+        this(id, null, model, null, maxDate, false) ;
     }
 
     /**
@@ -45,20 +45,8 @@ public class YuiDateSelector extends Panel {
      * @param maxDate Maximumn permitted date (may be null)
      * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
      */
-    public YuiDateSelector( final String id, final Model model, final Date maxDate, final boolean ignoreFirstSelect ) {
-        this(id, null, model, maxDate, ignoreFirstSelect);
-    }
-
-    /**
-     * Create a DateSelector with the given model.
-     *
-     * @param id The component identifier.
-     * @param dateFieldMarkupId The html markup id of the date text field (may be null)
-     * @param model The {@link java.util.Date Date} model.
-     * @param maxDate Maximumn permitted date (may be null)
-     */
-    public YuiDateSelector( final String id, final String dateFieldMarkupId, final Model model, final Date maxDate ) {
-        this( id, dateFieldMarkupId, model, maxDate, false ) ;
+    public YuiDateSelector( final String id, final Model model, final Date maxDate, final boolean ignoreFirstSelect) {
+        this(id, null, model, null, maxDate, ignoreFirstSelect);
     }
 
     /**
@@ -67,11 +55,26 @@ public class YuiDateSelector extends Panel {
      * @param id The component identifier.
      * @param dateFieldMarkupId The html markup id of the date text field (may be null)
      * @param model The {@link java.util.Date Date} model.
+     * @param minDate Minimum permitted date (may be null)
+     * @param maxDate Maximumn permitted date (may be null)
+     */
+    public YuiDateSelector( final String id, final String dateFieldMarkupId, final Model model, final Date minDate, final Date maxDate) {
+        this(id, dateFieldMarkupId, model, minDate, maxDate, false) ;
+    }
+
+    /**
+     * Create a DateSelector with the given model.
+     *
+     * @param id The component identifier.
+     * @param dateFieldMarkupId The html markup id of the date text field (may be null)
+     * @param model The {@link java.util.Date Date} model.
+     * @param minDate Minimum permitted date (may be null)
      * @param maxDate Maximumn permitted date (may be null)
      * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
      */
-    public YuiDateSelector( final String id, final String dateFieldMarkupId, final Model model, final Date maxDate, final boolean ignoreFirstSelect ) {
-        super( id, model );
+    public YuiDateSelector(final String id, final String dateFieldMarkupId, final Model model, final Date minDate, final Date maxDate, final boolean ignoreFirstSelect) {
+        super(id, model);
+        this.ignoreFirstSelect = ignoreFirstSelect;
 
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CONTAINER ) );
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_BUTTON ) );
@@ -86,14 +89,12 @@ public class YuiDateSelector extends Panel {
 
         add( HeaderContributor.forJavaScript( new ResourceReference( YuiDataTable.class, "../resources/js/dateSelector.js" ) ) );
 
-        final EmsSession session = ((EmsSession) RequestCycle.get().getSession());
-        final String timeZoneId = session.getTimeZoneId();
-
-        DateTextField textField = new DateTextField("date", model) {
+        dateTextField = new DateTextField("date", model) {
             @Override
             public IConverter getConverter(final Class aClass) {
                 return new IConverter() {
                     public DateFormat getDateFormat() {
+                        EmsSession session = ((EmsSession) RequestCycle.get().getSession());
                         return session.buildDateFormat( false );
                     }
 
@@ -116,23 +117,69 @@ public class YuiDateSelector extends Panel {
             }
         };
         if (dateFieldMarkupId != null && !dateFieldMarkupId.isEmpty()) {
-            textField.setMarkupId(dateFieldMarkupId);
+            dateTextField.setMarkupId(dateFieldMarkupId);
         }
-        textField.setRequired(true);
-        WebMarkupContainer calendarDiv = new WebMarkupContainer("calendar");
-        WebMarkupContainer calendarBody = new WebMarkupContainer("calendar-body");        
+        dateTextField.setRequired(true);
+        calendarDiv = new WebMarkupContainer("calendar");
+        calendarBody = new WebMarkupContainer("calendar-body");
                 
-        textField.setOutputMarkupId(true);
+        dateTextField.setOutputMarkupId(true);
         calendarDiv.setOutputMarkupId(true);
         calendarBody.setOutputMarkupId(true);
                 
-        add( textField );
+        add( dateTextField );
         add( calendarDiv );
         calendarDiv.add( calendarBody );
         
+        add( buildJavascriptLabelByDates("javascript", minDate, maxDate) );
+    }
+
+    /**
+     * Access the underlying date text field to allow configuration of validation options.
+     *
+     * @return The date text field.
+     */
+    public DateTextField getDateTextField() {
+        return dateTextField;
+    }
+
+    /**
+     * Update the date selector if any of minDate and maxDate changed.
+     * @param newMinDate
+     * @param newMaxDate
+     */
+    public void updateJavascriptLabelByDates(Date newMinDate, Date newMaxDate) {
+        // If both have no change, then no need to update.
+        if (newMinDate == null && newMaxDate == null) {
+            return;
+        }
+
+        remove("javascript");
+        add(buildJavascriptLabelByDates("javascript", newMinDate, newMaxDate));
+    }
+
+    //- PRIVATE
+
+    private final DateTextField dateTextField;
+    private WebMarkupContainer calendarDiv;
+    private WebMarkupContainer calendarBody;
+    private boolean ignoreFirstSelect;
+
+    /**
+     * Create a label containing javascript of the date-selector setting
+     * 
+     * @param componentId
+     * @param minDate
+     * @param maxDate
+     * @return
+     */
+    private Label buildJavascriptLabelByDates(String componentId, Date minDate, Date maxDate) {
+        EmsSession session = ((EmsSession) RequestCycle.get().getSession());
+        String timeZoneId = session.getTimeZoneId();
+
         StringBuilder scriptBuilder = new StringBuilder();
         scriptBuilder.append("YAHOO.util.Event.onDOMReady( function(){ initDateSelector('");
-        scriptBuilder.append( textField.getMarkupId() );
+        scriptBuilder.append( dateTextField.getMarkupId() );
         scriptBuilder.append("', '");
         scriptBuilder.append( calendarDiv.getMarkupId() );
         scriptBuilder.append("', '");
@@ -145,8 +192,17 @@ public class YuiDateSelector extends Panel {
 
         // date selected
         scriptBuilder.append(", '");
-        scriptBuilder.append( YuiCommon.toYuiDate(((Date)model.getObject()), timeZoneId) );
+        scriptBuilder.append( YuiCommon.toYuiDate(((Date)dateTextField.getModelObject()), timeZoneId) );
         scriptBuilder.append("'");
+
+        // min date if any
+        if ( minDate != null ) {
+            scriptBuilder.append(", '");
+            scriptBuilder.append( YuiCommon.toYuiDate(minDate, timeZoneId) );
+            scriptBuilder.append("'");
+        } else {
+            scriptBuilder.append(", null");
+        }
 
         // max date if any
         if ( maxDate != null ) {
@@ -157,27 +213,12 @@ public class YuiDateSelector extends Panel {
             scriptBuilder.append(", null");
         }
         scriptBuilder.append(", ");
-        scriptBuilder.append( ignoreFirstSelect );                
+        scriptBuilder.append( ignoreFirstSelect );
         scriptBuilder.append("); });");
-        
+
         Label label = new Label("javascript", scriptBuilder.toString());
         label.setEscapeModelStrings(false);
-        
-        add( label );
 
-        this.dateTextField = textField;
+        return label;
     }
-
-    /**
-     * Access the underlying date text field to allow configuration of validation options.
-     *
-     * @return The date text field.
-     */
-    public DateTextField getDateTextField() {
-        return dateTextField;
-    }
-
-    //- PRIVATE
-
-    private final DateTextField dateTextField;
 }
