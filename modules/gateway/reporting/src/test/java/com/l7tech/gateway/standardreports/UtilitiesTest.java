@@ -722,6 +722,7 @@ public class UtilitiesTest{
 
         Calendar control = Calendar.getInstance(tz);
         control.set(Calendar.MINUTE, 0);
+        control.set(Calendar.SECOND, 0);
         control.set(Calendar.MILLISECOND, 0);
 
         Calendar cal = Utilities.getCalendarForTimeUnit(Utilities.UNIT_OF_TIME.HOUR, timeZone);
@@ -731,6 +732,7 @@ public class UtilitiesTest{
         control = Calendar.getInstance(tz);
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
+        control.set(Calendar.SECOND, 0);
         control.set(Calendar.MILLISECOND, 0);
         Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
@@ -738,6 +740,7 @@ public class UtilitiesTest{
         control = Calendar.getInstance(tz);
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
+        control.set(Calendar.SECOND, 0);
         control.set(Calendar.MILLISECOND, 0);
         Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
 
@@ -746,6 +749,7 @@ public class UtilitiesTest{
         control.set(Calendar.DAY_OF_MONTH, 1);
         control.set(Calendar.HOUR_OF_DAY, 0);
         control.set(Calendar.MINUTE, 0);
+        control.set(Calendar.SECOND, 0);
         control.set(Calendar.MILLISECOND, 0);
         Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
     }
@@ -1004,6 +1008,7 @@ public class UtilitiesTest{
         TimeZone tz = Utilities.getTimeZone(timeZone);
         Calendar calendar = Calendar.getInstance(tz);
         calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         long endTimeMilli = Utilities.getMillisForEndTimePeriod(Utilities.UNIT_OF_TIME.HOUR, timeZone);
         Assert.assertTrue(calendar.getTimeInMillis() == endTimeMilli);
@@ -1266,6 +1271,7 @@ public class UtilitiesTest{
         TimeZone tz = TimeZone.getTimeZone(timeZone);
         Calendar calendar = Calendar.getInstance(tz);
         calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
         calendar.add(Calendar.HOUR_OF_DAY, -1);
@@ -1279,6 +1285,7 @@ public class UtilitiesTest{
         //day
         calendar = Calendar.getInstance(tz);
         calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
 
@@ -1294,6 +1301,7 @@ public class UtilitiesTest{
         //week
         calendar = Calendar.getInstance(tz);
         calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
 
@@ -1304,6 +1312,7 @@ public class UtilitiesTest{
         //month
         calendar = Calendar.getInstance(tz);
         calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.DAY_OF_MONTH, 1);
@@ -1312,6 +1321,31 @@ public class UtilitiesTest{
         timeInPast = Utilities.getRelativeMilliSecondsInPast(2, Utilities.UNIT_OF_TIME.MONTH, timeZone);
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
     }
+
+    /**
+     * This test was written as the second value of the calendar inside of Utilities was not being set to 0, which
+     * was yielding inconsistent results in reports. This confirms that calling getRelativeMilliSecondsInPast will
+     * be consistent. This test will fail if it runs across midnight for the specified timezone
+     * @throws InterruptedException
+     */
+//    @Test
+//    public void testGetMilliSecondsInPastRepeatable() throws InterruptedException {
+//        long value = Utilities.getRelativeMilliSecondsInPast(1, Utilities.UNIT_OF_TIME.DAY, "Canada/Pacific");
+//        Calendar cal = Calendar.getInstance();
+//        cal.setTimeInMillis(value);
+//        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss:SS");
+//        String valueStr = dateFormat.format(cal.getTime());
+//        //11 ensure we go past the second boundary
+//        for(int i = 0; i < 11; i++){
+//            long testValue = Utilities.getRelativeMilliSecondsInPast(1, Utilities.UNIT_OF_TIME.DAY, "Canada/Pacific");
+//            Thread.sleep(100);
+//            cal.setTimeInMillis(testValue);
+//            String testStr = dateFormat.format(cal.getTime());
+//            Assert.assertTrue(i+
+//                    " Long values should match. Expected: " + value+"("+valueStr+") actual : " + testValue+"("+testStr+")"
+//                    , testValue == value);
+//        }
+//    }
 
     /**
      * Ensure for various start and end times, that the correct resolution is used in sql queries

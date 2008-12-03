@@ -572,6 +572,14 @@ public class JsonConversionTests {
     }
 
 
+    @Test
+    public void testUsage_OnlyMappingAuthUser() throws Exception {
+        Object o = JSON.parse(usageOnlyMappingIsAuthUser);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        convertor.getReportSubmissions(jsonMap, "Donal");
+    }
+
 
     private final static String psRelativeJsonSummary = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
@@ -783,12 +791,12 @@ public class JsonConversionTests {
             "        }," +
             "        {" +
             "            \"clusterId\"         : \""+cluster2+"\"," +
-            "            \"messageContextKey\" : \"auth_user_id\"," +
+            "            \"messageContextKey\" : \"AUTH_USER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"         : \""+cluster2+"\"," +
-            "            \"messageContextKey\" : \"auth_user_id\"," +
+            "            \"messageContextKey\" : \"AUTH_USER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "    ]," +
@@ -1041,6 +1049,61 @@ public class JsonConversionTests {
             "            \"clusterId\"         : \""+cluster2+"\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : false," +
+            "    \"reportName\" : \"My Report\"" +
+            "}";
+
+    private final static String usageOnlyMappingIsAuthUser = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229377\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"229378\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }" +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"timeZone\" : \"Europe/Paris\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"AUTH_USER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"AUTH_USER\"," +
+            "            \"constraint\"        : \"\"" +
             "        }," +
             "    ]," +
             "    \"summaryChart\" : true," +

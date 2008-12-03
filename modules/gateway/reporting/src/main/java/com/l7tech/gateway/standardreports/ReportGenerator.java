@@ -214,7 +214,7 @@ public class ReportGenerator {
         //Required
         parameters.put(ReportApi.ReportParameters.TEMPLATE_FILE_ABSOLUTE, "com/l7tech/gateway/standardreports/Styles.jrtx");
         parameters.put(ReportApi.ReportParameters.SUBREPORT_DIRECTORY, ".");
-        parameters.put(ReportApi.ReportParameters.HOURLY_MAX_RETENTION_NUM_DAYS, 32); // TODO serverconfig property?
+        parameters.put(ReportApi.ReportParameters.HOURLY_MAX_RETENTION_NUM_DAYS, 30); // TODO serverconfig property? - yes as it will affect report output, as hourly resolution may be chosen, which could yields no data if it's less than 30
 
         Map sMap = null;
         InputStream styleIn = null;

@@ -417,7 +417,7 @@ public class CreateTestData {
         }
 
         List<String> operations = ReportApp.loadListFromProperties("OPERATION", prop);
-        List<String> authenticatedUser = ReportApp.loadListFromProperties("AUTH_USER_ID", prop);
+        List<String> authenticatedUser = ReportApp.loadListFromProperties("AUTH_USER", prop);
         if(authenticatedUser.size() != 2) throw new IllegalArgumentException("Must be two and only two authenticated users");
 
         String nodeId = prop.getProperty(NODE_ID);

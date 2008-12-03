@@ -20,15 +20,15 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
     public Collection<ReportSubmissionClusterBean> getReportSubmissions(Map params, String reportRanBy) throws ReportException {
         validateParams(params);
 
-        Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getReportParams(params, reportRanBy);
+        Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getReportParams(params, reportRanBy);
 
         String reportName = (String) params.get(JSONConstants.REPORT_NAME);
         List<ReportSubmissionClusterBean> clusterBeans = new ArrayList<ReportSubmissionClusterBean>();
-        for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
+        for(Map.Entry<String, Map<String, ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
             ReportApi.ReportSubmission reportSub = new ReportApi.ReportSubmission();
             reportSub.setName(reportName);
             reportSub.setType(getReportType(params));
-            reportSub.setParameters(me.getValue());
+            reportSub.setParameters(me.getValue().values());
 
             ReportSubmissionClusterBean clusterBean = new ReportSubmissionClusterBean(me.getKey(), reportSub);
             clusterBeans.add(clusterBean);
@@ -36,7 +36,6 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
 
         return clusterBeans;
     }
-
 
     protected ReportApi.ReportType getReportType(Map params) throws ReportException {
 
@@ -46,13 +45,12 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         }else if(reportType.equals(JSONConstants.ReportType.USAGE)){
             return ReportApi.ReportType.USAGE_SUMMARY;
         }
-
         throw new ReportException("Unknown report type: " + reportType);
     }
 
-    protected Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getReportParams(Map params, String reportRanBy) throws ReportException {
+    protected Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> getReportParams(Map params, String reportRanBy) throws ReportException {
 
-        Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getClusterMaps(params);
+        Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getClusterMaps(params);
 
         //Time Period
         addTimeParameters(clusterToReportParams, params);
@@ -61,58 +59,27 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         ReportApi.ReportSubmission.ReportParam reportRanByParam = new ReportApi.ReportSubmission.ReportParam();
         reportRanByParam.setName(ReportApi.ReportParameters.REPORT_RAN_BY);
         reportRanByParam.setValue(reportRanBy);
-        addParamToAllClusters(clusterToReportParams, reportRanByParam);
+        addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.REPORT_RAN_BY, reportRanByParam);
 
-        Map<String, Boolean> clusterIdToIsDetailMap = getClusterToIsDetailMap(clusterToReportParams);
         //add mapping keys
-        addMappingKeysAndValues(clusterToReportParams, params, true, clusterIdToIsDetailMap);
+        addMappingKeysAndValues(clusterToReportParams, params);
 
         ReportApi.ReportSubmission.ReportParam printChartParam = new ReportApi.ReportSubmission.ReportParam();
         printChartParam.setName(ReportApi.ReportParameters.PRINT_CHART);
         printChartParam.setValue(params.get(JSONConstants.SUMMARY_CHART));
-        addParamToAllClusters(clusterToReportParams, printChartParam);
-
+        addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.PRINT_CHART, printChartParam);
         
         return clusterToReportParams;
     }
 
-    private Map<String, Boolean> getClusterToIsDetailMap(
-            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams) throws ReportException {
-        Map<String, Boolean> clusterIdToIsDetailMap = new HashMap<String, Boolean>();
-
-        for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
-            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = me.getValue();
-            boolean isDetail = false;
-            boolean found = false;
-            for(ReportApi.ReportSubmission.ReportParam param: reportParams){
-                if(param.getName().equals(ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP)){
-                    found = true;
-                    Map<String, Set<String>> serviceIdtoOps = (Map<String, Set<String>>) param.getValue();
-                    for(Map.Entry<String, Set<String>> sToIds: serviceIdtoOps.entrySet()){
-                        if(!sToIds.getValue().isEmpty()){
-                            isDetail = true;
-                        }
-                    }
-                }
-            }
-            if(!found){
-                throw new ReportException(
-                        ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP+ " parameter is missing for cluster: " + me.getKey());
-            }
-
-            clusterIdToIsDetailMap.put(me.getKey(), isDetail);
-        }
-
-        return clusterIdToIsDetailMap;
-    }
-
     protected void addParamToAllClusters(
-            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams,
+            Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> clusterToReportParams,
+            String paramName,
             ReportApi.ReportSubmission.ReportParam paramToAdd){
 
         for(String s: clusterToReportParams.keySet()){
-            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = clusterToReportParams.get(s);
-            reportParams.add(paramToAdd);
+            Map<String, ReportApi.ReportSubmission.ReportParam> reportParams = clusterToReportParams.get(s);
+            reportParams.put(paramName, paramToAdd);
         }
     }
     /**
@@ -121,10 +88,10 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
      * @return
      * @throws ReportApi.ReportException
      */
-    private Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getClusterMaps(Map params) throws ReportException {
+    private Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> getClusterMaps(Map params) throws ReportException {
 
-        Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> returnMap
-                = new HashMap<String, Collection<ReportApi.ReportSubmission.ReportParam>>();
+        Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> returnMap
+                = new HashMap<String, Map<String, ReportApi.ReportSubmission.ReportParam>>();
 
         Map<String, Map<String, Set<String>>> clusterIdToServicesAndOperations
                 = new HashMap<String, Map<String, Set<String>>>();
@@ -138,9 +105,8 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             validateSubMap(currentEntity, JSONConstants.ReportEntities.ALL_KEYS);
             String clusterId = (String) currentEntity.get(JSONConstants.ReportEntities.CLUSTER_ID);
             if(!returnMap.containsKey(clusterId)){
-                List<ReportApi.ReportSubmission.ReportParam> clusterParams =
-                        new ArrayList<ReportApi.ReportSubmission.ReportParam>();
-
+                Map<String, ReportApi.ReportSubmission.ReportParam>
+                        clusterParams = new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
                 returnMap.put(clusterId, clusterParams);
             }
 
@@ -176,8 +142,8 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             ReportApi.ReportSubmission.ReportParam serviceIdToOperationParam = new ReportApi.ReportSubmission.ReportParam();
             serviceIdToOperationParam.setName(ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP);
             serviceIdToOperationParam.setValue(serviceIdToOps);
-            Collection<ReportApi.ReportSubmission.ReportParam> clusterParams = returnMap.get(clusterId);
-            clusterParams.add(serviceIdToOperationParam);
+            Map<String, ReportApi.ReportSubmission.ReportParam> clusterParams = returnMap.get(clusterId);
+            clusterParams.put(ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP, serviceIdToOperationParam);
 
             //check if any operations are selected, if they are, then we have a detail query
             //todo [Donal] the Utility functions can determine this itself, create a utility function determine this
@@ -190,13 +156,26 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             ReportApi.ReportSubmission.ReportParam isDetailParam = new ReportApi.ReportSubmission.ReportParam();
             isDetailParam.setName(ReportApi.ReportParameters.IS_DETAIL);
             isDetailParam.setValue(isDetail);
-            clusterParams.add(isDetailParam);
+            clusterParams.put(ReportApi.ReportParameters.IS_DETAIL, isDetailParam);
+
+            //add the is ctx mapping param. At this point it should not exist, however testing for it in case
+            //program gets reordered
+            if(!clusterParams.containsKey(ReportApi.ReportParameters.IS_CONTEXT_MAPPING)){
+                ReportApi.ReportSubmission.ReportParam isCtxMappingParam = new ReportApi.ReportSubmission.ReportParam();
+                isCtxMappingParam.setName(ReportApi.ReportParameters.IS_CONTEXT_MAPPING);
+                isCtxMappingParam.setValue(isDetail);
+                clusterParams.put(ReportApi.ReportParameters.IS_CONTEXT_MAPPING, isCtxMappingParam);
+            }else{
+                ReportApi.ReportSubmission.ReportParam
+                        isCtxMappingParam = clusterParams.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING);
+                isCtxMappingParam.setValue(isDetail || (Boolean)isCtxMappingParam.getValue());
+            }
 
             Map<String, String> serviceIdToName = clusterIdToServiceIdsToNameMap.get(clusterId);
             ReportApi.ReportSubmission.ReportParam serviceNameParam = new ReportApi.ReportSubmission.ReportParam();
             serviceNameParam.setName(ReportApi.ReportParameters.SERVICE_ID_TO_NAME_MAP);
             serviceNameParam.setValue(serviceIdToName);
-            clusterParams.add(serviceNameParam);
+            clusterParams.put(ReportApi.ReportParameters.SERVICE_ID_TO_NAME_MAP, serviceNameParam);
         }
 
         return returnMap;
@@ -220,10 +199,8 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
      * @throws ReportApi.ReportException
      */
     private void addMappingKeysAndValues(
-            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams,
-            Map params,
-            boolean setIsContextMapping,
-            Map<String, Boolean> clusterToIsDetail) throws ReportException {
+            Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> clusterToReportParams,
+            Map params) throws ReportException {
         //MAPPING_KEYS
         Object [] groupings = (Object[]) params.get(JSONConstants.GROUPINGS);
         if(groupings.length == 0){
@@ -232,37 +209,41 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
                 throw new ReportException("Usage reports must have at least one grouping specified, per cluster");
             }
             
-            for(Map.Entry<String, Collection<ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
+            for(Map.Entry<String, Map<String, ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
                 //add default values
                 ReportApi.ReportSubmission.ReportParam mappingKeyParam = new ReportApi.ReportSubmission.ReportParam();
                 mappingKeyParam.setName(ReportApi.ReportParameters.MAPPING_KEYS);
                 mappingKeyParam.setValue(new ArrayList<String>());
-                me.getValue().add(mappingKeyParam);
+                me.getValue().put(ReportApi.ReportParameters.MAPPING_KEYS, mappingKeyParam);
 
                 ReportApi.ReportSubmission.ReportParam mappingValueParam = new ReportApi.ReportSubmission.ReportParam();
                 mappingValueParam.setName(ReportApi.ReportParameters.MAPPING_VALUES);
                 mappingValueParam.setValue(new ArrayList<String>());
-                me.getValue().add(mappingValueParam);
+                me.getValue().put(ReportApi.ReportParameters.MAPPING_VALUES, mappingValueParam);
 
                 ReportApi.ReportSubmission.ReportParam mappingValueEqualOrLikeParam = new ReportApi.ReportSubmission.ReportParam();
                 mappingValueEqualOrLikeParam.setName(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE);
                 mappingValueEqualOrLikeParam.setValue(new ArrayList<String>());
-                me.getValue().add(mappingValueEqualOrLikeParam);
+                me.getValue().put(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE, mappingValueEqualOrLikeParam);
 
                 ReportApi.ReportSubmission.ReportParam useUserParam = new ReportApi.ReportSubmission.ReportParam();
                 useUserParam.setName(ReportApi.ReportParameters.USE_USER);
                 useUserParam.setValue(false);
-                me.getValue().add(useUserParam);
+                me.getValue().put(ReportApi.ReportParameters.USE_USER, useUserParam);
 
                 ReportApi.ReportSubmission.ReportParam authenticatedUsersParam = new ReportApi.ReportSubmission.ReportParam();
                 authenticatedUsersParam.setName(ReportApi.ReportParameters.AUTHENTICATED_USERS);
                 authenticatedUsersParam.setValue(new ArrayList<String>());
-                me.getValue().add(authenticatedUsersParam);
+                me.getValue().put(ReportApi.ReportParameters.AUTHENTICATED_USERS, authenticatedUsersParam);
 
-                ReportApi.ReportSubmission.ReportParam isCtxMappingParam = new ReportApi.ReportSubmission.ReportParam();
-                isCtxMappingParam.setName(ReportApi.ReportParameters.IS_CONTEXT_MAPPING);
-                isCtxMappingParam.setValue(false);
-                me.getValue().add(isCtxMappingParam);
+                //It's possible that even though there are no groupings that is context mapping should be true, as
+                //operations may have been specified by the user. In this case only set the param, if it's not already set
+                if(!me.getValue().containsKey(ReportApi.ReportParameters.IS_CONTEXT_MAPPING)){
+                    ReportApi.ReportSubmission.ReportParam isCtxMappingParam = new ReportApi.ReportSubmission.ReportParam();
+                    isCtxMappingParam.setName(ReportApi.ReportParameters.IS_CONTEXT_MAPPING);
+                    isCtxMappingParam.setValue(false);
+                    me.getValue().put(ReportApi.ReportParameters.IS_CONTEXT_MAPPING, isCtxMappingParam);
+                }
             }
             return;
         }
@@ -297,7 +278,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             }
             String value = (String) currentGrouping.get(JSONConstants.ReportMappings.CONSTRAINT);
 
-            if(key.equals(JSONConstants.AUTH_USER_ID)){
+            if(key.equals(JSONConstants.AUTH_USER)){
                 clusterAuthUserSet.add(clusterFound);
                 Set<String> authUsers = clusterToAuthUsers.get(clusterFound);
                 if(!value.equals("") ) authUsers.add(value);
@@ -330,7 +311,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             if(!clusterToReportParams.containsKey(me.getKey())){
                 throw new ReportException("Unknown cluster: " + me.getKey() +" found in grouping JSON");
             }
-            Collection<ReportApi.ReportSubmission.ReportParam> clusterParams = clusterToReportParams.get(me.getKey());
+            Map<String, ReportApi.ReportSubmission.ReportParam> clusterParams = clusterToReportParams.get(me.getKey());
 
             Set<String> testKeySet = new HashSet<String>(me.getValue());
             if(testKeySet.size() != me.getValue().size()){
@@ -339,55 +320,77 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             ReportApi.ReportSubmission.ReportParam mappingKeyParam = new ReportApi.ReportSubmission.ReportParam();
             mappingKeyParam.setName(ReportApi.ReportParameters.MAPPING_KEYS);
             mappingKeyParam.setValue(me.getValue());
-            clusterParams.add(mappingKeyParam);
+            clusterParams.put(ReportApi.ReportParameters.MAPPING_KEYS, mappingKeyParam);
 
             List<String> mappingValues = clusterToValues.get(me.getKey());
             ReportApi.ReportSubmission.ReportParam mappingValueParam = new ReportApi.ReportSubmission.ReportParam();
             mappingValueParam.setName(ReportApi.ReportParameters.MAPPING_VALUES);
             mappingValueParam.setValue(mappingValues);
-            clusterParams.add(mappingValueParam);
+            clusterParams.put(ReportApi.ReportParameters.MAPPING_VALUES, mappingValueParam);
 
             List<String> mappingValuesEqualOrLike = clusterToValuesEqualOrLike.get(me.getKey());
             ReportApi.ReportSubmission.ReportParam mappingValueEqualOrLikeParam = new ReportApi.ReportSubmission.ReportParam();
             mappingValueEqualOrLikeParam.setName(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE);
             mappingValueEqualOrLikeParam.setValue(mappingValuesEqualOrLike);
-            clusterParams.add(mappingValueEqualOrLikeParam);
+            clusterParams.put(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE, mappingValueEqualOrLikeParam);
 
             boolean useUser = clusterAuthUserSet.contains(me.getKey());
             ReportApi.ReportSubmission.ReportParam useUserParam = new ReportApi.ReportSubmission.ReportParam();
             useUserParam.setName(ReportApi.ReportParameters.USE_USER);
             useUserParam.setValue(useUser);
-            clusterParams.add(useUserParam);
+            clusterParams.put(ReportApi.ReportParameters.USE_USER, useUserParam);
 
             //AUTHENTICATED_USERS
             List<String> authUsers = new ArrayList<String>(clusterToAuthUsers.get(me.getKey()));
             ReportApi.ReportSubmission.ReportParam authenticatedUsersParam = new ReportApi.ReportSubmission.ReportParam();
             authenticatedUsersParam.setName(ReportApi.ReportParameters.AUTHENTICATED_USERS);
             authenticatedUsersParam.setValue(authUsers);
-            clusterParams.add(authenticatedUsersParam);
+            clusterParams.put(ReportApi.ReportParameters.AUTHENTICATED_USERS, authenticatedUsersParam);
 
 
-            if(setIsContextMapping){
-                boolean isDetail = clusterToIsDetail.get(me.getKey());
-                boolean isContextMapping = (useUser || me.getValue().size() > 0 || isDetail);
+            boolean isContextMapping = (useUser || me.getValue().size() > 0);
+
+            //does the ctx mapping param already exist?
+            if(!clusterParams.containsKey(ReportApi.ReportParameters.IS_CONTEXT_MAPPING)){
                 ReportApi.ReportSubmission.ReportParam isCtxMappingParam = new ReportApi.ReportSubmission.ReportParam();
                 isCtxMappingParam.setName(ReportApi.ReportParameters.IS_CONTEXT_MAPPING);
                 isCtxMappingParam.setValue(isContextMapping);
-                clusterParams.add(isCtxMappingParam);
+                clusterParams.put(ReportApi.ReportParameters.IS_CONTEXT_MAPPING, isCtxMappingParam);
+            }else{
+                ReportApi.ReportSubmission.ReportParam
+                        isCtxMappingParam = clusterParams.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING);
+                isCtxMappingParam.setValue(isContextMapping || (Boolean)isCtxMappingParam.getValue());
             }
         }
+
 
         //Usage reports MUST have at least one grouping
         if(getReportType(params) == ReportApi.ReportType.USAGE_SUMMARY
                 || getReportType(params) == ReportApi.ReportType.USAGE_INTERVAL){
-            for(String s: clusterToReportParams.keySet()){
-                if(!clusterToKeys.containsKey(s)){
-                    throw new ReportException("Required cluster: " + s +" has no grouping infomration in JSON data");
+
+            for(Map.Entry<String, Map<String, ReportApi.ReportSubmission.ReportParam>> me:
+                    clusterToReportParams.entrySet()){
+
+                //check mapping_keys and use_user
+                ReportApi.ReportSubmission.ReportParam mappingKeysParam = me.getValue().get(ReportApi.ReportParameters.MAPPING_KEYS);
+                boolean mappingKeysOk = false;
+                if(mappingKeysParam != null){
+                    List<String> mappingKeys = (List<String>) mappingKeysParam.getValue();
+                    if(!mappingKeys.isEmpty()){
+                        mappingKeysOk = true;    
+                    }
+
                 }
 
-                List<String> mappingKeys = clusterToKeys.get(s);
-                if(mappingKeys == null || mappingKeys.isEmpty()){
-                    throw new ReportException("Cluster: " + s +" must have at least one mapping key specified in the JSON data");                    
+                ReportApi.ReportSubmission.ReportParam useUserParam = me.getValue().get(ReportApi.ReportParameters.USE_USER);
+
+                Boolean useUser = false;
+                if(useUserParam != null){
+                    useUser = (Boolean) useUserParam.getValue();    
+                }
+
+                if(!mappingKeysOk && !useUser){
+                    throw new ReportException("Cluster: " + me.getKey() +" must have at least one mapping key specified in the JSON data");                    
                 }
             }
         }
@@ -395,7 +398,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
     }
 
     private void addTimeParameters(
-            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params)
+            Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params)
             throws ReportException {
 
         Object o = params.get(JSONConstants.TimePeriodTypeKeys.TIME_PERIOD_MAIN);
@@ -415,14 +418,14 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         ReportApi.ReportSubmission.ReportParam timeZoneParam = new ReportApi.ReportSubmission.ReportParam();
         timeZoneParam.setName(ReportApi.ReportParameters.SPECIFIC_TIME_ZONE);
         timeZoneParam.setValue(timeZone);
-        addParamToAllClusters(clusterToReportParams, timeZoneParam);
+        addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.SPECIFIC_TIME_ZONE, timeZoneParam);
 
 
         if(type.equals(JSONConstants.TimePeriodTypeValues.RELATIVE)){
             isRelative.setValue(true);
             isAbsolute.setValue(false);
-            addParamToAllClusters(clusterToReportParams, isRelative);
-            addParamToAllClusters(clusterToReportParams, isAbsolute);
+            addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.IS_RELATIVE, isRelative);
+            addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.IS_ABSOLUTE, isAbsolute);
 
             validateSubMap(timePeriodMap, JSONConstants.TimePeriodRelativeKeys.ALL_KEYS);
 
@@ -435,19 +438,20 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             ReportApi.ReportSubmission.ReportParam relativeUnit = new ReportApi.ReportSubmission.ReportParam();
             relativeUnit.setName(ReportApi.ReportParameters.RELATIVE_TIME_UNIT);
             relativeUnit.setValue(unitType);
-            addParamToAllClusters(clusterToReportParams, relativeUnit);
+            addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.RELATIVE_TIME_UNIT, relativeUnit);
 
             String numberOfTimeUnits = (String) timePeriodMap.get(JSONConstants.TimePeriodRelativeKeys.NUMBER_OF_TIME_UNITS);
             ReportApi.ReportSubmission.ReportParam numberRelativeTimeUnits = new ReportApi.ReportSubmission.ReportParam();
             numberRelativeTimeUnits.setName(ReportApi.ReportParameters.RELATIVE_NUM_OF_TIME_UNITS);
             numberRelativeTimeUnits.setValue(Integer.valueOf(numberOfTimeUnits));
-            addParamToAllClusters(clusterToReportParams, numberRelativeTimeUnits);
+            addParamToAllClusters(clusterToReportParams,
+                    ReportApi.ReportParameters.RELATIVE_NUM_OF_TIME_UNITS, numberRelativeTimeUnits);
 
         }else if(type.equals(JSONConstants.TimePeriodTypeValues.ABSOLUTE)){
             isRelative.setValue(false);
             isAbsolute.setValue(true);
-            addParamToAllClusters(clusterToReportParams, isRelative);
-            addParamToAllClusters(clusterToReportParams, isAbsolute);
+            addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.IS_RELATIVE, isRelative);
+            addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.IS_ABSOLUTE, isAbsolute);
 
             validateSubMap(timePeriodMap, JSONConstants.TimePeriodAbsoluteKeys.ALL_KEYS);
 
@@ -462,7 +466,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             ReportApi.ReportSubmission.ReportParam absoluteStartTimeParam = new ReportApi.ReportSubmission.ReportParam();
             absoluteStartTimeParam.setName(ReportApi.ReportParameters.ABSOLUTE_START_TIME);
             absoluteStartTimeParam.setValue(startTime);
-            addParamToAllClusters(clusterToReportParams, absoluteStartTimeParam);
+            addParamToAllClusters(clusterToReportParams,ReportApi.ReportParameters.ABSOLUTE_START_TIME,  absoluteStartTimeParam);
 
             String endTime = (String) timePeriodMap.get(JSONConstants.TimePeriodAbsoluteKeys.END);
             try{
@@ -475,7 +479,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             ReportApi.ReportSubmission.ReportParam absoluteEndTimeParam = new ReportApi.ReportSubmission.ReportParam();
             absoluteEndTimeParam.setName(ReportApi.ReportParameters.ABSOLUTE_END_TIME);
             absoluteEndTimeParam.setValue(endTime);
-            addParamToAllClusters(clusterToReportParams, absoluteEndTimeParam);
+            addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.ABSOLUTE_END_TIME, absoluteEndTimeParam);
         }else{
             throw new ReportException("Invalid json value for key:" + JSONConstants.TimePeriodTypeKeys.TYPE);
         }

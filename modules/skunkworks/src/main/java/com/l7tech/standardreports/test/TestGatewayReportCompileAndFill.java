@@ -333,7 +333,35 @@ public class TestGatewayReportCompileAndFill {
         DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
         dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
     }
-    
+
+    @Test
+    public void testReport_RutimeData() throws Exception {
+
+        Object o = JSON.parse(runTimeOpData);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(submission.getType(), reportParams, ReportApp.getConnection(prop));
+
+        ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+
+        Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
+        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+
+        DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+    }
+
+
+
     private final static String clusterId = "f7f6bf457e1346e5a842efc7f5aff75d";
     
     private final static String psRelativeJsonIntervalTest = "{\"reportType\":\"performance\",    " +
@@ -827,5 +855,7 @@ public class TestGatewayReportCompileAndFill {
             "    \"summaryReport\" : false," +
             "    \"reportName\" : \"Usage_Interval_NoData_Report\"" +
             "}";
+
     
+    private final static String runTimeOpData = "{\"entities\":[{\"clusterId\":\"5495af4d-ccc8-48c5-b92e-fa1a635ec2b7\",\"operation\":\"listProducts\",\"publishedServiceId\":\"360448\",\"publishedServiceName\":\"Warehouse Name 1 [/Routing uri 1]\"},{\"clusterId\":\"5495af4d-ccc8-48c5-b92e-fa1a635ec2b7\",\"operation\":\"listProducts\",\"publishedServiceId\":\"360449\",\"publishedServiceName\":\"Warehouse Service 2 [/Routing URI 2]\"}],\"entityType\":\"operation\",\"groupings\":[],\"reportName\":\"PS_Test_16_Ops\",\"reportType\":\"performance\",\"summaryChart\":true,\"summaryReport\":true,\"timeInterval\":null,\"timePeriod\":{\"numberOfTimeUnits\":\"1\",\"timeZone\":\"Canada/Pacific\",\"type\":\"relative\",\"unitOfTime\":\"DAY\"}}";    
 }

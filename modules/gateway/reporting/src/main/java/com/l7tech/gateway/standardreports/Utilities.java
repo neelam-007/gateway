@@ -368,6 +368,7 @@ public class Utilities {
         }
 
         calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
         //if the unit is month we also want to set the calendar at the start of this month, end time is exclusive

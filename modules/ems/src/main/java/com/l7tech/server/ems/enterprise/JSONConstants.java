@@ -209,7 +209,7 @@ public final class JSONConstants {
     public final static String REPORT_ENTITIES = "entities";
     public static final String GROUPINGS = "groupings";
 
-    public static final String AUTH_USER_ID = "auth_user_id";
+    public static final String AUTH_USER = "AUTH_USER";
 
     public static final String SUMMARY_CHART = "summaryChart";
 

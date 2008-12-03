@@ -19,6 +19,8 @@ import com.l7tech.server.ems.enterprise.JSONException;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * JSON Post interaction is a component that provides a JavaScript URL to which JSON data can be uploaded as the body
@@ -30,6 +32,7 @@ import java.util.Map;
  * </em>
  */
 public class JsonPostInteraction extends Panel {
+    private static final Logger logger = Logger.getLogger(JsonPostInteraction.class.getName());    
 
     //- PUBLIC
 
@@ -54,6 +57,7 @@ public class JsonPostInteraction extends Panel {
                     ServletInputStream inputStream = webRequest.getHttpServletRequest().getInputStream();
                     String input = new String(IOUtils.slurpStream(inputStream, 10000), "utf-8");
                     provider.setData(input);
+                    logger.log(Level.FINER, "Received JSON data: " + input);
                 } catch (IOException e) {
                     JSONException jsonException = new JSONException(e.getCause());
                     provider.setData(jsonException);

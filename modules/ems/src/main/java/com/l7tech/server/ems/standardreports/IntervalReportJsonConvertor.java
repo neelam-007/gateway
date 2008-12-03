@@ -36,8 +36,8 @@ public class IntervalReportJsonConvertor extends SummaryReportJsonConvertor {
      * @throws ReportApi.ReportException
      */
     @Override
-    protected Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> getReportParams(Map params, String reportRanBy) throws ReportException {
-        Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = super.getReportParams(params, reportRanBy);
+    protected Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> getReportParams(Map params, String reportRanBy) throws ReportException {
+        Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = super.getReportParams(params, reportRanBy);
         addIntervalTimeParameters(clusterToReportParams, params);
 
         return clusterToReportParams;
@@ -56,7 +56,7 @@ public class IntervalReportJsonConvertor extends SummaryReportJsonConvertor {
     }
 
     private void addIntervalTimeParameters(
-            Map<String, Collection<ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params)
+            Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> clusterToReportParams, Map params)
             throws ReportException {
 
         Object o = params.get(JSONConstants.TimePeriodTypeKeys.TIME_INTERVAL);
@@ -73,13 +73,13 @@ public class IntervalReportJsonConvertor extends SummaryReportJsonConvertor {
         ReportApi.ReportSubmission.ReportParam intervalTimeUnitParam = new ReportApi.ReportSubmission.ReportParam();
         intervalTimeUnitParam.setName(ReportApi.ReportParameters.INTERVAL_TIME_UNIT);
         intervalTimeUnitParam.setValue(unitType);
-        addParamToAllClusters(clusterToReportParams, intervalTimeUnitParam);
+        addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.INTERVAL_TIME_UNIT, intervalTimeUnitParam);
 
         String numberOfIntervalUnits = (String) timeIntervalMap.get(JSONConstants.TimePeriodIntervalKeys.NUMBER_OF_INTERVAL_TIME_UNITS);
         ReportApi.ReportSubmission.ReportParam numberIntervalTimeUnitsParam = new ReportApi.ReportSubmission.ReportParam();
         numberIntervalTimeUnitsParam.setName(ReportApi.ReportParameters.INTERVAL_NUM_OF_TIME_UNITS);
         numberIntervalTimeUnitsParam.setValue(Integer.valueOf(numberOfIntervalUnits));
-        addParamToAllClusters(clusterToReportParams, numberIntervalTimeUnitsParam);
+        addParamToAllClusters(clusterToReportParams, ReportApi.ReportParameters.INTERVAL_NUM_OF_TIME_UNITS, numberIntervalTimeUnitsParam);
 
     }
 
