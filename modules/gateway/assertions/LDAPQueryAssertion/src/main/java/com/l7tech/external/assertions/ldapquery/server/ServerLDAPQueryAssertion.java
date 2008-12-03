@@ -149,6 +149,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 ldapcontext = idprov.getBrowseContext();
                 SearchControls sc = new SearchControls();
                 sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                sc.setReturningAttributes(assertion.getAttrNames());
                 answer = ldapcontext.search(((LdapIdentityProviderConfig) idprov.getConfig()).getSearchBase(), filter, sc);
 
                 if (answer.hasMore()) {
