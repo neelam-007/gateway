@@ -92,6 +92,7 @@
 
                 <!-- Enterprise Migration -->
                 <value>com.l7tech.server.ems.migration.Migration</value>
+                <value>com.l7tech.server.ems.migration.MigrationMapping</value>
 
                 <!-- General -->
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
@@ -459,8 +460,12 @@
     <!-- SSG Node Manager -->
     <bean id="ssgNodeManager" class="com.l7tech.server.ems.enterprise.SsgNodeManagerImpl" parent="hibernateBean"/>
 
-    <!-- Policy Migration Manager -->
-    <bean id="migrationManager" class="com.l7tech.server.ems.migration.MigrationManagerImpl" parent="hibernateBean">
+    <!-- Migration Manager -->
+    <bean id="migrationRecordManager" class="com.l7tech.server.ems.migration.MigrationRecordManagerImpl" parent="hibernateBean">
+    </bean>
+
+    <bean id="migrationMappingManager" class="com.l7tech.server.ems.migration.MigrationMappingManagerImpl" parent="hibernateBean">
+        <constructor-arg index="0" ref="ssgClusterManager"/>
     </bean>
 
     <!-- keystore root cert and ssl config  -->

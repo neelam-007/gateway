@@ -1,0 +1,96 @@
+package com.l7tech.server.ems.migration;
+
+
+import com.l7tech.objectmodel.EntityType;
+
+import javax.persistence.Embeddable;
+import javax.persistence.Column;
+import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
+
+
+/**
+ *
+ */
+@Embeddable
+public class MigrationMappedEntity {
+
+    //- PUBLIC
+
+    public MigrationMappedEntity() {
+    }
+
+    @Column(name="entity_type", length=128)
+    @Enumerated(EnumType.STRING)
+    public EntityType getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(EntityType entityType) {
+        this.entityType = entityType;
+    }
+
+    @Column(name="entity_provider_id", length=512)
+    public String getEntityProviderId() {
+        return entityProviderId;
+    }
+
+    public void setEntityProviderId(String entityProviderId) {
+        this.entityProviderId = entityProviderId;
+    }
+
+    @Column(name="entity_id", length=512) 
+    public String getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(String entityId) {
+        this.entityId = entityId;
+    }
+
+    @Column(name="entity_value", length=1024) //TODO increase if required
+    public String getEntityValue() {
+        return entityValue;
+    }
+
+    public void setEntityValue(String entityValue) {
+        this.entityValue = entityValue;
+    }
+
+    @Column(name="entity_version", nullable=false)
+    public long getEntityVersion() {
+        return entityVersion;
+    }
+
+    public void setEntityVersion(long entityVersion) {
+        this.entityVersion = entityVersion;
+    }
+
+    @Column(name="entity_name", length=256)
+    public String getEntityName() {
+        return entityName;
+    }
+
+    public void setEntityName(String entityName) {
+        this.entityName = entityName;
+    }
+
+    @Column(name="entity_description", length=1024)
+    public String getEntityDescription() {
+        return entityDescription;
+    }
+
+    public void setEntityDescription(String entityDescription) {
+        this.entityDescription = entityDescription;
+    }
+
+    //- PRIVATE
+
+    private EntityType entityType;
+    private String entityProviderId; // TODO get rid of this hack
+    private String entityId;
+    private String entityValue;
+    private long entityVersion;
+    private String entityName;
+    private String entityDescription;
+}

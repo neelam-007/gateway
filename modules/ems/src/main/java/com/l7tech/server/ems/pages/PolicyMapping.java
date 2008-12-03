@@ -4,7 +4,7 @@ import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.EnterpriseFolderManager;
-import com.l7tech.server.ems.migration.MigrationManager;
+import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.migration.Migration;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.Functions;
@@ -36,7 +36,7 @@ public class PolicyMapping extends EmsPage  {
     private static final Logger logger = Logger.getLogger(PolicyMapping.class.getName());
 
     @SpringBean
-    private MigrationManager migrationManager;
+    private MigrationRecordManager migrationManager;
     @SpringBean
     private SsgClusterManager ssgClusterManager;
     @SpringBean
@@ -273,7 +273,7 @@ public class PolicyMapping extends EmsPage  {
         @Override
         public Iterator iterator(int first, int count) {
             try {
-                MigrationManager.SortProperty sort = MigrationManager.SortProperty.valueOf(getSort().getProperty());
+                MigrationRecordManager.SortProperty sort = MigrationRecordManager.SortProperty.valueOf(getSort().getProperty());
                 checkStartEndDays();
                 Iterator<Migration> itr = migrationManager.findPage(sort, getSort().isAscending(), first, count, start, end).iterator();
 
