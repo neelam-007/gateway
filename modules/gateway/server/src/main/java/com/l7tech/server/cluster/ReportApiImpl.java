@@ -51,13 +51,15 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
             String [] expectedParams = ReportApi.ReportType.getApplicableParameters(submission.getType());            
             validateReportParams(expectedParams, reportParameters.keySet() );
 
+            //validateReportParams validates all common params, the relative and absolute time params are only validated
+            //when we know the values for IS_RELATIVE and IS_ABSOLUTE
             for(ReportSubmission.ReportParam reportParam: submission.getParameters()){
                 if(reportParam.getName().equals(ReportApi.ReportParameters.IS_RELATIVE)){
                     Boolean isRelative = (Boolean) reportParam.getValue();
                     if(isRelative){
                         validateReportParams(ReportApi.ReportParameters.RELATIVE_TIME_PARAMS, reportParameters.keySet());
                     }else{
-                        validateReportParams(ReportApi.ReportParameters.INTERVAL_PARAMS, reportParameters.keySet());
+                        validateReportParams(ReportApi.ReportParameters.ABSOLUTE_TIME_PARAMS, reportParameters.keySet());
                     }
                 }
             }
