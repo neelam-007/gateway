@@ -1258,7 +1258,10 @@
               <!--<ref bean="logonInfoManager"/>-->
               <ref bean="messageContextMappingKeyManager"/>
               <ref bean="messageContextMappingValueManager"/>
-              <ref bean="policyManager"/>
+              <bean class="com.l7tech.server.policy.VersioningPolicyManager">
+                  <constructor-arg index="0" ref="policyManager"/>
+                  <constructor-arg index="1" ref="policyVersionManager"/>
+              </bean>
               <ref bean="policyAliasManager"/>
               <ref bean="keystoreFileManager"/>
               <ref bean="roleManager"/>
