@@ -15,6 +15,8 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -28,6 +30,7 @@ import java.text.MessageFormat;
  * @since Enterprise Manager 1.0
  * @author rmak
  */
+@Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, EntityHeader> implements SsgClusterManager {
     private static final Logger logger = Logger.getLogger(SsgClusterManagerImpl.class.getName());
 

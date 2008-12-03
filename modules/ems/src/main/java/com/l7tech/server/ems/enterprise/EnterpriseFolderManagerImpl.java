@@ -10,6 +10,8 @@ import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -17,11 +19,11 @@ import java.util.logging.Logger;
 
 /**
  * Entity manager for {@link EnterpriseFolder}.
- * TODO RBAC
  *
  * @since Enterprise Manager 1.0
  * @author rmak
  */
+@Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class EnterpriseFolderManagerImpl extends HibernateEntityManager<EnterpriseFolder, EntityHeader> implements EnterpriseFolderManager {
     private static final Logger logger = Logger.getLogger(EnterpriseFolderManagerImpl.class.getName());
 
@@ -35,18 +37,22 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         this.ssgClusterManager = ssgClusterManager;
     }
 
-    public Class<? extends Entity> getImpClass() {
+    @Override
+    public Class<EnterpriseFolder> getImpClass() {
         return EnterpriseFolder.class;
     }
 
-    public Class<? extends Entity> getInterfaceClass() {
+    @Override
+    public Class<EnterpriseFolder> getInterfaceClass() {
         return EnterpriseFolder.class;
     }
 
+    @Override
     public String getTableName() {
         return "enterprise_folder";
     }
 
+    @Override
     public EnterpriseFolder create(String name, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException {
         verifyParentFolder(parentFolder);
         verifyLegalFolderName(name);
@@ -56,6 +62,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         return result;
     }
 
+    @Override
     public EnterpriseFolder create(String name, String parentFolderGuid) throws FindException, InvalidNameException, SaveException {
         EnterpriseFolder parentFolder;
         if (parentFolderGuid == null) {
@@ -73,6 +80,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         return create(name, parentFolder);
     }
 
+    @Override
     public void renameByGuid(String name, String guid) throws FindException, UpdateException {
         final EnterpriseFolder folder = findByGuid(guid);
         verifyLegalFolderName(name);
@@ -80,6 +88,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         super.update(folder);
     }
 
+    @Override
     public void deleteByGuid(String guid) throws FindException, DeleteException {
         final EnterpriseFolder folder = findByGuid(guid);
         try {
@@ -108,6 +117,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
                     session.delete(folder);
                 }
 
+                @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     deleteFolder(session, folder);
                     return null;
@@ -118,6 +128,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         }
     }
 
+    @Override
     public EnterpriseFolder findRootFolder() throws FindException {
         try {
             return (EnterpriseFolder)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
@@ -133,6 +144,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         }
     }
 
+    @Override
     public EnterpriseFolder findByGuid(final String guid) throws FindException {
         try {
             return (EnterpriseFolder)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
@@ -152,6 +164,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         }
     }
 
+    @Override
     public List<EnterpriseFolder> findChildFolders(final EnterpriseFolder parentFolder) throws FindException {
         try {
             //noinspection unchecked
@@ -173,6 +186,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         }
     }
 
+    @Override
     protected UniqueType getUniqueType() {
         return UniqueType.OTHER;
     }

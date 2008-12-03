@@ -1,7 +1,6 @@
 package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
@@ -10,6 +9,8 @@ import org.hibernate.HibernateException;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.sql.SQLException;
 
@@ -20,20 +21,25 @@ import java.sql.SQLException;
  * @Author: ghuang
  * @Date: Nov 14, 2008
  */
+@Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SsgNodeManagerImpl extends HibernateEntityManager<SsgNode, EntityHeader> implements SsgNodeManager {
 
-    public Class<? extends Entity> getImpClass() {
+    @Override
+    public Class<SsgNode> getImpClass() {
         return SsgNode.class;
     }
 
-    public Class<? extends Entity> getInterfaceClass() {
+    @Override
+    public Class<SsgNode> getInterfaceClass() {
         return SsgNode.class;
     }
 
+    @Override
     public String getTableName() {
         return "ssg_node";
     }
 
+    @Override
     public SsgNode findByGuid(final String guid) throws FindException {
         try {
             return (SsgNode)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
