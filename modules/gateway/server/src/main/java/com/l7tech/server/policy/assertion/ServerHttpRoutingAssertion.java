@@ -76,7 +76,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private final GenericHttpClientFactory httpClientFactory;
     private final StashManagerFactory stashManagerFactory;
     private final HostnameVerifier hostnameVerifier;
-    private final FailoverStrategy failoverStrategy;
+    private final FailoverStrategy<String> failoverStrategy;
     private final String[] varNames;
     private final int maxFailoverAttempts;
     private final SSLSocketFactory socketFactory;
@@ -156,24 +156,24 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         customURLList = false;
         if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs)) {
             final String stratName = assertion.getFailoverStrategyName();
-            FailoverStrategy strat;
+            FailoverStrategy<String> strat;
             try {
                 strat = FailoverStrategyFactory.createFailoverStrategy(stratName, addrs);
             } catch (IllegalArgumentException e) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_STRATEGY_NAME, new String[] { stratName }, e);
-                strat = new StickyFailoverStrategy(addrs);
+                strat = new StickyFailoverStrategy<String>(addrs);
             }
             failoverStrategy = AbstractFailoverStrategy.makeSynchronized(strat);
             maxFailoverAttempts = addrs.length;
         } else if (assertion.getCustomURLs() != null && assertion.getCustomURLs().length > 0) {
             customURLList = true;
             final String stratName = assertion.getFailoverStrategyName();
-            FailoverStrategy strat;
+            FailoverStrategy<String> strat;
             try {
                 strat = FailoverStrategyFactory.createFailoverStrategy(stratName, assertion.getCustomURLs());
             } catch (IllegalArgumentException e) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_STRATEGY_NAME, new String[] { stratName }, e);
-                strat = new StickyFailoverStrategy(assertion.getCustomURLs());
+                strat = new StickyFailoverStrategy<String>(assertion.getCustomURLs());
             }
             failoverStrategy = AbstractFailoverStrategy.makeSynchronized(strat);
             maxFailoverAttempts = assertion.getCustomURLs().length;
@@ -217,7 +217,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             String failedHost = null;
             for (int tries = 0; tries < maxFailoverAttempts; tries++) {
-                String host = (String)failoverStrategy.selectService();
+                String host = failoverStrategy.selectService();
                 if (host == null) {
                     // strategy says it's time to give up
                     break;
