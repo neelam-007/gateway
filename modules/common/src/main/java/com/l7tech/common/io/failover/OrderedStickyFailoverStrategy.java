@@ -12,7 +12,7 @@ import java.util.Map;
  * This strategy does no loadbalancing at all -- just failover.  It prefers server that are first in the server list.
  * If using a backup server, it will check every few minutes to see if a more-preferred server has come back up.
  */
-public class OrderedStickyFailoverStrategy extends AbstractFailoverStrategy {
+public class OrderedStickyFailoverStrategy<ST> extends AbstractFailoverStrategy<ST> {
     public static final long DEFAULT_PROBE_TIME = 15 * 60 * 1000; // probe every 15 min by default
 
     private long probeTime = DEFAULT_PROBE_TIME;
@@ -24,7 +24,7 @@ public class OrderedStickyFailoverStrategy extends AbstractFailoverStrategy {
     private int probing = -1;
     private int nextdown = -1;
 
-    private Map index = new HashMap();
+    private Map<ST, Integer> index = new HashMap<ST, Integer>();
 
     /**
      * Create a new instance based on the specified server array, which must be non-null and non-empty.
@@ -32,11 +32,11 @@ public class OrderedStickyFailoverStrategy extends AbstractFailoverStrategy {
      *
      * @param servers servers to use.  Must not be null or empty.
      */
-    public OrderedStickyFailoverStrategy(Object[] servers) {
+    public OrderedStickyFailoverStrategy(ST[] servers) {
         super(servers);
         for (int i = 0; i < servers.length; i++) {
-            Object server = servers[i];
-            index.put(server, new Integer(i));
+            ST server = servers[i];
+            index.put(server, i);
         }
     }
 
@@ -49,7 +49,8 @@ public class OrderedStickyFailoverStrategy extends AbstractFailoverStrategy {
         this.probeTime = probeTime;
     }
 
-    public Object selectService() {
+    @Override
+    public ST selectService() {
 
         if (current > 0) {
             if (probing >= 0) {
@@ -82,13 +83,14 @@ public class OrderedStickyFailoverStrategy extends AbstractFailoverStrategy {
         return servers[current];
     }
 
-    private int index(Object service) {
-        Integer i = (Integer)index.get(service);
+    private int index(ST service) {
+        Integer i = index.get(service);
         if (i == null) throw new IllegalArgumentException("The service '" + service + "' is not known to this failover strategy");
-        return i.intValue();
+        return i;
     }
 
-    public void reportFailure(Object service) {
+    @Override
+    public void reportFailure(ST service) {
         if (index(service) == current) {
             if (current >= servers.length) {
                 current = 0;
@@ -100,16 +102,19 @@ public class OrderedStickyFailoverStrategy extends AbstractFailoverStrategy {
         }
     }
 
-    public void reportSuccess(Object service) {
+    @Override
+    public void reportSuccess(ST service) {
         int i = index(service);
         if (i < current)
             current = i;
     }
 
+    @Override
     public String getName() {
         return "ordered";
     }
 
+    @Override
     public String getDescription() {
         return "Ordered Sticky with Failover";
     }

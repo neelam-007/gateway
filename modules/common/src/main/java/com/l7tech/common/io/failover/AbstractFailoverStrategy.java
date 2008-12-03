@@ -10,8 +10,8 @@ package com.l7tech.common.io.failover;
 /**
  * Superclass for implementations of {@link FailoverStrategy}.
  */
-public abstract class AbstractFailoverStrategy implements FailoverStrategy {
-    protected final Object[] servers;
+public abstract class AbstractFailoverStrategy<ST> implements FailoverStrategy<ST> {
+    protected final ST[] servers;
 
     /**
      * Create a new instance based on the specified server array, which must be non-null and non-empty.
@@ -19,18 +19,22 @@ public abstract class AbstractFailoverStrategy implements FailoverStrategy {
      *
      * @param servers  servers to use.  Must not be null or empty.
      */
-    protected AbstractFailoverStrategy(Object[] servers) {
+    protected AbstractFailoverStrategy(ST[] servers) {
         if (servers == null) throw new NullPointerException();
         if (servers.length < 1) throw new IllegalArgumentException("Must be at least one server");
         this.servers = servers;
     }
 
-    abstract public Object selectService();
+    @Override
+    abstract public ST selectService();
 
-    abstract public void reportFailure(Object service);
+    @Override
+    abstract public void reportFailure(ST service);
 
-    abstract public void reportSuccess(Object service);
+    @Override
+    abstract public void reportSuccess(ST service);
 
+    @Override
     public String toString() {
         return getDescription();
     }
@@ -41,24 +45,29 @@ public abstract class AbstractFailoverStrategy implements FailoverStrategy {
      * @param strat the strategy that should be synchronized.  Must not be null.
      * @return strat wrapped in a layer that synchronizes access.  Never null.
      */
-    public static FailoverStrategy makeSynchronized(final FailoverStrategy strat) {
-        return new FailoverStrategy() {
-            public synchronized Object selectService() {
+    public static <ST> FailoverStrategy<ST> makeSynchronized(final FailoverStrategy<ST> strat) {
+        return new FailoverStrategy<ST>() {
+            @Override
+            public synchronized ST selectService() {
                 return strat.selectService();
             }
 
-            public synchronized void reportFailure(Object service) {
+            @Override
+            public synchronized void reportFailure(ST service) {
                 strat.reportFailure(service);
             }
 
-            public synchronized void reportSuccess(Object service) {
+            @Override
+            public synchronized void reportSuccess(ST service) {
                 strat.reportSuccess(service);
             }
 
+            @Override
             public synchronized String getName() {
                 return strat.getName();
             }
 
+            @Override
             public synchronized String getDescription() {
                 return strat.getDescription();
             }

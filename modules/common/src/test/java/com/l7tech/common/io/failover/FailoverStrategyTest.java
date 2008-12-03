@@ -6,73 +6,59 @@
 
 package com.l7tech.common.io.failover;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.*;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Test case for {@link FailoverStrategy} implementations.
  */
-public class FailoverStrategyTest extends TestCase {
-    private static Logger log = Logger.getLogger(FailoverStrategyTest.class.getName());
-
+public class FailoverStrategyTest {
     static {
         System.setProperty("com.l7tech.common.io.failover.robin.retryMillis", "200");
-    }
-
-    public FailoverStrategyTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(FailoverStrategyTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 
     public static final String SA = "a";
     public static final String SB = "b";
     public static final String SC = "c";
-    private final Object[] servers = { SA, SB, SC };
-    private final Object[] twoservers = { SA, SB };
+    private final String[] servers = { SA, SB, SC };
+    private final String[] twoservers = { SA, SB };
 
+    @Test
     public void testStickyFailoverStrategy() throws Exception {
-        FailoverStrategy s = AbstractFailoverStrategy.makeSynchronized(new StickyFailoverStrategy(servers));
+        FailoverStrategy<String> s = AbstractFailoverStrategy.makeSynchronized(new StickyFailoverStrategy<String>(servers));
 
         // Must be sticky
-        final Object a1 = s.selectService();
-        final Object a2 = s.selectService();
+        final String a1 = s.selectService();
+        final String a2 = s.selectService();
         assertEquals(a1, a2);
 
         // Must failover once...
         s.reportFailure(a1);
-        final Object b1 = s.selectService();
+        final String b1 = s.selectService();
         assertNotSame(a1, b1);
 
         // Must failover twice...
         s.reportFailure(b1);
-        final Object c1 = s.selectService();
+        final String c1 = s.selectService();
         assertNotSame(b1, c1);
 
         // After third failover, must recommend least-recently-failed service
         s.reportFailure(c1);
-        final Object d1 = s.selectService();
+        final String d1 = s.selectService();
         assertEquals(d1, a1);
 
         // Report one as "back up"
         s.reportSuccess(SB);
-        final Object e1 = s.selectService();
+        final String e1 = s.selectService();
         assertEquals(SB, e1);
     }
 
+    @Test
     public void testRoundRobinFailoverStrategy() throws Exception {
-        FailoverStrategy s = new RoundRobinFailoverStrategy(servers);
+        FailoverStrategy<String> s = new RoundRobinFailoverStrategy<String>(servers);
 
         // Strict round-robin must do blacklisting
         assertEquals(SA, s.selectService());
@@ -90,13 +76,14 @@ public class FailoverStrategyTest extends TestCase {
         s.reportSuccess(SB);
     }
 
+    @Test
     public void testRandomFailoverStrategy() throws Exception {
-        FailoverStrategy s = new RandomFailoverStrategy(servers);
+        FailoverStrategy<String> s = new RandomFailoverStrategy<String>(servers);
 
         // Strict random must report random order, ignoring success or failure
-        Set set = new HashSet();
+        Set<String> set = new HashSet<String>();
         for (int i = 0; i < servers.length * 500; ++i) {
-            Object next = s.selectService();
+            String next = s.selectService();
             assertNotNull(next);
             set.add(next);
             s.reportFailure(SA);
@@ -107,12 +94,13 @@ public class FailoverStrategyTest extends TestCase {
         assertEquals(set.size(), servers.length);
     }
 
+    @Test
     public void testOrderedStickyBug3930() throws Exception {
         String sa = "SA";
         String sb = "SB";
-        Object got;
+        String got;
 
-        OrderedStickyFailoverStrategy s = new OrderedStickyFailoverStrategy(new String[] { sa, sb });
+        OrderedStickyFailoverStrategy<String> s = new OrderedStickyFailoverStrategy<String>(new String[] { sa, sb });
         //s.setProbeTime(100);
 
         // 1. With both SSG2 & SSG3 up, issue a request to SSG1 -- this should work
@@ -141,8 +129,9 @@ public class FailoverStrategyTest extends TestCase {
         s.reportSuccess(got);
     }
 
+    @Test
     public void testOrderedStickyFailoverStrategy() throws Exception {
-        OrderedStickyFailoverStrategy s = new OrderedStickyFailoverStrategy(servers);
+        OrderedStickyFailoverStrategy<String> s = new OrderedStickyFailoverStrategy<String>(servers);
         s.setProbeTime(100);
 
         assertEquals("Must initially prefer first server", SA, s.selectService()); s.reportSuccess(SA);
@@ -160,7 +149,8 @@ public class FailoverStrategyTest extends TestCase {
         // Should start seeing probes of SA now
         int saCount = 0;
         for (int i = 0; i < 20; ++i) {
-            Object got = s.selectService();
+            String got = s.selectService();
+            //noinspection StringEquality
             if (got == SA) {
                 saCount++;
                 s.reportFailure(got);
@@ -179,8 +169,9 @@ public class FailoverStrategyTest extends TestCase {
         Thread.sleep(110);
         boolean sawSa = false;
         for (int i = 0; i < 20; ++i) {
-            Object got = s.selectService();
+            String got = s.selectService();
             s.reportSuccess(got);
+            //noinspection StringEquality
             if (got == SA) {
                 sawSa = true;
             } else {
@@ -193,9 +184,10 @@ public class FailoverStrategyTest extends TestCase {
         // TODO test two servers going down
     }
 
+    @Test
     public void testBug4232_OrderedStickyAllServersDownProbed() throws Exception {
         // Simulate 3 server failure (Bug #4232)
-        OrderedStickyFailoverStrategy s = new OrderedStickyFailoverStrategy(new Object[] { SA, SB, SC });
+        OrderedStickyFailoverStrategy<String> s = new OrderedStickyFailoverStrategy<String>(new String[] { SA, SB, SC });
         s.setProbeTime(100);
         s.reportFailure(s.selectService());
         s.reportFailure(s.selectService());
@@ -218,10 +210,11 @@ public class FailoverStrategyTest extends TestCase {
 
     }
 
+    @Test
     public void testBug1718_OrderedStickyAllServersDown() throws Exception {
-        OrderedStickyFailoverStrategy s = new OrderedStickyFailoverStrategy(twoservers);
+        OrderedStickyFailoverStrategy<String> s = new OrderedStickyFailoverStrategy<String>(twoservers);
 
-        Object got = s.selectService();
+        String got = s.selectService();
         assertEquals(got, SA);
         s.reportFailure(got);
 
@@ -230,6 +223,7 @@ public class FailoverStrategyTest extends TestCase {
         s.reportFailure(got);
 
         got = s.selectService();
+        //noinspection StringEquality
         assertTrue(got == SA || got == SB);
     }
 }

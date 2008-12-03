@@ -15,9 +15,9 @@ import java.util.*;
  * <p>
  * This implementation is unsynchronized; see {@link AbstractFailoverStrategy#makeSynchronized}.
  */
-public class StickyFailoverStrategy extends AbstractFailoverStrategy {
-    private final Set up;
-    private final Set down;
+public class StickyFailoverStrategy<ST> extends AbstractFailoverStrategy<ST> {
+    private final Set<ST> up;
+    private final Set<ST> down;
 
     /**
      * Create a StickyFailoverStrategy using the specified server list.
@@ -25,37 +25,42 @@ public class StickyFailoverStrategy extends AbstractFailoverStrategy {
      * @param servers the list of servers.  Must not be null or empty.  The precise type used to
      *        represent a server does not matter to this strategy.
      */
-    public StickyFailoverStrategy(Object[] servers) {
+    public StickyFailoverStrategy(ST[] servers) {
         super(servers);
-        List permuted = new ArrayList(Arrays.asList(servers));
+        List<ST> permuted = new ArrayList<ST>(Arrays.asList(servers));
         Collections.shuffle(permuted);
-        up = new LinkedHashSet(permuted);
-        down = new LinkedHashSet();
+        up = new LinkedHashSet<ST>(permuted);
+        down = new LinkedHashSet<ST>();
     }
 
-    public Object selectService() {
+    @Override
+    public ST selectService() {
         if (!up.isEmpty())
             return up.iterator().next();
         return down.iterator().next();
     }
 
-    public void reportFailure(Object service) {
+    @Override
+    public void reportFailure(ST service) {
         // Remove from up; move to last place in down
         up.remove(service);
         down.remove(service);
         down.add(service);
     }
 
-    public void reportSuccess(Object service) {
+    @Override
+    public void reportSuccess(ST service) {
         // Remove from down; ensure presence in up
         down.remove(service);
         up.add(service);
     }
 
+    @Override
     public String getName() {
         return "sticky";
     }
 
+    @Override
     public String getDescription() {
         return "Random Sticky with Failover";
     }

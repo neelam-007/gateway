@@ -14,7 +14,7 @@ package com.l7tech.common.io.failover;
  * Different strategies can be implemented with different goals: round-robin, random, sticky-with-failover, or
  * whatever else.  Users of a strategy can provide feedback hints about requests that succeed or fail.
  */
-public interface FailoverStrategy {
+public interface FailoverStrategy<ST> {
     /**
      * Select a service to use for a request.  Returns the "best" service to use for the next request
      * according to this strategy's current state.
@@ -25,7 +25,7 @@ public interface FailoverStrategy {
      *
      * @return a service object to use, or null to give up for now.
      */
-    Object selectService();
+    ST selectService();
 
     /**
      * Report that the specified server has failed to answer a request.
@@ -33,7 +33,7 @@ public interface FailoverStrategy {
      * @param service  the server that failed.  Never null.
      * @throws IllegalArgumentException if the specified server is unknown to or unmanaged by this strategy instance.
      */
-    void reportFailure(Object service);
+    void reportFailure(ST service);
 
     /**
      * Report that the specified server has successfully answered a request.
@@ -41,7 +41,7 @@ public interface FailoverStrategy {
      * @param service  the server that succeeded.  Never null.
      * @throws IllegalArgumentException if the specified server is unknown to or unmanaged by this strategy instance.
      */
-    void reportSuccess(Object service);
+    void reportSuccess(ST service);
 
     /** @return the short symbolic name of this FailoverStrategy. */
     String getName();

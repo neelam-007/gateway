@@ -12,7 +12,7 @@ import java.util.Random;
 /**
  * A {@link FailoverStrategy} that picks a service randomly.
  */
-public class RandomFailoverStrategy extends AbstractFailoverStrategy {
+public class RandomFailoverStrategy<ST> extends AbstractFailoverStrategy<ST> {
     private final Random random = new Random();
 
     /**
@@ -21,26 +21,31 @@ public class RandomFailoverStrategy extends AbstractFailoverStrategy {
      *
      * @param servers servers to use.  Must not be null or empty.
      */
-    public RandomFailoverStrategy(Object[] servers) {
+    public RandomFailoverStrategy(ST[] servers) {
         super(servers);
     }
 
-    public Object selectService() {
+    @Override
+    public ST selectService() {
         return servers[random.nextInt(servers.length)];  
     }
 
-    public void reportFailure(Object service) {
+    @Override
+    public void reportFailure(ST service) {
         // ignored
     }
 
-    public void reportSuccess(Object service) {
+    @Override
+    public void reportSuccess(ST service) {
         // ignored
     }
 
+    @Override
     public String getName() {
         return "random";
     }
 
+    @Override
     public String getDescription() {
         return "Pure Random";
     }

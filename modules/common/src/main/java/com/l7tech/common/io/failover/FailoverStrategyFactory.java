@@ -9,7 +9,7 @@ package com.l7tech.common.io.failover;
  * Factory for failover strategies.
  */
 public class FailoverStrategyFactory {
-    /** fake server list for creating skeleton strategies. */
+    /** fake server list for creating prototype strategy instances. */
     private static final String[] FS = new String[] { "a", "b", "c" };
 
     public static final OrderedStickyFailoverStrategy ORDERED = new OrderedStickyFailoverStrategy(FS);
@@ -36,8 +36,8 @@ public class FailoverStrategyFactory {
      * @return the newly-created strategy.
      * @throws IllegalArgumentException if the specified stratey name is not recognized.
      */
-    public static FailoverStrategy createFailoverStrategy(String name, Object[] servers) {
-        if (ORDERED.getName().equalsIgnoreCase(name)) return new OrderedStickyFailoverStrategy(servers);
+    public static <ST> FailoverStrategy<ST> createFailoverStrategy(String name, ST[] servers) {
+        if (ORDERED.getName().equalsIgnoreCase(name)) return new OrderedStickyFailoverStrategy<ST>(servers);
         if (STICKY.getName().equalsIgnoreCase(name)) return new StickyFailoverStrategy(servers);
         if (ROBIN.getName().equalsIgnoreCase(name)) return new RoundRobinFailoverStrategy(servers);
         if (RANDOM.getName().equalsIgnoreCase(name)) return new RandomFailoverStrategy(servers);

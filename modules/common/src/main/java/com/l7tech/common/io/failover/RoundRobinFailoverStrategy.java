@@ -21,15 +21,15 @@ import java.util.logging.Level;
  * <p>
  * This implementation is unsynchronized; see {@link AbstractFailoverStrategy#makeSynchronized}.
  */
-public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
+public class RoundRobinFailoverStrategy<ST> extends AbstractFailoverStrategy<ST> {
     private static final Logger logger = Logger.getLogger(RoundRobinFailoverStrategy.class.getName());
     private static final long DEFAULT_PROBE_MILLIS = 5 * 60 * 1000; // Retry failed server every 5 min by default
 
-    private long probeTime = SyspropUtil.getLong("com.l7tech.common.io.failover.robin.retryMillis", DEFAULT_PROBE_MILLIS).longValue();
+    private long probeTime = SyspropUtil.getLong("com.l7tech.common.io.failover.robin.retryMillis", DEFAULT_PROBE_MILLIS);
 
     int next = 0;
-    LinkedHashMap up = new LinkedHashMap();
-    LinkedHashMap down = new LinkedHashMap();
+    LinkedHashMap<ST, Long> up = new LinkedHashMap<ST, Long>();
+    LinkedHashMap<ST, Long> down = new LinkedHashMap<ST, Long>();
 
     /**
      * Create a new instance based on the specified server array, which must be non-null and non-empty.
@@ -37,42 +37,42 @@ public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
      *
      * @param servers servers to use.  Must not be null or empty.
      */
-    public RoundRobinFailoverStrategy(Object[] servers) {
+    public RoundRobinFailoverStrategy(ST[] servers) {
         super(servers);
-        for (int i = 0; i < servers.length; i++) {
-            Object server = servers[i];
+        for (ST server : servers)
             up.put(server, null);
-        }
         down.clear();
     }
 
-    public Object selectService() {
+    @Override
+    public ST selectService() {
         if (!down.isEmpty()) {
             // Check if it's time to probe one of the downed servers
             long now = System.currentTimeMillis();
-            for (Iterator i = down.entrySet().iterator(); i.hasNext();) {
-                Map.Entry entry = (Map.Entry)i.next();
-                Object server = entry.getKey();
-                Long probeWhen = (Long)entry.getValue();
-                if (probeWhen != null && probeWhen.longValue() <= now) {
+            final Iterator<Map.Entry<ST, Long>> entryIterator = down.entrySet().iterator();
+            while (entryIterator.hasNext()) {
+                Map.Entry<ST, Long> entry = entryIterator.next();
+                ST server = entry.getKey();
+                Long probeWhen = entry.getValue();
+                if (probeWhen != null && probeWhen <= now) {
                     // Probe this server; update time, move to end of list, and return it
                     if (logger.isLoggable(Level.FINE)) logger.finer("Probing server: " + server);
-                    i.remove();
-                    down.put(server, new Long(now + probeTime));
+                    entryIterator.remove();
+                    down.put(server, now + probeTime);
                     return server;
                 }
             }
         }
 
         // Round robin through UP list, unless all are down, in which case we robin through DOWN list
-        LinkedHashMap toUse = up.isEmpty() ? down : up;
+        LinkedHashMap<ST, Long> toUse = up.isEmpty() ? down : up;
         assert !toUse.isEmpty();  // Must always be at least 1 server, whether its up or down
 
         // Select first server
-        Iterator i = toUse.entrySet().iterator();
-        Map.Entry entry = (Map.Entry)i.next();
-        Object server = entry.getKey();
-        Long value = (Long)entry.getValue();
+        Iterator<Map.Entry<ST,Long>> i = toUse.entrySet().iterator();
+        Map.Entry<ST,Long> entry = i.next();
+        ST server = entry.getKey();
+        Long value = entry.getValue();
 
         // Move it to end of list
         i.remove();
@@ -81,22 +81,26 @@ public class RoundRobinFailoverStrategy extends AbstractFailoverStrategy {
         return server;
     }
 
-    public void reportFailure(Object service) {
+    @Override
+    public void reportFailure(ST service) {
         if (up.isEmpty() || !up.containsKey(service)) return;
         up.remove(service);
-        down.put(service, new Long(System.currentTimeMillis() + probeTime));
+        down.put(service, System.currentTimeMillis() + probeTime);
     }
 
-    public void reportSuccess(Object service) {
+    @Override
+    public void reportSuccess(ST service) {
         if (down.isEmpty() || !down.containsKey(service)) return;
         down.remove(service);
         up.put(service, null);
     }
 
+    @Override
     public String getName() {
         return "robin";
     }
 
+    @Override
     public String getDescription() {
         return "Round-Robin";
     }
