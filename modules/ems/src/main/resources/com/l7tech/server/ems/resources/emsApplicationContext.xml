@@ -481,6 +481,11 @@
         <constructor-arg index="3" ref="defaultKey" />
     </bean>
 
+    <bean id="gatewayClusterClientManager" class="com.l7tech.server.ems.gateway.GatewayClusterClientManagerImpl">
+        <constructor-arg index="0" ref="gatewayContextFactory"/>
+        <constructor-arg index="1" ref="ssgClusterManager"/>
+    </bean>
+
     <bean id="gatewayContextFactory" class="com.l7tech.server.ems.gateway.GatewayContextFactoryImpl">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="defaultKey" />

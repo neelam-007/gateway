@@ -1,30 +1,24 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.WebPage;
+import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
+import com.l7tech.server.ems.EmsSecurityManager;
+import org.apache.wicket.Component;
+import org.apache.wicket.RequestListenerInterface;
+import org.apache.wicket.ResourceReference;
+import org.apache.wicket.authorization.UnauthorizedActionException;
+import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.resources.CompressedResourceReference;
-import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
-import org.apache.wicket.ResourceReference;
-import org.apache.wicket.Component;
-import org.apache.wicket.RequestListenerInterface;
-import org.apache.wicket.authorization.UnauthorizedActionException;
-import org.apache.wicket.behavior.HeaderContributor;
-import com.l7tech.server.ems.EmsSecurityManager;
-import com.l7tech.server.ems.EmsSession;
-import com.l7tech.identity.User;
-import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
-
-import javax.servlet.http.HttpServletRequest;
+import org.apache.wicket.model.StringResourceModel;
 
 /**
- * Base page for EMS
+ * Base page for EMS pages that include the standard top-level navigation tabs and controls.
+ * TODO rename to something like EmsNavigationPage
  */
 @RequiredPermissionSet()
-public abstract class EmsPage extends WebPage {
+public abstract class EmsPage extends EmsBaseWebPage {
 
     //- PUBLIC
 
@@ -56,11 +50,6 @@ public abstract class EmsPage extends WebPage {
     }
 
     @Override
-    public EmsSession getSession() {
-        return (EmsSession) super.getSession();
-    }
-
-    @Override
     public void beforeCallComponent( final Component component, final RequestListenerInterface listener ) {
         if ( !securityManager.isAuthorized( component ) ) {
             throw new UnauthorizedActionException( component, Component.RENDER );
@@ -69,28 +58,7 @@ public abstract class EmsPage extends WebPage {
 
     //- PACKAGE
 
-    static final ResourceReference RES_CSS_SKIN = new CompressedResourceReference(YuiCommon.class, "../resources/css/l7-yui-skin.css" );    
-
-    EmsSecurityManager.LoginInfo getLoginInfo() {
-        EmsSecurityManager.LoginInfo info;
-
-        ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
-        HttpServletRequest request = servletWebRequest.getHttpServletRequest();
-        info = securityManager.getLoginInfo( request.getSession(true) );
-
-        return info;
-    }
-
-    User getUser() {
-        User user = null;
-
-        EmsSecurityManager.LoginInfo info = getLoginInfo();
-        if ( info != null ) {
-            user = info.getUser();
-        }
-
-        return user;
-    }
+    static final ResourceReference RES_CSS_SKIN = new CompressedResourceReference(YuiCommon.class, "../resources/css/l7-yui-skin.css" );
 
     //- PROTECTED
 
@@ -123,9 +91,4 @@ public abstract class EmsPage extends WebPage {
 
         super.onBeforeRender();
     }
-
-    //- PRIVATE
-    
-    @SpringBean
-    private EmsSecurityManager securityManager;
 }

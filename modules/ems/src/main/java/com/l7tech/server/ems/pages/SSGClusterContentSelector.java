@@ -1,28 +1,20 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.WebPage;
-import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
-import org.apache.wicket.RequestCycle;
-
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import com.l7tech.server.ems.enterprise.*;
-import com.l7tech.server.ems.EmsSecurityManager;
-import com.l7tech.server.ems.gateway.GatewayContextFactory;
-import com.l7tech.server.ems.gateway.GatewayContext;
-import com.l7tech.server.ems.user.UserPropertyManager;
-import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.User;
+import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.enterprise.*;
+import com.l7tech.server.ems.gateway.*;
+import com.l7tech.server.ems.user.UserPropertyManager;
+import com.l7tech.server.management.api.node.GatewayApi;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.spring.injection.annot.SpringBean;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.xml.ws.soap.SOAPFaultException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -30,14 +22,11 @@ import javax.xml.ws.soap.SOAPFaultException;
  * @Date: Nov 26, 2008
  */
 @RequiredPermissionSet()
-public class SSGClusterContentSelector extends WebPage {
+public class SSGClusterContentSelector extends EmsBaseWebPage {
     private static final Logger logger = Logger.getLogger(SSGClusterContentSelector.class.getName());
 
     @SpringBean
-    GatewayContextFactory gatewayContextFactory;
-
-    @SpringBean
-    private SsgClusterManager ssgClusterManager;
+    GatewayClusterClientManager gatewayClusterClientManager;
 
     @SpringBean
     private EmsSecurityManager securityManager;
@@ -65,14 +54,9 @@ public class SSGClusterContentSelector extends WebPage {
             public Object getData() {
                 try {
                     return buildSsgClusterContent();
-                } catch (SOAPFaultException e) {
-                    if ( GatewayContext.isNetworkException(e) ) {
-                        return new JSONException( new Exception("Gateway not available.") );                        
-                    } else {
-                        logger.warning(e.toString());
-                        return new JSONException(e);
-                    }
-                } catch (Exception e) {
+                } catch (GatewayNetworkException e) {
+                    return new JSONException( new Exception("Gateway not available.") );                        
+                } catch (GatewayException e) {
                     logger.warning(e.toString());
                     return new JSONException(e);
                 }
@@ -93,17 +77,15 @@ public class SSGClusterContentSelector extends WebPage {
     /**
      * Build a list of SSG Cluster content for entities (folder, published service, and policy fragment)
      * @return a list of entities content
-     * @throws Exception
+     * @throws GatewayException if there is a problem accessing the Gateway cluster
      */
-    private List<Object> buildSsgClusterContent() throws Exception {
+    private List<Object> buildSsgClusterContent() throws GatewayException {
         List<Object> jasonContentList = new ArrayList<Object>();
 
         // Get the content of entities using GatewayApi
         String ssgClusterId = RequestCycle.get().getRequest().getParameter("ssgClusterId");
-        final SsgCluster ssgCluster = ssgClusterManager.findByGuid(ssgClusterId);
-        GatewayContext context = gatewayContextFactory.getGatewayContext(getUser(), ssgCluster.getSslHostName(), ssgCluster.getAdminPort());
-        GatewayApi api = context.getApi();
-        Collection<GatewayApi.EntityInfo> rawEntitiesInfo = api.getEntityInfo(Arrays.asList(entityTypes));
+        GatewayClusterClient cluster = gatewayClusterClientManager.getGatewayClusterClient(ssgClusterId, getUser());
+        Collection<GatewayApi.EntityInfo> rawEntitiesInfo = cluster.getEntityInfo(Arrays.asList(entityTypes));
         Collections.sort((List<GatewayApi.EntityInfo>)rawEntitiesInfo);
 
         // Find the root folder and sort the raw entities data to have an ordered tree.
@@ -132,6 +114,7 @@ public class SSGClusterContentSelector extends WebPage {
         }
 
         // Finally add rbac_cud into each jason content.
+        final SsgCluster ssgCluster = cluster.getCluster();
         for (SsgClusterContent content: contentList) {
             jasonContentList.add(new JSONSupport(content) {
                 @Override
@@ -164,27 +147,5 @@ public class SSGClusterContentSelector extends WebPage {
                 preorderTraversal(sort, child, raw);
             }
         }
-    }
-
-    private EmsSecurityManager.LoginInfo getLoginInfo() {
-        EmsSecurityManager.LoginInfo info;
-
-        ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
-        HttpServletRequest request = servletWebRequest.getHttpServletRequest();
-        info = securityManager.getLoginInfo( request.getSession(true) );
-
-        return info;
-    }
-
-
-    private User getUser() {
-        User user = null;
-
-        EmsSecurityManager.LoginInfo info = getLoginInfo();
-        if ( info != null ) {
-            user = info.getUser();
-        }
-
-        return user;
     }
 }

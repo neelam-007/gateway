@@ -1,25 +1,22 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.WebPage;
-import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
-
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import com.l7tech.server.ems.enterprise.*;
-import com.l7tech.server.ems.EmsSecurityManager;
-import com.l7tech.server.ems.gateway.GatewayContext;
-import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.User;
+import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.enterprise.*;
+import com.l7tech.server.ems.gateway.GatewayContext;
+import com.l7tech.server.ems.user.UserPropertyManager;
+import org.apache.wicket.spring.injection.annot.SpringBean;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.soap.SOAPFaultException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -27,7 +24,7 @@ import javax.xml.ws.soap.SOAPFaultException;
  * @Date: Nov 26, 2008
  */
 @RequiredPermissionSet()
-public class SSGClusterSelector extends WebPage {
+public class SSGClusterSelector extends EmsBaseWebPage {
     private static final Logger logger = Logger.getLogger(SSGClusterSelector.class.getName());
 
     @SpringBean
@@ -110,27 +107,5 @@ public class SSGClusterSelector extends WebPage {
         });
 
         add(interaction);
-    }
-
-    private EmsSecurityManager.LoginInfo getLoginInfo() {
-        EmsSecurityManager.LoginInfo info;
-
-        ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
-        HttpServletRequest request = servletWebRequest.getHttpServletRequest();
-        info = securityManager.getLoginInfo( request.getSession(true) );
-
-        return info;
-    }
-
-
-    private User getUser() {
-        User user = null;
-
-        EmsSecurityManager.LoginInfo info = getLoginInfo();
-        if ( info != null ) {
-            user = info.getUser();
-        }
-
-        return user;
     }
 }
