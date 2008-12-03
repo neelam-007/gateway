@@ -40,6 +40,8 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
         EntityType.POLICY
     };
 
+    protected boolean keepRootFolder = true;
+
     public SSGClusterContentSelector() {
         Map<String,String> up = Collections.emptyMap();
         try {
@@ -89,7 +91,7 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
         Collections.sort((List<GatewayApi.EntityInfo>)rawEntitiesInfo);
 
         // Find the root folder and sort the raw entities data to have an ordered tree.
-        Collection<GatewayApi.EntityInfo> sortedEntitiesInfo = new ArrayList<GatewayApi.EntityInfo>();
+        List<GatewayApi.EntityInfo> sortedEntitiesInfo = new ArrayList<GatewayApi.EntityInfo>();
         GatewayApi.EntityInfo root = null;
         for (GatewayApi.EntityInfo info: rawEntitiesInfo) {
             if (info.getEntityType().equals(EntityType.FOLDER) && info.getParentId() == null) {
@@ -98,6 +100,7 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
             }
         }
         preorderTraversal(sortedEntitiesInfo, root, rawEntitiesInfo);
+        if (! keepRootFolder) sortedEntitiesInfo.remove(0);
 
         // Convert EntityInfo to SsgClusterContent while adding opertions content if a publiished service has opertions.
         List<SsgClusterContent> contentList = new ArrayList<SsgClusterContent>();

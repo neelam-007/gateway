@@ -13,5 +13,7 @@ public class SSGClusterServiceContentSelector extends SSGClusterContentSelector 
             EntityType.FOLDER,
             EntityType.SERVICE
         });
+
+        keepRootFolder = false;
     }
 }
