@@ -9,7 +9,7 @@ Vendor: Layer 7 Technologies
 Packager: Layer 7 Technologies, <support@layer7tech.com>
 source0: ssem.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
-requires: ssg-appliance >= 4.7
+requires: ssg-appliance >= 5.0
 Prefix: /opt/SecureSpan/EnterpriseManager
 
 %description
