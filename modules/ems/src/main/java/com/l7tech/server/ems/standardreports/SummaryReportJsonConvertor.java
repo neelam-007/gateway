@@ -456,8 +456,9 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             validateSubMap(timePeriodMap, JSONConstants.TimePeriodAbsoluteKeys.ALL_KEYS);
 
             String startTime = (String) timePeriodMap.get(JSONConstants.TimePeriodAbsoluteKeys.START);
+            Long startTimeMilli = null;
             try{
-                Utilities.getAbsoluteMilliSeconds(startTime, timeZone);
+                startTimeMilli = Utilities.getAbsoluteMilliSeconds(startTime, timeZone);
             }catch (ParseException ex){
                 throw new ReportException
                         ("Cannot parse startTime: " + startTime+" must be in the format: " + Utilities.DATE_STRING);                
@@ -469,13 +470,18 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             addParamToAllClusters(clusterToReportParams,ReportApi.ReportParameters.ABSOLUTE_START_TIME,  absoluteStartTimeParam);
 
             String endTime = (String) timePeriodMap.get(JSONConstants.TimePeriodAbsoluteKeys.END);
+            Long endTimeMilli = null;
             try{
-                Utilities.getAbsoluteMilliSeconds(startTime, timeZone);
+                endTimeMilli = Utilities.getAbsoluteMilliSeconds(endTime, timeZone);
             }catch (ParseException ex){
                 throw new ReportException
                         ("Cannot parse startTime: " + startTime+" must be in the format: " + Utilities.DATE_STRING);
             }
 
+            if(startTimeMilli >= endTimeMilli){
+                throw new ReportException("start time cannot be the same as or after the end time");
+            }
+            
             ReportApi.ReportSubmission.ReportParam absoluteEndTimeParam = new ReportApi.ReportSubmission.ReportParam();
             absoluteEndTimeParam.setName(ReportApi.ReportParameters.ABSOLUTE_END_TIME);
             absoluteEndTimeParam.setValue(endTime);

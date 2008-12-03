@@ -192,57 +192,6 @@ public class JsonConversionTests {
         Assert.assertTrue("Timezone should not have been found", exception);
     }
 
-    private final static String psRelativeJsonSummaryTest = "{\"reportType\":\"performance\",    " +
-            "    \"entityType\" : \"publishedService\"," +
-            "    \"entities\" : [" +
-            "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
-            "            \"publishedServiceId\" : \"360448\"," +
-            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"\"" +
-            "        }," +
-            "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
-            "            \"publishedServiceId\" : \"360449\"," +
-            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"\"" +
-            "        }," +
-            "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
-            "            \"publishedServiceId\" : \"360450\"," +
-            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"\"" +
-            "        }," +
-            "    ]," +
-            "    \"timePeriod\" : {" +
-            "        \"type\"     : \"relative\"," +
-            "        \"numberOfTimeUnits\"    : \"1\"," +
-            "        \"unitOfTime\"     : \"DAY\"," +
-            "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"      : \"2008-07-31 13:00:00\"," +
-            "        \"timeZone\" : \"Canada/Pacific\"" +
-            "    }," +
-            "    \"timeInterval\" : {" +
-            "        \"value\" : \"1\"," +
-            "        \"unit\"  : \"HOUR\"" +
-            "    }," +
-            "    \"groupings\" : [" +
-            "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
-            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
-            "            \"constraint\"        : \"\"" +
-            "        }," +
-            "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
-            "            \"messageContextKey\" : \"CUSTOMER\"," +
-            "            \"constraint\"        : \"\"" +
-            "        }," +
-            "    ]," +
-            "    \"summaryChart\" : true," +
-            "    \"summaryReport\" : true," +
-            "    \"reportName\" : \"My Report\"" +
-            "}";
-
     @Test
     public void testKeysAndValuesSize() throws ReportException{
         Object o = JSON.parse(psRelativeJsonSummaryTest);
@@ -580,6 +529,84 @@ public class JsonConversionTests {
         convertor.getReportSubmissions(jsonMap, "Donal");
     }
 
+    @Test
+    public void testInvalidAbsoluteDateFormat() throws Exception {
+        Object o = JSON.parse(absoluteInvalidDateFormat);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        boolean exception = false;
+        try{
+            convertor.getReportSubmissions(jsonMap, "Donal");
+        }catch(ReportException e){
+            exception = true;
+        }
+
+        Assert.assertTrue("Exception should have been thrown as absolute date is invalid", exception);
+    }
+
+    @Test
+    public void testInvalidAbsoluteDatePeriod() throws Exception {
+        Object o = JSON.parse(absoluteInvalidDatePeriod);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        boolean exception = false;
+        try{
+            convertor.getReportSubmissions(jsonMap, "Donal");
+        }catch(ReportException e){
+            exception = true;
+        }
+
+        Assert.assertTrue("Exception should have been thrown as absolute date end is before start", exception);
+    }
+
+    private final static String psRelativeJsonSummaryTest = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"My Report\"" +
+            "}";
 
     private final static String psRelativeJsonSummary = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
@@ -613,8 +640,6 @@ public class JsonConversionTests {
             "        \"type\"     : \"relative\"," +
             "        \"numberOfTimeUnits\"    : \"1\"," +
             "        \"unitOfTime\"     : \"DAY\"," +
-            "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"      : \"2008-07-31 13:00:00\"," +
             "        \"timeZone\" : \"Canada/Pacific\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -668,8 +693,6 @@ public class JsonConversionTests {
             "        \"type\"     : \"relative\"," +
             "        \"numberOfTimeUnits\"    : \"1\"," +
             "        \"unitOfTime\"     : \"DAY\"," +
-            "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"      : \"2008-07-31 13:00:00\"," +
             "        \"timeZone\" : \"Canada/Pacific\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -713,8 +736,6 @@ public class JsonConversionTests {
             "        \"type\"     : \"relative\"," +
             "        \"numberOfTimeUnits\"    : \"1\"," +
             "        \"unitOfTime\"     : \"DAY\"," +
-            "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"      : \"2008-07-31 13:00:00\"," +
             "        \"timeZone\" : \"Canada/Pacific\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -770,8 +791,6 @@ public class JsonConversionTests {
             "        \"type\"     : \"relative\"," +
             "        \"numberOfTimeUnits\"    : \"1\"," +
             "        \"unitOfTime\"     : \"DAY\"," +
-            "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"      : \"2008-07-31 13:00:00\"," +
             "        \"timeZone\" : \"Canada/Pacific\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -837,8 +856,6 @@ public class JsonConversionTests {
             "        \"type\"     : \"relative\"," +
             "        \"numberOfTimeUnits\"    : \"1\"," +
             "        \"unitOfTime\"     : \"DAY\"," +
-            "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"      : \"2008-07-31 13:00:00\"," +
             "        \"timeZone\" : \"Canada/Pacific\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -904,8 +921,6 @@ public class JsonConversionTests {
             "        \"type\"     : \"relative\"," +
             "        \"numberOfTimeUnits\"    : \"1\"," +
             "        \"unitOfTime\"     : \"DAY\"," +
-            "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"      : \"2008-07-31 13:00:00\"," +
             "        \"timeZone\" : \"Canada/Pacific\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -966,8 +981,6 @@ public class JsonConversionTests {
             "        \"type\"     : \"relative\"," +
             "        \"numberOfTimeUnits\"    : \"1\"," +
             "        \"unitOfTime\"     : \"DAY\"," +
-            "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"      : \"2008-07-31 13:00:00\"," +
             "        \"timeZone\" : \"Canada/Pacific\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -1110,5 +1123,116 @@ public class JsonConversionTests {
             "    \"summaryReport\" : false," +
             "    \"reportName\" : \"My Report\"" +
             "}";
+
+    private final static String absoluteInvalidDateFormat = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229377\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"229378\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }" +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"absolute\"," +
+            "        \"start\"    : \"2008-07-31 13:00:00\"," +
+            "        \"end\"    : \"2008-07-31 15:00:00\"," +            
+            "        \"timeZone\" : \"Europe/Paris\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"AUTH_USER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"AUTH_USER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : false," +
+            "    \"reportName\" : \"My Report\"" +
+            "}";
+
+    private final static String absoluteInvalidDatePeriod = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229377\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"229378\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }" +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"absolute\"," +
+            "        \"start\"    : \"2008/07/31 13:00:00\"," +
+            "        \"end\"    : \"2008/07/30 15:00:00\"," +            
+            "        \"timeZone\" : \"Europe/Paris\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"AUTH_USER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"AUTH_USER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : false," +
+            "    \"reportName\" : \"My Report\"" +
+            "}";
+
 
 }
