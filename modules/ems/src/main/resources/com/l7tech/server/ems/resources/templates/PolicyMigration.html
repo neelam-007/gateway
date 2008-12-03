@@ -36,6 +36,46 @@
                 text-align: left;
                 vertical-align: top;
             }
+
+            .yui-skin-sam .yui-button#migrateButton,
+            .yui-skin-sam .yui-button#migrateButton .first-child,
+            .yui-skin-sam .yui-button#migrateButton button,
+            .yui-skin-sam .yui-button#migrateButton a,
+            .yui-skin-sam .yui-button#migrateButton img,
+            .yui-skin-sam .yui-button-focus#migrateButton,
+            .yui-skin-sam .yui-button-focus#migrateButton .first-child,
+            .yui-skin-sam .yui-button-focus#migrateButton button,
+            .yui-skin-sam .yui-button-focus#migrateButton a,
+            .yui-skin-sam .yui-button-focus#migrateButton img,
+            .yui-skin-sam .yui-button-active#migrateButton,
+            .yui-skin-sam .yui-button-active#migrateButton .first-child,
+            .yui-skin-sam .yui-button-active#migrateButton button,
+            .yui-skin-sam .yui-button-active#migrateButton a
+            .yui-skin-sam .yui-button-active#migrateButton img,
+            .yui-skin-sam .yui-button#identifyDependenciesButton,
+            .yui-skin-sam .yui-button#identifyDependenciesButton .first-child,
+            .yui-skin-sam .yui-button#identifyDependenciesButton button,
+            .yui-skin-sam .yui-button#identifyDependenciesButton a,
+            .yui-skin-sam .yui-button#identifyDependenciesButton img,
+            .yui-skin-sam .yui-button-focus#identifyDependenciesButton,
+            .yui-skin-sam .yui-button-focus#identifyDependenciesButton .first-child,
+            .yui-skin-sam .yui-button-focus#identifyDependenciesButton button,
+            .yui-skin-sam .yui-button-focus#identifyDependenciesButton a,
+            .yui-skin-sam .yui-button-focus#identifyDependenciesButton img,
+            .yui-skin-sam .yui-button-active#identifyDependenciesButton,
+            .yui-skin-sam .yui-button-active#identifyDependenciesButton .first-child,
+            .yui-skin-sam .yui-button-active#identifyDependenciesButton button,
+            .yui-skin-sam .yui-button-active#identifyDependenciesButton a
+            .yui-skin-sam .yui-button-active#identifyDependenciesButton img {
+                border: none;
+                background: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .yui-skin-sam .yui-button#migrateButton {
+                margin-bottom: 10px;
+            }
         </style>
         <script type="text/javascript" src="../js/l7.js"></script>
         <script type="text/javascript" src="../js/entityTreeTable.js"></script>
@@ -55,13 +95,22 @@
             var INCR_FRAME_HEIGHT = 50;
             var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
 
-            var identifyDependenciesImageButton;
+            var migrateButton;
+            var identifyDependenciesButton;
             var srcSSGClusterContentSelectorWindow;
             var destSSGClusterContentSelectorWindow;
 
-            function initSSGClusterSelector(iframe) {
-                iframe.contentWindow.setCallbackId(iframe.id);
-                iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
+            /**
+             * Verifies if all inputs for migration are valid.
+             * @return {boolean} true if valid
+             */
+            function validateMigrationInputs() {
+                // TODO
+                return true;
+            }
+
+            function updateMigrateButton() {
+                migrateButton.set('disabled', !validateMigrationInputs());
             }
 
             /**
@@ -145,6 +194,10 @@
                 document.getElementById('selectionJson').value = postData;
             }
 
+            function onClickMigrate() {
+                // TODO
+            }
+
             function initSSGClusterSelector(iframe) {
                 iframe.contentWindow.setCallbackId(iframe.id);
                 iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
@@ -154,17 +207,37 @@
                 iframe.contentWindow.setCallbackId(iframe.id);
             }
 
+            function initButtons() {
+                migrateButton = new YAHOO.widget.Button('migrateButton', {
+// TODO                   disabled : true,        // initially disabled until all inputs are made
+                    onclick  : { fn : onClickMigrate },
+                    title    : 'Migrate selected policies with dependency mapping', // need title on IMG element too
+                    type     : 'push'
+                });
+                identifyDependenciesButton = new YAHOO.widget.Button('identifyDependenciesButton', {
+                    onclick : { fn : onClickIdentifyDependencies },
+                    title   : 'Identify dependencies',                              // need title on IMG element too
+                    type    : 'push'
+                });
+            }
+
+            function initDialogs() {
+                // No custom dialogs yet.
+            }
+
             function init() {
                 srcSSGClusterContentSelectorWindow = document.getElementById('srcSSGClusterContentSelector').contentWindow;
                 destSSGClusterContentSelectorWindow = document.getElementById('destSSGClusterContentSelector').contentWindow;
-                identifyDependenciesImageButton = document.getElementById('identifyDependenciesImageButton');
 
-                var wicketOnclick = identifyDependenciesImageButton.onclick;
-                identifyDependenciesImageButton.onclick = function(){
-                    onClickIdentifyDependencies();
-                    wicketOnclick();
-                    return true;
-                };
+// TODO for Steve
+//                var wicketOnclick = identifyDependenciesImageButton.onclick;
+//                identifyDependenciesImageButton.onclick = function(){
+//                    onClickIdentifyDependencies();
+//                    wicketOnclick();
+//                    return true;
+//                };
+                initButtons();
+                initDialogs();
             }
 
             YAHOO.util.Event.onDOMReady(init);
@@ -379,10 +452,9 @@
                             onload="initSSGClusterContentSelector(this);"></iframe>
                 </td>
                 <td class="srcDestCenter">
-                    Dep.<br />
-                    <img id="identifyDependenciesImageButton" wicket:id="identifyDependenciesImageButton" class="clickable" src="../images/resolveDependencies.png" title="Identify Dependencies" alt=""/><br />
-                    Copy<br />
-                    <img class="disabled" src="../images/copy.png" alt="" />
+                    <button id="migrateButton"><img src="../images/copy.png" title="Migrate selected policies with dependency mapping" alt=""></button>
+                    <br/>
+                    <button id="identifyDependenciesButton"><img src="../images/resolveDependencies.png" title="Identify dependencies" alt=""></button>
                 </td>
                 <td class="srcDest">
                     <iframe id="destSSGClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0"

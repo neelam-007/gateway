@@ -676,15 +676,10 @@ table.dataTable td.critical {
 .srcDestCenter {
     background-color: #f4f7ed;
     font-weight: bold;
-    padding-left: 6px;
-    padding-right: 6px;
+    padding-left: 2px;
+    padding-right: 2px;
     text-align: center;
     vertical-align: middle;
-}
-
-.srcDestCenter img {
-    margin-bottom: 8px;
-    margin-top: 4px;
 }
 
 .submissionMessageEntry div {
