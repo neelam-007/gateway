@@ -12,16 +12,15 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.CollectionUpdate;
+import com.l7tech.util.CollectionUpdateFilterer;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,14 +42,14 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
 
     public SecurityFilter getSecurityFilter() {
         return new SecurityFilter() {
-            public <T> List<T> filter(Collection<T> entityCollection, User user, OperationType type, String operationName) throws FindException {
+            public <T> Collection<T> filter(Collection<T> entityCollection, User user, OperationType type, String operationName) throws FindException {
                 return SecuredMethodInterceptor.this.filter( entityCollection, user, type, operationName, "internalFilter" );
             }
         };
     }
 
-    private <T> List<T> filter(Iterable<T> iter, User user, OperationType type, String operationName, String methodName) throws FindException {
-        List<T> newlist = new ArrayList<T>();
+    private <CT extends Iterable<T>, T> CT filter(CT iter, User user, OperationType type, String operationName, String methodName) throws FindException {
+        List<T> removals = new ArrayList<T>();
         for (T element : iter) {
             Entity testEntity;
             if (element instanceof Entity) {
@@ -62,21 +61,40 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
                 throw new IllegalArgumentException("Element of collection was neither Entity nor EntityHeader");
             }
 
-            if (testEntity == null || rbacServices.isPermittedForEntity(user, testEntity, type, operationName)) {
-                newlist.add(element);
-            } else {
+            if (testEntity != null && !rbacServices.isPermittedForEntity(user, testEntity, type, operationName)) {
+                removals.add(element);
                 if (logger.isLoggable(Level.FINEST)) {
-                    logger.log(Level.FINEST, 
+                    logger.log(Level.FINEST,
                             "Omitting {0} #{1} from return value of {2}",
-                            new Object[] {
-                                testEntity.getClass().getSimpleName(),
-                                testEntity.getId(),
-                                methodName}
-                            );
+                            new Object[] { testEntity.getClass().getSimpleName(), testEntity.getId(), methodName }
+                    );
                 }
             }
         }
-        return newlist;
+        return removeFiltered(iter, removals);
+    }
+
+    private <CT extends Iterable<T>, T> CT removeFiltered(CT iter, List<T> removals) {
+        if (iter instanceof Collection) {
+            Collection<T> out;
+            if (iter instanceof EntityHeaderSet) {
+                out = new EntityHeaderSet((Set)iter);
+            } else if (iter instanceof Set) {
+                out = new HashSet<T>((Collection<? extends T>)iter);
+            } else {
+                out = new ArrayList<T>((Collection<? extends T>)iter);
+            }
+
+            for (T removal : removals)
+                out.remove(removal);
+
+            return (CT)out;
+        } else if (iter instanceof CollectionUpdate) {
+            CollectionUpdate collectionUpdate = (CollectionUpdate)iter;
+            return (CT)CollectionUpdateFilterer.filter(collectionUpdate, removals);
+        } else {
+            throw new IllegalStateException("Unable to filter " + iter.getClass());
+        }
     }
 
     private static void collectAnnotations(Class clazz, List<Secured> annotations) {
@@ -154,7 +172,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
                 }
             case FIND_ENTITIES:
                 check.operation = READ;
-                if (Collection.class.isAssignableFrom(rtype)) {
+                if (Iterable.class.isAssignableFrom(rtype)) {
                     check.setBefore(CheckBefore.NONE);
                     check.setAfter(CheckAfter.COLLECTION);
                 } else if ((rtype.isArray() && (Entity.class.isAssignableFrom(rtype.getComponentType()) || EntityHeader.class.isAssignableFrom(rtype.getComponentType())))) {
@@ -169,10 +187,14 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
             case FIND_HEADERS:
                 check.setBefore(CheckBefore.NONE);
                 check.operation = READ;
-                if (Collection.class.isAssignableFrom(rtype) || rtype.isArray()) {
+                if (Iterable.class.isAssignableFrom(rtype) || rtype.isArray()) {
                     check.setAfter(CheckAfter.COLLECTION);
                 } else if (EntityHeader.class.isAssignableFrom(rtype)) {
                     check.setAfter(CheckAfter.HEADER);
+                } else {
+                    // Unsupported return value type; must be able to read all
+                    check.setBefore(CheckBefore.ALL);
+                    check.setAfter(CheckAfter.NONE);
                 }
                 break;
             case FIND_ENTITY:
@@ -298,10 +320,9 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
                     List<Entity> entities = filter(Arrays.asList(array), user, check.operation, check.otherOperationName, check.methodName);
                     Object[] a0 = (Object[]) Array.newInstance(array.getClass().getComponentType(), 0);
                     return entities.toArray(a0);
-                } else if (rv instanceof Collection) {
+                } else if (rv instanceof Iterable) {
                     // TODO check generic type?
-                    Collection coll = (Collection) rv;
-                    return filter(coll, user, check.operation, check.otherOperationName, check.methodName);
+                    return filter((Iterable) rv, user, check.operation, check.otherOperationName, check.methodName);
                 } else {
                     throw new IllegalStateException("Return value of " + mname + " was not Entity[] or Collection<Entity>");
                 }

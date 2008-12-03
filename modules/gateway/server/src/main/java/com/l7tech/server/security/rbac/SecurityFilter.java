@@ -22,6 +22,6 @@ public interface SecurityFilter {
      * @return The filtered entity collection
      * @throws FindException If an error occurs determining security permissions.
      */
-    <T> List<T> filter( Collection<T> entityCollection, User user, OperationType type, String operationName ) throws FindException;
+    <T> Collection<T> filter( Collection<T> entityCollection, User user, OperationType type, String operationName ) throws FindException;
 
 }

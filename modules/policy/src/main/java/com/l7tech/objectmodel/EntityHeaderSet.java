@@ -4,9 +4,8 @@
 package com.l7tech.objectmodel;
 
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import javax.xml.bind.annotation.XmlRootElement;
-import java.util.*;
 import java.io.Serializable;
+import java.util.*;
 
 /**
  * A Set&lt;EntityHeader&gt; that includes an optional {@link #exceededMax} property, used to indicate that this set
@@ -38,7 +37,14 @@ public class EntityHeaderSet<HT extends EntityHeader> implements Set<HT>, Serial
     }
 
     public EntityHeaderSet(Set<HT> delegate) {
-        this.delegate = delegate;
+        if (delegate instanceof EntityHeaderSet) {
+            EntityHeaderSet<HT> hts = (EntityHeaderSet<HT>)delegate;
+            if (hts.isMaxExceeded())
+                setMaxExceeded(hts.getExceededMax());
+            this.delegate = hts.delegate;
+        } else {
+            this.delegate = delegate;
+        }
     }
 
     /**

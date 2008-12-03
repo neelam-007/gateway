@@ -6,6 +6,8 @@ package com.l7tech.util;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Encapsulates changes in a {@link Collection} of class <code>T</code> objects
@@ -86,8 +88,7 @@ import java.util.Iterator;
  * @since SecureSpan 5.0
  * @author rmak
  */
-public class CollectionUpdate<T> implements Serializable {
-
+public class CollectionUpdate<T> implements Serializable, Iterable<T> {
     /**
      * A differentiator supplies an alternative <code>equals</code> method.
      * Handy when a class's <code>equals</code> method does not provide the
@@ -190,6 +191,15 @@ public class CollectionUpdate<T> implements Serializable {
 
     void setAdded(Collection<T> added) {
         _added = added;
+    }
+
+    /** This is really only for RBAC filtering. */
+    @Override
+    public Iterator<T> iterator() {
+        final List<T> all = new ArrayList<T>();
+        if (_added != null) all.addAll(_added);
+        if (_removed != null) all.addAll(_removed);
+        return all.iterator();
     }
 
     /**
