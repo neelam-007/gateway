@@ -20,7 +20,6 @@ import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.xml.ws.soap.SOAPFaultException;
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.UnknownHostException;
@@ -73,7 +72,7 @@ public class GatewayContext {
         return migrationApi;
     }
 
-    public static boolean isNetworkException( final SOAPFaultException sfe ) {
+    public static boolean isNetworkException( final RuntimeException sfe ) {
         return ExceptionUtils.causedBy( sfe, ConnectException.class ) ||
                ExceptionUtils.causedBy( sfe, NoRouteToHostException.class ) ||
                ExceptionUtils.causedBy( sfe, UnknownHostException.class );

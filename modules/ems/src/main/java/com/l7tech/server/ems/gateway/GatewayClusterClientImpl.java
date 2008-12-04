@@ -11,6 +11,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 
+import javax.xml.ws.ProtocolException;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.lang.ref.SoftReference;
 import java.util.Collection;
@@ -25,7 +26,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
     private static final String PROP_CACHE_TIMEOUT = "com.l7tech.server.ems.gateway.clusterclient.cacheTimeout";
     private static final String PROP_FAILOVER_STRATEGY_NAME = "com.l7tech.server.ems.gateway.clusterclient.failoverStrategyName";
 
-    private static final Long DEFAULT_CACHE_TIMEOUT = 60 * 1000L; // 60 sec
+    private static final Long DEFAULT_CACHE_TIMEOUT = 15 * 1000L; // 15 sec
     private static final String DEFAULT_FAILOVER_STRATEGY_NAME = FailoverStrategyFactory.STICKY.getName();
 
     private final SsgCluster ssgCluster;
@@ -131,7 +132,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
      *                          if the failover strategy signalled to give up by returning null from {@link FailoverStrategy#selectService()}.
      */
     public static <R> R callWithFailover(FailoverStrategy<GatewayContext> failover, int numAttempts, GatewayContextUser<R> contextUser) throws GatewayException {
-        SOAPFaultException lastNetworkException = null;
+        ProtocolException lastNetworkException = null;
 
         for (int i = 0; i < numAttempts; ++i) {
             GatewayContext context = failover.selectService();
@@ -146,7 +147,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
                 return result;
             } catch (GatewayApi.GatewayException e) {
                 throw new GatewayException(e);
-            } catch (SOAPFaultException sfe) {
+            } catch (ProtocolException sfe) {
                 if (GatewayContext.isNetworkException(sfe)) {
                     lastNetworkException = sfe;
                 } else {
