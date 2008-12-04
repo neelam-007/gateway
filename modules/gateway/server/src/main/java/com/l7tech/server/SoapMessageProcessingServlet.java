@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server;
 
 import com.l7tech.common.http.CookieUtils;
@@ -64,8 +61,6 @@ import java.util.logging.Logger;
  * and formats the response as a reasonable approximation of an HTTP response.
  * <p/>
  * The name of this class has not been accurate since non-SOAP web services were added in SecureSpan version 3.0.
- *
- * @author alex
  */
 public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
@@ -218,6 +213,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         final StashManager stashManager = stashManagerFactory.createStashManager();
 
+        AssertionStatus status = null;
         try {
             context.setAuditContext(auditContext);
             context.setSoapFaultManager(soapFaultManager);
@@ -239,7 +235,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             response.attachHttpResponseKnob(respKnob);
 
             // Process message
-            AssertionStatus status = messageProcessor.processMessage(context);
+            status = messageProcessor.processMessage(context);
 
             // if the policy is not successful AND the stealth flag is on, drop connection
             if (status != AssertionStatus.NONE) {
@@ -319,7 +315,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 sendChallenge(context, hrequest, hresponse);
             } else {
                 logger.fine("servlet transport returning 500");
-                returnFault(context, hrequest, hresponse);
+                returnFault(context, hrequest, hresponse, status);
             }
         } catch (Throwable e) {
             // if the policy throws AND the stealth flag is set, drop connection
@@ -339,35 +335,35 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     } else {
                         logger.log(Level.SEVERE, e.getMessage(), e);
                     }
-                    sendExceptionFault(context, e, hrequest, hresponse);
+                    sendExceptionFault(context, e, hrequest, hresponse, status);
                 } else if (e instanceof PolicyVersionException) {
                     String msg = "Request referred to an outdated version of policy";
                     logger.log(Level.INFO, msg);
-                    sendExceptionFault(context, e, hrequest, hresponse);
+                    sendExceptionFault(context, e, hrequest, hresponse, status);
                 } else if (e instanceof NoSuchPartException) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
-                    sendExceptionFault(context, e, hrequest, hresponse);
+                    sendExceptionFault(context, e, hrequest, hresponse, status);
                 } else if (e instanceof MethodNotAllowedException) {
                     logger.warning(e.getMessage());
-                    sendExceptionFault(context, e, hrequest, hresponse);
+                    sendExceptionFault(context, e, hrequest, hresponse, status);
                 } else if (e instanceof MessageProcessingSuspendedException) {
                     auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_MESSAGE_PROCESSING_SUSPENDED, e.getMessage());
-                    sendExceptionFault(context, e, hrequest, hresponse);
+                    sendExceptionFault(context, e, hrequest, hresponse, status);
                 } else if (e instanceof IOException &&
                            e.getClass().getName().equals("org.apache.catalina.connector.ClientAbortException")){
                     logger.warning("Client closed connection.");
                 } else if (e instanceof MessageResponseIOException) {
-                    sendExceptionFault(context, e.getMessage(), hrequest, hresponse);
+                    sendExceptionFault(context, e.getMessage(), hrequest, hresponse, status);
                 } else if (e instanceof IOException) {
                     logger.warning("I/O error while processing message: " + e.getMessage());
-                    sendExceptionFault(context, e, hrequest, hresponse);
+                    sendExceptionFault(context, e, hrequest, hresponse, status);
                 } else if (ExceptionUtils.causedBy(e, SocketTimeoutException.class)) {
                     auditor.logAndAudit(SystemMessages.SOCKET_TIMEOUT);
-                    sendExceptionFault(context, e, hrequest, hresponse);
+                    sendExceptionFault(context, e, hrequest, hresponse, status);
                 } else {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     //? if (e instanceof Error) throw (Error)e;
-                    sendExceptionFault(context, e, hrequest, hresponse);
+                    sendExceptionFault(context, e, hrequest, hresponse, status);
                 }
             } catch (SAXException e1) {
                 throw new ServletException(e1);
@@ -430,7 +426,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
      * the new way to return soap faults
      */
     private void returnFault(PolicyEnforcementContext context,
-                           HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
+                             HttpServletRequest hreq, HttpServletResponse hresp, AssertionStatus status) throws IOException, SAXException {
         OutputStream responseStream = null;
         String faultXml = null;
         try {
@@ -440,7 +436,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             } else {
                 hresp.setContentType(DEFAULT_CONTENT_TYPE);
             }
-            hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
+            hresp.setStatus(status == AssertionStatus.BAD_REQUEST ? 400 : 500); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
@@ -462,12 +458,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
-                                    HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
-        sendExceptionFault(context, soapFaultManager.constructExceptionFault(e, context), hreq, hresp);
+                                    HttpServletRequest hreq, HttpServletResponse hresp, AssertionStatus status) throws IOException, SAXException {
+        sendExceptionFault(context, soapFaultManager.constructExceptionFault(e, context), hreq, hresp, status);
     }
 
     private void sendExceptionFault(PolicyEnforcementContext context, String faultXml,
-                                    HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
+                                    HttpServletRequest hreq, HttpServletResponse hresp, AssertionStatus status) throws IOException, SAXException {
         OutputStream responseStream = null;
         try {
             responseStream = hresp.getOutputStream();
@@ -476,7 +472,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             } else {
                 hresp.setContentType(DEFAULT_CONTENT_TYPE);
             }
-            hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
+            hresp.setStatus(status == AssertionStatus.BAD_REQUEST ? 400 : 500); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
