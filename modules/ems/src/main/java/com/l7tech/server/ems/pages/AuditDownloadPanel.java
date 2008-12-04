@@ -13,10 +13,12 @@ import org.apache.wicket.util.value.ValueMap;
 
 import java.util.Date;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import com.l7tech.util.TimeUnit;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.server.ems.EmsSession;
 
 /**
  * Panel for collection of details for audit download.
@@ -77,8 +79,9 @@ public class AuditDownloadPanel extends Panel {
 
     //- PRIVATE
 
-    private Date startOfDay( final Date date ) {
+   private Date startOfDay( final Date date ) {
         Calendar calendar = Calendar.getInstance();
+        calendar.setTimeZone( TimeZone.getTimeZone( ((EmsSession)getSession()).getTimeZoneId() ) );
         calendar.setTime(date);
 
         calendar.set(Calendar.HOUR, 0);
