@@ -1,6 +1,8 @@
 package com.l7tech.server.folder;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.server.HibernateEntityManager;
@@ -49,5 +51,21 @@ public class FolderManagerImpl extends HibernateEntityManager<Folder, FolderHead
         map.put("parentFolder", entity.getParentFolder());
         map.put("name",entity.getName());
         return Arrays.asList(map);
+    }
+
+    @Override
+    public void update(Folder entity) throws UpdateException {
+        try {
+            //check for circular folders
+            Folder childFolder = findByPrimaryKey(entity.getParentFolder().getOid());
+            if (entity.equals(childFolder.getParentFolder())) {
+                throw new UpdateException("The destination folder is a subfolder of the source folder");
+            }
+        } catch (FindException fe) {
+            throw new UpdateException("Couldn't find previous version(s) to check for circular folders");
+        }
+
+        //proceed with update
+        super.update(entity);
     }
 }
