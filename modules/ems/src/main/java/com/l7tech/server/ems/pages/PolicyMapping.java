@@ -5,7 +5,7 @@ import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.EnterpriseFolderManager;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
-import com.l7tech.server.ems.migration.Migration;
+import com.l7tech.server.ems.migration.MigrationRecord;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.FindException;
@@ -194,7 +194,7 @@ public class PolicyMapping extends EmsPage  {
                 if (value != null && value.length() > 0) {
                     String summary;
                     try {
-                        Migration migration = migrationManager.findByPrimaryKey(Long.parseLong(value));
+                        MigrationRecord migration = migrationManager.findByPrimaryKey(Long.parseLong(value));
                         summary = migration.getSummary();
                     } catch (FindException e) {
                         logger.warning("Cannot find a policy migration (OID = '" + value + "'.");
@@ -230,9 +230,9 @@ public class PolicyMapping extends EmsPage  {
      * Migration Model, which has the following attributes: id, name, time created, source cluster, and destination cluster.
      */
     private final class MigrationModel implements Serializable {
-        private final Migration migration;
+        private final MigrationRecord migration;
 
-        MigrationModel(Migration migration) {
+        MigrationModel(MigrationRecord migration) {
             this.migration = migration;
         }
 
@@ -275,11 +275,11 @@ public class PolicyMapping extends EmsPage  {
             try {
                 MigrationRecordManager.SortProperty sort = MigrationRecordManager.SortProperty.valueOf(getSort().getProperty());
                 checkStartEndDays();
-                Iterator<Migration> itr = migrationManager.findPage(sort, getSort().isAscending(), first, count, start, end).iterator();
+                Iterator<MigrationRecord> itr = migrationManager.findPage(sort, getSort().isAscending(), first, count, start, end).iterator();
 
-                return Functions.map(itr, new Functions.Unary<MigrationModel, Migration>() {
+                return Functions.map(itr, new Functions.Unary<MigrationModel, MigrationRecord>() {
                     @Override
-                    public MigrationModel call(Migration migration) {
+                    public MigrationModel call(MigrationRecord migration) {
                         return new MigrationModel(migration);
                     }
                 });
@@ -336,7 +336,7 @@ public class PolicyMapping extends EmsPage  {
      */
     private void generatePolicyMigrationsForDemo() {
         try {
-            for (Migration m: migrationManager.findAll()) {
+            for (MigrationRecord m: migrationManager.findAll()) {
                 migrationManager.delete(m);
             }
 
@@ -374,7 +374,7 @@ public class PolicyMapping extends EmsPage  {
                     "Source cluster     : " + source.getName() + "\n" +
                         "Destination cluster: " + dest.getName() + "\n" +
                         "Date created       : " + dates[i].toString();
-                Migration m = new Migration("SourceCluser -> DestCluster " + i, dates[i].getTime(), source, dest, summary);
+                MigrationRecord m = new MigrationRecord("SourceCluser -> DestCluster " + i, dates[i].getTime(), source, dest, summary);
                 migrationManager.save(m);
             }
         } catch (Exception e) {

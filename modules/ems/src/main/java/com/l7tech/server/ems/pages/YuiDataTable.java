@@ -589,6 +589,7 @@ public class YuiDataTable extends Panel {
                             output.add( "sortOptions", Collections.singletonMap("sortFunction", "ordered") );
                         } else if ( Number.class.isAssignableFrom(typedPropertyColumn.getColumnClass()) ) {
                             output.add( "formatter", "number" );
+                            output.add( "className", "right");
                         }
                     }
                 }
@@ -632,7 +633,7 @@ public class YuiDataTable extends Panel {
                 if ( object == null ) {
                     output.add( column.getPropertyExpression(), null);
                 } else {
-                    String dataString = getConverter(object.getClass()).convertToString(object, null);
+                    String dataString = getConverter(object.getClass()).convertToString(object, Locale.getDefault());
                     if ( dataString != null ) {
                         if ( !(column instanceof TypedPropertyColumn) || ((TypedPropertyColumn)column).isEscapePropertyValue() ) {
                             dataString = Strings.escapeMarkup(dataString, false, false).toString();

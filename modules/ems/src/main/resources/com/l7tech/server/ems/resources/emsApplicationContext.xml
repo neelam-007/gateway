@@ -91,8 +91,8 @@
                 <value>com.l7tech.server.ems.standardreports.StandardReportArtifact</value>
 
                 <!-- Enterprise Migration -->
-                <value>com.l7tech.server.ems.migration.Migration</value>
-                <value>com.l7tech.server.ems.migration.MigrationMapping</value>
+                <value>com.l7tech.server.ems.migration.MigrationRecord</value>
+                <value>com.l7tech.server.ems.migration.MigrationMappingRecord</value>
 
                 <!-- General -->
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
@@ -464,7 +464,7 @@
     <bean id="migrationRecordManager" class="com.l7tech.server.ems.migration.MigrationRecordManagerImpl" parent="hibernateBean">
     </bean>
 
-    <bean id="migrationMappingManager" class="com.l7tech.server.ems.migration.MigrationMappingManagerImpl" parent="hibernateBean">
+    <bean id="migrationMappingManager" class="com.l7tech.server.ems.migration.MigrationMappingRecordManagerImpl" parent="hibernateBean">
         <constructor-arg index="0" ref="ssgClusterManager"/>
     </bean>
 

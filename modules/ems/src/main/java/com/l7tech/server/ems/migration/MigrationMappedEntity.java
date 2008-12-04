@@ -57,12 +57,12 @@ public class MigrationMappedEntity {
         this.entityValue = entityValue;
     }
 
-    @Column(name="entity_version", nullable=false)
-    public long getEntityVersion() {
+    @Column(name="entity_version")
+    public Integer getEntityVersion() {
         return entityVersion;
     }
 
-    public void setEntityVersion(long entityVersion) {
+    public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
 
@@ -90,7 +90,7 @@ public class MigrationMappedEntity {
     private String entityProviderId; // TODO get rid of this hack
     private String entityId;
     private String entityValue;
-    private long entityVersion;
+    private Integer entityVersion;
     private String entityName;
     private String entityDescription;
 }

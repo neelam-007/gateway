@@ -16,7 +16,7 @@ import java.util.Date;
  * @Author: ghuang
  * @Date: Nov 19, 2008
  */
-public interface MigrationRecordManager extends EntityManager<Migration, EntityHeader> {
+public interface MigrationRecordManager extends EntityManager<MigrationRecord, EntityHeader> {
 
     enum SortProperty {
         NAME("name"), TIME("timeCreated"), FROM("sourceCluster"), TO("destinationCluster");
@@ -39,7 +39,7 @@ public interface MigrationRecordManager extends EntityManager<Migration, EntityH
      * @return a new migration record.
      * @throws SaveException
      */
-    Migration create(String name, long timeCreated, final SsgCluster source, final SsgCluster destination, final String summary) throws SaveException;
+    MigrationRecord create(String name, long timeCreated, final SsgCluster source, final SsgCluster destination, final String summary) throws SaveException;
 
     /**
      * Find how many migration records are dated between "start" and "end".
@@ -61,5 +61,5 @@ public interface MigrationRecordManager extends EntityManager<Migration, EntityH
      * @param end The end date
      * @throws FindException If an error occurs
      */
-    Collection<Migration> findPage(final SortProperty sortProperty, final boolean ascending, final int offset, final int count, final Date start, final Date end) throws FindException;
+    Collection<MigrationRecord> findPage(final SortProperty sortProperty, final boolean ascending, final int offset, final int count, final Date start, final Date end) throws FindException;
 }

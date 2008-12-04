@@ -19,18 +19,18 @@ import org.springframework.transaction.annotation.Transactional;
  * @Date: Nov 19, 2008
  */
 @Transactional(rollbackFor=Throwable.class)
-public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration, EntityHeader> implements MigrationRecordManager {
+public class MigrationRecordManagerImpl extends HibernateEntityManager<MigrationRecord, EntityHeader> implements MigrationRecordManager {
 
     //- PUBLIC
 
     @Override
-    public Class<Migration> getImpClass() {
-        return Migration.class;
+    public Class<MigrationRecord> getImpClass() {
+        return MigrationRecord.class;
     }
 
     @Override
-    public Class<Migration> getInterfaceClass() {
-        return Migration.class;
+    public Class<MigrationRecord> getInterfaceClass() {
+        return MigrationRecord.class;
     }
 
     @Override
@@ -39,18 +39,18 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     }
 
     @Override
-    public Migration create( final String name, 
+    public MigrationRecord create( final String name,
                              final long timeCreated,
                              final SsgCluster source,
                              final SsgCluster destination,
                              final String summary) throws SaveException {
-        Migration result = new Migration(name, timeCreated, source, destination, summary);
+        MigrationRecord result = new MigrationRecord(name, timeCreated, source, destination, summary);
         super.save(result);
         return result;
     }
 
     @Override
-    public Collection<Migration> findPage( final SortProperty sortProperty,
+    public Collection<MigrationRecord> findPage( final SortProperty sortProperty,
                                            final boolean ascending,
                                            final int offset,
                                            final int count,

@@ -100,6 +100,8 @@
             var srcSSGClusterContentSelectorWindow;
             var destSSGClusterContentSelectorWindow;
 
+            var dependenciesAction;
+
             /**
              * Verifies if all inputs for migration are valid.
              * @return {boolean} true if valid
@@ -192,6 +194,7 @@
                 postObject.entities = getSelectedSrcItems();
                 var postData = YAHOO.lang.JSON.stringify(postObject);
                 document.getElementById('selectionJson').value = postData;
+                dependenciesAction();
             }
 
             function onClickMigrate() {
@@ -225,19 +228,19 @@
                 // No custom dialogs yet.
             }
 
+            function initActions() {
+                var identifyDependenciesImage = document.getElementById('identifyDependenciesImage');
+                dependenciesAction = identifyDependenciesImage.onclick;
+                identifyDependenciesImage.onclick = null;
+            }
+
             function init() {
                 srcSSGClusterContentSelectorWindow = document.getElementById('srcSSGClusterContentSelector').contentWindow;
                 destSSGClusterContentSelectorWindow = document.getElementById('destSSGClusterContentSelector').contentWindow;
 
-// TODO for Steve
-//                var wicketOnclick = identifyDependenciesImageButton.onclick;
-//                identifyDependenciesImageButton.onclick = function(){
-//                    onClickIdentifyDependencies();
-//                    wicketOnclick();
-//                    return true;
-//                };
                 initButtons();
                 initDialogs();
+                initActions();
             }
 
             YAHOO.util.Event.onDOMReady(init);
@@ -454,7 +457,7 @@
                 <td class="srcDestCenter">
                     <button id="migrateButton"><img src="../images/copy.png" title="Migrate selected policies with dependency mapping" alt=""></button>
                     <br/>
-                    <button id="identifyDependenciesButton"><img src="../images/resolveDependencies.png" title="Identify dependencies" alt=""></button>
+                    <button id="identifyDependenciesButton"><img src="../images/resolveDependencies.png" title="Identify dependencies" alt="" id="identifyDependenciesImage" wicket:id="identifyDependenciesImage"></button>
                 </td>
                 <td class="srcDest">
                     <iframe id="destSSGClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0"
@@ -531,6 +534,8 @@
                                     <input type="text" wicket:id="dependencySearchText" value="" size="30" />
                                     <button type="submit" wicket:id="dependencySearchButton">Search</button>
 
+                                    <br/>&nbsp;<br/>
+
                                     <table class="dataTable" wicket:id="dependencyOptions">
                                         <thead>
                                             <tr>
@@ -541,9 +546,9 @@
                                         </thead>
                                         <tbody>
                                             <tr wicket:id="optionRepeater">
-                                                <td><option type="radio"/></td>
+                                                <td><input name="selectionValue" type="radio" wicket:id="uid"/></td>
                                                 <td><div wicket:id="name"/></td>
-                                                <td><div wicket:id="type"/></td>
+                                                <td class="right"><div wicket:id="version"/></td>
                                             </tr>
                                         </tbody>
                                     </table>
