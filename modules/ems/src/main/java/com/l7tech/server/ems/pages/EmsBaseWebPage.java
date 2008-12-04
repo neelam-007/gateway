@@ -10,7 +10,7 @@ import com.l7tech.identity.User;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Base for all EMS web pages, that provides an implementation of UserContext.
+ * Base for all EMS web pages, that provides access to the current user, LoginInfo, and EmsSession.
  */
 public class EmsBaseWebPage extends WebPage {
     @SpringBean
