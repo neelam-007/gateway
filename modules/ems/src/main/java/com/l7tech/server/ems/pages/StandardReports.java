@@ -81,12 +81,14 @@ public class StandardReports extends EmsPage  {
                     }catch(Exception e){
                         returnValue = new JSONException(
                                 new Exception("Cannot parse uploaded JSON data", e.getCause()));
+                        logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
                         return;
                     }
                 }
 
                 try{
                     if(!(jsonDataObj instanceof Map)){
+                        logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
                         throw new ReportException("Incorrect JSON data. Not convertible to a Map");
                     }
                     Map jsonDataMap = (Map) jsonDataObj;
@@ -101,6 +103,7 @@ public class StandardReports extends EmsPage  {
                     // null for success
                     returnValue = null;
                 }catch(ReportException ex){
+                    logger.log(Level.FINER, "Problem running report: " + ex.getMessage(), ex.getCause());
                     returnValue = new JSONException(
                             new Exception("Problem running report: " + ex.getMessage(), ex.getCause()));
                 }
