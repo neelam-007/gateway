@@ -108,6 +108,11 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     @Override
+    public List<SsgCluster> findChildSsgClusters(String parentFolderGuid) throws FindException {
+        return findChildSsgClusters(enterpriseFolderManager.findByGuid(parentFolderGuid));
+    }
+
+    @Override
     public List<SsgCluster> findChildSsgClusters(final EnterpriseFolder parentFolder) throws FindException {
         try {
             //noinspection unchecked

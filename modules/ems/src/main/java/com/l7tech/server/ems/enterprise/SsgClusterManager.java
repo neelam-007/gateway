@@ -41,5 +41,21 @@ public interface SsgClusterManager extends EntityManager<SsgCluster, EntityHeade
      */
     void deleteByGuid(String guid) throws FindException, DeleteException;
 
+    /**
+     * Find all children of a given parent folder guid.
+     *
+     * @param parentFolderGuid The guid of the parent folder
+     * @return a list of children of the parent folder
+     * @throws FindException if failed to query database
+     */
+    List<SsgCluster> findChildSsgClusters(String parentFolderGuid) throws FindException;
+
+    /**
+     * Find all children of a given parent folder.
+     *
+     * @param parentFolder: the parent folder
+     * @return a list of children of the parent folder
+     * @throws FindException if failed to query database
+     */
     List<SsgCluster> findChildSsgClusters(final EnterpriseFolder parentFolder) throws FindException;
 }

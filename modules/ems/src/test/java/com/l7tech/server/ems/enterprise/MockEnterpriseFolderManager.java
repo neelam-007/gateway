@@ -33,12 +33,21 @@ public class MockEnterpriseFolderManager extends EntityManagerStub<EnterpriseFol
     }
 
     @Override
+    public void deleteByGuid(String guid, boolean deleteByCascade) throws FindException, DeleteException {
+    }
+
+    @Override
     public EnterpriseFolder findRootFolder() throws FindException {
         return null;
     }
 
     @Override
     public EnterpriseFolder findByGuid(String guid) throws FindException {
+        return null;
+    }
+
+    @Override
+    public List<EnterpriseFolder> findChildFolders(String parentFolderGuid) throws FindException {
         return null;
     }
 

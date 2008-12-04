@@ -44,13 +44,27 @@ public interface EnterpriseFolderManager extends EntityManager<EnterpriseFolder,
     void renameByGuid(String name, String guid) throws FindException, UpdateException;
 
     /**
-     * Deletes a folder and its descendents with the given GUID.
+     * Deletes a folder with the given guid without Cascade Deletion.  If the folder has descendents, then the folder
+     * won't be deleted and an exception will throw.
+     *
+     * Note: this method is the default deletion method.
      *
      * @param guid      GUID of the folder
      * @throws FindException if no folder with such GUID
      * @throws DeleteException if database delete failed
      */
     void deleteByGuid(String guid) throws FindException, DeleteException;
+
+    /**
+     * Deletes a folder with the given guid depending on the cascade flag.
+     *
+     * @param guid      GUID of the folder
+     * @param deleteByCascade: if the flag is true, then all descendents will be deleted.
+     *                         Otherwise, the method is the same as the default deletion method.
+     * @throws FindException if no folder with such GUID
+     * @throws DeleteException if database delete failed
+     */
+    void deleteByGuid(String guid, boolean deleteByCascade) throws FindException, DeleteException;
 
     /**
      * Finds the root folder.
@@ -68,6 +82,15 @@ public interface EnterpriseFolderManager extends EntityManager<EnterpriseFolder,
      * @throws FindException if failed to query database
      */
     EnterpriseFolder findByGuid(String guid) throws FindException;
+
+    /**
+     * Find child folders of a given folder guid.
+     *
+     * @param parentFolderGuid  the guid of the parent folder
+     * @return list of child folders
+     * @throws FindException if failed to query database
+     */
+    List<EnterpriseFolder> findChildFolders(String parentFolderGuid) throws FindException;
 
     /**
      * Find child folders of a given folder.

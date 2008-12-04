@@ -90,19 +90,29 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
 
     @Override
     public void deleteByGuid(String guid) throws FindException, DeleteException {
+        deleteByGuid(guid, false);
+    }
+
+    @Override
+    public void deleteByGuid(String guid, boolean deleteByCascade) throws FindException, DeleteException {
         final EnterpriseFolder folder = findByGuid(guid);
+
+        if (!deleteByCascade && !isEmptyFolder(guid)) {
+            throw new NonEmptyFolderDeletionException("Cannot delete a non-empty folder (NAME = '" + folder.getName() + "').");
+        }
+
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
-                private void deleteChildSsgClusters(final Session session, final EnterpriseFolder folder) {
+                private void deleteChildSsgClusters(final Session session, final EnterpriseFolder folder) throws DeleteException {
                     final Criteria crit = session.createCriteria(SsgCluster.class);
                     crit.add(Restrictions.eq("parentFolder", folder));
                     crit.addOrder(Order.asc("name"));
                     for (Object childSsgCluster : crit.list()) {
-                        session.delete(childSsgCluster);
+                        ssgClusterManager.delete((SsgCluster)childSsgCluster);
                     }
                 }
 
-                private void deleteChildFolders(final Session session, final EnterpriseFolder folder) {
+                private void deleteChildFolders(final Session session, final EnterpriseFolder folder) throws DeleteException {
                     final Criteria crit = session.createCriteria(getImpClass());
                     crit.add(Restrictions.eq("parentFolder", folder));
                     crit.addOrder(Order.asc("name"));
@@ -111,7 +121,7 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
                     }
                 }
 
-                private void deleteFolder(final Session session, final EnterpriseFolder folder) {
+                private void deleteFolder(final Session session, final EnterpriseFolder folder) throws DeleteException {
                     deleteChildSsgClusters(session, folder);
                     deleteChildFolders(session, folder);
                     session.delete(folder);
@@ -119,7 +129,11 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
 
                 @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    deleteFolder(session, folder);
+                    try {
+                        deleteFolder(session, folder);
+                    } catch (DeleteException e) {
+                        throw new HibernateException(e);
+                    }
                     return null;
                 }
             });
@@ -162,6 +176,11 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         } catch (DataAccessException e) {
             throw new FindException("Cannot find folder by GUID: " + guid, e);
         }
+    }
+
+    @Override
+    public List<EnterpriseFolder> findChildFolders(String parentFolderGuid) throws FindException {
+        return findChildFolders(findByGuid(parentFolderGuid));
     }
 
     @Override
@@ -233,5 +252,9 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
             if (parentFolder == null)
                 throw new IllegalArgumentException("Cannot create a second root folder, since the root folder exists already.");
         }
+    }
+
+    private boolean isEmptyFolder(String guid) throws FindException {
+        return findChildFolders(guid).isEmpty() && ssgClusterManager.findChildSsgClusters(guid).isEmpty();
     }
 }
