@@ -10,6 +10,7 @@ import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.util.TextUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.policy.Policy;
 import com.l7tech.identity.User;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Propagation;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
+import org.hibernate.StaleObjectStateException;
 
 import java.text.MessageFormat;
 import java.util.logging.Level;
@@ -139,7 +141,15 @@ public class ServiceManagerImp
         }
 
         updatePolicyName(service, service.getPolicy());
-        super.update(service);
+        try {
+            super.update(service);
+        } catch (UpdateException ue) {
+            if (ExceptionUtils.causedBy(ue, StaleObjectStateException.class)) {
+                throw new StaleUpdateException("version mismatch", ue);
+            } else {
+                throw ue;
+            }
+        }
 
         try {
             roleManager.renameEntitySpecificRole(SERVICE, service, replaceRoleName);
