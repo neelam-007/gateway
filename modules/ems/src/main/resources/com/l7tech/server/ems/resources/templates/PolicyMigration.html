@@ -86,7 +86,9 @@
                 CANCEL : 'Cancel',
                 ERROR : 'Error',
                 CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server: ',
-                CANNOT_DOWNLOAD_DEPENDENCIES : 'Failed to download list of dependencies for selected source items: '
+                IDENTIFING_DEPENDENCIES : 'Identifying dependencies for selected source items ...',
+                CANNOT_DOWNLOAD_DEPENDENCIES : 'Failed to download list of dependencies for selected source items: ',
+                DEPENDENCY_MAPPING : 'Dependency Mapping'
             }
         </script>
         <script type="text/javascript">
@@ -108,12 +110,48 @@
              * @return {boolean} true if valid
              */
             function validateMigrationInputs() {
-                // TODO
-                return true;
+                var valid = destSSGClusterContentSelectorWindow.getSsgCluster() != null &&
+                            destSSGClusterContentSelectorWindow.getEntityTreeTable().getEntityWithRadioButtonSelected() != null;
+                // TODO also check that dependencies list matches src selection and all dependencies are mapped
+                return valid;
+            }
+
+            /**
+             * Verifies if all inputs for identifying dependencies are valid.
+             * @return {boolean} true if valid
+             */
+            function validateIdentifyDependenciesInputs() {
+                return srcSSGClusterContentSelectorWindow.getSsgCluster() != null &&
+                       srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected().length > 0 &&
+                       destSSGClusterContentSelectorWindow.getSsgCluster() != null;
             }
 
             function updateMigrateButton() {
                 migrateButton.set('disabled', !validateMigrationInputs());
+            }
+
+            function updateIdentifyDependenciesButton() {
+                identifyDependenciesButton.set('disabled', !validateIdentifyDependenciesInputs());
+            }
+
+            function onLoadSrcSSGClusterContent(callbackId) {
+                updateIdentifyDependenciesButton();
+                updateMigrateButton();
+            }
+
+            function onLoadDestSSGClusterContent(callbackId) {
+                document.getElementById('destinationClusterId').value = destSSGClusterContentSelectorWindow.getSsgCluster().id;
+                updateIdentifyDependenciesButton();
+                updateMigrateButton();
+            }
+
+            function onChangeSrcSSGClusterContentSelection(event, entity, callbackId) {
+                updateIdentifyDependenciesButton();
+            }
+
+            function onChangeDestSSGClusterContentSelection(event, entity, callbackId) {
+                document.getElementById('destinationFolderId').value = destSSGClusterContentSelectorWindow.getEntityTreeTable().getEntityWithRadioButtonSelected().id;
+                updateMigrateButton();
             }
 
             /**
@@ -124,6 +162,8 @@
              */
             function onHighlightSsgCluster(previous, ssgCluster, callbackId) {
                 if (callbackId == 'srcSSGClusterSelector') {
+                    srcSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback(onLoadSrcSSGClusterContent);
+                    srcSSGClusterContentSelectorWindow.setEntityTristateCheckboxClickedCallback(onChangeSrcSSGClusterContentSelection);
                     srcSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
                         [
                             l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
@@ -142,6 +182,8 @@
                         ],
                         null);
                 } else if (callbackId == 'destSSGClusterSelector') {
+                    destSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback(onLoadDestSSGClusterContent);
+                    destSSGClusterContentSelectorWindow.setEntityRadioButtonClickedCallback(onChangeDestSSGClusterContentSelection);
                     destSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
                         [
                             l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
@@ -163,8 +205,6 @@
                     document.getElementById('srcItemDetails').src = 'dataSource/' + entity.type + '/' + srcSSGClusterContentSelectorWindow.getSsgCluster().id + '/' + entity.id + '.xml';
                 } else if (callbackId == 'destSSGClusterContentSelector') {
                     document.getElementById('destItemDetails').src = 'dataSource/' + entity.type + '/' + destSSGClusterContentSelectorWindow.getSsgCluster().id + '/' + entity.id + '.xml';
-                    // TODO this selection should be based on the radio buttons
-                    document.getElementById('destinationClusterId').value = destSSGClusterContentSelectorWindow.getSsgCluster().id;
                 }
             }
 
@@ -201,7 +241,12 @@
             }
 
             function onClickMigrate() {
-                //TODO validation and update of JSON form data
+                var postObject = {};
+                postObject.clusterId = srcSSGClusterContentSelectorWindow.getSsgCluster().id;
+                postObject.entities = getSelectedSrcItems();
+                var postData = YAHOO.lang.JSON.stringify(postObject);
+                document.getElementById('selectionJson').value = postData;
+                document.getElementById('enableNewServices').value = document.getElementById('enableNewServicesCheckBox').checked;
                 migrationAction();
             }
 
@@ -216,12 +261,13 @@
 
             function initButtons() {
                 migrateButton = new YAHOO.widget.Button('migrateButton', {
-// TODO                   disabled : true,        // initially disabled until all inputs are made
+                    disabled : true,        // initially disabled until all dependency mapping are done
                     onclick  : { fn : onClickMigrate },
                     title    : 'Migrate selected policies with dependency mapping', // need title on IMG element too
                     type     : 'push'
                 });
                 identifyDependenciesButton = new YAHOO.widget.Button('identifyDependenciesButton', {
+                    disabled : true,        // initially disabled until SSG contents are checked
                     onclick : { fn : onClickIdentifyDependencies },
                     title   : 'Identify dependencies',                              // need title on IMG element too
                     type    : 'push'
@@ -427,7 +473,7 @@
                 <td class="srcDest">
                     <table width="100%">
                         <tr>
-                            <td class="nowrap">Select items to copy:</td>
+                            <td class="nowrap">Select items to migrate:</td>
                             <td class="right" width="100%">
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
                                      onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
@@ -443,8 +489,8 @@
                         <tr>
                             <td class="nowrap">
                                 Select a destination folder:
-                                (<input id="checkbox:enable" type="checkbox" />
-                                <label for="checkbox:enable"> enable new services</label>)
+                                (<input id="enableNewServicesCheckBox" type="checkbox" />
+                                <label for="enableNewServicesCheckBox"> enable new services</label>)
                             </td>
                             <td class="right" width="100%">
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
@@ -517,6 +563,7 @@
                 <input id="selectionJson" type="hidden" wicket:id="selectionJson"/>
                 <input id="destinationClusterId" type="hidden" wicket:id="destinationClusterId"/>
                 <input id="destinationFolderId" type="hidden" wicket:id="destinationFolderId"/>
+                <input id="enableNewServices" type="hidden"/>
             </form>
             <div class="panel">
                 <div class="panelTitle">Dependencies Mapping</div>

@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <title>SSG Cluster Content Multi Selector [Enterprise Service Manager]</title>
+    <title>SSG Cluster Content Selector [Enterprise Service Manager]</title>
     <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
 
     <wicket:head>
@@ -72,8 +72,14 @@
         var callbackId;
 
         /**
-         * Callback function upon highlighting an SSG Cluster.
-         * @type function(entity)
+         * Callback function upon completion of loading the content of an SSG Cluster.
+         * @type function(callbackId)
+         */
+        var ssgClusterContentLoadedCallback;
+
+        /**
+         * Callback function upon highlighting an SSG content entity.
+         * @type function(previous, entity, callbackId)
          */
         var entityHighlightedCallback;
 
@@ -83,11 +89,33 @@
         var highlightableEntities;
 
         /**
+         * Callback function upon clicking the tri-state checkbox of an SSG content entity.
+         * @type function(event, entity, callbackId)
+         */
+        var entityTristateCheckboxClickedCallback;
+
+        /**
+         * Callback function upon clicking the radio button of an SSG content entity.
+         * @type function(event, entity, callbackId)
+         */
+        var entityRadioButtonClickedCallback;
+
+        /**
          * Parent window should call this if it wants a callback identifier.
          * @param {string} id   an identifier to include when callback to parent's showSSGClusterContent function.
          */
         function setCallbackId(id) {
             callbackId = id;
+        }
+
+        function setSsgClusterContentLoadedCallback(fn) {
+            ssgClusterContentLoadedCallback = fn;
+        }
+
+        function afterLoadSsgClusterContent() {
+            if (ssgClusterContentLoadedCallback != undefined && ssgClusterContentLoadedCallback != null) {
+                ssgClusterContentLoadedCallback(callbackId);
+            }
         }
 
         function setHighlightableEntitiesAndCallback(types, fn) {
@@ -103,6 +131,26 @@
         function onEntityHighlighted(previous, entity) {
             if (entityHighlightedCallback != undefined && entityHighlightedCallback != null) {
                 entityHighlightedCallback(previous, entity, callbackId);
+            }
+        }
+
+        function setEntityTristateCheckboxClickedCallback(fn) {
+            entityTristateCheckboxClickedCallback = fn;
+        }
+
+        function onClickEntityTristateCheckbox(event, entity) {
+            if (entityTristateCheckboxClickedCallback != undefined && entityTristateCheckboxClickedCallback != null) {
+                entityTristateCheckboxClickedCallback(event, entity, callbackId);
+            }
+        }
+
+        function setEntityRadioButtonClickedCallback(fn) {
+            entityRadioButtonClickedCallback = fn;
+        }
+
+        function onClickEntityRadioButton(event, entity) {
+            if (entityRadioButtonClickedCallback != undefined && entityRadioButtonClickedCallback != null) {
+                entityRadioButtonClickedCallback(event, entity, callbackId);
             }
         }
 
@@ -143,11 +191,13 @@
                     } else {
                         entityTreeTable.displayDataError();
                     }
+                    afterLoadSsgClusterContent();
                 },
                 failure : function(o) {
                     l7.Dialog.hideWaitDialog();
                     entityTreeTable.displayDataError();
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText, localizedStrings.OK);
+                    afterLoadSsgClusterContent();
                 }
             };
             entityTreeTable.clear();
@@ -176,7 +226,9 @@
                     l7.EntityTreeTable.COLUMN.TYPE
                 ],
                 highlightableEntities : highlightableEntities,
-                onEntityHighlighted : onEntityHighlighted
+                onEntityHighlighted : onEntityHighlighted,
+                onClickEntityTristateCheckbox : onClickEntityTristateCheckbox,
+                onClickEntityRadioButton : onClickEntityRadioButton
             };
             entityTreeTable = new l7.EntityTreeTable(entityTreeTableBody, [] /* no entities initially */, '../images', config);
         }

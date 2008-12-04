@@ -92,6 +92,7 @@ if (!l7.EntityTreeTable) {
          *   entitiesWithZoomIcon {array} - array of l7.EntityTreeTable.ENTITY values that should have zoom icon; optional if columns contains l7.EntityTreeTable.COLUMN.ZOOM; default is all types
          *   onClickTrustDialogButton {function(event, entity)} - required if columns contains l7.EntityTreeTable.COLUMN.TRUST_STATUS
          *   onClickAccessDialogButton {function(event, entity)} - required if columns contains l7.EntityTreeTable.COLUMN.ACCESS_STATUS
+         *   onClickEntityTristateCheckbox {function(event, entity)} - callback method upon click of an entity tri-state checkbox; optional if entitiesWithTristateCheckbox array is used
          *   onClickEntityRadioButton {function(event, entity)} - callback method upon click of an entity radio button; optional if entitiesWithRadioButton array is used
          *   onClickDashboardCheckbox {function(event, entity)} - callback method upon state change of Dashboard checkboxes; required if columns contains l7.EntityTreeTable.COLUMN.DASHBOARD
          *   onClickZoomIcon {function(event, entity)} - callback method upon click of an entity zoom icon; required if columns contain l7.EntityTreeTable.COLUMN.ZOOM
@@ -332,12 +333,14 @@ if (!l7.EntityTreeTable) {
              * @param {MouseEvent} event    the click event
              * @param {object} params       parameters passed;
              *                              where params.entities is array of entity object literals,
-             *                              and params.entityId is the ID of the entity clicked
+             *                              and params.entityId is the ID of the entity clicked,
+             *                              and params.callback is the user-supplied call back method
              * Expected execution scope is the checkbox HTMLInputElement.
              */
             function onEntityCheckboxClicked(event, params) {
                 var entities = params.entities;
                 var entityId = params.entityId;
+                var callback = params.callback;
 
                 function getState(entity) {
                     return entity._tristateCheckboxState;
@@ -449,6 +452,10 @@ if (!l7.EntityTreeTable) {
                 setState(entities[index], this.checked ? TRISTATE_CHECKBOX_CHECKED : TRISTATE_CHECKBOX_UNCHECKED);
                 checkDescendents(this.checked);
                 updateAncestors();
+
+                if (callback != undefined && callback != null) {
+                    callback(event, entities[index]);
+                }
             }
 
             // --------------------------------------------------------------------------------
@@ -522,7 +529,7 @@ if (!l7.EntityTreeTable) {
                         var checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
                         checkbox.disabled = !entity.rbacCUD;
-                        YAHOO.util.Event.addListener(checkbox, 'click', onEntityCheckboxClicked, {entities : this._entities, entityId : entity.id});
+                        YAHOO.util.Event.addListener(checkbox, 'click', onEntityCheckboxClicked, {entities : this._entities, entityId : entity.id, callback : this._config.onClickEntityTristateCheckbox});
                         td.appendChild(checkbox);
                         entity._tristateCheckbox = checkbox;
                         entity._tristateCheckboxState = TRISTATE_CHECKBOX_UNCHECKED;
@@ -1036,13 +1043,13 @@ if (!l7.EntityTreeTable) {
 
             /**
              * @public
-             * @return {string} ID of the entity whose radio button is selected; null if none selected
+             * @return {object} entity object literal whose radio button is selected; null if none selected
              */
-            this.getEntitiesWithRadioButtonSelected = function() {
+            this.getEntityWithRadioButtonSelected = function() {
                 for (var i in this._entities) {
                     var entity = this._entities[i];
                     if (entity._radioButton && entity._radioButton.checked) {
-                        return entity.id;
+                        return entity;
                     }
                 }
                 return null;
