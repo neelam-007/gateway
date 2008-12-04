@@ -747,19 +747,34 @@
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
 
+                var publishedService;
+                var operation;
+                if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                    publishedService = entity;
+                } else if (entity.type == l7.EntityTreeTable.ENTITY.OPERATION) {
+                    publishedService = ssgClusterContentSelectorWindow.getEntityTreeTable().getParentEntity(entity);
+                    operation = entity.name;
+                } else {
+                    YAHOO.log('Invalid entity type: ' + entity.type, 'error', 'StandardReports.html onClickAddEntity')
+                }
+
                 // Skips this if already added.
                 var alreadyAdded = false;
                 var trs = entitySelectionTableBody.rows;
                 for (var j = 0; j < trs.length; ++j) {
-                    if (trs[j]._entity == entity) {
+                    var tr = trs[j];
+                    if (tr._ssgCluster.id == ssgCluster.id &&
+                        tr._publishedService.id == publishedService.id &&
+                        tr._operation == operation) {
                         alreadyAdded = true;
+                        break;
                     }
                 }
                 if (alreadyAdded) {
                     continue;
                 }
 
-                var tr = entitySelectionTableBody.insertRow(-1);
+                tr = entitySelectionTableBody.insertRow(-1);
                 tr._ssgCluster = ssgCluster;    // Stash away for later retrieval.
                 tr._entity = entity;
                 var td;
@@ -781,23 +796,15 @@
                 }
 
                 // Published Service column.
-                var publishedService;
-                if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
-                    publishedService = entity;
-                } else if (entity.type == l7.EntityTreeTable.ENTITY.OPERATION) {
-                    publishedService = ssgClusterContentSelectorWindow.getEntityTreeTable().getParentEntity(entity);
-                } else {
-                    YAHOO.log('Invalid entity type: ' + entity.type, 'error', 'StandardReports.html onClickAddEntity')
-                }
                 td = tr.insertCell(-1);
                 td.innerHTML = publishedService.name;
                 tr._publishedService = publishedService;    // Stash away for later retrieval.
 
                 // Operation column.
                 td = tr.insertCell(-1);
-                if (entity.type == l7.EntityTreeTable.ENTITY.OPERATION) {
-                    td.innerHTML = entity.name;
-                    tr._operation = entity.name;            // Stash away for later retrieval.
+                if (operation) {
+                    td.innerHTML = operation;
+                    tr._operation = operation;              // Stash away for later retrieval.
                 } else {
                     td.className = 'notApplicable';
                 }
