@@ -80,6 +80,7 @@ public final class RootNode extends FolderNode {
             return typeDescending;
         }
 
+        @Override
         public int compare(TreeNode o1, TreeNode o2) {
            if (o1 instanceof AbstractTreeNode && o2 instanceof AbstractTreeNode) {
             //if (o1 instanceof Comparable && o2 instanceof Comparable) {
@@ -142,7 +143,7 @@ public final class RootNode extends FolderNode {
      * a given service manager with the name.
      */
     public RootNode(String name) {
-        super(new FolderHeader(OID, name, null), null);
+        super(new FolderHeader(OID, name, null, 0), null);
         this.serviceManager = Registry.getDefault().getServiceManager();
         this.policyAdmin = Registry.getDefault().getPolicyAdmin();
         this.title = name;
@@ -170,11 +171,13 @@ public final class RootNode extends FolderNode {
         this.sortComponents = sortComponents;
     }
 
+    @Override
     protected JMenu getSortMenu(){
         JMenu sortMenu = new JMenu("Sort By");
         return sortComponents.addSortMenu(sortMenu);
     }
 
+    @Override
     protected JMenu getFilterMenu(){
         JMenu filterMenu = new JMenu("Filter");
         return sortComponents.addFilterMenu(filterMenu);
@@ -354,10 +357,12 @@ public final class RootNode extends FolderNode {
      *
      * @return the name as a String
      */
+    @Override
     public String getName() {
         return title;
     }
 
+    @Override
     public long getOid() {
         return OID;
     }
@@ -367,6 +372,7 @@ public final class RootNode extends FolderNode {
      *
      * @param open for nodes that can be opened, can have children
      */
+    @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/ServerRegistry.gif";
     }

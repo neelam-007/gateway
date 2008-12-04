@@ -21,11 +21,13 @@ public class FederatedUserCertPanel extends UserCertPanel {
         super(userPanel, entityListener, canUpdate);
     }
 
+    @Override
     protected JButton getRemoveCertButton() {
         if (removeCertButton == null) {
             removeCertButton = new JButton();
             removeCertButton.setText("Remove");
             removeCertButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent event) {
                     String msg = "Are you sure you want to remove the user certificate?";
 
@@ -40,7 +42,7 @@ public class FederatedUserCertPanel extends UserCertPanel {
                             // reset values and redisplay
                             cert = null;
                             if (parentListener != null)
-                                parentListener.entityUpdated(new EntityEvent(this, new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getName(), null)));
+                                parentListener.entityUpdated(new EntityEvent(this, new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getName(), null, null, null)));
 
                             loadCertificateInfo();
                             if (userPanel instanceof FederatedUserPanel) {
@@ -60,6 +62,7 @@ public class FederatedUserCertPanel extends UserCertPanel {
         return removeCertButton;
     }
 
+    @Override
     protected boolean isCertOk(TrustedCert tc) throws IOException, CertificateException {
         boolean ok = false;
         FederatedUserPanel fup = (FederatedUserPanel)userPanel;

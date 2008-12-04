@@ -72,6 +72,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     protected PlatformTransactionManager transactionManager; // required for TransactionTemplate
 
+    @Override
     @Transactional(readOnly=true)
     public ET findByPrimaryKey(final long oid) throws FindException {
         try {
@@ -223,6 +224,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
+    @Override
     public long save(ET entity) throws SaveException {
         if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString() });
         try {
@@ -266,6 +268,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         return result.toString();
     }
 
+    @Override
     public void update(ET entity) throws UpdateException {
         try {
             if (getUniqueType() != UniqueType.NONE) {
@@ -300,6 +303,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @return The version, or null if the entity does not exist.
      * @throws FindException
      */
+    @Override
     @Transactional(readOnly=true)
     public Integer getVersion(final long oid) throws FindException {
         try {
@@ -316,6 +320,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
+    @Override
     @Transactional(readOnly=true)
     public Map<Long,Integer> findVersionMap() throws FindException {
         Map<Long, Integer> result = new HashMap<Long, Integer>();
@@ -349,11 +354,13 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         return result;
     }
 
+    @Override
     @Transactional(propagation=SUPPORTS)
     public EntityType getEntityType() {
         return EntityType.ANY;
     }
 
+    @Override
     @Transactional(readOnly=true)
     public EntityHeaderSet<HT> findAllHeaders() throws FindException {
         Collection<ET> entities = findAll();
@@ -364,6 +371,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         return headers;
     }
 
+    @Override
     @Transactional(readOnly=true)
     public EntityHeaderSet<HT> findAllHeaders(final int offset, final int windowSize) {
         //noinspection unchecked
@@ -434,10 +442,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
         //noinspection unchecked
         return (HT) new EntityHeader(
-                entity.getId(),
+                entity.getOid(),
                 getEntityType(),
                 name,
-                EMPTY_STRING);
+                EMPTY_STRING,
+                entity.getVersion());
     }
 
     /**
@@ -447,6 +456,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     protected void addFindAllCriteria(Criteria allHeadersCriteria) {
     }
 
+    @Override
     @Transactional(readOnly=true)
     public Collection<ET> findAll() throws FindException {
         try {
@@ -488,14 +498,17 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         return "from " + alias + " in class " + getImpClass().getName();
     }
 
+    @Override
     public void delete(long oid) throws DeleteException, FindException {
         //getHibernateTemplate().d
         delete(getImpClass(), oid);
     }
 
+    @Override
     public void delete(final ET et) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     //noinspection unchecked
                     ET entity = (ET)session.get(getImpClass(), et.getOid());
@@ -544,6 +557,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             if (cinfo != null) return freshen(cinfo, maxAge);
 
             return (ET) new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
+                @Override
                 public Object doInTransaction(TransactionStatus transactionStatus) {
                     try {
                         ET ent = findByUniqueName(name);
@@ -563,6 +577,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
+    @Override
     @Transactional(readOnly=true)
     public ET findByUniqueName(final String name) throws FindException {
         if (name == null) throw new NullPointerException();
@@ -604,6 +619,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @throws FindException
      * @throws CacheVeto
      */
+    @Override
     @Transactional(propagation=SUPPORTS, readOnly=true)
     public ET getCachedEntity(final long objectid, int maxAge) throws FindException, CacheVeto {
         ET entity;
@@ -619,6 +635,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 // Might be new, or might be first run
                 //noinspection unchecked
                 entity = (ET)new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
+                    @Override
                     public Object doInTransaction(TransactionStatus transactionStatus) {
                         try {
                             return findByPrimaryKey(objectid);
@@ -821,6 +838,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     protected boolean delete(Class entityClass, final long oid) throws DeleteException {
         try {
             return (Boolean)getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_DELETE_BY_OID);
                     q.setLong(0, oid);
@@ -863,6 +881,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     protected List<ET> findByPropertyMaybeNull(final String property, final Object value) throws FindException {
         try {
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     final Criteria crit = session.createCriteria(getImpClass());
                     if (value == null) {

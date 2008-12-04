@@ -20,7 +20,8 @@ public class ServiceHeader extends OrganizationHeader {
               svc.getName(),
               svc.getName(),
               svc.getFolder() == null ? null : svc.getFolder().getOid(),
-              false);
+              false,
+              svc.getVersion() );
     }
 
     public ServiceHeader(final ServiceHeader serviceHeader){
@@ -31,7 +32,8 @@ public class ServiceHeader extends OrganizationHeader {
              serviceHeader.getName(),
              serviceHeader.getDescription(),
              serviceHeader.getFolderOid(),
-             serviceHeader.isAlias());
+             serviceHeader.isAlias(),
+             serviceHeader.getVersion());
     }
     
     public ServiceHeader(final boolean isSoap,
@@ -41,8 +43,9 @@ public class ServiceHeader extends OrganizationHeader {
                          final String name,
                          final String description,
                          final Long folderOid,
-                         final boolean alias) {
-        super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description);
+                         final boolean alias,
+                         final int version) {
+        super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description, version);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
         this.displayName = displayName;
@@ -62,9 +65,11 @@ public class ServiceHeader extends OrganizationHeader {
         return displayName;
     }
 
+    @Override
     public String toString() {
         return getDisplayName();
     }
+
     //- PRIVATE
 
     private final boolean isSoap;

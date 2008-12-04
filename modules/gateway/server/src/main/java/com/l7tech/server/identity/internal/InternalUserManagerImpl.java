@@ -40,20 +40,24 @@ public class InternalUserManagerImpl
         this.roleManager = roleManager;
     }
 
+    @Override
     public void configure(InternalIdentityProvider provider) {
         this.setIdentityProvider( provider );
     }
 
+    @Override
     public String getTableName() {
         return "internal_user";
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public IdentityHeader userToHeader(InternalUser user) {
         InternalUser imp = cast(user);
-        return new IdentityHeader(imp.getProviderId(), imp.getId(), EntityType.USER, imp.getLogin(), null, imp.getName());
+        return new IdentityHeader(imp.getProviderId(), imp.getId(), EntityType.USER, imp.getLogin(), imp.getDescription(), imp.getName(), imp.getVersion());
     }
 
+    @Override
     public InternalUser reify(UserBean bean) {
         InternalUser iu = new InternalUser(bean.getLogin());
         iu.setDepartment(bean.getDepartment());
@@ -69,6 +73,7 @@ public class InternalUserManagerImpl
         return iu;
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public InternalUser headerToUser(IdentityHeader header) {
         InternalUser iu = new InternalUser();
@@ -78,14 +83,17 @@ public class InternalUserManagerImpl
         return iu;
     }
 
+    @Override
     public Class<? extends User> getImpClass() {
         return InternalUser.class;
     }
 
+    @Override
     public Class<User> getInterfaceClass() {
         return User.class;
     }
 
+    @Override
     protected void preSave(InternalUser user) throws SaveException {
         // check to see if an existing user with same login exist
         InternalUser existingDude;
@@ -100,6 +108,7 @@ public class InternalUserManagerImpl
         }
     }
 
+    @Override
     protected void checkUpdate(InternalUser originalUser,
                                InternalUser updatedUser) throws ObjectModelException {
         // checks whether the updatedUser changed his password
@@ -134,10 +143,12 @@ public class InternalUserManagerImpl
         roleManager.deleteRoleAssignmentsForUser(user);
     }
 
+    @Override
     protected String getNameFieldname() {
         return "login";
     }
 
+    @Override
     public InternalUser cast(User user) {
         if (user instanceof UserBean) {
             return reify((UserBean) user);
@@ -158,6 +169,7 @@ public class InternalUserManagerImpl
     }
 */
 
+    @Override
     protected UniqueType getUniqueType() {
         return UniqueType.OTHER;
     }

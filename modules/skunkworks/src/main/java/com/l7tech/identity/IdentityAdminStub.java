@@ -223,7 +223,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         if (u == null) {
             throw new IllegalArgumentException();
         }
-        return new IdentityHeader(u.getProviderId(), u.getId(), EntityType.USER, u.getLogin(), u.getName());
+        return new IdentityHeader(u.getProviderId(), u.getId(), EntityType.USER, u.getLogin(), null, u.getName(), null);
     }
 
     /**
@@ -236,7 +236,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         if (g == null) {
             throw new IllegalArgumentException();
         }
-        return new IdentityHeader(g.getProviderId(), g.getId(), EntityType.GROUP, g.getName(), g.getDescription());
+        return new IdentityHeader(g.getProviderId(), g.getId(), EntityType.GROUP, g.getName(), g.getDescription(), g.getName(), null);
     }
 
     /**

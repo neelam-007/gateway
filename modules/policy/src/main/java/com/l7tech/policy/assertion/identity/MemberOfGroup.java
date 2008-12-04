@@ -40,14 +40,16 @@ public class MemberOfGroup extends IdentityAssertion {
         this.groupId = groupID;
     }
 
+    @Override
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = super.getEntitiesUsed();
         EntityHeader[] headers2 = new EntityHeader[headers.length + 1];
         System.arraycopy(headers, 0, headers2, 0, headers.length);
-        headers2[headers.length] = new IdentityHeader(_identityProviderOid, groupId, EntityType.GROUP, _groupName, null);
+        headers2[headers.length] = new IdentityHeader(_identityProviderOid, groupId, EntityType.GROUP, _groupName, null, null, null);
         return headers2;
     }
 
+    @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if(!oldEntityHeader.getType().equals(newEntityHeader.getType())) {
             return;
@@ -68,10 +70,12 @@ public class MemberOfGroup extends IdentityAssertion {
         super.replaceEntity(oldEntityHeader, newEntityHeader);
     }
 
+    @Override
     public String loggingIdentity() {
         return getGroupName();
     }
 
+    @Override
     public String toString() {
         return super.toString() + " " + getGroupName();
     }

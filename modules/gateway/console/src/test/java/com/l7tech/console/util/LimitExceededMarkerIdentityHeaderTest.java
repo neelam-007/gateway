@@ -21,13 +21,13 @@ public class LimitExceededMarkerIdentityHeaderTest {
 
     @Test
     public void testComparability() {
-        IdentityHeader ih1 = new IdentityHeader(3, "1", EntityType.USER, "admin", "", "");
-        IdentityHeader ih2 = new IdentityHeader(2, "1", EntityType.USER, "admin", "", "");
-        IdentityHeader ih3 = new IdentityHeader(1, "1", EntityType.USER, "admin", "", "");
-        IdentityHeader ih4 = new IdentityHeader(1, "2", EntityType.USER, "admin2", "", "");
-        IdentityHeader ih5 = new IdentityHeader(2, "2", EntityType.USER, "admin2", "", "");
-        IdentityHeader ih6 = new IdentityHeader(1, "0", EntityType.USER, "admin3", "", "");
-        IdentityHeader ih7 = new IdentityHeader(4, "1", EntityType.USER, "admin", "", "");
+        IdentityHeader ih1 = new IdentityHeader(3, "1", EntityType.USER, "admin", "", "", null);
+        IdentityHeader ih2 = new IdentityHeader(2, "1", EntityType.USER, "admin", "", "", null);
+        IdentityHeader ih3 = new IdentityHeader(1, "1", EntityType.USER, "admin", "", "", null);
+        IdentityHeader ih4 = new IdentityHeader(1, "2", EntityType.USER, "admin2", "", "", null);
+        IdentityHeader ih5 = new IdentityHeader(2, "2", EntityType.USER, "admin2", "", "", null);
+        IdentityHeader ih6 = new IdentityHeader(1, "0", EntityType.USER, "admin3", "", "", null);
+        IdentityHeader ih7 = new IdentityHeader(4, "1", EntityType.USER, "admin", "", "", null);
         IdentityHeader ih8 = new LimitExceededMarkerIdentityHeader();
 
         IdentityHeader[] headers1 = {

@@ -47,6 +47,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         this.logonInfoManager = logonInfoManager;
     }
 
+    @Override
     public UT findByPrimaryKey(String oid) throws FindException {
         try {
             if (oid == null) {
@@ -63,6 +64,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
+    @Override
     public UT findByLogin(final String login) throws FindException {
         try {
             //noinspection unchecked
@@ -93,6 +95,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      *          thrown if an SQL error is encountered
      * @see PersistentGroupManager
      */
+    @Override
     public EntityHeaderSet<IdentityHeader> search(final String searchString) throws FindException {
         // replace wildcards to match stuff understood by mysql
         // replace * with % and ? with _
@@ -160,6 +163,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             revokeCert(userImp);
             deleteLogonInfo(userImp);
             getHibernateTemplate().execute(new HibernateCallback(){
+                @Override
                 @SuppressWarnings({"unchecked"})
                 public Object doInHibernate( final Session session) throws HibernateException, SQLException {
                     UT entity = (UT)session.get(userImp.getClass(), userImp.getOid());
@@ -192,9 +196,11 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      * @param ipoid The identity provider id
      * @throws DeleteException
      */
+    @Override
     public void deleteAll(final long ipoid) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_DELETE_BY_PROVIDEROID);
                     q.setLong(0, ipoid);
@@ -212,9 +218,11 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         postDelete( null );
     }
 
+    @Override
     public void delete(final String identifier) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_DELETE);
                     q.setString(0, identifier);
@@ -238,6 +246,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         return Long.parseLong(id);
     }
 
+    @Override
     public String save(UT user, Set<IdentityHeader> groupHeaders) throws SaveException {
         UT imp = cast(user);
         imp.setProviderId(getProviderOid());
@@ -278,6 +287,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      *
      * @param user existing user
      */
+    @Override
     public void update(UT user, Set<IdentityHeader> groupHeaders) throws UpdateException {
         UT imp = cast(user);
 
@@ -326,7 +336,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
 
     @Override
     protected IdentityHeader newHeader(UT entity) {
-        return new IdentityHeader(getProviderOid(), entity.getId(), EntityType.USER, entity.getName(), null);
+        return new IdentityHeader(getProviderOid(), entity.getOid(), EntityType.USER, entity.getLogin(), null, entity.getName(), entity.getVersion());
     }
 
     /**

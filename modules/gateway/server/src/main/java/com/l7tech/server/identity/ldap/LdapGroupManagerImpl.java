@@ -541,8 +541,13 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
 
     private IdentityHeader groupToHeader(LdapGroup maybegrp) {
         return new IdentityHeader(
-                getProviderOid(), maybegrp.getDn(), EntityType.GROUP,
-                maybegrp.getCn(), maybegrp.getDescription());
+                    getProviderOid(),
+                    maybegrp.getDn(),
+                    EntityType.GROUP,
+                    maybegrp.getCn(),
+                    maybegrp.getDescription(),
+                    null,
+                    null);
     }
 
     /**
@@ -609,8 +614,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                                     String memberlogin = val.toString();
                                     LdapUser u = getUserManager().findByLogin(memberlogin);
                                     if (u != null) {
-                                        IdentityHeader h = new IdentityHeader(getProviderOid(), u.getDn(), EntityType.USER,
-                                                                              u.getLogin(), null);
+                                        IdentityHeader h = new IdentityHeader(getProviderOid(), u.getDn(), EntityType.USER, u.getLogin(), null, u.getName(), null);
                                         if (h == null) {
                                             logger.info("the user " + u + " is not valid according to template " +
                                                         "and will not be considered a member");
@@ -639,7 +643,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                                         if (u != null) {
                                             IdentityHeader newheader = new IdentityHeader(getProviderOid(), u.getDn(),
                                                                                           EntityType.USER,
-                                                                                          u.getLogin(), null);
+                                                                                          u.getLogin(), null, u.getName(), null);
                                             if (newheader == null) {
                                                 logger.info("the user " + u + " is not valid according to template " +
                                                             "and will not be considered a member");

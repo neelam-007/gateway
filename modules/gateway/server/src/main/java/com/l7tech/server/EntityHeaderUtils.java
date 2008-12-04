@@ -56,12 +56,25 @@ public final class EntityHeaderUtils {
             return new ServiceHeader((PublishedService)e);
         } else if (e instanceof Folder) {
             return new FolderHeader((Folder)e);
+        } else if (e instanceof PersistentUser) {
+            PersistentUser user = (PersistentUser)e;
+            return new IdentityHeader(user.getProviderId(), user.getOid(), EntityType.USER, user.getLogin(), null, user.getName(), user.getVersion());
         } else if (e instanceof User) {
             User user = (User)e;
-            return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getLogin(), null, user.getName());
+            return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getLogin(), null, user.getName(), null);
+        } else if (e instanceof PersistentGroup) {
+            PersistentGroup group = (PersistentGroup)e;
+            return new IdentityHeader(group.getProviderId(), group.getOid(), EntityType.GROUP, group.getName(), null, group.getName(), group.getVersion());
         } else if (e instanceof Group) {
             Group group = (Group)e;
-            return new IdentityHeader(group.getProviderId(), group.getId(), EntityType.GROUP, group.getName(), null, group.getName());
+            return new IdentityHeader(group.getProviderId(), group.getId(), EntityType.GROUP, group.getName(), null, group.getName(), null);
+        }  else if (e instanceof PersistentEntity) {
+            PersistentEntity entity = (PersistentEntity) e;
+            return new EntityHeader(entity.getOid(),
+                                    EntityTypeRegistry.getEntityType(entity.getClass()),
+                                    entity instanceof NamedEntity ? ((NamedEntity)entity).getName() : null,
+                                    null,
+                                    entity.getVersion());
         } else {
             return new EntityHeader(e.getId(),
                                     EntityTypeRegistry.getEntityType(e.getClass()),

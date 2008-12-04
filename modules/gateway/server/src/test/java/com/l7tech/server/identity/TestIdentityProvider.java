@@ -46,10 +46,12 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     }
 
     public static class Factory implements IdentityProviderFactorySpi {
+        @Override
         public String getClassname() {
             return TestIdentityProvider.class.getName();
         }
 
+        @Override
         public IdentityProvider createIdentityProvider(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException {
             return new TestIdentityProvider(configuration);
         }
@@ -73,6 +75,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         usernameMap.clear();
     }
     
+    @Override
     public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
         MyUser mu = usernameMap.get(pc.getLogin());
         if (mu == null) return null;
@@ -82,54 +85,68 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         throw new AuthenticationException("Invalid username or password");
     }
 
+    @Override
     public X509Certificate findCertByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
         return null;
     }
 
+    @Override
     public IdentityProviderConfig getConfig() {
         return config;
     }
 
+    @Override
     public boolean updateFailedLogonAttempt(LoginCredentials lc) {
         return false;
     }
 
+    @Override
     public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
         return false;  
     }
 
+    @Override
     public UserManager getUserManager() {
         return userman;
     }
 
+    @Override
     public GroupManager<User,Group> getGroupManager() {
         return groupman;
     }
 
+    @Override
     public EntityHeaderSet<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
         return EntityHeaderSet.empty();
     }
 
+    @Override
     public EntityHeaderSet<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
         return EntityHeaderSet.empty();
     }
 
+    @Override
     public String getAuthRealm() {
         return "myrealm";
     }
 
+    @Override
     public void test(boolean fast) throws InvalidIdProviderCfgException {
     }
 
+    @Override
     public void preSaveClientCert( User user, X509Certificate[] certChain) throws ClientCertManager.VetoSave {
     }
 
+    @Override
     public void setUserManager(UserManager userManager) {
     }
 
+    @Override
     public void setGroupManager(GroupManager groupManager) {
     }
 
+    @Override
     public void validate(User u) throws ValidationException {
         if(!usernameMap.containsKey(u.getLogin())){
             throw new ValidationException("User " + u.getLogin()+ " does not exist in the TestIdentityProvider");
@@ -143,191 +160,235 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         public TestGroupManager(long providerId){
             this.providerId = providerId;    
         }
+        @Override
         public Group findByPrimaryKey(String identifier) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public Group findByName(String name) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void delete(Group group) throws DeleteException, ObjectNotFoundException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void deleteAllVirtual(long ipoid) throws DeleteException, ObjectNotFoundException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public String saveGroup(Group group) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void update(Group group) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public String save(Group group, Set<IdentityHeader> userHeaders) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void update(Group group, Set<IdentityHeader> userHeaders) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public Collection<IdentityHeader> search(String searchString) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public Class getImpClass() {
             return getClass();
         }
 
+        @Override
         public Group reify(GroupBean bean) {
             return bean;
         }
 
+        @Override
         public boolean isMember(User user, Group group) throws FindException {
             return false;
         }
 
+        @Override
         public void addUsers(Group group, Set<User> users) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void removeUsers(Group group, Set<User> users) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void addUser(User user, Set<Group> groups) throws FindException, UpdateException {
             userToGroupMap.put(user, groups);
         }
 
+        @Override
         public void removeUser(User user, Set<Group> groups) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void addUser(User user, Group group) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void removeUser(User user, Group group) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public Set<IdentityHeader> getGroupHeaders(User user) throws FindException {
             Set<Group> groups = userToGroupMap.get(user);
             if(groups == null) return null;
 
             Set<IdentityHeader> returnSet = new HashSet<IdentityHeader>();
             for(Group g: groups){
-                IdentityHeader iH = new IdentityHeader(providerId,g.getId(), EntityType.GROUP, g.getName(), g.getDescription());
+                IdentityHeader iH = new IdentityHeader(providerId,g.getId(), EntityType.GROUP, g.getName(), g.getDescription(), null, null);
                 returnSet.add(iH);
             }
             return returnSet;
         }
 
+        @Override
         public Set<IdentityHeader> getGroupHeaders(String userId) throws FindException {
             return Collections.emptySet();
         }
 
+        @Override
         public void setGroupHeaders(User user, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void setGroupHeaders(String userId, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public Set<IdentityHeader> getUserHeaders(Group group) throws FindException {
             return Collections.emptySet();
         }
 
+        @Override
         public Set<IdentityHeader> getUserHeaders(String groupId) throws FindException {
             return Collections.emptySet();
         }
 
+        @Override
         public void setUserHeaders(Group group, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void setUserHeaders(String groupId, Set<IdentityHeader> groupHeaders) throws FindException, UpdateException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public EntityHeaderSet<IdentityHeader> findAllHeaders() throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public Collection findAll() throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
     }
 
     private static class TestUserManager implements UserManager<User> {
+        @Override
         public User findByPrimaryKey(String identifier) throws FindException {
             MyUser mu = usernameMap.get(identifier);
             return mu == null ? null : mu.user;
         }
 
+        @Override
         public User findByLogin(String login) throws FindException {
             MyUser mu = usernameMap.get(login);
             return mu == null ? null : mu.user;
         }
 
+        @Override
         public void delete(User user) throws DeleteException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void delete(String identifier) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void deleteAll(long ipoid) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public void update(User user) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public String save(User user, Set<IdentityHeader> groupHeaders) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public User reify(UserBean bean) {
             return bean;
         }
 
+        @Override
         public void update(User user, Set<IdentityHeader> groupHeaders) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public EntityHeaderSet<IdentityHeader> search(String searchString) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public IdentityHeader userToHeader(User user) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         public User headerToUser(IdentityHeader header) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @Override
         @SuppressWarnings({"unchecked"})
         public Class getImpClass() {
             return getClass();
         }
 
+        @Override
         public EntityHeaderSet<IdentityHeader> findAllHeaders() throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }

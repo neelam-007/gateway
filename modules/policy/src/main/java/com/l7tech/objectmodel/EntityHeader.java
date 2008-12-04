@@ -17,16 +17,24 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 @XmlRootElement
 @XmlSeeAlso(IdentityHeader.class)
 public class EntityHeader extends EntityHeaderRef {
+    
     public EntityHeader(String id, EntityType type, String name, String description) {
+        this(id, type, name, description, null);
+    }
+
+    public EntityHeader(String id, EntityType type, String name, String description, Integer version) {
         super(type, id);
         this.name = name;
         this.description = description;
+        this.version = version;
+    }
+
+    public EntityHeader(long oid, EntityType type, String name, String description, Integer version) {
+        this(Long.toString(oid), type, name, description, version);
     }
 
     public EntityHeader(long oid, EntityType type, String name, String description) {
-        super(type, Long.toString(oid));
-        this.name = name;
-        this.description = description;
+        this(Long.toString(oid), type, name, description, null);
     }
 
     public EntityHeader() {
@@ -64,6 +72,15 @@ public class EntityHeader extends EntityHeaderRef {
         this.description = description;
     }
 
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof EntityHeader)) return false;
         EntityHeader theotherone = (EntityHeader)obj;
@@ -79,10 +96,12 @@ public class EntityHeader extends EntityHeaderRef {
                ", type = " + type.toString();
     }
 
+    @Override
     public String toString() {
         return name;
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = (type != null ? type.hashCode() : 0);
@@ -96,10 +115,13 @@ public class EntityHeader extends EntityHeaderRef {
 
     private static final long serialVersionUID = -1752153501322477805L;
 
-    private String description;
-    protected String name;
     private static final long DEFAULT_OID = -1;
 
+    protected String name;
+    private String description;
+    private Integer version;
+
+    @Override
     public int compareTo(Object o) {
         if (o == null) throw new NullPointerException();
         EntityHeader other = (EntityHeader)o;

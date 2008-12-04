@@ -27,10 +27,12 @@ public class SampleMessageManagerImp
     private static final String PROP_SERVICE_OID = "serviceOid";
     private static final String PROP_OPERATION_NAME = "operationName";
 
+    @Override
     @Transactional(readOnly=true)
     public EntityHeader[] findHeaders(final long serviceOid, final String operationName) throws FindException {
         try {
             return (EntityHeader[]) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(SampleMessage.class);
 
@@ -50,7 +52,7 @@ public class SampleMessageManagerImp
                     ArrayList<EntityHeader> out = new ArrayList<EntityHeader>();
                     for (Object result : results) {
                         SampleMessage sm = (SampleMessage) result;
-                        out.add(new EntityHeader(Long.toString(sm.getOid()), EntityType.SAMPLE_MESSAGE, sm.getName(), null));
+                        out.add(new EntityHeader(sm.getOid(), EntityType.SAMPLE_MESSAGE, sm.getName(), null, sm.getVersion()));
                     }
                     return out.toArray(new EntityHeader[0]);
                 }
@@ -82,18 +84,22 @@ public class SampleMessageManagerImp
         return UniqueType.NONE;
     }
 
+    @Override
     public Class getImpClass() {
         return SampleMessage.class;
     }
 
+    @Override
     public Class getInterfaceClass() {
         return SampleMessage.class;
     }
 
+    @Override
     public String getTableName() {
         return "sample_messages";
     }
 
+    @Override
     public EntityType getEntityType() {
         return EntityType.SAMPLE_MESSAGE;
     }

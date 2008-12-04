@@ -18,37 +18,37 @@ public class AuditRecordHeader extends EntityHeader {
     private Level level;
 
     public AuditRecordHeader(final AuditRecord auditRecord){
-
-        this(auditRecord.getId(),
-                auditRecord instanceof MessageSummaryAuditRecord ? auditRecord.getName() : "",
-                auditRecord.getMessage(),
-                null,
-                auditRecord.getSignature(),
-                auditRecord.getNodeId(),
-                auditRecord.getMillis(),
-                auditRecord.getLevel());
+        this( auditRecord.getOid(),
+              auditRecord instanceof MessageSummaryAuditRecord ? auditRecord.getName() : "",
+              auditRecord.getMessage(),
+              null,
+              auditRecord.getSignature(),
+              auditRecord.getNodeId(),
+              auditRecord.getMillis(),
+              auditRecord.getLevel(),
+              auditRecord.getVersion() );
     }
 
     public AuditRecordHeader(final AuditRecordHeader auditRecordHeader) {
-        this(Long.toString(auditRecordHeader.getOid()),
-                auditRecordHeader.getName(),
-                auditRecordHeader.getDescription(),
-                auditRecordHeader.getSignatureDigest(),
-                auditRecordHeader.getSignature(),
-                auditRecordHeader.getNodeId(),
-                auditRecordHeader.getTimestamp(),
-                auditRecordHeader.getLevel());
+        this( auditRecordHeader.getOid(),
+              auditRecordHeader.getName(),
+              auditRecordHeader.getDescription(),
+              auditRecordHeader.getSignatureDigest(),
+              auditRecordHeader.getSignature(),
+              auditRecordHeader.getNodeId(),
+              auditRecordHeader.getTimestamp(),
+              auditRecordHeader.getLevel(),
+              auditRecordHeader.getVersion() );
     }
 
-    public AuditRecordHeader(String id, String name, String description, byte[] signatureDigest, String signature, String nodeId, long timestamp, Level level) {
-        super(id, EntityType.AUDIT_RECORD, name, description);
+    public AuditRecordHeader(long id, String name, String description, byte[] signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
+        super(id, EntityType.AUDIT_RECORD, name, description, version);
         this.signatureDigest = signatureDigest;
         this.signature = signature;
         this.nodeId = nodeId;
         this.timestamp = timestamp;
         this.level = level;
     }
-
 
     public byte[] getSignatureDigest() {
         return signatureDigest;
@@ -86,6 +86,8 @@ public class AuditRecordHeader extends EntityHeader {
         return super.getDescription();
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -102,6 +104,7 @@ public class AuditRecordHeader extends EntityHeader {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (signature != null ? signature.hashCode() : 0);
@@ -112,6 +115,7 @@ public class AuditRecordHeader extends EntityHeader {
         return result;
     }
 
+    @Override
     public String toString(){
         return getClass().getName() +
                 " Node: " + nodeId +

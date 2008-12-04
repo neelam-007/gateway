@@ -112,6 +112,7 @@ public class ServiceMetricsPanel extends JPanel {
 
     private CollectionUpdateConsumer<ClusterNodeInfo, FindException> _clusterNodesUpdateConsumer =
             new CollectionUpdateConsumer<ClusterNodeInfo, FindException>(null) {
+                @Override
                 protected CollectionUpdate<ClusterNodeInfo> getUpdate(final int oldVersionID) throws FindException {
                     return getClusterStatusAdmin().getClusterNodesUpdate(oldVersionID);
                 }
@@ -119,6 +120,7 @@ public class ServiceMetricsPanel extends JPanel {
 
     /** Combobox item to represent all cluster nodes selected. */
     private static final ClusterNodeInfo ALL_NODES = new ClusterNodeInfo() {
+        @Override
         public String toString() {
             return _resources.getString("clusterNodeCombo.allValue");
         }
@@ -151,6 +153,7 @@ public class ServiceMetricsPanel extends JPanel {
 
     private CollectionUpdateConsumer<ServiceHeader, FindException> _publishedServicesUpdateConsumer =
             new CollectionUpdateConsumer<ServiceHeader, FindException>(new ServiceHeaderDifferentiator()) {
+                @Override
                 protected CollectionUpdate<ServiceHeader> getUpdate(final int oldVersionID) throws FindException {
                     return getServiceAdmin().getPublishedServicesUpdate(oldVersionID);
                 }
@@ -158,7 +161,7 @@ public class ServiceMetricsPanel extends JPanel {
 
     /** Combobox item to represent all published services selected. */
     private static final ServiceHeader ALL_SERVICES = new ServiceHeader(false, false,
-            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1L, false);
+            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1L, false, -1);
 
     private final DefaultComboBoxModel _publishedServicesComboModel =
             new DefaultComboBoxModel() {
@@ -196,6 +199,7 @@ public class ServiceMetricsPanel extends JPanel {
     private ServiceAdmin _serviceAdmin;
 
     private final ActionListener _refreshListener = new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             refreshData();
         }
@@ -237,6 +241,7 @@ public class ServiceMetricsPanel extends JPanel {
      * failure only, policy violation only, or both.
      */
     private class ProblemListCellRenderer extends DefaultListCellRenderer {
+        @Override
         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             ProblemListElement e = (ProblemListElement)value;
             super.getListCellRendererComponent(list, e.getPublishedService().getName(), index, isSelected, cellHasFocus);
@@ -254,6 +259,7 @@ public class ServiceMetricsPanel extends JPanel {
         selectionServicesWithProblemList.setCursor(handCursor);
         selectionServicesWithProblemList.setToolTipText(SERVICES_WITH_PROBLEM_TOOLTIP);
         selectionServicesWithProblemList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 final ProblemListElement selected = (ProblemListElement)selectionServicesWithProblemList.getSelectedValue();
                 if (selected != null) {
@@ -267,6 +273,7 @@ public class ServiceMetricsPanel extends JPanel {
         latestServicesWithProblemList.setCursor(handCursor);
         latestServicesWithProblemList.setToolTipText(SERVICES_WITH_PROBLEM_TOOLTIP);
         latestServicesWithProblemList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 final ProblemListElement selected = (ProblemListElement)latestServicesWithProblemList.getSelectedValue();
                 if (selected != null)
@@ -296,6 +303,7 @@ public class ServiceMetricsPanel extends JPanel {
         resolutionCombo.setModel(new DefaultComboBoxModel(new Resolution[]{_fineResolution, _hourlyResolution, _dailyResolution}));
         resolutionCombo.setSelectedItem(_currentResolution);
         resolutionCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 _currentResolution = (Resolution)resolutionCombo.getSelectedItem();
                 rightTabbedPane.setTitleAt(LATEST_TAB_INDEX, _currentResolution.getLatestTabTitle());
@@ -312,6 +320,7 @@ public class ServiceMetricsPanel extends JPanel {
         }
 
         publishedServiceCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 resetData(true);    // Keep selected period to aid user.
             }
@@ -325,6 +334,7 @@ public class ServiceMetricsPanel extends JPanel {
         }
 
         clusterNodeCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 resetData(true);    // Keep selected period to aid user.
             }

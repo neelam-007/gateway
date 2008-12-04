@@ -105,8 +105,10 @@ public class AdminInfo {
         if (subject == null)
             return toWrap;
         return new Callable<OUT>() {
+            @Override
             public OUT call() throws Exception {
                 return Subject.doAs(subject, new PrivilegedExceptionAction<OUT>() {
+                    @Override
                     public OUT run() throws Exception{
                         return toWrap.call();
                     }
@@ -119,6 +121,7 @@ public class AdminInfo {
         if (host == null)
             return toWrap;
         return new Callable<OUT>() {
+            @Override
             public OUT call() throws Exception {
                 return RemoteUtils.callWithConnectionInfo(host, null, toWrap);
             }
@@ -129,7 +132,7 @@ public class AdminInfo {
      * @return  Returns the identity header based on the admin information stored in this object
      */
     public IdentityHeader getIdentityHeader() {
-        return new IdentityHeader(identityProviderOid, id, EntityType.USER, login, "");
+        return new IdentityHeader(identityProviderOid, id, EntityType.USER, login, "", null, null);
     }
 
     /**

@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.PersistentEntity;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -178,7 +179,12 @@ public class MigrationUtils {
     public static EntityHeader getHeaderFromEntity(Entity entity) {
         final String name = entity instanceof NamedEntity ? ((NamedEntity)entity).getName() : null;
         final EntityType type = EntityType.findTypeByEntity(entity.getClass());
-        return new EntityHeader(entity.getId(), type, name, "");
+        if ( entity instanceof PersistentEntity ) {
+            PersistentEntity persistentEntity = (PersistentEntity) entity;
+            return new EntityHeader(persistentEntity.getOid(), type, name, "", persistentEntity.getVersion());
+        } else {
+            return new EntityHeader(entity.getId(), type, name, "");
+        }
     }
 
     /**

@@ -18,25 +18,21 @@ public class IdentityHeader extends EntityHeader {
     @Deprecated // use for serialization only
     protected IdentityHeader() {}
 
-    public IdentityHeader(long providerOid, String identityId, EntityType type, String loginName, String description) {
-        super(identityId, type, loginName, description);
-        if (type != EntityType.USER && type != EntityType.GROUP)
-            throw new IllegalArgumentException("EntityType must be USER or GROUP");
-        this.providerOid = providerOid;
-        this.commonName = "";
+    public IdentityHeader(long providerOid, long identityOid, EntityType type, String loginName, String description, String commonName, int version) {
+        this(providerOid, Long.toString(identityOid), type, loginName, description, commonName, version);
     }
 
     //added for bug #5321
-    public IdentityHeader(long providerOid, String identityId, EntityType type, String loginName, String description, String commonName) {
-        super(identityId, type, loginName, description);
+    public IdentityHeader(long providerOid, String identityId, EntityType type, String loginName, String description, String commonName, Integer version) {
+        super(identityId, type, loginName, description, version);
         if (type != EntityType.USER && type != EntityType.GROUP)
             throw new IllegalArgumentException("EntityType must be USER or GROUP");
         this.providerOid = providerOid;
         this.commonName = commonName;
     }
 
-    public IdentityHeader(long providerOid, EntityHeader header) {
-        this(providerOid, header.getStrId(), header.getType(), header.getName(), header.getDescription());
+    public IdentityHeader( long providerOid, EntityHeader header ) {
+        this(providerOid, header.getStrId(), header.getType(), header.getName(), header.getDescription(), getCommonName(header), header.getVersion());
     }
 
     @XmlAttribute
@@ -59,6 +55,7 @@ public class IdentityHeader extends EntityHeader {
         this.commonName = commonName;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -69,6 +66,7 @@ public class IdentityHeader extends EntityHeader {
         return providerOid == that.providerOid;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 29 * result + (int) (providerOid ^ (providerOid >>> 32));
@@ -83,5 +81,16 @@ public class IdentityHeader extends EntityHeader {
             compareResult = Long.valueOf( providerOid ).compareTo( that.providerOid );          
         }
         return compareResult;
+    }
+
+    private static String getCommonName( final EntityHeader entityHeader ) {
+        String commonName = null;
+
+        if ( entityHeader instanceof IdentityHeader ) {
+            IdentityHeader identityHeader = (IdentityHeader) entityHeader;
+            commonName = identityHeader.getCommonName();
+        }
+
+        return commonName;
     }
 }

@@ -69,6 +69,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Create Federated Identity Provider";
     }
@@ -76,6 +77,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "Create a new Federated Identity Provider";
     }
@@ -83,6 +85,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/CreateIdentityProvider16x16.gif";
     }
@@ -94,9 +97,11 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
 
                 Frame f = TopComponents.getInstance().getTopParent();
@@ -146,6 +151,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
             if (iProvider != null) {
 
                 SwingUtilities.invokeLater(new Runnable() {
+                    @Override
                     public void run() {
                         EntityHeader header = new EntityHeader();
                         header.setName(iProvider.getName());
@@ -198,7 +204,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                                                     for(String memberOid : members) {
                                                         if(userOidMap.containsKey(memberOid)) {
                                                             FederatedUser user = userOidMap.get(memberOid);
-                                                            memberHeaders.add(new IdentityHeader(header.getOid(), user.getId(), EntityType.USER, user.getName(), null));
+                                                            memberHeaders.add(new IdentityHeader(header.getOid(), user.getId(), EntityType.USER, user.getName(), null, null, null));
                                                         }
                                                     }
                                                 }
@@ -238,8 +244,10 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
          *
          * @param ev event describing the action
          */
+        @Override
         public void entityAdded(final EntityEvent ev) {
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     EntityHeader eh = (EntityHeader)ev.getEntity();
                     IdentityProvidersTree tree = (IdentityProvidersTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
@@ -266,6 +274,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
         }
     };
 
+    @Override
     public void onLogoff(LogonEvent e) {
         super.onLogoff(e);
         node = null;

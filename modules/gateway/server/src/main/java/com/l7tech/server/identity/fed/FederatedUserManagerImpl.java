@@ -37,15 +37,18 @@ public class FederatedUserManagerImpl
         super(clientCertManager, logonInfoManager);
     }
 
+    @Override
     public void configure(FederatedIdentityProvider provider) {
         this.setIdentityProvider( provider );
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public IdentityHeader userToHeader(FederatedUser user ) {
-        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getName(), null, user.getName());
+        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getName(), null, user.getName(), user.getVersion());
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public FederatedUser headerToUser(IdentityHeader header) {
         FederatedUser fu = new FederatedUser(getProviderOid(), header.getName());
@@ -53,6 +56,7 @@ public class FederatedUserManagerImpl
         return fu;
     }
 
+    @Override
     public FederatedUser reify(UserBean bean) {
         FederatedUser fu = new FederatedUser(bean.getProviderId(), bean.getLogin());
         fu.setOid(bean.getId() == null ? FederatedUser.DEFAULT_OID : Long.valueOf(bean.getId()));
@@ -65,18 +69,22 @@ public class FederatedUserManagerImpl
         return fu;
     }
 
+    @Override
     public Class<FederatedUser> getImpClass() {
         return FederatedUser.class;
     }
 
+    @Override
     public Class<User> getInterfaceClass() {
         return User.class;
     }
 
+    @Override
     public String getTableName() {
         return "fed_user";
     }
 
+    @Override
     @Transactional(readOnly=true)
     public FederatedUser findBySubjectDN(String dn) throws FindException {
         try {
@@ -95,6 +103,7 @@ public class FederatedUserManagerImpl
         }
     }
 
+    @Override
     @Transactional(readOnly=true)
     public FederatedUser findByEmail(String email) throws FindException {
         try {
@@ -112,6 +121,7 @@ public class FederatedUserManagerImpl
         }
     }
 
+    @Override
     public FederatedUser cast( User user ) {
         if ( user instanceof UserBean ) {
             return reify((UserBean) user);
@@ -120,6 +130,7 @@ public class FederatedUserManagerImpl
         }
     }
 
+    @Override
     protected void preSave(FederatedUser user) throws SaveException {
         // check to see if an existing user with same name exists
         if (user != null && user.getName() != null && user.getName().length() > 0) {
@@ -141,10 +152,12 @@ public class FederatedUserManagerImpl
         crit.add(Restrictions.eq("providerId", getProviderOid()));
     }
 
+    @Override
     protected String getNameFieldname() {
         return "name";
     }
 
+    @Override
     protected void addFindAllCriteria( Criteria findHeadersCriteria ) {
         findHeadersCriteria.add(Restrictions.eq("providerId", getProviderOid()));
     }

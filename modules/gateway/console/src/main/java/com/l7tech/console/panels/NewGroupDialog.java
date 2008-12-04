@@ -124,6 +124,7 @@ public class NewGroupDialog extends JDialog {
         }
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent event) {
                 // user hit window manager close button
                 windowAction(CMD_CANCEL);
@@ -233,6 +234,7 @@ public class NewGroupDialog extends JDialog {
                 setDocument(
                         new FilterDocument(128,
                                 new FilterDocument.Filter() {
+                                    @Override
                                     public boolean accept(String str) {
                                         return str != null;
                                     }
@@ -260,6 +262,7 @@ public class NewGroupDialog extends JDialog {
              * The code written for this method performs the operations
              * that need to occur when an item is selected (or deselected).
              */
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     createThenEdit = true;
@@ -290,6 +293,7 @@ public class NewGroupDialog extends JDialog {
         createButton.setActionCommand(CMD_OK);
         createButton.
                 addActionListener(new ActionListener() {
+                    @Override
                     public void actionPerformed(ActionEvent event) {
                         windowAction(event.getActionCommand());
                     }
@@ -305,6 +309,7 @@ public class NewGroupDialog extends JDialog {
         cancelButton.setActionCommand(CMD_CANCEL);
         cancelButton.
                 addActionListener(new ActionListener() {
+                    @Override
                     public void actionPerformed(ActionEvent event) {
                         windowAction(event.getActionCommand());
                     }
@@ -347,6 +352,7 @@ public class NewGroupDialog extends JDialog {
         group.setName(groupIdTextField.getText());
         SwingUtilities.invokeLater(
                 new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             EntityHeader header = new EntityHeader();
@@ -385,6 +391,7 @@ public class NewGroupDialog extends JDialog {
      * override the Dialogue method so tha we can open and editor
      * panel if requested
      */
+    @Override
     public void dispose() {
         super.dispose();
 
@@ -396,8 +403,9 @@ public class NewGroupDialog extends JDialog {
                 createThenEdit = false;
                 SwingUtilities.invokeLater(
                         new Runnable() {
+                            @Override
                             public void run() {
-                                IdentityHeader header = new IdentityHeader(ipc.getOid(), group.getId(), EntityType.GROUP, group.getName(), null);
+                                IdentityHeader header = new IdentityHeader(ipc.getOid(), group.getId(), EntityType.GROUP, group.getName(), null, null, null);
                                 GroupPanel panel = GroupPanel.newInstance(ipc, header);
                                 if (panel == null) return;
                                 try {
@@ -409,6 +417,7 @@ public class NewGroupDialog extends JDialog {
                                 dialog.pack();
                                 Utilities.centerOnScreen(dialog);
                                 DialogDisplayer.display(dialog, new Runnable() {
+                                    @Override
                                     public void run() {
                                         insertSuccess = false;
                                     }

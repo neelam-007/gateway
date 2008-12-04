@@ -92,6 +92,7 @@ public class LdapIdentityProviderImpl
         ldapReadTimeout = DEFAULT_LDAP_READ_TIMEOUT;
     }
 
+    @Override
     public void setIdentityProviderConfig(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException {
         if (this.config != null) {
             throw new InvalidIdProviderCfgException("Provider is already configured");
@@ -103,6 +104,7 @@ public class LdapIdentityProviderImpl
 
         // worker thread which cleans old certs in the cache
         Background.scheduleRepeated(new TimerTask() {
+            @Override
             public void run() {
                 cleanupCertCache();
             }
@@ -217,6 +219,7 @@ public class LdapIdentityProviderImpl
             oid = prov.getConfig().getOid();
         }
 
+        @Override
         protected void doRun() {
             //when the referant Identity provider goes away, this timer should stop
             if (ldapProvRef.wasRemoved()) {
@@ -258,6 +261,7 @@ public class LdapIdentityProviderImpl
             providerName = prov.getConfig().getName();
         }
 
+        @Override
         protected void doRun() {
             //when the referant Identity provider goes away, this timer should stop
             if (ldapProv.wasRemoved()) {
@@ -434,14 +438,17 @@ public class LdapIdentityProviderImpl
         lastSuccessfulLdapUrl = ldapUrls[0];
     }
 
+    @Override
     public IdentityProviderConfig getConfig() {
         return config;
     }
 
+    @Override
     public LdapUserManager getUserManager() {
         return userManager;
     }
 
+    @Override
     public LdapGroupManager getGroupManager() {
         return groupManager;
     }
@@ -458,6 +465,7 @@ public class LdapIdentityProviderImpl
      * @return The ldap url that was last used to successfully connect to the ldap directory. May be null if
      *         previous attempt failed on all available urls.
      */
+    @Override
     public String getLastWorkingLdapUrl() {
         Sync read = fallbackLock.readLock();
         try {
@@ -479,6 +487,7 @@ public class LdapIdentityProviderImpl
      * @param urlThatFailed the url that failed to connect, or null if no url was previously available
      * @return the next url in the list or null if all urls were marked as failure within the last while
      */
+    @Override
     public String markCurrentUrlFailureAndGetFirstAvailableOne(String urlThatFailed) {
         Sync write = fallbackLock.writeLock();
         try {
@@ -530,6 +539,7 @@ public class LdapIdentityProviderImpl
         }
     }
 
+    @Override
     public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
         LdapUser realUser = null;
         if (pc.getFormat() == CredentialFormat.KERBEROSTICKET) {
@@ -611,6 +621,7 @@ public class LdapIdentityProviderImpl
         throw new BadCredentialsException("credentials did not authenticate");
     }
 
+    @Override
     public long getMaxSearchResultSize() {
         if (maxSearchResultSize <= 0) {
             String tmp = serverConfig.getPropertyCached(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE);
@@ -646,6 +657,7 @@ public class LdapIdentityProviderImpl
      * @param searchString the search string for the users and group names, use "*" for all
      * @return a collection containing EntityHeader objects
      */
+    @Override
     public EntityHeaderSet<IdentityHeader> search(EntityType[] types, String searchString) throws FindException {
         if (types == null || types.length < 1) {
             throw new IllegalArgumentException("must pass at least one type");
@@ -731,6 +743,7 @@ public class LdapIdentityProviderImpl
         return doSearch(filter);
     }
 
+    @Override
     public X509Certificate findCertByIssuerAndSerial( final X500Principal issuerDN, final BigInteger certSerial ) {
         X509Certificate lookedupCert = null;
 
@@ -864,6 +877,7 @@ public class LdapIdentityProviderImpl
         return output;
     }
 
+    @Override
     public EntityHeaderSet<IdentityHeader> search(boolean getusers, boolean getgroups, IdentityMapping mapping, Object attValue) throws FindException {
         if (mapping instanceof LdapAttributeMapping) {
             LdapAttributeMapping lam = (LdapAttributeMapping) mapping;
@@ -909,6 +923,7 @@ public class LdapIdentityProviderImpl
         }
     }
 
+    @Override
     public String getAuthRealm() {
         return HttpDigest.REALM;
     }
@@ -916,6 +931,7 @@ public class LdapIdentityProviderImpl
     /**
      * builds a search filter for all user object classes based on the config object
      */
+    @Override
     public String userSearchFilterWithParam(String param) {
         if (config == null) throw new IllegalStateException("this provider needs a config!");
 
@@ -950,6 +966,7 @@ public class LdapIdentityProviderImpl
      *
      * @return the search filter or null if no group mappings are declared for this config
      */
+    @Override
     public String groupSearchFilterWithParam(String param) {
         if (config == null) throw new IllegalStateException("this provider needs a config!");
         GroupMappingConfig[] groupTypes = config.getGroupMappings();
@@ -963,6 +980,7 @@ public class LdapIdentityProviderImpl
         return makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
     }
 
+    @Override
     public DirContext getBrowseContext() throws NamingException {
         String ldapurl = getLastWorkingLdapUrl();
         if (ldapurl == null) {
@@ -1020,6 +1038,7 @@ public class LdapIdentityProviderImpl
         throw new CommunicationException("Could not establish context on any of the ldap urls.");
     }
 
+    @Override
     public void test(final boolean quick) throws InvalidIdProviderCfgException {
         DirContext context = null;
         try {
@@ -1169,18 +1188,22 @@ public class LdapIdentityProviderImpl
         }
     }
 
+    @Override
     public void preSaveClientCert(LdapUser user, X509Certificate[] certChain) throws ClientCertManager.VetoSave {
         // ClientCertManagerImp's default rules are OK
     }
 
+    @Override
     public void setUserManager(LdapUserManager userManager) {
         this.userManager = userManager;
     }
 
+    @Override
     public void setGroupManager(LdapGroupManager groupManager) {
         this.groupManager = groupManager;
     }
 
+    @Override
     public boolean updateFailedLogonAttempt(LoginCredentials lc) {
         LdapUser realUser;
         try {
@@ -1193,6 +1216,7 @@ public class LdapIdentityProviderImpl
         return true;
     }
 
+    @Override
     public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
         try {
             LdapUser ldapUser = userManager.findByLogin(lc.getLogin());
@@ -1237,6 +1261,7 @@ public class LdapIdentityProviderImpl
      * @throws Exception in the event of misconfiguration (such
      *                   as failure to set an essential property) or if initialization fails.
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         if (clientCertManager == null) throw new IllegalStateException("The Client Certificate Manager is required");
         if (auditor == null) throw new IllegalStateException("Auditor has not been initialized");
@@ -1244,6 +1269,7 @@ public class LdapIdentityProviderImpl
         if (groupManager == null) throw new IllegalStateException("GroupManager has not been initialized");
     }
 
+    @Override
     public void destroy() throws Exception {
         cancelTasks(rebuildTask, cleanupTask);
     }
@@ -1268,6 +1294,7 @@ public class LdapIdentityProviderImpl
      * <p/>
      * See bugzilla #1116, #1466 for the justification of this check.
      */
+    @Override
     public boolean isValidEntryBasedOnUserAccountControlAttribute(String userDn, Attributes attibutes) {
         final long DISABLED_FLAG = 0x00000002;
         final long LOCKED_FLAG = 0x00000010;
@@ -1314,6 +1341,7 @@ public class LdapIdentityProviderImpl
      *
      * @return true is account is expired, false otherwise
      */
+    @Override
     public boolean checkExpiredMSADAccount(String userDn, Attributes attibutes) {
         Attribute accountExpiresAttr = attibutes.get("accountExpires");
         if (accountExpiresAttr != null && accountExpiresAttr.size() > 0) {
@@ -1353,6 +1381,7 @@ public class LdapIdentityProviderImpl
      * @return the EntityHeader for the dn or null if the object class is not supported or if the entity
      *         should be ignored (perhaps disabled)
      */
+    @Override
     public IdentityHeader searchResultToHeader(SearchResult sr) {
         Attributes atts = sr.getAttributes();
         final String dn = sr.getNameInNamespace();
@@ -1402,7 +1431,7 @@ public class LdapIdentityProviderImpl
                     description = tmp.toString();
                 }
                 if (login != null) {
-                    return new IdentityHeader(config.getOid(), dn, EntityType.USER, login, description, cn);
+                    return new IdentityHeader(config.getOid(), dn, EntityType.USER, login, description, cn, null);
                 } else {
                     return null;
                 }
@@ -1434,11 +1463,12 @@ public class LdapIdentityProviderImpl
                 if (tmp != null) {
                     description = tmp.toString();
                 }
-                return new IdentityHeader(config.getOid(), dn, EntityType.GROUP, groupName, description);
+                return new IdentityHeader(config.getOid(), dn, EntityType.GROUP, groupName, description, null, null);
             }
         return null;
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);
     }
@@ -1447,6 +1477,7 @@ public class LdapIdentityProviderImpl
      * ValidationException exceptions do not state that the user belongs to an ldap or in which
      * ldap the user was not found
      **/
+    @Override
     public void validate(LdapUser u) throws ValidationException {
         User validatedUser;
         try{
@@ -1461,14 +1492,17 @@ public class LdapIdentityProviderImpl
         }
     }
 
+    @Override
     public long getLdapConnectionTimeout() {
         return ldapConnectionTimeout;
     }
 
+    @Override
     public long getLdapReadTimeout() {
         return ldapReadTimeout;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
         if (ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT.equals(propertyName)) {

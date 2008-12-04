@@ -61,15 +61,17 @@ public class SpecificUser extends IdentityAssertion {
         this.userName = userName;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED)
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = super.getEntitiesUsed();
         EntityHeader[] headers2 = new EntityHeader[headers.length + 1];
         System.arraycopy(headers, 0, headers2, 0, headers.length);
-        headers2[headers.length] = new IdentityHeader(super.getIdentityProviderOid(), userUid, EntityType.USER, userLogin, null);
+        headers2[headers.length] = new IdentityHeader(super.getIdentityProviderOid(), userUid, EntityType.USER, userLogin, null, null, null);
         return headers2;
     }
 
+    @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if(!oldEntityHeader.getType().equals(newEntityHeader.getType())) {
             return;
@@ -90,6 +92,7 @@ public class SpecificUser extends IdentityAssertion {
         super.replaceEntity(oldEntityHeader, newEntityHeader);
     }
 
+    @Override
     public String loggingIdentity() {
         String idtomatch = getUserLogin();
         if (idtomatch == null)
@@ -97,6 +100,7 @@ public class SpecificUser extends IdentityAssertion {
         return idtomatch;
     }
 
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer(super.toString());
         sb.append(" ");

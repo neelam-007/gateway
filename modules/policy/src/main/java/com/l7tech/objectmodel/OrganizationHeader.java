@@ -12,26 +12,26 @@ import com.l7tech.objectmodel.folder.HasFolderOid;
  * @author darmstrong
  */
 public abstract class OrganizationHeader extends EntityHeader implements Aliasable, HasFolderOid {
-    protected OrganizationHeader(String id, EntityType type, String name, String description) {
-        super(id, type, name, description);
+    protected OrganizationHeader(long oid, EntityType type, String name, String description, int version) {
+        super(oid, type, name, description, version);
     }
 
-    protected OrganizationHeader(long oid, EntityType type, String name, String description) {
-        super(oid, type, name, description);
-    }
-
+    @Override
     public Long getFolderOid() {
         return folderOid;
     }
 
+    @Override
     public void setFolderOid(Long folderOid) {
         this.folderOid = folderOid;
     }
 
+    @Override
     public boolean isAlias() {
         return alias;
     }
 
+    @Override
     public void setAlias(boolean isAlias) {
         this.alias = isAlias;
     }

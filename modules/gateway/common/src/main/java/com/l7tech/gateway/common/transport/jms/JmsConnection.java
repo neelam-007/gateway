@@ -88,12 +88,13 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         setProperties( other.getProperties() );
     }
 
+    @Override
     public String toString() {
         return "<JmsConnection oid=\"" + _oid + "\" name=\"" + _name + "\"/>";
     }
 
     public EntityHeader toEntityHeader() {
-        return new EntityHeader(Long.toString(getOid()), EntityType.JMS_CONNECTION, getName(), null);
+        return new EntityHeader(getOid(), EntityType.JMS_CONNECTION, getName(), null, getVersion());
     }
 
     @Column(name="username", length=32)

@@ -85,6 +85,7 @@ public class NewVirtualGroupDialog extends JDialog {
         setTitle(resources.getString("dialog.title"));
 
         addWindowListener(new WindowAdapter() {
+        @Override
         public void windowClosing(WindowEvent event) {
             // user hit window manager close button
             windowAction(CMD_CANCEL);
@@ -95,6 +96,7 @@ public class NewVirtualGroupDialog extends JDialog {
 
         groupNameTextField.setDocument(new FilterDocument(128,
                         new FilterDocument.Filter() {
+                            @Override
                             public boolean accept(String str) {
                                 return str != null;
                             }
@@ -102,6 +104,7 @@ public class NewVirtualGroupDialog extends JDialog {
 
         createButton.setActionCommand(CMD_OK);
         createButton.addActionListener(new ActionListener() {
+                   @Override
                    public void actionPerformed(ActionEvent event) {
                        windowAction(event.getActionCommand());
                    }
@@ -109,6 +112,7 @@ public class NewVirtualGroupDialog extends JDialog {
 
         cancelButton.setActionCommand(CMD_CANCEL);
         cancelButton.addActionListener(new ActionListener() {
+                    @Override
                     public void actionPerformed(ActionEvent event) {
                         windowAction(event.getActionCommand());
                     }
@@ -153,10 +157,11 @@ public class NewVirtualGroupDialog extends JDialog {
         vGroup.setDescription(groupDescriptionTextField.getText());
         SwingUtilities.invokeLater(
                 new Runnable() {
+                    @Override
                     public void run() {
                         String errorMessage = null;
                         try {
-                            IdentityHeader header = new IdentityHeader(ipc.getOid(), group.getId(), EntityType.GROUP, group.getName(), group.getDescription());
+                            IdentityHeader header = new IdentityHeader(ipc.getOid(), group.getId(), EntityType.GROUP, group.getName(), group.getDescription(), null, null);
                             group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(ipc.getOid(), vGroup, null ));
                             NewVirtualGroupDialog.this.fireEventGroupAdded(header);
                         } catch (DuplicateObjectException doe) {

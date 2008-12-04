@@ -21,7 +21,8 @@ public class PolicyHeader extends OrganizationHeader {
              policy.getInternalTag(),
              policy.getGuid(),
              policy.getFolder() == null ? null : policy.getFolder().getOid(),
-             false);
+             false,
+             policy.getVersion());
     }
 
     @Override
@@ -37,7 +38,8 @@ public class PolicyHeader extends OrganizationHeader {
              policyHeader.getDescription(),
              policyHeader.getGuid(),
              policyHeader.getFolderOid(),
-             policyHeader.isAlias());
+             policyHeader.isAlias(),
+             policyHeader.getVersion());
     }
 
     public PolicyHeader(final long oid,
@@ -46,9 +48,10 @@ public class PolicyHeader extends OrganizationHeader {
                         final String description,
                         final String policyGuid,
                         final Long folderOid,
-                        final boolean alias)
+                        final boolean alias,
+                        final int version )
     {
-        super(oid, EntityType.POLICY, name, description);
+        super(oid, EntityType.POLICY, name, description, version);
 
         this.guid = policyGuid;
         this.isSoap = isSoap;

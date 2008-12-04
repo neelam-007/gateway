@@ -29,6 +29,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     public LdapUserManagerImpl() {
     }
 
+    @Override
     public synchronized void configure(LdapIdentityProvider provider) {
         identityProvider = provider;
         identityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
@@ -39,6 +40,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
      *
      * @return a LdapUser object, null if not found
      */
+    @Override
     public LdapUser findByPrimaryKey(String dn) throws FindException {
         DirContext context = null;
         LdapIdentityProvider identityProvider = getIdentityProvider();
@@ -127,6 +129,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
      *
      * @return a LdapUser object, null if not found
      */
+    @Override
     public LdapUser findByLogin(String login) throws FindException {
         DirContext context = null;
         try {
@@ -186,6 +189,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * throws UnsupportedOperationException
      */
+    @Override
     public void delete(LdapUser user) {
         throw new UnsupportedOperationException();
     }
@@ -193,6 +197,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * throws UnsupportedOperationException
      */
+    @Override
     public void deleteAll(long ipoid) {
         throw new UnsupportedOperationException();
     }
@@ -200,6 +205,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * throws UnsupportedOperationException
      */
+    @Override
     public void delete(String identifier) {
         throw new UnsupportedOperationException();
     }
@@ -207,6 +213,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * throws UnsupportedOperationException
      */
+    @Override
     public void update(LdapUser user) {
         throw new UnsupportedOperationException();
     }
@@ -214,10 +221,12 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * throws UnsupportedOperationException
      */
+    @Override
     public String save(LdapUser user, Set groupHeaders) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public LdapUser reify(UserBean bean) {
         throw new UnsupportedOperationException();
     }
@@ -225,10 +234,12 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * throws UnsupportedOperationException
      */
+    @Override
     public void update(LdapUser user, Set groupHeaders) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Class<LdapUser> getImpClass() {
         return LdapUser.class;
     }
@@ -236,20 +247,24 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * practical equivalent to LdapIdentityProvider.search(new EntityType[] {EntityType.USER}, "*");
      */
+    @Override
     public EntityHeaderSet<IdentityHeader> findAllHeaders() throws FindException {
         LdapIdentityProvider identityProvider = getIdentityProvider();
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
 
+    @Override
     public EntityHeaderSet<IdentityHeader> search(String searchString) throws FindException {
         LdapIdentityProvider identityProvider = getIdentityProvider();
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
 
+    @Override
     public IdentityHeader userToHeader(LdapUser user) {
-        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getLogin(), user.getName(), user.getCn());
+        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getLogin(), user.getName(), user.getCn(), null);
     }
 
+    @Override
     public LdapUser headerToUser(IdentityHeader header) {
         LdapIdentityProvider identityProvider = getIdentityProvider();
         LdapUser user = new LdapUser();
@@ -259,6 +274,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
         return user;
     }
 
+    @Override
     public boolean authenticateBasic(String dn, String passwd) {
         if (passwd == null || passwd.length() < 1) {
             logger.info("User: " + dn + " refused authentication because empty password provided.");
