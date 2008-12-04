@@ -79,19 +79,19 @@
                 ENTITY_DATA_ERROR : 'Data error.',
                 CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Failed to get data from server for establishing trust by SSG Cluster: ',
                 CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Failed to get data from server for mapping access account: ',
-                FOLDER_NAME_HINT : 'must be &le; 128 characters, no slash "/"',
-                SSG_CLUSTER_NAME_HINT : 'must be &le; 128 characters, no slash "/"',
+                FOLDER_NAME_HINT : 'must be 1 to 128 characters; no slash "/", leading or trailing spaces',
+                SSG_CLUSTER_NAME_HINT : 'must be 1 to 128 characters; no slash "/", leading or trailing spaces',
                 SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
                 STARTING_SSG_NODE : 'Starting SSG Node ',
                 STOPPING_SSG_NODE : 'Stopping SSG Node ',
                 CANNOT_ADD_FOLDER : 'Failed to add folder: ',
                 CANNOT_RENAME_FOLDER : 'Failed to rename folder: ',
-                CANNOT_DELETE_FOLDER : 'Failed to delete folder.',
+                CANNOT_DELETE_FOLDER : 'Failed to delete folder: ',
                 CANNOT_ADD_SSG_CLUSTER : 'Failed to add SSG Cluster: ',
                 CANNOT_RENAME_SSG_CLUSTER : 'Failed to rename SSG Cluster: ',
-                CANNOT_DELETE_SSG_CLUSTER : 'Failed to delete SSG Cluster.',
-                CANNOT_START_SSG_NODE : 'Failed to start SSG Node.',
-                CANNOT_STOP_SSG_NODE : 'Failed to stop SSG Node.'
+                CANNOT_DELETE_SSG_CLUSTER : 'Failed to delete SSG Cluster: ',
+                CANNOT_START_SSG_NODE : 'Failed to start SSG Node: ',
+                CANNOT_STOP_SSG_NODE : 'Failed to stop SSG Node: '
             };
         </script>
         <script type="text/javascript">
@@ -273,7 +273,11 @@
              * @return {boolean}
              */
             function isValidFolderName(name) {
-                return name.length > 0 && name.length <= 128 && name.indexOf('/') == -1;
+                return name.length > 0 &&
+                       name.length <= 128 &&
+                       name.search(/^\s/) == -1 &&      // no leading spaces
+                       name.search(/\s$/) == -1 &&      // no trailing spaces
+                       name.indexOf('/') == -1;
             }
 
             /**
@@ -281,7 +285,11 @@
              * @return {boolean}
              */
             function isValidSSGClusterName(name) {
-                return name.length > 0 && name.length <= 128 && name.indexOf('/') == -1;
+                return name.length > 0 &&
+                       name.length <= 128 &&
+                       name.search(/^\s/) == -1 &&      // no leading spaces
+                       name.search(/\s$/) == -1 &&      // no trailing spaces
+                       name.indexOf('/') == -1;
             }
 
             function onClickAddFolder(event) {
@@ -581,7 +589,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 addFolderDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_FOLDER + o.status, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_FOLDER + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -623,7 +631,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 renameFolderDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_RENAME_FOLDER + o.status, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_RENAME_FOLDER + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -665,7 +673,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 deleteFolderDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_FOLDER + o.status, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_FOLDER + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -715,7 +723,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 addSSGClusterDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_SSG_CLUSTER + o.status, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_SSG_CLUSTER + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -757,7 +765,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 renameSSGClusterDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_RENAME_SSG_CLUSTER + o.status, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_RENAME_SSG_CLUSTER + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -799,7 +807,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 deleteSSGClusterDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SSG_CLUSTER + o.status, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SSG_CLUSTER + o.statusText, localizedStrings.OK);
                 }
             }
 
