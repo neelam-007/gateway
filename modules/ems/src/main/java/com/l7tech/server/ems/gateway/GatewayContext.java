@@ -6,7 +6,6 @@ import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.ExceptionUtils;
 
 import java.security.cert.X509Certificate;
@@ -15,6 +14,8 @@ import java.text.MessageFormat;
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.UnknownHostException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -81,6 +82,8 @@ public class GatewayContext {
 
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger(GatewayContext.class.getName());
+
     private static final String PROP_GATEWAY_URL = "com.l7tech.esm.gatewayUrl";
     private static final String PROP_REPORT_URL = "com.l7tech.esm.reportUrl";
     private static final String PROP_CONTROLLER_URL = "com.l7tech.esm.controllerUrl";
@@ -111,7 +114,7 @@ public class GatewayContext {
         cfb.setAddress( url );
 
         Client c = cfb.create();
-        if (JdkLoggerConfigurator.debugState()) {
+        if ( logger.isLoggable( Level.FINEST ) ) {
             c.getInInterceptors().add( new LoggingInInterceptor() );
             c.getOutInterceptors().add( new LoggingOutInterceptor() );
             c.getInFaultInterceptors().add( new LoggingInInterceptor() );
