@@ -304,6 +304,11 @@ public class CheckTestData{
         if(values.size() != 2){
             throw new IllegalArgumentException("This test designed to work with two key values");
         }
+        
+        for(String s: values){
+            if(s == null || s.equals("")) throw new IllegalArgumentException("Test is designed to work with actual key constraint values");
+        }
+
         Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
         List<String> ops = new ArrayList<String>();
         ops.add("listProducts");
