@@ -101,6 +101,7 @@
             var destSSGClusterContentSelectorWindow;
 
             var dependenciesAction;
+            var migrationAction;
 
             /**
              * Verifies if all inputs for migration are valid.
@@ -162,6 +163,8 @@
                     document.getElementById('srcItemDetails').src = 'dataSource/' + entity.type + '/' + srcSSGClusterContentSelectorWindow.getSsgCluster().id + '/' + entity.id + '.xml';
                 } else if (callbackId == 'destSSGClusterContentSelector') {
                     document.getElementById('destItemDetails').src = 'dataSource/' + entity.type + '/' + destSSGClusterContentSelectorWindow.getSsgCluster().id + '/' + entity.id + '.xml';
+                    // TODO this selection should be based on the radio buttons
+                    document.getElementById('destinationClusterId').value = destSSGClusterContentSelectorWindow.getSsgCluster().id;
                 }
             }
 
@@ -198,7 +201,8 @@
             }
 
             function onClickMigrate() {
-                // TODO
+                //TODO validation and update of JSON form data
+                migrationAction();
             }
 
             function initSSGClusterSelector(iframe) {
@@ -232,6 +236,10 @@
                 var identifyDependenciesImage = document.getElementById('identifyDependenciesImage');
                 dependenciesAction = identifyDependenciesImage.onclick;
                 identifyDependenciesImage.onclick = null;
+
+                var migrateImage = document.getElementById('migrateImage');
+                migrationAction = migrateImage.onclick;
+                migrateImage.onclick = null;
             }
 
             function init() {
@@ -455,7 +463,7 @@
                             onload="initSSGClusterContentSelector(this);"></iframe>
                 </td>
                 <td class="srcDestCenter">
-                    <button id="migrateButton"><img src="../images/copy.png" title="Migrate selected policies with dependency mapping" alt=""></button>
+                    <button id="migrateButton"><img src="../images/copy.png" title="Migrate selected policies with dependency mapping" alt="" id="migrateImage" wicket:id="migrateImage"></button>
                     <br/>
                     <button id="identifyDependenciesButton"><img src="../images/resolveDependencies.png" title="Identify dependencies" alt="" id="identifyDependenciesImage" wicket:id="identifyDependenciesImage"></button>
                 </td>
@@ -507,6 +515,8 @@
             </div>
             <form wicket:id="selectionForm">
                 <input id="selectionJson" type="hidden" wicket:id="selectionJson"/>
+                <input id="destinationClusterId" type="hidden" wicket:id="destinationClusterId"/>
+                <input id="destinationFolderId" type="hidden" wicket:id="destinationFolderId"/>
             </form>
             <div class="panel">
                 <div class="panelTitle">Dependencies Mapping</div>
