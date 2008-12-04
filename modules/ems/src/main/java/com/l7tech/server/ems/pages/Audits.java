@@ -188,7 +188,9 @@ public class Audits extends EmsPage {
 
     private Date startOfDay( final Date date ) {
         Calendar calendar = Calendar.getInstance();
-        calendar.setTimeZone( TimeZone.getTimeZone( getSession().getTimeZoneId() ) );
+        if ( getSession().getTimeZoneId() != null ) {
+            calendar.setTimeZone( TimeZone.getTimeZone( getSession().getTimeZoneId() ) );
+        }
         calendar.setTime(date);
 
         calendar.set(Calendar.HOUR, 0);

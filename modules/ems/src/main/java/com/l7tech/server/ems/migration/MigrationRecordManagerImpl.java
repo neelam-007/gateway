@@ -5,9 +5,12 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.identity.User;
 
 import java.util.Date;
 import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.criterion.Criterion;
@@ -40,31 +43,35 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
 
     @Override
     public MigrationRecord create( final String name,
-                             final long timeCreated,
-                             final SsgCluster source,
-                             final SsgCluster destination,
-                             final String summary) throws SaveException {
-        MigrationRecord result = new MigrationRecord(name, timeCreated, source, destination, summary);
-        super.save(result);
+                                   final User user,
+                                   final SsgCluster source,
+                                   final SsgCluster target,
+                                   final String summary,
+                                   final byte[] data ) throws SaveException {
+
+        MigrationRecord result = new MigrationRecord( name, System.currentTimeMillis(), user, source, target, summary, data );
+        long oid = super.save(result);
+        result.setOid( oid );
         return result;
     }
 
     @Override
-    public Collection<MigrationRecord> findPage( final SortProperty sortProperty,
+    public Collection<MigrationRecord> findPage(
+                                           final User user,
+                                           final SortProperty sortProperty,
                                            final boolean ascending,
                                            final int offset,
                                            final int count,
                                            final Date start,
                                            final Date end) throws FindException {
-        Criterion criterion = Restrictions.between("timeCreated", start.getTime(), end.getTime());
-        return super.findPage(null, sortProperty.getPropertyName(), ascending, offset, count, criterion);
+        return super.findPage(null, sortProperty.getPropertyName(), ascending, offset, count, asCriterion( user, start, end ));
     }
 
     @Override
-    public int findCount( final Date start,
+    public int findCount( final User user,
+                          final Date start,
                           final Date end ) throws FindException {
-        Criterion criterion = Restrictions.between("timeCreated", start.getTime(), end.getTime());
-        return super.findCount( criterion );
+        return super.findCount( asCriterion( user, start, end ) );
     }
 
     //- PROTECTED
@@ -73,4 +80,22 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     protected UniqueType getUniqueType() {
         return UniqueType.NONE;
     }
+
+    //- PRIVATE
+
+    private Criterion[] asCriterion( final User user, final Date start, final Date end ) {
+        List<Criterion> criterion = new ArrayList<Criterion>();
+
+        if ( user != null ) {
+            criterion.add( Restrictions.eq("provider", user.getProviderId()) );
+            criterion.add( Restrictions.eq("userId", user.getId()) );
+        }
+
+        if ( start != null && end != null ) {
+            criterion.add( Restrictions.between("timeCreated", start.getTime(), end.getTime()) );
+        }
+
+        return criterion.toArray( new Criterion[criterion.size()] );
+    }
+
 }

@@ -79,9 +79,11 @@ public class AuditDownloadPanel extends Panel {
 
     //- PRIVATE
 
-   private Date startOfDay( final Date date ) {
+    private Date startOfDay( final Date date ) {
         Calendar calendar = Calendar.getInstance();
-        calendar.setTimeZone( TimeZone.getTimeZone( ((EmsSession)getSession()).getTimeZoneId() ) );
+        if ( getSession() instanceof EmsSession && ((EmsSession)getSession()).getTimeZoneId() != null ) {
+            calendar.setTimeZone( TimeZone.getTimeZone( ((EmsSession)getSession()).getTimeZoneId() ) );
+        }
         calendar.setTime(date);
 
         calendar.set(Calendar.HOUR, 0);

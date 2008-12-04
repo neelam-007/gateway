@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.identity.User;
 
 import java.util.Collection;
 import java.util.Date;
@@ -30,16 +31,18 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
     }
 
     /**
-     * Createa a new migration record.
-     * @param name: the migration name.
-     * @param timeCreated: the time when a migration is created.
-     * @param source: the source cluster.
-     * @param destination: the destination cluster.
-     * @param summary: the migration summary.
+     * Create a a new migration record.
+     *
+     * @param name The name for the migration (may be null)
+     * @param user The user performing the migration
+     * @param source The source cluster.
+     * @param destination The destination cluster.
+     * @param summary The migration summary.
+     * @param data The migration summary.
      * @return a new migration record.
-     * @throws SaveException
+     * @throws SaveException if an error occurs
      */
-    MigrationRecord create(String name, long timeCreated, final SsgCluster source, final SsgCluster destination, final String summary) throws SaveException;
+    MigrationRecord create( final String name, final User user, final SsgCluster source, final SsgCluster destination, final String summary, final byte[] data ) throws SaveException;
 
     /**
      * Find how many migration records are dated between "start" and "end".
@@ -48,11 +51,12 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
      * @return: an integer - how many migration records satisfy the date constrain (between "start" and "end".)
      * @throws FindException
      */
-    int findCount(final Date start, final Date end) throws FindException;
+    int findCount(final User user, final Date start, final Date end) throws FindException;
 
     /**
      * Find a "page" worth of migrations for the given sort, offset, count, start, and end.
      *
+     * @param user The user to access migrations for (null for all users)
      * @param sortProperty The property to sort by (e.g. name)
      * @param ascending True to sort in ascending order
      * @param offset The initial offset 0 for the first page
@@ -61,5 +65,5 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
      * @param end The end date
      * @throws FindException If an error occurs
      */
-    Collection<MigrationRecord> findPage(final SortProperty sortProperty, final boolean ascending, final int offset, final int count, final Date start, final Date end) throws FindException;
+    Collection<MigrationRecord> findPage(final User user, final SortProperty sortProperty, final boolean ascending, final int offset, final int count, final Date start, final Date end) throws FindException;
 }
