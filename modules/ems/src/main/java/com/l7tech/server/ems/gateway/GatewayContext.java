@@ -1,35 +1,34 @@
 package com.l7tech.server.ems.gateway;
 
+
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.server.management.api.node.MigrationApi;
-import com.l7tech.server.DefaultKey;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
-
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.text.MessageFormat;
-import java.net.ConnectException;
-import java.net.NoRouteToHostException;
-import java.net.UnknownHostException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.KeyManager;
-import javax.xml.ws.soap.SOAPFaultException;
-
+import com.l7tech.util.SyspropUtil;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.interceptor.LoggingInInterceptor;
+import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
-import org.apache.cxf.configuration.jsse.TLSClientParameters;
-import org.apache.cxf.interceptor.LoggingOutInterceptor;
-import org.apache.cxf.interceptor.LoggingInInterceptor;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.xml.ws.soap.SOAPFaultException;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.UnknownHostException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * GatewayContext provides access to a Gateway from the ESM.
@@ -50,7 +49,7 @@ public class GatewayContext {
      */
     public GatewayContext( final DefaultKey defaultKey, final String host, final int port, final String esmId, final String userId ) {
         if ( host == null ) throw new IllegalArgumentException("host is required");
-        if ( esmId == null ) throw new IllegalArgumentException("esmId is required"); 
+        if ( esmId == null ) throw new IllegalArgumentException("esmId is required");
         this.cookie = buildCookie( esmId, userId );
         this.api = initApi( GatewayApi.class, defaultKey, MessageFormat.format(GATEWAY_URL, host, Integer.toString(port)));
         this.reportApi = initApi( ReportApi.class, defaultKey, MessageFormat.format(REPORT_URL, host, Integer.toString(port)));
@@ -108,7 +107,7 @@ public class GatewayContext {
     }
 
     @SuppressWarnings({"unchecked"})
-    private <T> T initApi( final Class<T> apiClass, final DefaultKey defaultKey, final String url ) {
+    protected <T> T initApi( final Class<T> apiClass, final DefaultKey defaultKey, final String url ) {
         JaxWsClientFactoryBean cfb = new JaxWsClientFactoryBean();
         cfb.setServiceClass( apiClass );
         cfb.setAddress( url );

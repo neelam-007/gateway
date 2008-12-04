@@ -1,39 +1,37 @@
 package com.l7tech.server.cluster;
 
-import com.l7tech.server.management.api.node.GatewayApi;
-import com.l7tech.server.util.JaasUtils;
-import com.l7tech.server.folder.FolderManager;
-import com.l7tech.server.policy.PolicyManager;
-import com.l7tech.server.service.ServiceManager;
-import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.security.rbac.SecurityFilter;
-import com.l7tech.util.Config;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.Policy;
+import com.l7tech.server.folder.FolderManager;
+import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.server.policy.PolicyManager;
+import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.Wsdl;
-
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.jws.WebMethod;
 import javax.jws.WebResult;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Gateway API implementation.
@@ -111,7 +109,10 @@ public class GatewayApiImpl implements GatewayApi {
     @Override
     @WebMethod(operationName = "GetEntityInfo")
     @WebResult(name = "EntityInfos", targetNamespace = "http://www.layer7tech.com/management/gateway")
-    public Collection<EntityInfo> getEntityInfo( final Collection<EntityType> entityTypes ) throws GatewayException {
+    public Collection<EntityInfo> getEntityInfo( Collection<EntityType> entityTypes ) throws GatewayException {
+        if (entityTypes == null) // null means "all supported types"
+            entityTypes = Arrays.asList(EntityType.SERVICE, EntityType.POLICY, EntityType.FOLDER);
+
         try {
             Collection<EntityInfo> info = new ArrayList<EntityInfo>();
             User user = JaasUtils.getCurrentUser();

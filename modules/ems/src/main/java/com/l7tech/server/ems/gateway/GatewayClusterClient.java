@@ -21,6 +21,12 @@ public interface GatewayClusterClient {
     SsgCluster getCluster();
 
     /**
+     * Clear all cached data, forcing the next query method to obtain up-to-date information by
+     * contacting the Gateway cluster.
+     */
+    void clearCachedData();
+
+    /**
      * Get information about all entities of the specified type known to this cluster.
      * TODO split this into several finer-grained but more useful query methods, backed by a cache filled
      *      from the coarse-grained remote method

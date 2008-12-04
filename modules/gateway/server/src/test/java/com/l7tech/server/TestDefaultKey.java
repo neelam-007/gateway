@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.server.audit.AuditContextStub;
+import com.l7tech.util.Pair;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -40,6 +41,10 @@ public class TestDefaultKey extends DefaultKeyImpl {
         super(null, new AuditContextStub(), null, null, null);
         this.sslInfo = makeFakeKeyEntry(sslCert, sslKey);
         this.caInfo = sslInfo;
+    }
+
+    public TestDefaultKey(Pair<X509Certificate, PrivateKey> certAndKey) {
+        this(certAndKey.left, certAndKey.right);
     }
 
     public SsgKeyEntry getSslInfo() {

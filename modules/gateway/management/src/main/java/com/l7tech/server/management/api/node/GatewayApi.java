@@ -2,14 +2,14 @@ package com.l7tech.server.management.api.node;
 
 import com.l7tech.objectmodel.EntityType;
 
-import java.io.Serializable;
-import java.util.Collection;
 import javax.jws.WebMethod;
+import javax.jws.WebParam;
 import javax.jws.WebResult;
 import javax.jws.WebService;
-import javax.jws.WebParam;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
+import java.util.Collection;
 
 /**
  * API for management of Gateway from Enterprise Service Manager.
@@ -20,9 +20,12 @@ import javax.xml.bind.annotation.XmlRootElement;
 public interface GatewayApi {
 
     /**
-     * Get entities information
-     * @param entityTypes: the types of entities retrieved
-     * @return
+     * Get entities information.
+     *
+     * @param entityTypes: the types of entities retrieved, or null to retrieve all entity types currently supported
+     *                     by this method on this Gateway.
+     * @return a Collection containing one EntityInfo for each Entity instance on this Gateway cluster of one of the
+     *         requested types.  May be empty but never null.
      */
     @WebMethod(operationName="GetEntityInfo")
     @WebResult(name="EntityInfos", targetNamespace="http://www.layer7tech.com/management/gateway")
