@@ -53,7 +53,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof Updated) {
             Updated updated = (Updated)event;
-            if (updated.getEntity() instanceof PublishedService) {
+            if (!updated.isSystem() && updated.getEntity() instanceof PublishedService) {
                 PublishedService service = (PublishedService) updated.getEntity();
                 EntityChangeSet changes = updated.getChangeSet();
                 Object o = changes.getOldValue(SERVICE_DISABLED);
@@ -68,8 +68,11 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         }
 
         if (event instanceof AdminEvent) {
-            auditContext.setCurrentRecord(makeAuditRecord(event));
-            auditContext.flush();
+            AdminEvent admin = (AdminEvent)event;
+            if (!admin.isSystem()) {
+                auditContext.setCurrentRecord(makeAuditRecord(event));
+                auditContext.flush();
+            }
         }
 
         if (event instanceof LogonEvent) {
