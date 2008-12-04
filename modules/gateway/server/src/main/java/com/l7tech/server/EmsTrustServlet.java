@@ -487,7 +487,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
     }
 
     private String stripchars(String string) {
-        return string == null ? "" : string.replaceAll("[^a-zA-Z0-9\\-\\r\\n +/=.,:;\\?@&!#$%\\^*\\(\\){}'~`]", "");
+        return string == null ? "" : string.replaceAll("[^a-zA-Z0-9\\-\\r\\n +/=.,:;\\_\\?@&!#$%\\^*\\(\\){}'~`]", "");
     }
 
     private String loadStringResource(String resourcePath) throws IOException {
