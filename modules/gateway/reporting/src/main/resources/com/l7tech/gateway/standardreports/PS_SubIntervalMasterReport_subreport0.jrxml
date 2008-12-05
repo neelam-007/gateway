@@ -124,9 +124,6 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 		<initialValueExpression><![CDATA[new Integer(Integer.MIN_VALUE)]]></initialValueExpression>
 	</variable>
-	<variable name="FRTA_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
-		<variableExpression><![CDATA[($F{FRTA}.equals(new Double(0)))? null: $F{FRTA}]]></variableExpression>
-	</variable>
 	<variable name="BRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Nothing">
 		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 		<initialValueExpression><![CDATA[new Integer(Integer.MAX_VALUE)]]></initialValueExpression>
@@ -134,9 +131,6 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 	<variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Nothing">
 		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
 		<initialValueExpression><![CDATA[new Integer(Integer.MIN_VALUE)]]></initialValueExpression>
-	</variable>
-	<variable name="BRTA_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
-		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>

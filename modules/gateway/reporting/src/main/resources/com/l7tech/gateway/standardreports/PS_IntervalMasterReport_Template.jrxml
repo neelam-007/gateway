@@ -164,13 +164,9 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE" calculation="Highest">
 	</variable>
-	<variable name="FRTA_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE" calculation="Average">
-	</variable>
 	<variable name="BRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE" calculation="Lowest">
 	</variable>
 	<variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE" calculation="Highest">
-	</variable>
-	<variable name="BRTA_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE" calculation="Average">
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE" calculation="Average">
 	</variable>
@@ -194,13 +190,9 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="FRTMX_MAX_MAPPING" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Highest">
 	</variable>
-	<variable name="FRTA_AVG_MAPPING" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Average">
-	</variable>
 	<variable name="BRTM_MIN_MAPPING" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Lowest">
 	</variable>
 	<variable name="BRTMX_MAX_MAPPING" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Highest">
-	</variable>
-	<variable name="BRTA_AVG_MAPPING" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Average">
 	</variable>
 	<variable name="AP_AVG_MAPPING" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Average">
 	</variable>
@@ -224,13 +216,9 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="FRTMX_MAX_REPORT" class="java.lang.Integer" resetType="Report" calculation="Highest">
 	</variable>
-	<variable name="FRTA_AVG_REPORT" class="java.lang.Double" resetType="Report" calculation="Average">
-	</variable>
 	<variable name="BRTM_MIN_REPORT" class="java.lang.Integer" resetType="Report" calculation="Lowest">
 	</variable>
 	<variable name="BRTMX_MAX_REPORT" class="java.lang.Integer" resetType="Report" calculation="Highest">
-	</variable>
-	<variable name="BRTA_AVG_REPORT" class="java.lang.Double" resetType="Report" calculation="Average">
 	</variable>
 	<variable name="AP_AVG_REPORT" class="java.lang.Double" resetType="Report" calculation="Average">
 	</variable>
@@ -254,13 +242,9 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="FRTMX_MAX_OPERATION" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Highest">
 	</variable>
-	<variable name="FRTA_AVG_OPERATION" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
-	</variable>
 	<variable name="BRTM_MIN_OPERATION" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Lowest">
 	</variable>
 	<variable name="BRTMX_MAX_OPERATION" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Highest">
-	</variable>
-	<variable name="BRTA_AVG_OPERATION" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
 	</variable>
 	<variable name="AP_AVG_OPERATION" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
 	</variable>
@@ -1744,34 +1728,26 @@ Utilities.getMappingReportInfoDisplayString
 					<returnValue subreportVariable="THROUGHPUT_SUM" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
 					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX" calculation="Highest"/>
-					<returnValue subreportVariable="FRTA_AVG" toVariable="FRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="BRTM_MIN" toVariable="BRTM_MIN" calculation="Lowest"/>
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX" calculation="Highest"/>
-					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG" calculation="Average"/>
 					<returnValue subreportVariable="THROUGHPUT_SUM" toVariable="THROUGHPUT_SUM_MAPPING" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN_MAPPING" calculation="Lowest"/>
 					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX_MAPPING" calculation="Highest"/>
-					<returnValue subreportVariable="FRTA_AVG" toVariable="FRTA_AVG_MAPPING" calculation="Average"/>
 					<returnValue subreportVariable="BRTM_MIN" toVariable="BRTM_MIN_MAPPING" calculation="Lowest"/>
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX_MAPPING" calculation="Highest"/>
-					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG_MAPPING" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG_MAPPING" calculation="Average"/>
 					<returnValue subreportVariable="THROUGHPUT_SUM" toVariable="THROUGHPUT_SUM_REPORT" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN_REPORT" calculation="Lowest"/>
 					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX_REPORT" calculation="Highest"/>
-					<returnValue subreportVariable="FRTA_AVG" toVariable="FRTA_AVG_REPORT" calculation="Average"/>
 					<returnValue subreportVariable="BRTM_MIN" toVariable="BRTM_MIN_REPORT" calculation="Lowest"/>
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX_REPORT" calculation="Highest"/>
-					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG_REPORT" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG_REPORT" calculation="Average"/>
 					<returnValue subreportVariable="THROUGHPUT_SUM" toVariable="THROUGHPUT_SUM_OPERATION" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN_OPERATION" calculation="Lowest"/>
 					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX_OPERATION" calculation="Highest"/>
-					<returnValue subreportVariable="FRTA_AVG" toVariable="FRTA_AVG_OPERATION" calculation="Average"/>
 					<returnValue subreportVariable="BRTM_MIN" toVariable="BRTM_MIN_OPERATION" calculation="Lowest"/>
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX_OPERATION" calculation="Highest"/>
-					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG_OPERATION" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG_OPERATION" calculation="Average"/>
 					<returnValue subreportVariable="POLICY_VIOLATIONS_SUM" toVariable="POLICY_VIOLATIONS_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_SUM" calculation="Sum"/>

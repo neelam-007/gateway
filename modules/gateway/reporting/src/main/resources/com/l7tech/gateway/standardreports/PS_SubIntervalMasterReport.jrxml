@@ -80,13 +80,9 @@
 	</variable>
 	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Highest">
 	</variable>
-	<variable name="FRTA_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
-	</variable>
 	<variable name="BRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Lowest">
 	</variable>
 	<variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Highest">
-	</variable>
-	<variable name="BRTA_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
 	</variable>
@@ -195,10 +191,8 @@ getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_
                     <returnValue subreportVariable="BACK_SUM" toVariable="BACK_SUM_SUM" calculation="Sum"/>
                     <returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
 					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX" calculation="Highest"/>
-					<returnValue subreportVariable="FRTA_AVG" toVariable="FRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="BRTM_MIN" toVariable="BRTM_MIN" calculation="Lowest"/>
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX" calculation="Highest"/>
-					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG" calculation="Average"/>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{SUB_REPORT}]]></subreportExpression>
 				</subreport>

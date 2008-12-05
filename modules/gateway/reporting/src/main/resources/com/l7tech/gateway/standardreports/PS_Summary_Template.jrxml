@@ -173,17 +173,11 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Highest">
 		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 	</variable>
-	<variable name="FRTA_AVG" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Average">
-		<variableExpression><![CDATA[($F{FRTA}.equals(new Double(0)))? null: $F{FRTA}]]></variableExpression>
-	</variable>
 	<variable name="BRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Lowest">
 		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 	</variable>
 	<variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Highest">
 		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
-	</variable>
-	<variable name="BRTA_AVG" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Average">
-		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
@@ -222,17 +216,11 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 	<variable name="FRTMX_SERVICE_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Highest">
 		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 	</variable>
-	<variable name="FRTA_SERVICE_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Average">
-		<variableExpression><![CDATA[($F{FRTA}.equals(new Double(0)))? null: $F{FRTA}]]></variableExpression>
-	</variable>
 	<variable name="BRTM_SERVICE_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Lowest">
 		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 	</variable>
 	<variable name="BRTMX_SERVICE_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Highest">
 		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
-	</variable>
-	<variable name="BRTA_SERVICE_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Average">
-		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
 	</variable>
 	<variable name="AP_SERVICE_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
@@ -268,17 +256,11 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 	<variable name="FRTMX_REPORT_MAX" class="java.lang.Integer" resetType="Report" calculation="Highest">
 		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 	</variable>
-	<variable name="FRTA_REPORT_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
-		<variableExpression><![CDATA[($F{FRTA}.equals(new Double(0)))? null: $F{FRTA}]]></variableExpression>
-	</variable>
 	<variable name="BRTM_REPORT_MIN" class="java.lang.Integer" resetType="Report" calculation="Lowest">
 		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 	</variable>
 	<variable name="BRTMX_REPORT_MAX" class="java.lang.Integer" resetType="Report" calculation="Highest">
 		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
-	</variable>
-	<variable name="BRTA_REPORT_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
-		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
 	</variable>
 	<variable name="AP_REPORT_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
@@ -314,17 +296,11 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 	<variable name="FRTMX_OPERATION_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Highest">
 		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 	</variable>
-	<variable name="FRTA_OPERATION_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
-		<variableExpression><![CDATA[($F{FRTA}.equals(new Double(0)))? null: $F{FRTA}]]></variableExpression>
-	</variable>
 	<variable name="BRTM_OPERATION_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Lowest">
 		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 	</variable>
 	<variable name="BRTMX_OPERATION_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Highest">
 		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
-	</variable>
-	<variable name="BRTA_OPERATION_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
-		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
 	</variable>
 	<variable name="AP_OPERATION_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
