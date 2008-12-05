@@ -30,5 +30,6 @@ public interface PropertyResolver {
      * @param propName the property of the sourceEntity for which a new value is set.
      * @param targetEntity the new value that is set for the sourceEntity's propName
      */
-    public void applyMapping(Entity sourceEntity, String propName, Entity targetEntity) throws MigrationException;
+    // todo: target value should be EntityHeader, and each resolver load the entity if it needs to
+    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws MigrationException;
 }

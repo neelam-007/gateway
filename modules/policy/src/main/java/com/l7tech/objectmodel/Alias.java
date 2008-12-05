@@ -2,6 +2,9 @@ package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 
 /**
  * Alias was created as a means of referring to any class which can be aliases generically.
@@ -32,6 +35,7 @@ public abstract class Alias<ET extends PersistentEntity> extends PersistentEntit
     }
 
     /** The folder where this alias lives. */
+    @Migration(mapName = NONE, mapValue = NONE)
     public Folder getFolder() {
         return folder;
     }

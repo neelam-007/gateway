@@ -90,6 +90,12 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
+    @Override
+    @Transactional(readOnly=true)
+    public ET findByHeader(EntityHeader header) throws FindException {
+        return findByPrimaryKey(header.getOid());
+    }
+
     /**
      * Find the number of entities that are found for the given criterion.
      *

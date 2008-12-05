@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,6 +42,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
         this.identityProviderOid = identityProviderOid;
     }
 
+    @Migration(mapName = MigrationMappingSelection.REQUIRED)
     public EntityHeader[] getEntitiesUsed() {
         if(identityProviderOid > 0) {
             return new EntityHeader[] {new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null)};

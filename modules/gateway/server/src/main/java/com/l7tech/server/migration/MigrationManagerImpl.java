@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.migration.*;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 import static com.l7tech.objectmodel.migration.MigrationException.*;
 import com.l7tech.server.*;
+import static com.l7tech.server.migration.MigrationManagerImpl.ImportOperation.*;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
@@ -33,6 +34,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private EntityCrud entityCrud;
     private PropertyResolverFactory resolverFactory;
+    private static final EntityHeaderRef ROOT_FOLDER_REF = new EntityHeaderRef(EntityType.FOLDER, "-5002");
 
     public MigrationManagerImpl(EntityCrud entityCrud, PropertyResolverFactory resolverFactory) {
         this.entityCrud = entityCrud;
@@ -99,24 +101,139 @@ public class MigrationManagerImpl implements MigrationManager {
 
 
     @Override
-    @Transactional(rollbackFor = Throwable.class)
-    public void importBundle(MigrationBundle bundle, boolean overwriteExisting) throws MigrationException {
+    public void importBundle(MigrationBundle bundle, EntityHeader targetFolder, boolean flattenFolders, boolean overwriteExisting) throws MigrationException {
         logger.log(Level.FINEST, "Importing bundle: {0}", bundle);
-        MigrationErrors errors = validateBundle(bundle);
-        if (! errors.isEmpty())
-            logger.log(Level.WARNING, "Migration bundle validation failed.", errors);
-            // todo: enable strict validation : throw new MigrationException("Migration bundle validation failed.", errors);
 
-        // load entities
-        Entity current, existing, fromBundle;
+        processFolders(bundle, targetFolder, flattenFolders);
+
+        MigrationErrors errors = validateBundle(bundle);
+        if (!errors.isEmpty())
+            logger.log(Level.WARNING, "Migration bundle validation failed.", errors);
+        // todo: enable strict validation : throw new MigrationException("Migration bundle validation failed.", errors);
+
+        Map<EntityHeader, EntityOperation> entities = loadEntities(bundle, overwriteExisting);
+
+        applyMappings(bundle, entities);
+        if (!errors.isEmpty())
+            logger.log(Level.WARNING, "Errors while applying mappings for the entities to import.", errors);
+        // todo: throw new MigrationException("Errors while applying mappings for the entities to import.", errors);
+
+        try {
+            Set<EntityHeader> uploaded = new HashSet<EntityHeader>();
+            for(EntityHeader header : bundle.getMetadata().getHeaders()) {
+                uploadEntityRecursive(header, entities, bundle.getMetadata(), uploaded);
+            }
+        } catch (ObjectModelException e) {
+            throw new MigrationException("Import failed.", e);
+        }
+    }
+
+    private void uploadEntityRecursive(EntityHeader header, Map<EntityHeader, EntityOperation> entities, MigrationMetadata metadata, Set<EntityHeader> uploaded) throws MigrationException, UpdateException, SaveException {
+
+        if (header == null || uploaded.contains(header))
+            return; // circular dependency
+        uploaded.add(header);
+
+        // upload dependencies first
+        Set<MigrationMapping> dependencies = metadata.getMappingsForSource(header);
+        if (dependencies != null) {
+            for (MigrationMapping mapping : dependencies) {
+                uploadEntityRecursive(metadata.getHeader(mapping.getTarget()), entities, metadata, uploaded);
+            }
+        }
+
+        EntityOperation eo = entities.get(header);
+        switch (eo.operation)  {
+            case SKIP:
+                return;
+
+            case UPDATE:
+                entityCrud.update(eo.entity);
+                break;
+
+            case CREATE:
+                Long oid = (Long)entityCrud.save(eo.entity);
+                if (eo.entity instanceof PersistentEntity)
+                    ((PersistentEntity)eo.entity).setOid(oid);
+                break;
+
+            default:
+                throw new IllegalStateException("Import operation not known: " + eo.operation);
+        }
+    }
+
+
+    private void processFolders(MigrationBundle bundle, EntityHeader targetFolder, boolean flatten) throws MigrationException {
+        MigrationMetadata metadata = bundle.getMetadata();
+        if (flatten) {
+            // replace all folder dependencies withe the (unique) targetFolder
+            Set<EntityHeaderRef> headersToRemove = new HashSet<EntityHeaderRef>();
+            for (MigrationMapping mapping : metadata.getMappings()) {
+                if (mapping.getTarget().getType() == EntityType.FOLDER) {
+                    headersToRemove.add(mapping.getTarget());
+                    mapping.setTarget(targetFolder);
+                }
+            }
+            for (EntityHeaderRef headerRef : headersToRemove) {
+                metadata.removeHeader(headerRef);
+            }
+            metadata.addHeader(targetFolder);
+        } else {
+            // map root folder to target folder
+            if (!metadata.hasHeader(ROOT_FOLDER_REF))
+                throw new MigrationException("Root folder not found in the bundle.");
+            metadata.mapName(ROOT_FOLDER_REF, targetFolder);
+        }
+    }
+
+    private MigrationErrors applyMappings(MigrationBundle bundle, Map<EntityHeader, EntityOperation> entities) throws MigrationException {
+        MigrationErrors errors = new MigrationErrors();
+
+        for (EntityHeader header : entities.keySet()) {
+            EntityOperation eo = entities.get(header);
+
+            MigrationMetadata metadata = bundle.getMetadata();
+            if ( eo.operation == SKIP && ! metadata.isUploadedByParent(header))
+                continue;
+
+            try {
+                for (MigrationMapping mapping : metadata.getMappingsForSource(header)) {
+                    PropertyResolver resolver = getResolver(eo.entity, mapping.getPropName());
+                    EntityOperation targetEo = entities.get(metadata.getHeader(mapping.getTarget()));
+                    if (targetEo == null || targetEo.entity == null) {
+                        // todo throw
+                        logger.log(Level.WARNING, "Cannot apply mapping, target entity not found: {0} : {1}", new Object[]{eo.entity, mapping.getPropName()});
+                        continue;
+                    }
+                    resolver.applyMapping(eo.entity, mapping.getPropName(), targetEo.entity, metadata.getOriginalHeader(mapping.getOriginalTarget()));
+                }
+            } catch (MigrationException e) {
+                logger.log(Level.WARNING, "Errors while applying.", e);
+                errors.add(EntityHeaderUtils.fromEntity(eo.entity), e);
+            }
+        }
+        return errors;
+    }
+
+    static enum ImportOperation { CREATE, UPDATE, SKIP }
+
+    private static class EntityOperation {
+        Entity entity;
+        ImportOperation operation;
+        private EntityOperation(Entity entity, ImportOperation operation) {
+            this.entity = entity;
+            this.operation = operation;
+        }
+    }
+
+    private Map<EntityHeader,EntityOperation> loadEntities(MigrationBundle bundle, boolean overwriteExisting) throws MigrationException {
+
+        Map<EntityHeader, EntityOperation> result = new HashMap<EntityHeader, EntityOperation>();
+
+        Entity existing, fromBundle;
         ExportedItem item;
-        Map<EntityHeaderRef, Entity> target,
-            allEntities = new HashMap<EntityHeaderRef, Entity>(),
-            newEntities = new HashMap<EntityHeaderRef, Entity>(),
-            updateEntities = new HashMap<EntityHeaderRef, Entity>();
         MigrationMetadata metadata = bundle.getMetadata();
         for (EntityHeader header : metadata.getHeaders()) {
-
             try {
                 existing = loadEntity(header);
             } catch (MigrationException e) {
@@ -125,67 +242,28 @@ public class MigrationManagerImpl implements MigrationManager {
             item = bundle.getExportedItem(header);
             fromBundle = item == null ? null : item.getValue();
 
-            // check
             if (fromBundle == null && existing == null) {
-                throw new MigrationException("Entity not found for header {0}. (unresolved mapping not validated?).");
+                throw new MigrationException("Entity not found for header (unresolved mapping not validated?):" + header);
             }
 
-            // which one?
-            current = existing == null ? fromBundle : overwriteExisting ? fromBundle : existing;
-            allEntities.put(header, current);
-
-            // where
-            target = existing == null ? newEntities : updateEntities;
-            target.put(header, current);
-        }
-
-        // apply mappings
-        Entity sourceEntity, targetEntity;
-        for (EntityHeaderRef header : allEntities.keySet()) {
-            if (!newEntities.containsKey(header) && !updateEntities.containsKey(header))
-                continue;
-
-            sourceEntity = newEntities.get(header);
-            try {
-                for (MigrationMapping mapping : metadata.getMappingsForSource(header)) {
-                    targetEntity = allEntities.get(mapping.getTarget());
-                    PropertyResolver resolver = getResolver(sourceEntity, mapping.getPropName());
-                    try {
-                        resolver.applyMapping(sourceEntity, mapping.getPropName(), targetEntity);
-                    } catch (MigrationException e) {
-                        logger.log(Level.WARNING, "Errors while applying mapping: ", e);
-                        errors.add(mapping, e);
-                    }
-                }
-            } catch (MigrationException e) {
-                logger.log(Level.WARNING, "Errors while applying mapping: ", e);
-                errors.add(header, e);
+            if (metadata.isUploadedByParent(header)) {
+                result.put(header, new EntityOperation(fromBundle, SKIP));
+            } else if (existing == null) {
+                if (fromBundle instanceof PersistentEntity)
+                    ((PersistentEntity)fromBundle).setOid(PersistentEntity.DEFAULT_OID);
+                result.put(header, new EntityOperation(fromBundle, CREATE));
+            } else if (fromBundle == null) {
+                result.put(header, new EntityOperation(existing, SKIP));
+            } else if (overwriteExisting) { // both not null
+                if (fromBundle instanceof PersistentEntity && existing instanceof PersistentEntity)
+                    ((PersistentEntity)fromBundle).setOid(((PersistentEntity)existing).getOid());
+                result.put(header, new EntityOperation(fromBundle, UPDATE));
+            } else {
+                result.put(header, new EntityOperation(existing, SKIP));
             }
         }
-        if (! errors.isEmpty())
-            logger.log(Level.WARNING, "Errors while applying mappings for the entities to import.", errors);
-            // todo: throw new MigrationException("Errors while applying mappings for the entities to import.", errors);
 
-        // todo: process folders
-        
-        // upload
-        for (EntityHeaderRef headerRef : newEntities.keySet()) {
-            try {
-                if ( ! metadata.isUploadedByParent(headerRef) )
-                    entityCrud.save(newEntities.get(headerRef));
-            } catch (SaveException e) {
-                throw new MigrationException("Import failed, save error.", e);
-            }
-        }
-        if (overwriteExisting) {
-            for (Entity entity : updateEntities.values()) {
-                try {
-                    entityCrud.update(entity);
-                } catch (UpdateException e) {
-                    throw new MigrationException("Import failed, update error", e);
-                }
-            }
-        }
+        return result;
     }
 
     private PropertyResolver getResolver(Entity sourceEntity, String propName) throws MigrationException {
@@ -245,13 +323,18 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private void findDependenciesRecursive(MigrationMetadata result, EntityHeader header) throws MigrationException {
         logger.log(Level.FINE, "Finding dependencies for: " + header.toStringVerbose());
-        result.addHeader(header); // marks header as processed
-        Entity entity;
+
+        Entity entity = null;
         try {
             entity = loadEntity(header);
         } catch (Exception e) {
-            return;
+            logger.log(Level.WARNING, "Error loading entity for dependency {0}", header);
         }
+        if ( (header.getName() == null || header.getName().length() == 0) && entity != null )
+            header = EntityHeaderUtils.fromEntity(entity);
+        result.addHeader(header); // marks header as processed
+        if (entity == null) return;
+
         for (Method method : entity.getClass().getMethods()) {
             if (MigrationUtils.isDependency(method)) {
                 PropertyResolver resolver = getResolver(entity, method.getName());

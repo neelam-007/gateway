@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.wsdl.Wsdl;
@@ -463,6 +463,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         this.laxResolution = laxResolution;
     }
 
+    @Migration(mapName = NONE, mapValue = NONE)
     public Folder getFolder() {
         return folder;
     }

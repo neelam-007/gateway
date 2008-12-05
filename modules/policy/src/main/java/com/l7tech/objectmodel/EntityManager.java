@@ -69,6 +69,8 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
 
     void update(ET entity) throws UpdateException;
 
+    ET findByHeader(EntityHeader header) throws FindException;
+
     /**
      * Thrown by EntityManagers who override <code>checkCachable</code>
      * to prevent an Entity from being cached.

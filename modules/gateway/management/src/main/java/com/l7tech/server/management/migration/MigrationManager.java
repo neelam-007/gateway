@@ -15,12 +15,11 @@ public interface MigrationManager {
 
     public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException;
 
-    // is this one optional? maybe remove from interface
     public MigrationMetadata findDependencies(Collection<EntityHeader> headers) throws MigrationException;
 
     public MigrationBundle exportBundle(Collection<EntityHeader> headers) throws MigrationException;
 
     public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables, String filter) throws MigrationException;
 
-    public void importBundle(MigrationBundle bundle, boolean overwriteExisting) throws MigrationException;
+    public void importBundle(MigrationBundle bundle, EntityHeader targetFolder, boolean flattenFolders, boolean overwriteExisting) throws MigrationException;
 }

@@ -41,6 +41,10 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         return entities.get(oid);
     }
 
+    public ET findByHeader(EntityHeader header) throws FindException {
+        return findByPrimaryKey(header.getOid());
+    }
+
     public synchronized void delete(long oid) throws DeleteException, FindException {
         entities.remove(oid);
         headers.remove(oid);

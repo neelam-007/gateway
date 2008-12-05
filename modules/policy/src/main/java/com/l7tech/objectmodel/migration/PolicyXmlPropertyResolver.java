@@ -39,7 +39,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
         return result;
     }
 
-    public void applyMapping(Entity sourceEntity, String propName, Entity targetEntity) throws MigrationException {
+    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws MigrationException {
         logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{MigrationUtils.getHeaderFromEntity(sourceEntity), propName});
         String policyXmlPropName, assertionPropName;
         int targetOrdinal;
@@ -61,11 +61,16 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
         if (!(assertion.getOrdinal() == targetOrdinal))
             throw new MigrationException("Assertion with ordinal " + targetOrdinal + " not found in poilcy.");
 
-        Method setter = MigrationUtils.setterForPropertyName(assertion, assertionPropName, targetEntity.getClass());
+        logger.log(Level.FINEST, "Applying mapping for assertion {0} : {1}.", new Object[]{assertion, assertionPropName});
         try {
-            logger.log(Level.FINEST, "Applying mapping for assertion {0} : {1}.", new Object[]{assertion, assertionPropName});
-            // todo: handle multi-value targets, e.g. UsesEntities.getEntitiesUsed()
-            setter.invoke(assertion, targetEntity);
+            Method setter;
+            if ("EntitiesUsed".equals(assertionPropName)) {
+                setter = MigrationUtils.setterForPropertyName(assertion, "replaceEntity", EntityHeader.class, EntityHeader.class);
+                setter.invoke(assertion, originalHeader, MigrationUtils.getHeaderFromEntity((Entity) targetValue));
+            } else {
+                setter = MigrationUtils.setterForPropertyName(assertion, assertionPropName, targetValue.getClass());
+                setter.invoke(assertion, targetValue);
+            }
         } catch (Exception e) {
             throw new MigrationException("Error applying mapping for " + propName, e);
         }

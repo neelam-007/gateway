@@ -1169,8 +1169,9 @@
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
-    <bean id="migrationApiImpl" class="com.l7tech.server.management.migration.MigrationApiImpl">
+    <bean id="migrationApiImpl" class="com.l7tech.server.migration.MigrationApiImpl">
         <constructor-arg index="0" ref="migrationManager"/>
+        <constructor-arg index="1" ref="auditContext"/>
     </bean>
 
     <bean id="systemClassLoader" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

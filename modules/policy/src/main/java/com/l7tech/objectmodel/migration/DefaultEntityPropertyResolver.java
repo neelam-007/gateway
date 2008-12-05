@@ -88,13 +88,13 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
         mappingsForHeader.add(mapping);
     }
 
-    public void applyMapping(Entity sourceEntity, String propName, Entity targetEntity) throws MigrationException {
+    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws MigrationException {
         logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{MigrationUtils.getHeaderFromEntity(sourceEntity), propName});
-        Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, targetEntity.getClass());
+        Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, targetValue.getClass());
 
         try {
             // todo: handle multi-value target values
-            method.invoke(sourceEntity, targetEntity);
+            method.invoke(sourceEntity, targetValue);
         } catch (Exception e) {
             throw new MigrationException("Error applying mapping for property name: " + propName, e);
         }

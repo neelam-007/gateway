@@ -67,8 +67,8 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
 
     @Override
     public Entity find(final EntityHeader header) throws FindException {
-        ReadOnlyEntityManager manager = getReadOnlyManager(EntityTypeRegistry.getEntityClass(header.getType()));
-        if (manager != null) return manager.findByPrimaryKey(header.getOid());
+        EntityManager manager = getManager(EntityTypeRegistry.getEntityClass(header.getType()));
+        if (manager != null) return manager.findByHeader(header);
         return entityFinder.find(header);
     }
 

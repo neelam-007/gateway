@@ -16,7 +16,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.migration.MigrationMapping;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.util.Pair;
 import org.apache.wicket.markup.html.form.Form;
@@ -254,14 +253,10 @@ public class PolicyMigration extends EmsPage  {
                 GatewayContext context = gatewayContextFactory.getGatewayContext( getUser(), cluster.getSslHostName(), cluster.getAdminPort() );
                 MigrationApi api = context.getMigrationApi();
                 MigrationMetadata metadata = api.findDependencies( request.asEntityHeaders() );
-                if ( metadata != null && metadata.getMappings() != null ) {
-                    for ( MigrationMapping mapping : metadata.getMappings() ) {
-                        EntityHeaderRef targetRef = mapping.getTarget();
-                        EntityHeader header = metadata.getHeader( targetRef );
-                        deps.add( new DependencyItem( header, toImgIcon(metadata.isMappingRequired(targetRef)) ) );
-                    }
+                for (EntityHeader header : metadata.getMappableDependencies()) {
+                    deps.add( new DependencyItem( header, toImgIcon(metadata.isMappingRequired(header)) ) );
                 }
-            } 
+            }
         }
 
         return deps;
@@ -324,7 +319,7 @@ public class PolicyMigration extends EmsPage  {
                             metadata.mapName( sourceRef, mapping.getValue().asEntityHeader() );
                         }
                     }
-                    targetMigrationApi.importBundle( export, true );
+                    targetMigrationApi.importBundle( export, new EntityHeader("-5002", EntityType.FOLDER, "Root Node", null), false, false );
                 }
             }
         } catch ( GatewayException ge ) {

@@ -3,13 +3,7 @@ package com.l7tech.server.policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.Policy;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
 import java.util.Set;
@@ -64,6 +58,11 @@ public class VersioningPolicyManager implements PolicyManager {
     @Override
     public Policy findByPrimaryKey(long oid) throws FindException {
         return policyManager.findByPrimaryKey(oid);
+    }
+
+    @Override
+    public Policy findByHeader(EntityHeader header) throws FindException {
+        return policyManager.findByHeader(header);
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.migration.MigrationMapping;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.objectmodel.migration.MigrationMappingType;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 import javax.xml.bind.annotation.*;
 import java.util.*;
@@ -39,6 +40,7 @@ public class MigrationMetadata {
      * Headers for all the items in the Migration Bundle. Used by migration business logic.
      */
     private Map<EntityHeaderRef, EntityHeader> headersMap = null;
+    private Map<EntityHeaderRef, EntityHeader> originalHeaders = new HashMap<EntityHeaderRef, EntityHeader>();
 
     private Set<MigrationMapping> mappings = new HashSet<MigrationMapping>();
     // easy access to dependencies / dependents
@@ -91,8 +93,14 @@ public class MigrationMetadata {
         return getHeadersMap().get(EntityHeaderRef.fromOther(headerRef));
     }
 
+    public EntityHeader getOriginalHeader(EntityHeaderRef headerRef) {
+        EntityHeader current = getHeader(headerRef);
+        return current != null ? current : originalHeaders.get(EntityHeaderRef.fromOther(headerRef));
+    }
+
     public void removeHeader(EntityHeaderRef headerRef) {
-        getHeadersMap().remove(EntityHeaderRef.fromOther(headerRef));
+        EntityHeaderRef ref = EntityHeaderRef.fromOther(headerRef);
+        originalHeaders.put(EntityHeaderRef.fromOther(headerRef), getHeadersMap().remove(ref));
     }
 
     public boolean isMappingRequired(EntityHeaderRef headerRef) throws MigrationException {
@@ -109,7 +117,10 @@ public class MigrationMetadata {
     private void initMappingsCache() throws MigrationException {
         mappingsBySource = new HashMap<EntityHeaderRef, Set<MigrationMapping>>();
         mappingsByTarget = new HashMap<EntityHeaderRef, Set<MigrationMapping>>();
-        addMappings(this.mappings);
+        for (MigrationMapping mapping : this.mappings) {
+            addMappingsForSource(mapping.getSource(), Collections.singleton(mapping));
+            addMappingsForTarget(mapping.getTarget(), Collections.singleton(mapping));
+        }
     }
 
     @XmlElementWrapper(name="mappings")
@@ -125,11 +136,11 @@ public class MigrationMetadata {
         this.mappings = mappings;
     }
 
-    public Set<EntityHeaderRef> getMappableDependencies() {
-        Set<EntityHeaderRef> result = new HashSet<EntityHeaderRef>();
+    public Set<EntityHeader> getMappableDependencies() {
+        Set<EntityHeader> result = new HashSet<EntityHeader>();
         for(MigrationMapping m : mappings) {
-            if (m.getType() != MigrationMappingType.BOTH_NONE)
-                result.add(m.getTarget());
+            if (m.getType().getNameMapping() != NONE || m.getType().getValueMapping() != NONE)
+                result.add(getHeader(m.getTarget()));
         }
         return result;
     }
@@ -144,8 +155,8 @@ public class MigrationMetadata {
 
         if (mapping == null) return;
 
+/*
         MigrationMapping conflicting = hasConflictingMapping(mapping);
-
         if (conflicting != null) {
             if (mapping.getType().getValueMapping() != MigrationMappingSelection.OPTIONAL) {
                 throw new MigrationException("New mapping: " + mapping + " conflicts with: " + conflicting);
@@ -154,16 +165,20 @@ public class MigrationMetadata {
                 mapping.getType().setValueMapping(MigrationMappingSelection.REQUIRED);
             }
         }
+*/
 
         mappings.add(mapping);
         addMappingsForSource(mapping.getSource(), Collections.singleton(mapping));
         addMappingsForTarget(mapping.getTarget(), Collections.singleton(mapping));
     }
 
-    public void mapName(EntityHeaderRef dependency, EntityHeaderRef newDependency) throws MigrationException {
+    public void mapName(EntityHeaderRef dependency, EntityHeader newDependency) throws MigrationException {
 
-        if (dependency == null || newDependency == null)
+        if (dependency == null || newDependency == null || dependency.equals(EntityHeaderRef.fromOther(newDependency)))
             return;
+
+        // add new header to the bundle
+        addHeader(newDependency);
 
         // incoming dependencies
         Set<MigrationMapping> mappingsForDependency = getMappingsForTarget(dependency);
@@ -195,18 +210,18 @@ public class MigrationMetadata {
      */
     private MigrationMapping hasConflictingMapping(MigrationMapping newMapping) throws MigrationException {
 
-        if (newMapping == null || newMapping.getType().getNameMapping() != MigrationMappingSelection.NONE)
+        if (newMapping == null || newMapping.getType().getNameMapping() != NONE)
             return null;
 
         Set<MigrationMapping> mappings = getMappingsForTarget(newMapping.getTarget());
         if (mappings == null) return null;
 
         EnumSet<MigrationMappingSelection> conflicting =
-            newMapping.getType().getValueMapping() != MigrationMappingSelection.NONE ?
-                EnumSet.of(MigrationMappingSelection.NONE) : EnumSet.of(MigrationMappingSelection.OPTIONAL, MigrationMappingSelection.REQUIRED);
+            newMapping.getType().getValueMapping() != NONE ?
+                EnumSet.of(NONE) : EnumSet.of(MigrationMappingSelection.OPTIONAL, MigrationMappingSelection.REQUIRED);
 
         for(MigrationMapping m : mappings) {
-            if (m.getType().getNameMapping() != MigrationMappingSelection.NONE)
+            if (m.getType().getNameMapping() != NONE)
                 continue;
             if (conflicting.contains(m.getType().getValueMapping()))
                 return m;

@@ -3,6 +3,7 @@ package com.l7tech.server.management.api.node;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
@@ -28,7 +29,6 @@ public interface MigrationApi {
     Collection<EntityHeader> listEntities(  @WebParam(name="EntityClass") Class<? extends Entity> clazz ) throws MigrationException;
 
     @WebMethod(operationName="FindDependencies")
-    // is this one optional? maybe remove from interface
     MigrationMetadata findDependencies( @WebParam(name="EntityHeaders") Collection<EntityHeader> headers ) throws MigrationException;
 
     @WebMethod(operationName="ExportBundle")
@@ -40,6 +40,8 @@ public interface MigrationApi {
 
     @WebMethod(operationName="ImportBundle")
     void importBundle( @WebParam(name="Bundle") MigrationBundle bundle,
+                       @WebParam(name="TargetFolder") EntityHeader targetFolder,
+                       @WebParam(name="FlattenFolders") boolean flattenFolders,
                        @WebParam(name="OverwriteExisting") boolean overwriteExisting ) throws MigrationException;
 
     @XmlRootElement(name="MappingCandidate", namespace="http://www.layer7tech.com/management/migration")

@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PolicyXmlPropertyResolver;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -239,6 +240,7 @@ public class Policy extends NamedEntityImp implements HasFolder {
 
     @ManyToOne
     @JoinColumn(name="folder_oid")
+    @Migration(mapName = NONE, mapValue = NONE)
     public Folder getFolder() {
         return folder;
     }

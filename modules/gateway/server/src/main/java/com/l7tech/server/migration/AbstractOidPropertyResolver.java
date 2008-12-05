@@ -3,6 +3,7 @@ package com.l7tech.server.migration;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.*;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.EntityHeaderUtils;
 
 import java.util.Set;
 import java.util.Map;
@@ -58,15 +59,15 @@ public abstract class AbstractOidPropertyResolver implements PropertyResolver {
     }
 
     // assigns the targetEntity's OID to the sourceEntity's property
-    public void applyMapping(Entity sourceEntity, String propName, Entity targetEntity) throws MigrationException {
-        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{MigrationUtils.getHeaderFromEntity(sourceEntity), propName});
+    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalValue) throws MigrationException {
+        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{EntityHeaderUtils.fromEntity(sourceEntity), propName});
 
-        if ( ! (targetEntity instanceof PersistentEntity) )
-            throw new MigrationException("Error applying mapping for property name; invalid target value:" + targetEntity);
+        if ( ! (targetValue instanceof PersistentEntity) )
+            throw new MigrationException("Error applying mapping for property name; invalid target value:" + targetValue);
 
         Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, Long.class);
         try {
-            method.invoke(sourceEntity, ((PersistentEntity)targetEntity).getOid());
+            method.invoke(sourceEntity, ((PersistentEntity)targetValue).getOid());
         } catch (Exception e) {
             throw new MigrationException("Error applying mapping for property name: " + propName, e);
         }
