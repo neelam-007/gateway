@@ -133,10 +133,10 @@ public class EnterpriseUsersEditPanel extends Panel {
         public UserForm( final String componentName, final UserModel userModel ) {
             super(componentName, new CompoundPropertyModel(userModel));
 
-            add(new TextField("email").add(new StringValidator.LengthBetweenValidator(1, 128)).add(EmailAddressValidator.getInstance()));
-            add(new TextField("lastName").add(new StringValidator.LengthBetweenValidator(1, 32)));
-            add(new TextField("firstName").add(new StringValidator.LengthBetweenValidator(1, 32)));
-            add(new TextField("description").add(new StringValidator.LengthBetweenValidator(1, 255)));
+            add(new TextField("email").add(new StringValidator.LengthBetweenValidator(0, 128)).add(EmailAddressValidator.getInstance()));
+            add(new TextField("lastName").add(new StringValidator.LengthBetweenValidator(0, 32)));
+            add(new TextField("firstName").add(new StringValidator.LengthBetweenValidator(0, 32)));
+            add(new TextField("description").add(new StringValidator.LengthBetweenValidator(0, 255)));
         }
 
         @Override
