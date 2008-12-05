@@ -167,8 +167,7 @@ public class GatewayApiImpl implements GatewayApi {
         for ( ServiceHeader header : serviceHeaders ) {
 
             PublishedService service = serviceCache.getCachedService(header.getOid());
-            EntityInfo entityInfo = new EntityInfo(header.getType(), header.getStrId(), header.getDisplayName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()),
-                    service == null ? 0 : service.getVersion());
+            EntityInfo entityInfo = new EntityInfo(header.getType(), header.getStrId(), header.getDisplayName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), header.getVersion());
 
             if ( service != null && service.isSoap() ) {
                 try {
@@ -199,8 +198,7 @@ public class GatewayApiImpl implements GatewayApi {
         Collection<PolicyHeader> policyHeaders = securityFilter.filter( policyManager.findHeadersByType( PolicyType.INCLUDE_FRAGMENT ), user, OperationType.READ, null );
 
         for ( PolicyHeader header : policyHeaders ) {
-            Policy policy = policyManager.findByGuid(header.getGuid());
-            info.add( new EntityInfo( header.getType(), header.getStrId(), header.getName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), policy.getVersion() ) );
+            info.add( new EntityInfo( header.getType(), header.getStrId(), header.getName(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), header.getVersion() ) );
         }
     }
 
