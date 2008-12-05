@@ -657,6 +657,35 @@ table.dataTable td.critical {
     text-align: center;
 }
 
+.roundedTitle2Left, .roundedTitle2Right {
+    background-color: #523b7a;
+    vertical-align: top;
+}
+
+.roundedTitle2Left img {
+    background-image: url( '../images/topLeftRoundedCorner2.png' );
+    background-position: top;
+}
+
+.roundedTitle2Right img {
+    background-image: url( '../images/topRightRoundedCorner2.png' );
+    background-position: top;
+}
+
+.roundedTitle2Center {
+    background-color: #523b7a;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 2px 6px 2px 6px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.unselectedTab {
+    opacity: 0.6;
+    *filter: alpha(opacity=60);
+}
+
 .srcDest, .srcDestTop, .srcDestBottom {
     background-color: #d1d8c5;
 }
