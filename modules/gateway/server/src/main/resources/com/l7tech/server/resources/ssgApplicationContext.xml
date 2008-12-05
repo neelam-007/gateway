@@ -1268,7 +1268,10 @@
               <ref bean="roleManager"/>
               <ref bean="serviceAliasManager"/>
               <ref bean="serviceDocumentManager"/>
-              <ref bean="serviceManager"/>
+              <bean class="com.l7tech.server.service.PolicyVersioningServiceManager">
+                  <constructor-arg index="0" ref="serviceManager"/>
+                  <constructor-arg index="1" ref="policyVersionManager"/>
+              </bean>
               <ref bean="ssgConnectorManager"/>
               <ref bean="emailListenerManager"/>
               <ref bean="jmsConnectionManager"/>

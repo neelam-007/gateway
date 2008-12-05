@@ -133,7 +133,7 @@ public class VersioningPolicyManager implements PolicyManager {
 
     @Override
     public void delete(long oid) throws DeleteException, FindException {
-        findAndDelete(oid);
+        policyManager.delete(oid);
     }
 
     @Override
@@ -155,14 +155,4 @@ public class VersioningPolicyManager implements PolicyManager {
 
     private final PolicyManager policyManager;
     private final PolicyVersionManager policyVersionManager;
-
-    /**
-     * Lookup the entity by oid and delete() it.
-     */
-    protected void findAndDelete( final long oid ) throws FindException, DeleteException {
-        Policy policy = policyManager.findByPrimaryKey( oid );
-        if ( policy != null ) {
-            delete( policy );
-        }
-    }
 }
