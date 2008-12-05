@@ -263,15 +263,20 @@ doEmsConfiguration() {
                 confirmedMessage ""
                 clear;;
             2)
-                /sbin/chkconfig ssem && true # && true due to set -e
-                if [ ${?} -eq 0 ] ; then
-                    echo "Disabing the Enterprise Service Manager."
-                    sudo /sbin/chkconfig ssem off
-                    confirmedMessage "Enterprise Service Manager disabled."
+                clear;
+                if [ ! -f "/opt/SecureSpan/EnterpriseManager/var/emconfig.properties" ] ; then
+                    confirmedMessage "Please configure the Enterprise Service Manager and try again."                
                 else
-                    echo "Enabling the Enterprise Service Manager."
-                    sudo /sbin/chkconfig ssem on
-                    confirmedMessage "Enterprise Service Manager enabled."
+                    /sbin/chkconfig ssem && true # && true due to set -e
+                    if [ ${?} -eq 0 ] ; then
+                        echo "Disabing the Enterprise Service Manager."
+                        sudo /sbin/chkconfig ssem off
+                        confirmedMessage "Enterprise Service Manager disabled."
+                    else
+                        echo "Enabling the Enterprise Service Manager."
+                        sudo /sbin/chkconfig ssem on
+                        confirmedMessage "Enterprise Service Manager enabled."
+                    fi
                 fi
                 clear;;
             x|X)
