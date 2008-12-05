@@ -10,6 +10,8 @@ import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.jetty.servlet.DefaultServlet;
 import org.mortbay.resource.Resource;
+import org.mortbay.log.Log;
+import org.mortbay.log.Slf4jLog;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -104,6 +106,12 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
             temp.mkdir();
         }
         this.temp = temp;
+
+        try {
+            Log.setLog( new Slf4jLog( EmsServletContainer.class.getName() + ".SERVLET" ) );
+        } catch ( Exception e ) {
+            logger.log( Level.WARNING, "Error installing Jetty logger.", e );        
+        }
     }
 
     @Override
