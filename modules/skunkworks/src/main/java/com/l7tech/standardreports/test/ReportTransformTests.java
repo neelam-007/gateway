@@ -12,6 +12,7 @@ import java.util.*;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.standardreports.Utilities;
+import com.l7tech.server.management.api.node.ReportApi;
 import org.w3c.dom.Document;
 import org.junit.Test;
 import org.junit.Assert;
@@ -96,24 +97,25 @@ public class ReportTransformTests {
 
     @Test
     public void testUsageTransformation_Dynamic() throws Exception {
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-        mappingValues.add("127.0.0.1Bronze");
-        mappingValues.add("127.0.0.1Gold");
-        mappingValues.add("127.0.0.1Silver");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair("127.0.0.1"));
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair("GOLD"));
+        keysToFilterPairs.put("CUSTOMER", custFilters);
 
         LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
         List<String> valueList = new ArrayList<String>();
-        valueList.add("Donal");
         valueList.add("127.0.0.1");
+        valueList.add("GOLD");
         distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageRuntimeTransform.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
@@ -148,6 +150,11 @@ public class ReportTransformTests {
 
     @Test
     public void testUsageTransformation_DynamicToJasperCompile() throws Exception {
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+
         List<String> keys = new ArrayList<String>();
         keys.add("IP_ADDRESS");
 //        keys.add("CUSTOMER");
@@ -159,7 +166,7 @@ public class ReportTransformTests {
         distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
-        Document transformDoc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document transformDoc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
         String xmlFileName = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
@@ -200,9 +207,18 @@ public class ReportTransformTests {
 
     @Test
     public void testUsageIntervalTransform_Master() throws Exception {
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair("127.0.0.1"));
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair("GOLD"));
+        keysToFilterPairs.put("CUSTOMER", custFilters);
+
+        List<ReportApi.FilterPair> authFilters = new ArrayList<ReportApi.FilterPair>();
+        authFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("AUTH_USER", authFilters);
 
         LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
         List<String> valueList = new ArrayList<String>();
@@ -216,7 +232,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 535);
@@ -248,23 +264,18 @@ public class ReportTransformTests {
 
     @Test
     public void testUsageIntervalMaster_CompileToJasper() throws Exception {
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
 
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-        mappingValues.add("127.0.0.1Bronze");
-        mappingValues.add("127.0.0.1Gold");
-        mappingValues.add("127.0.0.1Silver");
-        mappingValues.add("127.0.0.2Bronze");
-        mappingValues.add("127.0.0.2Gold");
-        mappingValues.add("127.0.0.2Silver");
-        mappingValues.add("127.0.0.1Bronze1");
-        mappingValues.add("127.0.0.1Gold1");
-        mappingValues.add("127.0.0.1Silver1");
-        mappingValues.add("127.0.0.2Bronze1");
-        mappingValues.add("127.0.0.2Gold1");
-        mappingValues.add("127.0.0.2Silver1");
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("CUSTOMER", custFilters);
+
+        List<ReportApi.FilterPair> authFilters = new ArrayList<ReportApi.FilterPair>();
+        authFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("AUTH_USER", authFilters);
 
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
@@ -278,7 +289,7 @@ public class ReportTransformTests {
         distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
-        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
 
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestMasterTransformDoc.xml");
         f.createNewFile();
@@ -321,10 +332,6 @@ public class ReportTransformTests {
 
     @Test
     public void testUsageSubIntervalTransform_Master() throws Exception {
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
-
         LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
         List<String> valueList = new ArrayList<String>();
         valueList.add("Donal");
@@ -337,7 +344,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportSubIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -366,10 +373,6 @@ public class ReportTransformTests {
 
     @Test
     public void testUsageSubIntervalMaster_CompileToJasper() throws Exception {
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
-
         LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
         List<String> valueList = new ArrayList<String>();
         valueList.add("Donal");
@@ -382,7 +385,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportSubIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -400,10 +403,6 @@ public class ReportTransformTests {
 
     @Test
     public void testUsageSubReport() throws Exception {
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-//        keys.add("CUSTOMER");
-
         LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
         List<String> valueList = new ArrayList<String>();
         valueList.add("127.0.0.1");
@@ -414,7 +413,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
+        Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -443,10 +442,6 @@ public class ReportTransformTests {
 
     @Test
     public void testUsageSubReport_CompileToJasper() throws Exception {
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
-
         LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
         List<String> valueList = new ArrayList<String>();
         valueList.add("127.0.0.1");
@@ -458,7 +453,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
         String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
 
-        Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
+        Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);

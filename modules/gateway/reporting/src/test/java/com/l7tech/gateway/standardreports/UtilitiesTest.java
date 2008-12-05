@@ -17,10 +17,10 @@ import org.junit.Assert;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import org.xml.sax.EntityResolver;
-import org.xml.sax.SAXException;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.ResourceMapEntityResolver;
+import com.l7tech.server.management.api.node.ReportApi;
 
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.Transformer;
@@ -51,15 +51,15 @@ public class UtilitiesTest{
      */
     @Test
     public void testCreateMappingQuery_OneKey(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        List<String> values = new ArrayList<String>();
-        values.add(null);
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> idFilters = new ArrayList<ReportApi.FilterPair>();
+        idFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", idFilters);
 
         Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
 
         String sql =
-                Utilities.createMappingQuery(false, null,null,serviceIdToOp ,keys ,values ,null,1,false, false,null);
+                Utilities.createMappingQuery(false, null,null,serviceIdToOp ,keysToFilterPairs,1,false, true);
 
         //There should only be 1 CASE statement in SQL
         int index = sql.indexOf("CASE", 0);
@@ -89,60 +89,184 @@ public class UtilitiesTest{
         System.out.println("OneKey: "+sql);
     }
 
-    @Test
-    public void testCreateMappingQuery_DisallowDuplicateKeys(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("IP_ADDRESS");
+//    @Test
+//    public void testCreateMapingQueryNew(){
+//        LinkedHashMap<String, List<FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<FilterPair>>();
+//        List<FilterPair> idFilters = new ArrayList<FilterPair>();
+//        idFilters.add(new FilterPair("127.0.0.1", true));
+//        idFilters.add(new FilterPair("127.0.0.2", true));
+//        keysToFilterPairs.put("IP_ADDRESS", idFilters);
+//
+//        String sql =
+//                Utilities.createMappingQueryNew(false, null,null,null,keysToFilterPairs ,1,false, false);
+//
+//        System.out.println("Sql: " + sql);
+//
+//        List<FilterPair> custFilters = new ArrayList<FilterPair>();
+//        custFilters.add(new FilterPair("GOLD", true));
+//        //custFilters.add(new FilterPair("SIL%ER", false));
+//        keysToFilterPairs.put("CUSTOMER", custFilters);
+//
+//        sql = Utilities.createMappingQueryNew(false, null,null,null,keysToFilterPairs ,1,false, false);
+//        System.out.println("Sql: " + sql);
+//    }
+//
+//    @Test
+//    public void testCreateMapingQueryNew_UseUser(){
+//        LinkedHashMap<String, List<FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<FilterPair>>();
+//        List<FilterPair> idFilters = new ArrayList<FilterPair>();
+//        idFilters.add(new FilterPair());
+//        keysToFilterPairs.put("AUTH_USER", idFilters);
+//
+//        String sql =
+//                Utilities.createMappingQueryNew(false, null,null,null,keysToFilterPairs ,1,false, false);
+//
+//        System.out.println("Sql: " + sql);
+//    }
+//
+//    @Test
+//    public void testCreateMapingQueryNew_(){
+//        LinkedHashMap<String, List<FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<FilterPair>>();
+//        List<FilterPair> idFilters = new ArrayList<FilterPair>();
+//        idFilters.add(new FilterPair("127.0.0.1", true));
+//        idFilters.add(new FilterPair("127.0.0.2", true));
+//        keysToFilterPairs.put("IP_ADDRESS", idFilters);
+//
+//        String sql =
+//                Utilities.createMappingQueryNew(false, null,null,null,keysToFilterPairs ,1,false, false);
+//
+//        System.out.println("Sql: " + sql);
+//
+//        List<FilterPair> custFilters = new ArrayList<FilterPair>();
+//        custFilters.add(new FilterPair("GOLD", true));
+//        //custFilters.add(new FilterPair("SIL%ER", false));
+//        keysToFilterPairs.put("CUSTOMER", custFilters);
+//
+//        sql = Utilities.createMappingQueryNew(false, null,null,null,keysToFilterPairs ,1,false, false);
+//        System.out.println("Sql: " + sql);
+//    }
+//
+//    @Test
+//    public void testCreateMapingQueryNew_OnlyKeys(){
+//
+//        LinkedHashMap<String, List<FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<FilterPair>>();
+//        List<FilterPair> idFilters = new ArrayList<FilterPair>();
+//        idFilters.add(new FilterPair());
+//        idFilters.add(new FilterPair());
+//        keysToFilterPairs.put("IP_ADDRESS", idFilters);
+//
+//        String sql =
+//                Utilities.createMappingQueryNew(false, null,null,null,keysToFilterPairs ,1,false, false);
+//
+//        System.out.println("Sql: " + sql);
+//
+//        List<FilterPair> custFilters = new ArrayList<FilterPair>();
+//        custFilters.add(new FilterPair("GOLD", true));
+//        custFilters.add(new FilterPair());
+//        keysToFilterPairs.put("CUSTOMER", custFilters);
+//
+//        sql = Utilities.createMappingQueryNew(false, null,null,null,keysToFilterPairs ,1,false, false);
+//        System.out.println("Sql: " + sql);
+//
+//    }
+//
+//    @Test
+//    public void testCreateMapingQueryNew_OnlyKeysOld(){
+//
+//        List<String> keys = new ArrayList<String>();
+//        keys.add("IP_ADDRESS");
+//        keys.add("CUSTOMER");
+//        List<String> values = new ArrayList<String>();
+//        values.add(null);
+//        values.add(null);
+//
+//        Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
+//
+//        String sql =
+//                Utilities.createMappingQuery(false, null,null,serviceIdToOp ,keys ,values ,null,1,false, false,null);
+//        System.out.println("Sql: " + sql);
+//
+//    }
 
-        List<String> values = new ArrayList<String>();
-        values.add(null);
-        values.add(null);
 
-        Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
-        boolean exception = false;
-        try{
-            String sql =
-                    Utilities.createMappingQuery(false, null,null,serviceIdToOp ,keys ,values ,null,1,false, false,null);
-        }catch(Exception e){
-            exception = true;
-        }
+//    @Test
+//    public void testCreateMappingQuery_DisallowDuplicateKeys(){
+//        LinkedHashMap<String, List<FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<FilterPair>>();
+//        List<FilterPair> idFilters = new ArrayList<FilterPair>();
+//        idFilters.add(new FilterPair());
+//        keysToFilterPairs.put("IP_ADDRESS", idFilters);
+//        keysToFilterPairs.put("IP_ADDRESS", idFilters);
+//
+//        Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
+//        boolean exception = false;
+//        try{
+//            String sql =
+//                    Utilities.createMappingQuery(false, null,null,serviceIdToOp ,keysToFilterPairs,1,false, true);
+//        }catch(Exception e){
+//            exception = true;
+//        }
+//
+//        Assert.assertTrue("Exception should be thrown due to duplicate keys", exception);
+//
+//    }
 
-        Assert.assertTrue("Exception should be thrown due to duplicate keys", exception);
-
-    }
-
+    //todo [Donal] finish test
     @Test
     public void testCreateMasterMappingQuery_KeyValues(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
 
-        List<String> values = new ArrayList<String>();
-        values.add("127.0.0.1");
-        values.add("GOLD");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair("127.0.0.1"));
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair("GOLD"));
+        keysToFilterPairs.put("CUSTOMER", custFilters);
 
         Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
 
-        String sql = Utilities.createMappingQuery(true, null,null,serviceIdToOp,keys ,values ,null ,1 ,false 
-                ,false ,null);
+        String sql = Utilities.createMappingQuery(true, null,null,serviceIdToOp, keysToFilterPairs ,1 ,false
+                ,true);
 
         System.out.println(sql);
 
     }
 
+    @Test
+    public void testLinkedMapInterationOrder(){
+
+        LinkedHashMap<String, Object> lM = new LinkedHashMap<String, Object>();
+        lM.put("Donal", "test1");
+        lM.put("aDonal", "test2");
+        lM.put("zDonal", "test3");
+
+        String [] control = new String[]{"Donal", "aDonal", "zDonal"};
+
+        for(int i = 0; i < 100; i++){
+            int index = 0;
+            for(String s: lM.keySet()){
+                //System.out.println(s);
+                Assert.assertTrue(s+" should equal " + control[index], s.equals(control[index]));
+                index++;
+            }
+        }
+    }
+
+    //todo [Donal] finish test
     /**
      * Test that the relationship of a service and any of it's selected operations are constrained correct
      */
     @Test
     public void testServiceAndOperation(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
 
-        List<String> values = new ArrayList<String>();
-        values.add("127.0.0.1");
-        values.add("GOLD");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair("127.0.0.1"));
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair("GOLD"));
+        keysToFilterPairs.put("CUSTOMER", custFilters);
 
         List<String> operations = new ArrayList<String>();
         operations.add("listProducts");
@@ -151,13 +275,13 @@ public class UtilitiesTest{
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         Set<String> ops = new HashSet<String>();
         ops.add("listProducts");
-        serviceIdsToOps.put("229376", new HashSet<String>(ops));
+        serviceIdsToOps.put("360449", new HashSet<String>(ops));
         ops.clear();
         ops.add("listOrders");
-        serviceIdsToOps.put("229382", new HashSet<String>(ops));
+        serviceIdsToOps.put("360450", new HashSet<String>(ops));
 
-        String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps, keys ,values ,null ,1 ,true ,
-                false ,null);
+        String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps, keysToFilterPairs ,1 ,true ,
+                true);
 
         System.out.println(sql);
 
@@ -172,18 +296,19 @@ public class UtilitiesTest{
      */
     @Test
     public void testCreateMappingQuery_KeyValues(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair("127.0.0.1"));
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
 
-        List<String> values = new ArrayList<String>();
-        values.add("127.0.0.1");
-        values.add("GOLD");
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair("GOLD"));
+        keysToFilterPairs.put("CUSTOMER", custFilters);
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
-        String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,keys ,values ,null ,1 ,false
-                ,false ,null);
+        String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,keysToFilterPairs,1 ,false
+                ,true);
 
         //System.out.println("Value Sql: "+sql);
 
@@ -204,45 +329,53 @@ public class UtilitiesTest{
         // ( mcmk.mapping5_key = 'CUSTOMER'  AND mcmv.mapping5_value = 'GOLD' )
         // )
 
-        for (int i = 0; i < keys.size(); i++) {
-            String s = keys.get(i);
-            String v = values.get(i);
+        for(Map.Entry<String, List<ReportApi.FilterPair>> me: keysToFilterPairs.entrySet()){
+            String s = me.getKey();
             for(int z = 1; z <= Utilities.NUM_MAPPING_KEYS; z++){
                 int index = sql.indexOf("mcmk.mapping"+z+"_key = '"+s+"'");
-                Assert.assertTrue(index != -1);
-                index = sql.indexOf("mcmv.mapping"+z+"_value = '"+v+"'");
-                Assert.assertTrue(index != -1);
+                Assert.assertTrue("mcmk.mapping"+z+"_key = '"+s+"' should be in the sql: " + sql, index != -1);
             }
+
+            for(ReportApi.FilterPair fp: me.getValue()){
+                if(!fp.isEmpty()){
+                    for(int z = 1; z <= Utilities.NUM_MAPPING_KEYS; z++){
+                        int index = sql.indexOf("mcmv.mapping"+z+"_value = '"+fp.getFilterValue()+"'");
+                        Assert.assertTrue("mcmv.mapping"+z+"_value = '"+fp.getFilterValue()+"' should be in the sql: " + sql, index != -1);
+                    }
+                }
+            }
+
         }
     }
 
+    //todo [Donal] add more logic to tests correct number of brackets
     /**
      * Check that any AND / LIKE filter constraints supplied are used correctly
      */
     @Test
     public void testCreateMappingQuery_KeyValuesFilters(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
-        keys.add("CUSTOMER_STATUS");
 
-        List<String> values = new ArrayList<String>();
-        values.add("127.0.0.1");
-        values.add("%GOLD");
-        values.add("GOLD%");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair("127.0.0.1"));
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
 
-        List<String> filters = new ArrayList<String>();
-        filters.add(null);
-        filters.add("LIKE");
-        filters.add("like");
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair("%GOLD"));
+        keysToFilterPairs.put("CUSTOMER", custFilters);
+
+        List<ReportApi.FilterPair> custStatusFilters = new ArrayList<ReportApi.FilterPair>();
+        custStatusFilters.add(new ReportApi.FilterPair("GOLD%"));
+        keysToFilterPairs.put("CUSTOMER_STATUS", custStatusFilters);
+
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
-        String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,keys ,values ,filters, 1 ,false 
-                ,false ,null);
+        String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,keysToFilterPairs, 1 ,false
+                ,true);
 
-        //System.out.println("Filter Sql: "+sql);
-        
+        System.out.println("Filter Sql: "+sql);
+
         //(
         // ( mcmk.mapping1_key = 'IP_ADDRESS' AND mcmv.mapping1_value = '127.0.0.1' ) OR
         // ( mcmk.mapping2_key = 'IP_ADDRESS' AND mcmv.mapping2_value = '127.0.0.1' ) OR
@@ -257,18 +390,25 @@ public class UtilitiesTest{
         //  ( mcmk.mapping3_key = 'CUSTOMER' AND mcmv.mapping3_value LIKE 'GOLD' ) OR
         //  ( mcmk.mapping4_key = 'CUSTOMER' AND mcmv.mapping4_value LIKE 'GOLD' ) OR
         //  ( mcmk.mapping5_key = 'CUSTOMER' AND mcmv.mapping5_value LIKE 'GOLD' ))
-        for (int i = 0; i < keys.size(); i++) {
-            String s = keys.get(i);
-            String v = values.get(i);
-            for(int z = 1; z <= Utilities.NUM_MAPPING_KEYS; z++){
-                boolean useAnd = (filters.get(i) == null || filters.get(i).equalsIgnoreCase("AND"));
-                String fValue = (useAnd)?"=":"LIKE";
-                int index = sql.indexOf("mcmk.mapping"+z+"_key = '"+s+"' AND mcmv.mapping"+z+"_value "+fValue+" '"+v+"'");
-                Assert.assertTrue(index != -1);
-            }
-        }
 
-        
+        for(Map.Entry<String, List<ReportApi.FilterPair>> me: keysToFilterPairs.entrySet()){
+            String s = me.getKey();
+
+            for(ReportApi.FilterPair fp: me.getValue()){
+                if(!fp.isEmpty()){
+                    for(int z = 1; z <= Utilities.NUM_MAPPING_KEYS; z++){
+                        boolean useAnd = fp.isUseAnd();
+                        String fValue = (useAnd)?"=":"LIKE";
+                        int index = sql.indexOf("mcmk.mapping"+z+"_key = '"+s+"'");
+                        Assert.assertTrue(index != -1);
+                        index = sql.indexOf("mcmv.mapping"+z+"_value "+fValue+" '"+fp.getFilterValue()+"'");
+                        Assert.assertTrue(index != -1);
+                        // );
+                    }
+                }
+            }
+
+        }
     }
 
     /**
@@ -280,12 +420,33 @@ public class UtilitiesTest{
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
         String sql =
-                Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,new ArrayList<String>(),null ,null,1,
-                        true ,false ,null);
+                Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,null,1,
+                        true ,false);
 
         int index = sql.indexOf("mcmv.service_operation AS SERVICE_OPERATION_VALUE");
         Assert.assertTrue(index != -1);
         //System.out.println("OnlyDetail: "+sql);
+    }
+
+    /**
+     * Tests that a non usage query can have a mapping query without any keys being required
+     */
+    @Test
+    public void testNonUsageQueryNoKeysNeeded(){
+        Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
+        Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,null,1,
+                        true ,false);
+
+        boolean exception = false;
+        try{
+            Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,null,1,
+                            true ,true);
+        }
+        catch(Exception ex){
+            exception = true;
+        }
+
+        Assert.assertTrue("Exception should have been thrown", exception);
     }
 
     /**
@@ -296,26 +457,26 @@ public class UtilitiesTest{
      */
     @Test
     public void testCreateMappingQuery_UseUser(){
-        List<String> users = new ArrayList<String>();
-        users.add("Donal");
-        users.add("Ldap User 1");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> userFilters = new ArrayList<ReportApi.FilterPair>();
+        userFilters.add(new ReportApi.FilterPair("Donal"));
+        userFilters.add(new ReportApi.FilterPair("Ldap User 1"));
+        keysToFilterPairs.put("AUTH_USER", userFilters);
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
         String sql =
-                Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,new ArrayList<String>() ,null ,null,1,
-                        true ,true , users);
+                Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,keysToFilterPairs,1,
+                        true ,false);
 
         int index = sql.indexOf("mcmv.auth_user_id AS AUTHENTICATED_USER");
         Assert.assertTrue(index != -1);
 
-        //mcmv.auth_user_id IN ('Donal','Ldap User 1')
-        index = sql.indexOf("mcmv.auth_user_id IN");
-        Assert.assertTrue(index != -1);
+        //AND (mcmv.auth_user_id = 'Donal'  OR mcmv.auth_user_id = 'Ldap User 1' )
 
-        for(String s: users){
-            index = sql.indexOf(s);
-            Assert.assertTrue(index != -1);
+        for(ReportApi.FilterPair fp: userFilters){
+            index = sql.indexOf("mcmv.auth_user_id = '"+fp.getFilterValue()+"'");
+            Assert.assertTrue("mcmv.auth_user_id = '"+fp.getFilterValue()+"' should have been in the sql: " + sql,index != -1);
         }
         //System.out.println("OnlyDetail: "+sql);
     }
@@ -329,22 +490,22 @@ public class UtilitiesTest{
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql =
-                Utilities.createMappingQuery(false, null,null,serviceIdsToOps,new ArrayList<String>() ,null ,null,1,
-                        true ,false , null);
+                Utilities.createMappingQuery(false, null,null,serviceIdsToOps,null,1,
+                        true ,false);
 
         int index = sql.indexOf("sm.resolution = 1");
         Assert.assertTrue(index != -1);
 
-        sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,new ArrayList<String>() ,null ,null,2,true
-                ,false , null);
+        sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,null,2,true
+                ,false);
         index = sql.indexOf("sm.resolution = 2");
         Assert.assertTrue(index != -1);
         //System.out.println("Resolution: "+sql);
 
         boolean exception = false;
         try{
-            Utilities.createMappingQuery(false, null,null, serviceIdsToOps, new ArrayList<String>() ,null ,null,3 ,true
-                    ,false , null);
+            Utilities.createMappingQuery(false, null,null, serviceIdsToOps, null,3 ,true
+                    ,false);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
@@ -365,19 +526,17 @@ public class UtilitiesTest{
         long endTime = cal.getTimeInMillis();
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String sql = Utilities.createMappingQuery(false, startTime, endTime ,serviceIdsToOps,new ArrayList<String>() ,
-                null ,null,1,true ,false , null);
+        String sql = Utilities.createMappingQuery(false, startTime, endTime ,serviceIdsToOps,null,1,true ,false);
 
         int index = sql.indexOf("sm.period_start >="+startTime);
         Assert.assertTrue(index != -1);
 
         index = sql.indexOf("sm.period_start <"+endTime);
         Assert.assertTrue(index != -1);
-        
+
         boolean exception = false;
         try{
-            Utilities.createMappingQuery(false, endTime, startTime, serviceIdsToOps, new ArrayList<String>() ,null ,
-                    null,1 ,true ,false , null);
+            Utilities.createMappingQuery(false, endTime, startTime, serviceIdsToOps, null,1 ,true ,false);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
@@ -397,8 +556,8 @@ public class UtilitiesTest{
         serviceIdsToOps.put("12345", null);
         serviceIdsToOps.put("67890", null);
 
-        String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
-                false, null);
+        String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+                false);
 
         //System.out.println("Service Ids: "+sql);
 
@@ -413,8 +572,8 @@ public class UtilitiesTest{
 
         //check no constraint when no ids supplied
         serviceIdsToOps.clear();
-        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
-                false, null);
+        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+                false);
         index = sql.indexOf("p.objectid IN");
         Assert.assertTrue(index == -1);
     }
@@ -433,8 +592,8 @@ public class UtilitiesTest{
         serviceIdsToOps.put("229382", new HashSet<String>(operations));
         serviceIdsToOps.put("229384", new HashSet<String>(operations));
 
-        String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
-                false, null);
+        String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+                false);
 
         //System.out.println("Operation: "+sql);
 
@@ -449,8 +608,8 @@ public class UtilitiesTest{
 
         //check no constraint when no ids supplied
         serviceIdsToOps.clear();
-        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
-                false, null);
+        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+                false);
         index = sql.indexOf("mcmv.service_operation IN");
         //System.out.println("Operation: "+sql);
         Assert.assertTrue(index == -1);
@@ -462,8 +621,8 @@ public class UtilitiesTest{
         serviceIdsToOps.put("229384", new HashSet<String>());
 
         //also check when just the serivce id's are supplied, but no operations are
-        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
-                false, null);
+        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+                false);
         index = sql.indexOf("mcmv.service_operation IN");
         //System.out.println("Operation: "+sql);
         Assert.assertTrue(index == -1);
@@ -476,14 +635,15 @@ public class UtilitiesTest{
         serviceIdsToOps.put("229382", null);
         serviceIdsToOps.put("229384", new HashSet<String>());
 
-        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
-                false, null);
+        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+                false);
         index = sql.indexOf("mcmv.service_operation IN");
         //System.out.println("Operation: "+sql);
         Assert.assertTrue(index != -1);
 
     }
 
+    //todo [Donal] update with policy violations and routing failures
     /**
      * Confirms that all fields which should be selected, are.
      */
@@ -491,8 +651,8 @@ public class UtilitiesTest{
     public void testCreateMappingQuery_SelectFields(){
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, null, null, 1, true,
-                false, null);
+        String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+                false);
 
         //System.out.println("Select Fields: "+sql);
 
@@ -534,54 +694,57 @@ public class UtilitiesTest{
         Assert.assertTrue(index != -1);
     }
 
+    //todo [Donal] finish test
     @Test
     public void testgetUsageDistinctMappingQuery(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> filters = new ArrayList<ReportApi.FilterPair>();
+        filters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", filters);
+        keysToFilterPairs.put("CUSTOMER", filters);
 
-        List<String> values = new ArrayList<String>();
-        values.add(null);
-        values.add(null);
 
-        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, values, null, 2, true, false, null);
+        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, true, true);
         System.out.println(sql);
 
-        values.clear();
-        values.add("127.0.0.1");
-        values.add(null);
+        keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair("127.0.0.1"));
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("CUSTOMER", custFilters);
 
-        sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, values, null, 2, true, false, null);
+        sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, true, false);
         System.out.println(sql);
     }
 
     @Test
     public void testGetUsageQuery(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> filters = new ArrayList<ReportApi.FilterPair>();
+        filters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", filters);
+        keysToFilterPairs.put("CUSTOMER", filters);
 
-        List<String> values = new ArrayList<String>();
-        values.add(null);
-        values.add(null);
-
-        String sql = Utilities.getUsageQuery(null, null, null, keys, values , null, 2, false, false, null);
+        String sql = Utilities.getUsageQuery(null, null, null, keysToFilterPairs, 2, false);
         System.out.println(sql);
     }
 
-    public void testGetUsageColumnHeader(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
-
-        List<String> values = new ArrayList<String>();
-        values.add("127.0.0.1");
-        values.add("GOLD");
-
-        String authUser = "Donal"; 
+//    public void testGetUsageColumnHeader(){
+//        List<String> keys = new ArrayList<String>();
+//        keys.add("IP_ADDRESS");
+//        keys.add("CUSTOMER");
+//
+//        List<String> values = new ArrayList<String>();
+//        values.add("127.0.0.1");
+//        values.add("GOLD");
+//
+//        String authUser = "Donal";
 //        String header = Utilities.getUsageColumnHeader(authUser, keys, values.toArray(new String[]{}));
-//        System.out.println(header);
-    }
+////        System.out.println(header);
+//    }
+
     /**
      * Checks that the gruop by order has all columns required present, and in the correct order.
      */
@@ -589,7 +752,7 @@ public class UtilitiesTest{
     public void testCreateMappingQuery_GroupBy(){
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql =
-                Utilities.createMappingQuery(false, null,null,serviceIdsToOps,null ,null,null,1, true, false,null);
+                Utilities.createMappingQuery(false, null,null,serviceIdsToOps,null,1, true, false);
         //System.out.println("Group by: "+sql);
         int index = sql.indexOf("GROUP BY p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER , MAPPING_VALUE_1, " +
                 "MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5");
@@ -603,7 +766,7 @@ public class UtilitiesTest{
     public void testCreateMappingQuery_OrderBy(){
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql =
-                Utilities.createMappingQuery(false, null,null,serviceIdsToOps,null ,null,null,1, true, false,null);
+                Utilities.createMappingQuery(false, null,null,serviceIdsToOps,null,1, true, false);
 //        System.out.println("Order by: "+sql);
         int index = sql.indexOf("ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, " +
                 "MAPPING_VALUE_4, MAPPING_VALUE_5 ,p.objectid, SERVICE_OPERATION_VALUE");
@@ -612,18 +775,16 @@ public class UtilitiesTest{
 
     @Test
     public void testGetUsageMasterIntervalQuery(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> filters = new ArrayList<ReportApi.FilterPair>();
+        filters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", filters);
+        keysToFilterPairs.put("CUSTOMER", filters);
 
-        List<String> values = new ArrayList<String>();
-        values.add(null);
-        values.add(null);
-
-        String sql = Utilities.getUsageMasterIntervalQuery(null, null, null, keys, values, null, 2, true, false, null);
+        String sql = Utilities.getUsageMasterIntervalQuery(null, null, null, keysToFilterPairs, 2, true);
         System.out.println(sql);
 
-        sql = Utilities.getUsageMasterIntervalQuery(null, null, null, keys, values, null, 2, false, false, null);
+        sql = Utilities.getUsageMasterIntervalQuery(null, null, null, keysToFilterPairs, 2, false);
         System.out.println(sql);
     }
 
@@ -634,8 +795,8 @@ public class UtilitiesTest{
     public void testCreateMappingQuery_SelectDistinctFields(){
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String sql = Utilities.createMappingQuery(true, null, null, serviceIdsToOps, null, null, null, 1, true,
-                false, null);
+        String sql = Utilities.createMappingQuery(true, null, null, serviceIdsToOps, null, 1, true,
+                false);
 
         System.out.println("Select Distinct Fields: "+sql);
 
@@ -667,9 +828,17 @@ public class UtilitiesTest{
      */
     @Test
     public void testCreateValueList(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair("127.0.0.1"));
+        ipFilters.add(new ReportApi.FilterPair("127.0.0.2"));
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair("GOLD"));
+        custFilters.add(new ReportApi.FilterPair("SILVER"));
+        keysToFilterPairs.put("CUSTOMER", custFilters);
+
 
         List<String> values = new ArrayList<String>();
         values.add("127.0.0.1");
@@ -678,8 +847,16 @@ public class UtilitiesTest{
         values.add(Utilities.SQL_PLACE_HOLDER);
         values.add(Utilities.SQL_PLACE_HOLDER);
 
-        List<String> valueList = Utilities.createValueList(keys, values.toArray(new String[]{}));
-        Assert.assertTrue(valueList.size() == 2);
+        LinkedHashMap<String, List<ReportApi.FilterPair>> valueMap = Utilities.createDistinctKeyToFilterMap(keysToFilterPairs, values.toArray(new String[]{}), null, false);
+        Assert.assertTrue(valueMap.keySet().size() == 2);
+
+        int index = 0;
+        for(String s: valueMap.keySet()){
+            List<ReportApi.FilterPair> fP = valueMap.get(s);
+            Assert.assertTrue("List should only have 1 FilterPair", fP.size() == 1);
+            Assert.assertTrue(values.get(index)+" should equal fP.get(0).getFilterValue()", values.get(index).equals(fP.get(0).getFilterValue()));
+            index++;
+        }
 
         values.clear();
         values.add("127.0.0.1");
@@ -689,11 +866,36 @@ public class UtilitiesTest{
 
         boolean exception = false;
         try{
-            Utilities.createValueList(keys, values.toArray(new String[]{}));
+            Utilities.createDistinctKeyToFilterMap(keysToFilterPairs, values.toArray(new String[]{}), null, false);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
         Assert.assertTrue(exception);
+
+        //test auth user
+        keysToFilterPairs.clear();
+        List<ReportApi.FilterPair> authFilters = new ArrayList<ReportApi.FilterPair>();
+        authFilters.add(new ReportApi.FilterPair("Donal"));
+        authFilters.add(new ReportApi.FilterPair("Ldap User 1"));
+        keysToFilterPairs.put("AUTH_USER", authFilters);
+
+        values.clear();
+        values.add(Utilities.SQL_PLACE_HOLDER);
+        values.add(Utilities.SQL_PLACE_HOLDER);
+        values.add(Utilities.SQL_PLACE_HOLDER);
+        values.add(Utilities.SQL_PLACE_HOLDER);
+        values.add(Utilities.SQL_PLACE_HOLDER);
+
+        valueMap = Utilities.createDistinctKeyToFilterMap(keysToFilterPairs, values.toArray(new String[]{}), "Donal", false);
+        Assert.assertTrue(valueMap.keySet().size() == 1);
+        List<ReportApi.FilterPair> aFp = valueMap.get("AUTH_USER");
+        Assert.assertTrue("AUTH_USER's only FilterPair should equal Donal, it was :" + aFp.get(0).getFilterValue(),
+                aFp.get(0).getFilterValue().equals("Donal"));
+        
+        //test only is detail
+        keysToFilterPairs.clear();
+        valueMap = Utilities.createDistinctKeyToFilterMap(keysToFilterPairs, values.toArray(new String[]{}), null, true);
+        Assert.assertTrue("valueMap should be empty", valueMap.isEmpty());
     }
 
 
@@ -755,8 +957,8 @@ public class UtilitiesTest{
     }
 
     /**
-     * Test that the display string returned from getIntervalDisplayDate are correct 
-     * @throws Exception 
+     * Test that the display string returned from getIntervalDisplayDate are correct
+     * @throws Exception
      */
     @Test
     public void testGetIntervalDisplayDate() throws Exception{
@@ -776,7 +978,7 @@ public class UtilitiesTest{
 
         timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, timeZone);
         Assert.assertTrue(timeDisplay.equals("Fri 08/01"));
-        
+
         timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.WEEK, timeZone);
         Assert.assertTrue(timeDisplay.equals("08/01 - 10/13"));
 
@@ -873,66 +1075,58 @@ public class UtilitiesTest{
      */
     @Test
     public void testGetMappingReportInfoDisplayString(){
-        String val = Utilities.getMappingReportInfoDisplayString(null, null, null, true, false);
+        String val = Utilities.getMappingReportInfoDisplayString(null, true, false);
         Assert.assertTrue(val.equals(Utilities.onlyIsDetailDisplayText));
 
-        val = Utilities.getMappingReportInfoDisplayString(null,null, null, false, true);
-        Assert.assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY));
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> filters = new ArrayList<ReportApi.FilterPair>();
+        ReportApi.FilterPair authFilterPair1 = new ReportApi.FilterPair("Donal");
+        filters.add(authFilterPair1);
+        keysToFilterPairs.put("AUTH_USER", filters);
 
-        List<String> authUsers = new ArrayList<String>();
-        authUsers.add("Donal");
-        val = Utilities.getMappingReportInfoDisplayString(authUsers, null, null, false, true);
-        Assert.assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authUsers.get(0)+")"));
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, true);
+        String expected = Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authFilterPair1.getFilterValue()+")"; 
+        Assert.assertTrue("Expected: " + expected+" actual: " + val,val.equals(expected));
 
-        authUsers.add("Ldap User 1");
-        val = Utilities.getMappingReportInfoDisplayString(authUsers, null, null, false, true);
-        Assert.assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authUsers.get(0)+", "+authUsers.get(1)+")"));
-        
-        //if auth users supplied, not printed if useUser is false
-        val = Utilities.getMappingReportInfoDisplayString(authUsers, null, null, true, false);
-        Assert.assertTrue(val.equals(Utilities.onlyIsDetailDisplayText));
+        ReportApi.FilterPair authFilterPair2 = new ReportApi.FilterPair("Ldap User 1");
+        filters.add(authFilterPair2);
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, true);
+        Assert.assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authFilterPair1.getFilterValue()+", "+authFilterPair2.getFilterValue()+")"));
 
         //exception, when all params are null or false
         boolean exception = false;
         try{
-            Utilities.getMappingReportInfoDisplayString(authUsers, null, null, false, false);
+            Utilities.getMappingReportInfoDisplayString(null, false, false);
         }catch (IllegalArgumentException e){
             exception = true;
         }
         Assert.assertTrue(exception);
 
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
 
-        List<String> values = new ArrayList<String>();
-        values.add(null);
-        values.add(null);
+        keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
 
-        val = Utilities.getMappingReportInfoDisplayString(authUsers, keys, values, false, false);
-        Assert.assertTrue(val.equals(keys.get(0) + ", "+keys.get(1)));
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("CUSTOMER", custFilters);
 
-        values.clear();
-        values.add("127.0.0.1");
-        values.add("GOLD");
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, false);
+        Assert.assertTrue(val.equals("IP_ADDRESS, CUSTOMER"));
 
-        val = Utilities.getMappingReportInfoDisplayString(authUsers, keys, values, false, false);
-        Assert.assertTrue(val.equals(keys.get(0) + " ("+values.get(0)+"), "+keys.get(1)+" ("+values.get(1)+")"));
+        keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair("127.0.0.1"));
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
 
-        //exception when too many values
-        values.add("GOLD");
-        exception = false;
-        try{
-            Utilities.getMappingReportInfoDisplayString(authUsers, keys, values, false, false);
-        }catch (IllegalArgumentException e){
-            exception = true;
-        }
-        Assert.assertTrue(exception);
-        values.remove(2);
+        custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair("GOLD"));
+        keysToFilterPairs.put("CUSTOMER", custFilters);
 
-        val = Utilities.getMappingReportInfoDisplayString(authUsers, keys, values, false, true);
-        Assert.assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY+": ("+authUsers.get(0)+", "+authUsers.get(1)+"), "
-                +keys.get(0) + " ("+values.get(0)+"), "+keys.get(1)+" ("+values.get(1)+")"));
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, false);
+        expected = "IP_ADDRESS (127.0.0.1), CUSTOMER (GOLD)";
+        Assert.assertTrue("Expected: " + expected+" actual: " + val,val.equals(expected));
 
     }
 
@@ -953,34 +1147,39 @@ public class UtilitiesTest{
         exception = false;
         try{
             Utilities.getMappingValueDisplayString(null, Utilities.SQL_PLACE_HOLDER, null, false, null);
-        }catch (IllegalArgumentException e){
+        }catch (NullPointerException e){
             exception = true;
         }
         Assert.assertTrue(exception);
 
         String preFix = "Group values: ";
-        String val = Utilities.getMappingValueDisplayString(null,"Donal",null, true, preFix);
+        LinkedHashMap<String, List<ReportApi.FilterPair>> emptyMap = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+
+        String pH = Utilities.SQL_PLACE_HOLDER;
+        String [] emptyStringArray = new String[]{pH, pH, pH, pH, pH};
+        
+        String val = Utilities.getMappingValueDisplayString(emptyMap,"Donal",emptyStringArray, true, preFix);
         Assert.assertTrue(val.equals(preFix+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal"));
 
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
 
-        List<String> values = new ArrayList<String>();
-        values.add("127.0.0.1");
-        values.add("GOLD");
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        keysToFilterPairs.put("CUSTOMER", custFilters);
 
-        val = Utilities.getMappingValueDisplayString(keys, Utilities.SQL_PLACE_HOLDER, values.toArray(new String[]{}), true, preFix);
-        Assert.assertTrue(val.equals(preFix+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
+        val = Utilities.getMappingValueDisplayString(keysToFilterPairs, Utilities.SQL_PLACE_HOLDER, new String[]{"127.0.0.1","GOLD", pH, pH, pH}, true, preFix);
+        String expected = preFix+"IP_ADDRESS: 127.0.0.1, CUSTOMER: GOLD";
+        Assert.assertTrue("Expected: " + expected+" actual: " + val,val.equals(expected));
 
-        val = Utilities.getMappingValueDisplayString(keys, "Donal", values.toArray(new String[]{}), true, preFix);
-        Assert.assertTrue(val.equals(preFix+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal, "+keys.get(0)+": "+values.get(0)+", "+keys.get(1)+": "+values.get(1)));
-        
-        values.remove(1);
+        val = Utilities.getMappingValueDisplayString(keysToFilterPairs, "Donal", new String[]{"127.0.0.1","GOLD", pH,pH,pH}, true, preFix);
+        expected = preFix+Utilities.AUTHENTICATED_USER_DISPLAY+": Donal, IP_ADDRESS: 127.0.0.1, CUSTOMER: GOLD";
+        Assert.assertTrue("Expected: " + expected+" actual: " + val,val.equals(expected));
+
         exception = false;
         try{
-            Utilities.getMappingValueDisplayString(keys, Utilities.SQL_PLACE_HOLDER, values.toArray(new String[]{}), true, preFix);
-        }catch (IllegalArgumentException e){
+            Utilities.getMappingValueDisplayString(keysToFilterPairs, Utilities.SQL_PLACE_HOLDER, new String[]{"127.0.0.1",pH,pH,pH,pH}, true, preFix);
+        }catch (IllegalStateException e){
             exception = true;
         }
         Assert.assertTrue(exception);
@@ -1046,7 +1245,7 @@ public class UtilitiesTest{
             exception = true;
         }
         Assert.assertTrue(exception);
-        
+
     }
 
     @Test
@@ -1095,7 +1294,7 @@ public class UtilitiesTest{
         Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.MAPPING_VALUE_5);
         Assert.assertTrue(index != -1);
-        
+
     }
 
     /**
@@ -1186,7 +1385,7 @@ public class UtilitiesTest{
 
         //check no constraint when no ids supplied
         sql = Utilities.getNoMappingQuery(false, startTime, endTime, null, 1);
-        
+
         index = sql.indexOf("p.objectid IN");
         Assert.assertTrue(index == -1);
     }
@@ -1216,7 +1415,7 @@ public class UtilitiesTest{
         long endTime = DATE_FORMAT.parse(endDate).getTime();
 
         String sql = Utilities.getNoMappingQuery(true, startTime, endTime, null,1);
-        
+
         int index = sql.indexOf(Utilities.SERVICE_ID);
         Assert.assertTrue(index != -1);
         index = sql.indexOf(Utilities.SERVICE_NAME);
@@ -1295,7 +1494,7 @@ public class UtilitiesTest{
         System.out.println("Calendar date: " + DATE_FORMAT.format(calendar.getTime()));
         Calendar testCal = Calendar.getInstance(tz);
         testCal.setTimeInMillis(timeInPast);
-        System.out.println("Test Calendar date: " + DATE_FORMAT.format(testCal.getTime()));        
+        System.out.println("Test Calendar date: " + DATE_FORMAT.format(testCal.getTime()));
         Assert.assertTrue(calendar.getTimeInMillis() == timeInPast);
 
         //week
@@ -1353,7 +1552,7 @@ public class UtilitiesTest{
     @Test
     public void testGetSummaryResolutionFromTimePeriod() throws ParseException {
         Calendar cal = Calendar.getInstance();
-        long startTime = cal.getTimeInMillis();         
+        long startTime = cal.getTimeInMillis();
         cal.add(Calendar.HOUR_OF_DAY, 6);
         long endTime = cal.getTimeInMillis();
         int resolution = Utilities.getSummaryResolutionFromTimePeriod(24, startTime, endTime);
@@ -1419,7 +1618,7 @@ public class UtilitiesTest{
         val = Utilities.getStringNamesFromCollection(strings);
         int index = val.indexOf(",");
         Assert.assertTrue(index == -1);
-        
+
     }
 
     @Test
@@ -1432,7 +1631,7 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_NullParams(){
         boolean exception = false;
         try{
-            Utilities.getUsageRuntimeDoc(false, null, null);
+            Utilities.getUsageRuntimeDoc(null, null);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
@@ -1441,10 +1640,10 @@ public class UtilitiesTest{
 
     @Test
     public void testGetUsageRuntimeDoc_NotNull(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Assert.assertNotNull(doc);
     }
 
@@ -1452,11 +1651,17 @@ public class UtilitiesTest{
      * Don't change the number of elements, as you will break the tests which use this as convenience
      * @return
      */
-    private List<String> getTestKeys(){
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
-        return keys;        
+    private LinkedHashMap<String, List<ReportApi.FilterPair>> getTestKeys(){
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("CUSTOMER", custFilters);
+
+        return keysToFilterPairs;
     }
 
     /**
@@ -1469,18 +1674,18 @@ public class UtilitiesTest{
             List<String> valueList = new ArrayList<String>();
             valueList.add("Donal");
             valueList.add("127.0.0.1");
-            valueList.add("Bronze"+i);//make each list unique - turns out set is quite smart, not just object refs
+            valueList.add("Bronze"+i);//make each list unique - set is smart, not just object refs
             distinctMappingSets.add(valueList);
         }
-        return distinctMappingSets;       
+        return distinctMappingSets;
     }
 
     @Test
     public void testGetUsageRuntimeDoc_FirstLevelElements(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         Assert.assertTrue(list.getLength() == 1);
@@ -1496,7 +1701,7 @@ public class UtilitiesTest{
 
         list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         Assert.assertTrue(list.getLength() == 1);
-        
+
         list = doc.getElementsByTagName(Utilities.COLUMN_WIDTH);
                 Assert.assertTrue(list.getLength() == 1);
 
@@ -1512,10 +1717,10 @@ public class UtilitiesTest{
 
     @Test
     public void testGetUsageRuntimeDoc_Variables(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
@@ -1531,17 +1736,17 @@ public class UtilitiesTest{
      */
     @Test
     public void testGetUsageRuntimeDoc_VariablesNames(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
         String [] variableNames = new String[]{"COLUMN_","COLUMN_MAPPING_TOTAL_","COLUMN_SERVICE_TOTAL_"};
         String [] calculations = new String[]{"Nothing","Sum","Sum"};
         String [] resetTypes = new String[]{"Group","Group","Group"};
         String [] resetGroups = new String[]{"SERVICE_AND_OPERATION","CONSTANT","SERVICE_ID"};
-        
+
         int index = 0;
         int varIndex = 1;
         for(int i = 0; i < list.getLength(); i++,varIndex++){
@@ -1552,7 +1757,7 @@ public class UtilitiesTest{
 
             NamedNodeMap attributes = list.item(i).getAttributes();
             Node varName = attributes.getNamedItem("name");
-            
+
             String expectedValue = variableNames[index % distinctMappingSets.size()]+varIndex;
             Assert.assertTrue("Name attribute should equal " + expectedValue+" actual value was: " + varName.getNodeValue()
                     ,varName.getNodeValue().equals(expectedValue));
@@ -1591,10 +1796,10 @@ public class UtilitiesTest{
 
     @Test
     public void testGetUsageRuntimeDoc_ConstantHeader(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
@@ -1606,10 +1811,10 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageRuntimeDoc_ConstantHeader_CheckElements(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1660,8 +1865,8 @@ public class UtilitiesTest{
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
-            
-            
+
+
         }
     }
 
@@ -1679,10 +1884,10 @@ public class UtilitiesTest{
 
     @Test
     public void testGetUsageRuntimeDoc_ServiceOperationFooter(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
@@ -1693,17 +1898,17 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageRuntimeDoc_ServiceOperationFooter_CheckElements(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
-        printOutDocument(doc);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        //printOutDocument(doc);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
             Node textFieldNode = list.item(i);
 
-            Node reportElementNode = findFirstChildElementByName(textFieldNode, "reportElement"); 
+            Node reportElementNode = findFirstChildElementByName(textFieldNode, "reportElement");
             NamedNodeMap attributes = reportElementNode.getAttributes();
             Node height = attributes.getNamedItem("height");
             int actualIntValue = Integer.valueOf(height.getNodeValue());
@@ -1760,13 +1965,13 @@ public class UtilitiesTest{
                     ,classType.equals(expectedValue));
 
             if(i < list.getLength() - 1) expectedValue = "$V{COLUMN_"+(i+1)+"}";
-            else expectedValue = "$V{SERVICE_AND_OR_OPERATION_TOTAL}"; 
+            else expectedValue = "$V{SERVICE_AND_OR_OPERATION_TOTAL}";
 
             Assert.assertTrue("text expression should equal " + expectedValue+ " Actual value was: " +
                     textFieldExprNode.getTextContent() ,textFieldExprNode.getTextContent().equals(expectedValue));
 
             //make sure the html markup attribute is also specified
-            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement"); 
+            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
             attributes = textElementNode.getAttributes();
             Node markUp = attributes.getNamedItem("markup");
             expectedValue = "html";
@@ -1778,10 +1983,10 @@ public class UtilitiesTest{
 
     @Test
     public void testGetUsageRuntimeDoc_SerivceIdFooter(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
         list = list.item(0).getChildNodes();
@@ -1792,10 +1997,10 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageRuntimeDoc_ServiceIdFooter_CheckElements(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1834,7 +2039,7 @@ public class UtilitiesTest{
 
             Node style = attributes.getNamedItem("style");
             String expectedValue = Utilities.ROW_TOTAL_STYLE;
-            
+
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
 
@@ -1843,7 +2048,7 @@ public class UtilitiesTest{
             String actualValue = mode.getNodeValue();
             Assert.assertTrue("mode attribute should equal " + expectedValue+ " Actual value was: " + actualValue
                     ,actualValue.equals(expectedValue));
-            
+
             Node textFieldExprNode = findFirstChildElementByName(textFieldNode, "textFieldExpression");
             attributes = textFieldExprNode.getAttributes();
             Node varClass = attributes.getNamedItem("class");
@@ -1872,10 +2077,10 @@ public class UtilitiesTest{
 
     @Test
     public void testGetUsageRuntimeDoc_ConstantFooter(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         list = list.item(0).getChildNodes();
@@ -1886,10 +2091,10 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageRuntimeDoc_ConstantFooter_CheckElements(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -1937,7 +2142,7 @@ public class UtilitiesTest{
             String actualValue = mode.getNodeValue();
             Assert.assertTrue("mode attribute should equal " + expectedValue+ " Actual value was: " + actualValue
                     ,actualValue.equals(expectedValue));
-            
+
             Node textFieldExprNode = findFirstChildElementByName(textFieldNode, "textFieldExpression");
             attributes = textFieldExprNode.getAttributes();
             Node varClass = attributes.getNamedItem("class");
@@ -1965,31 +2170,31 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageRuntimeDoc_CheckWidths(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
         testWidths(rootNode, distinctMappingSets.size());
     }
 
     /**
      * Validate the variables created, Check that their name, class, calculation, resetType and resetGroup if applicable
-     * are correct. 
+     * are correct.
      */
     @Test
     public void getUsageIntervalMasterRuntimeDoc_Variables(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
         String [] variableNames = new String[]{"COLUMN_SERVICE_","COLUMN_OPERATION_","COLUMN_REPORT_"};
         String [] resetTypes = new String[]{"Group","Group","Report"};
         String [] resetGroups = new String[]{"SERVICE","SERVICE_OPERATION",null};
         String [] calculations = new String[]{"Sum","Sum","Sum"};
-        
+
         int index = 0;
         int varIndex = 1;
         for(int i = 0; i < list.getLength(); i++,varIndex++){
@@ -2000,7 +2205,7 @@ public class UtilitiesTest{
 
             NamedNodeMap attributes = list.item(i).getAttributes();
             Node varName = attributes.getNamedItem("name");
-            
+
             //Going to check the name, class, resetType and resetGroup
             String expectedValue = variableNames[index % distinctMappingSets.size()]+varIndex;
             Assert.assertTrue("Name attribute should equal " + expectedValue+ " Actual value was: " + varName.getNodeValue()
@@ -2041,10 +2246,10 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_serviceHeader_CheckElements(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_HEADER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -2110,10 +2315,10 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_CheckSubReport(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.RETURN_VALUE);
         list = list.item(0).getChildNodes();
         String [] variableNames = new String[]{"COLUMN_SERVICE_","COLUMN_OPERATION_","COLUMN_REPORT_"};
@@ -2148,15 +2353,15 @@ public class UtilitiesTest{
 
             Assert.assertTrue("subreportVariable attribute should equal " + expectedValue+ " Actual value was: " + actualValue
                     ,actualValue.equals(expectedValue));
-            
+
         }
      }
 
     private void testGroupTotalRow(String elementName, String columnVariable, String totalVariable){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(elementName);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -2204,7 +2409,7 @@ public class UtilitiesTest{
             String actualValue = mode.getNodeValue();
             Assert.assertTrue("mode attribute should equal " + expectedValue+ " Actual value was: " + actualValue
                     ,actualValue.equals(expectedValue));
-            
+
             Node textFieldExprNode = findFirstChildElementByName(textFieldNode, "textFieldExpression");
             attributes = textFieldExprNode.getAttributes();
             Node varClass = attributes.getNamedItem("class");
@@ -2288,20 +2493,19 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_CheckWidths(){
-        List<String> keys = getTestKeys();
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
         testWidths(rootNode, distinctMappingSets.size());
     }
 
     @Test
     public void getUsageSubIntervalMasterRuntimeDoc_Variables(){
-        List<String> keys = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
 
@@ -2340,9 +2544,8 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageSubIntervalMasterRuntimeDoc_CheckSubReport(){
-        List<String> keys = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.RETURN_VALUE);
         list = list.item(0).getChildNodes();
 
@@ -2375,10 +2578,9 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageSubIntervalMasterRuntimeDoc_CheckWidths(){
-        List<String> keys = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
 
         Node subReportWidth = findFirstChildElementByName(rootNode, "subReportWidth");
@@ -2400,10 +2602,9 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageSubReportRuntimeDoc_Variables(){
-        List<String> keys = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
 
@@ -2452,10 +2653,9 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageSubReportRuntimeDoc_serviceAndOperationFooter_CheckElements(){
-        List<String> keys = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
 
@@ -2531,16 +2731,15 @@ public class UtilitiesTest{
             expectedValue = "html";
             Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
                     markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
-            
+
         }
     }
 
     @Test
     public void getUsageSubReportRuntimeDoc_noData_CheckElements(){
-        List<String> keys = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.NO_DATA);
         list = list.item(0).getChildNodes();
 
@@ -2606,10 +2805,9 @@ public class UtilitiesTest{
 
     @Test
     public void getUsageSubReportRuntimeDoc_CheckWidths(){
-        List<String> keys = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
 
         Node pageWidth = findFirstChildElementByName(rootNode, "pageWidth");
@@ -2663,7 +2861,7 @@ public class UtilitiesTest{
      * Note: This test, tests for widths. Widths will only change in a transform if the min width set as a param
      * to the transform is exceeded. Currently this width is guaranteed to be exceeded. If the canned transform
      * documents were to change such that they min width was no longer exceeded, then these tests would fail
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -2804,7 +3002,7 @@ public class UtilitiesTest{
      * Note: This test, tests for widths. Widths will only change in a transform if the min width set as a param
      * to the transform is exceeded. Currently this width is guaranteed to be exceeded. If the canned transform
      * documents were to change such that they min width was no longer exceeded, then these tests would fail
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -2837,7 +3035,7 @@ public class UtilitiesTest{
 
         nodeList = (NodeList) xPath.evaluate("/jasperReport/variable[contains(@name,'COLUMN_OPERATION_')]", transformedRuntimeDoc, XPathConstants.NODESET);
         Assert.assertTrue("There should be "+ numColumns+ " @COLUMN_OPERATION_ variables, there were " + nodeList.getLength(), nodeList.getLength() == numColumns);
-        
+
         nodeList = (NodeList) xPath.evaluate("/jasperReport/variable[contains(@name,'COLUMN_REPORT_')]", transformedRuntimeDoc, XPathConstants.NODESET);
         Assert.assertTrue("There should be "+ numColumns+ " @COLUMN_REPORT_ variables, there were " + nodeList.getLength(), nodeList.getLength() == numColumns);
 
@@ -2937,7 +3135,7 @@ public class UtilitiesTest{
 
         //All group header and footer frames have the same frame width
         expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/frameWidth/text()", runtimeDoc, XPathConstants.NUMBER);
-        //todo [Donal] put in the specific reportElements, can no longer do blanket              
+        //todo [Donal] put in the specific reportElements, can no longer do blanket
 //        nodeList = (NodeList) xPath.evaluate("/jasperReport/group/*/band/frame/reportElement/@width", transformedRuntimeDoc, XPathConstants.NODESET);
 //        for(int i = 0; i < nodeList.getLength(); i++){
 //            actualWidth = Double.valueOf(nodeList.item(i).getNodeValue());
@@ -2957,7 +3155,7 @@ public class UtilitiesTest{
         Assert.assertTrue(MessageFormat.format("Right margin width should be {0} actual width was {1}",
                 expectedWidth.intValue(), actualWidth.intValue()),
                 expectedWidth.intValue() == actualWidth.intValue());
-        
+
     }
 
 
@@ -2980,7 +3178,7 @@ public class UtilitiesTest{
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", runtimeDoc);
         params.put("PageMinWidth", 535);
-        
+
         Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
         Assert.assertNotNull("Transform document should not be null", transformedRuntimeDoc);
 
@@ -3050,7 +3248,7 @@ public class UtilitiesTest{
         //no data - 12 + 1 for total text fields
         nodeList = (NodeList) xPath.evaluate("/jasperReport/noData/band/frame/staticText", transformedRuntimeDoc, XPathConstants.NODESET);
         Assert.assertTrue("There should be "+ (numColumns + 1) + " no data static fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 1));
-        
+
         Double expectedWidth = (Double)xPath.evaluate("/JasperRuntimeTransformation/pageWidth/text()", runtimeDoc, XPathConstants.NUMBER);
         Double actualWidth = (Double) xPath.evaluate("/jasperReport/@pageWidth", transformedRuntimeDoc, XPathConstants.NUMBER);
         Assert.assertTrue(MessageFormat.format("Page width should be {0} actual width was {1}",
@@ -3062,7 +3260,7 @@ public class UtilitiesTest{
     /**
      * Usage template jrxml files are required as resources so are not compiled as part of the build process.
      * This test compiles all 4 usage jrxml files
-     * @exception 
+     * @exception
      */
     @Test
     public void compileUsageReports() throws Exception {
@@ -3080,7 +3278,7 @@ public class UtilitiesTest{
             ex.printStackTrace();
             exceptionThrown = true;
         }
-        Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);        
+        Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);
 
         templateXml = getResAsStringClasspath("Usage_IntervalMasterReport_Template.jrxml");
         templateDoc = getTemplateDocument(templateXml);

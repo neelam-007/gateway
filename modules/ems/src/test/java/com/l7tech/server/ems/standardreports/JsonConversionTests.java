@@ -12,6 +12,7 @@ import org.mortbay.util.ajax.JSON;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.server.ems.standardreports.SummaryReportJsonConvertor;
 import com.l7tech.gateway.standardreports.Utilities;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
 
 import java.util.*;
 
@@ -23,9 +24,7 @@ public class JsonConversionTests {
     String [] psSummaryRelativeExpectedParams = new String[]{ReportApi.ReportParameters.IS_RELATIVE, ReportApi.ReportParameters.RELATIVE_TIME_UNIT,
             ReportApi.ReportParameters.RELATIVE_NUM_OF_TIME_UNITS, ReportApi.ReportParameters.REPORT_RAN_BY,
             ReportApi.ReportParameters.SERVICE_ID_TO_NAME_MAP, ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP,
-            ReportApi.ReportParameters.IS_DETAIL, ReportApi.ReportParameters.MAPPING_KEYS, ReportApi.ReportParameters.MAPPING_VALUES,
-            ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE,
-            ReportApi.ReportParameters.USE_USER, ReportApi.ReportParameters.AUTHENTICATED_USERS, ReportApi.ReportParameters.PRINT_CHART};
+            ReportApi.ReportParameters.IS_DETAIL, ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS,ReportApi.ReportParameters.PRINT_CHART};
 
     @Test
     public void testNumClustersFound() throws ReportException {
@@ -214,20 +213,17 @@ public class JsonConversionTests {
             }
 
             ReportApi.ReportSubmission.ReportParam
-                    mappingKeyParam = paramMap.get(ReportApi.ReportParameters.MAPPING_KEYS);
+                    mappingKeyParam = paramMap.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
 
-            List<String> mappingKeys = (List<String>) mappingKeyParam.getValue();
-            Assert.assertNotNull("Mapping keys should not be null", mappingKeys);
+            LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>) mappingKeyParam.getValue();
+            Assert.assertNotNull("keysToFilterPairs should not be null", keysToFilterPairs);
 
-            ReportApi.ReportSubmission.ReportParam
-                    mappingValueParam = paramMap.get(ReportApi.ReportParameters.MAPPING_VALUES);
-            List<String> mappingValues = (List<String>) mappingValueParam.getValue();
-            Assert.assertNotNull("Mapping values should not be null", mappingValues);
-
-            Assert.assertTrue("Size of keys must match the size of values", + mappingKeys.size() == mappingValues.size());
+            Assert.assertTrue("Size of keys should be 2, it was: " + keysToFilterPairs.size(),
+                    keysToFilterPairs.size() == 2);
         }
 
     }
+
     @Test
     public void testPerfStatSummary_MappingKeysAndValues() throws ReportException {
         Object o = JSON.parse(psRelativeJsonSummary);
@@ -250,67 +246,131 @@ public class JsonConversionTests {
             }
 
             ReportApi.ReportSubmission.ReportParam
-                    mappingKeyParam = paramMap.get(ReportApi.ReportParameters.MAPPING_KEYS);
+                    keysToListParam = paramMap.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
 
-            List<String> mappingKeys = (List<String>) mappingKeyParam.getValue();
-            Assert.assertNotNull("Mapping keys should not be null", mappingKeys);
+            LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>) keysToListParam.getValue();
+            Assert.assertNotNull("keysToFilterPairs should not be null", keysToFilterPairs);
 
-            ReportApi.ReportSubmission.ReportParam
-                    mappingValueParam = paramMap.get(ReportApi.ReportParameters.MAPPING_VALUES);
-            List<String> mappingValues = (List<String>) mappingValueParam.getValue();            
-            Assert.assertNotNull("Mapping values should not be null", mappingValues);
+            Assert.assertTrue("Size of keys should be 2, it was: " + keysToFilterPairs.size(),
+                    keysToFilterPairs.size() == 2);
 
-            Assert.assertTrue("Size of keys must match the size of values", + mappingKeys.size() == mappingValues.size());
-
-            ReportApi.ReportSubmission.ReportParam
-                    mappingValueEqualOrLikeParam = paramMap.get(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE);
-            List<String> mappingValuesEqualOrLike = (List<String>) mappingValueEqualOrLikeParam.getValue();
-            Assert.assertNotNull("Mapping values equal or like should not be null", mappingValuesEqualOrLike);
+            for(String s: keysToFilterPairs.keySet()){
+                Assert.assertTrue("Should be 1 values per key, there was: " + keysToFilterPairs.get(s).size(),keysToFilterPairs.get(s).size() ==1);
+            }
 
             String clusterId = clusterBean.getClusterId();
             if(clusterId.equals(cluster1)){
-                Assert.assertTrue("cluster 1 should have 2 mapping keys", mappingKeys.size() == 2);
+                Assert.assertTrue("cluster 1 should have 2 mapping keys", keysToFilterPairs.size() == 2);
                 String [] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
-                Set<String> keySet = new HashSet<String>(mappingKeys);
                 for(String s: expectedKeys){
-                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keySet.contains(s));                    
+                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keysToFilterPairs.containsKey(s));                    
+                }
+            }else if(clusterId.equals(cluster2)){
+
+                Assert.assertTrue("cluster 2 should have 2 mapping keys", keysToFilterPairs.size() == 2);
+                String [] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
+                for(String s: expectedKeys){
+                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keysToFilterPairs.containsKey(s));
                 }
 
-                Assert.assertTrue("cluster 1 should have 2 mapping values", mappingValues.size() == 2);
-                for(String s: mappingValues){
-                    Assert.assertTrue("value should be null, it was: '" + s+"'", s == null);
+                List<ReportApi.FilterPair> fps = keysToFilterPairs.get("IP_ADDRESS");
+                Assert.assertTrue("IP_ADDRESS key should have 1 mapping values", fps.size() == 1);
+
+                Assert.assertTrue("IP_ADDRESS constraint should equal 127.%.%.1, it was: " + fps.get(0).getFilterValue(),
+                        fps.get(0).getFilterValue().equals("127.%.%.1"));
+
+                Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", !fps.get(0).isUseAnd());
+
+
+                fps = keysToFilterPairs.get("CUSTOMER");
+                Assert.assertTrue("CUSTOMER key should have 1 mapping values", fps.size() == 1);
+
+                Assert.assertTrue("CUSTOMER constraint should equal GOLD, it was: " + fps.get(0).getFilterValue(),
+                        fps.get(0).getFilterValue().equals("GOLD"));
+
+                Assert.assertTrue("CUSTOMER  constraint should be a and constraint", fps.get(0).isUseAnd());
+            }
+        }
+    }
+
+    /**
+     * Check that multiple mapping values per key are parsed correctly
+     * @throws ReportException
+     */
+    @Test
+    public void testPerfStatSummary_MappingKeysAndMultipleValues() throws ReportException {
+        Object o = JSON.parse(psRelativeJsonSummaryMultipleKeyValues);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        Assert.assertNotNull(reportClusterBeans);
+
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+
+            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
+            Assert.assertNotNull(reportParams);
+
+            Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
+                    new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
+            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+                paramMap.put(rP.getName(), rP);
+            }
+
+            ReportApi.ReportSubmission.ReportParam
+                    keysToListParam = paramMap.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
+
+            LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>) keysToListParam.getValue();
+            Assert.assertNotNull("keysToFilterPairs should not be null", keysToFilterPairs);
+
+            Assert.assertTrue("Size of keys should be 2, it was: " + keysToFilterPairs.size(),
+                    keysToFilterPairs.size() == 2);
+
+            String clusterId = clusterBean.getClusterId();
+            if(clusterId.equals(cluster1)){
+                Assert.assertTrue("cluster 1 should have 2 mapping keys", keysToFilterPairs.size() == 2);
+                String [] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
+                for(String s: expectedKeys){
+                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keysToFilterPairs.containsKey(s));
                 }
 
-                Assert.assertTrue("cluster 1 should have 2 equals or like values", mappingValuesEqualOrLike.size() == 2);
-                for(String s: mappingValuesEqualOrLike){
-                    Assert.assertTrue("equal or like value should be null, it was: '"+s+"'", s == null);
-                }
+                List<ReportApi.FilterPair> fps = keysToFilterPairs.get("IP_ADDRESS");
+                Assert.assertTrue("Should be 1 IP_ADDRESS values, there were: " + fps.size(), fps.size() == 1);
+                fps = keysToFilterPairs.get("CUSTOMER");
+                Assert.assertTrue("Should be 2 customer values, there were: " + fps.size(), fps.size() == 2);
+                Assert.assertTrue("First customer value should equal GOLD, it was: " + fps.get(0).getFilterValue(),
+                        fps.get(0).getFilterValue().equals("GOLD"));
+                Assert.assertTrue("Second customer value should equal SILVER, it was: " + fps.get(1).getFilterValue(),
+                        fps.get(1).getFilterValue().equals("SILVER"));
 
             }else if(clusterId.equals(cluster2)){
-                Assert.assertTrue("cluster 1 should have 2 mapping keys", mappingKeys.size() == 2);
-                String [] expectedKeys = new String[]{"CUSTOMER"};
-                Set<String> keySet = new HashSet<String>(mappingKeys);
+
+                Assert.assertTrue("cluster 2 should have 2 mapping keys", keysToFilterPairs.size() == 2);
+                String [] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
                 for(String s: expectedKeys){
-                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keySet.contains(s));
+                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keysToFilterPairs.containsKey(s));
                 }
 
-                Assert.assertTrue("cluster 2 should have 1 mapping values", mappingValues.size() == 2);
-                String [] expectedValues = new String[]{"127.%.%.1", "GOLD"};
-                Set<String> valueSet = new HashSet<String>(mappingValues);
-                for(String s: expectedValues){
-                    Assert.assertTrue("value should be "+s+", should be in the mapping values", valueSet.contains(s));
-                }
+                List<ReportApi.FilterPair> fps = keysToFilterPairs.get("IP_ADDRESS");
+                Assert.assertTrue("Should be 2 IP_ADDRESS values, there were: " + fps.size(), fps.size() == 2);
+                Assert.assertTrue("IP_ADDRESS key should have 2 mapping values", fps.size() == 2);
 
-                Assert.assertTrue("cluster 2 should have 2 equals or like values", mappingValuesEqualOrLike.size() == 2);
-                for (int i = 0; i < mappingValuesEqualOrLike.size(); i++) {
-                    String s = mappingValuesEqualOrLike.get(i);
-                    if(i == 0){
-                        Assert.assertTrue("equal or like value should be LIKE, it was: " + s + "", s.equals("LIKE"));
-                    }else{
-                        Assert.assertTrue("equal or like value should be AND, it was: " + s + "", s.equals("AND"));                        
-                    }
-                }
+                Assert.assertTrue("IP_ADDRESS constraint should equal 127.%.%.1, it was: " + fps.get(0).getFilterValue(),
+                        fps.get(0).getFilterValue().equals("127.%.%.1"));
 
+                Assert.assertTrue("IP_ADDRESS second FilterPair should be empty",fps.get(1).isEmpty());
+
+                Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", !fps.get(0).isUseAnd());
+
+
+                fps = keysToFilterPairs.get("CUSTOMER");
+                Assert.assertTrue("CUSTOMER key should have 1 mapping values", fps.size() == 1);
+
+                Assert.assertTrue("CUSTOMER constraint should equal GOLD, it was: " + fps.get(0).getFilterValue(),
+                        fps.get(0).getFilterValue().equals("GOLD"));
+
+                Assert.assertTrue("CUSTOMER  constraint should be a and constraint", fps.get(0).isUseAnd());
             }
         }
     }
@@ -344,40 +404,6 @@ public class JsonConversionTests {
     }
 
     @Test
-    public void testPerfStatRelativeReport_NoAuthenticatedUser() throws ReportException {
-        Object o = JSON.parse(psRelativeJsonSummary);
-        Map jsonMap = (Map) o;
-        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
-        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
-        Assert.assertNotNull(reportClusterBeans);
-
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
-
-            String clusterId = clusterBean.getClusterId();
-            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
-
-            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
-            Assert.assertNotNull(reportParams);
-
-            Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
-                    new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
-                paramMap.put(rP.getName(), rP);
-            }
-
-            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(ReportApi.ReportParameters.AUTHENTICATED_USERS);
-            List<String> authUsers = (List<String>) reportParam.getValue();
-            Assert.assertNotNull("authUsers should not be null", authUsers);
-            Assert.assertTrue("Authusers should be empty", authUsers.size() == 0);
-
-            ReportApi.ReportSubmission.ReportParam useUserParam = paramMap.get(ReportApi.ReportParameters.USE_USER);
-            Boolean useUser = (Boolean) useUserParam.getValue();
-            Assert.assertFalse("Use user should be false", useUser);
-
-        }
-    }
-
-    @Test
     public void testPerfStatRelativeReport_WithAuthenticatedUser() throws ReportException {
         Object o = JSON.parse(psRelativeJsonWithAuthUser);
         Map jsonMap = (Map) o;
@@ -399,18 +425,23 @@ public class JsonConversionTests {
                 paramMap.put(rP.getName(), rP);
             }
 
-            ReportApi.ReportSubmission.ReportParam reportParam = paramMap.get(ReportApi.ReportParameters.AUTHENTICATED_USERS);
-            List<String> authUsers = (List<String>) reportParam.getValue();
-            Assert.assertNotNull("authUsers should not be null", authUsers);
-            ReportApi.ReportSubmission.ReportParam useUserParam = paramMap.get(ReportApi.ReportParameters.USE_USER);
-            Boolean useUser = (Boolean) useUserParam.getValue();
+            ReportApi.ReportSubmission.ReportParam
+                    reportParam = paramMap.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
+            LinkedHashMap<String, List<ReportApi.FilterPair>>
+                    keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>) reportParam.getValue();
+
 
             if(clusterId.equals(cluster1)){
-                Assert.assertTrue("Authusers should be empty, actual size was " + authUsers.size(), authUsers.size() == 0);
-                Assert.assertFalse("Use user should be false", useUser);
+                List<ReportApi.FilterPair> authFilters = keysToFilterPairs.get(MessageContextMapping.MappingType.AUTH_USER.toString());
+                Assert.assertNull("authUsers should be null", authFilters);
             }else if(clusterId.equals(cluster2)){
-                Assert.assertTrue("Authusers should be empty, actual size was " + authUsers.size(), authUsers.size() == 0);
-                Assert.assertTrue("Use user should be true", useUser);
+                List<ReportApi.FilterPair> authFilters = keysToFilterPairs.get(MessageContextMapping.MappingType.AUTH_USER.toString());
+                Assert.assertNotNull("authUsers should not be null", authFilters);
+                Assert.assertFalse("authUsers should not be empty", authFilters.isEmpty());
+                Assert.assertTrue("Authusers should be 2, actual size was " + authFilters.size(), authFilters.size() == 2);
+                for(ReportApi.FilterPair fp: authFilters){
+                    Assert.assertTrue("FilterPair for auth user should be empty", fp.isEmpty());
+                }
             }
         }
     }
@@ -661,6 +692,81 @@ public class JsonConversionTests {
             "            \"clusterId\"         : \""+cluster2+"\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"127.*.*.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"My Report\"" +
+            "}";
+
+    private final static String psRelativeJsonSummaryMultipleKeyValues = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229377\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"229378\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }" +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"GOLD\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"SILVER\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"127.*.*.1\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
             "            \"clusterId\"         : \""+cluster2+"\"," +

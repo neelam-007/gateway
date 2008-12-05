@@ -29,7 +29,7 @@
 	<parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
 	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
 	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
-	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
+	<parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
 	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAPPING_VALUE_1" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAPPING_VALUE_2" isForPrompting="false" class="java.lang.String"/>
@@ -39,24 +39,23 @@
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
 	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="valueList" isForPrompting="false" class="java.util.List">
+	<parameter name="distinctKeyMapValues" isForPrompting="false" class="java.util.LinkedHashMap">
 		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
-com.l7tech.gateway.standardreports.Utilities.createValueList($P{MAPPING_KEYS},
+com.l7tech.gateway.standardreports.Utilities.createDistinctKeyToFilterMap($P{KEYS_TO_LIST_FILTER_PAIRS},
 new String[]{$P{MAPPING_VALUE_1}, $P{MAPPING_VALUE_2}, $P{MAPPING_VALUE_3}, $P{MAPPING_VALUE_4},
-$P{MAPPING_VALUE_5}})
+$P{MAPPING_VALUE_5}}, $P{AUTHENTICATED_USER}, $P{IS_DETAIL}.booleanValue())
 :null)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
 com.l7tech.gateway.standardreports.Utilities.createMappingQuery($P{INTERVAL_START},
-$P{INTERVAL_END},$P{SERVICE_ID}, $P{MAPPING_KEYS}, $P{valueList}, null,
-$P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USER})
+$P{INTERVAL_END},$P{SERVICE_ID}, $P{distinctKeyMapValues},
+$P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE}, false)
 :
 com.l7tech.gateway.standardreports.Utilities.getNoMappingQuery($P{INTERVAL_START},
 $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
@@ -66,6 +65,8 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
 	<field name="THROUGHPUT" class="java.lang.Long"/>
+	<field name="POLICY_VIOLATIONS" class="java.lang.Long"/>
+	<field name="ROUTING_FAILURES" class="java.lang.Long"/>
 	<field name="FRTM" class="java.lang.Integer"/>
 	<field name="FRTMX" class="java.lang.Integer"/>
 	<field name="FRTA" class="java.lang.Double"/>
@@ -73,17 +74,20 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 	<field name="BRTMX" class="java.lang.Integer"/>
 	<field name="BRTA" class="java.lang.Double"/>
 	<field name="AP" class="java.lang.Double"/>
-	<field name="POLICY_VIOLATIONS" class="java.lang.Long"/>
-	<field name="ROUTING_FAILURES" class="java.lang.Long"/>
 
 	<variable name="RESOLUTION" class="java.lang.Integer" resetType="Report" calculation="Nothing">
 		<variableExpression><![CDATA[($P{INTERVAL_UNIT_OF_TIME}.equals( "HOUR" ))?new Integer(1):new Integer(2)]]></variableExpression>
 	</variable>
-	<variable name="TEST_OBJ" class="java.lang.Object" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[$F{FRTM}.toString()]]></variableExpression>
-	</variable>
 	<variable name="THROUGHPUT" class="java.lang.Long" resetType="None" calculation="Nothing">
 		<variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+	</variable>
+	<variable name="POLICY_VIOLATIONS" class="java.lang.Long" resetType="None" calculation="Nothing">
+		<variableExpression><![CDATA[$F{POLICY_VIOLATIONS}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+	</variable>
+	<variable name="ROUTING_FAILURES" class="java.lang.Long" resetType="None" calculation="Nothing">
+		<variableExpression><![CDATA[$F{ROUTING_FAILURES}]]></variableExpression>
 		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
 	</variable>
 	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Nothing">
@@ -110,14 +114,6 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
-	</variable>
-	<variable name="POLICY_VIOLATIONS" class="java.lang.Long" resetType="None" calculation="Nothing">
-		<variableExpression><![CDATA[$F{POLICY_VIOLATIONS}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-	</variable>
-	<variable name="ROUTING_FAILURES" class="java.lang.Long" resetType="None" calculation="Nothing">
-		<variableExpression><![CDATA[$F{ROUTING_FAILURES}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
 	</variable>
 		<background>
 			<band height="0"  isSplitAllowed="true" >
@@ -261,7 +257,7 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{POLICY_VIOLATIONS}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$F{POLICY_VIOLATIONS}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -275,7 +271,7 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{ROUTING_FAILURES}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$F{ROUTING_FAILURES}]]></textFieldExpression>
 				</textField>
 			</band>
 		</detail>

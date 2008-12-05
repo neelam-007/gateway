@@ -31,7 +31,6 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.ResourceMapEntityResolver;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
 import com.l7tech.server.management.api.node.ReportApi;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperFillManager;
@@ -267,21 +266,22 @@ public class ReportGenerator {
             reportParams.put(ReportApi.ReportParameters.INTERVAL_TIME_UNIT, intervalUnitOfTime);
         }
 
-        List<String> keys = (List<String>) reportParams.get(ReportApi.ReportParameters.MAPPING_KEYS);
-        List<String> values = (List<String>) reportParams.get(ReportApi.ReportParameters.MAPPING_VALUES);
-        List<String> useAnd = (List<String>) reportParams.get(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE);
         Map<String, Set<String>> serivceIdsToOp = (Map<String, Set<String>>) reportParams.get(ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP);
 
-        boolean useUser = Boolean.valueOf(reportParams.get(ReportApi.ReportParameters.USE_USER).toString());
-        List<String> authUsers = (List<String>) reportParams.get(ReportApi.ReportParameters.AUTHENTICATED_USERS);
         int resolution = Utilities.getSummaryResolutionFromTimePeriod(30, startTimeInPast, endTimeInPast);
 
         boolean isContextMapping = Boolean.valueOf(reportParams.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING).toString());
         boolean isDetail = Boolean.valueOf(reportParams.get(ReportApi.ReportParameters.IS_DETAIL).toString());
 
+        LinkedHashMap<String, List<ReportApi.FilterPair>>
+                keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>)
+                reportParams.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);        
         String sql;
         if( isContextMapping ) {
-            sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serivceIdsToOp, keys, values, useAnd, resolution, isDetail, useUser, authUsers);
+            boolean isUsage = (reportType == ReportApi.ReportType.USAGE_SUMMARY
+                    || reportType == ReportApi.ReportType.USAGE_INTERVAL);
+            sql = Utilities.getUsageDistinctMappingQuery(
+                    startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
         }else{
             sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
         }
@@ -292,7 +292,7 @@ public class ReportGenerator {
         if( isContextMapping ){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
             reportParams.put(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS, distinctMappingSets);
-            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);
+            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -373,17 +373,19 @@ public class ReportGenerator {
 
         LinkedHashSet<List<String>> distinctMappingSets =
                 (LinkedHashSet<List<String>>) reportParameters.get(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS);
-        Boolean useUser = (Boolean) reportParameters.get(ReportApi.ReportParameters.USE_USER);
-        List<String> keys = (List<String>) reportParameters.get(ReportApi.ReportParameters.MAPPING_KEYS);
-        
+
+        LinkedHashMap<String, List<ReportApi.FilterPair>>
+                keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>)
+                reportParameters.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);        
+
         if(template.getType() == ReportApi.ReportType.USAGE_SUMMARY){
-            runtimeDocument = Utilities.getUsageRuntimeDoc(useUser, keys, distinctMappingSets);
+            runtimeDocument = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         }else if(template.getType() == ReportApi.ReportType.USAGE_INTERVAL && subReportParamName == null){
-            runtimeDocument = Utilities.getUsageIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
+            runtimeDocument = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         }else if(subReportParamName.equals(ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT)){
-            runtimeDocument = Utilities.getUsageSubIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
+            runtimeDocument = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         }else if(subReportParamName.equals(ReportApi.ReportParameters.SUB_REPORT)){
-            runtimeDocument = Utilities.getUsageSubReportRuntimeDoc(useUser, keys, distinctMappingSets);
+            runtimeDocument = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         }
 
         return runtimeDocument;

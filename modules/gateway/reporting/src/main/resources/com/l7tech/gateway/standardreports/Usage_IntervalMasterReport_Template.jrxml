@@ -63,14 +63,11 @@
 	<parameter name="HOURLY_MAX_RETENTION_NUM_DAYS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
-	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
-	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
+
+    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
-	<parameter name="AUTHENTICATED_USERS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SUB_INTERVAL_SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
@@ -124,8 +121,7 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[Utilities.getUsageMasterIntervalQuery($P{startTimeMilli},$P{endTimeMilli}
-,$P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
-$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
+,$P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{KEYS_TO_LIST_FILTER_PAIRS}, $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
 ]]></defaultValueExpression>
 	</parameter>
 	<parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
@@ -763,7 +759,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingReportInfoDisplayString
-($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())]]></textFieldExpression>
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),true)]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -824,8 +820,8 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					<subreportParameter  name="REPORT_CONNECTION">
 						<subreportParameterExpression><![CDATA[$P{REPORT_CONNECTION}]]></subreportParameterExpression>
 					</subreportParameter>
-					<subreportParameter  name="MAPPING_KEYS">
-						<subreportParameterExpression><![CDATA[$P{MAPPING_KEYS}]]></subreportParameterExpression>
+					<subreportParameter  name="KEYS_TO_LIST_FILTER_PAIRS">
+						<subreportParameterExpression><![CDATA[$P{KEYS_TO_LIST_FILTER_PAIRS}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="SERVICE_OPERATION_VALUE">
 						<subreportParameterExpression><![CDATA[$F{SERVICE_OPERATION_VALUE}]]></subreportParameterExpression>
@@ -833,23 +829,11 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					<subreportParameter  name="IS_DETAIL">
 						<subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
 					</subreportParameter>
-					<subreportParameter  name="USE_USER">
-						<subreportParameterExpression><![CDATA[$P{USE_USER}]]></subreportParameterExpression>
-					</subreportParameter>
 					<subreportParameter  name="RESOLUTION">
 						<subreportParameterExpression><![CDATA[$P{resolution}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="SUBREPORT_DIRECTORY">
 						<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIRECTORY}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="AUTHENTICATED_USERS">
-						<subreportParameterExpression><![CDATA[$P{AUTHENTICATED_USERS}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="MAPPING_VALUES">
-						<subreportParameterExpression><![CDATA[$P{MAPPING_VALUES}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="VALUE_EQUAL_OR_LIKE">
-						<subreportParameterExpression><![CDATA[$P{VALUE_EQUAL_OR_LIKE}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="SUB_REPORT_HELPER">
 						<subreportParameterExpression><![CDATA[$P{SUB_REPORT_HELPER}]]></subreportParameterExpression>
@@ -1245,7 +1229,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingReportInfoDisplayString
-($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())]]></textFieldExpression>
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),true)]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement

@@ -36,17 +36,16 @@
 	<parameter name="ROUTING_URI" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
 	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="MAPPING_VALUE_1" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
+    <parameter name="MAPPING_VALUE_1" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAPPING_VALUE_2" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAPPING_VALUE_3" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAPPING_VALUE_4" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="MAPPING_VALUE_5" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List"/>
-	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
 	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
@@ -63,7 +62,11 @@
 
 	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
 	</variable>
-	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Lowest">
+    <variable name="POLICY_VIOLATIONS_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+    </variable>
+    <variable name="ROUTING_FAILURES_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+    </variable>
+    <variable name="FRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Lowest">
 	</variable>
 	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Highest">
 	</variable>
@@ -76,10 +79,6 @@
 	<variable name="BRTA_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
-	</variable>
-	<variable name="POLICY_VIOLATIONS_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
-	</variable>
-	<variable name="ROUTING_FAILURES_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
 	</variable>
 		<background>
 			<band height="0"  isSplitAllowed="true" >
@@ -157,14 +156,11 @@ getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_
 					<subreportParameter  name="MAPPING_VALUE_5">
 						<subreportParameterExpression><![CDATA[$P{MAPPING_VALUE_5}]]></subreportParameterExpression>
 					</subreportParameter>
-					<subreportParameter  name="MAPPING_KEYS">
-						<subreportParameterExpression><![CDATA[$P{MAPPING_KEYS}]]></subreportParameterExpression>
+					<subreportParameter  name="KEYS_TO_LIST_FILTER_PAIRS">
+						<subreportParameterExpression><![CDATA[$P{KEYS_TO_LIST_FILTER_PAIRS}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="IS_DETAIL">
 						<subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="USE_USER">
-						<subreportParameterExpression><![CDATA[$P{USE_USER}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="AUTHENTICATED_USER">
 						<subreportParameterExpression><![CDATA[$P{AUTHENTICATED_USER}]]></subreportParameterExpression>
@@ -180,15 +176,15 @@ getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_
 					</subreportParameter>
 					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 					<returnValue subreportVariable="THROUGHPUT" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
-					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
+                    <returnValue subreportVariable="POLICY_VIOLATIONS" toVariable="POLICY_VIOLATIONS_SUM" calculation="Sum"/>
+                    <returnValue subreportVariable="ROUTING_FAILURES" toVariable="ROUTING_FAILURES_SUM" calculation="Sum"/>
+                    <returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
 					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX" calculation="Highest"/>
 					<returnValue subreportVariable="FRTA_AVG" toVariable="FRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="BRTM_MIN" toVariable="BRTM_MIN" calculation="Lowest"/>
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX" calculation="Highest"/>
 					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG" calculation="Average"/>
-					<returnValue subreportVariable="POLICY_VIOLATIONS" toVariable="POLICY_VIOLATIONS_SUM" calculation="Sum"/>
-					<returnValue subreportVariable="ROUTING_FAILURES" toVariable="ROUTING_FAILURES_SUM" calculation="Sum"/>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{SUB_REPORT}]]></subreportExpression>
 				</subreport>
 			</band>

@@ -58,12 +58,9 @@
 	<parameter name="HOURLY_MAX_RETENTION_NUM_DAYS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
-	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
-	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
+
+    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean"/>
-	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
-	<parameter name="AUTHENTICATED_USERS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SERVICE_ID_TO_NAME_MAP" isForPrompting="false" class="java.util.Map">
 		<defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
@@ -112,8 +109,8 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[Utilities.getUsageQuery($P{startTimeMilli},
-$P{endTimeMilli}, $P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
-$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
+$P{endTimeMilli}, $P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{KEYS_TO_LIST_FILTER_PAIRS},
+$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
 ]]></defaultValueExpression>
 	</parameter>
 	<parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
@@ -197,9 +194,9 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanVal
 						</dataset>
 						<categorySeries>
 							<seriesExpression><![CDATA["# Successful Requests"]]></seriesExpression>
-							<categoryExpression><![CDATA[(Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
-$F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}}))]]></categoryExpression>
+							<categoryExpression><![CDATA[(Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP}
+							 ,$F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2},
+							 $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},$F{MAPPING_VALUE_5}}))]]></categoryExpression>
 							<valueExpression><![CDATA[((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET}).getUsageChartCategoryValue(
  $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, 
 $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndSubReportHelper.COLUMN_MAPPING_TOTAL)]]></valueExpression>
@@ -770,7 +767,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingReportInfoDisplayString
-($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())]]></textFieldExpression>
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(), true)]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -1151,7 +1148,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingReportInfoDisplayString
-($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())]]></textFieldExpression>
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),true)]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement

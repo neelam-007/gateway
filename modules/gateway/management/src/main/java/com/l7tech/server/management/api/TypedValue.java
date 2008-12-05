@@ -1,5 +1,7 @@
 package com.l7tech.server.management.api;
 
+import com.l7tech.server.management.api.node.ReportApi;
+
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
@@ -40,7 +42,24 @@ public class TypedValue {
         } else if ( value instanceof List ) {
             type = Type.LIST_STRING;
             stringArrayValue =  new NamedStringArray((List<String>) value);
-        } else if ( value instanceof Map) {
+        }else if( value instanceof LinkedHashMap){
+            LinkedHashMap<String, List<ReportApi.FilterPair>>
+                    keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>) value;
+            type = Type.LINKED_HASH_MAP_TO_LIST_FILTER_PAIR;
+
+            namedStringArrayValue = new NamedStringArray[keysToFilterPairs.size()];
+
+            int index = 0;
+            for(Map.Entry<String, List<ReportApi.FilterPair>> me: keysToFilterPairs.entrySet()){
+                List<String> filterPairDisplayStrings = new ArrayList<String>();
+                for(ReportApi.FilterPair fp: me.getValue()){
+                    filterPairDisplayStrings.add(fp.getDisplayValue());
+                }
+                namedStringArrayValue[index++] = new NamedStringArray(me.getKey(), filterPairDisplayStrings);
+            }
+            
+        }
+        else if ( value instanceof Map) {
             Map testMap = (Map) value;
             Object testVal = testMap.values().iterator().next();
             if(testVal instanceof Collection){
@@ -166,6 +185,28 @@ public class TypedValue {
                 }
                 value = valueMap;
                 break;
+            case LINKED_HASH_MAP_TO_LIST_FILTER_PAIR:
+                LinkedHashMap<String, List<ReportApi.FilterPair>>
+                        keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+
+                if ( namedStringArrayValue != null ) {
+                    for ( NamedStringArray nsa : namedStringArrayValue ) {
+                        String key = nsa.getName();
+                        String[] values = nsa.asStringArray();
+                        //values should never be null as even an empty FilterPair() will have "" internally
+                        List<ReportApi.FilterPair> fpL = new ArrayList<ReportApi.FilterPair>();
+                        for(String s: values){
+                            if(s.equals("")){
+                                fpL.add(new ReportApi.FilterPair());
+                            }else{
+                                fpL.add(new ReportApi.FilterPair(s));
+                            }
+                        }
+                        keysToFilterPairs.put(key, fpL);
+                    }
+                }
+                value = keysToFilterPairs;
+                break;
             case MAP_STRING_STRING:
                 Map<String,String> valueMapString = new LinkedHashMap<String,String>();
                 if ( namedStringArrayValue != null ) {
@@ -218,7 +259,8 @@ public class TypedValue {
         return result;
     }
 
-    public static enum Type { BOOLEAN, INTEGER, STRING, SET_STRING, LIST_STRING, MAP_STRING_SET_STRING, MAP_STRING_STRING }
+    public static enum Type { BOOLEAN, INTEGER, STRING, SET_STRING, LIST_STRING, MAP_STRING_SET_STRING,
+        MAP_STRING_STRING, LINKED_HASH_MAP_TO_LIST_FILTER_PAIR }
 
     @XmlRootElement
     public static final class NamedStringArray {

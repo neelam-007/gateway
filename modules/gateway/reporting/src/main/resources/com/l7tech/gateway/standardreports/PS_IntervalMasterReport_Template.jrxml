@@ -56,14 +56,10 @@
 	<parameter name="HOURLY_MAX_RETENTION_NUM_DAYS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
-	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
-	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
+    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
-	<parameter name="AUTHENTICATED_USERS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
@@ -116,8 +112,8 @@ $P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())]]></defau
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
 Utilities.createMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
-,$P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
-$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
+,$P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{KEYS_TO_LIST_FILTER_PAIRS},
+$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 :
 Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 ,$P{SERVICE_ID_TO_OPERATIONS_MAP}.keySet(),$P{resolution}.intValue())
@@ -150,7 +146,11 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
 	</variable>
-	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE" calculation="Lowest">
+    <variable name="POLICY_VIOLATIONS_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
+    </variable>
+    <variable name="ROUTING_FAILURES_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
+    </variable>
+    <variable name="FRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE" calculation="Lowest">
 	</variable>
 	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE" calculation="Highest">
 	</variable>
@@ -166,7 +166,11 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="THROUGHPUT_SUM_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
 	</variable>
-	<variable name="FRTM_MIN_MAPPING" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Lowest">
+    <variable name="POLICY_VIOLATIONS_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
+    </variable>
+    <variable name="ROUTING_FAILURES_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
+    </variable>
+    <variable name="FRTM_MIN_MAPPING" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Lowest">
 	</variable>
 	<variable name="FRTMX_MAX_MAPPING" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Highest">
 	</variable>
@@ -180,9 +184,13 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="AP_AVG_MAPPING" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Average">
 	</variable>
-	<variable name="THROUGHPUT_SUM_REPORT" class="java.lang.Long" resetType="Report" resetGroup="MAPPINGS" calculation="Sum">
+	<variable name="THROUGHPUT_SUM_REPORT" class="java.lang.Long" resetType="Report" calculation="Sum">
 	</variable>
-	<variable name="FRTM_MIN_REPORT" class="java.lang.Integer" resetType="Report" calculation="Lowest">
+    <variable name="POLICY_VIOLATIONS_REPORT" class="java.lang.Long" resetType="Report" calculation="Sum">
+    </variable>
+    <variable name="ROUTING_FAILURES_REPORT" class="java.lang.Long" resetType="Report" calculation="Sum">
+    </variable>
+    <variable name="FRTM_MIN_REPORT" class="java.lang.Integer" resetType="Report" calculation="Lowest">
 	</variable>
 	<variable name="FRTMX_MAX_REPORT" class="java.lang.Integer" resetType="Report" calculation="Highest">
 	</variable>
@@ -198,7 +206,11 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="THROUGHPUT_SUM_OPERATION" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
 	</variable>
-	<variable name="FRTM_MIN_OPERATION" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Lowest">
+    <variable name="POLICY_VIOLATIONS_OPERATION" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
+    </variable>
+    <variable name="ROUTING_FAILURES_OPERATION" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
+    </variable>
+    <variable name="FRTM_MIN_OPERATION" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Lowest">
 	</variable>
 	<variable name="FRTMX_MAX_OPERATION" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Highest">
 	</variable>
@@ -212,24 +224,8 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="AP_AVG_OPERATION" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
 	</variable>
-	<variable name="POLICY_VIOLATIONS_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
-	</variable>
-	<variable name="ROUTING_FAILURES_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
-	</variable>
-	<variable name="POLICY_VIOLATIONS_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
-	</variable>
-	<variable name="ROUTING_FAILURES_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
-	</variable>
-	<variable name="POLICY_VIOLATIONS_OPERATION" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
-	</variable>
-	<variable name="ROUTING_FAILURES_OPERATION" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
-	</variable>
-	<variable name="POLICY_VIOLATIONS_REPORT" class="java.lang.Long" resetType="Report" calculation="Sum">
-	</variable>
-	<variable name="ROUTING_FAILURES_REPORT" class="java.lang.Long" resetType="Report" calculation="Sum">
-	</variable>
 
-		<group  name="CONSTANT_CHART" >
+        <group  name="CONSTANT_CHART" >
 			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
 			<groupHeader>
 			<band height="228"  isSplitAllowed="true" >
@@ -398,7 +394,7 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<seriesExpression><![CDATA["Throughput"]]></seriesExpression>
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
-$F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
+$F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{THROUGHPUT_SUM_MAPPING}]]></valueExpression>
 				<itemHyperlink >
@@ -408,7 +404,7 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<seriesExpression><![CDATA["Policy Violations"]]></seriesExpression>
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
-$F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
+$F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{POLICY_VIOLATIONS_MAPPING}]]></valueExpression>
 				<itemHyperlink >
@@ -418,7 +414,7 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<seriesExpression><![CDATA["Routing Failures"]]></seriesExpression>
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
-$F{AUTHENTICATED_USER}, $P{MAPPING_KEYS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
+$F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{ROUTING_FAILURES_MAPPING}]]></valueExpression>
 				<itemHyperlink >
@@ -481,7 +477,7 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getMappingValueDisplayString(
-$P{MAPPING_KEYS}, $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
+$P{KEYS_TO_LIST_FILTER_PAIRS}, $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
 $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
@@ -1595,7 +1591,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
 Utilities.getMappingReportInfoDisplayString
-($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
 :"None")]]></textFieldExpression>
 				</textField>
 				<staticText>
@@ -1656,8 +1652,8 @@ Utilities.getMappingReportInfoDisplayString
 					<subreportParameter  name="REPORT_CONNECTION">
 						<subreportParameterExpression><![CDATA[$P{REPORT_CONNECTION}]]></subreportParameterExpression>
 					</subreportParameter>
-					<subreportParameter  name="MAPPING_KEYS">
-						<subreportParameterExpression><![CDATA[$P{MAPPING_KEYS}]]></subreportParameterExpression>
+					<subreportParameter  name="KEYS_TO_LIST_FILTER_PAIRS">
+						<subreportParameterExpression><![CDATA[$P{KEYS_TO_LIST_FILTER_PAIRS}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="MAPPING_VALUE_1">
 						<subreportParameterExpression><![CDATA[$F{MAPPING_VALUE_1}]]></subreportParameterExpression>
@@ -1679,9 +1675,6 @@ Utilities.getMappingReportInfoDisplayString
 					</subreportParameter>
 					<subreportParameter  name="IS_DETAIL">
 						<subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="USE_USER">
-						<subreportParameterExpression><![CDATA[$P{USE_USER}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="AUTHENTICATED_USER">
 						<subreportParameterExpression><![CDATA[$F{AUTHENTICATED_USER}]]></subreportParameterExpression>
@@ -2267,7 +2260,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
 Utilities.getMappingReportInfoDisplayString
-($P{AUTHENTICATED_USERS},$P{MAPPING_KEYS},$P{MAPPING_VALUES},$P{IS_DETAIL}.booleanValue(),$P{USE_USER}.booleanValue())
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
 :"None")]]></textFieldExpression>
 				</textField>
 				<staticText>

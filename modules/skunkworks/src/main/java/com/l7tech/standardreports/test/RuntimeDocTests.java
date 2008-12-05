@@ -19,6 +19,7 @@ import com.l7tech.gateway.standardreports.Utilities;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.standardreports.ReportApp;
+import com.l7tech.server.management.api.node.ReportApi;
 
 public class RuntimeDocTests {
 
@@ -64,16 +65,13 @@ public class RuntimeDocTests {
 
         boolean isDetail = Boolean.parseBoolean(prop.getProperty(ReportApp.IS_DETAIL));
 
-        List<String > keys  = ReportApp.loadListFromProperties(ReportApp.MAPPING_KEY, prop);
-        List<String> values = ReportApp.loadListFromProperties(ReportApp.MAPPING_VALUE, prop);
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = ReportApp.getFilterPairMap(prop);
 
-        List<String> useAnd = ReportApp.loadListFromProperties(ReportApp.VALUE_EQUAL_OR_LIKE, prop);
-
-        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keys, values, useAnd, 2, isDetail, false, null);
+        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, isDetail, true);
 
         LinkedHashSet<List<String>> distinctMappingSets = ReportApp.getDistinctMappingSets(conn, sql);
         
-        Document doc = Utilities.getUsageRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Assert.assertTrue(doc != null);
         XmlUtil.format(doc, true);
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
@@ -100,13 +98,18 @@ public class RuntimeDocTests {
 
     @Test
     public void testGetUsageIntervalMasterRuntimeDoc() throws Exception{
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("CUSTOMER", custFilters);
 
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
@@ -122,12 +125,8 @@ public class RuntimeDocTests {
 
     @Test
     public void testGetUsageSubIntervalMasterRuntimeDoc() throws Exception{
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
-
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
@@ -143,13 +142,9 @@ public class RuntimeDocTests {
 
     @Test
     public void testGetUsageSubReportRuntimeDoc() throws Exception{
-        List<String> keys = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("CUSTOMER");
-
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(false, keys, distinctMappingSets);
+        Document doc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);

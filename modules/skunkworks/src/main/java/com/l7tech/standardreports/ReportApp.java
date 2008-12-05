@@ -20,6 +20,7 @@ import com.l7tech.common.io.IOUtils;
 import com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper;
 import com.l7tech.gateway.standardreports.UsageReportHelper;
 import com.l7tech.gateway.standardreports.Utilities;
+import com.l7tech.server.management.api.node.ReportApi;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -60,15 +61,12 @@ public class ReportApp
     private static final String ABSOLUTE_START_TIME = "ABSOLUTE_START_TIME";
     private static final String ABSOLUTE_END_TIME = "ABSOLUTE_END_TIME";
 
-    public static final String MAPPING_KEYS = "MAPPING_KEYS";
-    public static final String MAPPING_VALUES = "MAPPING_VALUES";
-    public static final String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
-    public static final String MAPPING_KEY = "MAPPING_KEY";
-    public static final String MAPPING_VALUE = "MAPPING_VALUE";
-    public static final String OPERATIONS = "OPERATIONS";
+    public static final String KEYS_TO_LIST_FILTER_PAIRS = "KEYS_TO_LIST_FILTER_PAIRS";
+    
+    public static final String MAPPING_KEY_ = "MAPPING_KEY_";
+    public static final String VALUE_ = "_VALUE_";
 
-    private static final String USE_USER = "USE_USER";
-    public static final String AUTHENTICATED_USERS = "AUTHENTICATED_USERS";
+    public static final String OPERATIONS = "OPERATIONS";
 
     //db props
     private static final String CONNECTION_STRING = "CONNECTION_STRING";
@@ -77,7 +75,6 @@ public class ReportApp
 
     //Non report params, just used in ReportApp
     private static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
-    private static final String REPORT_FILE_NAME_NO_ENDING = "REPORT_FILE_NAME_NO_ENDING";
     private static final Properties prop = new Properties();
     private static final String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
     private static final String REPORT_SCRIPTLET = "REPORT_SCRIPTLET";
@@ -157,14 +154,9 @@ public class ReportApp
         long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime, timeZone);
         long endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime, timeZone);
 
-        List<String> keys = (List<String>) parameters.get(MAPPING_KEYS);
-        List<String> values = (List<String>) parameters.get(MAPPING_VALUES);
-        List<String> useAnd = (List<String>) parameters.get(VALUE_EQUAL_OR_LIKE);
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getFilterPairMap(prop);
+        parameters.put(KEYS_TO_LIST_FILTER_PAIRS, keysToFilterPairs);
         Map<String, Set<String>> serivceIdsToOp = (Map<String, Set<String>>) parameters.get(SERVICE_ID_TO_OPERATIONS_MAP);
-
-
-        boolean useUser = Boolean.valueOf(parameters.get(USE_USER).toString());
-        List<String> authUsers = (List<String>) parameters.get(AUTHENTICATED_USERS);
 
 
         boolean isDetail = Boolean.valueOf(parameters.get(IS_DETAIL).toString());
@@ -176,7 +168,8 @@ public class ReportApp
 
         String sql = null;
         if(isContextMapping){
-            sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serivceIdsToOp, keys, values, useAnd, resolution, isDetail, useUser, authUsers);
+            Boolean isUsage = Boolean.valueOf(prop.getProperty("IS_USAGE"));
+            sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
         }else{
             sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
         }
@@ -184,16 +177,16 @@ public class ReportApp
         
         if(!type.equals("Usage") && !type.equals("Usage_Interval")){
             if(type.equals("Performance_Interval")){
-                runPerfStatIntervalReport(isContextMapping, prop, parameters, sql, keys);
+                runPerfStatIntervalReport(isContextMapping, prop, parameters, sql, keysToFilterPairs);
             }else{
-                runPerfStatSummaryReport(isContextMapping, prop, parameters, sql, keys);
+                runPerfStatSummaryReport(isContextMapping, prop, parameters, sql, keysToFilterPairs);
             }
         }else{
 
             if(type.equals("Usage")){
-                runUsageReport(prop, parameters, scriplet, sql, keys, useUser);
+                runUsageReport(prop, parameters, scriplet, sql, keysToFilterPairs);
             }else if(type.equals("Usage_Interval")){
-                runUsageIntervalReport(prop, parameters, scriplet, sql, keys, useUser);
+                runUsageIntervalReport(prop, parameters, scriplet, sql, keysToFilterPairs);
             }
             
         }
@@ -213,6 +206,37 @@ public class ReportApp
             key1Name = prop.getProperty(key1+"_"+index);
             key2Name = prop.getProperty(key2+"_"+index);
             index++;
+        }
+
+        return returnMap;
+    }
+
+
+    public static LinkedHashMap<String, List<ReportApi.FilterPair>> getFilterPairMap(Properties prop){
+        LinkedHashMap<String, List<ReportApi.FilterPair>> returnMap = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+
+        int index = 1;
+        String keyName = prop.getProperty(MAPPING_KEY_+index);
+        while(keyName != null){
+            int valueIndex = 1;
+            ReportApi.FilterPair defaultFilter = new ReportApi.FilterPair();
+            List<ReportApi.FilterPair> filterList = new ArrayList<ReportApi.FilterPair>();
+
+            //any values for this key?
+
+            String keyValue = prop.getProperty(MAPPING_KEY_+index+VALUE_+valueIndex);
+            while(keyValue != null){
+                //todo [Donal] replace wildcard with %
+                ReportApi.FilterPair filter = new ReportApi.FilterPair(keyValue);
+                filterList.add(filter);
+                valueIndex++;
+                keyValue = prop.getProperty(MAPPING_KEY_+index+VALUE_+valueIndex);
+            }
+            
+            if(filterList.isEmpty()) filterList.add(defaultFilter);
+            returnMap.put(keyName, filterList);
+            index++;
+            keyName = prop.getProperty(MAPPING_KEY_+index);            
         }
 
         return returnMap;
@@ -308,7 +332,7 @@ public class ReportApp
     }
 
     private void runUsageIntervalReport(Properties prop, Map parameters, Object scriplet, String sql,
-                                       List<String> keys, boolean useUser)
+                                       LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs)
                                                                     throws Exception{
         UsageReportHelper helper = (UsageReportHelper) scriplet;
         Connection connection = getConnection(prop);
@@ -319,12 +343,12 @@ public class ReportApp
         summaryAndSubReportHelper.setKeyToColumnMap(keyToColumnName);
         parameters.put(SUB_REPORT_HELPER, summaryAndSubReportHelper);
 
-        LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);
+        LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
         LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend);
         helper.setIndexToGroupMap(groupIndexToGroup);
         
         //Master report first
-        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
+        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
 
         File f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageMasterTransformDoc.xml");
         f.createNewFile();
@@ -357,7 +381,7 @@ public class ReportApp
         }
 
         //MasterSubInterval report
-        transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(useUser, keys, distinctMappingSets);
+        transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageSubIntervalTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
@@ -386,7 +410,7 @@ public class ReportApp
         }
 
         //subreport report
-        transformDoc = Utilities.getUsageSubReportRuntimeDoc(useUser, keys, distinctMappingSets);
+        transformDoc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageSubReportTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
@@ -457,7 +481,7 @@ public class ReportApp
     }
 
     private void runPerfStatSummaryReport(boolean isContextMapping, Properties prop, Map parameters,
-                                           String sql, List<String> keys) throws Exception{
+                                           String sql, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception{
         Connection connection = getConnection(prop);
 
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
@@ -465,7 +489,7 @@ public class ReportApp
 
         if(isContextMapping){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);
+            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -543,7 +567,7 @@ public class ReportApp
 
 
     private void runPerfStatIntervalReport(boolean isContextMapping, Properties prop, Map parameters,
-                                           String sql, List<String> keys) throws Exception{
+                                           String sql, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception{
 
         //Compile both subreports and add to parameters
         String subIntervalReport = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SubIntervalMasterReport.jrxml");
@@ -564,7 +588,7 @@ public class ReportApp
         
         if(isContextMapping){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);
+            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -648,18 +672,18 @@ public class ReportApp
     }
 
     private void runUsageReport(Properties prop, Map parameters, Object scriplet, String sql,
-                                       List<String> keys, boolean useUser)
+                                       LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs)
                                                                     throws Exception{
         UsageSummaryAndSubReportHelper helper = (UsageSummaryAndSubReportHelper) scriplet;
         Connection connection = getConnection(prop);
         LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
         LinkedHashMap<String, String> keyToColumnName = Utilities.getKeyToColumnValues(distinctMappingSets);
         helper.setKeyToColumnMap(keyToColumnName);
-        LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keys, distinctMappingSets);
+        LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
         LinkedHashMap<String, String> displayStringToGroup = Utilities.getLegendDisplayStringToGroupMap(mappingValuesLegend);
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
-        Document transformDoc = Utilities.getUsageRuntimeDoc(useUser, keys, distinctMappingSets);
+        Document transformDoc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         File f = new File(SKUNKWORK_RELATIVE_PATH+"/UsageTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
@@ -846,18 +870,9 @@ public class ReportApp
         parameters.put(SERVICE_ID_TO_OPERATIONS_MAP, serviceIdsToOps);
         parameters.put(SERVICE_ID_TO_NAME_MAP, serviceIdsToName);
 
-        List<String> keys  = loadListFromProperties(MAPPING_KEY, prop);
-        List<String> values = loadListFromProperties(MAPPING_VALUE, prop);
-        List<String> useAnd = loadListFromProperties(VALUE_EQUAL_OR_LIKE, prop);
 
-        parameters.put(MAPPING_KEYS, keys);
-        parameters.put(MAPPING_VALUES, values);
-        parameters.put(VALUE_EQUAL_OR_LIKE, useAnd);
-
-        b = Boolean.parseBoolean(prop.getProperty(USE_USER).toString());
-        parameters.put(USE_USER, b);
-        List<String> authUser = loadListFromProperties(AUTHENTICATED_USERS, prop);
-        parameters.put(AUTHENTICATED_USERS, authUser);
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getFilterPairMap(prop);
+        parameters.put(KEYS_TO_LIST_FILTER_PAIRS, keysToFilterPairs);
 
         JasperPrint jp = JasperFillManager.fillReport("StyleGenerator.jasper", parameters);
         Map sMap = jp.getStylesMap();

@@ -29,20 +29,15 @@
 	<parameter name="INTERVAL_START" isForPrompting="false" class="java.lang.Long"/>
 	<parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
 	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
+    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>    
+    <parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
-	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
-	<parameter name="AUTHENTICATED_USERS" isForPrompting="false" class="java.util.List"/>
-	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
-	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[Utilities.getUsageQuery($P{INTERVAL_START},
-$P{INTERVAL_END},$P{SERVICE_ID}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
-$P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USERS})
+$P{INTERVAL_END},$P{SERVICE_ID}, $P{KEYS_TO_LIST_FILTER_PAIRS}, $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE})
 ]]></defaultValueExpression>
 	</parameter>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>

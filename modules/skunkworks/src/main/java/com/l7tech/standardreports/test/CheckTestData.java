@@ -16,6 +16,7 @@ import java.sql.*;
 
 import com.l7tech.gateway.standardreports.Utilities;
 import com.l7tech.standardreports.ReportApp;
+import com.l7tech.server.management.api.node.ReportApi;
 
 public class CheckTestData{
 
@@ -94,15 +95,26 @@ public class CheckTestData{
     }
 
     private int getNumDistinctMetricDetailRows() throws Exception{
-        List<String > keys  = ReportApp.loadListFromProperties(ReportApp.MAPPING_KEY, prop);
-        Assert.assertTrue("2 mapping keys should be specified in report.properties", keys.size() == 2);
-        List<String > values  = new ArrayList<String>();
-        values.add(null);
-        values.add(null);
+        //LinkedHashMap<String, List<FilterPair>> keysToFilterPairs = ReportApp.getFilterPairMap(prop);
+
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("CUSTOMER", custFilters);
+
+        List<ReportApi.FilterPair> authFilters = new ArrayList<ReportApi.FilterPair>();
+        authFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("AUTH_USER", authFilters);
+
+        //Assert.assertTrue("2 mapping keys should be specified in report.properties", keysToFilterPairs.keySet().size() == 2);
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String s = Utilities.createMappingQuery(true, null, null, serviceIdsToOps,
-                keys, values, null, 2, true, true, null);
+        //is usage is false, as keys must be specified for this test
+        String s = Utilities.createMappingQuery(true, null, null, serviceIdsToOps,keysToFilterPairs, 2, true, false);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select count(*) as total from (");
@@ -133,19 +145,28 @@ public class CheckTestData{
 //        System.out.println("numValueRows: "+numValueRows);
 //        System.out.println("numServices: "+numServices);
 
-        Assert.assertTrue(totalMasterRowsFound == (numValueRows * numServices));
+        Assert.assertTrue("Expected: " + totalMasterRowsFound+" rows, actual number found: " + (numValueRows * numServices),totalMasterRowsFound == (numValueRows * numServices));
     }
 
     private int getSumOfAllDailyValueGroups() throws SQLException {
-        List<String > keys  = ReportApp.loadListFromProperties(ReportApp.MAPPING_KEY, prop);
-        Assert.assertTrue("2 mapping keys should be specified in report.properties", keys.size() == 2);
-        List<String > values  = new ArrayList<String>();
-        values.add(null);
-        values.add(null);
+        //LinkedHashMap<String, List<FilterPair>> keysToFilterPairs = ReportApp.getFilterPairMap(prop);
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
+        ipFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("IP_ADDRESS", ipFilters);
+
+        List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
+        custFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("CUSTOMER", custFilters);
+
+        List<ReportApi.FilterPair> authFilters = new ArrayList<ReportApi.FilterPair>();
+        authFilters.add(new ReportApi.FilterPair());
+        keysToFilterPairs.put("AUTH_USER", authFilters);
+
+        //Assert.assertTrue("2 mapping keys should be specified in report.properties", keysToFilterPairs.keySet().size() == 2);
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String s = Utilities.createMappingQuery(false, null, null, serviceIdsToOps,
-                keys, values, null, 2, true, true, null);
+        String s = Utilities.createMappingQuery(false, null, null, serviceIdsToOps,keysToFilterPairs, 2, true, false);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
@@ -173,21 +194,18 @@ public class CheckTestData{
         int sumOfAllValueGroups = getSumOfAllDailyValueGroups();
         int totalDailyRows = getNumDailyRows();
 
-        Assert.assertTrue(totalDailyRows == sumOfAllValueGroups);
+        Assert.assertTrue("Expected: totalDailyRows == sumOfAllValueGroups: " + totalDailyRows+" != " + sumOfAllValueGroups,totalDailyRows == sumOfAllValueGroups);
     }
 
     /**
      * Run a mapping query from Utilities.createMappingQuery(false... with keys and value specified. Wrap the query
      * to determine the sum of all rows found for each group that match the key and value criteria 
-     * @param keys
-     * @param values
      * @return
      * @throws SQLException
      */
-    private int getMappingQueryOverallTotalSpecificValues_Daily(List<String> keys, List<String> values) throws SQLException {
+    private int getMappingQueryOverallTotalSpecificValues_Daily(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws SQLException {
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String s = Utilities.createMappingQuery(false, null, null, serviceIdsToOps,
-                keys, values, null, 2, true, true, null);
+        String s = Utilities.createMappingQuery(false, null, null, serviceIdsToOps,keysToFilterPairs, 2, true, false);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
@@ -204,10 +222,9 @@ public class CheckTestData{
     }
 
     private int getMappingQueryOverallTotalSpecificValues_DailyNew(Map<String, Set<String>> serviceIdToOp,
-                                                                   List<String> keys,
-                                                                   List<String> values) throws SQLException {
-        String s = Utilities.createMappingQuery(false, null, null, serviceIdToOp, keys, values, null, 2, true, true, null);
-        //String s = Utilities.createMappingQueryNew(false, null, null, null, null, null, null, 2, true, true, null);
+                                                                   LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs
+    ) throws SQLException {
+        String s = Utilities.createMappingQuery(false, null, null, serviceIdToOp, keysToFilterPairs, 2, true, false);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
@@ -270,22 +287,17 @@ public class CheckTestData{
      */
     @Test
     public void testMappingQuerySpecificValues_SummaryDaily() throws Exception{
-        List<String > keys  = ReportApp.loadListFromProperties(ReportApp.MAPPING_KEY, prop);
-        List<String > values  = ReportApp.loadListFromProperties(ReportApp.MAPPING_VALUE, prop);
-        if(values.size() != 2){
-            throw new IllegalArgumentException("This test designed to work with two key values");
-        }
-        for(String s: values){
-            if(s == null || s.equals("")) throw new IllegalArgumentException("Test is designed to work with actual key constraint values");
-        }
-        int total = getMappingQueryOverallTotalSpecificValues_Daily(keys, values);
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = ReportApp.getFilterPairMap(prop);
+        validateKeyFilterMap(keysToFilterPairs);
+
+        int total = getMappingQueryOverallTotalSpecificValues_Daily(keysToFilterPairs);
         //364
         int rowsPerDistinctValue = getMetricRowsPerDistinctValue();
         //24
         int numValueRows = getNumValueRows();
 
         int numApplicableValueRows = 0;
-        for(String s1: keys){
+        for(String s1: keysToFilterPairs.keySet()){
             numApplicableValueRows += getDistinctValuesForKey(s1);
         }
 
@@ -297,18 +309,25 @@ public class CheckTestData{
         Assert.assertTrue(queryExpectedTotal == total);
     }
 
+    private void validateKeyFilterMap(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) {
+        if(keysToFilterPairs.keySet().size()!=2){
+            throw new IllegalArgumentException("This test designed to work with two keys");
+        }
+        for(Map.Entry<String, List<ReportApi.FilterPair>> me: keysToFilterPairs.entrySet()){
+            if(me.getValue().size() != 1){
+                throw new IllegalArgumentException("Each key must have 1 FilterPair");
+            }
+            if(me.getValue().get(0).isEmpty()){
+                throw new IllegalArgumentException("Test is designed to work with actual key constraint values");
+            }
+        }
+    }
+
     @Test
     public void testMappingQuerySpecificValues_SummaryDailyNew() throws Exception{
-        List<String > keys  = ReportApp.loadListFromProperties(ReportApp.MAPPING_KEY, prop);
-        List<String > values  = ReportApp.loadListFromProperties(ReportApp.MAPPING_VALUE, prop);
-        if(values.size() != 2){
-            throw new IllegalArgumentException("This test designed to work with two key values");
-        }
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = ReportApp.getFilterPairMap(prop);
+        validateKeyFilterMap(keysToFilterPairs);
         
-        for(String s: values){
-            if(s == null || s.equals("")) throw new IllegalArgumentException("Test is designed to work with actual key constraint values");
-        }
-
         Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
         List<String> ops = new ArrayList<String>();
         ops.add("listProducts");
@@ -322,14 +341,14 @@ public class CheckTestData{
             index++;
         }
 
-        int total = getMappingQueryOverallTotalSpecificValues_DailyNew(serviceIdToOp, keys, values);
+        int total = getMappingQueryOverallTotalSpecificValues_DailyNew(serviceIdToOp, keysToFilterPairs);
         //364
         int rowsPerDistinctValue = getMetricRowsPerDistinctValue();
         //24
         int numValueRows = getNumValueRows();
 
         int numApplicableValueRows = 0;
-        for(String s1: keys){
+        for(String s1: keysToFilterPairs.keySet()){
             numApplicableValueRows += getDistinctValuesForKey(s1);
         }
 

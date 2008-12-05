@@ -211,30 +211,10 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             
             for(Map.Entry<String, Map<String, ReportApi.ReportSubmission.ReportParam>> me: clusterToReportParams.entrySet()){
                 //add default values
-                ReportApi.ReportSubmission.ReportParam mappingKeyParam = new ReportApi.ReportSubmission.ReportParam();
-                mappingKeyParam.setName(ReportApi.ReportParameters.MAPPING_KEYS);
-                mappingKeyParam.setValue(new ArrayList<String>());
-                me.getValue().put(ReportApi.ReportParameters.MAPPING_KEYS, mappingKeyParam);
-
-                ReportApi.ReportSubmission.ReportParam mappingValueParam = new ReportApi.ReportSubmission.ReportParam();
-                mappingValueParam.setName(ReportApi.ReportParameters.MAPPING_VALUES);
-                mappingValueParam.setValue(new ArrayList<String>());
-                me.getValue().put(ReportApi.ReportParameters.MAPPING_VALUES, mappingValueParam);
-
-                ReportApi.ReportSubmission.ReportParam mappingValueEqualOrLikeParam = new ReportApi.ReportSubmission.ReportParam();
-                mappingValueEqualOrLikeParam.setName(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE);
-                mappingValueEqualOrLikeParam.setValue(new ArrayList<String>());
-                me.getValue().put(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE, mappingValueEqualOrLikeParam);
-
-                ReportApi.ReportSubmission.ReportParam useUserParam = new ReportApi.ReportSubmission.ReportParam();
-                useUserParam.setName(ReportApi.ReportParameters.USE_USER);
-                useUserParam.setValue(false);
-                me.getValue().put(ReportApi.ReportParameters.USE_USER, useUserParam);
-
-                ReportApi.ReportSubmission.ReportParam authenticatedUsersParam = new ReportApi.ReportSubmission.ReportParam();
-                authenticatedUsersParam.setName(ReportApi.ReportParameters.AUTHENTICATED_USERS);
-                authenticatedUsersParam.setValue(new ArrayList<String>());
-                me.getValue().put(ReportApi.ReportParameters.AUTHENTICATED_USERS, authenticatedUsersParam);
+                ReportApi.ReportSubmission.ReportParam keysToFilterParam = new ReportApi.ReportSubmission.ReportParam();
+                keysToFilterParam.setName(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
+                keysToFilterParam.setValue(new LinkedHashMap<String, List<ReportApi.FilterPair>>());
+                me.getValue().put(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS, keysToFilterParam);
 
                 //It's possible that even though there are no groupings that is context mapping should be true, as
                 //operations may have been specified by the user. In this case only set the param, if it's not already set
@@ -247,29 +227,18 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             }
             return;
         }
-        
-        Map<String, List<String>> clusterToKeys = new HashMap<String, List<String>>();
-        Map<String, List<String>> clusterToValues = new HashMap<String, List<String>>();
-        Map<String, List<String>> clusterToValuesEqualOrLike = new HashMap<String, List<String>>();
-        Map<String, Set<String>> clusterToAuthUsers = new HashMap<String, Set<String>>();
-        //For each cluster, track if auth user key has been set
-        //used to determine whether to set is context mapping param to true or not
-        Set<String> clusterAuthUserSet = new HashSet<String>();
-        
+
+        Map<String, LinkedHashMap<String, List<ReportApi.FilterPair>>> clusterToKeysToListFilterPairs
+                = new HashMap<String, LinkedHashMap<String, List<ReportApi.FilterPair>>>();
+
         for(Object o: groupings){
             Map currentGrouping = (Map) o;
             validateSubMap(currentGrouping, JSONConstants.ReportMappings.ALL_KEYS);
 
             String clusterFound = (String) currentGrouping.get(JSONConstants.ReportMappings.CLUSTER_ID);
-            if(!clusterToKeys.containsKey(clusterFound)){
-                List<String> keys = new ArrayList<String>();
-                clusterToKeys.put(clusterFound, keys);
-                List<String> values = new ArrayList<String>();
-                clusterToValues.put(clusterFound, values);
-                List<String> valuesEqualOrLike = new ArrayList<String>();
-                clusterToValuesEqualOrLike.put(clusterFound, valuesEqualOrLike);
-                Set<String> authUsers = new HashSet<String>();
-                clusterToAuthUsers.put(clusterFound, authUsers);
+            if(!clusterToKeysToListFilterPairs.containsKey(clusterFound)){
+                LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+                clusterToKeysToListFilterPairs.put(clusterFound, keysToFilterPairs);
             }
 
             String key = (String) currentGrouping.get(JSONConstants.ReportMappings.MESSAGE_CONTEXT_KEY);
@@ -278,77 +247,35 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             }
             String value = (String) currentGrouping.get(JSONConstants.ReportMappings.CONSTRAINT);
 
-            if(key.equals(JSONConstants.AUTH_USER)){
-                clusterAuthUserSet.add(clusterFound);
-                Set<String> authUsers = clusterToAuthUsers.get(clusterFound);
-                if(!value.equals("") ) authUsers.add(value);
+            LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = clusterToKeysToListFilterPairs.get(clusterFound);
+            if(!keysToFilterPairs.containsKey(key)){
+                List<ReportApi.FilterPair> lFp = new ArrayList<ReportApi.FilterPair>();
+                keysToFilterPairs.put(key, lFp);
+            }
+
+            List<ReportApi.FilterPair> lFp = keysToFilterPairs.get(key);
+            if(value.equals("")){
+                lFp.add(new ReportApi.FilterPair());
             }else{
-                List<String> clusterKeys = clusterToKeys.get(clusterFound);
-                clusterKeys.add(key);
-                List<String> clusterValuesEqualOrLike = clusterToValuesEqualOrLike.get(clusterFound);
-                if(value.equals("")){
-                    clusterValuesEqualOrLike.add(null);
-                }else{
-                    if(value.indexOf("*") != -1){
-                        value = value.replaceAll("\\*", "%");
-                        clusterValuesEqualOrLike.add("LIKE");
-                    }else{
-                        clusterValuesEqualOrLike.add("AND");                        
-                    }
-                }
-                List<String> clusterValues = clusterToValues.get(clusterFound);
-                //note value may be udpated above, with *'s replaced with %'s
-                if(value.equals("")){
-                    clusterValues.add(null);
-                }else{
-                    clusterValues.add(value);
-                }
+                lFp.add(new ReportApi.FilterPair(value));
             }
         }
 
-        for(Map.Entry<String, List<String>> me: clusterToKeys.entrySet()){
-
+        for(Map.Entry<String, LinkedHashMap<String, List<ReportApi.FilterPair>>> me: clusterToKeysToListFilterPairs.entrySet()){
+            //Ensures that groupings only reference clusters defined in the entity section
             if(!clusterToReportParams.containsKey(me.getKey())){
                 throw new ReportException("Unknown cluster: " + me.getKey() +" found in grouping JSON");
             }
+
             Map<String, ReportApi.ReportSubmission.ReportParam> clusterParams = clusterToReportParams.get(me.getKey());
 
-            Set<String> testKeySet = new HashSet<String>(me.getValue());
-            if(testKeySet.size() != me.getValue().size()){
-                throw new ReportException("Groups cannot contain duplicate keys on a per cluster basis");
-            }
-            ReportApi.ReportSubmission.ReportParam mappingKeyParam = new ReportApi.ReportSubmission.ReportParam();
-            mappingKeyParam.setName(ReportApi.ReportParameters.MAPPING_KEYS);
-            mappingKeyParam.setValue(me.getValue());
-            clusterParams.put(ReportApi.ReportParameters.MAPPING_KEYS, mappingKeyParam);
-
-            List<String> mappingValues = clusterToValues.get(me.getKey());
-            ReportApi.ReportSubmission.ReportParam mappingValueParam = new ReportApi.ReportSubmission.ReportParam();
-            mappingValueParam.setName(ReportApi.ReportParameters.MAPPING_VALUES);
-            mappingValueParam.setValue(mappingValues);
-            clusterParams.put(ReportApi.ReportParameters.MAPPING_VALUES, mappingValueParam);
-
-            List<String> mappingValuesEqualOrLike = clusterToValuesEqualOrLike.get(me.getKey());
-            ReportApi.ReportSubmission.ReportParam mappingValueEqualOrLikeParam = new ReportApi.ReportSubmission.ReportParam();
-            mappingValueEqualOrLikeParam.setName(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE);
-            mappingValueEqualOrLikeParam.setValue(mappingValuesEqualOrLike);
-            clusterParams.put(ReportApi.ReportParameters.VALUE_EQUAL_OR_LIKE, mappingValueEqualOrLikeParam);
-
-            boolean useUser = clusterAuthUserSet.contains(me.getKey());
-            ReportApi.ReportSubmission.ReportParam useUserParam = new ReportApi.ReportSubmission.ReportParam();
-            useUserParam.setName(ReportApi.ReportParameters.USE_USER);
-            useUserParam.setValue(useUser);
-            clusterParams.put(ReportApi.ReportParameters.USE_USER, useUserParam);
-
-            //AUTHENTICATED_USERS
-            List<String> authUsers = new ArrayList<String>(clusterToAuthUsers.get(me.getKey()));
-            ReportApi.ReportSubmission.ReportParam authenticatedUsersParam = new ReportApi.ReportSubmission.ReportParam();
-            authenticatedUsersParam.setName(ReportApi.ReportParameters.AUTHENTICATED_USERS);
-            authenticatedUsersParam.setValue(authUsers);
-            clusterParams.put(ReportApi.ReportParameters.AUTHENTICATED_USERS, authenticatedUsersParam);
+            ReportApi.ReportSubmission.ReportParam keysToFilterParam = new ReportApi.ReportSubmission.ReportParam();
+            keysToFilterParam.setName(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
+            keysToFilterParam.setValue(me.getValue());
+            clusterParams.put(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS, keysToFilterParam);
 
 
-            boolean isContextMapping = (useUser || me.getValue().size() > 0);
+            boolean isContextMapping = me.getValue().size() > 0;
 
             //does the ctx mapping param already exist?
             if(!clusterParams.containsKey(ReportApi.ReportParameters.IS_CONTEXT_MAPPING)){
@@ -361,8 +288,9 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
                         isCtxMappingParam = clusterParams.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING);
                 isCtxMappingParam.setValue(isContextMapping || (Boolean)isCtxMappingParam.getValue());
             }
+            
+            
         }
-
 
         //Usage reports MUST have at least one grouping
         if(getReportType(params) == ReportApi.ReportType.USAGE_SUMMARY
@@ -372,25 +300,18 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
                     clusterToReportParams.entrySet()){
 
                 //check mapping_keys and use_user
-                ReportApi.ReportSubmission.ReportParam mappingKeysParam = me.getValue().get(ReportApi.ReportParameters.MAPPING_KEYS);
-                boolean mappingKeysOk = false;
-                if(mappingKeysParam != null){
-                    List<String> mappingKeys = (List<String>) mappingKeysParam.getValue();
-                    if(!mappingKeys.isEmpty()){
-                        mappingKeysOk = true;    
-                    }
+                ReportApi.ReportSubmission.ReportParam keyToListParam =
+                        me.getValue().get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
 
+                if(keyToListParam == null){
+                    throw new ReportException("Cluster: " + me.getKey()
+                            +" must have at least one mapping key specified in the JSON data");
                 }
-
-                ReportApi.ReportSubmission.ReportParam useUserParam = me.getValue().get(ReportApi.ReportParameters.USE_USER);
-
-                Boolean useUser = false;
-                if(useUserParam != null){
-                    useUser = (Boolean) useUserParam.getValue();    
-                }
-
-                if(!mappingKeysOk && !useUser){
-                    throw new ReportException("Cluster: " + me.getKey() +" must have at least one mapping key specified in the JSON data");                    
+                LinkedHashMap<String, List<ReportApi.FilterPair>>
+                        keyToListMap = (LinkedHashMap<String, List<ReportApi.FilterPair>>) keyToListParam.getValue();
+                if(keyToListMap.isEmpty()){
+                    throw new ReportException("Cluster: " + me.getKey()
+                            +" must have at least one mapping key specified in the JSON data");
                 }
             }
         }

@@ -32,20 +32,16 @@
 	<parameter name="ROUTING_URI" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
 	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
-	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
+    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>    
+    <parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List"/>
-	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
 	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="AUTHENTICATED_USERS" isForPrompting="false" class="java.util.List"/>
-	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
-	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
     <parameter name="SUB_REPORT_HELPER" isForPrompting="false" class="com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper"/>
@@ -113,26 +109,14 @@
 					<subreportParameter  name="SERVICE_OPERATION_VALUE">
 						<subreportParameterExpression><![CDATA[$P{SERVICE_OPERATION_VALUE}]]></subreportParameterExpression>
 					</subreportParameter>
-					<subreportParameter  name="MAPPING_KEYS">
-						<subreportParameterExpression><![CDATA[$P{MAPPING_KEYS}]]></subreportParameterExpression>
+					<subreportParameter  name="KEYS_TO_LIST_FILTER_PAIRS">
+						<subreportParameterExpression><![CDATA[$P{KEYS_TO_LIST_FILTER_PAIRS}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="IS_DETAIL">
 						<subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
 					</subreportParameter>
-					<subreportParameter  name="USE_USER">
-						<subreportParameterExpression><![CDATA[$P{USE_USER}]]></subreportParameterExpression>
-					</subreportParameter>
 					<subreportParameter  name="RESOLUTION">
 						<subreportParameterExpression><![CDATA[$P{RESOLUTION}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="AUTHENTICATED_USERS">
-						<subreportParameterExpression><![CDATA[$P{AUTHENTICATED_USERS}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="MAPPING_VALUES">
-						<subreportParameterExpression><![CDATA[$P{MAPPING_VALUES}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="VALUE_EQUAL_OR_LIKE">
-						<subreportParameterExpression><![CDATA[$P{VALUE_EQUAL_OR_LIKE}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="REPORT_SCRIPTLET">
 						<subreportParameterExpression><![CDATA[$P{SUB_REPORT_HELPER}]]></subreportParameterExpression>

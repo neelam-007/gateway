@@ -420,12 +420,8 @@ public interface ReportApi {
         public static final String ABSOLUTE_END_TIME = "ABSOLUTE_END_TIME";
         public static final String REPORT_RAN_BY = "REPORT_RAN_BY";
         public static final String SERVICE_ID_TO_OPERATIONS_MAP = "SERVICE_ID_TO_OPERATIONS_MAP";
-        public static final String SERVICE_ID_TO_NAME_MAP = "SERVICE_ID_TO_NAME_MAP";        
-        public static final String MAPPING_KEYS = "MAPPING_KEYS";
-        public static final String MAPPING_VALUES = "MAPPING_VALUES";
-        public static final String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
-        public static final String USE_USER = "USE_USER";
-        public static final String AUTHENTICATED_USERS = "AUTHENTICATED_USERS";
+        public static final String SERVICE_ID_TO_NAME_MAP = "SERVICE_ID_TO_NAME_MAP";
+        public static final String KEYS_TO_LIST_FILTER_PAIRS = "KEYS_TO_LIST_FILTER_PAIRS";
         public static final String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
         public static final String IS_DETAIL = "IS_DETAIL";
         public static final String PRINT_CHART = "PRINT_CHART";
@@ -461,11 +457,75 @@ public interface ReportApi {
         public static final String [] ABSOLUTE_TIME_PARAMS = new String[]{ABSOLUTE_START_TIME, ABSOLUTE_END_TIME};
 
         public static final String [] COMMON_PARAMS = new String[]{SPECIFIC_TIME_ZONE, IS_RELATIVE, IS_ABSOLUTE,
-                REPORT_RAN_BY, SERVICE_ID_TO_NAME_MAP, SERVICE_ID_TO_OPERATIONS_MAP, MAPPING_KEYS, MAPPING_VALUES,
-                VALUE_EQUAL_OR_LIKE, USE_USER, AUTHENTICATED_USERS, IS_CONTEXT_MAPPING, IS_DETAIL, PRINT_CHART};
+                REPORT_RAN_BY, SERVICE_ID_TO_NAME_MAP, SERVICE_ID_TO_OPERATIONS_MAP, KEYS_TO_LIST_FILTER_PAIRS,
+                IS_CONTEXT_MAPPING, IS_DETAIL, PRINT_CHART};
 
         public static final String [] INTERVAL_PARAMS = new String []{INTERVAL_TIME_UNIT, INTERVAL_NUM_OF_TIME_UNITS};
     }
 
-    
+
+    /**
+ * Records a filter value for a mapping key. Each instance represents one value and whether the value in the
+     * database should be compared using = or like.
+     */
+    public static class FilterPair {
+        /**
+         * Record the unmodified value as entered by the user, so it can be displayed to them in reports
+         * Also, for transmitting this object over the wire, only the display string needs to be sent
+         */
+        private final String displayValue;
+        private final String filterValue;
+        private final boolean useAnd;
+        private final boolean isEmpty;
+
+
+        public FilterPair(final String filterValue) {
+            displayValue = filterValue;
+            if(filterValue.indexOf("*") != -1){
+                this.filterValue = filterValue.replaceAll("\\*", "%");
+                this.useAnd = false;
+            }else{
+                this.filterValue = filterValue;
+                this.useAnd = true;
+            }
+            isEmpty = false;
+        }
+
+        /**
+         * Has a very specifi use in Utilities.createDistinctKeyToFilterMap, where the filter pair holds a value,
+         * found at runtime from the database, and we don't want to modify the string found in case it contains
+         * the wild card character
+         * @param filterValue
+         * @param doNotCheckForWildCard not actually used
+         */
+        public FilterPair(final String filterValue, boolean doNotCheckForWildCard) {
+            displayValue = filterValue;
+            this.filterValue = filterValue;
+            this.useAnd = true;
+            isEmpty = false;
+        }
+
+        public FilterPair() {
+            isEmpty = true;
+            displayValue = "";
+            filterValue = "";
+            useAnd = true;
+        }
+
+        public String getDisplayValue() {
+            return displayValue;
+        }
+
+        public String getFilterValue() {
+            return filterValue;
+        }
+
+        public boolean isUseAnd() {
+            return useAnd;
+        }
+
+        public boolean isEmpty() {
+            return isEmpty;
+        }
+    }
 }
