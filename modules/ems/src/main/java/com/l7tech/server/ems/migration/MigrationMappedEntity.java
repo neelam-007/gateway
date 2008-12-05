@@ -30,12 +30,12 @@ public class MigrationMappedEntity {
         this.entityType = entityType;
     }
 
-    @Column(name="entity_provider_id", length=512)
-    public String getEntityProviderId() {
+    @Column(name="entity_provider_id")
+    public Long getEntityProviderId() {
         return entityProviderId;
     }
 
-    public void setEntityProviderId(String entityProviderId) {
+    public void setEntityProviderId(Long entityProviderId) {
         this.entityProviderId = entityProviderId;
     }
 
@@ -87,7 +87,7 @@ public class MigrationMappedEntity {
     //- PRIVATE
 
     private EntityType entityType;
-    private String entityProviderId; // TODO get rid of this hack
+    private Long entityProviderId; // TODO get rid of this hack
     private String entityId;
     private String entityValue;
     private Integer entityVersion;

@@ -24,6 +24,15 @@ public class MigrationMappingRecord extends PersistentEntityImp {
     public MigrationMappingRecord() {
     }
 
+    @Column(name="created_time", updatable=false, nullable=false)
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
     @ManyToOne(optional=false)
     @JoinColumn(name="source_cluster_oid", nullable=false)
     public SsgCluster getSourceCluster() {
@@ -40,7 +49,7 @@ public class MigrationMappingRecord extends PersistentEntityImp {
         @AttributeOverride(name="entityProviderId",  column=@Column(name="source_entity_provider_id", length=512)),
         @AttributeOverride(name="entityId", column=@Column(name="source_entity_id", length=512)),
         @AttributeOverride(name="entityValue", column=@Column(name="source_entity_value", length=1024)),
-        @AttributeOverride(name="entityVersion", column=@Column(name="source_entity_version", nullable=false)),
+        @AttributeOverride(name="entityVersion", column=@Column(name="source_entity_version")),
         @AttributeOverride(name="entityName", column=@Column(name="source_entity_name", length=256)),
         @AttributeOverride(name="entityDescription", column=@Column(name="source_entity_description", length=1024))
     })
@@ -68,7 +77,7 @@ public class MigrationMappingRecord extends PersistentEntityImp {
         @AttributeOverride(name="entityProviderId",  column=@Column(name="target_entity_provider_id", length=512)),
         @AttributeOverride(name="entityId", column=@Column(name="target_entity_id", length=512)),
         @AttributeOverride(name="entityValue", column=@Column(name="target_entity_value", length=1024)),
-        @AttributeOverride(name="entityVersion", column=@Column(name="target_entity_version", nullable=false)),
+        @AttributeOverride(name="entityVersion", column=@Column(name="target_entity_version")),
         @AttributeOverride(name="entityName", column=@Column(name="target_entity_name", length=256)),
         @AttributeOverride(name="entityDescription", column=@Column(name="target_entity_description", length=1024))
     })
@@ -82,6 +91,7 @@ public class MigrationMappingRecord extends PersistentEntityImp {
 
     //- PRIVATE
 
+    private long timestamp;
     private SsgCluster sourceCluster;
     private MigrationMappedEntity source;
     private SsgCluster targetCluster;

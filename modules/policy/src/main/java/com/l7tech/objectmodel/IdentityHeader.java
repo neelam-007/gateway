@@ -16,7 +16,7 @@ public class IdentityHeader extends EntityHeader {
     private String commonName = "";
 
     @Deprecated // use for serialization only
-    protected IdentityHeader() {}
+    public IdentityHeader() {}
 
     public IdentityHeader(long providerOid, long identityOid, EntityType type, String loginName, String description, String commonName, int version) {
         this(providerOid, Long.toString(identityOid), type, loginName, description, commonName, version);
