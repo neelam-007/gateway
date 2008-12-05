@@ -37,12 +37,12 @@ This step lets you configure the ESM server.</prompt>
     <!--
       Options for Administrative user account configuration
     -->
-    <option id="admin-user" group="admin" type="USERNAME" order="100" updatable="false" name="Administrative Username">
+    <option id="admin-user" group="admin" type="USERNAME" order="100" updatable="false" name="Administrative Username" minlength="3" maxlength="128">
         <configName>admin.user</configName>
         <description>Administrative Username</description>
         <prompt>Enter the administrative user.</prompt>
     </option>
-    <option id="admin-pass" group="admin" type="PASSWORD" order="101" updatable="false" confirmed="true" name="Administrative Password">
+    <option id="admin-pass" group="admin" type="PASSWORD" order="101" updatable="false" confirmed="true" name="Administrative Password" minlength="6" maxlength="32">
         <configName>admin.pass</configName>
         <description>Administrative Password</description>
         <prompt>Enter the administrative password.</prompt>
@@ -58,7 +58,7 @@ This step lets you configure the ESM server.</prompt>
         <description>HTTPS Listener IP Address</description>
         <prompt>Enter the IP address for the HTTPS listener.</prompt>
     </option>
-    <option id="server-listener-port" group="server" type="PORT" order="201" name="Server Port">
+    <option id="server-listener-port" group="server" type="PORT" order="201" name="Server Port" min="1024">
         <configName>server.listenport</configName>
         <configValue>8182</configValue>
         <description>HTTPS Listener Port</description>

@@ -24,7 +24,11 @@ public class Option implements Comparable {
     private String regex; // property validation if not default for type
     private Boolean updatable = true; // is this property editable
     private Boolean confirmed = false; // does this property require confirmation
-    
+    private Integer minlength;
+    private Integer maxlength;
+    private Integer min;
+    private Integer max;
+
     @XmlElement
     public String getRegex() {
         return regex;
@@ -142,8 +146,44 @@ public class Option implements Comparable {
     public void setConfirmed(Boolean confirmed) {
         if ( confirmed == null ) throw new NullPointerException(); 
         this.confirmed = confirmed;
-    }        
-    
+    }
+
+    @XmlAttribute
+    public Integer getMinlength() {
+        return minlength;
+    }
+
+    public void setMinlength(Integer minlength) {
+        this.minlength = minlength;
+    }
+
+    @XmlAttribute
+    public Integer getMaxlength() {
+        return maxlength;
+    }
+
+    public void setMaxlength(Integer maxlength) {
+        this.maxlength = maxlength;
+    }
+
+    @XmlAttribute
+    public Integer getMin() {
+        return min;
+    }
+
+    public void setMin(Integer min) {
+        this.min = min;
+    }
+
+    @XmlAttribute
+    public Integer getMax() {
+        return max;
+    }
+
+    public void setMax(Integer max) {
+        this.max = max;
+    }
+
     @Override
     public int compareTo(Object o) {
         int value = Integer.valueOf(order).compareTo( ((Option) o).order );

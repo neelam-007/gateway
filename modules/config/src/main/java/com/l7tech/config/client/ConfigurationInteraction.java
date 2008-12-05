@@ -111,7 +111,7 @@ public abstract class ConfigurationInteraction extends Interaction {
 
             boolean set = false;
             Matcher matcher = pattern.matcher(value);
-            if ( matcher.matches() && (!option.isConfirmed() || doConfirmOption( option, value ))) {
+            if ( matcher.matches() && isValid(value, option) && (!option.isConfirmed() || doConfirmOption( option, value ))) {
                 read = true;
                 ConfigurationBean<String> bean = new ConfigurationBean<String>();
                 bean.setId( option.getId() );
@@ -131,7 +131,32 @@ public abstract class ConfigurationInteraction extends Interaction {
             } 
         }
     }  
-    
+
+    protected boolean isValid( final String value, final Option option ) {
+        boolean valid = true;
+
+        if ( option.getMinlength() != null && (value==null || value.length() < option.getMinlength())  ) {
+            valid = false;
+        } else if ( option.getMaxlength() != null && (value!=null && value.length() > option.getMaxlength()) ){
+            valid = false;
+        }
+
+        if ( ( option.getMin() != null || option.getMax() != null ) && value != null ) {
+            try {
+                Long numberValue = Long.parseLong( value.trim() );
+                if ( option.getMin() != null && numberValue < option.getMin() ) {
+                    valid = false;
+                } else if ( option.getMax() != null && numberValue > option.getMax() ) {
+                    valid = false;
+                }
+            } catch ( NumberFormatException nfe ) {
+                //
+            }
+        }
+
+        return valid;
+    }
+
     protected boolean hasBeanCurrentValue( Option option ) {
         boolean hasValue = false;
         
