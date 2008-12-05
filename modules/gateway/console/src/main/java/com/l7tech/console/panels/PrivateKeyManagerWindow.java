@@ -685,12 +685,12 @@ public class PrivateKeyManagerWindow extends JDialog {
 
     public boolean isDefaultSslCert(SsgKeyEntry entry) {
         String alias = entry.getAlias();
-        return alias != null && alias.equals(defaultAliasTracker.getDefaultSslAlias());
+        return alias != null && alias.equalsIgnoreCase(defaultAliasTracker.getDefaultSslAlias());
     }
 
     public boolean isDefaultCaCert(SsgKeyEntry entry) {
         String alias = entry.getAlias();
-        return alias != null && alias.equals(defaultAliasTracker.getDefaultCaAlias());
+        return alias != null && alias.equalsIgnoreCase(defaultAliasTracker.getDefaultCaAlias());
     }
 
     /** Represents a row in the Manage Private Keys table. */
