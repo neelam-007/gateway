@@ -2,6 +2,7 @@ package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Session;
@@ -13,6 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
 
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Arrays;
 
 /**
  * The implementation for SsgNodeManager that manages the ssg_node table.
@@ -23,6 +28,8 @@ import java.sql.SQLException;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SsgNodeManagerImpl extends HibernateEntityManager<SsgNode, EntityHeader> implements SsgNodeManager {
+
+    //- PUBLIC
 
     @Override
     public Class<SsgNode> getImpClass() {
@@ -40,7 +47,7 @@ public class SsgNodeManagerImpl extends HibernateEntityManager<SsgNode, EntityHe
     }
 
     @Override
-    public SsgNode findByGuid(final String guid) throws FindException {
+    public SsgNode findByGuid( final String guid ) throws FindException {
         try {
             return (SsgNode)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 @Override
@@ -58,4 +65,20 @@ public class SsgNodeManagerImpl extends HibernateEntityManager<SsgNode, EntityHe
             throw new FindException("Cannot find SSG Node by GUID: " + guid, e);
         }
     }
+
+    //- PROTECTED
+    
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
+    }
+
+    @Override
+    protected Collection<Map<String, Object>> getUniqueConstraints( final SsgNode ssgNode ) {
+        Map<String, Object> attrs = new HashMap<String, Object>();
+        attrs.put("SsgCluster", ssgNode.getSsgCluster());
+        attrs.put("name", ssgNode.getName());
+        return Arrays.asList(attrs);
+    }
+
 }
