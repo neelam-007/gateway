@@ -3,6 +3,7 @@ package com.l7tech.server.migration;
 import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
+import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.server.management.migration.MigrationManager;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.objectmodel.EntityHeader;
@@ -70,11 +71,11 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public void importBundle(MigrationBundle bundle, EntityHeader targetFolder, boolean flattenFolders, boolean overwriteExisting) throws MigrationException {
+    public Collection<MigratedItem> importBundle(MigrationBundle bundle, EntityHeader targetFolder, boolean flattenFolders, boolean overwriteExisting) throws MigrationException {
         boolean oldSystem = auditContext.isSystem();
         try {
             auditContext.setSystem(true);
-            manager.importBundle(bundle, targetFolder, flattenFolders, overwriteExisting);
+            return manager.importBundle(bundle, targetFolder, flattenFolders, overwriteExisting);
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Unexpected error in Migration API.", e );
             if (e instanceof MigrationException) 

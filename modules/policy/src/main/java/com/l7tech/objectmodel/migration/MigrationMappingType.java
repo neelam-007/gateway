@@ -65,6 +65,7 @@ public class MigrationMappingType {
         MigrationMappingType that = (MigrationMappingType) o;
 
         if (nameMapping != that.nameMapping) return false;
+        //noinspection RedundantIfStatement
         if (valueMapping != that.valueMapping) return false;
 
         return true;

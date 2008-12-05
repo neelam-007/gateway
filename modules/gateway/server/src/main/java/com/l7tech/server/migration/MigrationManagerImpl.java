@@ -3,6 +3,7 @@ package com.l7tech.server.migration;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.ExportedItem;
+import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.server.management.migration.MigrationManager;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -101,7 +102,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
 
     @Override
-    public void importBundle(MigrationBundle bundle, EntityHeader targetFolder, boolean flattenFolders, boolean overwriteExisting) throws MigrationException {
+    public Collection<MigratedItem> importBundle(MigrationBundle bundle, EntityHeader targetFolder, boolean flattenFolders, boolean overwriteExisting) throws MigrationException {
         logger.log(Level.FINEST, "Importing bundle: {0}", bundle);
 
         processFolders(bundle, targetFolder, flattenFolders);
@@ -119,10 +120,17 @@ public class MigrationManagerImpl implements MigrationManager {
         // todo: throw new MigrationException("Errors while applying mappings for the entities to import.", errors);
 
         try {
+            Collection<MigratedItem> result = new HashSet<MigratedItem>();
             Set<EntityHeader> uploaded = new HashSet<EntityHeader>();
+            // add to result
             for(EntityHeader header : bundle.getMetadata().getHeaders()) {
                 uploadEntityRecursive(header, entities, bundle.getMetadata(), uploaded);
+                EntityOperation eo = entities.get(header);
+                if (eo.operation != SKIP) {
+                    result.add(new MigratedItem(EntityHeaderUtils.fromEntity(eo.entity), eo.operation.toString()));
+                }
             }
+            return result;
         } catch (ObjectModelException e) {
             throw new MigrationException("Import failed.", e);
         }

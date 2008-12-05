@@ -4,7 +4,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.MigrationMapping;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.MigrationException;
-import com.l7tech.objectmodel.migration.MigrationMappingType;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 import javax.xml.bind.annotation.*;
@@ -74,6 +73,7 @@ public class MigrationMetadata {
         }
         this.headersMap = headersMap;
         this.headers = null;
+        logger.log(Level.FINEST, "Headers cache initialized.");
     }
 
     private Map<EntityHeaderRef, EntityHeader> getHeadersMap() {
@@ -121,6 +121,7 @@ public class MigrationMetadata {
             addMappingsForSource(mapping.getSource(), Collections.singleton(mapping));
             addMappingsForTarget(mapping.getTarget(), Collections.singleton(mapping));
         }
+        logger.log(Level.FINEST, "Mappings cache initialized.");
     }
 
     @XmlElementWrapper(name="mappings")
@@ -152,7 +153,7 @@ public class MigrationMetadata {
     }
 
     public void addMapping(MigrationMapping mapping) throws MigrationException {
-
+        logger.log(Level.FINEST, "Adding mapping: {0}", mapping);
         if (mapping == null) return;
 
 /*
@@ -174,6 +175,7 @@ public class MigrationMetadata {
 
     public void mapName(EntityHeaderRef dependency, EntityHeader newDependency) throws MigrationException {
 
+        logger.log(Level.FINE, "Name-mapping: {0} -> {1}.", new Object[]{dependency, newDependency});
         if (dependency == null || newDependency == null || dependency.equals(EntityHeaderRef.fromOther(newDependency)))
             return;
 
@@ -248,11 +250,11 @@ public class MigrationMetadata {
         return mappingsByTarget.get(EntityHeaderRef.fromOther(target));
     }
 
-    public void addMappingsForSource(EntityHeaderRef source, Set<MigrationMapping> mappings) throws MigrationException {
+    private void addMappingsForSource(EntityHeaderRef source, Set<MigrationMapping> mappings) throws MigrationException {
         getMappingsForSource(source).addAll(mappings);
     }
 
-    public void addMappingsForTarget(EntityHeaderRef target, Set<MigrationMapping> mappings) throws MigrationException {
+    private void addMappingsForTarget(EntityHeaderRef target, Set<MigrationMapping> mappings) throws MigrationException {
         getMappingsForTarget(target).addAll(mappings);
     }
 

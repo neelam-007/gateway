@@ -123,6 +123,7 @@ public class MigrationMapping {
         if (propName != null ? !propName.equals(that.propName) : that.propName != null) return false;
         if (source != null ? !source.equals(that.source) : that.source != null) return false;
         if (target != null ? !target.equals(that.target) : that.target != null) return false;
+        //noinspection RedundantIfStatement
         if (type != null ? !type.equals(that.type) : that.type != null) return false;
 
         return true;

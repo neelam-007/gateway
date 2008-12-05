@@ -3,10 +3,10 @@ package com.l7tech.server.management.api.node;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
+import com.l7tech.server.management.migration.bundle.MigratedItem;
 
 import javax.jws.WebService;
 import javax.jws.WebMethod;
@@ -39,7 +39,7 @@ public interface MigrationApi {
                                                             @WebParam(name="Filter") String filter ) throws MigrationException;
 
     @WebMethod(operationName="ImportBundle")
-    void importBundle( @WebParam(name="Bundle") MigrationBundle bundle,
+    Collection<MigratedItem> importBundle( @WebParam(name="Bundle") MigrationBundle bundle,
                        @WebParam(name="TargetFolder") EntityHeader targetFolder,
                        @WebParam(name="FlattenFolders") boolean flattenFolders,
                        @WebParam(name="OverwriteExisting") boolean overwriteExisting ) throws MigrationException;
