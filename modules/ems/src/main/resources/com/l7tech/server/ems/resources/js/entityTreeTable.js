@@ -846,6 +846,8 @@ if (!l7.EntityTreeTable) {
              * @public
              */
             this.collapseAll = function() {
+                var root;
+                var rootCount = 0;
                 for (var i = 0; i < this._entities.length; ++i) {
                     var entity = this._entities[i];
                     if (entity._children.length > 0) {
@@ -854,6 +856,18 @@ if (!l7.EntityTreeTable) {
                     }
                     if (entity._treeLevel > 0) {
                         entity._tr.style.display = 'none';
+                    } else {
+                        rootCount = rootCount + 1;
+                        root = entity;
+                    }
+                }
+
+                if ( rootCount == 1 ) {
+                    toggler = root._toggler;
+                    toggler.src = l7.Util.getParent(toggler.src) + TOGGLER_EXPANDED_IMG_NAME;
+                    for (i = 0; i < root._children.length; ++i) {
+                        entity = root._children[i];
+                        entity._tr.style.display = '';
                     }
                 }
             }
