@@ -421,7 +421,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      * @param set a set of Strings such as "GET", "POST", "PUT".  Will be converted to all upper-case.
      */
     public void setHttpMethods(Set<HttpMethod> set) {
-        httpMethods = EnumSet.copyOf(set);
+        httpMethods = set;
     }
 
     /**
