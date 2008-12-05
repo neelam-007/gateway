@@ -2,6 +2,8 @@ package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.TypedPropertyColumn;
+import com.l7tech.server.ems.migration.MigrationRecordManager;
+import com.l7tech.server.ems.migration.MigrationMappingRecordManager;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.JSONConstants;
@@ -9,14 +11,18 @@ import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.management.api.node.MigrationApi;
+import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
+import com.l7tech.server.management.migration.bundle.ExportedItem;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeaderSet;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.migration.MigrationException;
+import com.l7tech.objectmodel.migration.MigrationMapping;
 import com.l7tech.util.Pair;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
@@ -38,6 +44,7 @@ import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.mortbay.util.ajax.JSON;
 
+import javax.xml.ws.soap.SOAPFaultException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Arrays;
@@ -69,11 +76,13 @@ public class PolicyMigration extends EmsPage  {
         final DependencyKey[] lastSourceKey = new DependencyKey[1];
         final String[] lastTargetClusterId = new String[1];
         final HiddenField hiddenSelectionForm = new HiddenField("selectionJson", new Model(""));
-        final HiddenField hiddenDestClusterId = new HiddenField("destinationClusterId", new Model(""));        
-        final HiddenField hiddenDestFolderId = new HiddenField("destinationFolderId", new Model(""));        
+        final HiddenField hiddenDestClusterId = new HiddenField("destinationClusterId", new Model(""));
+        final HiddenField hiddenDestFolderId = new HiddenField("destinationFolderId", new Model(""));
+        final HiddenField hiddenEnableNewServices = new HiddenField("enableNewServices", new Model(""));
         selectionJsonForm.add( hiddenSelectionForm );
         selectionJsonForm.add( hiddenDestClusterId );
         selectionJsonForm.add( hiddenDestFolderId );
+        selectionJsonForm.add( hiddenEnableNewServices );
         AjaxFormSubmitBehavior submitBehaviour = new AjaxFormSubmitBehavior(selectionJsonForm, "onclick"){
             @Override
             protected void onSubmit(final AjaxRequestTarget target) {
@@ -86,7 +95,8 @@ public class PolicyMigration extends EmsPage  {
                     final DependencyItemsRequest dir = new DependencyItemsRequest();
                     dir.fromJSON(jsonMap);
 
-                    Collection deps = retrieveDependencies(dir);
+                    final Collection<DependencyItem> deps = retrieveDependencies(dir);
+                    loadMappings( mappingModel, dir.clusterId, lastTargetClusterId[0], deps );
                     YuiDataTable ydt = new YuiDataTable(
                             "dependenciesTable",
                             Arrays.asList(
@@ -109,13 +119,25 @@ public class PolicyMigration extends EmsPage  {
                         protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String value ) {
                             if ( lastTargetClusterId[0] != null && !lastTargetClusterId[0].isEmpty() && value != null && !value.isEmpty() ) {
                                 String[] typeIdPair = value.split(":", 2);
-                                logger.info("Selected dependency for mapping id '"+typeIdPair[1]+"', type '"+typeIdPair[0]+"'.");
+                                logger.fine("Selected dependency for mapping id '"+typeIdPair[1]+"', type '"+typeIdPair[0]+"'.");
 
-                                DependencyKey sourceKey = new DependencyKey( dir.clusterId, EntityType.valueOf(typeIdPair[0]), typeIdPair[1] );
-                                lastSourceKey[0] = sourceKey;
+                                DependencyItem selectedItem = null;
+                                for ( DependencyItem item : deps ) {
+                                    if ( item.type.equals(typeIdPair[0]) && item.id.equals(typeIdPair[1]) ) {
+                                        selectedItem = item;
+                                        break;
+                                    }
+                                }
 
-                                List optionList = retrieveDependencyOptions( lastTargetClusterId[0], sourceKey, null );
-                                addDependencyOptions( dependenciesOptionsContainer, sourceKey, lastTargetClusterId[0], optionList, mappingModel );
+                                if ( selectedItem != null ) {
+                                    DependencyKey sourceKey = new DependencyKey( dir.clusterId, selectedItem.asEntityHeader() );
+                                    lastSourceKey[0] = sourceKey;
+
+                                    List optionList = retrieveDependencyOptions( lastTargetClusterId[0], sourceKey, null );
+                                    addDependencyOptions( dependenciesOptionsContainer, sourceKey, lastTargetClusterId[0], optionList, mappingModel );
+                                } else {
+                                    addDependencyOptions( dependenciesOptionsContainer, null, null, Collections.emptyList(), mappingModel );
+                                }
 
                                 ajaxRequestTarget.addComponent(dependenciesOptionsContainer);
                             }
@@ -143,6 +165,8 @@ public class PolicyMigration extends EmsPage  {
             protected void onSubmit(final AjaxRequestTarget target) {
                 final String value = hiddenSelectionForm.getModelObjectAsString();
                 final String targetClusterId = hiddenDestClusterId.getModelObjectAsString();
+                final String targetFolderId = hiddenDestFolderId.getModelObjectAsString();
+                final String enableNewServices = hiddenEnableNewServices.getModelObjectAsString();
                 try {
                     String jsonData = value.replaceAll("&quot;", "\"");
 
@@ -150,7 +174,9 @@ public class PolicyMigration extends EmsPage  {
                     final DependencyItemsRequest dir = new DependencyItemsRequest();
                     dir.fromJSON(jsonMap);
 
-                    performMigration( dir.clusterId, targetClusterId, dir, mappingModel );
+                    boolean enableServices = Boolean.valueOf(enableNewServices);
+
+                    performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, dir, mappingModel );
                 } catch ( Exception e ) {
                     logger.log( Level.WARNING, "Error processing selection.", e);
                 }
@@ -186,7 +212,7 @@ public class PolicyMigration extends EmsPage  {
         dependenciesOptionsContainer.add(new YuiAjaxButton("dependencySearchButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                logger.info("Searching for dependencies with filter '"+searchModel.getSearchValue()+"'.");
+                logger.fine("Searching for dependencies with filter '"+searchModel.getSearchValue()+"'.");
                 List optionList = retrieveDependencyOptions( lastTargetClusterId[0], lastSourceKey[0], searchModel.getSearchValue() );
                 addDependencyOptions( dependenciesOptionsContainer, lastSourceKey[0], lastTargetClusterId[0], optionList, mappingModel );
                 ajaxRequestTarget.addComponent(dependenciesOptionsContainer);
@@ -204,6 +230,12 @@ public class PolicyMigration extends EmsPage  {
 
     @SpringBean
     private SsgClusterManager ssgClusterManager;
+
+    @SpringBean
+    private MigrationRecordManager migrationRecordManager;
+
+    @SpringBean
+    private MigrationMappingRecordManager migrationMappingRecordManager;
 
     @SpringBean
     private GatewayContextFactory gatewayContextFactory;
@@ -227,7 +259,7 @@ public class PolicyMigration extends EmsPage  {
                 Component radioComponent = new WebComponent("uid").add( new AjaxEventBehavior("onchange"){
                     @Override
                     protected void onEvent(final AjaxRequestTarget target) {
-                        logger.info("Selection callback for : " + dependencyItem);
+                        logger.fine("Selection callback for : " + dependencyItem);
                         mappingModel.dependencyMap.put( mappingKey, dependencyItem );
                     }
                 } );
@@ -281,25 +313,52 @@ public class PolicyMigration extends EmsPage  {
                                 deps.add( new DependencyItem( header, "") );
                             }
                         } else {
-                            logger.info("No entities found.");
+                            logger.fine("No entities found when searching for candidates of ID '"+sourceKey.id+"', type '"+sourceKey.type+"'.");
                         }
                     } else {
-                        logger.info("No candidates found.");
+                        logger.fine("No candidates found when searching for candidates of ID '"+sourceKey.id+"', type '"+sourceKey.type+"'.");
                     }
                 }
             }
         } catch ( GatewayException ge ) {
             logger.log( Level.WARNING, "Error while gettings dependency options.", ge );
         } catch ( FindException fe ) {
-            logger.log( Level.INFO, "Error while gettings dependency options.", fe );
+            logger.log( Level.WARNING, "Error while gettings dependency options.", fe );
         } catch ( MigrationException me ) {
-            logger.log( Level.INFO, "Error while gettings dependency options.", me );
+            logger.log( Level.WARNING, "Error while gettings dependency options.", me );
         }
 
         return deps;
     }
 
-    private void performMigration( final String sourceClusterId, final String targetClusterId, final DependencyItemsRequest requestedItems, final EntityMappingModel mappingModel ) {
+    private void loadMappings( final EntityMappingModel mappingModel,
+                               final String sourceClusterId,
+                               final String targetClusterId,
+                               final Collection<DependencyItem> dependencyItems ) {
+        if ( !dependencyItems.isEmpty() ) {
+            try {
+                for ( DependencyItem item : dependencyItems ) {
+                    DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
+                    Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
+                    if ( !mappingModel.dependencyMap.containsKey(mapKey) ) {
+                        EntityHeader targetHeader = migrationMappingRecordManager.findEntityHeaderForMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
+                        if ( targetHeader != null ) {
+                            mappingModel.dependencyMap.put( mapKey, new DependencyItem( targetHeader, "" ) );
+                        }
+                    }
+                }
+            } catch ( FindException fe ) {
+                logger.log( Level.WARNING, "Error loading dependency mappings.", fe );
+            }
+        }
+    }
+
+    private void performMigration( final String sourceClusterId,
+                                   final String targetClusterId,
+                                   final String targetFolderId,
+                                   final boolean enableNewServices,
+                                   final DependencyItemsRequest requestedItems,
+                                   final EntityMappingModel mappingModel ) {
         try {
             SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterId);
             SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
@@ -310,6 +369,7 @@ public class PolicyMigration extends EmsPage  {
 
                     GatewayContext targetContext = gatewayContextFactory.getGatewayContext( getUser(), targetCluster.getSslHostName(), targetCluster.getAdminPort() );
                     MigrationApi targetMigrationApi = targetContext.getMigrationApi();
+                    GatewayApi targetGatewayApi = targetContext.getApi();
 
                     MigrationBundle export = sourceMigrationApi.exportBundle( requestedItems.asEntityHeaders() );
                     MigrationMetadata metadata = export.getMetadata();
@@ -317,18 +377,152 @@ public class PolicyMigration extends EmsPage  {
                         if ( mapping.getKey().left.clusterId.equals(sourceClusterId) && mapping.getKey().right.equals(targetClusterId) ) {
                             EntityHeaderRef sourceRef = new EntityHeaderRef( mapping.getKey().left.type, mapping.getKey().left.id );
                             metadata.mapName( sourceRef, mapping.getValue().asEntityHeader() );
+
+                            migrationMappingRecordManager.persistMapping(
+                                    sourceCluster.getGuid(),
+                                    mapping.getKey().left.asEntityHeader(),
+                                    targetCluster.getGuid(),
+                                    mapping.getValue().asEntityHeader() );
                         }
                     }
-                    targetMigrationApi.importBundle( export, new EntityHeader("-5002", EntityType.FOLDER, "Root Node", null), false, false );
+
+                    Collection<GatewayApi.EntityInfo> folders = targetGatewayApi.getEntityInfo( Collections.singleton(EntityType.FOLDER) );
+                    EntityHeader targetFolderHeader = null;
+                    for ( GatewayApi.EntityInfo info : folders ) {
+                        if ( targetFolderId.equals( info.getId() ) ) {
+                            targetFolderHeader = new EntityHeader(info.getId(), EntityType.FOLDER, info.getName(), null, info.getVersion());
+                        }
+                    }
+
+                    targetMigrationApi.importBundle( export, targetFolderHeader, false, false );
+
+                    migrationRecordManager.create( null, getUser(), sourceCluster, targetCluster, summarize(export, summarize(folders, targetFolderId), enableNewServices), new byte[]{} ); // TODO save migrated bundle
                 }
             }
         } catch ( GatewayException ge ) {
             logger.log( Level.WARNING, "Error while performing migration.", ge );
         } catch ( FindException fe ) {
-            logger.log( Level.INFO, "Error while performing migration.", fe );
+            logger.log( Level.WARNING, "Error while performing migration.", fe );
+        } catch ( SaveException se ) {
+            logger.log( Level.WARNING, "Error while performing migration.", se );
         } catch ( MigrationException me ) {
-            logger.log( Level.INFO, "Error while performing migration.", me );
+            logger.log( Level.WARNING, "Error while performing migration.", me );
+        } catch (GatewayApi.GatewayException ge) {
+            logger.log( Level.WARNING, "Error while performing migration.", ge );
+        } catch (SOAPFaultException sfe) {
+            logger.log( Level.WARNING, "Error while performing migration.", sfe );
         }
+    }
+
+    private String summarize( final Collection<GatewayApi.EntityInfo> folders, final String targetFolderId ) throws FindException {
+        StringBuilder builder = new StringBuilder();
+
+        List<GatewayApi.EntityInfo> folderPath = new ArrayList<GatewayApi.EntityInfo>();
+        String targetId = targetFolderId;
+        while ( targetId != null ) {
+            GatewayApi.EntityInfo folder = null;
+            for ( GatewayApi.EntityInfo info : folders ) {
+                if ( targetId.equals( info.getId() ) ) {
+                    folder = info;
+                    break;
+                }
+            }
+
+            if ( folder == null ) {
+                throw new FindException("Could not find target folder.");               
+            }
+
+            targetId = folder.getParentId();
+            if ( targetId != null || !folder.getName().equals("Root Node") ) {
+                folderPath.add(0, folder);
+            }
+        }
+
+        for ( GatewayApi.EntityInfo folder : folderPath ) {
+            builder.append( "/ " );
+            builder.append( folder.getName() );
+            builder.append( " " );
+        }
+
+        return builder.toString().trim();
+    }
+
+    private String summarize( final MigrationBundle export, String targetFolderPath, final boolean enabled ) {
+        StringBuilder builder = new StringBuilder();
+
+        // overview
+        builder.append( "Migration Options\n" );
+        builder.append( "Imported to folder: " );
+        builder.append( targetFolderPath );
+        builder.append( "\n" );
+        builder.append( "Services enabled on import: " );
+        builder.append( enabled );
+        builder.append( "\n" );
+        builder.append( "Services migrated: " );
+        builder.append( count(export.getExportedItems(),EntityType.SERVICE) );
+        builder.append( "\n" );
+        builder.append( "Policies migrated: " );
+        builder.append( count(export.getExportedItems(),EntityType.POLICY) );
+        builder.append( "\n\n" );
+
+        // entity details
+        MigrationMetadata metadata = export.getMetadata();
+        builder.append( "Migrated Data\n" );
+        for ( ExportedItem item : export.getExportedItems() ) {
+            if ( !item.isMappedValue() && item.getHeaderRef().getType() != EntityType.FOLDER ) {
+                EntityHeaderRef ref = item.getHeaderRef();
+                EntityHeader header = metadata.getHeader( ref );
+                builder.append( header.getType() );
+                builder.append( ", " );
+                builder.append( header.getName() );
+                builder.append( "(#" );
+                builder.append( ref.getStrId() );
+                builder.append( ")" );
+                builder.append( "\n" );
+            }
+        }
+        builder.append( "\n" );
+
+        // entity mappings
+        StringBuilder mappingBuilder = new StringBuilder();
+        for ( MigrationMapping mapping : metadata.getMappings() ) {
+            if ( mapping.isMappedTarget() && !mapping.isUploadedByParent() ) {
+                EntityHeaderRef sourceRef = mapping.getSource();
+                EntityHeaderRef targetRef = mapping.getTarget();
+                EntityHeader sourceHeader = metadata.getHeader( sourceRef );
+                EntityHeader targetHeader = metadata.getHeader( targetRef );
+                mappingBuilder.append( sourceRef.getType() );
+                mappingBuilder.append( ", " );
+                mappingBuilder.append( sourceHeader.getName() );
+                mappingBuilder.append( " (#" );
+                mappingBuilder.append( sourceHeader.getStrId() );
+                mappingBuilder.append( ") mapped to " );
+                mappingBuilder.append( targetHeader.getName() );
+                mappingBuilder.append( " (#" );
+                mappingBuilder.append( targetHeader.getStrId() );
+                mappingBuilder.append( ")" );
+                mappingBuilder.append( "\n" );
+            }
+        }
+        String mappingText = mappingBuilder.toString();
+        if ( !mappingText.isEmpty() ) {
+            builder.append( "Mappings\n" );
+            builder.append( mappingText );
+        }
+
+        return builder.toString();
+    }
+
+    private int count( final Collection<ExportedItem> items, final EntityType type ) {
+        int count = 0;
+
+        for ( ExportedItem item : items ) {
+            if ( !item.isMappedValue() && item.getHeaderRef().getType() == type ) {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private String toImgIcon( final boolean required ) {
@@ -391,13 +585,14 @@ public class PolicyMigration extends EmsPage  {
         private final String clusterId;
         private final EntityType type;
         private final String id;
+        private final EntityHeader header;
 
         DependencyKey( final String clusterId,
-                       final EntityType type,
-                       final String id ) {
+                       final EntityHeader header ) {
             this.clusterId = clusterId;
-            this.type = type;
-            this.id = id;
+            this.type = header.getType();
+            this.id = header.getStrId();
+            this.header = header;
         }
 
         @Override
@@ -427,6 +622,10 @@ public class PolicyMigration extends EmsPage  {
             result = 31 * result + type.hashCode();
             result = 31 * result + id.hashCode();
             return result;
+        }
+
+        public EntityHeader asEntityHeader() {
+            return header;
         }
     }
 
