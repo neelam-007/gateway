@@ -241,7 +241,7 @@ public class YuiDataTable extends Panel {
                 StringBuilder scriptBuilder = new StringBuilder(1024);
 
                 scriptBuilder.append( "function dataTableSelectionCallback").append(tableId).append("( id ) {\n");
-                scriptBuilder.append( " wicketAjaxGet('").append(getCallbackUrl(true)).append("&selection=true&id=' + id, function() { }, function() { });\n");
+                scriptBuilder.append( " wicketAjaxGet('").append(getCallbackUrl(true)).append("&selection=true&id=' + escape(id), function() { }, function() { });\n");
                 scriptBuilder.append( "}\n" );
 
                 scriptBuilder.append( "function initDataTable" );
@@ -294,7 +294,14 @@ public class YuiDataTable extends Panel {
                                 WebApplication app = (WebApplication)getComponent().getApplication();
                                 AjaxRequestTarget target = app.newAjaxRequestTarget(getComponent().getPage());
                                 RequestCycle.get().setRequestTarget(target);
-                                onSelect( target, requestCycle.getRequest().getParameter("id") );        
+                                String id = requestCycle.getRequest().getParameter("id");
+
+                                // remove any HTML escaping
+                                id = id.replace("&amp;", "&");
+                                id = id.replace("&quot;", "\"");
+                                id = id.replace("&#039;", "'");
+
+                                onSelect( target, id );        
                             } else {
 
                                 int startIndex = Integer.parseInt(requestCycle.getRequest().getParameter("startIndex"));
