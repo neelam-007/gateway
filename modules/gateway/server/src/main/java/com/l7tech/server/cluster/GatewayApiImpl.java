@@ -8,7 +8,6 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.FolderHeader;
-import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.folder.FolderManager;
@@ -175,7 +174,7 @@ public class GatewayApiImpl implements GatewayApi {
                     Wsdl wsdl = service.parsedWsdl();
                     if ( wsdl != null ) {
                         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-                        ArrayList<String> operations = new ArrayList<String>();
+                        Set<String> operations = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
                         for (BindingOperation operation: wsdl.getBindingOperations()) {
                             operations.add(operation.getName());
                         }
