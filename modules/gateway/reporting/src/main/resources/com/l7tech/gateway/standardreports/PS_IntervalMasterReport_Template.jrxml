@@ -56,7 +56,7 @@
 	<parameter name="HOURLY_MAX_RETENTION_NUM_DAYS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
-    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
+	<parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
@@ -146,11 +146,21 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
 	</variable>
-    <variable name="POLICY_VIOLATIONS_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
-    </variable>
-    <variable name="ROUTING_FAILURES_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
-    </variable>
-    <variable name="FRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE" calculation="Lowest">
+	<variable name="POLICY_VIOLATIONS_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
+	</variable>
+	<variable name="ROUTING_FAILURES_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
+	</variable>
+	<variable name="AUTHORIZED_SUM" class="java.lang.Double" resetType="Group" resetGroup="SERVICE" calculation="Sum">
+	</variable>
+	<variable name="ATTEMPTED_SUM" class="java.lang.Double" resetType="Group" resetGroup="SERVICE" calculation="Sum">
+	</variable>
+	<variable name="FRONT_SUM_SUM" class="java.lang.Double" resetType="Group" resetGroup="SERVICE" calculation="Sum">
+	</variable>
+	<variable name="COMPLETED_SUM" class="java.lang.Double" resetType="Group" resetGroup="SERVICE" calculation="Sum">
+	</variable>
+	<variable name="BACK_SUM_SUM" class="java.lang.Double" resetType="Group" resetGroup="SERVICE" calculation="Sum">
+	</variable>
+	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE" calculation="Lowest">
 	</variable>
 	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE" calculation="Highest">
 	</variable>
@@ -166,11 +176,21 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="THROUGHPUT_SUM_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
 	</variable>
-    <variable name="POLICY_VIOLATIONS_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
-    </variable>
-    <variable name="ROUTING_FAILURES_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
-    </variable>
-    <variable name="FRTM_MIN_MAPPING" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Lowest">
+	<variable name="POLICY_VIOLATIONS_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
+	</variable>
+	<variable name="ROUTING_FAILURES_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
+	</variable>
+	<variable name="AUTHORIZED_SUM_MAPPING" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
+	</variable>
+	<variable name="ATTEMPTED_SUM_MAPPING" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
+	</variable>
+	<variable name="FRONT_SUM_MAPPING" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
+	</variable>
+	<variable name="COMPLETED_SUM_MAPPING" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
+	</variable>
+	<variable name="BACK_SUM_MAPPING" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
+	</variable>
+	<variable name="FRTM_MIN_MAPPING" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Lowest">
 	</variable>
 	<variable name="FRTMX_MAX_MAPPING" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Highest">
 	</variable>
@@ -186,11 +206,21 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="THROUGHPUT_SUM_REPORT" class="java.lang.Long" resetType="Report" calculation="Sum">
 	</variable>
-    <variable name="POLICY_VIOLATIONS_REPORT" class="java.lang.Long" resetType="Report" calculation="Sum">
-    </variable>
-    <variable name="ROUTING_FAILURES_REPORT" class="java.lang.Long" resetType="Report" calculation="Sum">
-    </variable>
-    <variable name="FRTM_MIN_REPORT" class="java.lang.Integer" resetType="Report" calculation="Lowest">
+	<variable name="POLICY_VIOLATIONS_REPORT" class="java.lang.Long" resetType="Report" calculation="Sum">
+	</variable>
+	<variable name="ROUTING_FAILURES_REPORT" class="java.lang.Long" resetType="Report" calculation="Sum">
+	</variable>
+	<variable name="AUTHORIZED_SUM_REPORT" class="java.lang.Double" resetType="Report" calculation="Sum">
+	</variable>
+	<variable name="ATTEMPTED_SUM_REPORT" class="java.lang.Double" resetType="Report" calculation="Sum">
+	</variable>
+	<variable name="FRONT_SUM_REPORT" class="java.lang.Double" resetType="Report" calculation="Sum">
+	</variable>
+	<variable name="COMPLETED_SUM_REPORT" class="java.lang.Double" resetType="Report" calculation="Sum">
+	</variable>
+	<variable name="BACK_SUM_REPORT" class="java.lang.Double" resetType="Report" calculation="Sum">
+	</variable>
+	<variable name="FRTM_MIN_REPORT" class="java.lang.Integer" resetType="Report" calculation="Lowest">
 	</variable>
 	<variable name="FRTMX_MAX_REPORT" class="java.lang.Integer" resetType="Report" calculation="Highest">
 	</variable>
@@ -206,11 +236,21 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	</variable>
 	<variable name="THROUGHPUT_SUM_OPERATION" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
 	</variable>
-    <variable name="POLICY_VIOLATIONS_OPERATION" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
-    </variable>
-    <variable name="ROUTING_FAILURES_OPERATION" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
-    </variable>
-    <variable name="FRTM_MIN_OPERATION" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Lowest">
+	<variable name="POLICY_VIOLATIONS_OPERATION" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
+	</variable>
+	<variable name="ROUTING_FAILURES_OPERATION" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
+	</variable>
+	<variable name="AUTHORIZED_SUM_OPERATION" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
+	</variable>
+	<variable name="ATTEMPTED_SUM_OPERATION" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
+	</variable>
+	<variable name="FRONT_SUM_OPERATION" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
+	</variable>
+	<variable name="COMPLETED_SUM_OPERATION" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
+	</variable>
+	<variable name="BACK_SUM_OPERATION" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
+	</variable>
+	<variable name="FRTM_MIN_OPERATION" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Lowest">
 	</variable>
 	<variable name="FRTMX_MAX_OPERATION" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Highest">
 	</variable>
@@ -225,7 +265,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	<variable name="AP_AVG_OPERATION" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
 	</variable>
 
-        <group  name="CONSTANT_CHART" >
+		<group  name="CONSTANT_CHART" >
 			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
 			<groupHeader>
 			<band height="228"  isSplitAllowed="true" >
@@ -562,7 +602,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{FRTA_AVG_MAPPING} == null)? new Double(0) : $V{FRTA_AVG_MAPPING}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_MAPPING} == 0)? new Double(0) : $V{FRONT_SUM_MAPPING}/$V{ATTEMPTED_SUM_MAPPING}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -604,7 +644,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{BRTA_AVG_MAPPING} == null)? new Double(0) : $V{BRTA_AVG_MAPPING}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM_MAPPING} == 0)? new Double(0) : $V{BACK_SUM_MAPPING}/$V{COMPLETED_SUM_MAPPING}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -618,7 +658,9 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{AP_AVG_MAPPING} == null)? new Double(0) : $V{AP_AVG_MAPPING}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_MAPPING}>0)?
+(1 - (($V{AUTHORIZED_SUM_MAPPING} - $V{COMPLETED_SUM_MAPPING})/$V{ATTEMPTED_SUM_MAPPING}))
+:0]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -950,7 +992,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{FRTA_AVG} == null)? new Double(0) : $V{FRTA_AVG}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM} == 0)? new Double(0) : new Double($V{FRONT_SUM_SUM}/$V{ATTEMPTED_SUM})]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -992,7 +1034,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{BRTA_AVG} == null)? new Double(0) : $V{BRTA_AVG}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM} == 0)? new Double(0) : new Double($V{BACK_SUM_SUM}/$V{COMPLETED_SUM})]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1006,7 +1048,9 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{AP_AVG} == null)? new Double(0) : $V{AP_AVG}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM}>0)?
+(1 - (($V{AUTHORIZED_SUM} - $V{COMPLETED_SUM})/$V{ATTEMPTED_SUM}))
+:0]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1155,7 +1199,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{FRTA_AVG_OPERATION} == null)? new Double(0) : $V{FRTA_AVG_OPERATION}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_OPERATION} == 0)? new Double(0) : $V{FRONT_SUM_OPERATION}/$V{ATTEMPTED_SUM_OPERATION}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1197,7 +1241,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{BRTA_AVG_OPERATION} == null)? new Double(0) : $V{BRTA_AVG_OPERATION}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM_OPERATION} == 0)? new Double(0) : $V{BACK_SUM_OPERATION}/$V{COMPLETED_SUM_OPERATION}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1211,7 +1255,9 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{AP_AVG_OPERATION} == null)? new Double(0) : $V{AP_AVG_OPERATION}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_OPERATION}>0)?
+(1 - (($V{AUTHORIZED_SUM_OPERATION} - $V{COMPLETED_SUM_OPERATION})/$V{ATTEMPTED_SUM_OPERATION}))
+:0]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1729,12 +1775,32 @@ Utilities.getMappingReportInfoDisplayString
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG_OPERATION" calculation="Average"/>
 					<returnValue subreportVariable="POLICY_VIOLATIONS_SUM" toVariable="POLICY_VIOLATIONS_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_SUM" calculation="Sum"/>
+                    <returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM" calculation="Sum"/>
+                    <returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM" calculation="Sum"/>
+					<returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_SUM" calculation="Sum"/>
+					<returnValue subreportVariable="COMPLETED_SUM" toVariable="COMPLETED_SUM" calculation="Sum"/>
+					<returnValue subreportVariable="BACK_SUM_SUM" toVariable="BACK_SUM_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="POLICY_VIOLATIONS_SUM" toVariable="POLICY_VIOLATIONS_MAPPING" calculation="Sum"/>
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_MAPPING" calculation="Sum"/>
+                    <returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM_MAPPING" calculation="Sum"/>
+                    <returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM_MAPPING" calculation="Sum"/>
+                    <returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_MAPPING" calculation="Sum"/>
+					<returnValue subreportVariable="COMPLETED_SUM" toVariable="COMPLETED_SUM_MAPPING" calculation="Sum"/>
+					<returnValue subreportVariable="BACK_SUM_SUM" toVariable="BACK_SUM_MAPPING" calculation="Sum"/>
 					<returnValue subreportVariable="POLICY_VIOLATIONS_SUM" toVariable="POLICY_VIOLATIONS_OPERATION" calculation="Sum"/>
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_OPERATION" calculation="Sum"/>
+                    <returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM_OPERATION" calculation="Sum"/>
+                    <returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM_OPERATION" calculation="Sum"/>
+                    <returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_OPERATION" calculation="Sum"/>
+					<returnValue subreportVariable="COMPLETED_SUM" toVariable="COMPLETED_SUM_OPERATION" calculation="Sum"/>
+					<returnValue subreportVariable="BACK_SUM_SUM" toVariable="BACK_SUM_OPERATION" calculation="Sum"/>
 					<returnValue subreportVariable="POLICY_VIOLATIONS_SUM" toVariable="POLICY_VIOLATIONS_REPORT" calculation="Sum"/>
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_REPORT" calculation="Sum"/>
+                    <returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM_REPORT" calculation="Sum"/>
+                    <returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM_REPORT" calculation="Sum"/>
+                    <returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_REPORT" calculation="Sum"/>
+					<returnValue subreportVariable="COMPLETED_SUM" toVariable="COMPLETED_SUM_REPORT" calculation="Sum"/>
+					<returnValue subreportVariable="BACK_SUM_SUM" toVariable="BACK_SUM_REPORT" calculation="Sum"/>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{SUB_INTERVAL_SUB_REPORT}]]></subreportExpression>
 				</subreport>
 				</frame>			</band>
@@ -1830,7 +1896,7 @@ Utilities.getMappingReportInfoDisplayString
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{FRTA_AVG_REPORT} == null)? new Double(0) : $V{FRTA_AVG_REPORT}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_REPORT} == 0)? new Double(0) : $V{FRONT_SUM_REPORT}/$V{ATTEMPTED_SUM_REPORT}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1872,7 +1938,7 @@ Utilities.getMappingReportInfoDisplayString
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{BRTA_AVG_REPORT} == null)? new Double(0) : $V{BRTA_AVG_REPORT}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM_REPORT} == 0)? new Double(0) : $V{BACK_SUM_REPORT}/$V{COMPLETED_SUM_REPORT}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1886,7 +1952,9 @@ Utilities.getMappingReportInfoDisplayString
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{AP_AVG_REPORT} == null)? new Double(0) : $V{AP_AVG_REPORT}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_REPORT}>0)?
+(1 - (($V{AUTHORIZED_SUM_REPORT} - $V{COMPLETED_SUM_REPORT})/$V{ATTEMPTED_SUM_REPORT}))
+:0]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement

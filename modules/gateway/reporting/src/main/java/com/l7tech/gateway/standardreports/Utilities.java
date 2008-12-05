@@ -101,6 +101,10 @@ public class Utilities {
     private final static String aggregateSelect = "SELECT p.objectid as SERVICE_ID, " +
             "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
             "SUM({0}.attempted) as ATTEMPTED, "+
+            "SUM({0}.completed) as COMPLETED, "+
+            "SUM({0}.authorized) as AUTHORIZED, "+
+            "SUM({0}.front_sum) as FRONT_SUM, "+
+            "SUM({0}.back_sum) as BACK_SUM, "+
             "SUM({0}.completed) as THROUGHPUT," +
             "SUM({0}.attempted)-SUM({0}.authorized) as POLICY_VIOLATIONS, "+
             "SUM({0}.authorized)-SUM({0}.completed) as ROUTING_FAILURES, "+
