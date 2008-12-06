@@ -14,6 +14,7 @@ import static com.l7tech.objectmodel.migration.MigrationException.*;
 import com.l7tech.server.*;
 import static com.l7tech.server.migration.MigrationManagerImpl.ImportOperation.*;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.gateway.common.service.PublishedService;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -102,7 +103,8 @@ public class MigrationManagerImpl implements MigrationManager {
 
 
     @Override
-    public Collection<MigratedItem> importBundle(MigrationBundle bundle, EntityHeader targetFolder, boolean flattenFolders, boolean overwriteExisting) throws MigrationException {
+    public Collection<MigratedItem> importBundle(MigrationBundle bundle, EntityHeader targetFolder,
+                                                 boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationException {
         logger.log(Level.FINEST, "Importing bundle: {0}", bundle);
 
         processFolders(bundle, targetFolder, flattenFolders);
@@ -112,7 +114,7 @@ public class MigrationManagerImpl implements MigrationManager {
             logger.log(Level.WARNING, "Migration bundle validation failed.", errors);
         // todo: enable strict validation : throw new MigrationException("Migration bundle validation failed.", errors);
 
-        Map<EntityHeader, EntityOperation> entities = loadEntities(bundle, overwriteExisting);
+        Map<EntityHeader, EntityOperation> entities = loadEntities(bundle, overwriteExisting, enableServices);
 
         applyMappings(bundle, entities);
         if (!errors.isEmpty())
@@ -124,7 +126,9 @@ public class MigrationManagerImpl implements MigrationManager {
             Set<EntityHeader> uploaded = new HashSet<EntityHeader>();
             // add to result
             for(EntityHeader header : bundle.getMetadata().getHeaders()) {
-                uploadEntityRecursive(header, entities, bundle.getMetadata(), uploaded);
+                if (! uploaded.contains(header)) {
+                    uploadEntityRecursive(header, entities, bundle.getMetadata(), uploaded, dryRun);
+                }
                 EntityOperation eo = entities.get(header);
                 if (eo.operation != SKIP) {
                     result.add(new MigratedItem(EntityHeaderUtils.fromEntity(eo.entity), eo.operation.toString()));
@@ -136,37 +140,45 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
-    private void uploadEntityRecursive(EntityHeader header, Map<EntityHeader, EntityOperation> entities, MigrationMetadata metadata, Set<EntityHeader> uploaded) throws MigrationException, UpdateException, SaveException {
+    private void uploadEntityRecursive(EntityHeader header, Map<EntityHeader, EntityOperation> entities, MigrationMetadata metadata, Set<EntityHeader> uploaded, boolean dryRun) throws MigrationException, UpdateException, SaveException {
 
-        if (header == null || uploaded.contains(header))
-            return; // circular dependency
+        if (uploaded.contains(header)) {
+            logger.log(Level.WARNING, "Circular dependency reached during entity upload for header {0}.", header);
+            return;
+        }
         uploaded.add(header);
 
         // upload dependencies first
         Set<MigrationMapping> dependencies = metadata.getMappingsForSource(header);
         if (dependencies != null) {
             for (MigrationMapping mapping : dependencies) {
-                uploadEntityRecursive(metadata.getHeader(mapping.getTarget()), entities, metadata, uploaded);
+                EntityHeader dep = metadata.getHeader(mapping.getTarget());
+                if (dep != null)
+                    uploadEntityRecursive(dep, entities, metadata, uploaded, dryRun);
+                else
+                    logger.log(Level.WARNING, "Header not found for dependency reference {0}", mapping.getTarget());
             }
         }
 
-        EntityOperation eo = entities.get(header);
-        switch (eo.operation)  {
-            case SKIP:
-                return;
+        if (! dryRun) {
+            EntityOperation eo = entities.get(header);
+            switch (eo.operation)  {
+                case SKIP:
+                    return;
 
-            case UPDATE:
-                entityCrud.update(eo.entity);
-                break;
+                case UPDATE:
+                    entityCrud.update(eo.entity);
+                    break;
 
-            case CREATE:
-                Long oid = (Long)entityCrud.save(eo.entity);
-                if (eo.entity instanceof PersistentEntity)
-                    ((PersistentEntity)eo.entity).setOid(oid);
-                break;
+                case CREATE:
+                    Long oid = (Long)entityCrud.save(eo.entity);
+                    if (eo.entity instanceof PersistentEntity)
+                        ((PersistentEntity)eo.entity).setOid(oid);
+                    break;
 
-            default:
-                throw new IllegalStateException("Import operation not known: " + eo.operation);
+                default:
+                    throw new IllegalStateException("Import operation not known: " + eo.operation);
+            }
         }
     }
 
@@ -210,7 +222,7 @@ public class MigrationManagerImpl implements MigrationManager {
                     EntityOperation targetEo = entities.get(metadata.getHeader(mapping.getTarget()));
                     if (targetEo == null || targetEo.entity == null) {
                         // todo throw
-                        logger.log(Level.WARNING, "Cannot apply mapping, target entity not found: {0} : {1}", new Object[]{eo.entity, mapping.getPropName()});
+                        logger.log(Level.WARNING, "Cannot apply mapping, target entity not found for dependency reference: {0}", mapping.getTarget());
                         continue;
                     }
                     resolver.applyMapping(eo.entity, mapping.getPropName(), targetEo.entity, metadata.getOriginalHeader(mapping.getOriginalTarget()));
@@ -229,12 +241,17 @@ public class MigrationManagerImpl implements MigrationManager {
         Entity entity;
         ImportOperation operation;
         private EntityOperation(Entity entity, ImportOperation operation) {
+            this(entity, operation, false);
+        }
+        private EntityOperation(Entity entity, ImportOperation operation, boolean createServiceDisabled) {
             this.entity = entity;
             this.operation = operation;
+            if (entity instanceof PublishedService && operation == CREATE && createServiceDisabled)
+                ((PublishedService)entity).setDisabled(true);
         }
     }
 
-    private Map<EntityHeader,EntityOperation> loadEntities(MigrationBundle bundle, boolean overwriteExisting) throws MigrationException {
+    private Map<EntityHeader,EntityOperation> loadEntities(MigrationBundle bundle, boolean overwriteExisting, boolean enableServices) throws MigrationException {
 
         Map<EntityHeader, EntityOperation> result = new HashMap<EntityHeader, EntityOperation>();
 
@@ -259,7 +276,7 @@ public class MigrationManagerImpl implements MigrationManager {
             } else if (existing == null) {
                 if (fromBundle instanceof PersistentEntity)
                     ((PersistentEntity)fromBundle).setOid(PersistentEntity.DEFAULT_OID);
-                result.put(header, new EntityOperation(fromBundle, CREATE));
+                result.put(header, new EntityOperation(fromBundle, CREATE, !enableServices));
             } else if (fromBundle == null) {
                 result.put(header, new EntityOperation(existing, SKIP));
             } else if (overwriteExisting) { // both not null

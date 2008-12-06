@@ -7,6 +7,9 @@ package com.l7tech.identity;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.migration.Migration;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Column;
@@ -92,6 +95,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
     }
 
     @Transient
+    @Migration(mapName = NONE, mapValue = NONE, targetType = EntityType.ID_PROVIDER_CONFIG)
     public long getProviderId() {
         return providerOid;
     }
@@ -119,10 +123,8 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
 
         PersistentGroup that = (PersistentGroup) o;
 
-        if (providerOid != that.providerOid) return false;
-        if (description != null ? !description.equals(that.description) : that.description != null) return false;
+        return providerOid == that.providerOid && !(description != null ? !description.equals(that.description) : that.description != null);
 
-        return true;
     }
 
     public int hashCode() {

@@ -42,7 +42,10 @@ public interface MigrationApi {
     Collection<MigratedItem> importBundle( @WebParam(name="Bundle") MigrationBundle bundle,
                        @WebParam(name="TargetFolder") EntityHeader targetFolder,
                        @WebParam(name="FlattenFolders") boolean flattenFolders,
-                       @WebParam(name="OverwriteExisting") boolean overwriteExisting ) throws MigrationException;
+                       @WebParam(name="OverwriteExisting") boolean overwriteExisting,
+                       @WebParam(name="EnableServices") boolean enableServices,
+                       @WebParam(name="DryRun") boolean dryRun
+    ) throws MigrationException;
 
     @XmlRootElement(name="MappingCandidate", namespace="http://www.layer7tech.com/management/migration")
     final class MappingCandidate {

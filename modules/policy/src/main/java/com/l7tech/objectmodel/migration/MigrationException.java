@@ -56,7 +56,7 @@ public class MigrationException extends ObjectModelException {
         private Map<Object,Set<MigrationException>> errors = new HashMap<Object, Set<MigrationException>>();
 
         public void add(Object source, MigrationException e) {
-            logger.log(Level.FINEST, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             Set<MigrationException> errorsForSource = errors.get(source);
             if (errorsForSource == null) {
                 errorsForSource = new HashSet<MigrationException>();

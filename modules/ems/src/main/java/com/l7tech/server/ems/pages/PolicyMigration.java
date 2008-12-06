@@ -502,7 +502,7 @@ public class PolicyMigration extends EmsPage  {
                         }
                     }
 
-                    targetMigrationApi.importBundle( export, targetFolderHeader, false, overwriteDependencies );
+                    targetMigrationApi.importBundle( export, targetFolderHeader, false, overwriteDependencies, true, false );
 
                     migrationRecordManager.create( null, getUser(), sourceCluster, targetCluster, summarize(export, summarize(folders, targetFolderId), enableNewServices), new byte[]{} ); // TODO save migrated bundle
                 }

@@ -21,5 +21,6 @@ public interface MigrationManager {
 
     public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables, String filter) throws MigrationException;
 
-    public Collection<MigratedItem> importBundle(MigrationBundle bundle, EntityHeader targetFolder, boolean flattenFolders, boolean overwriteExisting) throws MigrationException;
+    public Collection<MigratedItem> importBundle(MigrationBundle bundle, EntityHeader targetFolder,
+                                                 boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationException;
 }

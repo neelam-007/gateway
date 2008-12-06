@@ -5,6 +5,9 @@ package com.l7tech.policy.assertion.identity;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.EntityHeader;
 
 /**
  * Authenticates the credentials against a specified provider, but does not authorize any particular
@@ -32,6 +35,17 @@ public class AuthenticationAssertion extends IdentityAssertion {
 
     public String loggingIdentity() {
         return loggingIdentity;
+    }
+
+    @Migration(mapName = MigrationMappingSelection.REQUIRED)
+    @Override
+    public long getIdentityProviderOid() {
+        return super.getIdentityProviderOid();
+    }
+
+    @Migration(mapName = MigrationMappingSelection.REQUIRED)
+    public EntityHeader[] getEntitiesUsed() {
+        return super.getEntitiesUsed();
     }
 
     @Override

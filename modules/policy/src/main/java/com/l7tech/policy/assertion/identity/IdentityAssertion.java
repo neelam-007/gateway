@@ -46,7 +46,6 @@ public abstract class IdentityAssertion extends Assertion implements UsesEntitie
         return _identityProviderOid;
     }
 
-    @Migration(mapName = MigrationMappingSelection.REQUIRED)
     public EntityHeader[] getEntitiesUsed() {
         return new EntityHeader[] { new EntityHeader(Long.toString(_identityProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
     }

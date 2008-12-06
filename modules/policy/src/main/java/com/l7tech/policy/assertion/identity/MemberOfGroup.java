@@ -7,6 +7,8 @@ package com.l7tech.policy.assertion.identity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 
 /**
  * Asserts that the requestor is a member of a particular group.
@@ -41,6 +43,7 @@ public class MemberOfGroup extends IdentityAssertion {
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.NONE)
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = super.getEntitiesUsed();
         EntityHeader[] headers2 = new EntityHeader[headers.length + 1];
