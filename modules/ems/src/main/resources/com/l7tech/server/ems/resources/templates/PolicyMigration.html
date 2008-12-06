@@ -110,7 +110,7 @@
              * @return {boolean} true if valid
              */
             function validateMigrationInputs() {
-                var valid = destSSGClusterContentSelectorWindow.getSsgCluster() != null &&
+                var valid = validateIdentifyDependenciesInputs() &&
                             destSSGClusterContentSelectorWindow.getEntityTreeTable().getEntityWithRadioButtonSelected() != null;
                 // TODO also check that dependencies list matches src selection and all dependencies are mapped
                 return valid;
@@ -147,6 +147,7 @@
 
             function onChangeSrcSSGClusterContentSelection(event, entity, callbackId) {
                 updateIdentifyDependenciesButton();
+                updateMigrateButton();
             }
 
             function onChangeDestSSGClusterContentSelection(event, entity, callbackId) {
@@ -202,9 +203,9 @@
 
             function zoomItem(previous, entity, callbackId) {
                 if (callbackId == 'srcSSGClusterContentSelector') {
-                    document.getElementById('srcItemDetails').src = 'dataSource/' + entity.type + '/' + srcSSGClusterContentSelectorWindow.getSsgCluster().id + '/' + entity.id + '.xml';
+                    wicketAjaxGet(srcItemSelectionCallbackUrl + '&clusterId=' + escape(srcSSGClusterContentSelectorWindow.getSsgCluster().id) + '&type=' + escape(entity.type) + '&id=' + escape(entity.id) , function() { }, function() { });
                 } else if (callbackId == 'destSSGClusterContentSelector') {
-                    document.getElementById('destItemDetails').src = 'dataSource/' + entity.type + '/' + destSSGClusterContentSelectorWindow.getSsgCluster().id + '/' + entity.id + '.xml';
+                    wicketAjaxGet(destItemSelectionCallbackUrl + '&clusterId=' + escape(destSSGClusterContentSelectorWindow.getSsgCluster().id) + '&type=' + escape(entity.type) + '&id=' + escape(entity.id) , function() { }, function() { });
                 }
             }
 
@@ -247,6 +248,7 @@
                 var postData = YAHOO.lang.JSON.stringify(postObject);
                 document.getElementById('selectionJson').value = postData;
                 document.getElementById('enableNewServices').value = document.getElementById('enableNewServicesCheckBox').checked;
+                document.getElementById('overwriteDependencies').value = document.getElementById('overwriteDependenciesCheckBox').checked;
                 migrationAction();
             }
 
@@ -490,7 +492,9 @@
                             <td class="nowrap">
                                 Select a destination folder:
                                 (<input id="enableNewServicesCheckBox" type="checkbox" />
-                                <label for="enableNewServicesCheckBox"> enable new services</label>)
+                                <label for="enableNewServicesCheckBox"> enable new services</label>,
+                                <input id="overwriteDependenciesCheckBox" type="checkbox" />
+                                <label for="overwriteDependenciesCheckBox"> replace existing dependencies</label>)
                             </td>
                             <td class="right" width="100%">
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
@@ -562,11 +566,49 @@
             </tr>
             <tr>
                 <td class="srcDestBottom" style="padding-top: 0;">
-                    <iframe id="srcItemDetails" frameborder="0" scrolling="yes" height="150" width="100%"></iframe>
+                    <div id="srcItemDetails" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
+                        <table class="dataTable" wicket:id="srcItemDependencies" width="100%">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th class="name" width="100%">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+                                    <th title="Version">Ver.</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr wicket:id="optionRepeater">
+                                    <td><div wicket:id="optional"/></td>
+                                    <td><div wicket:id="name"/></td>
+                                    <td class="right"><div wicket:id="version"/></td>
+                                    <td><div wicket:id="type"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </td>
                 <td class="srcDestCenter"></td>
                 <td class="srcDestBottom" style="padding-top: 0;">
-                    <iframe id="destItemDetails" frameborder="0" scrolling="yes" height="150" width="100%"></iframe>
+                    <div id="destItemDetails" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
+                        <table class="dataTable" wicket:id="destItemDependencies" width="100%">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th class="name" width="100%">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+                                    <th title="Version">Ver.</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr wicket:id="optionRepeater">
+                                    <td><div wicket:id="optional"/></td>
+                                    <td><div wicket:id="name"/></td>
+                                    <td class="right"><div wicket:id="version"/></td>
+                                    <td><div wicket:id="type"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </td>
             </tr>
             </table>
@@ -576,6 +618,7 @@
                 <input id="destinationClusterId" type="hidden" wicket:id="destinationClusterId"/>
                 <input id="destinationFolderId" type="hidden" wicket:id="destinationFolderId"/>
                 <input id="enableNewServices" type="hidden" wicket:id="enableNewServices"/>
+                <input id="overwriteDependencies" type="hidden" wicket:id="overwriteDependencies"/>
             </form>
             <div class="panel">
                 <div class="panelTitle">Dependencies Mapping</div>
@@ -610,7 +653,7 @@
                                             <tr>
                                                 <th></th>
                                                 <th>Name</th>
-                                                <th>Version</th>
+                                                <th>Ver.</th>
                                             </tr>
                                         </thead>
                                         <tbody>

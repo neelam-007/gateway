@@ -30,6 +30,7 @@ import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebComponent;
+import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.basic.Label;
@@ -38,10 +39,13 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.AjaxEventBehavior;
+import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.protocol.http.WebRequest;
 import org.mortbay.util.ajax.JSON;
 
 import javax.xml.ws.soap.SOAPFaultException;
@@ -55,6 +59,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.io.Serializable;
 
 /**
@@ -66,23 +71,35 @@ public class PolicyMigration extends EmsPage  {
     //- PUBLIC
 
     public PolicyMigration() {
+        final DependencyKey[] lastSourceKey = new DependencyKey[1];
+        final String[] lastTargetClusterId = new String[1];
         final EntityMappingModel mappingModel = new EntityMappingModel();
 
         final WebMarkupContainer dependenciesContainer = new WebMarkupContainer("dependencies");
         final Form dependenciesOptionsContainer = new Form("dependencyOptionsContainer");
         YuiDataTable.contributeHeaders(this);
 
+        final WebMarkupContainer srcItemDependencies = new WebMarkupContainer("srcItemDependencies");
+        add( srcItemDependencies.setOutputMarkupId(true) );
+        showDependencies( srcItemDependencies, Collections.emptyList() );
+        srcItemDependencies.add( buildDependencyDisplayBehaviour(srcItemDependencies, "srcItemSelectionCallbackUrl" ) );
+
+        final WebMarkupContainer destItemDependencies = new WebMarkupContainer("destItemDependencies");
+        add( destItemDependencies.setOutputMarkupId(true) );
+        showDependencies( destItemDependencies, Collections.emptyList() );
+        destItemDependencies.add( buildDependencyDisplayBehaviour(destItemDependencies, "destItemSelectionCallbackUrl" ) );
+
         Form selectionJsonForm = new Form("selectionForm");
-        final DependencyKey[] lastSourceKey = new DependencyKey[1];
-        final String[] lastTargetClusterId = new String[1];
         final HiddenField hiddenSelectionForm = new HiddenField("selectionJson", new Model(""));
         final HiddenField hiddenDestClusterId = new HiddenField("destinationClusterId", new Model(""));
         final HiddenField hiddenDestFolderId = new HiddenField("destinationFolderId", new Model(""));
         final HiddenField hiddenEnableNewServices = new HiddenField("enableNewServices", new Model(""));
+        final HiddenField hiddenOverwriteDependencies = new HiddenField("overwriteDependencies", new Model(""));
         selectionJsonForm.add( hiddenSelectionForm );
         selectionJsonForm.add( hiddenDestClusterId );
         selectionJsonForm.add( hiddenDestFolderId );
         selectionJsonForm.add( hiddenEnableNewServices );
+        selectionJsonForm.add( hiddenOverwriteDependencies );
         AjaxFormSubmitBehavior submitBehaviour = new AjaxFormSubmitBehavior(selectionJsonForm, "onclick"){
             @Override
             protected void onSubmit(final AjaxRequestTarget target) {
@@ -103,8 +120,8 @@ public class PolicyMigration extends EmsPage  {
                                     new PropertyColumn(new Model(""), "uid"),
                                     new TypedPropertyColumn(new Model(""), "optional", "optional", String.class, false),
                                     new PropertyColumn(new Model("Name"), "name", "name"),
-                                    new PropertyColumn(new Model("Type"), "type", "type"),
-                                    new TypedPropertyColumn(new Model("Version"), "version", "version", Integer.class, true)
+                                    new TypedPropertyColumn(new Model("Ver."), "version", "version", Integer.class, true),
+                                    new PropertyColumn(new Model("Type"), "type", "type")
                             ),
                             "name",
                             true,
@@ -167,6 +184,7 @@ public class PolicyMigration extends EmsPage  {
                 final String targetClusterId = hiddenDestClusterId.getModelObjectAsString();
                 final String targetFolderId = hiddenDestFolderId.getModelObjectAsString();
                 final String enableNewServices = hiddenEnableNewServices.getModelObjectAsString();
+                final String overwriteDependencies = hiddenOverwriteDependencies.getModelObjectAsString();
                 try {
                     String jsonData = value.replaceAll("&quot;", "\"");
 
@@ -175,8 +193,10 @@ public class PolicyMigration extends EmsPage  {
                     dir.fromJSON(jsonMap);
 
                     boolean enableServices = Boolean.valueOf(enableNewServices);
+                    boolean overwrite = Boolean.valueOf(overwriteDependencies);
 
-                    performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, dir, mappingModel );
+
+                    performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel );
                 } catch ( Exception e ) {
                     logger.log( Level.WARNING, "Error processing selection.", e);
                 }
@@ -239,6 +259,93 @@ public class PolicyMigration extends EmsPage  {
 
     @SpringBean
     private GatewayContextFactory gatewayContextFactory;
+
+    private AbstractDefaultAjaxBehavior buildDependencyDisplayBehaviour( final WebMarkupContainer itemDependenciesContainer, final String jsVar ) {
+        return new AbstractDefaultAjaxBehavior(){
+            @Override
+            public void renderHead( final IHeaderResponse iHeaderResponse ) {
+                super.renderHead( iHeaderResponse );
+                iHeaderResponse.renderJavascript("var "+jsVar+" = '"+getCallbackUrl(true)+"';", null);
+            }
+
+            @Override
+            protected void respond( final AjaxRequestTarget ajaxRequestTarget ) {
+                WebRequest request = (WebRequest) RequestCycle.get().getRequest();
+                String clusterId = request.getParameter("clusterId");
+                String type = request.getParameter("type");
+                String id = request.getParameter("id");
+                logger.info( "Processing request for cluster " + clusterId + " type " + type + " id " + id );
+                DependencyItemsRequest dir = new DependencyItemsRequest();
+                dir.clusterId = clusterId;
+                dir.entities = new DependencyItem[]{ new DependencyItem() };
+                dir.entities[0].type = type;
+                dir.entities[0].id = id;
+                List<DependencyItem> options = Collections.emptyList();
+                try {
+                    options = new ArrayList<DependencyItem>(retrieveDependencies( dir ));
+                    for ( Iterator<DependencyItem> itemIter = options.iterator(); itemIter.hasNext();  ) {
+                        DependencyItem item = itemIter.next();
+                        if ( EntityType.FOLDER.toString().equals(item.type) ) {
+                            itemIter.remove();
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.log( Level.WARNING, "Error processing selection.", e);
+                }
+                showDependencies( itemDependenciesContainer, options );
+                ajaxRequestTarget.addComponent( itemDependenciesContainer );
+            }
+        };
+    }
+
+    private void showDependencies( final WebMarkupContainer container, final List options ) {
+        ListView listView = new ListView("optionRepeater", options) {
+            @Override
+            protected void populateItem( final ListItem item ) {
+                final DependencyItem dependencyItem = ((DependencyItem)item.getModelObject());
+                item.add(new Label("optional", dependencyItem.optional).setEscapeModelStrings(false));
+                item.add(new Label("name", dependencyItem.name));
+                item.add(new Label("type", fromEntityType(EntityType.valueOf(dependencyItem.type))));
+                item.add(new Label("version", dependencyItem.getVersionAsString()));
+            }
+        };
+
+        if ( container.get( "optionRepeater" ) == null ) {
+            container.add( listView.setOutputMarkupId(true) );
+        } else {
+            container.replace( listView.setOutputMarkupId(true) );
+        }
+    }
+
+    private static String fromEntityType( final EntityType entityType ) {
+        String type;
+
+        switch ( entityType ) {
+            case FOLDER:
+                type = "folder";
+                break;
+            case SERVICE:
+                type = "published service";
+                break;
+            case POLICY:
+                type = "policy fragment";
+                break;
+            case ID_PROVIDER_CONFIG:
+                type = "identity provider";
+                break;
+            case USER:
+                type = "user";
+                break;
+            case GROUP:
+                type = "group";
+                break;
+            default:
+                type = entityType.toString();
+                break;
+        }
+
+        return type;
+    }
 
     private void addDependencyOptions( final WebMarkupContainer dependenciesOptionsContainer, final DependencyKey sourceKey, final String targetClusterId, final List options, final EntityMappingModel mappingModel ) {
         WebMarkupContainer markupContainer = new WebMarkupContainer("dependencyOptions");
@@ -357,6 +464,7 @@ public class PolicyMigration extends EmsPage  {
                                    final String targetClusterId,
                                    final String targetFolderId,
                                    final boolean enableNewServices,
+                                   final boolean overwriteDependencies,
                                    final DependencyItemsRequest requestedItems,
                                    final EntityMappingModel mappingModel ) {
         try {
@@ -394,7 +502,7 @@ public class PolicyMigration extends EmsPage  {
                         }
                     }
 
-                    targetMigrationApi.importBundle( export, targetFolderHeader, false, false );
+                    targetMigrationApi.importBundle( export, targetFolderHeader, false, overwriteDependencies );
 
                     migrationRecordManager.create( null, getUser(), sourceCluster, targetCluster, summarize(export, summarize(folders, targetFolderId), enableNewServices), new byte[]{} ); // TODO save migrated bundle
                 }
@@ -438,10 +546,14 @@ public class PolicyMigration extends EmsPage  {
             }
         }
 
-        for ( GatewayApi.EntityInfo folder : folderPath ) {
-            builder.append( "/ " );
-            builder.append( folder.getName() );
-            builder.append( " " );
+        if ( folderPath.isEmpty() ) {
+            builder.append("/");
+        } else {
+            for ( GatewayApi.EntityInfo folder : folderPath ) {
+                builder.append( "/ " );
+                builder.append( folder.getName() );
+                builder.append( " " );
+            }
         }
 
         return builder.toString().trim();
@@ -649,6 +761,10 @@ public class PolicyMigration extends EmsPage  {
             this.name = entityHeader.getName();
             this.optional = optional;
             this.version = entityHeader.getVersion();
+        }
+
+        public String getType() {
+            return fromEntityType(EntityType.valueOf(type));
         }
 
         @Override
