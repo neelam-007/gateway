@@ -238,31 +238,39 @@ public class Utilities {
     /**
      * Get the resolution to use in interval queries.
      * This method delegates to getSummaryResolutionFromTimePeriod after checking that if the relativeTimeUnit is
-     * UNIT_OF_TIME.HOUR, that the relative time period does not exceed the maximum retention period for hourly bins
-     * @param startTimeMilli start of time period, in milliseconds, since epoch
-     * @param endTimeMilli end of time period, in milliseconds, since epoch
+     * UNIT_OF_TIME.HOUR,
+     * If the end of the time period is before the oldest hourly metric bin value in the database, an IllegalStateException
+     * is thrown, as the report is guaranteed to have no output. If the time period overlaps with the start of the hourly
+     * metric bins, then no exception will be thrown, as providing the resolution 1 allows for the possibility of data
+     * being found.
+     * @param intervalTimeUnit What interval is required. HOUR, DAY, WEEK or MONTH
      * @param hourRetentionPeriod SSG's current hourly bin max retention policy value, number of days hourly data is
      * kept for
+     * @param startTimeMilli start of time period, in milliseconds, since epoch
+     * @param endTimeMilli end of time period, in milliseconds, since epoch
      * @param
-     * @return
+     * @return Integer 1 for hourly metric bin or 2 for daily metric bin. If UNIT_OF_TIME was hour, then the return value
+     * can only ever be 1.
      */
     public static Integer getIntervalResolutionFromTimePeriod(UNIT_OF_TIME intervalTimeUnit, Integer hourRetentionPeriod,
-                                                              Long startTimeMilli, Long endTimeMilli){
-        if(startTimeMilli >= endTimeMilli) throw new IllegalArgumentException("Start time must be before end time");
+                                                              Long startTimeMilli, Long endTimeMilli)
+    throws UtilityConstraintException{
+        if(startTimeMilli >= endTimeMilli) throw new UtilityConstraintException("Start time must be before end time");
 
         if(intervalTimeUnit == UNIT_OF_TIME.HOUR){
             //If the interval is in hours, then we have to use the hourly bin
             long dayMillis = 86400000L;//day milli seconds
             long maxHourRenentionMilli = dayMillis * hourRetentionPeriod;
-            
-            long totalRelativeTime = endTimeMilli - startTimeMilli;
 
-            if(totalRelativeTime > maxHourRenentionMilli){
-//                throw new IllegalStateException("The relative time period extends beyond the maximum retention time for" +
-//                        " hourly metrics");
+            Calendar cal = Calendar.getInstance();//timezone irrevelant for this calculation
+            long currentTime = cal.getTimeInMillis();
+            long firstHourlyMetricBin = currentTime - maxHourRenentionMilli;
+
+            if(endTimeMilli < firstHourlyMetricBin){
+                throw new UtilityConstraintException("Invalid report selection. Report cannot be ran as the end of the time period" +
+                        " is before the first hourly metric data in the database.");
             }
-            return new Integer(1);
-
+            return 1;
         }
         
         return getSummaryResolutionFromTimePeriod(hourRetentionPeriod, startTimeMilli, endTimeMilli);
@@ -511,66 +519,10 @@ public class Utilities {
      * @param startTimeInclusiveMilli
      * @param endTimeInclusiveMilli
      * @param serviceIdToOperations
-     * @param keys
-     * @param keyValueConstraints
-     * @param valueConstraintAndOrLike
      * @param resolution
      * @param isDetail
-     * @param useUser
-     * @param authenticatedUsers
      * @return
      */
-//    public static String getUsageDistinctMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-//                                            Map<String, Set<String>> serviceIdToOperations, List<String> keys,
-//                                            List<String> keyValueConstraints,
-//                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-//                                            boolean useUser, List<String> authenticatedUsers){
-//
-//        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
-//
-//        boolean keyValuesSupplied = checkMappingQueryParams(keys,
-//                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
-//
-//        boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
-//
-//        checkResolutionParameter(resolution);
-//
-//        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
-//
-//        StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
-//
-//        addUserToSelect(false, useUser, sb);
-//        addCaseSQL(keys, sb);
-//        sb.append(mappingJoin);
-//        addResolutionConstraint(resolution, sb);
-//        if(useTime){
-//            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
-//        }
-//
-//        boolean isBlankedOpQuery = isBlanketOperationQuery(serviceIdToOperations);
-//        //not a detail query and service id's are ok
-//        // OR is a detail query, and we have blanked operation requirements
-//        if(serviceIdsOk && ( (!isDetail) || (isBlankedOpQuery && isDetail))){
-//            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
-//        }
-//        //else isDetail and were going to use operations
-//        else if(serviceIdsOk && !isBlankedOpQuery && isDetail){
-//            //new method to constrain serivce id and operation together
-//            addServiceAndOperationConstraint(serviceIdToOperations, sb);
-//        }
-//
-//        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
-//            addUserConstraint(authenticatedUsers, sb);
-//        }
-//        if(keyValuesSupplied){
-//            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
-//        }
-//        addUsageDistinctMappingOrder(sb);
-//
-//        logger.log(Level.FINER,"getUsageDistinctMappingQuery: " +sb.toString());
-//        return sb.toString();
-//    }
-
     public static String getUsageDistinctMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Map<String, Set<String>> serviceIdToOperations,
                                             LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,int resolution,
@@ -634,61 +586,6 @@ public class Utilities {
      * service id followed by operation, which may be a place holder
      * @return
      */
-//    public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-//                                            Map<String, Set<String>> serviceIdToOperations, List<String> keys,
-//                                            List<String> keyValueConstraints,
-//                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-//                                            boolean useUser, List<String> authenticatedUsers){
-//
-//        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
-//
-//        boolean keyValuesSupplied = checkMappingQueryParams(keys,
-//                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
-//
-//        boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
-//
-//        checkResolutionParameter(resolution);
-//
-//        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
-//
-//        StringBuilder sb = new StringBuilder(distinctFrom);
-//
-//        addOperationToSelect(isDetail, sb);
-//
-//        sb.append(mappingJoin);
-//
-//        addResolutionConstraint(resolution, sb);
-//
-//        if(useTime){
-//            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
-//        }
-//
-//        boolean isBlankedOpQuery = isBlanketOperationQuery(serviceIdToOperations);
-//        //not a detail query and service id's are ok
-//        // OR is a detail query, and we have blanked operation requirements
-//        if(serviceIdsOk && ( (!isDetail) || (isBlankedOpQuery && isDetail))){
-//            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
-//        }
-//        //else isDetail and were going to use operations
-//        else if(serviceIdsOk && !isBlankedOpQuery && isDetail){
-//            //new method to constrain serivce id and operation together
-//            addServiceAndOperationConstraint(serviceIdToOperations, sb);
-//        }
-//
-//        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
-//            addUserConstraint(authenticatedUsers, sb);
-//        }
-//
-//        if(keyValuesSupplied){
-//            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
-//        }
-//
-//        sb.append(" ORDER BY SERVICE_ID, SERVICE_OPERATION_VALUE");
-//
-//        logger.log(Level.FINER,"getUsageMasterIntervalQuery: " +sb.toString());
-//        return sb.toString();
-//    }
-
     public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Map<String, Set<String>> serviceIdToOperations,
                                             LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
@@ -755,85 +652,10 @@ public class Utilities {
      * @param startTimeInclusiveMilli
      * @param endTimeInclusiveMilli
      * @param serviceIdToOperations
-     * @param keys
-     * @param keyValueConstraints
-     * @param valueConstraintAndOrLike
      * @param resolution
      * @param isDetail
-     * @param useUser
-     * @param authenticatedUsers
      * @return
      */
-//    public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-//                                            Map<String, Set<String>> serviceIdToOperations, List<String> keys,
-//                                            List<String> keyValueConstraints,
-//                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-//                                            boolean useUser, List<String> authenticatedUsers){
-//
-//        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
-//
-//        boolean keyValuesSupplied = checkMappingQueryParams(keys,
-//                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
-//
-//        boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
-//
-//        checkResolutionParameter(resolution);
-//
-//        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
-//
-//        //----SECTION A----
-//        StringBuilder sb = new StringBuilder(usageAggregateSelect);
-//
-//        //----SECTION B----
-//        addUserToSelect(true, useUser, sb);
-//        //----SECTION C----
-//        addOperationToSelect(isDetail, sb);
-//        //----SECTION D's----
-//        addCaseSQL(keys, sb);
-//        //----SECTION E----
-//        sb.append(mappingJoin);
-//        //----SECTION F----
-//        addResolutionConstraint(resolution, sb);
-//
-//        //----SECTION G----
-//        if(useTime){
-//            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
-//        }
-//
-//        //----SECTION H & I----
-//        //Service ids only constrained here, if isDetail is false, otherwise operation and services are constrained
-//        //together below
-//
-//        boolean isBlankedOpQuery = isBlanketOperationQuery(serviceIdToOperations);
-//        //not a detail query and service id's are ok
-//        // OR is a detail query, and we have blanked operation requirements
-//        if(serviceIdsOk && ( (!isDetail) || (isBlankedOpQuery && isDetail))){
-//            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
-//        }
-//        //else isDetail and were going to use operations
-//        else if(serviceIdsOk && !isBlankedOpQuery && isDetail){
-//            //new method to constrain serivce id and operation together
-//            addServiceAndOperationConstraint(serviceIdToOperations, sb);
-//        }
-//
-//        //----SECTION J----
-//        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
-//            addUserConstraint(authenticatedUsers, sb);
-//        }
-//
-//        //----SECTION K----
-//        if(keyValuesSupplied){
-//            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
-//        }
-//
-//        addGroupBy(sb);
-//
-//        //----SECTION M----
-//        addUsageMappingOrder(sb);
-//
-//        logger.log(Level.FINER,"getUsageQuery: " +sb.toString());
-//        return sb.toString();
-//    }
 
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Map<String, Set<String>> serviceIdToOperations,
@@ -911,28 +733,6 @@ public class Utilities {
         return sb.toString();
     }
 
-
-//    public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-//                                            Long serviceId, List<String> keys,
-//                                            List<String> keyValueConstraints,
-//                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-//                                            String operation, boolean useUser, List<String> authenticatedUsers){
-//        if(serviceId == null) throw new NullPointerException("serviceId cannot be null");
-//        if(operation == null || operation.equals("")){
-//            throw new IllegalArgumentException("operation can be null or empty");
-//        }
-//
-//        Set<String> operations = new HashSet<String>();
-//        if(!operation.equals(Utilities.SQL_PLACE_HOLDER)) operations.add(operation);
-//        Map<String, Set<String>> serviceIdToOperations = new HashMap<String, Set<String>>();
-//        serviceIdToOperations.put(String.valueOf(serviceId), operations);
-//
-//        return getUsageQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIdToOperations, keys, keyValueConstraints,
-//                valueConstraintAndOrLike, resolution, isDetail, useUser, authenticatedUsers);
-//
-//    }
-
-
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Long serviceId,
                                             LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
@@ -951,6 +751,40 @@ public class Utilities {
 
     }
 
+
+    /**
+     * From the keysToFilters map, determine if the AUTH_USER mapping key has been specified
+     * @param keysToFilters
+     * @return
+     */
+    private static boolean isUserSupplied(Map<String, List<ReportApi.FilterPair>> keysToFilters){
+        if(keysToFilters.containsKey(MessageContextMapping.MappingType.AUTH_USER.toString())){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Extract all the FilterPair's which relate to the context mapping key AUTH_USER
+     * @param keysToFilters
+     * @return the list of FilterPair's supplied to createMappingQuery, empty list if non were specified in keysToFilters
+     */
+    private static List<ReportApi.FilterPair> getAuthenticatedUserFilterPairs(Map<String, List<ReportApi.FilterPair>> keysToFilters){
+        for(Map.Entry<String, List<ReportApi.FilterPair>> me: keysToFilters.entrySet()){
+            if(me.getKey().equals(MessageContextMapping.MappingType.AUTH_USER.toString())){
+                List<ReportApi.FilterPair> returnList = new ArrayList<ReportApi.FilterPair>();
+                for(ReportApi.FilterPair fp: me.getValue()){
+                    if(!fp.isEmpty()){
+                        returnList.add(fp);
+                    }
+                }
+                return returnList;
+            }
+        }
+        throw new IllegalStateException("No authenticated user filter pairs were found");
+    }
+
+    //todo [Donal] update as now out of date
     /**
      * Create the sql required to get performance statistics for a specific period of time, for a possible specifc set of
      * service id's, operations, mapping keys and values, mapping values AND or LIKE logic and authenticated users.
@@ -962,7 +796,7 @@ public class Utilities {
      * results are unaltered
      * 3) Order by can always include this column, so long as the placeholder value is the same for all columns, the
      * results are unaltered
-     * 
+     *
      * SECTION A: The logic for determing the performance statistics for a specific interval of time is hard coded, and
      * has no need to change at runtime. This hardcoded query also contains logic to make processing easier.
      *
@@ -981,7 +815,7 @@ public class Utilities {
      * Within each case statement we are looking for the existence of a specific key in any of 5 column locations. The
      * key WILL ALWAYS exist due to the WHERE constraint that follows. The WHERE constraint guarantees that any rows
      * found from the joins in the from clause, will ALWAYS contain rows which have ALL of the keys in List<String> keys
-     * Note: The implementation of service_metric_detail bins, normalizes the keys used by any mcmv bin instance. This 
+     * Note: The implementation of service_metric_detail bins, normalizes the keys used by any mcmv bin instance. This
      * means that although the keys can be in any order in a message context assertion, any assertion with the same
      * keys in any order, will always use the same key from mcmk.
      *
@@ -1005,7 +839,7 @@ public class Utilities {
      * or empty list of operations, it is simply left out of the query. isDetail must be true for this behaviour to happen.
      * I) When all of the keys have null or empty lists of operations, then the query is only constrained by service ids.
      * If isDetail is true, then this turns the query into a blanket operation query, in which all operations for the
-     * selected services are returned.  
+     * selected services are returned.
      *
      * If serviceIdToOperations is null or empty, then no constraint is put on services or operations.
      *
@@ -1032,7 +866,7 @@ public class Utilities {
      * from there it can be further broken down by operation, and then mapping value. The mapping values can in
      * reality be in any order here however due to how the keys are processed in the CASE statements, being determined
      * from the List<String> keys supplied, the first X mapping values are NEVER placeholders, placeholders always come
-     * last.  
+     * last.
      *
      * SECTION M: The order by order is important. Mapping values are ALWAYS ordered first, AUTHENTICATED_USER IS A
      * mapping value. They are the major order aspect, by which we want to view data. We want to look at data in terms
@@ -1159,123 +993,10 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * @param useUser if true the auth_user_id column from message_context_mapping_values will be included in the
      * select, group by and order by clauses
      * @param authenticatedUsers if useUser is true, the where clause will constrain the values of
-     * message_context_mapping_values, with the values in authenticatedUsers 
+     * message_context_mapping_values, with the values in authenticatedUsers
      * @return String query
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
-//    public static String createMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-//                                               Map<String, Set<String>> serviceIdToOperations,
-//                                            List<String> keys,
-//                                            List<String> keyValueConstraints,
-//                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-//                                            boolean useUser, List<String> authenticatedUsers){
-//
-//        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
-//
-//        boolean keyValuesSupplied = checkMappingQueryParams(keys,
-//                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
-//
-//        boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
-//        //if(!serviceIdsOk) throw new IllegalArgumentException("There must be at least one service id specified as a key in serviceIdToOperations");
-//
-//        checkResolutionParameter(resolution);
-//
-//        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
-//
-//        //----SECTION A----
-//        StringBuilder sb = null;
-//        if(isMasterQuery){
-//            sb = new StringBuilder(distinctFrom);
-//        }else{
-//            String select = MessageFormat.format(aggregateSelect ,"smd");
-//            sb = new StringBuilder(select);
-//        }
-//        //----SECTION B----
-//        addUserToSelect(true, useUser, sb);
-//        //----SECTION C----
-//        addOperationToSelect(isDetail, sb);
-//        //----SECTION D's----
-//        addCaseSQL(keys, sb);
-//        //----SECTION E----
-//        sb.append(mappingJoin);
-//        //----SECTION F----
-//        addResolutionConstraint(resolution, sb);
-//
-//        //----SECTION G----
-//        if(useTime){
-//            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
-//        }
-//
-//        //----SECTION H & I----
-//        //Service ids only constrained here, if isDetail is false, otherwise operation and services are constrained
-//        //together below
-//
-//        boolean isBlankedOpQuery = isBlanketOperationQuery(serviceIdToOperations);
-//        //not a detail query and service id's are ok
-//        // OR is a detail query, and we have blanked operation requirements
-//        if(serviceIdsOk && ( (!isDetail) || (isBlankedOpQuery && isDetail))){
-//            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
-//        }
-//        //else isDetail and were going to use operations
-//        else if(serviceIdsOk && !isBlankedOpQuery && isDetail){
-//            //new method to constrain serivce id and operation together
-//            addServiceAndOperationConstraint(serviceIdToOperations, sb);
-//        }
-//
-//        //----SECTION J----
-//        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
-//            addUserConstraint(authenticatedUsers, sb);
-//        }
-//
-//        //----SECTION K----
-//        if(keyValuesSupplied){
-//            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
-//        }
-//
-//        if(!isMasterQuery){
-//            //----SECTION L----
-//            addGroupBy(sb);
-//        }
-//
-//        //----SECTION M----
-//        addMappingOrder(sb);
-//
-//        logger.log(Level.FINER,"createMappingQuery: " + sb.toString());
-//        return sb.toString();
-//    }
-
-    /**
-     * From the keysToFilters map, determine if the AUTH_USER mapping key has been specified
-     * @param keysToFilters
-     * @return
-     */
-    private static boolean isUserSupplied(Map<String, List<ReportApi.FilterPair>> keysToFilters){
-        if(keysToFilters.containsKey(MessageContextMapping.MappingType.AUTH_USER.toString())){
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Extract all the FilterPair's which relate to the context mapping key AUTH_USER
-     * @param keysToFilters
-     * @return the list of FilterPair's supplied to createMappingQuery, empty list if non were specified in keysToFilters
-     */
-    private static List<ReportApi.FilterPair> getAuthenticatedUserFilterPairs(Map<String, List<ReportApi.FilterPair>> keysToFilters){
-        for(Map.Entry<String, List<ReportApi.FilterPair>> me: keysToFilters.entrySet()){
-            if(me.getKey().equals(MessageContextMapping.MappingType.AUTH_USER.toString())){
-                List<ReportApi.FilterPair> returnList = new ArrayList<ReportApi.FilterPair>();
-                for(ReportApi.FilterPair fp: me.getValue()){
-                    if(!fp.isEmpty()){
-                        returnList.add(fp);
-                    }
-                }
-                return returnList;
-            }
-        }
-        throw new IllegalStateException("No authenticated user filter pairs were found");
-    }
-
     public static String createMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                Map<String, Set<String>> serviceIdToOperations,
                                                LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
@@ -1829,18 +1550,6 @@ Value is included in all or none, comment is just illustrative
 
     }
 
-//    private static void addMappingConstraint(List<String> keys, List<String> keyValueConstraints, List<String> valueConstraintAndOrLike, StringBuilder sb) {
-//        for(int i = 0; i < keys.size(); i++){
-//            boolean useAnd = true;
-//            if( i < valueConstraintAndOrLike.size()){
-//                useAnd = valueConstraintAndOrLike.get(i) == null || valueConstraintAndOrLike.get(i).equalsIgnoreCase("AND");
-//            }
-//
-//            sb.append(" AND (").append( createOrKeyValueBlock(keys.get(i), keyValueConstraints.get(i), useAnd) );
-//            sb.append(")");
-//        }
-//    }
-
     /**
      *
      * @param key
@@ -1986,19 +1695,9 @@ END as IP_ADDRESS,
      * see Utilities.getMappingValueDisplayString()
      * @param displayStringToMappingGroup
      * @param authUser
-     * @param keys
      * @param keyValues
      * @return
      */
-//    public static String getCategoryMappingDisplayString(Map<String, String> displayStringToMappingGroup,
-//                                                               String authUser, List<String> keys, String [] keyValues){
-//
-//        String displayString = getMappingValueDisplayString(keys, authUser, keyValues, false, null);
-//        if(!displayStringToMappingGroup.containsKey(displayString)) throw new IllegalArgumentException("Group for " +
-//                "display string not found: " + displayString);
-//
-//        return displayStringToMappingGroup.get(displayString);
-//    }
     public static String getCategoryMappingDisplayString(Map<String, String> displayStringToMappingGroup,
                                                                String authUser,
                                                                LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, String [] keyValues){
@@ -2062,58 +1761,6 @@ END as IP_ADDRESS,
      * @throws NullPointerException if any argument is null or empty for it's type
      * @throws IllegalStateException if keyValues ever has the place holder value for any value from keys
      */
-//    public static String getMappingValueDisplayString(List<String> keys, String authUser, String[] keyValues, boolean includePreFix, String prefix) {
-//        if(authUser == null || authUser.equals(""))
-//            throw new NullPointerException("authUser must have a non null and non empty value. " +
-//                    "It can be the placeholder value");//as it always exists in select
-//
-//        if(authUser.equals(SQL_PLACE_HOLDER) && (keys == null || keys.isEmpty())
-//                && (keyValues == null || keyValues.length == 0)){
-//            throw new IllegalArgumentException("authUser must be supplied (non null, emtpy and not a placeholder or" +
-//                    " valid keys and values must be supplied");
-//        }
-//        if(includePreFix){
-//            if(prefix == null || prefix.equals("")) throw new IllegalArgumentException("If includePreFix is true, prefix " +
-//                    "cannot be null or the empty string");
-//        }
-//
-//        if(keyValues == null){
-//            keyValues = new String[]{};
-//        }
-//        if(keys == null){
-//            keys = new ArrayList<String>();
-//        }
-//        if(keyValues.length < keys.size()) throw new IllegalArgumentException("Length of keyValues must equal length of keys");
-//
-//
-//        StringBuilder sb = new StringBuilder();
-//        boolean firstComma = false;
-//        if(!authUser.equals(SQL_PLACE_HOLDER)){
-//            sb.append("Authenticated User: " + authUser);
-//            firstComma = true;
-//        }
-//
-//        for (int i1 = 0; i1 < keys.size(); i1++) {
-//            String s = keys.get(i1);
-//            if(keyValues[i1].equals(SQL_PLACE_HOLDER)){
-//                throw new IllegalStateException("Place holder should not be found as the value for a valid key");
-//            }
-//            if(firstComma){
-//                sb.append(", ");
-//                firstComma = false;
-//            }
-//            if(i1 != 0){
-//                sb.append(", ");
-//            }
-//            sb.append(s+": " + keyValues[i1]);
-//        }
-//        if(sb.toString().equals("")){
-//            return "Detail Report";
-//        }else{
-//            if(includePreFix) sb.insert(0, prefix);
-//            return sb.toString();
-//        }
-//    }
 
     /**
      * Creates a display string from the supplied parameters. Any values which are the place holder are ignored.
@@ -2192,66 +1839,9 @@ END as IP_ADDRESS,
     /**
      * From the auth user, keys, values and filter constraints get a string which displays this information for the user
      * in the report info section of a report
-     * @param authUsers Auth user string, can be null or empty
-     * @param keys mapping keys, can be null or empty so long as isDetail or useUser is true
-     * @param keyValueConstraints
      * @param isDetail
-     * @param useUser
      * @return String for displaying in report info section of report
      */
-//    public static String getMappingReportInfoDisplayString(List<String> authUsers, List<String> keys,
-//                                                           List<String> keyValueConstraints,
-//                                                           boolean isDetail,
-//                                                           boolean useUser){
-//        boolean keyValuesSupplied = checkMappingQueryParams(keys,
-//                keyValueConstraints, null, isDetail, useUser);
-//
-//        StringBuilder sb = new StringBuilder();
-//        boolean firstComma = false;
-//        if(useUser){
-//            sb.append(AUTHENTICATED_USER_DISPLAY);
-//            firstComma = true;
-//        }
-//        if(useUser && authUsers != null && !authUsers.isEmpty()){
-//            sb.append(": (");
-//            for (int i = 0; i < authUsers.size(); i++) {
-//                String s = authUsers.get(i);
-//                if(i != 0) sb.append(", ");
-//                sb.append(s);
-//            }
-//            sb.append(")");
-//        }
-//
-//        if(keys == null){
-//            //The only constraint on the params is that if all are null, then isDetail or useUser must be true,
-//            //however if sb is empty here, then useUser was false, in which case it's a detail query. Show something
-//            //instead of nothing for this corner case.
-//            if(sb.toString().equals("")){
-//                return onlyIsDetailDisplayText;
-//            }else{
-//                return sb.toString();
-//            }
-//        }
-//
-//        for (int i1 = 0; i1 < keys.size(); i1++) {
-//            String s = keys.get(i1);
-//            //valueConstraintAndOrLike
-//            if(firstComma){
-//                sb.append(", ");
-//                firstComma = false;
-//            }
-//            if(i1 != 0){
-//                sb.append(", ");
-//            }
-//            sb.append(s);
-//            if(keyValuesSupplied){
-//                String value = keyValueConstraints.get(i1);
-//                if(value != null && !value.equals("")) sb.append(" (" + keyValueConstraints.get(i1) + ")");
-//            }
-//        }
-//        if(sb.toString().equals("")) return "None";
-//        return sb.toString();
-//    }
     public static String getMappingReportInfoDisplayString(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters
                                                            ,boolean isDetail, boolean isUsage){
 
@@ -2326,35 +1916,6 @@ END as IP_ADDRESS,
         if(sb.toString().equals("")) return "None";
         return sb.toString();
     }
-
-
-//
-//    public static String getUsageColumnHeader(String authUser, List<String> keys, String [] values) {
-//        if(values.length < keys.size()) throw new IllegalArgumentException("values must be greater or equal to the size of keys");
-//
-//        StringBuilder sb = new StringBuilder();
-//        if(authUser != null && !authUser.equals(SQL_PLACE_HOLDER)){
-//            sb.append("User: ").append(authUser).append(" ");
-//        }
-//        for (int i = 0; i < keys.size(); i++) {
-//            String key = keys.get(i);
-//            sb.append(key);
-//
-//            if(values[i] == null || values[i].equals(SQL_PLACE_HOLDER)){
-//                throw new IllegalArgumentException("A value for each key must be supplied");
-//            }
-//            sb.append(": ").append(values[i]).append(" ");
-//        }
-//
-//        return sb.toString();
-//    }
-
-    //todo [Donal] ensure not used by running all reports
-//    public static String getUsageColumnHeader(String mappingValue){
-//        if(mappingValue == null) throw new NullPointerException("Parameter mappingValue cannot be null");
-//        return mappingValue.replaceAll(";","").trim();
-//    }
-
 
     /**
      *
@@ -2476,26 +2037,6 @@ END as IP_ADDRESS,
 
         return doc;
     }
-
-//    private static String getContextKeysDiaplayString(boolean useUser, List<String> keys){
-//        StringBuilder sb = new StringBuilder();
-//        boolean first = true;
-//        if(useUser){
-//            sb.append("Auth User");
-//            first = false;
-//        }
-//
-//        for (int i = 0; i < keys.size(); i++) {
-//            String s = keys.get(i);
-//            if (!first) {
-//                if (i != keys.size()-1 ) sb.append(", ");
-//                else sb.append(" and ");
-//            }
-//            first = false;
-//            sb.append(s);
-//        }
-//        return sb.toString();
-//    }
 
     private static String getContextKeysDiaplayString(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters){
         StringBuilder sb = new StringBuilder();

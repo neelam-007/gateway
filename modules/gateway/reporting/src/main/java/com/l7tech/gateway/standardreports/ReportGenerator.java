@@ -103,6 +103,10 @@ public class ReportGenerator {
         try {
             jasperPrint = JasperFillManager.fillReport( handle.getJasperReport(), reportParams, connection);
         } catch ( JRException jre ) {
+            if(ExceptionUtils.causedBy(jre.getCause(), UtilityConstraintException.class)){
+                Throwable t = ExceptionUtils.getCauseIfCausedBy(jre, UtilityConstraintException.class);
+                throw new ReportGenerationException( "Error filling report: " + t.getMessage(), t );                
+            }
             throw new ReportGenerationException( "Error filling report.", jre );
         }
 
@@ -182,6 +186,7 @@ public class ReportGenerator {
         GatewayJavaReportCompiler.registerClass(PerformanceSummaryChartCustomizer.class);
         GatewayJavaReportCompiler.registerClass(UsageSummaryAndSubReportHelper.class);
         GatewayJavaReportCompiler.registerClass(UsageReportHelper.class);
+        GatewayJavaReportCompiler.registerClass(UtilityConstraintException.class);
 
         final Map<ReportApi.ReportType,ReportTemplate> templates = new HashMap<ReportApi.ReportType,ReportTemplate>();
         final String resourcePath = "/com/l7tech/gateway/standardreports";

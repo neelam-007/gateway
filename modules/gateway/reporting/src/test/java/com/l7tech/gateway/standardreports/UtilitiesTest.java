@@ -1593,7 +1593,21 @@ public class UtilitiesTest{
         resolution = Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.DAY, 24, startTime, endTime);
         Assert.assertTrue(resolution == 2);
 
+        //test that a time period to far in the past fails for hourly interval
         boolean exception = false;
+        try{
+
+            long oldStartTime = cal.getTimeInMillis();
+            cal.add(Calendar.DAY_OF_MONTH, 2);
+            long oldEndTime = cal.getTimeInMillis();
+
+            Utilities.getIntervalResolutionFromTimePeriod(Utilities.UNIT_OF_TIME.HOUR , 24, oldStartTime, oldEndTime);
+        }catch(UtilityConstraintException e){
+            exception = true;
+        }
+        Assert.assertTrue(exception);
+
+        exception = false;
         try{
             Utilities.getSummaryResolutionFromTimePeriod(24, endTime, startTime);
         }catch(IllegalArgumentException iae){

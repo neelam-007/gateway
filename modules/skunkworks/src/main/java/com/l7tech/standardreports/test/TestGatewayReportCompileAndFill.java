@@ -308,6 +308,34 @@ public class TestGatewayReportCompileAndFill {
     }
 
     @Test
+    public void testReport_UsageInterval_AbsoluteInvalidInterval() throws Exception {
+
+        Object o = JSON.parse(usageAbsoluteInvalidIntervalTime);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        ReportSubmissionClusterBean clusterBean = reportClusterBeans.iterator().next();
+        ReportApi.ReportSubmission submission = clusterBean.getReportSubmission();
+        Map<String, Object> reportParams = buildReportParameters(submission.getParameters());
+
+        Assert.assertTrue("Type should be usage interval", submission.getType() == ReportApi.ReportType.USAGE_INTERVAL);
+        ReportGenerator reportGenerator = new ReportGenerator();
+        ReportGenerator.ReportHandle reportHandle = reportGenerator.compileReport(submission.getType(), reportParams, ReportApp.getConnection(prop));
+
+        boolean exception = false;
+        try{
+            ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
+        }catch(Exception e){
+            System.out.println(e.getMessage());
+            exception = true;
+        }
+        
+        Assert.assertTrue("Exception should have been thrown as the time period is too far in history for hour interval",
+                exception);
+    }
+
+    @Test
     public void testReport_UsageInterval_NoData() throws Exception {
 
         Object o = JSON.parse(usageAbsoluteJsonIntervalTest_NoData);
@@ -856,6 +884,55 @@ public class TestGatewayReportCompileAndFill {
             "    \"reportName\" : \"Usage_Interval_NoData_Report\"" +
             "}";
 
-    
-    private final static String runTimeOpData = "{\"entities\":[{\"clusterId\":\"5495af4d-ccc8-48c5-b92e-fa1a635ec2b7\",\"operation\":\"listProducts\",\"publishedServiceId\":\"360448\",\"publishedServiceName\":\"Warehouse Name 1 [/Routing uri 1]\"},{\"clusterId\":\"5495af4d-ccc8-48c5-b92e-fa1a635ec2b7\",\"operation\":\"listProducts\",\"publishedServiceId\":\"360449\",\"publishedServiceName\":\"Warehouse Service 2 [/Routing URI 2]\"}],\"entityType\":\"operation\",\"groupings\":[],\"reportName\":\"PS_Test_16_Ops\",\"reportType\":\"performance\",\"summaryChart\":true,\"summaryReport\":true,\"timeInterval\":null,\"timePeriod\":{\"numberOfTimeUnits\":\"1\",\"timeZone\":\"Canada/Pacific\",\"type\":\"relative\",\"unitOfTime\":\"DAY\"}}";    
+    private final static String runTimeOpData = "{\"entities\":[{\"clusterId\":\"5495af4d-ccc8-48c5-b92e-fa1a635ec2b7\",\"operation\":\"listProducts\",\"publishedServiceId\":\"360448\",\"publishedServiceName\":\"Warehouse Name 1 [/Routing uri 1]\"},{\"clusterId\":\"5495af4d-ccc8-48c5-b92e-fa1a635ec2b7\",\"operation\":\"listProducts\",\"publishedServiceId\":\"360449\",\"publishedServiceName\":\"Warehouse Service 2 [/Routing URI 2]\"}],\"entityType\":\"operation\",\"groupings\":[],\"reportName\":\"PS_Test_16_Ops\",\"reportType\":\"performance\",\"summaryChart\":true,\"summaryReport\":true,\"timeInterval\":null,\"timePeriod\":{\"numberOfTimeUnits\":\"1\",\"timeZone\":\"Canada/Pacific\",\"type\":\"relative\",\"unitOfTime\":\"DAY\"}}";
+
+    private final static String usageAbsoluteInvalidIntervalTime = "{\"reportType\":\"usage\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360448\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360449\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+clusterId+"\"," +
+            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"absolute\"," +
+            "        \"start\"    : \"2008/07/30 13:00\"," +
+            "        \"end\"      : \"2008/07/31 13:00\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+clusterId+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : false," +
+            "    \"reportName\" : \"Usage_Interval_Report\"" +
+            "}";
+
 }
