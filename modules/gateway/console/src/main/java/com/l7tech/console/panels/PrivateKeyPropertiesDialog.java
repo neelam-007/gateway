@@ -519,10 +519,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                                     "Warning",JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
                             if (result != JOptionPane.YES_OPTION) {
                                 return;
-                            } else {
-                                FileUtils.save(new ByteArrayInputStream(p12bytes), new File(name));
                             }
                         }
+                        FileUtils.save(new ByteArrayInputStream(p12bytes), new File(name));
                     } catch (IOException e) {
                         showErrorMessage("Unable to Save", "Unable to save PKCS#12 file: " + ExceptionUtils.getMessage(e), e);
                     }
