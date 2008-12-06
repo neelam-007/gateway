@@ -1864,7 +1864,7 @@ END as IP_ADDRESS,
             for(ReportApi.FilterPair fp: authUsers){
                 if(fp.isEmpty()) continue;
                 if(index != 0) tempBuffer.append(", ");
-                tempBuffer.append(fp.getFilterValue());
+                tempBuffer.append(fp.getDisplayValue());
                 index++;
                 valueFound = true;
             }
@@ -1905,7 +1905,7 @@ END as IP_ADDRESS,
             for(ReportApi.FilterPair fp: me.getValue()){
                 if(!fp.isEmpty()){
                     if(tempIndex != 0) tempBuilder.append(", ");
-                    tempBuilder.append(fp.getFilterValue());
+                    tempBuilder.append(fp.getDisplayValue());
                     tempIndex++;
                 }
             }
