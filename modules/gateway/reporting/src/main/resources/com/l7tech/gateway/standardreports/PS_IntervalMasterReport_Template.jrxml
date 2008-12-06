@@ -1457,12 +1457,12 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 						key="frame-22"
 						positionType="Float"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="280"
+						width="291"
 						height="18"
 						key="textField-144"/>
 					<box></box>
@@ -1751,30 +1751,30 @@ Utilities.getMappingReportInfoDisplayString
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG_OPERATION" calculation="Average"/>
 					<returnValue subreportVariable="POLICY_VIOLATIONS_SUM" toVariable="POLICY_VIOLATIONS_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_SUM" calculation="Sum"/>
-                    <returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM" calculation="Sum"/>
-                    <returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM" calculation="Sum"/>
+					<returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM" calculation="Sum"/>
+					<returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="COMPLETED_SUM" toVariable="COMPLETED_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="BACK_SUM_SUM" toVariable="BACK_SUM_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="POLICY_VIOLATIONS_SUM" toVariable="POLICY_VIOLATIONS_MAPPING" calculation="Sum"/>
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_MAPPING" calculation="Sum"/>
-                    <returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM_MAPPING" calculation="Sum"/>
-                    <returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM_MAPPING" calculation="Sum"/>
-                    <returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_MAPPING" calculation="Sum"/>
+					<returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM_MAPPING" calculation="Sum"/>
+					<returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM_MAPPING" calculation="Sum"/>
+					<returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_MAPPING" calculation="Sum"/>
 					<returnValue subreportVariable="COMPLETED_SUM" toVariable="COMPLETED_SUM_MAPPING" calculation="Sum"/>
 					<returnValue subreportVariable="BACK_SUM_SUM" toVariable="BACK_SUM_MAPPING" calculation="Sum"/>
 					<returnValue subreportVariable="POLICY_VIOLATIONS_SUM" toVariable="POLICY_VIOLATIONS_OPERATION" calculation="Sum"/>
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_OPERATION" calculation="Sum"/>
-                    <returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM_OPERATION" calculation="Sum"/>
-                    <returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM_OPERATION" calculation="Sum"/>
-                    <returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_OPERATION" calculation="Sum"/>
+					<returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM_OPERATION" calculation="Sum"/>
+					<returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM_OPERATION" calculation="Sum"/>
+					<returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_OPERATION" calculation="Sum"/>
 					<returnValue subreportVariable="COMPLETED_SUM" toVariable="COMPLETED_SUM_OPERATION" calculation="Sum"/>
 					<returnValue subreportVariable="BACK_SUM_SUM" toVariable="BACK_SUM_OPERATION" calculation="Sum"/>
 					<returnValue subreportVariable="POLICY_VIOLATIONS_SUM" toVariable="POLICY_VIOLATIONS_REPORT" calculation="Sum"/>
 					<returnValue subreportVariable="ROUTING_FAILURES_SUM" toVariable="ROUTING_FAILURES_REPORT" calculation="Sum"/>
-                    <returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM_REPORT" calculation="Sum"/>
-                    <returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM_REPORT" calculation="Sum"/>
-                    <returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_REPORT" calculation="Sum"/>
+					<returnValue subreportVariable="AUTHORIZED_SUM" toVariable="AUTHORIZED_SUM_REPORT" calculation="Sum"/>
+					<returnValue subreportVariable="ATTEMPTED_SUM" toVariable="ATTEMPTED_SUM_REPORT" calculation="Sum"/>
+					<returnValue subreportVariable="FRONT_SUM_SUM" toVariable="FRONT_SUM_REPORT" calculation="Sum"/>
 					<returnValue subreportVariable="COMPLETED_SUM" toVariable="COMPLETED_SUM_REPORT" calculation="Sum"/>
 					<returnValue subreportVariable="BACK_SUM_SUM" toVariable="BACK_SUM_REPORT" calculation="Sum"/>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{SUB_INTERVAL_SUB_REPORT}]]></subreportExpression>

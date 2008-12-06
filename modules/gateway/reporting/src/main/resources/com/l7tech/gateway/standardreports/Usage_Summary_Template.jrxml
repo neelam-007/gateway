@@ -58,8 +58,7 @@
 	<parameter name="HOURLY_MAX_RETENTION_NUM_DAYS" isForPrompting="false" class="java.lang.Integer">
 		<defaultValueExpression ><![CDATA[new Integer(1)]]></defaultValueExpression>
 	</parameter>
-
-    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
+	<parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SERVICE_ID_TO_NAME_MAP" isForPrompting="false" class="java.util.Map">
@@ -612,7 +611,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
 						style="DefaultStyle"
 						x="121"
 						y="0"
-						width="280"
+						width="291"
 						height="18"
 						key="textField-144"/>
 					<box></box>
