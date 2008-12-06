@@ -353,7 +353,7 @@ public class MigrationManagerImpl implements MigrationManager {
         try {
             entity = loadEntity(header);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error loading entity for dependency {0}", header);
+            logger.log(Level.WARNING, "Error loading entity for dependency '"+header+"'.", ExceptionUtils.getDebugException(e));
         }
         if ( (header.getName() == null || header.getName().length() == 0) && entity != null )
             header = EntityHeaderUtils.fromEntity(entity);

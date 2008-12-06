@@ -114,7 +114,7 @@ public class MigrationMetadata {
 
     // --- mapping / dependencies operations ---
 
-    private void initMappingsCache() throws MigrationException {
+    private void initMappingsCache()  {
         mappingsBySource = new HashMap<EntityHeaderRef, Set<MigrationMapping>>();
         mappingsByTarget = new HashMap<EntityHeaderRef, Set<MigrationMapping>>();
         for (MigrationMapping mapping : this.mappings) {
@@ -232,7 +232,7 @@ public class MigrationMetadata {
         return null;
     }
 
-    public Set<MigrationMapping> getMappingsForSource(EntityHeaderRef source) throws MigrationException {
+    public Set<MigrationMapping> getMappingsForSource(EntityHeaderRef source)  {
         if (mappingsBySource == null) initMappingsCache();
 
         if ( ! mappingsBySource.containsKey(EntityHeaderRef.fromOther(source)))
@@ -241,7 +241,7 @@ public class MigrationMetadata {
         return mappingsBySource.get(EntityHeaderRef.fromOther(source));
     }
 
-    public Set<MigrationMapping> getMappingsForTarget(EntityHeaderRef target) throws MigrationException {
+    public Set<MigrationMapping> getMappingsForTarget(EntityHeaderRef target) {
         if (mappingsByTarget == null) initMappingsCache();
 
         if ( ! mappingsByTarget.containsKey(EntityHeaderRef.fromOther(target)))
@@ -250,15 +250,15 @@ public class MigrationMetadata {
         return mappingsByTarget.get(EntityHeaderRef.fromOther(target));
     }
 
-    private void addMappingsForSource(EntityHeaderRef source, Set<MigrationMapping> mappings) throws MigrationException {
+    private void addMappingsForSource(EntityHeaderRef source, Set<MigrationMapping> mappings) {
         getMappingsForSource(source).addAll(mappings);
     }
 
-    private void addMappingsForTarget(EntityHeaderRef target, Set<MigrationMapping> mappings) throws MigrationException {
+    private void addMappingsForTarget(EntityHeaderRef target, Set<MigrationMapping> mappings) {
         getMappingsForTarget(target).addAll(mappings);
     }
 
-    public boolean isUploadedByParent(EntityHeaderRef headerRef) throws MigrationException {
+    public boolean isUploadedByParent(EntityHeaderRef headerRef) {
         for(MigrationMapping m : getMappingsForTarget(headerRef)) {
             if (m.isUploadedByParent())
                 return true;

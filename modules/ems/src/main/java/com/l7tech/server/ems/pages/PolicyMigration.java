@@ -24,6 +24,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.objectmodel.migration.MigrationMapping;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -31,6 +32,7 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.IHeaderResponse;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.basic.Label;
@@ -75,7 +77,13 @@ public class PolicyMigration extends EmsPage  {
         final String[] lastTargetClusterId = new String[1];
         final EntityMappingModel mappingModel = new EntityMappingModel();
 
+        final WebMarkupContainer dialogContainer = new WebMarkupContainer("dialogContainer");
+        dialogContainer.add( new EmptyPanel("dialog") );
+        add( dialogContainer.setOutputMarkupId(true) );
+
         final WebMarkupContainer dependenciesContainer = new WebMarkupContainer("dependencies");
+        dependenciesContainer.setVisible(false);
+        dependenciesContainer.setOutputMarkupPlaceholderTag(true);
         final Form dependenciesOptionsContainer = new Form("dependencyOptionsContainer");
         YuiDataTable.contributeHeaders(this);
 
@@ -162,6 +170,7 @@ public class PolicyMigration extends EmsPage  {
                     };
 
                     addDependencyOptions( dependenciesOptionsContainer, null, null, Collections.emptyList(), mappingModel );
+                    dependenciesContainer.setVisible(true);
                     dependenciesContainer.replace(ydt);
                     target.addComponent( dependenciesContainer );
                 } catch ( Exception e ) {
@@ -192,11 +201,27 @@ public class PolicyMigration extends EmsPage  {
                     final DependencyItemsRequest dir = new DependencyItemsRequest();
                     dir.fromJSON(jsonMap);
 
-                    boolean enableServices = Boolean.valueOf(enableNewServices);
-                    boolean overwrite = Boolean.valueOf(overwriteDependencies);
+                    final boolean enableServices = Boolean.valueOf(enableNewServices);
+                    final boolean overwrite = Boolean.valueOf(overwriteDependencies);
 
+                    TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel, true )));
+                    YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, textPanel, new YuiDialog.OkCancelCallback(){
+                        @Override
+                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
+                            if ( button == YuiDialog.Button.OK ) {
+                                logger.info("Migration confirmed.");
+                                String message = performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel, false );
+                                YuiDialog resultDialog = new YuiDialog("dialog", "Migration Result", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), message), null);
+                                dialogContainer.replace( resultDialog );
+                            } else {
+                                dialogContainer.replace( new EmptyPanel("dialog") );
+                            }
+                            target.addComponent(dialogContainer);
+                        }
+                    }, "600px");
 
-                    performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel );
+                    dialogContainer.replace( dialog );
+                    target.addComponent( dialogContainer );
                 } catch ( Exception e ) {
                     logger.log( Level.WARNING, "Error processing selection.", e);
                 }
@@ -460,13 +485,15 @@ public class PolicyMigration extends EmsPage  {
         }
     }
 
-    private void performMigration( final String sourceClusterId,
-                                   final String targetClusterId,
-                                   final String targetFolderId,
-                                   final boolean enableNewServices,
-                                   final boolean overwriteDependencies,
-                                   final DependencyItemsRequest requestedItems,
-                                   final EntityMappingModel mappingModel ) {
+    private String performMigration( final String sourceClusterId,
+                                     final String targetClusterId,
+                                     final String targetFolderId,
+                                     final boolean enableNewServices,
+                                     final boolean overwriteDependencies,
+                                     final DependencyItemsRequest requestedItems,
+                                     final EntityMappingModel mappingModel,
+                                     final boolean dryRun ) {
+        String summary = "";
         try {
             SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterId);
             SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
@@ -502,24 +529,35 @@ public class PolicyMigration extends EmsPage  {
                         }
                     }
 
-                    targetMigrationApi.importBundle( export, targetFolderHeader, false, overwriteDependencies, true, false );
-
-                    migrationRecordManager.create( null, getUser(), sourceCluster, targetCluster, summarize(export, summarize(folders, targetFolderId), enableNewServices), new byte[]{} ); // TODO save migrated bundle
+                    summary = summarize(export, summarize(folders, targetFolderId), enableNewServices);
+                    if ( !dryRun ) {
+                        targetMigrationApi.importBundle( export, targetFolderHeader, false, overwriteDependencies, enableNewServices, false );
+                        migrationRecordManager.create( null, getUser(), sourceCluster, targetCluster, summary, new byte[]{} ); // TODO save migrated bundle
+                        summary = "Migration completed.";
+                    }
                 }
             }
         } catch ( GatewayException ge ) {
             logger.log( Level.WARNING, "Error while performing migration.", ge );
+            summary = "Migration failed '"+ ExceptionUtils.getMessage(ge)+"'.";
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error while performing migration.", fe );
+            summary = "Migration failed '"+ ExceptionUtils.getMessage(fe)+"'.";
         } catch ( SaveException se ) {
             logger.log( Level.WARNING, "Error while performing migration.", se );
+            summary = "Migration failed '"+ ExceptionUtils.getMessage(se)+"'.";
         } catch ( MigrationException me ) {
             logger.log( Level.WARNING, "Error while performing migration.", me );
+            summary = "Migration failed '"+ ExceptionUtils.getMessage(me)+"'.";
         } catch (GatewayApi.GatewayException ge) {
             logger.log( Level.WARNING, "Error while performing migration.", ge );
+            summary = "Migration failed '"+ ExceptionUtils.getMessage(ge)+"'.";
         } catch (SOAPFaultException sfe) {
             logger.log( Level.WARNING, "Error while performing migration.", sfe );
+            summary = "Migration failed '"+ ExceptionUtils.getMessage(sfe)+"'.";
         }
+
+        return summary;
     }
 
     private String summarize( final Collection<GatewayApi.EntityInfo> folders, final String targetFolderId ) throws FindException {
@@ -537,7 +575,7 @@ public class PolicyMigration extends EmsPage  {
             }
 
             if ( folder == null ) {
-                throw new FindException("Could not find target folder.");               
+                throw new FindException("Could not find target folder.");
             }
 
             targetId = folder.getParentId();
@@ -562,6 +600,8 @@ public class PolicyMigration extends EmsPage  {
     private String summarize( final MigrationBundle export, String targetFolderPath, final boolean enabled ) {
         StringBuilder builder = new StringBuilder();
 
+        MigrationMetadata metadata = export.getMetadata();
+
         // overview
         builder.append( "Migration Options\n" );
         builder.append( "Imported to folder: " );
@@ -571,20 +611,19 @@ public class PolicyMigration extends EmsPage  {
         builder.append( enabled );
         builder.append( "\n" );
         builder.append( "Services migrated: " );
-        builder.append( count(export.getExportedItems(),EntityType.SERVICE) );
+        builder.append( count(export.getExportedItems(),metadata,EntityType.SERVICE) );
         builder.append( "\n" );
         builder.append( "Policies migrated: " );
-        builder.append( count(export.getExportedItems(),EntityType.POLICY) );
+        builder.append( count(export.getExportedItems(),metadata,EntityType.POLICY) );
         builder.append( "\n\n" );
 
         // entity details
-        MigrationMetadata metadata = export.getMetadata();
         builder.append( "Migrated Data\n" );
         for ( ExportedItem item : export.getExportedItems() ) {
-            if ( !item.isMappedValue() && item.getHeaderRef().getType() != EntityType.FOLDER ) {
+            if ( !item.isMappedValue() && item.getHeaderRef().getType() != EntityType.FOLDER && !metadata.isUploadedByParent(item.getHeaderRef())) {
                 EntityHeaderRef ref = item.getHeaderRef();
                 EntityHeader header = metadata.getHeader( ref );
-                builder.append( header.getType() );
+                builder.append( fromEntityType(header.getType()) );
                 builder.append( ", " );
                 builder.append( header.getName() );
                 builder.append( "(#" );
@@ -599,11 +638,11 @@ public class PolicyMigration extends EmsPage  {
         StringBuilder mappingBuilder = new StringBuilder();
         for ( MigrationMapping mapping : metadata.getMappings() ) {
             if ( mapping.isMappedTarget() && !mapping.isUploadedByParent() ) {
-                EntityHeaderRef sourceRef = mapping.getSource();
-                EntityHeaderRef targetRef = mapping.getTarget();
-                EntityHeader sourceHeader = metadata.getHeader( sourceRef );
+                EntityHeaderRef sourceRef = mapping.getOriginalTarget();
+                EntityHeaderRef targetRef = mapping.getMappedTarget();
+                EntityHeader sourceHeader = metadata.getOriginalHeader( sourceRef );
                 EntityHeader targetHeader = metadata.getHeader( targetRef );
-                mappingBuilder.append( sourceRef.getType() );
+                mappingBuilder.append( fromEntityType(sourceRef.getType()) );
                 mappingBuilder.append( ", " );
                 mappingBuilder.append( sourceHeader.getName() );
                 mappingBuilder.append( " (#" );
@@ -625,11 +664,11 @@ public class PolicyMigration extends EmsPage  {
         return builder.toString();
     }
 
-    private int count( final Collection<ExportedItem> items, final EntityType type ) {
+    private int count( final Collection<ExportedItem> items, final MigrationMetadata metadata, final EntityType type ) {
         int count = 0;
 
         for ( ExportedItem item : items ) {
-            if ( !item.isMappedValue() && item.getHeaderRef().getType() == type ) {
+            if ( !item.isMappedValue() && !metadata.isUploadedByParent(item.getHeaderRef()) && item.getHeaderRef().getType() == type ) {
                 count++;
             }
         }
@@ -750,7 +789,7 @@ public class PolicyMigration extends EmsPage  {
         private String optional;
         private Integer version;
 
-        public DependencyItem() {        
+        public DependencyItem() {
         }
 
         public DependencyItem( final EntityHeader entityHeader, final String optional ) {

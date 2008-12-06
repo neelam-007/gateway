@@ -144,9 +144,9 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     private EntityManager getManager(Class<? extends Entity> clazz) {
         final ReadOnlyEntityManager<? extends Entity, ? extends EntityHeader> manager = managersByClass.get(clazz);
         if (manager != null && !(PersistentEntity.class.isAssignableFrom(clazz)))
-            throw new IllegalArgumentException(clazz.getSimpleName() + " is not a PersistentEntity");
+            return null;
         if (!(manager instanceof EntityManager))
-            throw new IllegalArgumentException("Writeable EntityManager not available.");
+            return null;
         return (EntityManager)manager;
     }
 }
