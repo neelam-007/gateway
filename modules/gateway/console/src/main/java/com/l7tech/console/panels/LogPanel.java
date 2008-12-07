@@ -444,6 +444,7 @@ public class LogPanel extends JPanel {
                 setDataFromControlPanel();
                 savePreferences();
                 updateControlState();
+                updateMsgTotal();
 
                 //clear the details for the currently selected audit record
                 getMsgDetails().setText("");
@@ -2181,6 +2182,13 @@ public class LogPanel extends JPanel {
         public int compareTo(Object o) {
             return new Long(ssgLogRecord.getMillis()).compareTo(((WriteableLogMessage) o).ssgLogRecord.getMillis());
         }
+    }
+
+    /**
+     * Stop any running threads.
+     */
+    public void stopWorkers() {
+        auditLogTableSorterModel.stopWorkers();
     }
 
     /**

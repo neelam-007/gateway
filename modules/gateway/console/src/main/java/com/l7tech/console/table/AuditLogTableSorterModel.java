@@ -93,6 +93,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     private boolean canceled;
     private boolean displayingFromFile;
     private boolean truncated;
+    private LogRetrievalWorker logWorker;
 
 //    /**
 //     * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
@@ -568,106 +569,19 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         logPane.updateMsgTotal();
     }
 
-//    /**
-//     * Retreive logs from the cluster.
-//     *
-//     * @param logPane   The object reference to the LogPanel.
-//     * @param restartTimer  Specifying whether the refresh timer should be restarted.
-//     * @param start The start date for log records.
-//     * @param end The end date for log records.
-//     * @param requests  The list of requests for retrieving logs. One request per node.
-//     * @param nodeId the node to filter requests by (may be null)
-//     * @param count Number of records retrieved in the current refresh cycle.
-//     */
+
     private void doRefreshLogs(final LogPanel logPane, LogRequest logRequest, final boolean restartTimer, final int count) {
-
-        if(displayingFromFile) {
-            displayingFromFile = false;
-            clearLogCache();
-        }
-
         try {
-            // create a worker thread to retrieve the cluster info
-            final ClusterLogWorker infoWorker = new ClusterLogWorker(
-                    clusterStatusAdmin,
-                    auditAdmin,
-                    logType,
-                    //currentNodeList,
-                    logRequest) {
-                public void finished() {
+            //check if there is already a worker that is working already, if so, stop it!
+            if (logWorker != null && logWorker.isAlive()) {
+                logWorker.stopWorker();
+            }
 
-                    if (isCanceled()) {
-                        logger.info("Log retrieval is canceled.");
-                        logPane.getLogsRefreshTimer().stop();
-                        logPane.getMsgProgressBar().setVisible(false);
-                        logPane.getSearchButton().setEnabled(true);
-                    } else {
-                        // Note: the get() operation is a blocking operation.
-                        if (this.get() != null) {
-                            Map<Long, LogMessage> newLogs = getNewLogs();
-                            int logCount = newLogs.size();
-                            boolean updated = logCount > 0;
-
-                            if (count==0) {
-                                Map<String, GatewayStatus> newNodeList = getNewNodeList();
-                                removeLogsOfNonExistNodes(newNodeList);
-                                updated = updated || currentNodeList==null || !currentNodeList.keySet().equals(newNodeList.keySet());
-                                currentNodeList = newNodeList;
-                            }
-
-                            addLogs(newLogs);
-
-                            if (updated) {
-
-                                String msgNumSelected = logPane.getSelectedMsgNumber();
-
-                                // filter the logs
-                                if(logType == GenericLogAdmin.TYPE_LOG){
-                                    filterData(logPane.getMsgFilterLevel(),
-                                        logPane.getMsgFilterThreadId(),
-                                        logPane.getMsgFilterMessage());
-                                }
-
-                                // sort the logs
-                                sortData(columnToSort, false);
-
-                                // populate the change to the display
-                                realModel.fireTableDataChanged();
-                                logPane.updateMsgTotal();
-                                logPane.setSelectedRow(msgNumSelected);
-                            }
-
-                            logPane.updateTimeStamp(getCurrentClusterSystemTime());
-
-                            final LogRequest unfilledRequest = getUnfilledRequest();
-
-                            // if there unfilled requests
-                            final int total = count + logCount;
-                            if (unfilledRequest != null && total < MAX_NUMBER_OF_LOG_MESSAGES) {
-                                logPane.getMsgProgressBar().setVisible(true);
-                                SwingUtilities.invokeLater(
-                                        new Runnable() {
-                                            public void run() {
-                                                doRefreshLogs(logPane, unfilledRequest, restartTimer, total);
-                                            }
-                                        });
-
-                            } else {
-                                logPane.getMsgProgressBar().setVisible(false);
-                                logPane.getSearchButton().setEnabled(true);
-                                if (restartTimer) {
-                                    logPane.getLogsRefreshTimer().start();
-                                }
-                            }
-
-                        }
-                    }
-                }
-            };
-
-            infoWorker.start();
+            //create new worker thread
+            logWorker = new LogRetrievalWorker(clusterStatusAdmin, auditAdmin, logType, logRequest, logPane, restartTimer);
+            logWorker.start();
         }
-        catch(IllegalArgumentException iae) {
+        catch (IllegalArgumentException iae) {
             //can happen on disconnect when auto refresh is on.
             logPane.getMsgProgressBar().setVisible(false);
             logPane.getSearchButton().setEnabled(true);
@@ -765,5 +679,131 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         return msg.getSSGLogRecord() instanceof MessageSummaryAuditRecord
                 ? ((MessageSummaryAuditRecord) msg.getSSGLogRecord()).getName()
                 : "";
+    }
+
+    /**
+     * Stop any worker threads that may be running.
+     */
+    public void stopWorkers() {
+        logWorker.stopWorker();
+    }
+
+    /**
+     * Background thread that will basically retrieve log data for the audit viewer window.
+     * A background thread is used because it will download and update the viewer in chunks if there are alot
+     * of data to retrieve.
+     */
+    public class LogRetrievalWorker extends Thread {
+        private ClusterStatusAdmin clusterStatusAdmin;
+        private AuditAdmin auditAdmin;
+        private int logType;
+        private LogRequest logRequest;
+        private LogPanel logPane;
+        private boolean restartTimer;
+        private boolean done;
+        private int count;
+        private ClusterLogWorker infoWorker;
+
+        public LogRetrievalWorker(ClusterStatusAdmin clusterStatusAdmin, AuditAdmin auditAdmin, int logType,
+                                  final LogRequest logRequest, final LogPanel logPanel, boolean restartTimer) {
+            this.clusterStatusAdmin = clusterStatusAdmin;
+            this.auditAdmin = auditAdmin;
+            this.logType = logType;
+            this.logRequest = logRequest;
+            this.logPane = logPanel;
+            this.restartTimer = restartTimer;
+            this.count = 0;
+            this.done = false;
+        }
+
+        @Override
+        public void run() {
+            while (!done) {
+                logPane.getMsgProgressBar().setVisible(true);
+                if (displayingFromFile) {
+                    displayingFromFile = false;
+                    clearLogCache();
+                }
+
+                //if we have a busy worker, don't interrupt
+                if (infoWorker == null || !infoWorker.isAlive()) {
+                    infoWorker = new ClusterLogWorker(clusterStatusAdmin, auditAdmin, logType, logRequest);
+                    infoWorker.start();
+
+                    //block till thread is done and not interrupted
+                    if (infoWorker.get() != null && !this.isInterrupted()) {
+                        Map<Long, LogMessage> newLogs = infoWorker.getNewLogs();
+                        boolean updated = newLogs.size() > 0;
+
+                        if (count == 0) {
+                            Map<String, GatewayStatus> newNodeList = infoWorker.getNewNodeList();
+                            removeLogsOfNonExistNodes(newNodeList);
+                            updated = updated || currentNodeList == null || !currentNodeList.keySet().equals(newNodeList.keySet());
+                            currentNodeList = newNodeList;
+                        }
+
+                        addLogs(newLogs);
+                        if (updated) {
+                            String msgNumSelected = logPane.getSelectedMsgNumber();
+
+                            // filter the logs
+                            if (logType == GenericLogAdmin.TYPE_LOG) {
+                                filterData(logPane.getMsgFilterLevel(), logPane.getMsgFilterThreadId(), logPane.getMsgFilterMessage());
+                            }
+
+                            // sort the logs
+                            sortData(columnToSort, false);
+
+                            // populate the change to the display
+                            realModel.fireTableDataChanged();
+                            logPane.updateMsgTotal();
+                            logPane.setSelectedRow(msgNumSelected);
+                        }
+
+                        logPane.updateTimeStamp(infoWorker.getCurrentClusterSystemTime());
+                        count = count + newLogs.size();
+
+                        //check if we need to get more data
+                        if (infoWorker.getUnfilledRequest() != null && count < MAX_NUMBER_OF_LOG_MESSAGES) {
+                            logger.fine("Thread - " + this + ": says we need to grab more data");
+                            logRequest = infoWorker.getUnfilledRequest();
+                            logPane.getMsgProgressBar().setVisible(true);
+                            done = false;
+                        } else {
+                            logger.fine("Thread - " + this + ": says we don't need to grab more data");
+                            logPane.getMsgProgressBar().setVisible(false);
+                            logPane.getSearchButton().setEnabled(true);
+                            if (restartTimer) {
+                                logPane.getLogsRefreshTimer().start();
+                            }
+                            done = true;
+                        }
+                    } else {
+                        logPane.getMsgProgressBar().setVisible(false);
+                        logPane.getSearchButton().setEnabled(true);
+                        if (restartTimer) {
+                            logPane.getLogsRefreshTimer().start();
+                        }
+                        done = true;
+                        if (this.isInterrupted()) {
+                            logger.fine("Thread - " + this + " : was interrupted.");
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * Stop this thread worker.
+         */
+        public void stopWorker() {
+            logger.fine("Stop main worker thread requested (" + this + " )");
+            //try to stop the worker thread if there is one alive
+            if (infoWorker != null && infoWorker.isAlive()) {
+                logger.fine("Child worker is still working, we'll just interrupt child thread (" + infoWorker + ")");
+                infoWorker.interrupt();
+            }
+            this.interrupt();
+        }
     }
 }

@@ -139,6 +139,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      */
     @Column(name="request_zipxml", length=Integer.MAX_VALUE)
     @Type(type="com.l7tech.server.util.CompressedStringType")
+    @Basic(fetch=FetchType.LAZY)
     public String getRequestXml() {
         return requestXml;
     }
@@ -149,6 +150,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      */
     @Column(name="response_zipxml", length=Integer.MAX_VALUE)
     @Type(type="com.l7tech.server.util.CompressedStringType")
+    @Basic(fetch=FetchType.LAZY)
     public String getResponseXml() {
         return responseXml;
     }

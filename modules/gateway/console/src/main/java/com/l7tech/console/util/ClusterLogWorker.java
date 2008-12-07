@@ -236,5 +236,10 @@ public class ClusterLogWorker extends SwingWorker {
             return newNodeList;
         }
     }
+
+    @Override
+    public boolean isAlive() {
+        return super.isAlive();
+    }
 }
 
