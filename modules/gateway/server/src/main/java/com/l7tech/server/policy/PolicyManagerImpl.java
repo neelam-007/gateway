@@ -11,11 +11,13 @@ import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.*;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 
@@ -50,10 +52,12 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
     private PolicyCache policyCache;
     private final RoleManager roleManager;
     private final PolicyAliasManager policyAliasManager;
+    private final FolderManager folderManager;
 
-    public PolicyManagerImpl(RoleManager roleManager, PolicyAliasManager policyAliasManager) {
+    public PolicyManagerImpl(RoleManager roleManager, PolicyAliasManager policyAliasManager, FolderManager folderManager) {
         this.roleManager = roleManager;
         this.policyAliasManager = policyAliasManager;
+        this.folderManager = folderManager;
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -144,6 +148,16 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
             policyCache.validate(policy);
         } catch ( CircularPolicyException e ) {
             throw new SaveException("Couldn't save Policy: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        try {
+            //if the policy doesn't contain a folder location, we'll default it to be placed under the root folder
+            if (policy.getFolder() == null) {
+                Folder rootFolder = folderManager.findRootFolder();
+                policy.setFolder(rootFolder);
+            }
+        } catch (FindException fe) {
+            throw new SaveException("Couldn't save policy under root folder.");
         }
 
         oid = super.save(policy);

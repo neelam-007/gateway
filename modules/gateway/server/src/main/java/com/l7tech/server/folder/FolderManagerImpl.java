@@ -10,10 +10,7 @@ import org.springframework.transaction.annotation.Propagation;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Implementation of the service/policy folder manager.
@@ -67,5 +64,16 @@ public class FolderManagerImpl extends HibernateEntityManager<Folder, FolderHead
 
         //proceed with update
         super.update(entity);
+    }
+
+    public Folder findRootFolder() throws FindException {
+        //root folder should have no parent folder, ie null
+        Collection<Folder> folders = super.findAll();
+        for (Folder folder : folders) {
+            if (folder.getParentFolder() == null) {
+                return folder;
+            }
+        }
+        throw new FindException("No root folder!!");
     }
 }
