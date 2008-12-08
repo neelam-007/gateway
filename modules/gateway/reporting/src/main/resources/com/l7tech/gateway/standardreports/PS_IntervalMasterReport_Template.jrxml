@@ -586,7 +586,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_MAPPING} == 0)? new Double(0) : $V{FRONT_SUM_MAPPING}/$V{ATTEMPTED_SUM_MAPPING}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_MAPPING}.doubleValue() == 0)? new Double(0) : new Double($V{FRONT_SUM_MAPPING}.doubleValue()/$V{ATTEMPTED_SUM_MAPPING}.doubleValue())]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -628,7 +628,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM_MAPPING} == 0)? new Double(0) : $V{BACK_SUM_MAPPING}/$V{COMPLETED_SUM_MAPPING}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM_MAPPING}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_MAPPING}.doubleValue()/$V{COMPLETED_SUM_MAPPING}.doubleValue())]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -642,9 +642,9 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_MAPPING}>0)?
-(1 - (($V{AUTHORIZED_SUM_MAPPING} - $V{COMPLETED_SUM_MAPPING})/$V{ATTEMPTED_SUM_MAPPING}))
-:0]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_MAPPING}.doubleValue()>0)?
+new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MAPPING}.doubleValue())/$V{ATTEMPTED_SUM_MAPPING}.doubleValue())))
+:new Double(0)]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -976,7 +976,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM} == 0)? new Double(0) : new Double($V{FRONT_SUM_SUM}/$V{ATTEMPTED_SUM})]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM}.doubleValue() == 0)? new Double(0) : new Double($V{FRONT_SUM_SUM}.doubleValue()/$V{ATTEMPTED_SUM}.doubleValue())]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1018,7 +1018,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM} == 0)? new Double(0) : new Double($V{BACK_SUM_SUM}/$V{COMPLETED_SUM})]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_SUM}.doubleValue()/$V{COMPLETED_SUM}.doubleValue())]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1032,9 +1032,9 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM}>0)?
-(1 - (($V{AUTHORIZED_SUM} - $V{COMPLETED_SUM})/$V{ATTEMPTED_SUM}))
-:0]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM}.doubleValue()>0)?
+new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleValue())/$V{ATTEMPTED_SUM}.doubleValue())))
+:new Double(0)]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1183,7 +1183,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_OPERATION} == 0)? new Double(0) : $V{FRONT_SUM_OPERATION}/$V{ATTEMPTED_SUM_OPERATION}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_OPERATION}.doubleValue() == 0)? new Double(0) : new Double($V{FRONT_SUM_OPERATION}.doubleValue()/$V{ATTEMPTED_SUM_OPERATION}.doubleValue())]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1225,7 +1225,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM_OPERATION} == 0)? new Double(0) : $V{BACK_SUM_OPERATION}/$V{COMPLETED_SUM_OPERATION}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM_OPERATION}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_OPERATION}.doubleValue()/$V{COMPLETED_SUM_OPERATION}.doubleValue())]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1239,9 +1239,9 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_OPERATION}>0)?
-(1 - (($V{AUTHORIZED_SUM_OPERATION} - $V{COMPLETED_SUM_OPERATION})/$V{ATTEMPTED_SUM_OPERATION}))
-:0]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_OPERATION}.doubleValue()>0)?
+new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_OPERATION}.doubleValue())/$V{ATTEMPTED_SUM_OPERATION}.doubleValue())))
+:new Double(0)]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1872,7 +1872,7 @@ Utilities.getMappingReportInfoDisplayString
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_REPORT} == 0)? new Double(0) : $V{FRONT_SUM_REPORT}/$V{ATTEMPTED_SUM_REPORT}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_REPORT}.doubleValue() == 0)? new Double(0) : new Double($V{FRONT_SUM_REPORT}.doubleValue()/$V{ATTEMPTED_SUM_REPORT}.doubleValue())]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1914,7 +1914,7 @@ Utilities.getMappingReportInfoDisplayString
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM_REPORT} == 0)? new Double(0) : $V{BACK_SUM_REPORT}/$V{COMPLETED_SUM_REPORT}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM_REPORT}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_REPORT}.doubleValue()/$V{COMPLETED_SUM_REPORT}.doubleValue())]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1928,9 +1928,9 @@ Utilities.getMappingReportInfoDisplayString
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_REPORT}>0)?
-(1 - (($V{AUTHORIZED_SUM_REPORT} - $V{COMPLETED_SUM_REPORT})/$V{ATTEMPTED_SUM_REPORT}))
-:0]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_REPORT}.doubleValue()>0)?
+new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REPORT}.doubleValue())/$V{ATTEMPTED_SUM_REPORT}.doubleValue())))
+:new Double(0)]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
