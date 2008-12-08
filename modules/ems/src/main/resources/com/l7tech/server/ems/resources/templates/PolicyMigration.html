@@ -551,14 +551,16 @@
                 <td class="srcDest">
                     <table width="100%">
                         <tr>
-                            <td class="nowrap">
-                                Select a destination folder:
-                                (<input id="enableNewServicesCheckBox" type="checkbox" />
-                                <label for="enableNewServicesCheckBox"> enable new services</label>,
-                                <input id="overwriteDependenciesCheckBox" type="checkbox" />
-                                <label for="overwriteDependenciesCheckBox"> replace existing dependencies</label>)
+                            <td width="100%">
+                                <span class="nowrap">Select a destination folder:</span>
+                                <span class="nowrap">
+                                    (<input id="enableNewServicesCheckBox" type="checkbox" />
+                                    <label for="enableNewServicesCheckBox"> enable new services</label>,
+                                    <input id="overwriteDependenciesCheckBox" type="checkbox" />
+                                    <label for="overwriteDependenciesCheckBox"> replace existing dependencies</label>)
+                                </span>
                             </td>
-                            <td class="right" width="100%">
+                            <td class="nowrap">
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
                                      onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
@@ -598,9 +600,9 @@
                             <td id="srcItemDependenciesTabRight" class="roundedTitle2Right"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
                             <td class="right" width="100%">
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcItemIFrame', 'destItemIFrame'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcItemDiv', 'destItemDiv'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcItemIFrame', 'destItemIFrame'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcItemDiv', 'destItemDiv'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                             </td>
                         </tr>
                     </table>
@@ -618,9 +620,9 @@
                             <td id="destItemDependenciesTabRight" class="roundedTitle2Right"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
                             <td class="right" width="100%">
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcItemIFrame', 'destItemIFrame'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcItemDiv', 'destItemDiv'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcItemIFrame', 'destItemIFrame'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcItemDiv', 'destItemDiv'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                             </td>
                         </tr>
                     </table>
@@ -628,54 +630,58 @@
             </tr>
             <tr>
                 <td class="srcDestBottom" style="padding-top: 0;">
-                    <div id="srcItemDetailsDiv" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
-                        <h4>This feature is not available in this version.</h4>
-                    </div>
-                    <div id="srcItemDependenciesDiv" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
-                        <table class="dataTable" wicket:id="srcItemDependencies" width="100%">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th class="name" width="100%">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
-                                    <th title="Version">Ver.</th>
-                                    <th>Type</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr wicket:id="optionRepeater">
-                                    <td><div wicket:id="optional"/></td>
-                                    <td><div wicket:id="name"/></td>
-                                    <td class="right"><div wicket:id="version"/></td>
-                                    <td><div wicket:id="type"/></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div id="srcItemDiv" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
+                        <div id="srcItemDetailsDiv">
+                            <h4>This feature is not available in this version.</h4>
+                        </div>
+                        <div id="srcItemDependenciesDiv">
+                            <table class="dataTable" wicket:id="srcItemDependencies" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th class="name" width="100%">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+                                        <th title="Version">Ver.</th>
+                                        <th>Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr wicket:id="optionRepeater">
+                                        <td><div wicket:id="optional"/></td>
+                                        <td><div wicket:id="name"/></td>
+                                        <td class="right"><div wicket:id="version"/></td>
+                                        <td><div wicket:id="type"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </td>
                 <td class="srcDestCenter"></td>
                 <td class="srcDestBottom" style="padding-top: 0;">
-                    <div id="destItemDetailsDiv" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
-                        <h4>This feature is not available in this version.</h4>
-                    </div>
-                    <div id="destItemDependenciesDiv" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
-                        <table class="dataTable" wicket:id="destItemDependencies" width="100%">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th class="name" width="100%">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
-                                    <th title="Version">Ver.</th>
-                                    <th>Type</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr wicket:id="optionRepeater">
-                                    <td><div wicket:id="optional"/></td>
-                                    <td><div wicket:id="name"/></td>
-                                    <td class="right"><div wicket:id="version"/></td>
-                                    <td><div wicket:id="type"/></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div id="destItemDiv" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
+                        <div id="destItemDetailsDiv">
+                            <h4>This feature is not available in this version.</h4>
+                        </div>
+                        <div id="destItemDependenciesDiv">
+                            <table class="dataTable" wicket:id="destItemDependencies" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th class="name" width="100%">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+                                        <th title="Version">Ver.</th>
+                                        <th>Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr wicket:id="optionRepeater">
+                                        <td><div wicket:id="optional"/></td>
+                                        <td><div wicket:id="name"/></td>
+                                        <td class="right"><div wicket:id="version"/></td>
+                                        <td><div wicket:id="type"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </td>
             </tr>
