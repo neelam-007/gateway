@@ -120,8 +120,9 @@ public class PolicyMigration extends EmsPage  {
                     final DependencyItemsRequest dir = new DependencyItemsRequest();
                     dir.fromJSON(jsonMap);
 
+                    final String targetClusterId = lastTargetClusterId[0];
                     final Collection<DependencyItem> deps = retrieveDependencies(dir);
-                    loadMappings( mappingModel, dir.clusterId, lastTargetClusterId[0], deps );
+                    loadMappings( mappingModel, dir.clusterId, targetClusterId, deps );
                     YuiDataTable ydt = new YuiDataTable(
                             "dependenciesTable",
                             Arrays.asList(
@@ -173,6 +174,13 @@ public class PolicyMigration extends EmsPage  {
                     dependenciesContainer.setVisible(true);
                     dependenciesContainer.replace(ydt);
                     target.addComponent( dependenciesContainer );
+
+                    // build info dialog
+                    Label label = new Label(YuiDialog.getContentId(), summarize(dir, targetClusterId, deps, mappingModel));
+                    label.setEscapeModelStrings(false);
+                    YuiDialog dialog = new YuiDialog("dialog", "Identified Dependencies", YuiDialog.Style.CLOSE, label, null);
+                    dialogContainer.replace( dialog );
+                    target.addComponent( dialogContainer );
                 } catch ( Exception e ) {
                     logger.log( Level.WARNING, "Error processing selection.", e);
                 }
@@ -328,7 +336,7 @@ public class PolicyMigration extends EmsPage  {
             @Override
             protected void populateItem( final ListItem item ) {
                 final DependencyItem dependencyItem = ((DependencyItem)item.getModelObject());
-                item.add(new Label("optional", dependencyItem.optional).setEscapeModelStrings(false));
+                item.add(new Label("optional", dependencyItem.getOptional()).setEscapeModelStrings(false));
                 item.add(new Label("name", dependencyItem.name));
                 item.add(new Label("type", fromEntityType(EntityType.valueOf(dependencyItem.type))));
                 item.add(new Label("version", dependencyItem.getVersionAsString()));
@@ -418,7 +426,7 @@ public class PolicyMigration extends EmsPage  {
                 MigrationApi api = context.getMigrationApi();
                 MigrationMetadata metadata = api.findDependencies( request.asEntityHeaders() );
                 for (EntityHeader header : metadata.getMappableDependencies()) {
-                    deps.add( new DependencyItem( header, toImgIcon(metadata.isMappingRequired(header)) ) );
+                    deps.add( new DependencyItem( header, !metadata.isMappingRequired(header) ) );
                 }
             }
         }
@@ -442,7 +450,7 @@ public class PolicyMigration extends EmsPage  {
                         EntityHeaderSet<EntityHeader> entitySet = (EntityHeaderSet<EntityHeader>) candidates.get(entityHeader);
                         if ( entitySet != null ) {
                             for ( EntityHeader header : entitySet ) {
-                                deps.add( new DependencyItem( header, "") );
+                                deps.add( new DependencyItem( header, true) );
                             }
                         } else {
                             logger.fine("No entities found when searching for candidates of ID '"+sourceKey.id+"', type '"+sourceKey.type+"'.");
@@ -477,7 +485,7 @@ public class PolicyMigration extends EmsPage  {
                     if ( !mappingModel.dependencyMap.containsKey(mapKey) ) {
                         EntityHeader targetHeader = migrationMappingRecordManager.findEntityHeaderForMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
                         if ( targetHeader != null ) {
-                            mappingModel.dependencyMap.put( mapKey, new DependencyItem( targetHeader, "" ) );
+                            mappingModel.dependencyMap.put( mapKey, new DependencyItem( targetHeader, true ) );
                         }
                     }
                 }
@@ -560,6 +568,32 @@ public class PolicyMigration extends EmsPage  {
         }
 
         return summary;
+    }
+
+    /**
+     *
+     */
+    private String summarize( final DependencyItemsRequest request, final String targetClusterId, final Collection<DependencyItem> dependencies, final EntityMappingModel mappings ) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("<p>Found ");
+        builder.append(dependencies.size());
+        builder.append(" dependencies.</p>");        
+
+        builder.append("<p>");
+        int count = 0;
+        for ( DependencyItem item : dependencies ) {
+            DependencyKey sourceKey = new DependencyKey( request.clusterId, item.asEntityHeader() );
+            Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
+            if ( !item.optional && !mappings.dependencyMap.containsKey(mapKey) ) {
+                count++;    
+            }
+        }
+        builder.append(count);
+        builder.append(" dependencies require mapping.</p>");
+
+
+        return builder.toString();
     }
 
     private String summarize( final Collection<GatewayApi.EntityInfo> folders, final String targetFolderId ) throws FindException {
@@ -681,10 +715,10 @@ public class PolicyMigration extends EmsPage  {
         return count;
     }
 
-    private String toImgIcon( final boolean required ) {
+    private static String toImgIcon( final boolean optional ) {
         String icon = "";
 
-        if ( required ) {
+        if ( !optional ) {
             icon = "<img src=/images/unresolved.png />"; //TODO JSON quote escaping
         }
 
@@ -791,13 +825,13 @@ public class PolicyMigration extends EmsPage  {
         private String id;
         private String type;
         private String name;
-        private String optional;
+        private boolean optional;
         private Integer version;
 
         public DependencyItem() {
         }
 
-        public DependencyItem( final EntityHeader entityHeader, final String optional ) {
+        public DependencyItem( final EntityHeader entityHeader, final boolean optional ) {
             this.entityHeader = entityHeader;
             this.uid = entityHeader.getType().toString() +":" + entityHeader.getStrId();
             this.id = entityHeader.getStrId();
@@ -809,6 +843,10 @@ public class PolicyMigration extends EmsPage  {
 
         public String getType() {
             return fromEntityType(EntityType.valueOf(type));
+        }
+
+        public String getOptional() {
+            return toImgIcon(optional);
         }
 
         @Override
@@ -838,7 +876,6 @@ public class PolicyMigration extends EmsPage  {
 
             if (id != null ? !id.equals(that.id) : that.id != null) return false;
             if (name != null ? !name.equals(that.name) : that.name != null) return false;
-            if (optional != null ? !optional.equals(that.optional) : that.optional != null) return false;
             if (type != null ? !type.equals(that.type) : that.type != null) return false;
             if (uid != null ? !uid.equals(that.uid) : that.uid != null) return false;
             if (version != null ? !version.equals(that.version) : that.version != null) return false;
@@ -854,7 +891,6 @@ public class PolicyMigration extends EmsPage  {
             result = 31 * result + (type != null ? type.hashCode() : 0);
             result = 31 * result + (name != null ? name.hashCode() : 0);
             result = 31 * result + (version != null ? version.hashCode() : 0);
-            result = 31 * result + (optional != null ? optional.hashCode() : 0);
             return result;
         }
 
