@@ -117,7 +117,7 @@ public class StandardReports extends EmsPage  {
 
         List<String> zoneIds = Arrays.asList(TimeZone.getAvailableIDs());
         Collections.sort(zoneIds);
-        form.add(new DropDownChoice("timezone", zoneIds, new IChoiceRenderer(){
+        form.add(new DropDownChoice("timezone", new Model(getSession().getTimeZoneId()), zoneIds, new IChoiceRenderer(){
             @Override
             public Object getDisplayValue(Object object) {
                 return object;
