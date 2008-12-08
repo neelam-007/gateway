@@ -56,10 +56,12 @@ public class MigrationManagerImpl implements MigrationManager {
     @Override
     public MigrationMetadata findDependencies(Collection<EntityHeader> headers ) throws MigrationException {
         logger.log(Level.FINEST, "Finding dependencies for headers: {0}", headers);
-        MigrationMetadata result = new MigrationMetadata();
-        result.setHeaders(headers);
+        Collection<EntityHeader> resolvedHeaders = resolveHeaders( headers );
 
-        for (EntityHeader header : headers) {
+        MigrationMetadata result = new MigrationMetadata();
+        result.setHeaders( resolvedHeaders );
+
+        for ( EntityHeader header : resolvedHeaders ) {
             findDependenciesRecursive(result, header);
         }
 
@@ -370,23 +372,49 @@ public class MigrationManagerImpl implements MigrationManager {
                     throw new MigrationException("Error getting dependencies for property: " + method, e);
                 }
                 for (EntityHeader depHeader : deps.keySet()) {
-                    for (MigrationMapping mapping : deps.get(depHeader)) {
+                    for ( MigrationMapping mapping : deps.get(depHeader) ) {
+                        EntityHeader resolvedHeader = resolveHeader( depHeader );
+                        if ( depHeader instanceof GuidEntityHeader ) {
+                            // TODO find a better way to do this
+                            EntityHeader resolvedDepHeader  = resolveHeader( depHeader );
+                            if ( mapping.getSource().getStrId().equals(((GuidEntityHeader)depHeader).getGuid()) ) {
+                                mapping.setSource( EntityHeaderRef.fromOther(resolvedDepHeader) );
+                            }
+                            if ( mapping.getTarget().getStrId().equals(((GuidEntityHeader)depHeader).getGuid()) ) {
+                                mapping.setTarget( EntityHeaderRef.fromOther(resolvedDepHeader) );
+                            }
+                        }
                         result.addMapping(mapping);
                         logger.log(Level.FINE, "Added mapping: " + mapping);
-                        if (!result.hasHeader(depHeader))
-                            findDependenciesRecursive(result, depHeader);
+                        if ( !result.hasHeader( resolvedHeader ) ) {
+                            findDependenciesRecursive( result, resolvedHeader );
+                        }
                     }
                 }
             }
         }
     }
 
-    private Entity loadEntity(EntityHeader header) throws MigrationException {
+    private EntityHeader resolveHeader( final EntityHeader header ) throws MigrationException {
+        return EntityHeaderUtils.fromEntity( loadEntity(header) );
+    }
+
+    private Collection<EntityHeader> resolveHeaders( final Collection<EntityHeader> headers ) throws MigrationException {
+        List<EntityHeader> resolvedHeaders = new ArrayList<EntityHeader>( headers.size() );
+
+        for ( EntityHeader header : headers ) {
+            resolvedHeaders.add( resolveHeader( header ) );
+        }
+
+        return resolvedHeaders;
+    }
+
+    private Entity loadEntity( final EntityHeader header ) throws MigrationException {
         logger.log(Level.FINEST, "Loading entity for header: {0}", header);
         try {
             Entity ent = entityCrud.find(header); // load the entity
             if (ent == null)
-                throw new MigrationException("Error loading the entity for header: " + header);
+                throw new MigrationException("Error loading the entity for header "+ header.getType() +", " + header.getName() + "(#"+header.getOid()+")");
             return ent;
         } catch (FindException e) {
             throw new MigrationException("Error loading the entity for header: " + header, e);

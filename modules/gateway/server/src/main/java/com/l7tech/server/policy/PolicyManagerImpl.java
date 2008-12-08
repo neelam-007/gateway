@@ -65,6 +65,15 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         this.policyCache = policyCache;
     }
 
+    @Override
+    public Policy findByHeader(final EntityHeader header) throws FindException {
+        if ( header instanceof GuidEntityHeader && ((GuidEntityHeader)header).getGuid() != null ) {
+            return findByGuid( ((GuidEntityHeader)header).getGuid() );
+        } else {
+            return super.findByHeader( header );
+        }
+    }
+
     public Policy findByGuid(final String guid) throws FindException {
         try {
             //noinspection unchecked

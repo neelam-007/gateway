@@ -458,6 +458,8 @@ public class PolicyMigration extends EmsPage  {
             logger.log( Level.WARNING, "Error while gettings dependency options.", fe );
         } catch ( MigrationException me ) {
             logger.log( Level.WARNING, "Error while gettings dependency options.", me );
+        } catch ( SOAPFaultException sfe ) {
+            logger.log( Level.WARNING, "Error while gettings dependency options.", sfe );
         }
 
         return deps;
@@ -529,7 +531,7 @@ public class PolicyMigration extends EmsPage  {
                         }
                     }
 
-                    summary = summarize(export, summarize(folders, targetFolderId), enableNewServices);
+                    summary = summarize(export, summarize(folders, targetFolderId), enableNewServices, overwriteDependencies);
                     if ( !dryRun ) {
                         targetMigrationApi.importBundle( export, targetFolderHeader, false, overwriteDependencies, enableNewServices, false );
                         migrationRecordManager.create( null, getUser(), sourceCluster, targetCluster, summary, new byte[]{} ); // TODO save migrated bundle
@@ -597,7 +599,7 @@ public class PolicyMigration extends EmsPage  {
         return builder.toString().trim();
     }
 
-    private String summarize( final MigrationBundle export, String targetFolderPath, final boolean enabled ) {
+    private String summarize( final MigrationBundle export, String targetFolderPath, final boolean enabled, final boolean overwrite ) {
         StringBuilder builder = new StringBuilder();
 
         MigrationMetadata metadata = export.getMetadata();
@@ -609,6 +611,9 @@ public class PolicyMigration extends EmsPage  {
         builder.append( "\n" );
         builder.append( "Services enabled on import: " );
         builder.append( enabled );
+        builder.append( "\n" );
+        builder.append( "Existing dependencies replaced: " );
+        builder.append( overwrite );
         builder.append( "\n" );
         builder.append( "Services migrated: " );
         builder.append( count(export.getExportedItems(),metadata,EntityType.SERVICE) );

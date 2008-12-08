@@ -5,6 +5,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.GuidEntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 
@@ -64,6 +65,7 @@ public class Include extends Assertion implements UsesEntities, PolicyReference 
         return policyGuid;
     }
 
+    @Override
     public String retrievePolicyGuid() {
         return getPolicyGuid();
     }
@@ -80,22 +82,28 @@ public class Include extends Assertion implements UsesEntities, PolicyReference 
         this.policyOid = policyOid;
     }
 
+    @Override
     public EntityHeader[] getEntitiesUsed() {
+        GuidEntityHeader header = new GuidEntityHeader(policyGuid, EntityType.POLICY, policyName, null);
+        header.setGuid( policyGuid );
         return new EntityHeader[] {
-            new EntityHeader(policyGuid, EntityType.POLICY, policyName, null)
+            header
         };
     }
 
+    @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if (!(newEntityHeader instanceof PolicyHeader)) throw new IllegalArgumentException("newEntityHeader is not a PolicyHeader");
 
         policyGuid = ((PolicyHeader)newEntityHeader).getGuid();
     }
 
+    @Override
     public Policy retrieveFragmentPolicy() {
         return fragmentPolicy;
     }
 
+    @Override
     public void replaceFragmentPolicy(Policy policy) {
         fragmentPolicy = policy;
     }

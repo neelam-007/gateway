@@ -63,10 +63,6 @@ public class PolicyHeader extends OrganizationHeader {
         return isSoap;
     }
 
-    public String getGuid() {
-        return guid;
-    }
-
     @Override
     public String toString() {
         return getName();
@@ -75,5 +71,4 @@ public class PolicyHeader extends OrganizationHeader {
     //- PRIVATE
 
     private final boolean isSoap;
-    private final String guid;
 }
