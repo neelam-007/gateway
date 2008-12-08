@@ -920,7 +920,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						x="0"
 						y="18"
 						width="820"
-						height="130"
+						height="122"
 						key="frame-5"
 						stretchType="RelativeToTallestObject"
 						isPrintRepeatedValues="false"/>
@@ -1246,15 +1246,38 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 				<text><![CDATA[Groupings:]]></text>
 				</staticText>
 				</frame>				</frame>				<frame>					<reportElement
+						style="FrameTableTop"
+						mode="Opaque"
+						x="0"
+						y="158"
+						width="820"
+						height="18"
+						key="frame-45"/>
+					<box></box>
+				<staticText>
+					<reportElement
+						x="0"
+						y="0"
+						width="105"
+						height="17"
+						key="staticText-154"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[No Data]]></text>
+				</staticText>
+				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
-						y="168"
+						y="176"
 						width="820"
 						height="118"
 						key="frame-9"/>
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
+						style="FrameNoData"
 						x="0"
 						y="0"
 						width="820"
@@ -1264,8 +1287,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					<textElement markup="html">
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["There were no service metrics for the time period chosen for services:<br> "
-+ $P{serviceIdValueToDisplay}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["There were no service metrics for the criteria chosen"]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 		</noData>

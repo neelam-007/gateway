@@ -516,6 +516,20 @@
             <rightPen lineWidth="1.0"/>
         </box>
     </style>
+
+    <style
+            name="FrameNoData"
+            isDefault="false"
+            backcolor="#F8F8F8"
+            vAlign="Middle"
+            >
+        <box leftPadding="5">
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
     <style
             name="FrameTotalTableRow"
             isDefault="false"
