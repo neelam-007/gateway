@@ -149,8 +149,7 @@
                 ],
                 onEntityHighlighted : onEntityHighlighted,
                 onClickAccessDialogButton : function(event, entity) {
-                    // TODO
-alert('Not implemented yet!\n\nonClickAccessDialogButton\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, 'This feature is not available in this version.', localizedStrings.OK);
                 }
             };
             entityTreeTable = new l7.EntityTreeTable(entityTreeTableBody, [], '../images', config);
