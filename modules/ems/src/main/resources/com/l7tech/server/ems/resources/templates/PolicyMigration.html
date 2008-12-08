@@ -88,10 +88,17 @@
                 CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server: ',
                 IDENTIFING_DEPENDENCIES : 'Identifying dependencies for selected source items ...',
                 CANNOT_DOWNLOAD_DEPENDENCIES : 'Failed to download list of dependencies for selected source items: ',
-                DEPENDENCY_MAPPING : 'Dependency Mapping'
+                DEPENDENCY_MAPPING : 'Dependency Mapping',
+                DEPENDENCY_DOWNLOADED : 'Dependencies are listed below for mapping resolution.'
             }
         </script>
         <script type="text/javascript">
+            var SIDE_SRC  = 'src';
+            var SIDE_DEST = 'dest';
+            var ITEM_TAB_SUFFIX_DETAILS      = 'Details';
+            var ITEM_TAB_SUFFIX_DEPENDENCIES = 'Dependencies';
+            var ITEM_TAB_SUFFIXES = [ITEM_TAB_SUFFIX_DETAILS, ITEM_TAB_SUFFIX_DEPENDENCIES];
+            var ITEM_TAB_LCR = ['Left', 'Center', 'Right'];
             var MIN_FRAME_HEIGHT = 150;
             var MAX_FRAME_HEIGHT = 500;
             var INCR_FRAME_HEIGHT = 50;
@@ -137,12 +144,14 @@
             function onLoadSrcSSGClusterContent(callbackId) {
                 updateIdentifyDependenciesButton();
                 updateMigrateButton();
+                // TODO Clears item display because no item is highlighted now.
             }
 
             function onLoadDestSSGClusterContent(callbackId) {
                 document.getElementById('destinationClusterId').value = destSSGClusterContentSelectorWindow.getSsgCluster().id;
                 updateIdentifyDependenciesButton();
                 updateMigrateButton();
+                // TODO Clears item display because no item is highlighted now.
             }
 
             function onChangeSrcSSGClusterContentSelection(event, entity, callbackId) {
@@ -171,7 +180,7 @@
                             l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
                             l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
                             l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
-                        ], zoomItem);
+                    ], onItemHighlighted);
                     srcSSGClusterContentSelectorWindow.loadSsgClusterContent(
                         ssgCluster,
                         [
@@ -191,7 +200,7 @@
                             l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
                             l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
                             l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
-                        ], zoomItem);
+                    ], onItemHighlighted);
                     destSSGClusterContentSelectorWindow.loadSsgClusterContent(
                         ssgCluster,
                         null,
@@ -201,11 +210,62 @@
                 }
             }
 
-            function zoomItem(previous, entity, callbackId) {
+            function onClickItemTab(event, args) {
+                var side = args[0];
+                var tabSuffix = args[1];
+                selectItemTab(side, tabSuffix, true);
+            }
+
+            function onItemHighlighted(ssgCluster, previous, entity, callbackId) {
                 if (callbackId == 'srcSSGClusterContentSelector') {
                     wicketAjaxGet(srcItemSelectionCallbackUrl + '&clusterId=' + escape(srcSSGClusterContentSelectorWindow.getSsgCluster().id) + '&type=' + escape(entity.type) + '&id=' + escape(entity.id) , function() { }, function() { });
                 } else if (callbackId == 'destSSGClusterContentSelector') {
                     wicketAjaxGet(destItemSelectionCallbackUrl + '&clusterId=' + escape(destSSGClusterContentSelectorWindow.getSsgCluster().id) + '&type=' + escape(entity.type) + '&id=' + escape(entity.id) , function() { }, function() { });
+                }
+            }
+
+            /**
+             * @param {string} side         which side: SIDE_SRC or SIDE_DEST
+             * @param {string} tabSuffix    which tab: one of ITEM_TAB_SUFFIXES
+             */
+            function selectItemTab(side, tabSuffix) {
+                for (var i in ITEM_TAB_SUFFIXES) {
+                    for (var j in ITEM_TAB_LCR) {
+                        var elementId = side + 'Item' + ITEM_TAB_SUFFIXES[i] + 'Tab' + ITEM_TAB_LCR[j];
+                        var element = document.getElementById(elementId);
+                        if (tabSuffix == ITEM_TAB_SUFFIXES[i]) {
+                            l7.Util.removeClass(element, 'unselectedTab');
+                            l7.Util.removeClass(element, 'clickable');
+                            YAHOO.util.Event.removeListener(element, 'click', onClickItemTab, [side, ITEM_TAB_SUFFIXES[i]]);
+                        } else {
+                            l7.Util.addClass(element, 'unselectedTab');
+                            l7.Util.addClass(element, 'clickable');
+                            YAHOO.util.Event.addListener(element, 'click', onClickItemTab, [side, ITEM_TAB_SUFFIXES[i]]);
+                        }
+                    }
+
+                    var divId = side + 'Item' + ITEM_TAB_SUFFIXES[i] + 'Div';
+                    var div = document.getElementById(divId);
+                     if (tabSuffix == ITEM_TAB_SUFFIXES[i]) {
+                         div.style.display = '';
+                     } else {
+                         div.style.display = 'none';
+                     }
+                }
+            }
+
+            /**
+             * @param {string} side     which side: SIDE_SRC or SIDE_DEST
+             * @return {string} the tab suffix: one of ITEM_TAB_SUFFIXES
+             */
+            function getSelctedItemTab(side) {
+                for (var i in ITEM_TAB_SUFFIXES) {
+                    var tabSuffix = ITEM_TAB_SUFFIXES[i];
+                    var elementId = side + 'Item' + tabSuffix + 'Tab' + ITEM_TAB_LCR[0];
+                    var element = document.getElementById(elementId);
+                    if (!l7.Util.hasClass(element, 'clickable')) {
+                        return tabSuffix;
+                    }
                 }
             }
 
@@ -297,6 +357,8 @@
                 initButtons();
                 initDialogs();
                 initActions();
+                selectItemTab(SIDE_SRC,  ITEM_TAB_SUFFIX_DEPENDENCIES); // TODO select Details tab upon page load when implemented
+                selectItemTab(SIDE_DEST, ITEM_TAB_SUFFIX_DEPENDENCIES);
             }
 
             YAHOO.util.Event.onDOMReady(init);
@@ -527,18 +589,18 @@
                 <td class="srcDest" style="padding-top: 4px; padding-bottom: 0;">
                     <table width="100%">
                         <tr>
-                            <td class="roundedTitle2Left unselectedTab clickable"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                            <td class="roundedTitle2Center unselectedTab clickable">Item Details</td>
-                            <td class="roundedTitle2Right unselectedTab clickable"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                            <td id="srcItemDetailsTabLeft" class="roundedTitle2Left"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                            <td id="srcItemDetailsTabCenter" class="roundedTitle2Center">Item Details</td>
+                            <td id="srcItemDetailsTabRight" class="roundedTitle2Right"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
                             <td><img src="../images/spacer.png" width="1" height="1" alt="" /></td>
-                            <td class="roundedTitle2Left"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                            <td class="roundedTitle2Center">Item Dependencies</td>
-                            <td class="roundedTitle2Right"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                            <td id="srcItemDependenciesTabLeft" class="roundedTitle2Left"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                            <td id="srcItemDependenciesTabCenter" class="roundedTitle2Center">Item Dependencies</td>
+                            <td id="srcItemDependenciesTabRight" class="roundedTitle2Right"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
                             <td class="right" width="100%">
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcItemIFrame', 'destItemIFrame'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcItemIFrame', 'destItemIFrame'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                             </td>
                         </tr>
                     </table>
@@ -547,18 +609,18 @@
                 <td class="srcDest" style="padding-top: 4px; padding-bottom: 0;">
                     <table width="100%">
                         <tr>
-                            <td class="roundedTitle2Left unselectedTab clickable"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                            <td class="roundedTitle2Center unselectedTab clickable">Item Details</td>
-                            <td class="roundedTitle2Right unselectedTab clickable"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                            <td id="destItemDetailsTabLeft" class="roundedTitle2Left"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                            <td id="destItemDetailsTabCenter" class="roundedTitle2Center">Item Details</td>
+                            <td id="destItemDetailsTabRight" class="roundedTitle2Right"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
                             <td><img src="../images/spacer.png" width="1" height="1" alt="" /></td>
-                            <td class="roundedTitle2Left"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
-                            <td class="roundedTitle2Center">Item Dependencies</td>
-                            <td class="roundedTitle2Right"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                            <td id="destItemDependenciesTabLeft" class="roundedTitle2Left"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
+                            <td id="destItemDependenciesTabCenter" class="roundedTitle2Center">Item Dependencies</td>
+                            <td id="destItemDependenciesTabRight" class="roundedTitle2Right"><img src="../images/spacer.png" width="8" height="8" alt="" /></td>
                             <td class="right" width="100%">
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcItemIFrame', 'destItemIFrame'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcItemDetails', 'destItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcItemIFrame', 'destItemIFrame'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                             </td>
                         </tr>
                     </table>
@@ -566,7 +628,10 @@
             </tr>
             <tr>
                 <td class="srcDestBottom" style="padding-top: 0;">
-                    <div id="srcItemDetails" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
+                    <div id="srcItemDetailsDiv" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
+                        <h4>This feature is not available in this version.</h4>
+                    </div>
+                    <div id="srcItemDependenciesDiv" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
                         <table class="dataTable" wicket:id="srcItemDependencies" width="100%">
                             <thead>
                                 <tr>
@@ -589,7 +654,10 @@
                 </td>
                 <td class="srcDestCenter"></td>
                 <td class="srcDestBottom" style="padding-top: 0;">
-                    <div id="destItemDetails" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
+                    <div id="destItemDetailsDiv" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
+                        <h4>This feature is not available in this version.</h4>
+                    </div>
+                    <div id="destItemDependenciesDiv" style="border: 1px solid black; overflow: scroll; height: 150px" class="dataIFrame">
                         <table class="dataTable" wicket:id="destItemDependencies" width="100%">
                             <thead>
                                 <tr>

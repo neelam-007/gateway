@@ -79,7 +79,7 @@
 
         /**
          * Callback function upon highlighting an SSG content entity.
-         * @type function(previous, entity, callbackId)
+         * @type function(ssgCluster, previous, entity, callbackId)
          */
         var entityHighlightedCallback;
 
@@ -130,7 +130,7 @@
          */
         function onEntityHighlighted(previous, entity) {
             if (entityHighlightedCallback != undefined && entityHighlightedCallback != null) {
-                entityHighlightedCallback(previous, entity, callbackId);
+                entityHighlightedCallback(currentSsgCluster, previous, entity, callbackId);
             }
         }
 

@@ -11,12 +11,38 @@
     <title>Policy Submission [Enterprise Service Manager]</title>
     <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
 
-    <!-- Required YUI modules: animation, event, logger -->
+    <!-- Required YUI modules: animation, button, event, logger -->
+    <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css">
     <link rel="stylesheet" type="text/css" href="../yui/logger/assets/skins/sam/logger.css">
     <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
     <script type="text/javascript" src="../yui/animation/animation-min.js"></script>
+    <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
+    <script type="text/javascript" src="../yui/button/button-min.js"></script>
     <script type="text/javascript" src="../yui/logger/logger-min.js"></script>
 
+    <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css" /> <!-- modifies YUI sam skin; must come after YUI CSS files -->
+    <style type="text/css">
+        .yui-skin-sam .yui-button#submitButton,
+        .yui-skin-sam .yui-button#submitButton .first-child,
+        .yui-skin-sam .yui-button#submitButton button,
+        .yui-skin-sam .yui-button#submitButton a,
+        .yui-skin-sam .yui-button#submitButton img,
+        .yui-skin-sam .yui-button-focus#submitButton,
+        .yui-skin-sam .yui-button-focus#submitButton .first-child,
+        .yui-skin-sam .yui-button-focus#submitButton button,
+        .yui-skin-sam .yui-button-focus#submitButton a,
+        .yui-skin-sam .yui-button-focus#submitButton img,
+        .yui-skin-sam .yui-button-active#submitButton,
+        .yui-skin-sam .yui-button-active#submitButton .first-child,
+        .yui-skin-sam .yui-button-active#submitButton button,
+        .yui-skin-sam .yui-button-active#submitButton a
+        .yui-skin-sam .yui-button-active#submitButton img {
+            border: none;
+            background: none;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
     <script type="text/javascript" src="../js/l7.js"></script>
     <script type="text/javascript" src="../js/entityTreeTable.js"></script>
     <script type="text/javascript">
@@ -25,9 +51,7 @@
         var INCR_FRAME_HEIGHT = 50;
         var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
 
-        /**
-         * @type HTMLIFrameElement
-         */
+        var submitButton;
         var srcSSGClusterContentSelectorWindow;
 
         function initSSGClusterSelector(iframe) {
@@ -67,10 +91,19 @@
             }
         }
 
-        function zoomItem(previous, entity, callbackId) {
+        function zoomItem(ssgCluster, previous, entity, callbackId) {
             if (callbackId == 'srcSSGClusterContentSelector') {
-                document.getElementById('srcItemDetails').src = 'dataSource/' + entity.type + '/' + srcSSGClusterContentSelectorWindow.getSsgCluster().id + '/' + entity.id + '.xml';
+                document.getElementById('srcItemIFrame').src = 'dataSource/' + entity.type + '/' + ssgCluster.id + '/' + entity.id + '.xml';
             }
+        }
+
+        function initButtons() {
+            submitButton = new YAHOO.widget.Button('submitButton', {
+                disabled : true,        // initially disabled until all inputs are made
+                onclick  : { fn : onClickSumbit },
+                title    : 'Submit',    // need title on IMG element too
+                type     : 'push'
+            });
         }
 
         function init() {
@@ -78,6 +111,8 @@
             debugLogReader.hide();   // Initially hidden.
 
             srcSSGClusterContentSelectorWindow = document.getElementById('srcSSGClusterContentSelector').contentWindow;
+
+            initButtons();
         }
 
         YAHOO.util.Event.onDOMReady(init);
@@ -235,7 +270,7 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="srcDest"><iframe id="srcSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterSelector(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="srcSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSSGClusterSelector(this);"></iframe></td>
                             <td class="srcDestCenter"></td>
                             <td class="srcDest"><iframe id="userSelector" src="UserSelector.html" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
                         </tr>
@@ -270,8 +305,12 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="srcDest"><iframe id="srcSSGClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSSGClusterContentSelector(this);"></iframe></td>
-                            <td class="srcDestCenter">Submit<br /><img src="../images/copy.png" alt="" /></td>
+                            <td class="srcDest">
+                                <iframe id="srcSSGClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSSGClusterContentSelector(this);"></iframe>
+                            </td>
+                            <td class="srcDestCenter">
+                                <button id="submitButton"><img src="../images/copy.png" title="Submit" alt=""></button>
+                            </td>
                         </tr>
                         <tr>
                             <td class="srcDest">
@@ -279,8 +318,8 @@
                                     <tr>
                                         <td class="nowrap"><img src="../images/zoom.png" alt="" /> Item Details:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcItemIFrame'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcItemIFrame'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
@@ -288,7 +327,7 @@
                             <td class="srcDestCenter"></td>
                         </tr>
                         <tr>
-                            <td class="srcDestBottom"><iframe id="srcItemDetails" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
+                            <td class="srcDestBottom"><iframe id="srcItemIFrame" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
                             <td class="srcDestCenter"></td>
                         </tr>
                     </table>
