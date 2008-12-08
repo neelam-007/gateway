@@ -31,15 +31,12 @@ public class RmiErrorHandler implements ErrorHandler {
         final RemoteException rex = ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteException.class);
         final RemoteAccessException raex = ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteAccessException.class);
 
-        //ignore any admin api timeouts
-        if (throwable instanceof TimeoutRuntimeException) {
-            e.getLogger().log(Level.WARNING, "Client connection was lost, unable to handle response from gateway.");
-            return;
-        }
+
 
         final Frame topParent = TopComponents.getInstance().getTopParent();
         if (throwable instanceof SocketException ||
             throwable instanceof SocketTimeoutException ||
+            throwable instanceof TimeoutRuntimeException ||
             rex instanceof ConnectException ||
             rex instanceof ConnectIOException ||
             rex instanceof NoSuchObjectException ||
@@ -57,6 +54,7 @@ public class RmiErrorHandler implements ErrorHandler {
              throwable instanceof SocketException ||
              throwable instanceof SocketTimeoutException ||
              throwable instanceof AccessControlException ||
+             throwable instanceof TimeoutRuntimeException ||
              (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet()))) {
 
             Throwable t = e.getThrowable();
@@ -69,7 +67,8 @@ public class RmiErrorHandler implements ErrorHandler {
             }
             else if ((rex instanceof ConnectException) ||
                      (raex != null && (throwable instanceof SocketException || throwable instanceof SocketTimeoutException)) ||
-                    (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet())) {
+                    (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet()) ||
+                    (throwable instanceof TimeoutRuntimeException)) {
                 message = "SecureSpan Gateway unavailable (Network issue or server stopped).";
                 t = null;
             }

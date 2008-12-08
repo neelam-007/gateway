@@ -217,6 +217,10 @@ public class ClusterLogWorker extends SwingWorker {
                 }
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
+            } catch (RuntimeException re) {
+                logger.log(Level.INFO, "Client connection lost, we don't need to continue further.");
+                logRequest = null;
+                return null;
             }
 
             if (newLogs.size() > 0) {
@@ -228,12 +232,19 @@ public class ClusterLogWorker extends SwingWorker {
                 logRequest = null;
             }
         }
-        currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
 
-        if (currentClusterSystemTime == null) {
+        try {
+            currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
+
+            if (currentClusterSystemTime == null) {
+                return null;
+            } else {
+                return newNodeList;
+            }
+        } catch (RuntimeException re) {
+            logger.log(Level.INFO, "Client connection lost, we don't need to continue further.");
+            logRequest = null;
             return null;
-        } else {
-            return newNodeList;
         }
     }
 
