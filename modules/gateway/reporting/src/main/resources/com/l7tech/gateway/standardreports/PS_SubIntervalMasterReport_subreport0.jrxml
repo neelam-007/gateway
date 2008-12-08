@@ -64,12 +64,12 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
-    <field name="AUTHORIZED" class="java.lang.Long"/>    
-    <field name="ATTEMPTED" class="java.lang.Long"/>
-    <field name="FRONT_SUM" class="java.lang.Long"/>
-    <field name="BACK_SUM" class="java.lang.Long"/>
-    <field name="COMPLETED" class="java.lang.Long"/>
-    <field name="THROUGHPUT" class="java.lang.Long"/>
+	<field name="AUTHORIZED" class="java.lang.Long"/>
+	<field name="ATTEMPTED" class="java.lang.Long"/>
+	<field name="FRONT_SUM" class="java.lang.Long"/>
+	<field name="BACK_SUM" class="java.lang.Long"/>
+	<field name="COMPLETED" class="java.lang.Long"/>
+	<field name="THROUGHPUT" class="java.lang.Long"/>
 	<field name="POLICY_VIOLATIONS" class="java.lang.Long"/>
 	<field name="ROUTING_FAILURES" class="java.lang.Long"/>
 	<field name="FRTM" class="java.lang.Integer"/>
@@ -80,7 +80,6 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 	<field name="BRTA" class="java.lang.Double"/>
 	<field name="AP" class="java.lang.Double"/>
 
-
 	<variable name="RESOLUTION" class="java.lang.Integer" resetType="Report" calculation="Nothing">
 		<variableExpression><![CDATA[($P{INTERVAL_UNIT_OF_TIME}.equals( "HOUR" ))?new Integer(1):new Integer(2)]]></variableExpression>
 	</variable>
@@ -88,27 +87,27 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 		<variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
 		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
 	</variable>
-    <variable name="AUTHORIZED" class="java.lang.Long" resetType="Report" calculation="Nothing">
-        <variableExpression><![CDATA[$F{AUTHORIZED}]]></variableExpression>
-        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-    </variable>
-    <variable name="ATTEMPTED" class="java.lang.Long" resetType="Report" calculation="Nothing">
-        <variableExpression><![CDATA[$F{ATTEMPTED}]]></variableExpression>
-        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-    </variable>
-    <variable name="FRONT_SUM" class="java.lang.Long" resetType="Report" calculation="Nothing">
-        <variableExpression><![CDATA[$F{FRONT_SUM}]]></variableExpression>
-        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-    </variable>
-    <variable name="COMPLETED" class="java.lang.Long" resetType="Report" calculation="Nothing">
-        <variableExpression><![CDATA[$F{COMPLETED}]]></variableExpression>
-        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-    </variable>
-    <variable name="BACK_SUM" class="java.lang.Long" resetType="Report" calculation="Nothing">
-        <variableExpression><![CDATA[$F{BACK_SUM}]]></variableExpression>
-        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-    </variable>
-    <variable name="POLICY_VIOLATIONS" class="java.lang.Long" resetType="None" calculation="Nothing">
+	<variable name="AUTHORIZED" class="java.lang.Long" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[$F{AUTHORIZED}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+	</variable>
+	<variable name="ATTEMPTED" class="java.lang.Long" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[$F{ATTEMPTED}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+	</variable>
+	<variable name="FRONT_SUM" class="java.lang.Long" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[$F{FRONT_SUM}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+	</variable>
+	<variable name="COMPLETED" class="java.lang.Long" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[$F{COMPLETED}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+	</variable>
+	<variable name="BACK_SUM" class="java.lang.Long" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[$F{BACK_SUM}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+	</variable>
+	<variable name="POLICY_VIOLATIONS" class="java.lang.Long" resetType="None" calculation="Nothing">
 		<variableExpression><![CDATA[$F{POLICY_VIOLATIONS}]]></variableExpression>
 		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
 	</variable>
@@ -135,8 +134,7 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
 	</variable>
-
-        <background>
+		<background>
 			<band height="0"  isSplitAllowed="true" >
 			</band>
 		</background>
@@ -180,7 +178,7 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{FRTM}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($F{FRTM} == null)?"-":$F{FRTM}.toString()]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -194,7 +192,7 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{FRTMX}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($F{FRTMX} == null)?"-":$F{FRTMX}.toString()]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -222,7 +220,7 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{BRTM}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($F{BRTM} == null)?"-":$F{BRTM}.toString()]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -236,7 +234,7 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{BRTMX}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($F{BRTMX} == null)?"-":$F{BRTMX}.toString()]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement

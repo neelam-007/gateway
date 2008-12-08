@@ -750,7 +750,7 @@ public class ReportApp
         File f = new File(path);
         InputStream is = new FileInputStream(f);
         try{
-            byte[] resbytes = IOUtils.slurpStream(is, 100000);
+            byte[] resbytes = IOUtils.slurpStream(is, 200000);
             return new String(resbytes);
         }finally{
             is.close();
