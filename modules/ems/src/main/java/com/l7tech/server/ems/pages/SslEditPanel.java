@@ -76,7 +76,7 @@ public class SslEditPanel extends Panel {
         final Component[] generateComponents = new Component[]{ hostname };
         final Component[] keystoreComponents = new Component[]{ keystore, password, alias };
 
-        sslLoad.add( new AjaxEventBehavior("onchange"){
+        sslLoad.add( new AjaxEventBehavior("onclick"){
             @Override
             protected void onEvent( final AjaxRequestTarget ajaxRequestTarget ) {
                 enableComponents( ajaxRequestTarget, generateComponents, false );
@@ -84,7 +84,7 @@ public class SslEditPanel extends Panel {
             }
         });
 
-        sslGenerate.add( new AjaxEventBehavior("onchange"){
+        sslGenerate.add( new AjaxEventBehavior("onclick"){
             @Override
             protected void onEvent( final AjaxRequestTarget ajaxRequestTarget ) {
                 enableComponents( ajaxRequestTarget, generateComponents, true );
