@@ -246,11 +246,14 @@ public class NewFederatedUserDialog extends JDialog {
                 message = "";
             } else {
                 message = "\n" + message;
+
+                JOptionPane.showMessageDialog(this,
+                        resources.getString("x509SubjectDNTextField.warning.invalid") + message,
+                        resources.getString("x509SubjectDNTextField.warning.title"),
+                        JOptionPane.ERROR_MESSAGE);
+                return false;
+
             }
-            return JOptionPane.showConfirmDialog(this,
-                            resources.getString("x509SubjectDNTextField.warning.invalid") + message,
-                            resources.getString("x509SubjectDNTextField.warning.title"),
-                            JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION;
         }
 
         return true;
