@@ -82,9 +82,10 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
 
         // process direct dependencies of this assertion
         for (Method method : assertion.getClass().getMethods()) {
-            // todo: handle non-default dependencies here?
-            if (MigrationUtils.isDefaultDependency(method)) {
-                Map<EntityHeader, Set<MigrationMapping>> deps = super.getDependencies(source, assertion, method);
+            if (MigrationUtils.isDependency(method)) {
+                // todo: figure out how to get a hold of resolvers specified through Migration.targetType()
+                PropertyResolver resolver = MigrationUtils.getResolver(method);
+                Map<EntityHeader, Set<MigrationMapping>> deps = resolver.getDependencies(source, assertion, method);
                 for (EntityHeader depHeader : deps.keySet()) {
                     for (MigrationMapping mapping : deps.get(depHeader)) {
                         // use assertion's ordinal to identify where in the policy xml each dependency can be mapped

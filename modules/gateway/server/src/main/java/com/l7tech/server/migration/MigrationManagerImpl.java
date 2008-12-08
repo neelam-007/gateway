@@ -78,6 +78,11 @@ public class MigrationManagerImpl implements MigrationManager {
                 continue;
             }
 
+            // todo: find out why: unable to marshal type "com.l7tech.identity.IdentityProviderConfig" as an element because it is missing an @XmlRootElement annotation]
+            if (header.getType() == EntityType.ID_PROVIDER_CONFIG) {
+                continue;
+            }
+
             Entity ent = loadEntity(header);
             logger.log(Level.FINE, "Entity value for header {0} : {1}", new Object[] {header.toStringVerbose(), ent});
             bundle.addExportedItem(new ExportedItem(header, ent));

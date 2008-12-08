@@ -4,6 +4,7 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.identity.IdentityProviderConfig;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,8 +69,14 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     @Override
     public Entity find(final EntityHeader header) throws FindException {
         EntityManager manager = getManager(EntityTypeRegistry.getEntityClass(header.getType()));
-        if (manager != null) return manager.findByHeader(header);
-        return entityFinder.find(header);
+        Entity ent = manager != null ? manager.findByHeader(header) : entityFinder.find(header);
+
+        if (ent instanceof IdentityProviderConfig)
+            return new IdentityProviderConfig((IdentityProviderConfig)ent);
+        else
+            return ent;
+
+        // todo: make entities clonable, so that we can return ent.copyOf();
     }
 
     @Override
@@ -77,7 +84,12 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         ReadOnlyEntityManager manager = getReadOnlyManager(clazz);
         if (manager != null)
             return (ET)manager.findByPrimaryKey(Long.valueOf(pk.toString()));
-        return entityFinder.find(clazz, pk);
+        ET ent = entityFinder.find(clazz, pk);
+
+        if (ent instanceof IdentityProviderConfig)
+            return (ET) new IdentityProviderConfig((IdentityProviderConfig)ent);
+        else
+            return ent;
     }
 
     @Override

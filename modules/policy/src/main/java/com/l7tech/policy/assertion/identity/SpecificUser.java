@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.UserGroupResolver;
 
 /**
  * Asserts that the requester is a particular User.
@@ -62,7 +63,7 @@ public class SpecificUser extends IdentityAssertion {
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE)
+    @Migration(mapName = MigrationMappingSelection.NONE, resolver = UserGroupResolver.class)
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = super.getEntitiesUsed();
         EntityHeader[] headers2 = new EntityHeader[headers.length + 1];

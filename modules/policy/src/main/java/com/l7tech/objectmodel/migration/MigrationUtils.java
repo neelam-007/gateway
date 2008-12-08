@@ -33,10 +33,13 @@ public class MigrationUtils {
      * @see com.l7tech.objectmodel.migration.Migration, PropertyResolver
      */
     public static PropertyResolver getResolver(Method property) throws MigrationException {
-        Class<? extends PropertyResolver> resolverClass = isDefaultDependency(property) ? DefaultEntityPropertyResolver.class :
-            isDependency(property) ? property.getAnnotation(Migration.class).resolver() : null;
-        if (resolverClass == null)
+
+        Class<? extends PropertyResolver> resolverClass;
+        if (isDependency(property)) {
+            resolverClass = property.isAnnotationPresent(Migration.class) ? property.getAnnotation(Migration.class).resolver() : DefaultEntityPropertyResolver.class;
+        } else {
             throw new MigrationException("Property " + property + " is not a dependency.");
+        }
         try {
             return resolverClass.newInstance();
         } catch (Exception e) {
@@ -109,7 +112,7 @@ public class MigrationUtils {
 
     /**
      * Checkes if the given method is marked as a dependency (using the {@link com.l7tech.objectmodel.migration.Migration}
-     * annotation, or if qualifies as a default dependency.
+     * annotation, or if it qualifies as a default dependency.
      *
      * @param property the method being checked
      * @return true if the method is annotated as a dependency; if the annotation is not present, falls back to the default dependency check.

@@ -56,6 +56,11 @@ public class IdentityProviderConfig extends NamedEntityImp {
         type = IdentityProviderType.LDAP;
     }
 
+    public IdentityProviderConfig(IdentityProviderConfig other) {
+        super(other);
+        this.type = other.type;
+    }
+
     /**
      * the type is set in constructor
      */
