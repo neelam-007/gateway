@@ -15,6 +15,7 @@ import java.util.Map;
 public interface JsonReportParameterConvertor {
 
     String DATE_FORMAT = "MM/dd/yyyy";
+    int MAX_KEYS_PER_CLUSTER = 5;
 
     //end gateway runtime params
 
