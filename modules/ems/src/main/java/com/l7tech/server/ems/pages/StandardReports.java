@@ -38,7 +38,8 @@ import java.text.SimpleDateFormat;
 @NavigationPage(page="StandardReports",section="Reports",pageUrl="StandardReports.html")
 public class StandardReports extends EmsPage  {
     private static final Logger logger = Logger.getLogger(StandardReports.class.getName());
-
+    private static final SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
+    
     @SpringBean
     private ReportService reportService;
 
@@ -134,23 +135,20 @@ public class StandardReports extends EmsPage  {
         final YuiDateSelector toDateField = new YuiDateSelector("toDate", "absoluteTimePeriodToDateTextBox",
             new Model(new Date(now.getTime())), new Date(now.getTime() - TimeUnit.DAYS.toMillis(1)), now);
 
-        StringBuilder scriptBuilder = new StringBuilder();
-        SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
-        scriptBuilder.append( "YAHOO.util.Event.onDOMReady( function(){ " );
-        scriptBuilder.append("absoluteTimePeriodFromDate = '").append(format.format(fromDateField.getDateTextField().getModelObject())).append("'; ");
-        scriptBuilder.append("absoluteTimePeriodToDate = '").append(format.format(toDateField.getDateTextField().getModelObject())).append("'; ");
-        scriptBuilder.append( "} );" );
-        Label script = new Label("javascript", scriptBuilder.toString() );
-        script.setEscapeModelStrings(false);
+        final Label fromDateJavascript = new Label("fromDateJavascript", buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
+        fromDateJavascript.setEscapeModelStrings(false);
+
+        final Label toDateJavascript = new Label("toDateJavascript", buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
+        toDateJavascript.setEscapeModelStrings(false);
 
         fromDateField.getDateTextField().add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 // update the hidden form fields with the date in the expected format
-                SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
-                target.appendJavascript("absoluteTimePeriodFromDate = '"+format.format(fromDateField.getDateTextField().getModelObject())+"';");
+                fromDateJavascript.setModelObject(buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
+                target.addComponent(fromDateJavascript);
 
-                toDateField.updateJavascriptLabelByDates((Date)fromDateField.getModelObject(), now);
+                toDateField.setDateSelectorModel((Date)fromDateField.getModelObject(), now);
                 target.addComponent(toDateField);
             }
         });
@@ -158,10 +156,10 @@ public class StandardReports extends EmsPage  {
             @Override
             protected void onUpdate(final AjaxRequestTarget target) {
                 // update the hidden form fields with the date in the expected format
-                SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
-                target.appendJavascript("absoluteTimePeriodToDate = '"+format.format(toDateField.getDateTextField().getModelObject())+"';");
-
-                fromDateField.updateJavascriptLabelByDates(null, (Date)toDateField.getModelObject());
+                fromDateJavascript.setModelObject(buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
+                target.addComponent(toDateJavascript);
+                
+                fromDateField.setDateSelectorModel(null, (Date)toDateField.getModelObject());
                 target.addComponent(fromDateField);
             }
         });
@@ -170,9 +168,26 @@ public class StandardReports extends EmsPage  {
         form.add( toDateField.setOutputMarkupId(true) );
 
         add( form );
-        add( script );
+        add( fromDateJavascript.setOutputMarkupId(true) );
+        add( toDateJavascript.setOutputMarkupId(true) );
 
         add( new JsonInteraction("jsonMappings", "jsonMappingUrl", new MappingDataProvider() ) );
+    }
+
+    /**
+     * Create a javascript for the selected date
+     *
+     * @param fromDate: a flag indicating if the date is a starting date or an ending date.
+     * @param date: the selected date.
+     * @return
+     */
+    private String buildDateJavascript(boolean fromDate, Object date) {
+        StringBuilder scriptBuilder = new StringBuilder();
+        scriptBuilder.append( "YAHOO.util.Event.onDOMReady( function(){ " );
+        scriptBuilder.append(fromDate? "absoluteTimePeriodFromDate" : "absoluteTimePeriodToDate").append(" = '").append(format.format(date)).append("'; ");
+        scriptBuilder.append( "} );" );
+
+        return scriptBuilder.toString();
     }
 
     private final class MappingDataProvider implements JsonDataProvider {

@@ -5,6 +5,7 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.RequestCycle;
@@ -16,6 +17,7 @@ import java.text.ParseException;
 import java.text.DateFormat;
 import java.util.Locale;
 import java.util.Date;
+import java.io.Serializable;
 
 /**
  * Panel with a text input field with an associated pop-up YUI calendar.
@@ -51,7 +53,7 @@ public class YuiDateSelector extends Panel {
 
     /**
      * Create a DateSelector with the given model.
-     * 
+     *
      * @param id The component identifier.
      * @param dateFieldMarkupId The html markup id of the date text field (may be null)
      * @param model The {@link java.util.Date Date} model.
@@ -122,16 +124,19 @@ public class YuiDateSelector extends Panel {
         dateTextField.setRequired(true);
         calendarDiv = new WebMarkupContainer("calendar");
         calendarBody = new WebMarkupContainer("calendar-body");
-                
+
         dateTextField.setOutputMarkupId(true);
         calendarDiv.setOutputMarkupId(true);
         calendarBody.setOutputMarkupId(true);
-                
+
         add( dateTextField );
         add( calendarDiv );
         calendarDiv.add( calendarBody );
-        
-        add( buildJavascriptLabelByDates("javascript", minDate, maxDate) );
+
+        javascriptLabel = new Label("javascript", new PropertyModel(new DateSelectorModel(minDate, maxDate), "script"));
+        javascriptLabel.setEscapeModelStrings(false);
+
+        add( javascriptLabel.setOutputMarkupId(true) );
     }
 
     /**
@@ -143,37 +148,67 @@ public class YuiDateSelector extends Panel {
         return dateTextField;
     }
 
-    /**
-     * Update the date selector if any of minDate and maxDate changed.
-     * @param newMinDate
-     * @param newMaxDate
-     */
-    public void updateJavascriptLabelByDates(Date newMinDate, Date newMaxDate) {
-        // If both have no change, then no need to update.
-        if (newMinDate == null && newMaxDate == null) {
-            return;
-        }
-
-        remove("javascript");
-        add(buildJavascriptLabelByDates("javascript", newMinDate, newMaxDate));
+    public void setDateSelectorModel(Date minDate, Date maxDate) {
+        javascriptLabel.setModel(new PropertyModel(new DateSelectorModel(minDate, maxDate), "script"));
     }
 
     //- PRIVATE
 
     private final DateTextField dateTextField;
+    private final Label javascriptLabel;
     private WebMarkupContainer calendarDiv;
     private WebMarkupContainer calendarBody;
     private boolean ignoreFirstSelect;
 
     /**
-     * Create a label containing javascript of the date-selector setting
-     * 
-     * @param componentId
-     * @param minDate
-     * @param maxDate
+     * A model to store a javascript of the date selector settings based on min date and max date.
+     */
+    private class DateSelectorModel implements Serializable {
+        private String script;
+        private Date minDate;
+        private Date maxDate;
+
+        DateSelectorModel(Date minDate, Date maxDate) {
+            this.minDate = minDate;
+            this.maxDate = maxDate;
+            script = buildDateSelectorJavascript(minDate, maxDate);
+        }
+
+        public Date getMaxDate() {
+            return maxDate;
+        }
+
+        public void setMaxDate(Date maxDate) {
+            this.maxDate = maxDate;
+            script = buildDateSelectorJavascript(minDate, maxDate);
+        }
+
+        public Date getMinDate() {
+            return minDate;
+        }
+
+        public void setMinDate(Date minDate) {
+            this.minDate = minDate;
+            script = buildDateSelectorJavascript(minDate, maxDate);
+        }
+
+        public String getScript() {
+            return script;
+        }
+
+        public void setScript(String script) {
+            this.script = script;
+        }
+    }
+
+    /**
+     * Create a javascript with the date-selector setting
+     *
+     * @param minDate: the min date in the date selector.
+     * @param maxDate: the max date in the date selector.
      * @return
      */
-    private Label buildJavascriptLabelByDates(String componentId, Date minDate, Date maxDate) {
+    private String buildDateSelectorJavascript(Date minDate, Date maxDate) {
         EmsSession session = ((EmsSession) RequestCycle.get().getSession());
         String timeZoneId = session.getTimeZoneId();
 
@@ -216,9 +251,6 @@ public class YuiDateSelector extends Panel {
         scriptBuilder.append( ignoreFirstSelect );
         scriptBuilder.append("); });");
 
-        Label label = new Label("javascript", scriptBuilder.toString());
-        label.setEscapeModelStrings(false);
-
-        return label;
+        return scriptBuilder.toString();
     }
 }

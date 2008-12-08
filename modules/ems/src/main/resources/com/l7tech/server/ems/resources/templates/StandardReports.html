@@ -406,9 +406,9 @@
             relativeTimePeriodUnitDropDown.disabled = !isRelative;
 
             var isAbsolute = absoluteTimePeriodRadioButton.checked;
-            absoluteTimePeriodFromDateTextBox.disabled = !isAbsolute;
+            document.getElementById('absoluteTimePeriodFromDateTextBox').disabled = !isAbsolute;
             absoluteTimePeriodFromHourDropDown.disabled = !isAbsolute;
-            absoluteTimePeriodToDateTextBox.disabled = !isAbsolute;
+            document.getElementById('absoluteTimePeriodToDateTextBox').disabled = !isAbsolute;
             absoluteTimePeriodToHourDropDown.disabled = !isAbsolute;
 
             onChangeRelativeTimePeriod();
@@ -1321,7 +1321,8 @@
                         </div>
                     </div>
                 </div>
-                <script lanaguge="javascript" wicket:id="javascript"></script>
+                <script lanaguge="javascript" wicket:id="fromDateJavascript"></script>
+                <script lanaguge="javascript" wicket:id="toDateJavascript"></script>
                 <div wicket:id="generatedReports">
                 <div class="panel">
                     <div class="panelTitle tippy">
