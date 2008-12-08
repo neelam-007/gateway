@@ -59,7 +59,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException if there is a problem finding the certs
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_ENTITY)
+    @Secured(stereotype=FIND_ENTITIES)
     public Collection<TrustedCert> findCertsBySubjectDn(String dn) throws FindException;
 
     /**

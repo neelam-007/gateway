@@ -18,7 +18,7 @@ public enum MethodStereotype {
      * returned.
      *
      * If the method's return type is not a collection or an array, the caller must have {@link OperationType#READ}
-     * permission on <em>all</em> entities with the specified {@link EntityType}.
+     * permission on <em>all</em> entities with the specified {@link com.l7tech.objectmodel.EntityType}.
      */
     FIND_HEADERS,
 
@@ -30,7 +30,7 @@ public enum MethodStereotype {
      * which the caller has {@link OperationType#READ} permission will be returned.
      *
      * If the method's return type is not a collection or an array, the caller must have {@link OperationType#READ}
-     * permission on <em>all</em> entities with the specified {@link EntityType}.
+     * permission on <em>all</em> entities with the specified {@link com.l7tech.objectmodel.EntityType}.
      */
     FIND_ENTITIES,
 
@@ -122,10 +122,7 @@ public enum MethodStereotype {
     SET_PROPERTY_BY_UNIQUE_ATTRIBUTE,
 
     /**
-     * The method does not conform to any known stereotype.
-     * 
-     * An {@link com.l7tech.gateway.common.security.rbac.Secured#entityResolverClass()} must be specified,
-     * otherwise an exception will be thrown.
+     * The method does not conform to any known stereotype.  An exception will be thrown at runtime.
      */
     NONE
 }
