@@ -299,6 +299,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     public boolean canAccess(  final HttpSession session, final HttpServletRequest request ) {
         // TODO Clean this up (use secured and unsecured sections?)
         return session.getAttribute(ATTR_ID) != null ||
+                request.getRequestURI().equals("/favicon.ico") ||
                 request.getRequestURI().equals("/Login.html") ||
                 (request.getRequestURI().equals("/") && TextUtils.toString(request.getQueryString()).contains("wicket:interface")) ||
                 request.getRequestURI().startsWith("/css") ||
