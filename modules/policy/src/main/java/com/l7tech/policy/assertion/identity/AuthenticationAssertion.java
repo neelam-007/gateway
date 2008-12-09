@@ -37,7 +37,6 @@ public class AuthenticationAssertion extends IdentityAssertion {
         return loggingIdentity;
     }
 
-    @Migration(mapName = MigrationMappingSelection.REQUIRED)
     @Override
     public long getIdentityProviderOid() {
         return super.getIdentityProviderOid();
