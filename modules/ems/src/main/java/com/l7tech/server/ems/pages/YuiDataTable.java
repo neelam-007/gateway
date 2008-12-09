@@ -145,6 +145,25 @@ public class YuiDataTable extends Panel {
     }
 
     /**
+     * Utility method to unescape ID values that were from a YUI id value.
+     *
+     * @param identifier The identifier to unescape.
+     * @return The unescaped value.
+     */
+    public static String unescapeIdentitifer( final String identifier ) {
+        String id = identifier;
+
+        if ( id != null ) {
+            // remove any HTML escaping
+            id = id.replace("&amp;", "&");
+            id = id.replace("&quot;", "\"");
+            id = id.replace("&#039;", "'");
+        }
+
+        return id;
+    }
+
+    /**
      * Internal constructor.
      */
     private YuiDataTable( final String id,
@@ -295,13 +314,7 @@ public class YuiDataTable extends Panel {
                                 AjaxRequestTarget target = app.newAjaxRequestTarget(getComponent().getPage());
                                 RequestCycle.get().setRequestTarget(target);
                                 String id = requestCycle.getRequest().getParameter("id");
-
-                                // remove any HTML escaping
-                                id = id.replace("&amp;", "&");
-                                id = id.replace("&quot;", "\"");
-                                id = id.replace("&#039;", "'");
-
-                                onSelect( target, id );        
+                                onSelect( target, unescapeIdentitifer(id) );
                             } else {
 
                                 int startIndex = Integer.parseInt(requestCycle.getRequest().getParameter("startIndex"));

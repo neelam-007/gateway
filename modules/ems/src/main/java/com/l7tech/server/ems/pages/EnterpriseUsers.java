@@ -84,7 +84,7 @@ public class EnterpriseUsers extends EmsPage {
         Button deleteButton = new YuiAjaxButton("deleteUserButton") {
             @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
-                final String id = (String) form.get("userId").getModel().getObject();
+                final String id = YuiDataTable.unescapeIdentitifer((String) form.get("userId").getModel().getObject());
                 if ( id != null && !id.isEmpty() ) {
                     container.removeAll();
                     User u = getUser();
