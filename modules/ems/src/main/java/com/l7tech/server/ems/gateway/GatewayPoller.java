@@ -140,6 +140,8 @@ public class GatewayPoller implements InitializingBean {
                                         cluster.setTrustStatus( false );
                                         ssgClusterManager.update( cluster );
                                     }
+                                } else if ( "Not Licensed".equals(sfe.getMessage()) ) {
+                                    logger.fine("Gateway cluster is not licensed '"+host+":"+port+"'.");
                                 } else{
                                     logger.log( Level.WARNING, "Gateway error when polling gateways", sfe );
                                 }

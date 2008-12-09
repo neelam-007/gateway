@@ -108,7 +108,7 @@ public class EsmApiInterceptor extends AbstractPhaseInterceptor<Message> {
             licenseManager.requireFeature( GatewayFeatureSets.SERVICE_REMOTE_MANAGEMENT );
         } catch ( LicenseException e) {
             logger.log( Level.WARNING, "License check failed for remote management.");
-            throw new SoapFault("Server Error", SoapFault.FAULT_CODE_SERVER);
+            throw new SoapFault("Not Licensed", SoapFault.FAULT_CODE_SERVER);
         }
     }
 
