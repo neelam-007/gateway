@@ -140,7 +140,7 @@ public class RbacServicesImpl implements RbacServices, InitializingBean, Applica
                 if (!perm.matches(entity) || perm.getOperation() != attemptedOperation)
                     continue;
 
-                if (!checkScope(entity, perm)) return false;
+                if (!checkScope(entity, perm)) continue;
 
                 if (attemptedOperation == OperationType.OTHER || attemptedOperation == OperationType.NONE) {
                     if (otherOperationName.equals(perm.getOtherOperationName())) return true;
