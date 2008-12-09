@@ -12,6 +12,9 @@ import javax.persistence.Embedded;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.AttributeOverride;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 /**
  * 
  */
@@ -34,6 +37,7 @@ public class MigrationMappingRecord extends PersistentEntityImp {
     }
 
     @ManyToOne(optional=false)
+    @OnDelete(action=OnDeleteAction.CASCADE)
     @JoinColumn(name="source_cluster_oid", nullable=false)
     public SsgCluster getSourceCluster() {
         return sourceCluster;
@@ -62,6 +66,7 @@ public class MigrationMappingRecord extends PersistentEntityImp {
     }
 
     @ManyToOne(optional=false)
+    @OnDelete(action=OnDeleteAction.CASCADE)
     @JoinColumn(name="target_cluster_oid", nullable=false)
     public SsgCluster getTargetCluster() {
         return targetCluster;
