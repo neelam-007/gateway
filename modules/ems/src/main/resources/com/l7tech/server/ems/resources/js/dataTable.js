@@ -219,11 +219,17 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
             var hasSelectedRows = selectedRows && (selectedRows.length != 0);
 
             if ( selectionControlIds ) {
-                var controlId;
-                for ( controlId in selectionControlIds ) {
-                    var control = document.getElementById( selectionControlIds[controlId] );
-                    if ( control ) {
-                        control.disabled = !hasSelectedRows;
+                var controlIndex;
+                for ( controlIndex in selectionControlIds ) {
+                    var controlId = selectionControlIds[controlIndex];
+                    var yuiButton = YAHOO.widget.Button.getButton( controlId );
+                    if ( yuiButton ) {
+                        yuiButton.set('disabled', !hasSelectedRows);
+                    } else {
+                        var control = document.getElementById( controlId );
+                        if ( control ) {
+                            control.disabled = !hasSelectedRows;
+                        }
                     }
                 }
             }

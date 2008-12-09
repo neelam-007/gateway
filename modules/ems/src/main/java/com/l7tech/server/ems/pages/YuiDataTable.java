@@ -221,11 +221,7 @@ public class YuiDataTable extends Panel {
         if ( selectionSensitiveComponents != null ) {
             List<String> buttonIds = new ArrayList<String>();
             for ( Button button : selectionSensitiveComponents ) {
-                if ( button instanceof YuiAjaxButton || button instanceof YuiButton ) {
-                    buttonIds.add( "'" +button.getMarkupId() + "-button'" );
-                } else {
-                    buttonIds.add( "'" +button.getMarkupId() + "'" );
-                }
+                buttonIds.add( "'" +button.getMarkupId() + "'" );
             }
             buttons = buttonIds.toString();
         } else {
