@@ -2,7 +2,6 @@ package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Session;
@@ -76,7 +75,7 @@ public class SsgNodeManagerImpl extends HibernateEntityManager<SsgNode, EntityHe
     @Override
     protected Collection<Map<String, Object>> getUniqueConstraints( final SsgNode ssgNode ) {
         Map<String, Object> attrs = new HashMap<String, Object>();
-        attrs.put("SsgCluster", ssgNode.getSsgCluster());
+        attrs.put("ssgCluster", ssgNode.getSsgCluster());
         attrs.put("name", ssgNode.getName());
         return Arrays.asList(attrs);
     }
