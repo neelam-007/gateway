@@ -52,7 +52,7 @@ public class BouncyCastleCertUtils {
         certGen.setSerialNumber(BigInteger.valueOf(new Random().nextInt(2000000) + 1));
         certGen.setIssuerDN(dn);
         Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_MONTH, -1);
+        cal.add(Calendar.HOUR, -1);
         certGen.setNotBefore(cal.getTime());
         cal.add(Calendar.DAY_OF_MONTH, expiryDays);
         certGen.setNotAfter(cal.getTime());
