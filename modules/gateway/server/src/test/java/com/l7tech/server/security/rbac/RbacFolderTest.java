@@ -291,6 +291,14 @@ public class RbacFolderTest extends TestCase {
         assertFalse("Shouldn't find folder2", folders.contains(folder2));
     }
 
+    public void testBug6230MultiplePermissions() throws Exception {
+        canReadSpecific(jimbo, EntityType.POLICY, aPolicy.getOid(), bPolicy.getOid());
+        assertTrue("Can read A policy", rbacServices.isPermittedForEntity(jimbo, aPolicy, OperationType.READ, null));
+        assertTrue("Can read B policy", rbacServices.isPermittedForEntity(jimbo, bPolicy, OperationType.READ, null));
+        Collection<PolicyHeader> headers = runAs(jimbo, findAllPolicies);
+        assertEquals("Found 2 policies", 2, headers.size());
+    }
+
     private <T> T runAs(final User user, final GenericMethodInvocation<T> invocation) throws PrivilegedActionException {
         return Subject.doAs(new Subject(true, Collections.singleton(user), Collections.emptySet(), Collections.emptySet()), new PrivilegedAction<T>() {
             @Override
@@ -305,10 +313,12 @@ public class RbacFolderTest extends TestCase {
         });
     }
 
-    private long canReadSpecific(final User user, final EntityType etype, final long oid) throws SaveException {
+    private long canReadSpecific(final User user, final EntityType etype, final long... oids) throws SaveException {
         Role role = new Role();
         role.addAssignedUser(user);
-        role.addEntityPermission(OperationType.READ, etype, Long.toString(oid));
+        for (long oid : oids) {
+            role.addEntityPermission(OperationType.READ, etype, Long.toString(oid));
+        }
         return roleManager.save(role);
     }
 
