@@ -31,7 +31,14 @@ Set Up the ESM HTTPS Listener
 At any time type "quit" to quit.
 Press "&lt;" to go to the previous step.
 
-This step lets you configure the ESM server.</prompt>
+This step lets you configure the ESM server.
+
+Configuration of Server Settings is optional. If you choose not to
+configure the server settings, then the following defaults will be
+used:
+
+ - HTTPS Listener IP Address : * (all)
+ - HTTPS Listener Port       : 8182</prompt>
     </optionGroup>
 
     <!--
