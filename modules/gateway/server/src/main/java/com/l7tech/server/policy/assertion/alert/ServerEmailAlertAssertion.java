@@ -72,7 +72,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         try {
             addr = InternetAddress.parse(ass.getTargetEmailAddress());
         } catch (AddressException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Unable to initialize EmailAlertAssert: invalid destination email address"}, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Unable to initialize EmailAlertAssert: invalid destination email address"}, ExceptionUtils.getDebugException(e));
             addr = null;
         }
         toAddresses = addr;
@@ -80,7 +80,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         try {
             addr = InternetAddress.parse(ass.getTargetCCEmailAddress());
         } catch (AddressException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"Unable to initialize EmailAlertAssert: invalid CC email address"}, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"Unable to initialize EmailAlertAssert: invalid CC email address"}, ExceptionUtils.getDebugException(e));
             addr = null;
         }
         ccAddresses = addr;
@@ -88,7 +88,7 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         try {
             addr = InternetAddress.parse(ass.getTargetBCCEmailAddress());
         } catch (AddressException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"Unable to initialize EmailAlertAssert: invalid BCC email address"}, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"Unable to initialize EmailAlertAssert: invalid BCC email address"}, ExceptionUtils.getDebugException(e));
             addr = null;
         }
         bccAddresses = addr;
