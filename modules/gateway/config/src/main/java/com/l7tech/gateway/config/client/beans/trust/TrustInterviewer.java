@@ -116,126 +116,128 @@ public class TrustInterviewer {
                 throw new ExitErrorException(1, "Error during configuration");
             }
 
-            boolean writeProps = false;
-            boolean writeTruststore = false;
-            boolean hasCert = false;
-            Map<String, X509Certificate> deleteCerts = new HashMap<String, X509Certificate>();
-            Map<String, X509Certificate> addCerts = new HashMap<String, X509Certificate>();
-            for (ConfigurationBean bean : outBeans) {
-                if (bean instanceof ConfiguredTrustedCert) {
-                    ConfiguredTrustedCert trustedCert = (ConfiguredTrustedCert)bean;
-                    X509Certificate cert = trustedCert.getConfigValue();
-                    if (inCertBeans == null || !inCertBeans.containsKey(trustedCert)) {
-                        try {
-                            hasCert = true;
-                            addCerts.put("trustedCert-" + CertUtils.getThumbprintSHA1(cert) + "-" + System.currentTimeMillis(), cert);
-                        } catch (CertificateEncodingException e) {
-                            logger.warning("Couldn't get thumbprint for " + cert.getSubjectDN().getName() + "; skipping");
-                        }
-                    }
-                }
-            }
-            if (inCertBeans != null) {
-                for (ConfiguredTrustedCert bean : inCertBeans.keySet()) {
-                    String oldAlias = inCertBeans.get(bean);
-                    boolean found = false;
-                    for (ConfigurationBean configurationBean : outBeans) {
-                        if (configurationBean instanceof ConfiguredTrustedCert) {
-                            ConfiguredTrustedCert configuredTrustedCert = (ConfiguredTrustedCert)configurationBean;
-                            if (bean == configuredTrustedCert) {
+            if ( !outBeans.isEmpty() ) { // empty on QUIT
+                boolean writeProps = false;
+                boolean writeTruststore = false;
+                boolean hasCert = false;
+                Map<String, X509Certificate> deleteCerts = new HashMap<String, X509Certificate>();
+                Map<String, X509Certificate> addCerts = new HashMap<String, X509Certificate>();
+                for (ConfigurationBean bean : outBeans) {
+                    if (bean instanceof ConfiguredTrustedCert) {
+                        ConfiguredTrustedCert trustedCert = (ConfiguredTrustedCert)bean;
+                        X509Certificate cert = trustedCert.getConfigValue();
+                        if (inCertBeans == null || !inCertBeans.containsKey(trustedCert)) {
+                            try {
                                 hasCert = true;
-                                found = true;
+                                addCerts.put("trustedCert-" + CertUtils.getThumbprintSHA1(cert) + "-" + System.currentTimeMillis(), cert);
+                            } catch (CertificateEncodingException e) {
+                                logger.warning("Couldn't get thumbprint for " + cert.getSubjectDN().getName() + "; skipping");
                             }
                         }
                     }
-                    if (!found) deleteCerts.put(oldAlias, bean.getConfigValue());
                 }
-            }
-            for (ConfigurationBean bean : outBeans) {
-                if ( bean instanceof RemoteNodeManagementEnabled ) {
-                    final boolean newEnabled = ((RemoteNodeManagementEnabled)bean).getConfigValue() && hasCert;
-                    if (newEnabled != enabled) {
-                        hostProps.setProperty(HOSTPROPERTIES_NODEMANAGEMENT_ENABLED, newEnabled ? "true" : "false");
+                if (inCertBeans != null) {
+                    for (ConfiguredTrustedCert bean : inCertBeans.keySet()) {
+                        String oldAlias = inCertBeans.get(bean);
+                        boolean found = false;
+                        for (ConfigurationBean configurationBean : outBeans) {
+                            if (configurationBean instanceof ConfiguredTrustedCert) {
+                                ConfiguredTrustedCert configuredTrustedCert = (ConfiguredTrustedCert)configurationBean;
+                                if (bean == configuredTrustedCert) {
+                                    hasCert = true;
+                                    found = true;
+                                }
+                            }
+                        }
+                        if (!found) deleteCerts.put(oldAlias, bean.getConfigValue());
+                    }
+                }
+                for (ConfigurationBean bean : outBeans) {
+                    if ( bean instanceof RemoteNodeManagementEnabled ) {
+                        final boolean newEnabled = ((RemoteNodeManagementEnabled)bean).getConfigValue() && hasCert;
+                        if (newEnabled != enabled) {
+                            hostProps.setProperty(HOSTPROPERTIES_NODEMANAGEMENT_ENABLED, newEnabled ? "true" : "false");
+                            writeProps = true;
+                        }
+                    } else if ( bean instanceof TypedConfigurableBean ) {
+                        if ( bean.getConfigValue()!=null) {
+                            hostProps.setProperty( bean.getId(), bean.getConfigValue().toString() );
+                        } else {
+                            hostProps.remove( bean.getId() );
+                        }
                         writeProps = true;
                     }
-                } else if ( bean instanceof TypedConfigurableBean ) {
-                    if ( bean.getConfigValue()!=null) {
-                        hostProps.setProperty( bean.getId(), bean.getConfigValue().toString() );
-                    } else {
-                        hostProps.remove( bean.getId() );
+                }
+
+                if (trustStore == null) {
+                    try {
+                        byte[] newpass = new byte[8];
+                        new SecureRandom().nextBytes(newpass);
+                        trustStorePass = HexUtils.hexDump(newpass).toCharArray();
+                        trustStore = KeyStore.getInstance(trustStoreType);
+                        trustStore.load(null, null);
+                        writeTruststore = true;
+                        hostProps.put(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_FILE, tsFile.getCanonicalPath());
+                        hostProps.put(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD, masterPasswordManager.encryptPassword(trustStorePass));
+                        hostProps.put(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_TYPE, "JKS");
+                        writeProps = true;
+                    } catch (GeneralSecurityException e) {
+                        logger.log(Level.WARNING, "Couldn't create trust store", e);
+                        throw new ExitErrorException(3, "Couldn't create trust store");
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Couldn't create trust store", e);
+                        throw new ExitErrorException(3, "Couldn't create trust store");
                     }
-                    writeProps = true;
                 }
-            }
 
-            if (trustStore == null) {
-                try {
-                    byte[] newpass = new byte[8];
-                    new SecureRandom().nextBytes(newpass);
-                    trustStorePass = HexUtils.hexDump(newpass).toCharArray();
-                    trustStore = KeyStore.getInstance(trustStoreType);
-                    trustStore.load(null, null);
+                for (Map.Entry<String, X509Certificate> entry : addCerts.entrySet()) {
+                    final X509Certificate cert = entry.getValue();
+                    try {
+                        trustStore.setCertificateEntry(entry.getKey(), cert);
+                    } catch (KeyStoreException e) {
+                        logger.log(Level.WARNING, "Couldn't add new truststore entry for " + cert.getSubjectDN().getName() + "; skipping", e);
+                        continue;
+                    }
                     writeTruststore = true;
-                    hostProps.put(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_FILE, tsFile.getCanonicalPath());
-                    hostProps.put(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD, masterPasswordManager.encryptPassword(trustStorePass));
-                    hostProps.put(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_TYPE, "JKS");
-                    writeProps = true;
-                } catch (GeneralSecurityException e) {
-                    logger.log(Level.WARNING, "Couldn't create trust store", e);
-                    throw new ExitErrorException(3, "Couldn't create trust store");
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Couldn't create trust store", e);
-                    throw new ExitErrorException(3, "Couldn't create trust store");
                 }
-            }
 
-            for (Map.Entry<String, X509Certificate> entry : addCerts.entrySet()) {
-                final X509Certificate cert = entry.getValue();
-                try {
-                    trustStore.setCertificateEntry(entry.getKey(), cert);
-                } catch (KeyStoreException e) {
-                    logger.log(Level.WARNING, "Couldn't add new truststore entry for " + cert.getSubjectDN().getName() + "; skipping", e);
-                    continue;
+                for (Map.Entry<String, X509Certificate> entry : deleteCerts.entrySet()) {
+                    try {
+                        trustStore.deleteEntry(entry.getKey());
+                    } catch (KeyStoreException e) {
+                        logger.log(Level.WARNING, "Couldn't delete truststore entry " + entry.getValue().getSubjectDN().getName() + "; skipping");
+                        continue;
+                    }
+                    writeTruststore = true;
                 }
-                writeTruststore = true;
-            }
 
-            for (Map.Entry<String, X509Certificate> entry : deleteCerts.entrySet()) {
-                try {
-                    trustStore.deleteEntry(entry.getKey());
-                } catch (KeyStoreException e) {
-                    logger.log(Level.WARNING, "Couldn't delete truststore entry " + entry.getValue().getSubjectDN().getName() + "; skipping");
-                    continue;
+                if (writeTruststore) {
+                    FileOutputStream fos = null;
+                    try {
+                        fos = new FileOutputStream(tsFile);
+                        trustStore.store(fos, trustStorePass);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Couldn't write trust store", e);
+                        throw new ExitErrorException(3, "Couldn't write trust store");
+                    } catch (GeneralSecurityException e) {
+                        logger.log(Level.WARNING, "Couldn't write trust store", e);
+                        throw new ExitErrorException(3, "Couldn't write trust store");
+                    } finally {
+                        ResourceUtils.closeQuietly(fos);
+                    }
                 }
-                writeTruststore = true;
-            }
 
-            if (writeTruststore) {
-                FileOutputStream fos = null;
-                try {
-                    fos = new FileOutputStream(tsFile);
-                    trustStore.store(fos, trustStorePass);
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Couldn't write trust store", e);
-                    throw new ExitErrorException(3, "Couldn't write trust store");
-                } catch (GeneralSecurityException e) {
-                    logger.log(Level.WARNING, "Couldn't write trust store", e);
-                    throw new ExitErrorException(3, "Couldn't write trust store");
-                } finally {
-                    ResourceUtils.closeQuietly(fos);
-                }
-            }
-
-            if (writeProps) {
-                OutputStreamWriter w = null;
-                try {
-                    w = new OutputStreamWriter(new FileOutputStream(hostPropsFile));
-                    hostProps.store(w, null);
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Couldn't write host.properties file", e);
-                    throw new ExitErrorException(3, "Couldn't write host.properties file");
-                } finally {
-                    ResourceUtils.closeQuietly(w);
+                if (writeProps) {
+                    OutputStreamWriter w = null;
+                    try {
+                        w = new OutputStreamWriter(new FileOutputStream(hostPropsFile));
+                        hostProps.store(w, null);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Couldn't write host.properties file", e);
+                        throw new ExitErrorException(3, "Couldn't write host.properties file");
+                    } finally {
+                        ResourceUtils.closeQuietly(w);
+                    }
                 }
             }
         } catch ( ExitErrorException eee ) {
