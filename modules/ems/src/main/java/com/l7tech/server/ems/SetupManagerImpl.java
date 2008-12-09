@@ -369,7 +369,9 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                 try {
                     if ( clusterPropertyManager.findByUniqueName("esm.id") == null ) {
-                        clusterPropertyManager.save( new ClusterProperty( "esm.id", UUID.randomUUID().toString() ) );
+                        String id = UUID.randomUUID().toString();
+                        clusterPropertyManager.save( new ClusterProperty( "esm.id", id ) );
+                        serverConfig.putProperty( "em.server.id", id ); // work around for application events not yet available
                     }
 
                     if ( identityProviderConfigManager.findAll().isEmpty() &&
