@@ -1965,6 +1965,13 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
 		<noData>
 			<band height="300"  isSplitAllowed="true" >
 				<frame>					<reportElement
+						x="0"
+						y="0"
+						width="820"
+						height="300"
+						key="frame-45"/>
+					<box></box>
+				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
@@ -2153,11 +2160,11 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_RELATIVE}.booleanValue())?("Last " + $P{timePeriodAsString} +
-" (" + Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE}) +
-" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}, $P{SPECIFIC_TIME_ZONE}) + ")")
-:
-Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE}) +
-" to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}, $P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
+    " (" + Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE}) +
+    " to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}, $P{SPECIFIC_TIME_ZONE}) + ")")
+    :
+    Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE}) +
+    " to " + Utilities.getMilliSecondAsStringDate($P{endTimeMilli}, $P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -2278,7 +2285,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())
-?"Selected Services & Operations":"Selected Services"]]></textFieldExpression>
+    ?"Selected Services & Operations":"Selected Services"]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="TableCell"
@@ -2303,9 +2310,9 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
-Utilities.getMappingReportInfoDisplayString
-($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
-:"None")]]></textFieldExpression>
+    Utilities.getMappingReportInfoDisplayString
+    ($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
+    :"None")]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -2329,7 +2336,8 @@ Utilities.getMappingReportInfoDisplayString
 						y="158"
 						width="820"
 						height="18"
-						key="frame-45"/>
+						key="frame-45"
+						positionType="Float"/>
 					<box></box>
 				<staticText>
 					<reportElement
@@ -2350,7 +2358,8 @@ Utilities.getMappingReportInfoDisplayString
 						y="176"
 						width="820"
 						height="118"
-						key="frame-9"/>
+						key="frame-9"
+						positionType="Float"/>
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -2366,6 +2375,6 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["There were no service metrics for the criteria chosen"]]></textFieldExpression>
 				</textField>
-				</frame>			</band>
+				</frame>				</frame>			</band>
 		</noData>
 </jasperReport>

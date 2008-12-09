@@ -2436,6 +2436,13 @@ new Double((1 - (($V{AUTHORIZED_REPORT_SUM}.doubleValue() - $V{COMPLETED_REPORT_
 		<noData>
 			<band height="300"  isSplitAllowed="true" >
 				<frame>					<reportElement
+						x="0"
+						y="0"
+						width="820"
+						height="300"
+						key="frame-45"/>                                                   
+					<box></box>
+				    <frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
@@ -2457,7 +2464,8 @@ new Double((1 - (($V{AUTHORIZED_REPORT_SUM}.doubleValue() - $V{COMPLETED_REPORT_
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
-				</frame>				<frame>					<reportElement
+				</frame>
+                    <frame>					<reportElement
 						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
@@ -2793,14 +2801,16 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<text><![CDATA[Groupings:]]></text>
 				</staticText>
-				</frame>				</frame>				<frame>					<reportElement
+				</frame>				</frame>
+                    <frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
 						y="158"
 						width="820"
 						height="18"
-						key="frame-45"/>
+						key="frame-45"
+						positionType="Float"/>
 					<box></box>
 				<staticText>
 					<reportElement
@@ -2815,13 +2825,15 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<text><![CDATA[No Data]]></text>
 				</staticText>
-				</frame>				<frame>					<reportElement
+				</frame>
+                    <frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="176"
 						width="820"
 						height="118"
-						key="frame-9"/>
+						key="frame-9"
+						positionType="Float"/>
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -2830,13 +2842,16 @@ Utilities.getMappingReportInfoDisplayString
 						y="0"
 						width="820"
 						height="118"
-						key="textField-84"/>
+						key="textField-84"
+						positionType="FixRelativeToBottom"/>
 					<box></box>
 					<textElement markup="html">
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["There were no service metrics for the criteria chosen"]]></textFieldExpression>
 				</textField>
-				</frame>			</band>
+				</frame>
+                </frame>
+            </band>
 		</noData>
 </jasperReport>

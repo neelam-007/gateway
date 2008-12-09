@@ -893,6 +893,13 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 		<noData>
 			<band height="300"  isSplitAllowed="true" >
 				<frame>					<reportElement
+						x="0"
+						y="0"
+						width="820"
+						height="300"
+						key="frame-45"/>
+					<box></box>
+				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
@@ -1252,7 +1259,8 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						y="158"
 						width="820"
 						height="18"
-						key="frame-45"/>
+						key="frame-45"
+						positionType="Float"/>
 					<box></box>
 				<staticText>
 					<reportElement
@@ -1273,7 +1281,8 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 						y="176"
 						width="820"
 						height="118"
-						key="frame-9"/>
+						key="frame-9"
+						positionType="Float"/>
 					<box></box>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -1289,6 +1298,6 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["There were no service metrics for the criteria chosen"]]></textFieldExpression>
 				</textField>
-				</frame>			</band>
+				</frame>				</frame>			</band>
 		</noData>
 </jasperReport>
