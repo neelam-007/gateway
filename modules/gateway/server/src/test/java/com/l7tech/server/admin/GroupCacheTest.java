@@ -177,6 +177,6 @@ public class GroupCacheTest extends TestCase {
     * Get the cache via reflection as it's a singleton, and want a separate cache per test method
     * */
     private GroupCache getGroupCache() throws Exception{
-        return new GroupCache( "testgroupcache", null, 100, 1000, 50 );
+        return new GroupCache( "testgroupcache", 100, 1000, 50 );
     }
 }

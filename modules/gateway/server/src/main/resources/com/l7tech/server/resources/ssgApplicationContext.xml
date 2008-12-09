@@ -187,6 +187,7 @@
                                 <value>ldapConnectionTimeout</value>
                             </list>
                         </entry>
+                        <entry key="adminSessionManager"><list><value>principalSessionCacheMaxTime</value></list></entry>
                     </map>
                 </constructor-arg>
             </bean>

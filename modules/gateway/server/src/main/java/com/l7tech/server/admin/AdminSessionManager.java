@@ -35,6 +35,8 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * This class handles authentication and tracking for admin sessions.
@@ -43,13 +45,18 @@ import java.util.logging.Logger;
  * resume an admin session as that user; thus, the cookies must be sent over SSL, never written to disk by
  * either client or server, and not kept longer than necessary.</p>
  */
-public class AdminSessionManager extends RoleManagerIdentitySourceSupport implements ApplicationListener {
+public class AdminSessionManager extends RoleManagerIdentitySourceSupport implements ApplicationListener, PropertyChangeListener {
 
     //- PUBLIC
 
     public AdminSessionManager( final ServerConfig config ) {
         this.serverConfig = config;
-        this.groupCache = new GroupCache( "PrincipalCache_unified", config );
+
+        int cacheSize = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_SIZE, 100);
+        int cacheMaxTime = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
+        int cacheMaxGroups = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS, 50);
+
+        this.groupCache = new GroupCache( "PrincipalCache_unified", cacheSize, cacheMaxTime, cacheMaxGroups );
     }
 
     public void setRoleManager( final RoleManager roleManager ) {
@@ -74,6 +81,16 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             if (eie.getEntityClass() == IdentityProviderConfig.class) {
                 setupAdminProviders();
             }
+        }
+    }
+
+    @Override
+    public void propertyChange( final PropertyChangeEvent event ) {
+        if ( event.getPropertyName().equals("principalSessionCacheMaxTime") &&
+             event.getNewValue() != null ) {
+            int cacheMaxTime = serverConfig.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
+            logger.config("Updating principal session cache max time '"+cacheMaxTime+"'.");
+            groupCache.setCacheMaxTime( cacheMaxTime );
         }
     }
 

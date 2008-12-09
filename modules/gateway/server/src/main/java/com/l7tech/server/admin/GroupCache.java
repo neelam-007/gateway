@@ -1,7 +1,6 @@
 package com.l7tech.server.admin;
 
 import com.l7tech.identity.*;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -10,6 +9,7 @@ import com.whirlycott.cache.Cache;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,24 +24,16 @@ class GroupCache {
 
     private static final Logger logger = Logger.getLogger(GroupCache.class.getName());
 
-    private final int cacheMaxTime;
-    private final int cacheMaxGroups;
+    private final AtomicInteger cacheMaxTime = new AtomicInteger();
+    private final AtomicInteger cacheMaxGroups = new AtomicInteger();
     private final Cache cache;
     
-    GroupCache( final String name, final ServerConfig config ){
-        this( name, config, -1, -1, -1 );
+    GroupCache( final String name, final int cacheMaxSize, final int cacheMaxTime, final int cacheMaxGroups ){
+        this.cacheMaxTime.set(cacheMaxTime);
+        this.cacheMaxGroups.set(cacheMaxGroups);
+        cache = cacheMaxSize < 1 ? null :
+                WhirlycacheFactory.createCache(name, cacheMaxSize, 293, WhirlycacheFactory.POLICY_LFU);
     }
-
-    GroupCache( final String name, final ServerConfig config, final int cacheMaxSize, final int cacheMaxTime, final int cacheMaxGroups ){
-        int cacheSize = cacheMaxSize!=-1 ? cacheMaxSize : config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_SIZE, 100);
-        this.cacheMaxGroups = cacheMaxGroups!=-1 ? cacheMaxGroups : config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS, 50);
-        this.cacheMaxTime = cacheMaxTime!=-1 ? cacheMaxTime : config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
-
-        cache = cacheSize < 1 ? null :
-                WhirlycacheFactory.createCache(name, cacheSize, 293, WhirlycacheFactory.POLICY_LFU);
-
-    }
-
 
     /*
     * validate will look up the user in the cache and return it's Set<Principal> representing its
@@ -55,13 +47,17 @@ class GroupCache {
 
         final long providerOid = ip.getConfig().getOid();
         final CacheKey ckey = new CacheKey(providerOid, u.getId());
-        final Set<IdentityHeader> cached = getCacheEntry(ckey, u.getLogin(), ip, cacheMaxTime);
+        final Set<IdentityHeader> cached = getCacheEntry(ckey, u.getLogin(), ip, cacheMaxTime.get());
 
         if ( cached != null ) {
             return cached;
         }
 
         return getAndCacheNewResult(u, ckey, ip);
+    }
+
+    void setCacheMaxTime( final int cacheMaxTime ) {
+        this.cacheMaxTime.set( cacheMaxTime );        
     }
 
     /*
@@ -101,6 +97,7 @@ class GroupCache {
     // caller is responsible for ensuring that only one thread at a time calls this per username,
     @SuppressWarnings({"unchecked"})
     private Set<IdentityHeader> getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp) throws ValidationException {
+        int cacheMaxGroups = this.cacheMaxGroups.get();
         idp.validate(u);
         //download group info and any other info to be added as a gP as and when required here..
 
@@ -153,6 +150,7 @@ class GroupCache {
         }
 
         /** @noinspection RedundantIfStatement*/
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -165,6 +163,7 @@ class GroupCache {
             return true;
         }
 
+        @Override
         public int hashCode() {
             if (cachedHashcode == -1) {
                 int result;
