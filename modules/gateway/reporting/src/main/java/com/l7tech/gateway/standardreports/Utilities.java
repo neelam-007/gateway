@@ -2712,7 +2712,13 @@ END as IP_ADDRESS,
         int rowIndex = 0;
         int maxRows = sIdToOpMap.size();
         for(String s: serviceNames){
-            sb.append(s).append(" -> ").append(idToDisplayString.get(s));
+            sb.append(s);
+            String operations = idToDisplayString.get(s);
+            if(!operations.equals("")){
+                sb.append(" -> ").append(operations);
+            }else{
+                sb.append(" -> All");                
+            }
             if(rowIndex < maxRows-1) sb.append("<br>");
             rowIndex++;
         }
