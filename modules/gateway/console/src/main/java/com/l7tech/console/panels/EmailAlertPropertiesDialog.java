@@ -195,6 +195,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
      * Sets the fields to the values from the EmailAlertAssertion object.
      */
     private void modelToView(final EmailAlertAssertion assertion) {
+        protocolCombo.setSelectedItem(assertion.getProtocol());
         hostField.setText(assertion.getSmtpHost());
         portField.setText(Integer.toString(assertion.getSmtpPort()));
         toAddressesField.setText(assertion.getTargetEmailAddress());
@@ -203,7 +204,6 @@ public class EmailAlertPropertiesDialog extends JDialog {
         subjectField.setText(assertion.getSubject());
         messageField.setText(assertion.messageString());
         fromAddressField.setText(assertion.getSourceEmailAddress());
-        protocolCombo.setSelectedItem(assertion.getProtocol());
         authenticateCheckBox.setSelected(assertion.isAuthenticate());
         authUsernameField.setText(assertion.getAuthUsername());
         authPasswordField.setText(assertion.getAuthPassword());
