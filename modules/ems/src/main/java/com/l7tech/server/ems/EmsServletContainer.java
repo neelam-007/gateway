@@ -278,7 +278,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         final ListenerConfiguration actualConfg = runningConfiguration.get();
         try {
 
-            if ( actualConfg == null || !desiredConfig.equals(actualConfg) ) {
+            if ( desiredConfig != null && (actualConfg == null || !desiredConfig.equals(actualConfg)) ) {
                 logger.info("Configuration is updated applying new configuration.");
                 rebuildConnectors( desiredConfig );
                 runningConfiguration.set( desiredConfig );
