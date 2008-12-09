@@ -91,20 +91,26 @@ public final class TimeUnit implements Serializable, Comparable {
         if (value.length() == 0) throw new NumberFormatException("Empty strings are not supported");
         if (value.length() > 20) throw new NumberFormatException("Strings with more than 20 characters are not supported");
 
-        Matcher mat = numberPattern.matcher(value.toLowerCase().replace(",", "").replace(" ", ""));
-        if (!mat.matches() && mat.groupCount() != 2)
-            throw new NumberFormatException("Value doesn't match expected format");
+        try {
+            Matcher mat = numberPattern.matcher(value.toLowerCase().replace(",", "").replace(" ", ""));
+            if (!mat.matches() && mat.groupCount() != 2)
+                throw new NumberFormatException("Value doesn't match expected format");
 
-        final String snum = mat.group(1);
+            final String snum = mat.group(1);
 
-        final TimeUnit unit;
-        String maybeUnit = mat.group(2);
-        TimeUnit tu = (TimeUnit) valuesByAbbrev.get(maybeUnit);
-        if (tu == null) tu = unsuffixedUnit;
-        unit = tu;
+            final TimeUnit unit;
+            String maybeUnit = mat.group(2);
+            TimeUnit tu = (TimeUnit) valuesByAbbrev.get(maybeUnit);
+            if (tu == null) tu = unsuffixedUnit;
+            unit = tu;
 
-        BigDecimal bd = new BigDecimal(snum); // OK to throw NFE
-        return (long) (bd.doubleValue() * unit.multiplier);
+            BigDecimal bd = new BigDecimal(snum); // OK to throw NFE
+            return (long) (bd.doubleValue() * unit.multiplier);
+        } catch (IllegalStateException ise) {
+            throw new NumberFormatException(ise.getMessage());
+        } catch (IndexOutOfBoundsException ioobe) {
+            throw new NumberFormatException(ioobe.getMessage());
+        }
     }
 
     public static long parse(String value) {
