@@ -15,6 +15,7 @@ import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.ExportedItem;
+import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityHeaderRef;
@@ -539,11 +540,10 @@ public class PolicyMigration extends EmsPage  {
                         }
                     }
 
-                    summary = summarize(export, summarize(folders, targetFolderId), enableNewServices, overwriteDependencies);
+                    Collection<MigratedItem> migratedItems = targetMigrationApi.importBundle( export, targetFolderHeader, false, overwriteDependencies, enableNewServices, dryRun);
+                    summary = summarize(export, migratedItems, summarize(folders, targetFolderId), enableNewServices, overwriteDependencies, dryRun);
                     if ( !dryRun ) {
-                        targetMigrationApi.importBundle( export, targetFolderHeader, false, overwriteDependencies, enableNewServices, false );
                         migrationRecordManager.create( null, getUser(), sourceCluster, targetCluster, summary, new byte[]{} ); // TODO save migrated bundle
-                        summary = "Migration completed.";
                     }
                 }
             }
@@ -633,7 +633,7 @@ public class PolicyMigration extends EmsPage  {
         return builder.toString().trim();
     }
 
-    private String summarize( final MigrationBundle export, String targetFolderPath, final boolean enabled, final boolean overwrite ) {
+    private String summarize( final MigrationBundle export, final Collection<MigratedItem> migratedItems, String targetFolderPath, final boolean enabled, final boolean overwrite, boolean dryRun ) {
         StringBuilder builder = new StringBuilder();
 
         MigrationMetadata metadata = export.getMetadata();
@@ -658,18 +658,10 @@ public class PolicyMigration extends EmsPage  {
 
         // entity details
         builder.append( "Migrated Data\n" );
-        for ( ExportedItem item : export.getExportedItems() ) {
-            if ( !item.isMappedValue() && item.getHeaderRef().getType() != EntityType.FOLDER && !metadata.isUploadedByParent(item.getHeaderRef())) {
-                EntityHeaderRef ref = item.getHeaderRef();
-                EntityHeader header = metadata.getHeader( ref );
-                builder.append( fromEntityType(header.getType()) );
-                builder.append( ", " );
-                builder.append( header.getName() );
-                builder.append( "(#" );
-                builder.append( ref.getStrId() );
-                builder.append( ")" );
-                builder.append( "\n" );
-            }
+        for ( MigratedItem item : migratedItems ) {
+            EntityHeader ih = item.getHeader();
+            builder.append(ih.getType().getName()).append(", ").append(ih.getName())
+                .append("(#").append(ih.getStrId()).append("): ").append(item.getStatus()).append("\n");
         }
         builder.append( "\n" );
 

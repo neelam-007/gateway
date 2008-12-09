@@ -132,8 +132,8 @@ public class MigrationManagerImpl implements MigrationManager {
                     uploadEntityRecursive(header, entities, bundle.getMetadata(), uploaded, dryRun);
                 }
                 EntityOperation eo = entities.get(header);
-                if (eo.operation != SKIP) {
-                    result.add(new MigratedItem(EntityHeaderUtils.fromEntity(eo.entity), eo.operation.toString()));
+                if (eo.operation != IGNORE) {
+                    result.add(new MigratedItem(dryRun ? header : EntityHeaderUtils.fromEntity(eo.entity), dryRun ? eo.operation.toString() : eo.operation.toString() + "D"));
                 }
             }
             return result;
@@ -165,7 +165,7 @@ public class MigrationManagerImpl implements MigrationManager {
         if (! dryRun) {
             EntityOperation eo = entities.get(header);
             switch (eo.operation)  {
-                case SKIP:
+                case IGNORE:
                     return;
 
                 case UPDATE:
@@ -208,6 +208,7 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     private MigrationErrors applyMappings(MigrationBundle bundle, Map<EntityHeader, EntityOperation> entities) throws MigrationException {
         MigrationErrors errors = new MigrationErrors();
 
@@ -215,7 +216,7 @@ public class MigrationManagerImpl implements MigrationManager {
             EntityOperation eo = entities.get(header);
 
             MigrationMetadata metadata = bundle.getMetadata();
-            if ( eo.operation == SKIP && ! metadata.isUploadedByParent(header))
+            if ( eo.operation == IGNORE && ! metadata.isUploadedByParent(header))
                 continue;
 
             try {
@@ -223,8 +224,7 @@ public class MigrationManagerImpl implements MigrationManager {
                     PropertyResolver resolver = getResolver(eo.entity, mapping.getPropName());
                     EntityOperation targetEo = entities.get(metadata.getHeader(mapping.getTarget()));
                     if (targetEo == null || targetEo.entity == null) {
-                        // todo throw
-                        logger.log(Level.WARNING, "Cannot apply mapping, target entity not found for dependency reference: {0}", mapping.getTarget());
+                        errors.add(EntityHeaderUtils.fromEntity(eo.entity), new MigrationException("Cannot apply mapping, target entity not found for dependency reference: " + mapping.getTarget()));
                         continue;
                     }
                     resolver.applyMapping(eo.entity, mapping.getPropName(), targetEo.entity, metadata.getOriginalHeader(mapping.getOriginalTarget()));
@@ -237,7 +237,7 @@ public class MigrationManagerImpl implements MigrationManager {
         return errors;
     }
 
-    static enum ImportOperation { CREATE, UPDATE, SKIP }
+    static enum ImportOperation { CREATE, UPDATE, IGNORE }
 
     private static class EntityOperation {
         Entity entity;
@@ -274,19 +274,19 @@ public class MigrationManagerImpl implements MigrationManager {
             }
 
             if (metadata.isUploadedByParent(header)) {
-                result.put(header, new EntityOperation(fromBundle, SKIP));
+                result.put(header, new EntityOperation(fromBundle, IGNORE));
             } else if (existing == null) {
                 if (fromBundle instanceof PersistentEntity)
                     ((PersistentEntity)fromBundle).setOid(PersistentEntity.DEFAULT_OID);
                 result.put(header, new EntityOperation(fromBundle, CREATE, !enableServices));
             } else if (fromBundle == null) {
-                result.put(header, new EntityOperation(existing, SKIP));
+                result.put(header, new EntityOperation(existing, IGNORE));
             } else if (overwriteExisting) { // both not null
                 if (fromBundle instanceof PersistentEntity && existing instanceof PersistentEntity)
                     ((PersistentEntity)fromBundle).setOid(((PersistentEntity)existing).getOid());
                 result.put(header, new EntityOperation(fromBundle, UPDATE));
             } else {
-                result.put(header, new EntityOperation(existing, SKIP));
+                result.put(header, new EntityOperation(existing, IGNORE));
             }
         }
 
