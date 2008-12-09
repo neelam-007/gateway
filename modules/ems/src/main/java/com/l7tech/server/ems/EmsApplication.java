@@ -40,6 +40,8 @@ public class EmsApplication extends WebApplication {
 
     public static final String DEFAULT_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
+    public static final String DEFAULT_SYSTEM_TIME_ZONE = "[System Default Time Zone]";
+    public static final String DEFAULT_HOME_PAGE = "SystemSettings";
 
     /**
      *
@@ -284,6 +286,13 @@ public class EmsApplication extends WebApplication {
 
     public static String getDateFormat( final String dateKey ) {
         return "friendly".equals(dateKey) ? "MMM dd, yyyy" : "yyyy-MM-dd";
+    }
+
+    public static boolean isValidTimezoneId(String id) {
+        if (id == null || (! Arrays.asList(TimeZone.getAvailableIDs()).contains(id)))
+            return false;
+        else
+            return true;
     }
 
     public long getTimeStarted() {

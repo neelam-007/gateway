@@ -114,16 +114,35 @@ public class UserSettings extends EmsPage {
         boolean updated = false;
 
         try {
+            String dateFormat = preferences.get("dateformat");
+            String timeFormat = preferences.get("timeformat");
+            String zoneId = preferences.get("timezone");
+            String preferredPage = preferences.get("homepage");
+
+            if (dateFormat == null) {
+                dateFormat = "formal";
+                preferences.put("dateformat", "formal");
+            }
+            if (timeFormat == null) {
+                timeFormat = "formal";
+                preferences.put("timeformat", "formal");
+            }
+            if (!EmsApplication.isValidTimezoneId(zoneId)) {
+                zoneId = TimeZone.getDefault().getID();
+                preferences.put("timezone", EmsApplication.DEFAULT_SYSTEM_TIME_ZONE);
+            }
+            if (preferredPage == null) {
+                preferences.put("homepage", EmsApplication.DEFAULT_HOME_PAGE);
+            }
+
+            getSession().setDateFormatPattern( EmsApplication.getDateFormat(dateFormat) );
+            getSession().setDateTimeFormatPattern( EmsApplication.getDateTimeFormat(dateFormat, timeFormat) );
+            getSession().setTimeZoneId( zoneId );
+            getSession().setPreferredPage( preferredPage );
+
             logger.fine("Saving user preferences: " + preferences);
             userPropertyManager.saveUserProperties( getUser(), preferences );
             updated = true;
-
-            String dateFormat = preferences.get("dateformat");
-            String timeFormat = preferences.get("timeformat");
-
-            getSession().setDateTimeFormatPattern( EmsApplication.getDateTimeFormat(dateFormat, timeFormat) );
-            getSession().setTimeZoneId( preferences.get("timezone") );
-            getSession().setPreferredPage( preferences.get("homepage") );
         } catch ( UpdateException ue ) {
             logger.log( Level.WARNING, "Error saving user preferences.", ue );       
         }
@@ -201,8 +220,9 @@ public class UserSettings extends EmsPage {
         public PreferencesForm(final String componentName, final Map<String,String> preferences) {
             super(componentName, new CompoundPropertyModel(preferences));
 
-            List<String> zoneIds = Arrays.asList(TimeZone.getAvailableIDs());
+            List<String> zoneIds = new ArrayList<String>(Arrays.asList(TimeZone.getAvailableIDs()));
             Collections.sort( zoneIds );
+            zoneIds.add(0, EmsApplication.DEFAULT_SYSTEM_TIME_ZONE);
 
             final NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages", new Functions.Unary<Boolean,Class<? extends Page>>(){
                 @Override

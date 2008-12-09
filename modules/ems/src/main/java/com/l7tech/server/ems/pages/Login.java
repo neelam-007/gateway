@@ -19,12 +19,14 @@ import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
+import com.l7tech.objectmodel.UpdateException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.HashMap;
 
 /**
  * Login page
@@ -38,7 +40,7 @@ public class Login extends WebPage {
 
     @SpringBean
     private UserPropertyManager userPropertyManager;
-    
+
     /**
      * Create login page
      */
@@ -97,7 +99,7 @@ public class Login extends WebPage {
 
             add(new RequiredTextField("username", new PropertyModel(model, "username")));
             add(new PasswordTextField("password", new PropertyModel(model, "password")).setRequired(true));
-        }        
+        }
 
         @Override
         public final void onSubmit() {
@@ -137,25 +139,67 @@ public class Login extends WebPage {
         String dateformat = null;
         String datetimeformat = null;
         String zoneid = null;
+        String preferredpage = null;
 
+        boolean propsChanged = false;
+        Map<String, String> props = new HashMap<String, String>();
         try {
-            Map<String,String> props = userPropertyManager.getUserProperties( user );
+            props = userPropertyManager.getUserProperties( user );
             String dateFormat = props.get("dateformat");
             String timeFormat = props.get("timeformat");
 
-            dateformat = EmsApplication.getDateFormat(dateFormat);            
+            if (dateFormat == null) {
+                dateFormat = "formal";
+                props.put("dateformat", "formal");
+                propsChanged = true;
+            }
+            if (timeFormat == null) {
+                timeFormat = "formal";
+                props.put("timeformat", "formal");
+                propsChanged = true;
+            }
+
+            dateformat = EmsApplication.getDateFormat(dateFormat);
             datetimeformat = EmsApplication.getDateTimeFormat(dateFormat, timeFormat);
             zoneid = props.get("timezone");
+            preferredpage = props.get("homepage");
         } catch ( FindException fe ) {
-            // use default format            
+            // use default format
         }
 
-        if ( dateformat == null ) dateformat = EmsApplication.DEFAULT_DATE_FORMAT;
-        if ( datetimeformat == null ) datetimeformat = EmsApplication.DEFAULT_DATETIME_FORMAT;
-        if ( zoneid == null ) zoneid = TimeZone.getDefault().getID();
+        if (dateformat == null) {
+            dateformat = EmsApplication.DEFAULT_DATE_FORMAT;
+            props.put("dateformat", "formal");
+            propsChanged = true;
+
+        }
+        if (datetimeformat == null) {
+            datetimeformat = EmsApplication.DEFAULT_DATETIME_FORMAT;
+            props.put("timeformat", "formal");
+            propsChanged = true;
+        }
+        if (!EmsApplication.isValidTimezoneId(zoneid)) {
+            zoneid = TimeZone.getDefault().getID();
+            props.put("timezone", EmsApplication.DEFAULT_SYSTEM_TIME_ZONE);
+            propsChanged = true;
+        }
+        if (preferredpage == null) {
+            preferredpage = EmsApplication.DEFAULT_HOME_PAGE;
+            props.put("homepage", preferredpage);
+            propsChanged = true;
+        }
 
         session.setDateFormatPattern( dateformat );
         session.setDateTimeFormatPattern( datetimeformat );
         session.setTimeZoneId(zoneid);
+        session.setPreferredPage(preferredpage);
+
+        if (propsChanged) {
+            try {
+                userPropertyManager.saveUserProperties(user, props);
+            } catch (UpdateException e) {
+                // use the previous props
+            }
+        }
     }
 }
