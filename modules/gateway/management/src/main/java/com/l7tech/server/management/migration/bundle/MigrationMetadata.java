@@ -193,9 +193,13 @@ public class MigrationMetadata {
     }
 
     public void mapName(EntityHeaderRef dependency, EntityHeader newDependency) throws MigrationException {
+        mapName(dependency, newDependency, true);
+    }
+
+    public void mapName(EntityHeaderRef dependency, EntityHeader newDependency, boolean enforceMappingType) throws MigrationException {
 
         logger.log(Level.FINE, "Name-mapping: {0} -> {1}.", new Object[]{dependency, newDependency});
-        if (dependency == null || newDependency == null || dependency.equals(EntityHeaderRef.fromOther(newDependency)))
+        if (dependency == null || newDependency == null /*|| dependency.equals(EntityHeaderRef.fromOther(newDependency))*/)
             return;
 
         // add new header to the bundle
@@ -205,7 +209,7 @@ public class MigrationMetadata {
         Set<MigrationMapping> mappingsForDependency = getMappingsForTarget(dependency);
         for (MigrationMapping mapping : mappingsForDependency) {
             // todo: one-to-many mappings: decide how/when to apply this mapping (vs a presious / individual selection)
-            mapping.setMappedTarget(newDependency);
+            mapping.setMappedTarget(newDependency, enforceMappingType);
         }
         addMappingsForTarget(newDependency, mappingsForDependency);
         mappingsByTarget.remove(EntityHeaderRef.fromOther(dependency)); // nobody will depend on the old one

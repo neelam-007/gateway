@@ -204,7 +204,7 @@ public class MigrationManagerImpl implements MigrationManager {
             // map root folder to target folder
             if (!metadata.hasHeader(ROOT_FOLDER_REF))
                 throw new MigrationException("Root folder not found in the bundle.");
-            metadata.mapName(ROOT_FOLDER_REF, targetFolder);
+            metadata.mapName(ROOT_FOLDER_REF, targetFolder, false);
         }
     }
 
@@ -340,7 +340,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
             // value-mapping required
             if (! mapping.isMappedTarget() && mapping.getType().getValueMapping() == REQUIRED &&
-                ! bundle.getExportedItem(mapping.getTarget()).isMappedValue()) {
+                (bundle.getExportedItem(mapping.getTarget()) == null || ! bundle.getExportedItem(mapping.getTarget()).isMappedValue()) ) {
                 errors.add(mapping, new MigrationException("Unresolved value-mapping: " + mapping));
             }
         }

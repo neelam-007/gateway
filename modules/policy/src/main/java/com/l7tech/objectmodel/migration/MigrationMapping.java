@@ -110,10 +110,14 @@ public class MigrationMapping {
         return mappedTarget;
     }
 
-    public void setMappedTarget(EntityHeaderRef mappedTarget) {
-        if (type.getNameMapping() == MigrationMappingSelection.NONE)
+    public void setMappedTarget(EntityHeaderRef mappedTarget, boolean enforceMappingType) {
+        if (enforceMappingType && type.getNameMapping() == MigrationMappingSelection.NONE)
             throw new IllegalStateException("Mapping selection set to NONE, cannot set new mapping target for: " + this.toString() );
         this.mappedTarget = EntityHeaderRef.fromOther(mappedTarget);
+    }
+
+    public void setMappedTarget(EntityHeaderRef mappedTarget) {
+        setMappedTarget(mappedTarget, true);
     }
 
     @XmlAttribute
