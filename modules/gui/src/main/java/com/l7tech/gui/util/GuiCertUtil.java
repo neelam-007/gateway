@@ -306,6 +306,18 @@ public class GuiCertUtil {
             File file = fc.getSelectedFile();
             if(file!=null) {
 
+                // add extension if not provided and pem or cer is selected.
+                boolean isPem = true;
+                if (file.getName().indexOf('.') < 0) {
+                    if (fc.getFileFilter() == pemFilter) file = new File(file.getParent(), file.getName() + ".pem");
+                    if (fc.getFileFilter() == cerFilter) {
+                        isPem = false;
+                        file = new File(file.getParent(), file.getName() + ".cer");
+                    }
+                } else if (file.getName().endsWith(".cer")) {
+                    isPem = false;
+                }
+
                 //if file already exists, we need to ask for confirmation to overwrite.
                 if (file.exists())
                 {
@@ -321,19 +333,6 @@ public class GuiCertUtil {
                 //
                 if ((!file.exists() && file.getParentFile()!=null /*&& file.getParentFile().canWrite()*/) ||
                     (file.isFile() && file.canWrite())) {
-
-                    // add extension if not provided and pem or cer is selected.
-                    boolean isPem = true;
-                    if (file.getName().indexOf('.') < 0) {
-                        if(fc.getFileFilter()==pemFilter) file = new File(file.getParent(), file.getName() + ".pem");
-                        if(fc.getFileFilter()==cerFilter) {
-                            isPem = false;
-                            file = new File(file.getParent(), file.getName() + ".cer");
-                        }
-                    }
-                    else if (file.getName().endsWith(".cer")) {
-                        isPem = false;                        
-                    }
 
                     byte[] data = null;
 
