@@ -4,9 +4,22 @@
 <head profile="http://www.w3.org/2005/10/profile">
     <title><wicket:message key="label.title">Log In [Enterprise Service Manager]</wicket:message></title>
     <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
-    <link rel="icon" type="image/png" href="/images/favicon.ico" />
+    <wicket:head>
+        <script type="text/javascript">
+            function updateSubmitButton() {
+                var username = document.getElementById('username').value;
+                var password = document.getElementById('password').value;
+                YAHOO.widget.Button.getButton('submit').set('disabled', username == '' || password == '');
+            }
+
+            function init() {
+                updateSubmitButton();
+                document.getElementById('username').focus();
+            }
+        </script>
+    </wicket:head>
 </head>
-<body class="yui-skin-sam">
+<body class="yui-skin-sam" onload="init();">
 <table width="100%">
     <tr>
         <td>
@@ -36,15 +49,15 @@
                                             <table class="center spaced">
                                                 <tr>
                                                     <td class="right"><wicket:message key="username">User Name</wicket:message>:</td>
-                                                    <td><input id="username" name="username" type="text" wicket:id="username" /></td>
+                                                    <td><input id="username" name="username" type="text" wicket:id="username" onkeyup="updateSubmitButton();" /></td>
                                                 </tr>
                                                 <tr>
                                                     <td class="right"><wicket:message key="password">Password</wicket:message>:</td>
-                                                    <td><input id="password" name="password" type="password" wicket:id="password" /></td>
+                                                    <td><input id="password" name="password" type="password" wicket:id="password" onkeyup="updateSubmitButton();" /></td>
                                                 </tr>
                                                 <tr>
                                                     <td class="right"> </td>
-                                                    <td class="right"><button type="button" wicket:id="submit"><wicket:message key="label.login">Log In</wicket:message></button></td>
+                                                    <td class="right"><input type="submit" wicket:message="value:label.login" wicket:id="submit" /></td>
                                                 </tr>
                                             </table>
                                         </form>

@@ -1,25 +1,25 @@
 package com.l7tech.server.ems.pages;
 
+import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.ems.EmsApplication;
+import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.EmsSession;
+import com.l7tech.server.ems.user.UserPropertyManager;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.markup.html.WebPage;
-import org.apache.wicket.markup.html.panel.FeedbackPanel;
-import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
+import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
-import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.behavior.HeaderContributor;
-import com.l7tech.server.ems.EmsSecurityManager;
-import com.l7tech.server.ems.EmsSession;
-import com.l7tech.server.ems.EmsApplication;
-import com.l7tech.server.ems.user.UserPropertyManager;
-import com.l7tech.identity.User;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.common.admin.Administrative;
-import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
+import org.apache.wicket.spring.injection.annot.SpringBean;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -54,16 +54,18 @@ public class Login extends WebPage {
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
         add( feedback.setOutputMarkupId(true) );
         LoginForm form = new LoginForm("loginForm");
-        form.add(
-            new YuiAjaxButton("submit", form){
-                @Override
-                protected void onSubmit(AjaxRequestTarget target, Form form) {}
-                @Override
-                protected void onError(AjaxRequestTarget target, Form form) {
-                    target.addComponent(feedback);
-                }
+        YuiAjaxButton submitButton = new YuiAjaxButton("submit", form) {
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form form) {
             }
-        );
+
+            @Override
+            protected void onError(AjaxRequestTarget target, Form form) {
+                target.addComponent(feedback);
+            }
+        };
+        submitButton.setMarkupId("submit");
+        form.add(submitButton);
         add(form);
 
         EmptyPanel empty = new EmptyPanel("empty");
