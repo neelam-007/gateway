@@ -41,6 +41,7 @@
             PUBLISHED_SERVICE_S : 'Published Service(s)',
             OPERATION_S : 'Operation(s)',
             ADD_ENTITY_BUTTON_LABEL : 'Add Checked ENTITY_TYPE',
+            REMOVE : 'Remove',
             OK : 'OK',
             CANCEL : 'Cancel',
             ERROR : 'Error',
@@ -787,6 +788,7 @@
                 var img = document.createElement('img');
                 img.src = '../images/delete.png';
                 img.className = 'clickable';
+                img.title = localizedStrings.REMOVE;
                 YAHOO.util.Event.addListener(img, 'click', onClickDeleteEntity, tr);
                 td = tr.insertCell(-1);
                 td.appendChild(img);
@@ -830,6 +832,7 @@
             var deleteImg = document.createElement('img');
             deleteImg.src = '../images/delete.png';
             deleteImg.className = 'clickable';
+            deleteImg.title = localizedStrings.REMOVE;
             YAHOO.util.Event.addListener(deleteImg, 'click', onClickDeleteGrouping, tr);
             td = tr.insertCell(-1);
             td.appendChild(deleteImg);
