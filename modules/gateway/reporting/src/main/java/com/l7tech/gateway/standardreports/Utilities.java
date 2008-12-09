@@ -1727,9 +1727,7 @@ END as IP_ADDRESS,
         String serviceNameDisplay = TextUtils.truncStringMiddle(serviceName, 26);
         String displayRoutingURI = TextUtils.truncStringMiddle(serviceRoutingURI, 26);
 
-        //return "<font size=\"10\">"+serviceNameDisplay +"<br>" + "[" + displayRoutingURI+"]"+"</font>";
-        return serviceNameDisplay +"<br>" + "[" + displayRoutingURI+"]";
-        //return serviceName+"["+serviceRoutingURI+"]";
+        return "<font size=\"1\">"+serviceNameDisplay +"<br>" + "[" + displayRoutingURI+"]"+"</font>";
     }
 
 

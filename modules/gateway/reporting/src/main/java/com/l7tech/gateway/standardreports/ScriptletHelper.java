@@ -24,8 +24,21 @@ public class ScriptletHelper extends JRDefaultScriptlet {
     private final static String SERVICE_ID_GROUP = "SERVICE_ID_GROUP";
     private final static String SERVICE_OPERATION_VALUE = "SERVICE_OPERATION_VALUE";
     private final static String FRAME_DETAIL_TABLE_ROW = "FrameDetailTableRow";
-    private final static String TABLE_CELL = "TableCell";
+    private static final String SUMMARY_ROW_HEADING_HTML = "SummaryRowHeadingHtml";
 
+    /**
+     * The performance summary report handles both mapping and non mapping queries, just as the interval report does.
+     * However there is one section of the performance summary report where we need different styles based on
+     * whether the report is mapping and if it's a detail report.
+     * What happens below is that if the report is a mapping report, and it's not a detail report, it means
+     * that we aer going to display the service name as the first column in band SERVICE_ID_GROUP (to understand this
+     * you need to look at the jrxml file). The default style for this bands frame is that it has borders and has a
+     * grey colour to indicate that it has totals. When it's not a detail report we need to change the style so that
+     * only the left and right hand sides have a border, and the background is white so that it's clear that the data
+     * is not a total
+     * @param s
+     * @throws JRScriptletException
+     */
     @Override
     public void beforeGroupInit(String s) throws JRScriptletException {
         if(s.equals(SERVICE_ID_GROUP)){
@@ -35,12 +48,12 @@ public class ScriptletHelper extends JRDefaultScriptlet {
                 throw new IllegalStateException(FRAME_DETAIL_TABLE_ROW + " style not found");
             }
 
-            if(!styleMap.containsKey(TABLE_CELL)){
-                throw new IllegalStateException(TABLE_CELL+ " style not found");
+            if(!styleMap.containsKey(SUMMARY_ROW_HEADING_HTML)){
+                throw new IllegalStateException(SUMMARY_ROW_HEADING_HTML+ " style not found");
             }
-            
+
             JRStyle nonDetailStyle = (JRStyle) styleMap.get(FRAME_DETAIL_TABLE_ROW);
-            JRStyle tableStyle = (JRStyle) styleMap.get(TABLE_CELL);
+            JRStyle tableStyle = (JRStyle) styleMap.get(SUMMARY_ROW_HEADING_HTML);
 
             if(nonDetailStyle == null) throw new IllegalStateException(FRAME_DETAIL_TABLE_ROW+" not found");
 
@@ -80,8 +93,5 @@ public class ScriptletHelper extends JRDefaultScriptlet {
             }
         }
     }
-
-    private Long throughputSum;
-
 
 }

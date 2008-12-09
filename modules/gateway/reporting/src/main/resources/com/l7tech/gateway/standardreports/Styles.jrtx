@@ -58,6 +58,31 @@
     </style>
 
     <style
+            name="RowTotalHeadingHtml"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Left"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            markup="html"
+            >
+        <box leftPadding="5">
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <style
             name="SummaryRowHeadingHtml"
             isDefault="false"
             mode="Transparent"
@@ -246,31 +271,6 @@
             pdfFontName="Helvetica"
             pdfEncoding="Cp1252"
             isPdfEmbedded="false"
-            >
-        <box leftPadding="5">
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
-        </box>
-    </style>
-
-    <style
-            name="RowTotalHeadingHtml"
-            isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            markup="html"
             >
         <box leftPadding="5">
             <topPen lineWidth="0.5" lineStyle="Solid"/>

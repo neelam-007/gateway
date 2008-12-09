@@ -1491,7 +1491,7 @@ new Double((1 - (($V{AUTHORIZED_SERVICE_SUM}.doubleValue() - $V{COMPLETED_SERVIC
 						key="textField-120"/>
 					<box></box>
 					<textElement markup="html">
-						<font size="8"/>
+						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[((Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))?Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})
 :"Service Totals")]]></textFieldExpression>
@@ -2105,7 +2105,7 @@ Utilities.getMappingReportInfoDisplayString
 						key="textField-164"/>
 					<box></box>
 					<textElement markup="html">
-						<font size="8"/>
+						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
