@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.transport.email.EmailMessage;
 import com.l7tech.gateway.common.transport.email.EmailTestException;
 
@@ -11,6 +12,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.mail.Session;
 import javax.mail.MessagingException;
 import javax.mail.Transport;
+import javax.mail.AuthenticationFailedException;
 import javax.mail.internet.MimeMessage;
 import java.util.*;
 import java.util.logging.Logger;
@@ -98,8 +100,16 @@ public class EmailUtils {
             Session session = getSession(propertyMap);
             sendMessage(session, emailMessage, emailConfig);
         } catch (MessagingException me) {
-            logger.fine("Failed to send test email message: " + me.getMessage());
-            throw new EmailTestException(me.getMessage());
+            if (ExceptionUtils.causedBy(me, AuthenticationFailedException.class)) {
+                logger.fine("Failed to send test email message: Authentication failed");
+                throw new EmailTestException("Authentication failed.");
+            } else if ("[EOF]".equals(me.getMessage())) {
+                logger.fine("Failed to send test email message: Client does not have permission to Send As this sender '" + emailMessage.getFromAddress() + "'");
+                throw new EmailTestException("Client does not have permission to Send As this sender '" + emailMessage.getFromAddress() + "'");
+            } else {
+                logger.fine("Failed to send test email message: " + me.getMessage());
+                throw new EmailTestException(me.getMessage());
+            }
         }
     }
 
