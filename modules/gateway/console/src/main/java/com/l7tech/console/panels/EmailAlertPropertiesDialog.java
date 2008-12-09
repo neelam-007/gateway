@@ -21,6 +21,9 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Collection;
+import java.util.Vector;
+import java.util.ArrayList;
 
 /**
  * Properties dialog for {@link com.l7tech.policy.assertion.alert.EmailAlertAssertion}.
@@ -89,9 +92,23 @@ public class EmailAlertPropertiesDialog extends JDialog {
 
         validator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                viewToModel(assertion);
-                confirmed = true;
-                dispose();
+
+                //validate fields
+                java.util.List<String> errors = validateFields();
+                if (!errors.isEmpty()) {
+                    StringBuffer errMsg = new StringBuffer("");
+                    for (String error : errors) {
+                        errMsg.append(error + " \n");
+                    }
+                    DialogDisplayer.showMessageDialog(sendTestEmailButton,
+                            "Invalid fields, please correct the following: \n" + errMsg.toString(),
+                            "Invalid fields", JOptionPane.ERROR_MESSAGE, null);
+                    return;
+                } else {
+                    viewToModel(assertion);
+                    confirmed = true;
+                    dispose();
+                }
             }
         });
 
@@ -104,6 +121,20 @@ public class EmailAlertPropertiesDialog extends JDialog {
 
         sendTestEmailButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
+
+                //validate fields
+                java.util.List<String> errors = validateFields();
+                if (!errors.isEmpty()) {
+                    StringBuffer errMsg = new StringBuffer("");
+                    for (String error : errors) {
+                        errMsg.append(error + " \n");
+                    }
+                    DialogDisplayer.showMessageDialog(sendTestEmailButton,
+                            "Invalid fields, please correct the following: \n" + errMsg.toString(),
+                            "Invalid fields", JOptionPane.ERROR_MESSAGE, null);
+                    return;
+                }
+
                 DialogDisplayer.showConfirmDialog(sendTestEmailButton, constructRecipientEmailMessage(), "Confirm Email Test", JOptionPane.OK_CANCEL_OPTION, new DialogDisplayer.OptionListener(){
                     public void reportResult(int option) {
                         if ( option == JOptionPane.OK_OPTION ) {
@@ -232,6 +263,20 @@ public class EmailAlertPropertiesDialog extends JDialog {
             assertion.setAuthUsername(null);
             assertion.setAuthPassword(null);
         }
+    }
+
+    private java.util.List<String> validateFields() {
+        java.util.List<String> errors = new ArrayList<String>();
+
+        if ("".equals(toAddressesField.getText())) {
+            errors.add("Missing address in TO field.");
+        }
+
+        if ("".equals(fromAddressField.getText())) {
+            errors.add("Missing address in FROM field.");
+        }
+
+        return errors;
     }
 
     /**
