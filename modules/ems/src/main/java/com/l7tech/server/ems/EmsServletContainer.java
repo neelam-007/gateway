@@ -63,7 +63,6 @@ import com.l7tech.server.ems.enterprise.MappingFilter;
 /**
  * An embedded servlet container that the EMS uses to host itself.
  *
- * TODO [steve] This needs cleanup
  * TODO [steve] HTTP Cookies are not secure, needs to be configured here
  */
 public class EmsServletContainer implements ApplicationContextAware, InitializingBean, DisposableBean, PropertyChangeListener {
@@ -202,6 +201,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         final Map<String, String> initParams = root.getInitParams();
         initParams.put("contextConfigLocation", "classpath:com/l7tech/server/ems/resources/webApplicationContext.xml");
         initParams.put(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
+        initParams.put("org.mortbay.jetty.servlet.Default.dirAllowed", "false");
 
         // Add security handler
         final Filter securityFilter = new EmsSecurityFilter();
