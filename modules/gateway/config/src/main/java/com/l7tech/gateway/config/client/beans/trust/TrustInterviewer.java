@@ -75,7 +75,7 @@ public class TrustInterviewer {
             inBeans.add(new RemoteNodeManagementEnabled(enabled));
             inBeans.add(new NewTrustedCertFactory());
             inBeans.add(new TypedConfigurableBean<String>( "host.controller.sslIpAddress", "Listener IP Address", "Valid inputs are any IP Address or * for all.", "localhost", listenIpAddr, OptionType.IP_ADDRESS ) );
-            inBeans.add(new TypedConfigurableBean<Integer>( "host.controller.sslPort", "Listener Port", "Valid inputs are integers in the range 1024-65535.", 8765, Integer.parseInt(listenPort), OptionType.PORT ) );
+            inBeans.add(new TypedConfigurableBean<Integer>( "host.controller.sslPort", "Listener Port", "Valid inputs are integers in the range 1024-65535.", 8765, Integer.parseInt(listenPort), OptionType.PORT, 1024, null ) );
 
             Map<ConfiguredTrustedCert, String> inCertBeans = null;
             KeyStore trustStore = null;

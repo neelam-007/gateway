@@ -21,12 +21,25 @@ public class TypedConfigurableBean<T> extends EditableConfigurationBean<T>  {
                                   final T defaultValue,
                                   final T currentValue,
                                   final OptionType type ) {
+        this( id, intro, validationFailureMessage, defaultValue, currentValue, type, null, null );
+    }
+
+    public TypedConfigurableBean( final String id,
+                                  final String intro,
+                                  final String validationFailureMessage,
+                                  final T defaultValue,
+                                  final T currentValue,
+                                  final OptionType type,
+                                  final Integer minValue,
+                                  final Integer maxValue) {
         super( id, intro, defaultValue );
         if ( currentValue != null ) {
             this.setConfigValue( currentValue );
         }
         this.validationFailureMessage = validationFailureMessage;
         this.type = type;
+        this.minValue = minValue;
+        this.maxValue = maxValue;
     }
 
     @SuppressWarnings({"unchecked"})
@@ -35,11 +48,14 @@ public class TypedConfigurableBean<T> extends EditableConfigurationBean<T>  {
         T result;
 
         if ( !Pattern.matches( type.getDefaultRegex(), userInput ) ) {
-            throw new ConfigurationException( validationFailureMessage );            
+            throw new ConfigurationException( validationFailureMessage );
         }
 
         try {
             result = (T) type.getFormat().parseObject( userInput );
+            if ( !valid( result ) ) {
+                throw new ConfigurationException( validationFailureMessage );
+            }
         } catch (ParseException e) {
             throw new ConfigurationException( ExceptionUtils.getMessage(e), e ); 
         }
@@ -77,4 +93,22 @@ public class TypedConfigurableBean<T> extends EditableConfigurationBean<T>  {
 
     private final String validationFailureMessage;
     private final OptionType type;
+    private final Integer minValue;
+    private final Integer maxValue;
+
+    private boolean valid( final Object value ) {
+        boolean valid = true;
+
+        if ( value instanceof Number ) {
+            int intValue = ((Number)value).intValue();
+
+            if ( minValue != null && minValue > intValue) {
+                valid = false;
+            } else if ( maxValue != null && maxValue < intValue ) {
+                valid = false;
+            }
+        }
+
+        return valid;
+    }
 }
