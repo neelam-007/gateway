@@ -63,7 +63,7 @@ public class SpecificUser extends IdentityAssertion {
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, resolver = UserGroupResolver.class)
+    @Migration(mapName = MigrationMappingSelection.NONE, export = false, resolver = UserGroupResolver.class)
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = super.getEntitiesUsed();
         EntityHeader[] headers2 = new EntityHeader[headers.length + 1];

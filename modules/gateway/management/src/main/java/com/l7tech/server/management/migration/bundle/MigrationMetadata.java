@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.MigrationMapping;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.MigrationException;
+import com.l7tech.objectmodel.migration.MigrationMappingType;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 import javax.xml.bind.annotation.*;
@@ -110,6 +111,24 @@ public class MigrationMetadata {
                 return true;
         }
         return false;
+    }
+
+    public boolean includeInExport(EntityHeaderRef headerRef) throws MigrationException {
+        if (isMappingRequired(headerRef)) {
+            return false;
+        } else {
+            Set<MigrationMapping> deps = getMappingsForTarget(EntityHeaderRef.fromOther(headerRef));
+
+            if (deps == null || deps.size() == 0) // top-level item
+                return true;
+
+            for (MigrationMapping mapping : deps) {
+                if (mapping.isExport())
+                    return true;
+            }
+
+            return false;
+        }
     }
 
     // --- mapping / dependencies operations ---

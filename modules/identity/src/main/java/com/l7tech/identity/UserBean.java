@@ -6,6 +6,9 @@ package com.l7tech.identity;
 
 import com.l7tech.util.HexUtils;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.objectmodel.migration.Migration;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import com.l7tech.objectmodel.EntityType;
 
 import java.io.Serializable;
 
@@ -62,6 +65,7 @@ public class UserBean implements User, Serializable {
         return department;
     }
 
+    @Migration(mapName = NONE, mapValue = NONE, export = false, targetType = EntityType.ID_PROVIDER_CONFIG)
     public long getProviderId() {
         return providerId;
     }

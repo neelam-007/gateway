@@ -73,13 +73,8 @@ public class MigrationManagerImpl implements MigrationManager {
         MigrationMetadata metadata = findDependencies(headers);
         MigrationBundle bundle = new MigrationBundle(metadata);
         for (EntityHeader header : metadata.getHeaders()) {
-            if (metadata.isMappingRequired(header)) {
-                logger.log(Level.FINEST, "Mapping required for {0}, not exporting.", header);
-                continue;
-            }
-
-            // todo: find out why: unable to marshal type "com.l7tech.identity.IdentityProviderConfig" as an element because it is missing an @XmlRootElement annotation]
-            if (header.getType() == EntityType.ID_PROVIDER_CONFIG) {
+            if (!metadata.includeInExport(header)) {
+                logger.log(Level.FINEST, "Not exporting header {0}", header);
                 continue;
             }
 

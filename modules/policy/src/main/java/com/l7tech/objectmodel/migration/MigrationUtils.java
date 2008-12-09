@@ -211,4 +211,8 @@ public class MigrationUtils {
     public static String propertyNameFromGetter(String getterName) {
         return getterName == null ? null : getterName.startsWith("get") && getterName.length() > 3 ? getterName.substring(3, getterName.length()) : getterName;
     }
+
+    public static boolean isExported(Method property) {
+        return !property.isAnnotationPresent(Migration.class) || property.getAnnotation(Migration.class).export();
+    }
 }

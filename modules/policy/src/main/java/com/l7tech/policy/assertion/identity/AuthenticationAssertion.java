@@ -43,7 +43,7 @@ public class AuthenticationAssertion extends IdentityAssertion {
         return super.getIdentityProviderOid();
     }
 
-    @Migration(mapName = MigrationMappingSelection.REQUIRED)
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false)
     public EntityHeader[] getEntitiesUsed() {
         return super.getEntitiesUsed();
     }
