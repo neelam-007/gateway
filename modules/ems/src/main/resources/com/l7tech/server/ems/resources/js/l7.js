@@ -347,7 +347,7 @@ if (!l7.Util) {
          * @param {array} array         the array to search
          * @param {string} propName     the property name to look up
          * @param {any} propValue       the property value to match
-         * @return {array} array of all element objects found
+         * @return {array} array of all element objects found; may be empty but never null
          */
         l7.Util.findArrayElementsByProperty = function(array, propName, propValue) {
             var result = [];

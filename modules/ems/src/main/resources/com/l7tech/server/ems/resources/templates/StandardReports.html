@@ -28,7 +28,6 @@
         .note {
             font-size: 90%;
             margin-left: 8px;
-            vertical-align: middle;
         }
     </style>
     <script type="text/javascript" src="../js/l7.js"></script>
@@ -110,7 +109,9 @@
         var ssgClusterSelectorWindow;
         var ssgClusterContentSelectorWindow;
 
+        var messageWhenNoEntitySelected;
         var entitySelectionTableBody;
+        var messageWhenNoGrouping;
         var groupingTableBody;
 
         /**
@@ -327,6 +328,7 @@
             while (entitySelectionTableBody.rows.length > 0) {
                 entitySelectionTableBody.deleteRow(-1);
             }
+            messageWhenNoEntitySelected.style.display = '';
             updateSsgClustersWithSelectedEntities();
             // and all groupings
             while (groupingTableBody.rows.length > 0) {
@@ -350,6 +352,7 @@
         }
 
         function onChangeSelectedEntities() {
+            messageWhenNoEntitySelected.style.display = entitySelectionTableBody.rows.length == 0 ? '' : 'none';
             updateSsgClustersWithSelectedEntities();
             loadAvailableMessageContext();
             updateAddGroupingButton();
@@ -432,6 +435,7 @@
         }
 
         function onChangeGroupings() {
+            messageWhenNoGrouping.style.display = groupingTableBody.rows.length == 0 ? '' : 'none';
             updateSaveSettingsButton();
             updateSaveDefaultButton();
             updateGenerateButton();
@@ -998,8 +1002,10 @@
             operationRadioButton            = document.getElementById('operationRadioButton');
             ssgClusterSelectorWindow        = document.getElementById('ssgClusterSelector').contentWindow;
             ssgClusterContentSelectorWindow = document.getElementById('ssgClusterServiceContentSelector').contentWindow;
+            messageWhenNoEntitySelected     = document.getElementById('messageWhenNoEntitySelected');
             entitySelectionTableBody        = document.getElementById('entitySelectionTableBody');
             groupingHint                    = document.getElementById('groupingHint');
+            messageWhenNoGrouping           = document.getElementById('messageWhenNoGrouping');
             groupingTableBody               = document.getElementById('groupingTableBody');
             summaryChartCheckBox            = document.getElementById('summaryChartCheckBox');
             reportNameTextBox               = document.getElementById('reportNameTextBox');
@@ -1191,6 +1197,11 @@
                                                             <th width="100%">Operation</th>
                                                         </tr>
                                                     </thead>
+                                                    <tbody id="messageWhenNoEntitySelected">
+                                                        <tr>
+                                                            <td colspan="4">Please add at least one entity.</td>
+                                                        </tr>
+                                                    </tbody>
                                                     <tbody id="entitySelectionTableBody"></tbody>
                                                 </table>
                                             </div>
@@ -1295,8 +1306,12 @@
                                                             <th width="100%">Constraint Value <span class="note">(optional, wildcard * allowed)</span></th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody id="groupingTableBody">
+                                                    <tbody id="messageWhenNoGrouping">
+                                                        <tr>
+                                                            <td colspan="4">No grouping by message context.</td>
+                                                        </tr>
                                                     </tbody>
+                                                    <tbody id="groupingTableBody"></tbody>
                                                 </table>
                                             </div>
                                         </div>
