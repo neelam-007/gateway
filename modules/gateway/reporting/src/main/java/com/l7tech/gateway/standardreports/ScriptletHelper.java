@@ -25,6 +25,7 @@ public class ScriptletHelper extends JRDefaultScriptlet {
     private final static String SERVICE_OPERATION_VALUE = "SERVICE_OPERATION_VALUE";
     private final static String FRAME_DETAIL_TABLE_ROW = "FrameDetailTableRow";
     private static final String SUMMARY_ROW_HEADING_HTML = "SummaryRowHeadingHtml";
+    private static final String TABLE_CELL = "TableCell";
 
     /**
      * The performance summary report handles both mapping and non mapping queries, just as the interval report does.
@@ -53,7 +54,8 @@ public class ScriptletHelper extends JRDefaultScriptlet {
             }
 
             JRStyle nonDetailStyle = (JRStyle) styleMap.get(FRAME_DETAIL_TABLE_ROW);
-            JRStyle tableStyle = (JRStyle) styleMap.get(SUMMARY_ROW_HEADING_HTML);
+            JRStyle serviceTextFieldColumnStyle = (JRStyle) styleMap.get(SUMMARY_ROW_HEADING_HTML);
+            JRStyle tableColumnStyle = (JRStyle) styleMap.get(TABLE_CELL); 
 
             if(nonDetailStyle == null) throw new IllegalStateException(FRAME_DETAIL_TABLE_ROW+" not found");
 
@@ -81,9 +83,11 @@ public class ScriptletHelper extends JRDefaultScriptlet {
                         for(Object o1: frameChildren){
                             if(o1 instanceof JRFillTextField){
                                 JRFillTextField field = (JRFillTextField) o1;
-                                //JRStyle style = field.getStyle();
-                                //if(style.getName().equals("")) continue;//don't process the static text field
-                                field.setStyle(tableStyle);
+                                if(field.getKey().startsWith("serviceName")){
+                                    field.setStyle(serviceTextFieldColumnStyle);
+                                }else{
+                                    field.setStyle(tableColumnStyle);
+                                }
                             }
                         }
 

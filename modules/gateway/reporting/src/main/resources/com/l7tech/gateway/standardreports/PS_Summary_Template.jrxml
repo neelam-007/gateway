@@ -1488,7 +1488,7 @@ new Double((1 - (($V{AUTHORIZED_SERVICE_SUM}.doubleValue() - $V{COMPLETED_SERVIC
 						y="0"
 						width="110"
 						height="18"
-						key="textField-120"/>
+						key="serviceName-120"/>
 					<box></box>
 					<textElement markup="html">
 						<font/>
@@ -2440,9 +2440,9 @@ new Double((1 - (($V{AUTHORIZED_REPORT_SUM}.doubleValue() - $V{COMPLETED_REPORT_
 						y="0"
 						width="820"
 						height="300"
-						key="frame-45"/>                                                   
+						key="frame-45"/>
 					<box></box>
-				    <frame>					<reportElement
+				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
@@ -2464,8 +2464,7 @@ new Double((1 - (($V{AUTHORIZED_REPORT_SUM}.doubleValue() - $V{COMPLETED_REPORT_
 					</textElement>
 				<text><![CDATA[Report Information]]></text>
 				</staticText>
-				</frame>
-                    <frame>					<reportElement
+				</frame>				<frame>					<reportElement
 						style="ReportInfoTableBottom"
 						mode="Opaque"
 						x="0"
@@ -2801,8 +2800,7 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<text><![CDATA[Groupings:]]></text>
 				</staticText>
-				</frame>				</frame>
-                    <frame>					<reportElement
+				</frame>				</frame>				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
@@ -2825,8 +2823,7 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<text><![CDATA[No Data]]></text>
 				</staticText>
-				</frame>
-                    <frame>					<reportElement
+				</frame>				<frame>					<reportElement
 						style="TableCell"
 						x="0"
 						y="176"
@@ -2850,8 +2847,6 @@ Utilities.getMappingReportInfoDisplayString
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["There were no service metrics for the criteria chosen"]]></textFieldExpression>
 				</textField>
-				</frame>
-                </frame>
-            </band>
+				</frame>				</frame>			</band>
 		</noData>
 </jasperReport>
