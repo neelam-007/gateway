@@ -81,7 +81,7 @@ public class ReportTransformTests {
 
     @Test
     public void testUsageTransformation_HardCodedTranslationDoc() throws Exception{
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportTransform.xsl");
         //String xslStr = getResAsStringClasspath("UsageReportTransform.xsl");
         //String xmlFileName = "/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/Usage_Summary_XSLT_Template.jrxml";
         String xmlFileName = getResAsStringClasspath("Usage_Summary_XSLT_Template.jrxml");
@@ -125,8 +125,8 @@ public class ReportTransformTests {
             fos.close();
         }
 
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
-        String xmlFileName = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportTransform.xsl");
+        String xmlFileName = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", doc);
         params.put("FrameMinWidth", 565);
@@ -167,8 +167,8 @@ public class ReportTransformTests {
         distinctMappingSets.add(valueList);
 
         Document transformDoc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportTransform.xsl");
-        String xmlFileName = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_Summary_Template.jrxml");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportTransform.xsl");
+        String xmlFileName = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 535);
@@ -229,8 +229,8 @@ public class ReportTransformTests {
         distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportIntervalTransform_Master.xsl");
+        String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_IntervalMasterReport_Template.jrxml");
 
         Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
@@ -277,8 +277,8 @@ public class ReportTransformTests {
         authFilters.add(new ReportApi.FilterPair());
         keysToFilterPairs.put("AUTH_USER", authFilters);
 
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportIntervalTransform_Master.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_IntervalMasterReport_Template.jrxml");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportIntervalTransform_Master.xsl");
+        String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_IntervalMasterReport_Template.jrxml");
 
         LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
         List<String> valueList = new ArrayList<String>();
@@ -341,8 +341,8 @@ public class ReportTransformTests {
         distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportSubIntervalTransform_Master.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportSubIntervalTransform_Master.xsl");
+        String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
 
         Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
@@ -382,8 +382,8 @@ public class ReportTransformTests {
         distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/UsageReportSubIntervalTransform_Master.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportSubIntervalTransform_Master.xsl");
+        String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
 
         Document transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
@@ -410,8 +410,8 @@ public class ReportTransformTests {
         distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubReport.xsl");
+        String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
 
         Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
@@ -450,8 +450,8 @@ public class ReportTransformTests {
         distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/Usage_SubReport.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/java/com/l7tech/server/ems/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubReport.xsl");
+        String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
 
         Document transformDoc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         Map<String, Object> params = new HashMap<String, Object>();
@@ -490,8 +490,8 @@ public class ReportTransformTests {
             fos.close();
         }
         
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_IntervalMasterTransform.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_IntervalMasterReport_Template.jrxml");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/PS_IntervalMasterTransform.xsl");
+        String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/PS_IntervalMasterReport_Template.jrxml");
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
@@ -537,8 +537,8 @@ public class ReportTransformTests {
             fos.close();
         }
 
-        String xslStr = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_IntervalMasterTransform.xsl");
-        String xmlSrc = getResAsString("modules/ems/src/main/resources/com/l7tech/server/ems/standardreports/PS_IntervalMasterReport_Template.jrxml");
+        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/PS_IntervalMasterTransform.xsl");
+        String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/PS_IntervalMasterReport_Template.jrxml");
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);

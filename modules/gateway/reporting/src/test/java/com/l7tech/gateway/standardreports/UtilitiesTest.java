@@ -2897,9 +2897,9 @@ public class UtilitiesTest{
         params.put("TitleInnerFrameBuffer", titleInnerFrameBuffer);
 
         Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
-//        printOutDocument(transformedRuntimeDoc);
         Assert.assertNotNull("Transform document should not be null", transformedRuntimeDoc);
-
+        compileReport(transformedRuntimeDoc);
+        
         XPathFactory factory = XPathFactory.newInstance(XPathFactory.DEFAULT_OBJECT_MODEL_URI);
         XPath xPath = factory.newXPath();
         //COLUMN_MAPPING_TOTAL_
@@ -2926,9 +2926,9 @@ public class UtilitiesTest{
         nodeList = (NodeList) xPath.evaluate("/jasperReport/variable[contains(@name, 'COLUMN_SERVICE_TOTAL_')]", transformedRuntimeDoc, XPathConstants.NODESET);
         Assert.assertTrue("There should be "+ numColumns+ " @COLUMN_SERVICE_TOTAL_ variables, there were " + nodeList.getLength(), nodeList.getLength() == numColumns);
 
-        //constantHeader - 12 column headers, plus 2 totals and 1 with text 'Service'
+        //constantHeader - 12 column headers, plus 2 totals
         nodeList = (NodeList) xPath.evaluate("/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[2]/textField", transformedRuntimeDoc, XPathConstants.NODESET);
-        Assert.assertTrue("There should be "+ (numColumns + 3)+ " contant group header text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 3));
+        Assert.assertTrue("There should be "+ (numColumns + 2)+ " contant group header text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 2));
 
         //serviceAndOperationFooter - 12 columns + 1 total + 1 display text field
         nodeList = (NodeList) xPath.evaluate("/jasperReport/group[@name='SERVICE_AND_OPERATION']/groupFooter/band/frame/textField", transformedRuntimeDoc, XPathConstants.NODESET);
@@ -3028,6 +3028,7 @@ public class UtilitiesTest{
         String templateXml = getResAsStringClasspath("Usage_IntervalMasterReport_Template.jrxml");
 
         Document runtimeDoc = XmlUtil.stringToDocument(transformXml);
+
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", runtimeDoc);
         params.put("FrameMinWidth", 820);
@@ -3039,6 +3040,8 @@ public class UtilitiesTest{
 
         Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
         Assert.assertNotNull("Transform document should not be null", transformedRuntimeDoc);
+
+        compileReport(transformedRuntimeDoc);
 
         XPathFactory factory = XPathFactory.newInstance(XPathFactory.DEFAULT_OBJECT_MODEL_URI);
         XPath xPath = factory.newXPath();
@@ -3055,9 +3058,9 @@ public class UtilitiesTest{
         nodeList = (NodeList) xPath.evaluate("/jasperReport/variable[contains(@name,'COLUMN_REPORT_')]", transformedRuntimeDoc, XPathConstants.NODESET);
         Assert.assertTrue("There should be "+ numColumns+ " @COLUMN_REPORT_ variables, there were " + nodeList.getLength(), nodeList.getLength() == numColumns);
 
-        //serviceHeader = 12 columns + 1 total + 2 display text fields
+        //serviceHeader = 12 columns + 1 total + 1 display text field
         nodeList = (NodeList) xPath.evaluate("/jasperReport/group[@name='SERVICE']/groupHeader/band/frame[2]/textField", transformedRuntimeDoc, XPathConstants.NODESET);
-        Assert.assertTrue("There should be "+ (numColumns + 3) + " SERVICE group header text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 3));
+        Assert.assertTrue("There should be "+ (numColumns + 2) + " SERVICE group header text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 2));
 
         //subreport return variables
         nodeList = (NodeList) xPath.evaluate("/jasperReport/detail/band/frame/subreport/returnValue[@toVariable='ROW_OPERATION_TOTAL']", transformedRuntimeDoc, XPathConstants.NODESET);
@@ -3197,6 +3200,7 @@ public class UtilitiesTest{
 
         Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
         Assert.assertNotNull("Transform document should not be null", transformedRuntimeDoc);
+        compileReport(transformedRuntimeDoc);
 
         XPathFactory factory = XPathFactory.newInstance(XPathFactory.DEFAULT_OBJECT_MODEL_URI);
         XPath xPath = factory.newXPath();
@@ -3247,6 +3251,7 @@ public class UtilitiesTest{
 
         Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
         Assert.assertNotNull("Transform document should not be null", transformedRuntimeDoc);
+        compileReport(transformedRuntimeDoc);
 
         XPathFactory factory = XPathFactory.newInstance(XPathFactory.DEFAULT_OBJECT_MODEL_URI);
         XPath xPath = factory.newXPath();
@@ -3289,6 +3294,22 @@ public class UtilitiesTest{
         }
         Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);
     }
+
+    private void compileReport(Document runTimeDoc) throws Exception{
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XmlUtil.nodeToOutputStream(runTimeDoc, baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        boolean exceptionThrown = false;
+        try{
+            JasperReport compiledReport = JasperCompileManager.compileReport(bais);
+            Assert.assertTrue("Compiled report should not be null", compiledReport != null);
+        }catch(Exception ex){
+            ex.printStackTrace();
+            exceptionThrown = true;
+        }
+        Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);
+    }
+
     /**
      * Usage template jrxml files are required as resources so are not compiled as part of the build process.
      * This test compiles all 4 usage jrxml files

@@ -77,19 +77,9 @@
     <serviceHeader>
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
-            <reportElement height="36"
-                key="textField-serviceHeader-MappingKeys"
-                style="TableCell" width="67" x="50" y="0"/>
-            <box/>
-            <textElement markup="html">
-                <font/>
-            </textElement>
-            <textFieldExpression class="java.lang.String"><![CDATA["Auth User<br>IP_ADDRESS<br>CUSTOMER"]]></textFieldExpression>
-        </textField>
-        <textField evaluationTime="Now" hyperlinkTarget="Self"
-            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-1"
-                style="TableCell" width="60" x="117" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="113" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -99,7 +89,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-2"
-                style="TableCell" width="60" x="177" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="193" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -109,7 +100,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-3"
-                style="TableCell" width="60" x="237" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="273" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -119,7 +111,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-4"
-                style="TableCell" width="60" x="297" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="353" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -129,7 +122,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-5"
-                style="TableCell" width="60" x="357" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="433" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -139,7 +133,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-6"
-                style="TableCell" width="60" x="417" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="513" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -149,7 +144,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-7"
-                style="TableCell" width="60" x="477" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="593" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -159,7 +155,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-8"
-                style="TableCell" width="60" x="537" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="673" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -169,7 +166,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-9"
-                style="TableCell" width="60" x="597" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="753" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -179,7 +177,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-10"
-                style="TableCell" width="60" x="657" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="833" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -189,7 +188,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-11"
-                style="TableCell" width="60" x="717" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="913" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -199,7 +199,8 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36" key="textField-serviceHeader-12"
-                style="TableCell" width="60" x="777" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="993" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -210,7 +211,8 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="36"
                 key="textField-serviceHeader-ServiceTotals"
-                style="TableCell" width="80" x="837" y="0"/>
+                mode="Opaque" style="UsageTableHeading" width="80"
+                x="1073" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -218,6 +220,7 @@
             <textFieldExpression class="java.lang.String"><![CDATA["Service Totals"]]></textFieldExpression>
         </textField>
     </serviceHeader>
+    <keyInfo><![CDATA[IP_ADDRESS, CUSTOMER and AUTH_USER]]></keyInfo>
     <subReport>
         <returnValue calculation="Sum" subreportVariable="COLUMN_1" toVariable="COLUMN_SERVICE_1"/>
         <returnValue calculation="Sum" subreportVariable="COLUMN_2" toVariable="COLUMN_SERVICE_2"/>
@@ -261,7 +264,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-1" mode="Opaque"
-                style="TotalCell" width="60" x="117" y="0"/>
+                style="UsageRowTotal" width="80" x="113" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -272,7 +275,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-2" mode="Opaque"
-                style="TotalCell" width="60" x="177" y="0"/>
+                style="UsageRowTotal" width="80" x="193" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -283,7 +286,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-3" mode="Opaque"
-                style="TotalCell" width="60" x="237" y="0"/>
+                style="UsageRowTotal" width="80" x="273" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -294,7 +297,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-4" mode="Opaque"
-                style="TotalCell" width="60" x="297" y="0"/>
+                style="UsageRowTotal" width="80" x="353" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -305,7 +308,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-5" mode="Opaque"
-                style="TotalCell" width="60" x="357" y="0"/>
+                style="UsageRowTotal" width="80" x="433" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -316,7 +319,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-6" mode="Opaque"
-                style="TotalCell" width="60" x="417" y="0"/>
+                style="UsageRowTotal" width="80" x="513" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -327,7 +330,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-7" mode="Opaque"
-                style="TotalCell" width="60" x="477" y="0"/>
+                style="UsageRowTotal" width="80" x="593" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -338,7 +341,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-8" mode="Opaque"
-                style="TotalCell" width="60" x="537" y="0"/>
+                style="UsageRowTotal" width="80" x="673" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -349,7 +352,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-9" mode="Opaque"
-                style="TotalCell" width="60" x="597" y="0"/>
+                style="UsageRowTotal" width="80" x="753" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -360,7 +363,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-10" mode="Opaque"
-                style="TotalCell" width="60" x="657" y="0"/>
+                style="UsageRowTotal" width="80" x="833" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -371,7 +374,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-11" mode="Opaque"
-                style="TotalCell" width="60" x="717" y="0"/>
+                style="UsageRowTotal" width="80" x="913" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -382,7 +385,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooter-12" mode="Opaque"
-                style="TotalCell" width="60" x="777" y="0"/>
+                style="UsageRowTotal" width="80" x="993" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -393,7 +396,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceOperationFooterTotal"
-                mode="Opaque" style="TotalCell" width="80" x="837" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="1073" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -405,7 +408,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-ServiceIdFooter-1"
-                mode="Opaque" style="TotalCell" width="60" x="117" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="113" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -415,7 +418,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-ServiceIdFooter-2"
-                mode="Opaque" style="TotalCell" width="60" x="177" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="193" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -425,7 +428,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-ServiceIdFooter-3"
-                mode="Opaque" style="TotalCell" width="60" x="237" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="273" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -435,7 +438,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-ServiceIdFooter-4"
-                mode="Opaque" style="TotalCell" width="60" x="297" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="353" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -445,7 +448,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-ServiceIdFooter-5"
-                mode="Opaque" style="TotalCell" width="60" x="357" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="433" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -455,7 +458,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-ServiceIdFooter-6"
-                mode="Opaque" style="TotalCell" width="60" x="417" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="513" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -465,7 +468,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-ServiceIdFooter-7"
-                mode="Opaque" style="TotalCell" width="60" x="477" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="593" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -475,7 +478,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-ServiceIdFooter-8"
-                mode="Opaque" style="TotalCell" width="60" x="537" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="673" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -485,7 +488,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-ServiceIdFooter-9"
-                mode="Opaque" style="TotalCell" width="60" x="597" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="753" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -496,7 +499,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceIdFooter-10" mode="Opaque"
-                style="TotalCell" width="60" x="657" y="0"/>
+                style="UsageRowTotal" width="80" x="833" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -507,7 +510,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceIdFooter-11" mode="Opaque"
-                style="TotalCell" width="60" x="717" y="0"/>
+                style="UsageRowTotal" width="80" x="913" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -518,7 +521,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceIdFooter-12" mode="Opaque"
-                style="TotalCell" width="60" x="777" y="0"/>
+                style="UsageRowTotal" width="80" x="993" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -529,7 +532,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-ServiceIdFooterTotal" mode="Opaque"
-                style="TotalCell" width="80" x="837" y="0"/>
+                style="UsageRowTotal" width="80" x="1073" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -541,7 +544,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-1"
-                mode="Opaque" style="TotalCell" width="60" x="117" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="113" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -551,7 +554,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-2"
-                mode="Opaque" style="TotalCell" width="60" x="177" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="193" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -561,7 +564,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-3"
-                mode="Opaque" style="TotalCell" width="60" x="237" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="273" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -571,7 +574,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-4"
-                mode="Opaque" style="TotalCell" width="60" x="297" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="353" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -581,7 +584,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-5"
-                mode="Opaque" style="TotalCell" width="60" x="357" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="433" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -591,7 +594,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-6"
-                mode="Opaque" style="TotalCell" width="60" x="417" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="513" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -601,7 +604,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-7"
-                mode="Opaque" style="TotalCell" width="60" x="477" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="593" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -611,7 +614,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-8"
-                mode="Opaque" style="TotalCell" width="60" x="537" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="673" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -621,7 +624,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-9"
-                mode="Opaque" style="TotalCell" width="60" x="597" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="753" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -631,7 +634,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-10"
-                mode="Opaque" style="TotalCell" width="60" x="657" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="833" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -641,7 +644,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-11"
-                mode="Opaque" style="TotalCell" width="60" x="717" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="913" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -651,7 +654,7 @@
         <textField evaluationTime="Now" hyperlinkTarget="Self"
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18" key="textField-constantFooter-12"
-                mode="Opaque" style="TotalCell" width="60" x="777" y="0"/>
+                mode="Opaque" style="UsageRowTotal" width="80" x="993" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -662,7 +665,7 @@
             hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
             <reportElement height="18"
                 key="textField-constantFooterTotal" mode="Opaque"
-                style="TotalCell" width="80" x="837" y="0"/>
+                style="UsageRowTotal" width="80" x="1073" y="0"/>
             <box/>
             <textElement markup="html">
                 <font/>
@@ -670,9 +673,139 @@
             <textFieldExpression class="java.lang.Long"><![CDATA[$V{ROW_REPORT_TOTAL}]]></textFieldExpression>
         </textField>
     </summary>
-    <pageWidth>977</pageWidth>
-    <columnWidth>917</columnWidth>
-    <frameWidth>917</frameWidth>
-    <leftMargin>30</leftMargin>
-    <rightMargin>30</rightMargin>
+    <pageWidth>1183</pageWidth>
+    <columnWidth>1153</columnWidth>
+    <frameWidth>1153</frameWidth>
+    <leftMargin>15</leftMargin>
+    <rightMargin>15</rightMargin>
+    <chartElement>
+        <chartLegend>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey1"
+                    style="chartLegendTextField" width="1153" x="0" y="0"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 1:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey2"
+                    style="chartLegendTextField" width="1153" x="0" y="20"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 2:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.1, CUSTOMER: Gold"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey3"
+                    style="chartLegendTextField" width="1153" x="0" y="40"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 3:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.1, CUSTOMER: Silver"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey4"
+                    style="chartLegendTextField" width="1153" x="0" y="60"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 4:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.2, CUSTOMER: Bronze"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey5"
+                    style="chartLegendTextField" width="1153" x="0" y="80"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 5:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey6"
+                    style="chartLegendTextField" width="1153" x="0" y="100"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 6:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.2, CUSTOMER: Silver"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey7"
+                    style="chartLegendTextField" width="1153" x="0" y="120"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 7:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey8"
+                    style="chartLegendTextField" width="1153" x="0" y="140"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 8:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.1, CUSTOMER: Gold"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey9"
+                    style="chartLegendTextField" width="1153" x="0" y="160"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 9:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.1, CUSTOMER: Silver"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey10"
+                    style="chartLegendTextField" width="1153" x="0" y="180"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 10:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.2, CUSTOMER: Bronze"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey11"
+                    style="chartLegendTextField" width="1153" x="0" y="200"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 11:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold"]]></textFieldExpression>
+            </textField>
+            <textField evaluationTime="Now" hyperlinkTarget="Self"
+                hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+                <reportElement height="18" key="chartLegendKey12"
+                    style="chartLegendTextField" width="1153" x="0" y="220"/>
+                <box/>
+                <textElement markup="html">
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 12:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.2, CUSTOMER: Silver"]]></textFieldExpression>
+            </textField>
+        </chartLegend>
+        <chartHeight>430</chartHeight>
+        <chartLegendFrameYPos>430</chartLegendFrameYPos>
+        <chartLegendHeight>240</chartLegendHeight>
+        <chartFrameHeight>688</chartFrameHeight>
+        <bandHeight>724</bandHeight>
+        <pageHeight>1061</pageHeight>
+    </chartElement>
 </JasperRuntimeTransformation>

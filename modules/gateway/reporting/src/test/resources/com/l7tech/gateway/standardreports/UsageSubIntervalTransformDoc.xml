@@ -40,6 +40,6 @@
         <returnValue calculation="Sum" subreportVariable="COLUMN_11" toVariable="COLUMN_11"/>
         <returnValue calculation="Sum" subreportVariable="COLUMN_12" toVariable="COLUMN_12"/>
     </subReport>
-    <subReportWidth>800</subReportWidth>
-    <pageWidth>918</pageWidth>
+    <subReportWidth>1040</subReportWidth>
+    <pageWidth>1153</pageWidth>
 </JasperRuntimeTransformation>
