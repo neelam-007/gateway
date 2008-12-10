@@ -148,7 +148,7 @@ public class StandardReports extends EmsPage  {
             @Override
             protected void onUpdate(final AjaxRequestTarget target) {
                 // update the hidden form fields with the date in the expected format
-                fromDateJavascript.setModelObject(buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
+                toDateJavascript.setModelObject(buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
                 target.addComponent(toDateJavascript);
                 
                 fromDateField.setDateSelectorModel(null, (Date)toDateField.getModelObject());
