@@ -153,7 +153,7 @@ public class EsmApiInterceptor extends AbstractPhaseInterceptor<Message> {
             if ( esmUserId != null ) {
                 TrustedEmsUser emsUser = trustedEmsUserManager.findByEmsIdAndUserUUID( esm.getOid(), esmUserId );
                 if ( emsUser == null ) {
-                    throw new SoapFault("Authentication Required", SoapFault.FAULT_CODE_CLIENT);
+                    throw new SoapFault("Access Denied", SoapFault.FAULT_CODE_CLIENT);
                 }
 
                 long providerId = emsUser.getProviderOid();
@@ -161,7 +161,7 @@ public class EsmApiInterceptor extends AbstractPhaseInterceptor<Message> {
 
                 user = adminSessionManager.authorize( providerId, userId );
                 if ( user == null ) {
-                    throw new SoapFault("Authentication Required", SoapFault.FAULT_CODE_CLIENT);
+                    throw new SoapFault("Access Denied", SoapFault.FAULT_CODE_CLIENT);
                 }
             }
         } catch ( ObjectModelException fe ) {

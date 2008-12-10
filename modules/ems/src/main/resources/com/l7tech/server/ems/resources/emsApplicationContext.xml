@@ -507,6 +507,7 @@
         <constructor-arg index="2" ref="auditContext" />
         <constructor-arg index="3" ref="ssgClusterManager" />
         <constructor-arg index="4" ref="gatewayContextFactory" />
+        <constructor-arg index="5" ref="userPropertyManager" />
     </bean>
 
     <bean id="standardReportManager" class="com.l7tech.server.ems.standardreports.StandardReportManagerImpl" parent="hibernateBean"/>

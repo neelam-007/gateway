@@ -5,16 +5,22 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.ems.enterprise.JSONConstants;
+import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.identity.User;
+import com.l7tech.gateway.common.audit.LogonEvent;
 
 import javax.xml.ws.soap.SOAPFaultException;
 import java.util.*;
@@ -24,7 +30,7 @@ import java.util.logging.Level;
 /**
  * 
  */
-public class GatewayPoller implements InitializingBean {
+public class GatewayPoller implements InitializingBean, ApplicationListener {
 
     //- PUBLIC
 
@@ -32,17 +38,15 @@ public class GatewayPoller implements InitializingBean {
                           final Timer timer,
                           final AuditContext auditContext,
                           final SsgClusterManager ssgClusterManager,
-                          final GatewayContextFactory gatewayContextFactory ) {
+                          final GatewayContextFactory gatewayContextFactory,
+                          final UserPropertyManager userPropertyManager ) {
         this.transactionManager = transactionManager;
         this.timer = timer;
         this.auditContext = auditContext;
         this.ssgClusterManager = ssgClusterManager;
         this.gatewayContextFactory = gatewayContextFactory;
-    }
-
-    @SuppressWarnings({"override"})
-    public void afterPropertiesSet() throws Exception {
-        timer.schedule( new TimerTask(  ) {
+        this.userPropertyManager = userPropertyManager;
+        this.timerTask = new TimerTask(  ) {
             @Override
             public void run() {
                 boolean isSystem = auditContext.isSystem();
@@ -55,7 +59,41 @@ public class GatewayPoller implements InitializingBean {
                     auditContext.setSystem( isSystem );
                 }
             }
-        }, 30000, 15000 );
+        };
+    }
+
+    @SuppressWarnings({"override"})
+    public void afterPropertiesSet() throws Exception {
+        timer.schedule( timerTask, 30000, 15000 );
+    }
+
+    @Override
+    public void onApplicationEvent( final ApplicationEvent event ) {
+        if ( event instanceof GatewayRegistrationEvent ) {
+            timer.schedule( timerTask, 0 );   
+        } else if ( event instanceof LogonEvent) {
+            LogonEvent logonEvent = (LogonEvent) event;
+            if ( logonEvent.getType() == LogonEvent.LOGON ) {
+                scheduleUserAccessChecks( (User)event.getSource() );
+            }
+        }
+    }
+
+    public void scheduleUserAccessChecks( final User user ) {
+        timer.schedule( new TimerTask() {
+            @Override
+            public void run() {
+                boolean isSystem = auditContext.isSystem();
+                try {
+                    auditContext.setSystem( true );
+                    pollUserAccess( user );
+                } catch ( Exception e ) {
+                    logger.log( Level.WARNING, "Error polling gateways", e );
+                } finally {
+                    auditContext.setSystem( isSystem );
+                }
+            }
+        }, 0);
     }
 
     //- PRIVATE
@@ -64,9 +102,64 @@ public class GatewayPoller implements InitializingBean {
 
     private final PlatformTransactionManager transactionManager;
     private final Timer timer;
-    private final AuditContext auditContext;                             
+    private final AuditContext auditContext;
     private final SsgClusterManager ssgClusterManager;
     private final GatewayContextFactory gatewayContextFactory;
+    private final UserPropertyManager userPropertyManager;
+    private final TimerTask timerTask;
+
+    private void pollUserAccess( final User user ) {
+        if ( user != null ) {
+            TransactionTemplate template = new TransactionTemplate( transactionManager );
+            template.execute( new TransactionCallbackWithoutResult(){
+                @Override
+                protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
+                    try {
+                        Collection<SsgCluster> clusters = ssgClusterManager.findAll();
+                        for ( SsgCluster cluster : clusters ) {
+                            if ( cluster.getTrustStatus() && cluster.getOnlineStatus().equals( JSONConstants.SsgClusterOnlineState.UP ) ) {
+                                try {
+                                    String host = cluster.getSslHostName();
+                                    int port = cluster.getAdminPort();
+                                    GatewayContext context = gatewayContextFactory.getGatewayContext( user, cluster.getGuid(), host, port );
+                                    context.getApi().getEntityInfo( Collections.singleton(EntityType.FOLDER) );
+                                } catch ( GatewayException ge ) {
+                                    // ok, can't update status
+                                } catch (GatewayApi.GatewayException ge) {
+                                    if ( "Authentication Required".equals(ge.getMessage()) ) {
+                                        deleteAccessAccountMapping( user, cluster );
+                                    }
+                                } catch ( SOAPFaultException sfe ) {
+                                    if ( GatewayContext.isNetworkException(sfe) ) {
+                                        // ok, can't update status
+                                    } else if ( "Access Denied".equals(sfe.getMessage()) ) {
+                                        deleteAccessAccountMapping( user, cluster );   
+                                    } else if ( "Authentication Required".equals(sfe.getMessage()) ){
+                                        // ok, don't update status since the certificate trust failed
+                                    } else if ( "Not Licensed".equals(sfe.getMessage()) ) {
+                                        // ok, can't update status
+                                    } else {
+                                        logger.log( Level.WARNING, "Gateway error when polling gateways", sfe );
+                                    }
+                                }
+                            }
+                        }
+                    } catch ( ObjectModelException ome ) {
+                        logger.log( Level.WARNING, "Persistence error when polling gateways", ome );
+                    }
+                }
+            } );
+        }
+    }
+
+    private void deleteAccessAccountMapping( final User user, final SsgCluster cluster ) throws ObjectModelException {
+        Map<String,String> props = userPropertyManager.getUserProperties( user );
+        String username = props.remove( "cluster." +  cluster.getGuid() + ".trusteduser" );
+        if ( username != null ) {
+            logger.info("Removing access account mapping '"+username+"', on cluster '"+cluster.getName()+"' for user '"+user.getLogin()+"'.");
+            userPropertyManager.saveUserProperties( user, props );
+        }
+    }
 
     private void pollGateways() {
         TransactionTemplate template = new TransactionTemplate( transactionManager );

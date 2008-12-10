@@ -18,6 +18,7 @@ import com.l7tech.util.TextUtils;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
@@ -39,11 +40,14 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 import org.apache.wicket.Component;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.beans.BeansException;
 
 /**
  * Manages which pages are secure and performs authentication
  */
-public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport implements EmsSecurityManager {
+public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport implements ApplicationContextAware, EmsSecurityManager {
 
     //- PUBLIC
 
@@ -53,6 +57,13 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
         this.identityProviderFactory = identityProviderFactory;
         this.roleManager = roleManager;
         this.licenseManager = licenseManager;
+    }
+
+    @Override
+    public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
+        if ( this.applicationContext == null ) {
+            this.applicationContext = applicationContext;
+        }
     }
 
     /**
@@ -202,6 +213,9 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
             try {
                 AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
                 user = authResult == null ? null : authResult.getUser();
+                if ( applicationContext != null && user != null ) {
+                    applicationContext.publishEvent( new LogonEvent(user, LogonEvent.LOGON) );
+                }
             } catch (AuthenticationException e) {
                 logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
             }
@@ -235,8 +249,14 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     public boolean logout( final HttpSession session ) {
         boolean loggedOut = false;
 
-        if ( session.getAttribute(ATTR_ID) != null ) {
+        final Object user = session.getAttribute(ATTR_ID);
+        if ( user != null ) {
             loggedOut = true;
+
+            if ( applicationContext != null && user instanceof User ) {
+                applicationContext.publishEvent( new LogonEvent(user, LogonEvent.LOGOFF) );
+            }
+
             session.setAttribute(ATTR_ID, null);
             session.setAttribute(ATTR_DATE, null);
         }
@@ -382,6 +402,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     private final IdentityProviderFactory identityProviderFactory;
     private final LicenseManager licenseManager;
     private final SessionAuthorizer authorizer = new SessionAuthorizer();
+    private ApplicationContext applicationContext;
 
     private final class SessionAuthorizer extends Authorizer {
         @Override

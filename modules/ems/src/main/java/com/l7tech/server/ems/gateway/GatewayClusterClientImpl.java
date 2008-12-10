@@ -54,10 +54,12 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
         this.timeout = SyspropUtil.getLong(PROP_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT);
     }
 
+    @Override
     public SsgCluster getCluster() {
         return ssgCluster;
     }
 
+    @Override
     public void clearCachedData() {
         synchronized (cacheLock) {
             entityInfos.clear();
@@ -66,10 +68,12 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
         }
     }
 
+    @Override
     public Collection<GatewayApi.EntityInfo> getEntityInfo(final Collection<EntityType> entityTypes) throws GatewayException {
         if (entityTypes == null) throw new NullPointerException();
 
         Collection<GatewayApi.EntityInfo> allInfos = cacheGet(entityInfos, new GatewayContextUser<Collection<GatewayApi.EntityInfo>>() {
+            @Override
             public Collection<GatewayApi.EntityInfo> callUsingContext(GatewayContext context) throws GatewayApi.GatewayException {
                 return context.getApi().getEntityInfo(null);
             }
@@ -78,22 +82,27 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
         final Set<EntityType> types = entityTypes instanceof Set ? (Set<EntityType>)entityTypes : EnumSet.copyOf(entityTypes);
 
         return Functions.grep(allInfos, new Functions.Unary<Boolean, GatewayApi.EntityInfo>() {
+            @Override
             public Boolean call(GatewayApi.EntityInfo entityInfo) {
                 return entityInfo != null && types.contains(entityInfo.getEntityType());
             }
         });
     }
 
+    @Override
     public GatewayApi.ClusterInfo getClusterInfo() throws GatewayException {
         return cacheGet(clusterInfo, new GatewayContextUser<GatewayApi.ClusterInfo>() {
+            @Override
             public GatewayApi.ClusterInfo callUsingContext(GatewayContext context) throws GatewayApi.GatewayException, SOAPFaultException {
                 return context.getApi().getClusterInfo();
             }
         });
     }
 
+    @Override
     public Collection<GatewayApi.GatewayInfo> getGatewayInfo() throws GatewayException {
         return cacheGet(gatewayInfo, new GatewayContextUser<Collection<GatewayApi.GatewayInfo>>() {
+            @Override
             public Collection<GatewayApi.GatewayInfo> callUsingContext(GatewayContext context) throws GatewayApi.GatewayException, SOAPFaultException {
                 return context.getApi().getGatewayInfo();
             }
@@ -151,7 +160,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
                 if (GatewayContext.isNetworkException(sfe)) {
                     lastNetworkException = sfe;
                 } else {
-                    throw new GatewayException(sfe);
+                    throw new GatewayException(sfe.getMessage(), sfe);
                 }
             } finally {
                 if (success)

@@ -2,6 +2,7 @@ package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.gateway.GatewayRegistrationEvent;
 import com.l7tech.server.ems.user.UserPropertyManager;
 
 import javax.servlet.*;
@@ -11,6 +12,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
  * TODO [steve] Add a "nonce" value using EM user login, sessionid and cluster guid
@@ -23,6 +27,7 @@ public class MappingFilter implements Filter {
         emsSecurityManager = (EmsSecurityManager) context.getAttribute("securityManager");
         ssgClusterManager = (SsgClusterManager) context.getAttribute("ssgClusterManager");
         userPropertyManager = (UserPropertyManager) context.getAttribute("userPropertyManager");
+        applicationContext = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext());
     }
 
     @Override
@@ -49,6 +54,15 @@ public class MappingFilter implements Filter {
                             Map<String,String> props = userPropertyManager.getUserProperties( info.getUser() );
                             props.put("cluster." +  ssgCluster.getGuid() + ".trusteduser", username);
                             userPropertyManager.saveUserProperties( info.getUser(), props );
+                            if (applicationContext!=null) {
+                                applicationContext.publishEvent(new GatewayRegistrationEvent(this));
+                                try {
+                                    Thread.sleep(200); // pause to allow for status update
+                                } catch ( InterruptedException ie ) {
+                                    Thread.currentThread().interrupt();
+                                }
+                            }
+
                         } else {
                             logger.warning("Cluster '"+clusterGuid+"' not found when adding user mapping.");
                         }
@@ -81,4 +95,5 @@ public class MappingFilter implements Filter {
     private EmsSecurityManager emsSecurityManager;
     private SsgClusterManager ssgClusterManager;
     private UserPropertyManager userPropertyManager;
+    private ApplicationContext applicationContext;
 }

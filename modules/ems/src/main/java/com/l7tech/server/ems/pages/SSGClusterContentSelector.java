@@ -45,8 +45,13 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
                 } catch (GatewayNoTrustException e) {
                     return new JSONMessage("Trust not established.");    
                 } catch (GatewayException e) {
-                    logger.warning(e.toString());
-                    return new JSONException(e);
+                    if ( "Access Denied".equals(e.getMessage()) ||
+                         "Authentication Required".equals(e.getMessage())) {
+                        return new JSONMessage(e.getMessage()+".");
+                    } else {
+                        logger.warning(e.toString());
+                        return new JSONException(e);
+                    }
                 }
             }
 
