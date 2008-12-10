@@ -202,17 +202,17 @@ public class PolicyMigration extends EmsPage  {
                     final DependencyItemsRequest dir = new DependencyItemsRequest();
                     dir.fromJSON(jsonMap);
 
-                    String depenencyValidationMessage = validateDependencies( dir.clusterId, targetClusterId, dir, mappingModel );
-                    if ( depenencyValidationMessage != null && !depenencyValidationMessage.isEmpty() ) {
-                        TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(depenencyValidationMessage));
-                        YuiDialog dialog = new YuiDialog("dialog", "Dependency Mapping Required", YuiDialog.Style.CLOSE, textPanel, null, "600px");
-                        dialogContainer.replace( dialog );
-                        target.addComponent( dialogContainer );
-                    } else {
-                        final boolean enableServices = Boolean.valueOf(enableNewServices);
-                        final boolean overwrite = Boolean.valueOf(overwriteDependencies);
+                    try {
+                        String depenencyValidationMessage = validateDependencies( dir.clusterId, targetClusterId, dir, mappingModel );
+                        if ( depenencyValidationMessage != null && !depenencyValidationMessage.isEmpty() ) {
+                            TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(depenencyValidationMessage));
+                            YuiDialog dialog = new YuiDialog("dialog", "Dependency Mapping Required", YuiDialog.Style.CLOSE, textPanel, null, "600px");
+                            dialogContainer.replace( dialog );
+                            target.addComponent( dialogContainer );
+                        } else {
+                            final boolean enableServices = Boolean.valueOf(enableNewServices);
+                            final boolean overwrite = Boolean.valueOf(overwriteDependencies);
 
-                        try {
                             TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel, true )));
                             YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, textPanel, new YuiDialog.OkCancelCallback(){
                                 @Override
@@ -237,11 +237,11 @@ public class PolicyMigration extends EmsPage  {
 
                             dialogContainer.replace( dialog );
                             target.addComponent( dialogContainer );
-                        } catch ( MigrationFailedException mfe ) {
-                            YuiDialog dialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), mfe.getMessage()), null);
-                            dialogContainer.replace( dialog );
-                            target.addComponent( dialogContainer );
                         }
+                    } catch ( MigrationFailedException mfe ) {
+                        YuiDialog dialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), mfe.getMessage()), null);
+                        dialogContainer.replace( dialog );
+                        target.addComponent( dialogContainer );
                     }
                 } catch ( Exception e ) {
                     logger.log( Level.WARNING, "Error processing selection.", e);
@@ -511,7 +511,7 @@ public class PolicyMigration extends EmsPage  {
     private String validateDependencies( final String sourceClusterId,
                                          final String targetClusterId,
                                          final DependencyItemsRequest requestedItems,
-                                         final EntityMappingModel mappingModel ) {
+                                         final EntityMappingModel mappingModel ) throws MigrationFailedException {
         String summary = "";
         try {
             SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterId);
@@ -540,16 +540,16 @@ public class PolicyMigration extends EmsPage  {
             }
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error while checking dependencies for migration.", fe );
-            summary = "Migration failed '"+ ExceptionUtils.getMessage(fe)+"'.";
+            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(fe)+"'.");
         } catch ( GatewayException e ) {
             logger.log( Level.WARNING, "Error while checking dependencies for migration.", e );
-            summary = "Migration failed '"+ ExceptionUtils.getMessage(e)+"'.";
+            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(e)+"'.");
         } catch ( MigrationException e ) {
             logger.log( Level.WARNING, "Error while checking dependencies for migration.", e );
-            summary = "Migration failed '"+ ExceptionUtils.getMessage(e)+"'.";
+            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(e)+"'.");
         } catch ( SOAPFaultException sfe ) {
             logger.log( Level.WARNING, "Error while checking dependencies for migration.", sfe );
-            summary = "Migration failed '"+ ExceptionUtils.getMessage(sfe)+"'.";
+            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(sfe)+"'.");
         }
 
         return summary;

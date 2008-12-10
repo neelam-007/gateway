@@ -130,7 +130,8 @@
             function validateIdentifyDependenciesInputs() {
                 return srcSSGClusterContentSelectorWindow.getSsgCluster() != null &&
                        srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected().length > 0 &&
-                       destSSGClusterContentSelectorWindow.getSsgCluster() != null;
+                       destSSGClusterContentSelectorWindow.getSsgCluster() != null &&
+                       srcSSGClusterContentSelectorWindow.getSsgCluster() != destSSGClusterContentSelectorWindow.getSsgCluster();
             }
 
             function updateMigrateButton() {

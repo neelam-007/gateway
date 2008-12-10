@@ -265,7 +265,7 @@ public class AuditContextImpl implements AuditContext {
             highestLevelYetSeen = Level.ALL;
             ordinal = 0;
             update = false;
-            system = false;
+            //system = false;
         }
     }
 
