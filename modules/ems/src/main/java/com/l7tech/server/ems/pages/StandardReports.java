@@ -1,36 +1,29 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.server.ems.gateway.GatewayContextFactory;
-import com.l7tech.server.ems.gateway.GatewayContext;
-import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.server.ems.enterprise.JSONException;
-import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.ems.enterprise.SsgClusterManager;
+import com.l7tech.server.ems.gateway.GatewayContext;
+import com.l7tech.server.ems.gateway.GatewayContextFactory;
+import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.TimeUnit;
-import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.DropDownChoice;
-import org.apache.wicket.markup.html.form.IChoiceRenderer;
-import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
+import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.DropDownChoice;
+import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.RequestCycle;
 import org.mortbay.util.ajax.JSON;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Map;
-import java.util.Collection;
-import java.util.Date;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
-import java.util.TimeZone;
-import java.util.Arrays;
 import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -177,6 +170,7 @@ public class StandardReports extends EmsPage  {
         StringBuilder scriptBuilder = new StringBuilder();
         scriptBuilder.append( "YAHOO.util.Event.onDOMReady( function(){ " );
         scriptBuilder.append(fromDate? "absoluteTimePeriodFromDate" : "absoluteTimePeriodToDate").append(" = '").append(format.format(date)).append("'; ");
+        scriptBuilder.append("onChangeAbsoluteTimePeriod(); ");
         scriptBuilder.append( "} );" );
 
         return scriptBuilder.toString();
