@@ -8,6 +8,8 @@ package com.l7tech.policy.assertion;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 
 
 /**
@@ -133,6 +135,7 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
     protected int httpPort = 0;
     protected int httpsPort = 0;
 
+    @Migration(mapName = MigrationMappingSelection.REQUIRED)
     public EntityHeader[] getEntitiesUsed() {
         if (serverCertificateOid != null) {
             return new EntityHeader[] { new EntityHeader(serverCertificateOid.toString(), EntityType.TRUSTED_CERT, serverCertificateName, "Trusted certificate to be used by the bridge routing assertion")};
