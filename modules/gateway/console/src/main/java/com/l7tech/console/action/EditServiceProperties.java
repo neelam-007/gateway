@@ -6,10 +6,8 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.ServicePropertiesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.tree.EntityWithPolicyNode;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ServicesAndPoliciesTree;
-import com.l7tech.console.tree.ServiceNodeAlias;
+import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -83,6 +81,14 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
                         if(!(serviceNode instanceof ServiceNodeAlias)){
                             ServiceHeader sH = (ServiceHeader) serviceNode.getUserObject();
                             tree.updateAllAliases(sH.getOid());
+
+                            SwingUtilities.invokeLater(new Runnable() {
+                                public void run() {
+                                    RefreshTreeNodeAction refresh = new RefreshTreeNodeAction((RootNode)tree.getModel().getRoot());
+                                    refresh.setTree(tree);
+                                    refresh.invoke();
+                                }
+                            });
                         }
                     }
 

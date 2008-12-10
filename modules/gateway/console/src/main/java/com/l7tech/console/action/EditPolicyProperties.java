@@ -15,10 +15,9 @@ import com.l7tech.util.Functions;
 import com.l7tech.console.panels.PolicyPropertiesPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.tree.PolicyEntityNode;
-import com.l7tech.console.tree.ServicesAndPoliciesTree;
-import com.l7tech.console.tree.EntityWithPolicyNode;
-import com.l7tech.console.tree.PolicyEntityNodeAlias;
+import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
+import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
@@ -76,10 +75,10 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
             public void call(Boolean changed) {
                 if (changed) {
                     policyNode.clearCachedEntities();
-                    ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                    final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        model.nodeChanged(node);
+                        //model.nodeChanged(node);
                         model.reload(node);
                     }
 
@@ -89,6 +88,14 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                         if (tree !=null) {
                             PolicyHeader pH = (PolicyHeader) policyNode.getUserObject();
                             tree.updateAllAliases(pH.getOid());
+
+                            SwingUtilities.invokeLater(new Runnable() {
+                                public void run() {
+                                    RefreshTreeNodeAction refresh = new RefreshTreeNodeAction((RootNode)tree.getModel().getRoot());
+                                    refresh.setTree(tree);
+                                    refresh.invoke();
+                                }
+                            });
                         }
                     }
                     

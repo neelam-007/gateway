@@ -2,6 +2,8 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.RefreshTreeNodeAction;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.PolicyFolderPropertiesDialog;
 import com.l7tech.objectmodel.UpdateException;
@@ -75,10 +77,18 @@ public class EditFolderAction extends SecureAction {
                 folder.setName(dialog.getName());
                 folderAdmin.saveFolder(folder);
                 folderHeader.setName(dialog.getName());
-                JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     model.nodeChanged(folderToRename);
+
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            RefreshTreeNodeAction refresh = new RefreshTreeNodeAction((RootNode) tree.getModel().getRoot());
+                            refresh.setTree(tree);
+                            refresh.invoke();
+                        }
+                    });
                 }
             } catch(ConstraintViolationException e) {
                 folder.setName(prevFolderName);
