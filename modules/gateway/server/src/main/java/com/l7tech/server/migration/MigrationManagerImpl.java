@@ -133,7 +133,7 @@ public class MigrationManagerImpl implements MigrationManager {
                 }
                 EntityOperation eo = entities.get(header);
                 if (eo.operation != IGNORE) {
-                    result.add(new MigratedItem(dryRun ? header : EntityHeaderUtils.fromEntity(eo.entity), dryRun ? eo.operation.toString() : eo.operation.toString() + "D"));
+                    result.add(new MigratedItem(header, EntityHeaderUtils.fromEntity(eo.entity), dryRun ? eo.operation.toString() : eo.operation.toString() + "D"));
                 }
             }
             return result;

@@ -11,22 +11,32 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement
 public class MigratedItem {
-    private EntityHeader header;
+    private EntityHeader sourceHeader;
+    private EntityHeader targetHeader;
     private String status;
 
     public MigratedItem() {}
 
-    public MigratedItem(EntityHeader header, String status) {
-        this.header = header;
+    public MigratedItem(EntityHeader sourceHeader, EntityHeader targetHeader, String status) {
+        this.sourceHeader = sourceHeader;
+        this.targetHeader = targetHeader;
         this.status = status;
     }
 
-    public EntityHeader getHeader() {
-        return header;
+    public EntityHeader getTargetHeader() {
+        return targetHeader;
     }
 
-    public void setHeader(EntityHeader header) {
-        this.header = header;
+    public void setTargetHeader(EntityHeader targetHeader) {
+        this.targetHeader = targetHeader;
+    }
+
+    public EntityHeader getSourceHeader() {
+        return sourceHeader;
+    }
+
+    public void setSourceHeader(EntityHeader sourceHeader) {
+        this.sourceHeader = sourceHeader;
     }
 
     public String getStatus() {

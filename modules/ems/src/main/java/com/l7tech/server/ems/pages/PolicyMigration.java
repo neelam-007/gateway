@@ -653,7 +653,7 @@ public class PolicyMigration extends EmsPage  {
         // entity details
         builder.append( "Migrated Data\n" );
         for ( MigratedItem item : migratedItems ) {
-            EntityHeader ih = item.getHeader();
+            EntityHeader ih = dryRun ? item.getSourceHeader() : item.getTargetHeader();
             builder.append(ih.getType().getName()).append(", ").append(ih.getName())
                 .append("(#").append(ih.getStrId()).append("): ").append(item.getStatus()).append("\n");
         }
