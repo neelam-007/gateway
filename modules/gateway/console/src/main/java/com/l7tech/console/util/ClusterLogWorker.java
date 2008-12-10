@@ -12,7 +12,9 @@ import com.l7tech.console.table.AuditLogTableSorterModel;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gateway.common.logging.LogMessage;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
+import com.l7tech.gateway.common.admin.TimeoutRuntimeException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -218,9 +220,13 @@ public class ClusterLogWorker extends SwingWorker {
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
             } catch (RuntimeException re) {
-                logger.log(Level.INFO, "Client connection lost, we don't need to continue further.");
-                logRequest = null;
-                return null;
+                if (ExceptionUtils.causedBy(re, TimeoutRuntimeException.class)) {
+                    logger.log(Level.INFO, "Client connection lost, audit data returned from gateway no longer needed.");
+                    logRequest = null;
+                    return null;
+                } else {
+                    throw re;
+                }
             }
 
             if (newLogs.size() > 0) {
