@@ -12,6 +12,7 @@ import com.l7tech.identity.User;
 import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.basic.MultiLineLabel;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.model.Model;
@@ -220,7 +221,7 @@ public class PolicyMapping extends EmsPage  {
      */
     private void initMigrationSummaryContainer() {
         migrationSummaryContainer = new WebMarkupContainer("migrationSummaryContainer");
-        migrationSummaryContainer.add(new Label("migrationSummaryTextarea", new PropertyModel(selectedMigrationModel, "summary")));
+        migrationSummaryContainer.add(new MultiLineLabel("migrationSummaryTextarea", new PropertyModel(selectedMigrationModel, "summary")));
         migrationSummaryContainer.add(new Label("name", new PropertyModel(selectedMigrationModel, "name")));
         migrationSummaryContainer.add(new Label("timeCreated", new PropertyModel(selectedMigrationModel, "timeCreated")));
         migrationSummaryContainer.add(new Label("sourceCluster", new PropertyModel(selectedMigrationModel, "sourceCluster")));
