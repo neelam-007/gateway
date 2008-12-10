@@ -25,6 +25,7 @@ public class PropertyResolverFactory {
     private void initRegistry() {
         // todo: better registry initialization
         registry.put(EntityType.ANY, new DefaultEntityPropertyResolver());
+        registry.put(EntityType.POLICY, new PolicyXmlPropertyResolver());
         registry.put(EntityType.ID_PROVIDER_CONFIG, new AbstractOidPropertyResolver(entityFinder) {
             public EntityType getTargetType() { return EntityType.ID_PROVIDER_CONFIG; }
         });

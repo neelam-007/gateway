@@ -79,7 +79,7 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
         return result;
     }
 
-    void addToResult(EntityHeader header, MigrationMapping mapping, Map<EntityHeader,Set<MigrationMapping>> result) {
+    public void addToResult(EntityHeader header, MigrationMapping mapping, Map<EntityHeader,Set<MigrationMapping>> result) {
         Set<MigrationMapping> mappingsForHeader = result.get(header);
         if (mappingsForHeader == null) {
             mappingsForHeader = new HashSet<MigrationMapping>();

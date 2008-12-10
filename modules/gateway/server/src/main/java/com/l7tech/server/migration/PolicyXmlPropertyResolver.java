@@ -1,4 +1,4 @@
-package com.l7tech.objectmodel.migration;
+package com.l7tech.server.migration;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -6,6 +6,8 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.migration.*;
+import com.l7tech.server.EntityHeaderUtils;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -40,7 +42,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
     }
 
     public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws MigrationException {
-        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{MigrationUtils.getHeaderFromEntity(sourceEntity), propName});
+        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{EntityHeaderUtils.fromEntity(sourceEntity), propName});
         String policyXmlPropName, assertionPropName;
         int targetOrdinal;
         try {
@@ -66,7 +68,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
             Method setter;
             if ("EntitiesUsed".equals(assertionPropName)) {
                 setter = MigrationUtils.setterForPropertyName(assertion, "replaceEntity", EntityHeader.class, EntityHeader.class);
-                setter.invoke(assertion, originalHeader, MigrationUtils.getHeaderFromEntity((Entity) targetValue));
+                setter.invoke(assertion, originalHeader, EntityHeaderUtils.fromEntity((Entity) targetValue));
             } else {
                 setter = MigrationUtils.setterForPropertyName(assertion, assertionPropName, targetValue.getClass());
                 setter.invoke(assertion, targetValue);
