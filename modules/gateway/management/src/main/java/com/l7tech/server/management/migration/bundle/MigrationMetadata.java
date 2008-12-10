@@ -4,7 +4,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.MigrationMapping;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.MigrationException;
-import com.l7tech.objectmodel.migration.MigrationMappingType;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.util.Pair;
 
@@ -27,7 +26,7 @@ import java.util.logging.Level;
  * @author jbufu
  */
 @XmlRootElement
-@XmlType(propOrder={"headers", "mappings"})
+@XmlType(propOrder={"headers", "mappings", "originalHeaders"})
 public class MigrationMetadata {
 
     private static final Logger logger = Logger.getLogger(MigrationMetadata.class.getName());
@@ -36,12 +35,13 @@ public class MigrationMetadata {
      * Headers for all the items in the Migration Bundle. Used only by/during JAXB marshalling / unmarshalling operations.
      */
     private Set<EntityHeader> headers = new HashSet<EntityHeader>();
+    private Set<EntityHeader> originalHeaders = new HashSet<EntityHeader>(); // needed to apply properties through UsesEntities
 
     /**
      * Headers for all the items in the Migration Bundle. Used by migration business logic.
      */
     private Map<EntityHeaderRef, EntityHeader> headersMap = null;
-    private Map<EntityHeaderRef, EntityHeader> originalHeaders = new HashMap<EntityHeaderRef, EntityHeader>();
+    private Map<EntityHeaderRef, EntityHeader> originalHeadersMap = null;
 
     private Set<MigrationMapping> mappings = new HashSet<MigrationMapping>();
     // easy access to dependencies / dependents
@@ -67,6 +67,23 @@ public class MigrationMetadata {
         this.headers = new HashSet<EntityHeader>(headers);
     }
 
+    @XmlElementWrapper(name="originalHeaders")
+    @XmlElementRef
+    public Collection<EntityHeader> getOriginalHeaders() {
+        if (originalHeadersMap != null)
+            // immutable, throws unsupported operation on modification attempts
+            return originalHeadersMap.values();
+        else
+            // should be used by JAXB unmarshalling only
+            return originalHeaders;
+    }
+
+    public void setOriginalHeaders(Collection<EntityHeader> headers) {
+        // state reset: switching to "map cache uninitialized"
+        this.originalHeadersMap = null;
+        this.originalHeaders = new HashSet<EntityHeader>(headers);
+    }
+
     private void initHeadersCache() {
         // state change: JAXB init over; switching to the internal map representation
         HashMap<EntityHeaderRef, EntityHeader> headersMap = new HashMap<EntityHeaderRef, EntityHeader>();
@@ -75,12 +92,25 @@ public class MigrationMetadata {
         }
         this.headersMap = headersMap;
         this.headers = null;
+
+        HashMap<EntityHeaderRef, EntityHeader> originalHeadersMap = new HashMap<EntityHeaderRef, EntityHeader>();
+        for(EntityHeader header : originalHeaders) {
+            originalHeadersMap.put(EntityHeaderRef.fromOther(header), header);
+        }
+        this.originalHeadersMap = originalHeadersMap;
+        this.originalHeaders = null;
+
         logger.log(Level.FINEST, "Headers cache initialized.");
     }
 
     private Map<EntityHeaderRef, EntityHeader> getHeadersMap() {
         if (headersMap == null) initHeadersCache();
         return headersMap;
+    }
+
+    private Map<EntityHeaderRef, EntityHeader> getOriginalHeadersMap() {
+        if (originalHeadersMap == null) initHeadersCache();
+        return originalHeadersMap;
     }
 
     public void addHeader(EntityHeader header) {
@@ -96,13 +126,12 @@ public class MigrationMetadata {
     }
 
     public EntityHeader getOriginalHeader(EntityHeaderRef headerRef) {
-        EntityHeader current = getHeader(headerRef);
-        return current != null ? current : originalHeaders.get(EntityHeaderRef.fromOther(headerRef));
+        return getOriginalHeadersMap().get(EntityHeaderRef.fromOther(headerRef));
     }
 
     public void removeHeader(EntityHeaderRef headerRef) {
         EntityHeaderRef ref = EntityHeaderRef.fromOther(headerRef);
-        originalHeaders.put(EntityHeaderRef.fromOther(headerRef), getHeadersMap().remove(ref));
+        getOriginalHeadersMap().put(EntityHeaderRef.fromOther(headerRef), getHeadersMap().remove(ref));
     }
 
     public boolean isMappingRequired(EntityHeaderRef headerRef) throws MigrationException {
@@ -138,8 +167,8 @@ public class MigrationMetadata {
         mappingsBySource = new HashMap<EntityHeaderRef, Set<MigrationMapping>>();
         mappingsByTarget = new HashMap<EntityHeaderRef, Set<MigrationMapping>>();
         for (MigrationMapping mapping : this.mappings) {
-            addMappingsForSource(mapping.getSource(), Collections.singleton(mapping));
-            addMappingsForTarget(mapping.getTarget(), Collections.singleton(mapping));
+            addMappingsForSource(mapping.getDependant(), Collections.singleton(mapping));
+            addMappingsForTarget(mapping.getDependency(), Collections.singleton(mapping));
         }
         logger.log(Level.FINEST, "Mappings cache initialized.");
     }
@@ -161,7 +190,7 @@ public class MigrationMetadata {
         Set<EntityHeader> result = new HashSet<EntityHeader>();
         for(MigrationMapping m : mappings) {
             if (m.getType().getNameMapping() != NONE || m.getType().getValueMapping() != NONE)
-                result.add(getHeader(m.getTarget()));
+                result.add(getHeader(m.getDependency()));
         }
         return result;
     }
@@ -189,8 +218,8 @@ public class MigrationMetadata {
 */
 
         mappings.add(mapping);
-        addMappingsForSource(mapping.getSource(), Collections.singleton(mapping));
-        addMappingsForTarget(mapping.getTarget(), Collections.singleton(mapping));
+        addMappingsForSource(mapping.getDependant(), Collections.singleton(mapping));
+        addMappingsForTarget(mapping.getDependency(), Collections.singleton(mapping));
     }
 
     public void mapNames(Set<Pair<EntityHeaderRef,EntityHeader>> mappings) throws MigrationException {
@@ -237,14 +266,14 @@ public class MigrationMetadata {
         Set<MigrationMapping> mappingsForDependency = getMappingsForTarget(dependency);
         for (MigrationMapping mapping : mappingsForDependency) {
             // todo: one-to-many mappings: decide how/when to apply this mapping (vs a presious / individual selection)
-            mapping.setMappedTarget(newDependency, enforceMappingType);
+            mapping.mapDependency(newDependency, enforceMappingType);
         }
         mappingsByTarget.remove(EntityHeaderRef.fromOther(dependency)); // nobody will depend on the old one
         addMappingsForTarget(newDependency, mappingsForDependency);
 
         // outgoing dependencies
         for(MigrationMapping mapping : getMappingsForSource(dependency)) {
-            getMappingsForTarget(mapping.getTarget()).remove(mapping);
+            getMappingsForTarget(mapping.getDependency()).remove(mapping);
             mappings.remove(mapping);
         }
         mappingsBySource.remove(EntityHeaderRef.fromOther(dependency));
@@ -264,7 +293,7 @@ public class MigrationMetadata {
         if (newMapping == null || newMapping.getType().getNameMapping() != NONE)
             return null;
 
-        Set<MigrationMapping> mappings = getMappingsForTarget(newMapping.getTarget());
+        Set<MigrationMapping> mappings = getMappingsForTarget(newMapping.getDependency());
         if (mappings == null) return null;
 
         EnumSet<MigrationMappingSelection> conflicting =

@@ -136,7 +136,7 @@ public class MigrationBundle {
         Set<MigrationMapping> result = new HashSet<MigrationMapping>();
         for(MigrationMapping m : metadata.getMappings()) {
             MigrationMappingType type = m.getType();
-            EntityHeaderRef targetHeaderRef = m.getTarget();
+            EntityHeaderRef targetHeaderRef = m.getDependency();
             ExportedItem targetItem = getExportedItem(targetHeaderRef);
             boolean hasSourceValue = targetItem != null && targetItem.getSourceValue() != null;
             boolean hasMappedValue = targetItem != null && targetItem.getMappedValue() != null;
@@ -147,11 +147,11 @@ public class MigrationBundle {
                         throw new MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
                     break;
                 case OPTIONAL:
-                    if ( ! hasSourceValue && m.getMappedTarget() == null)
+                    if ( ! hasSourceValue && ! m.isMappedDependency())
                         result.add(m);
                     break;
                 case REQUIRED:
-                    if (m.getMappedTarget() == null)
+                    if (! m.isMappedDependency())
                         result.add(m);
                     break;
                 default:
@@ -160,7 +160,7 @@ public class MigrationBundle {
 
             switch (type.getValueMapping()) {
                 case NONE: // requirement only if there's no name-mapping
-                    if ( ! hasSourceValue && type.getNameMapping() != MigrationMappingSelection.NONE && m.getMappedTarget() == null)
+                    if ( ! hasSourceValue && type.getNameMapping() != MigrationMappingSelection.NONE && ! m.isMappedDependency())
                         throw new MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
                     break;
                 case OPTIONAL:

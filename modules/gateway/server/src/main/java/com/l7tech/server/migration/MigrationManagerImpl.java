@@ -154,11 +154,11 @@ public class MigrationManagerImpl implements MigrationManager {
         Set<MigrationMapping> dependencies = metadata.getMappingsForSource(header);
         if (dependencies != null) {
             for (MigrationMapping mapping : dependencies) {
-                EntityHeader dep = metadata.getHeader(mapping.getTarget());
+                EntityHeader dep = metadata.getHeader(mapping.getDependency());
                 if (dep != null)
                     uploadEntityRecursive(dep, entities, metadata, uploaded, dryRun);
                 else
-                    logger.log(Level.WARNING, "Header not found for dependency reference {0}", mapping.getTarget());
+                    logger.log(Level.WARNING, "Header not found for dependency reference {0}", mapping.getDependency());
             }
         }
 
@@ -191,9 +191,9 @@ public class MigrationManagerImpl implements MigrationManager {
             // replace all folder dependencies withe the (unique) targetFolder
             Set<EntityHeaderRef> headersToRemove = new HashSet<EntityHeaderRef>();
             for (MigrationMapping mapping : metadata.getMappings()) {
-                if (mapping.getTarget().getType() == EntityType.FOLDER) {
-                    headersToRemove.add(mapping.getTarget());
-                    mapping.setTarget(targetFolder);
+                if (mapping.getDependency().getType() == EntityType.FOLDER) {
+                    headersToRemove.add(mapping.getDependency());
+                    mapping.mapDependency(targetFolder, false);
                 }
             }
             for (EntityHeaderRef headerRef : headersToRemove) {
@@ -216,18 +216,18 @@ public class MigrationManagerImpl implements MigrationManager {
             EntityOperation eo = entities.get(header);
 
             MigrationMetadata metadata = bundle.getMetadata();
-            if ( eo.operation == IGNORE && ! metadata.isUploadedByParent(header))
-                continue;
+//            if ( eo.operation == IGNORE && ! metadata.isUploadedByParent(header))
+//                continue;
 
             try {
                 for (MigrationMapping mapping : metadata.getMappingsForSource(header)) {
                     PropertyResolver resolver = getResolver(eo.entity, mapping.getPropName());
-                    EntityOperation targetEo = entities.get(metadata.getHeader(mapping.getTarget()));
+                    EntityOperation targetEo = entities.get(metadata.getHeader(mapping.getDependency()));
                     if (targetEo == null || targetEo.entity == null) {
-                        errors.add(EntityHeaderUtils.fromEntity(eo.entity), new MigrationException("Cannot apply mapping, target entity not found for dependency reference: " + mapping.getTarget()));
+                        errors.add(EntityHeaderUtils.fromEntity(eo.entity), new MigrationException("Cannot apply mapping, target entity not found for dependency reference: " + mapping.getDependency()));
                         continue;
                     }
-                    resolver.applyMapping(eo.entity, mapping.getPropName(), targetEo.entity, metadata.getOriginalHeader(mapping.getOriginalTarget()));
+                    resolver.applyMapping(eo.entity, mapping.getPropName(), targetEo.entity, metadata.getOriginalHeader(mapping.getSourceDependency()));
                 }
             } catch (MigrationException e) {
                 logger.log(Level.WARNING, "Errors while applying mapping.", e);
@@ -327,20 +327,20 @@ public class MigrationManagerImpl implements MigrationManager {
         for(MigrationMapping mapping : metadata.getMappings()) {
 
             // all headers present in the metadata
-            EntityHeaderRef header = mapping.getSource();
+            EntityHeaderRef header = mapping.getDependant();
             if (! metadata.hasHeader(header))
                 errors.add(header, new MigrationException("Header listed as the source of a dependency, but not included in bundle metadata: " + header));
-            header = mapping.getTarget();
+            header = mapping.getDependency();
             if (! metadata.hasHeader(header))
                 errors.add(header, new MigrationException("Header listed as a dependency, but not included in bundle metadata: " + header));
 
             // name-mapping required
-            if (mapping.getType().getNameMapping() == REQUIRED && ! mapping.isMappedTarget())
+            if (mapping.getType().getNameMapping() == REQUIRED && ! mapping.isMappedDependency())
                 errors.add(mapping, new MigrationException("Unresolved name-mapping: " + mapping));
 
             // value-mapping required
-            if (! mapping.isMappedTarget() && mapping.getType().getValueMapping() == REQUIRED &&
-                (bundle.getExportedItem(mapping.getTarget()) == null || ! bundle.getExportedItem(mapping.getTarget()).isMappedValue()) ) {
+            if (! mapping.isMappedDependency() && mapping.getType().getValueMapping() == REQUIRED &&
+                (bundle.getExportedItem(mapping.getDependency()) == null || ! bundle.getExportedItem(mapping.getDependency()).isMappedValue()) ) {
                 errors.add(mapping, new MigrationException("Unresolved value-mapping: " + mapping));
             }
         }
@@ -377,11 +377,11 @@ public class MigrationManagerImpl implements MigrationManager {
                         if ( depHeader instanceof GuidEntityHeader ) {
                             // TODO find a better way to do this
                             EntityHeader resolvedDepHeader  = resolveHeader( depHeader );
-                            if ( mapping.getSource().getStrId().equals(((GuidEntityHeader)depHeader).getGuid()) ) {
-                                mapping.setSource( EntityHeaderRef.fromOther(resolvedDepHeader) );
+                            if ( mapping.getDependant().getStrId().equals(((GuidEntityHeader)depHeader).getGuid()) ) {
+                                mapping.setDependant( EntityHeaderRef.fromOther(resolvedDepHeader) );
                             }
-                            if ( mapping.getTarget().getStrId().equals(((GuidEntityHeader)depHeader).getGuid()) ) {
-                                mapping.setTarget( EntityHeaderRef.fromOther(resolvedDepHeader) );
+                            if ( mapping.getDependency().getStrId().equals(((GuidEntityHeader)depHeader).getGuid()) ) {
+                                mapping.setSourceDependency( EntityHeaderRef.fromOther(resolvedDepHeader) );
                             }
                         }
                         result.addMapping(mapping);
