@@ -66,6 +66,7 @@ public class MemberOfGroup extends IdentityAssertion {
             if(oldIdentityHeader.getProviderOid() == _identityProviderOid && oldIdentityHeader.getStrId().equals(groupId)) {
                 _identityProviderOid = newIdentityHeader.getProviderOid();
                 groupId = newIdentityHeader.getStrId();
+                _groupName = newIdentityHeader.getName();
 
                 return;
             }

@@ -85,6 +85,8 @@ public class SpecificUser extends IdentityAssertion {
             if(oldIdentityHeader.getProviderOid() == _identityProviderOid && oldIdentityHeader.getStrId().equals(userUid)) {
                 _identityProviderOid = newIdentityHeader.getProviderOid();
                 userUid = newIdentityHeader.getStrId();
+                userLogin = newIdentityHeader.getName();
+                userName = newIdentityHeader.getCommonName();
 
                 return;
             }
