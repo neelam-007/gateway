@@ -16,7 +16,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.l7tech.server.ems.SecureResource;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 
@@ -31,7 +32,7 @@ public class ReportResource extends SecureResource {
      *
      */
     public ReportResource() {
-        super( new AttemptedReadAll(EntityType.ESM_STANDARD_REPORT) );
+        super( new AttemptedReadAny(EntityType.ESM_STANDARD_REPORT) );
     }
 
     //- PROTECTED
@@ -46,55 +47,59 @@ public class ReportResource extends SecureResource {
             String id = parameters.getString("reportId");
             String type = parameters.getString("type");
 
-            StandardReportManager manager = getStandardReportManager();
-            if ( manager != null ) {
-                try {
-                    final StandardReport report = manager.findByPrimaryKey( Long.parseLong( id ) );
-                    StandardReportArtifact typedArtifact = null;
-                    if ( report != null ) {
-                        for ( StandardReportArtifact artifact : report.getArtifacts() ) {
-                            if ( artifact.getContentType().equals(type) ) {
-                                typedArtifact = artifact;
-                                break;
+            if ( !hasPermission( new AttemptedReadSpecific(EntityType.ESM_STANDARD_REPORT, id) ) ) {
+                resource = getAccessDeniedStream();
+            } else {
+                StandardReportManager manager = getStandardReportManager();
+                if ( manager != null ) {
+                    try {
+                        final StandardReport report = manager.findByPrimaryKey( Long.parseLong( id ) );
+                        StandardReportArtifact typedArtifact = null;
+                        if ( report != null ) {
+                            for ( StandardReportArtifact artifact : report.getArtifacts() ) {
+                                if ( artifact.getContentType().equals(type) ) {
+                                    typedArtifact = artifact;
+                                    break;
+                                }
                             }
+                        } else {
+                            logger.warning("Report id not found when accessing report resource '"+id+"'.");
                         }
-                    } else {
-                        logger.warning("Report id not found when accessing report resource '"+id+"'.");                        
-                    }
 
-                    final StandardReportArtifact resourceArtifact = typedArtifact;
-                    if ( resourceArtifact != null ) {
-                        final ByteArrayInputStream in = new ByteArrayInputStream( resourceArtifact.getReportData() );
-                        resource = new AbstractResourceStream(){
-                            @Override
-                            public String getContentType() {
-                                return resourceArtifact.getContentType();
-                            }
+                        final StandardReportArtifact resourceArtifact = typedArtifact;
+                        if ( resourceArtifact != null ) {
+                            final ByteArrayInputStream in = new ByteArrayInputStream( resourceArtifact.getReportData() );
+                            resource = new AbstractResourceStream(){
+                                @Override
+                                public String getContentType() {
+                                    return resourceArtifact.getContentType();
+                                }
 
-                            @Override
-                            public InputStream getInputStream() throws ResourceStreamNotFoundException {
-                                return in;
-                            }
+                                @Override
+                                public InputStream getInputStream() throws ResourceStreamNotFoundException {
+                                    return in;
+                                }
 
-                            @Override
-                            public void close() throws IOException {
-                                ResourceUtils.closeQuietly( in );
-                            }
+                                @Override
+                                public void close() throws IOException {
+                                    ResourceUtils.closeQuietly( in );
+                                }
 
-                            @Override
-                            public Time lastModifiedTime() {
-                                return Time.milliseconds( report.getStatusTime() );
-                            }
-                        };
-                    } else {
-                        logger.warning("Report artifact not found when accessing report resource '"+id+"', type '"+type+"'.");
+                                @Override
+                                public Time lastModifiedTime() {
+                                    return Time.milliseconds( report.getStatusTime() );
+                                }
+                            };
+                        } else {
+                            logger.warning("Report artifact not found when accessing report resource '"+id+"', type '"+type+"'.");
+                            resource = new StringResourceStream( "" );
+                        }
+                    } catch ( NumberFormatException nfe ) {
+                        logger.warning("Invalid report id when accessing report resource '"+id+"'..");
                         resource = new StringResourceStream( "" );
+                    } catch (FindException e) {
+                        logger.log( Level.WARNING, "Error finding report.", e );
                     }
-                } catch ( NumberFormatException nfe ) {
-                    logger.warning("Invalid report id when accessing report resource '"+id+"'..");
-                    resource = new StringResourceStream( "" );
-                } catch (FindException e) {
-                    logger.log( Level.WARNING, "Error finding report.", e );
                 }
             }
         }

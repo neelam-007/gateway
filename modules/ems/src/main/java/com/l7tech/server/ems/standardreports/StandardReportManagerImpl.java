@@ -1,11 +1,23 @@
 package com.l7tech.server.ems.standardreports;
 
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.util.JaasUtils;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.identity.User;
+import com.l7tech.util.TextUtils;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
+import static com.l7tech.gateway.common.security.rbac.OperationType.UPDATE;
+import static com.l7tech.gateway.common.security.rbac.OperationType.DELETE;
 
 import java.util.List;
+import java.text.MessageFormat;
 
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
@@ -16,6 +28,10 @@ import org.hibernate.criterion.Restrictions;
 public class StandardReportManagerImpl  extends HibernateEntityManager<StandardReport, EntityHeader> implements StandardReportManager {
 
     //- PUBLIC
+
+    public StandardReportManagerImpl( final RoleManager roleManager ) {
+        this.roleManager = roleManager;
+    }
 
     @Override
     public List<StandardReport> findPage( final User user, String sortProperty, boolean ascending, int offset, int count) throws FindException {
@@ -42,6 +58,26 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
         return "report";
     }
 
+    @Override
+    public void delete(StandardReport standardReport) throws DeleteException {
+        super.delete(standardReport);
+        roleManager.deleteEntitySpecificRole( EntityType.ESM_STANDARD_REPORT, standardReport.getOid() );
+    }
+
+    @Override
+    public void delete(long oid) throws DeleteException, FindException {
+        super.findAndDelete(oid);
+    }
+
+    @Override
+    public long save( final StandardReport entity ) throws SaveException {
+        long oid = super.save(entity);
+
+        addReportRole( oid, entity );
+
+        return oid;
+    }
+
     //- PROTECTED
 
     @Override
@@ -50,6 +86,8 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
     }
 
     //- PRIVATE
+
+    private final RoleManager roleManager;
 
     private Criterion[] asCriterion( final User user ) {
         Criterion[] criterion;
@@ -63,5 +101,45 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
         }
 
         return criterion;
+    }
+
+     public void addReportRole( final long oid, final StandardReport standardReport ) throws SaveException {
+        User currentUser = JaasUtils.getCurrentUser();
+
+        // truncate service name in the role name to avoid going beyond 128 limit
+        String reportname = standardReport.getName();
+
+        // cutoff is arbitrarily set to 50
+        reportname = TextUtils.truncStringMiddle(reportname, 50);
+        String name = MessageFormat.format("Manage {0} Report (#{1})", reportname, oid);
+
+        Role newRole = new Role();
+        newRole.setName(name);
+
+        // RUD this report
+        newRole.addEntityPermission(READ, EntityType.ESM_STANDARD_REPORT, Long.toString(oid));
+        newRole.addEntityPermission(UPDATE, EntityType.ESM_STANDARD_REPORT, Long.toString(oid));
+        newRole.addEntityPermission(DELETE, EntityType.ESM_STANDARD_REPORT, Long.toString(oid));
+
+        // Set role as entity-specific
+        newRole.setEntityType(EntityType.ESM_STANDARD_REPORT);
+        newRole.setEntityOid(oid);
+        newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the {1} Report.");
+
+        if (currentUser != null) {
+            // See if we should give the current user admin permission for this service
+            boolean omnipotent;
+            try {
+                omnipotent = roleManager.isPermittedForAnyEntityOfType(currentUser, OperationType.DELETE, EntityType.ESM_STANDARD_REPORT);
+            } catch (FindException e) {
+                throw new SaveException("Coudln't get existing permissions", e);
+            }
+
+            if (!omnipotent) {
+                newRole.addAssignedUser(currentUser);
+            }
+        }
+         
+        roleManager.save(newRole);
     }
 }

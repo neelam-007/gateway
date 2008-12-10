@@ -40,6 +40,7 @@ public class RbacUtilities {
         patternMap.put(EntityType.ID_PROVIDER_CONFIG, Pattern.compile(MessageFormat.format(REGEX_PATTERN, IdentityAdmin.ROLE_NAME_TYPE_SUFFIX)));
         patternMap.put(EntityType.POLICY, Pattern.compile(MessageFormat.format(REGEX_PATTERN, PolicyAdmin.ROLE_NAME_TYPE_SUFFIX)));
         patternMap.put(EntityType.ESM_SSG_CLUSTER, Pattern.compile(MessageFormat.format(REGEX_PATTERN, "Cluster")));
+        patternMap.put(EntityType.ESM_STANDARD_REPORT, Pattern.compile(MessageFormat.format(REGEX_PATTERN, "Report")));
     }
 
     public static boolean isEnableRoleEditing() {

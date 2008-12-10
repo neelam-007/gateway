@@ -30,7 +30,7 @@ public abstract class SecureResource extends WebResource {
         if ( securityManager != null && securityManager.hasPermission( attemptedOperation ) ) {
             stream = getSecureResourceStream();
         } else {
-            stream = new StringResourceStream("Access Denied.");
+            stream = getAccessDeniedStream();
         }
         
         return stream;
@@ -70,6 +70,26 @@ public abstract class SecureResource extends WebResource {
                 webResponse.setHeader("Content-Disposition", "inline; filename=\"" + filename + "\"");
             }
         }
+    }
+
+    /**
+     * Get the access denied stream.
+     *
+     * @return The access denied resource.
+     */
+    protected IResourceStream getAccessDeniedStream() {
+        return new StringResourceStream("Access Denied.");
+    }
+
+    /**
+     * Test if the current user has permission to perform the given operation.
+     *
+     * @param attemptedOperation The attempted operation.
+     * @return true if permission is permitted.
+     */
+    protected boolean hasPermission( final AttemptedOperation attemptedOperation ) {
+        EmsSecurityManager securityManager = securityManagerRef.get();
+        return securityManager != null && securityManager.hasPermission( attemptedOperation );        
     }
 
     protected String getFilename() {
