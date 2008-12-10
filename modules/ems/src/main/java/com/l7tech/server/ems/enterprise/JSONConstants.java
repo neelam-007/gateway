@@ -128,7 +128,7 @@ public final class JSONConstants {
     public static final String ACCESS_STATUS = "accessStatus";
 
     // Additional properties for SSG Cluster and SSG Node entities.
-    public static final String ONLINES_TATUS        = "onlineStatus";
+    public static final String ONLINE_STATUS = "onlineStatus";
     public static final String TRUST_STATUS         = "trustStatus";
     public static final String IP_ADDRESS           = "ipAddress";
     public static final String MONITORED_PROPERTIES = "monitoredProperties";

@@ -113,19 +113,21 @@ public class GatewayPoller implements InitializingBean {
                                         node.setName(newInfo.getName());
                                         node.setSoftwareVersion(newInfo.getSoftwareVersion());
                                         node.setIpAddress(newInfo.getIpAddress());
-                                        refreshNodeStatus(node);
+                                        refreshNodeStatus(node, port);
                                         node.setSsgCluster(cluster);
                                         nodes.add(node);
                                     }
                                     cluster.getNodes().clear();
                                     cluster.getNodes().addAll(nodes);
+                                    refreshClusterStatus(cluster);
                                     ssgClusterManager.update(cluster);
                                 } else {
                                     boolean updated = false;
                                     for ( SsgNode node : cluster.getNodes() ) {
-                                        updated = updated || refreshNodeStatus( node );
+                                        updated = updated || refreshNodeStatus( node, port );
                                     }
                                     if ( updated ) {
+                                        refreshClusterStatus(cluster);
                                         ssgClusterManager.update(cluster);
                                     }
                                 }
@@ -156,11 +158,41 @@ public class GatewayPoller implements InitializingBean {
     }
 
     /**
+     * Update the online status of the given cluster based on the status of its
+     * nodes.
+     */
+    private void refreshClusterStatus( final SsgCluster cluster ) {
+        int nodeCount = 0;
+        int upCount = 0;
+
+        if ( cluster.getNodes() != null ) {
+            for ( SsgNode node : cluster.getNodes() ) {
+                nodeCount++;
+                if ( JSONConstants.SsgNodeOnlineState.ON.equals(node.getOnlineStatus()) ) {
+                    upCount++;
+                }
+
+            }
+        }
+
+        String clusterStatus;
+        if ( upCount == 0 ) {
+            clusterStatus = JSONConstants.SsgClusterOnlineState.DOWN;
+        } else if ( upCount != nodeCount ) {
+            clusterStatus = JSONConstants.SsgClusterOnlineState.PARTIAL;
+        } else {
+            clusterStatus = JSONConstants.SsgClusterOnlineState.UP;
+        }
+
+        cluster.setOnlineStatus( clusterStatus );        
+    }
+
+    /**
      * Update the trusted / online status of the given ssg node.
      *
      * @return true if updated
      */
-    private boolean refreshNodeStatus( final SsgNode node ) {
+    private boolean refreshNodeStatus( final SsgNode node, final int port ) {
         boolean updated = false;
 
         final String host = node.getIpAddress();
@@ -192,6 +224,24 @@ public class GatewayPoller implements InitializingBean {
         } catch ( SOAPFaultException sfe ) {
             if ( GatewayContext.isNetworkException(sfe) ) {
                 logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+"'." );
+
+                // perhaps we don't have a process controller that works, let's check the node directly
+                try {
+                    GatewayContext context = gatewayContextFactory.getGatewayContext( null, host, port );
+                    GatewayApi api = context.getApi();
+                    if ( api.getClusterInfo() != null ) {
+                        status = JSONConstants.SsgNodeOnlineState.ON;
+                    }
+                } catch (GatewayException e) {
+                    // don't care
+                    logger.log( Level.FINE, "Error checking gateway status using gateway api for '"+host+"'.", ExceptionUtils.getDebugException(e) );
+                } catch ( SOAPFaultException sfe2 ) {
+                    // don't care
+                    if ( !GatewayContext.isNetworkException(sfe2) ) {
+                        logger.log( Level.FINE, "Error checking gateway status using gateway api for  '"+host+"'.", ExceptionUtils.getDebugException(sfe2)  );
+                    }
+                }
+
             } else if ( "Authentication Required".equals(sfe.getMessage()) ){
                 trusted = false;
             } else{

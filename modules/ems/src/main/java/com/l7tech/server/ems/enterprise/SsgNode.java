@@ -92,7 +92,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         output.add(JSONConstants.VERSION, getSoftwareVersion());
         output.add(JSONConstants.NAME, _name);
         output.add(JSONConstants.RBAC_CUD, false);
-        output.add(JSONConstants.ONLINES_TATUS, getOnlineStatus());
+        output.add(JSONConstants.ONLINE_STATUS, getOnlineStatus());
         output.add(JSONConstants.TRUST_STATUS, isTrustStatus());
         output.add(JSONConstants.SELF_HOST_NAME, obtainHostName());
         output.add(JSONConstants.IP_ADDRESS, getIpAddress());

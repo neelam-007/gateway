@@ -34,6 +34,8 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
     /** Port number of the administrative interface. */
     private int adminPort;
 
+    private String onlineStatus;
+
     private boolean trustStatus;
 
     private String dbHosts;
@@ -125,6 +127,15 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         this.dbHosts = dbHosts;
     }
 
+    @Column(name="online_status", length=36)
+    public String getOnlineStatus() {
+        return onlineStatus;
+    }
+
+    public void setOnlineStatus(String onlineStatus) {
+        this.onlineStatus = onlineStatus;
+    }
+
     @Column(name="trust_status", nullable=false)
     public boolean getTrustStatus() {
         return trustStatus;
@@ -197,6 +208,7 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         output.add(JSONConstants.TRUST_STATUS, trustStatus);
         output.add(JSONConstants.SSL_HOST_NAME, sslHostName);
         output.add(JSONConstants.ADMIN_PORT, Integer.toString(adminPort));
+        output.add(JSONConstants.ONLINE_STATUS, onlineStatus);
 // TODO       output.add(JSONConstants.DB_HOSTS, ...);
 // TODO       output.add(JSONConstants.IP_ADDRESS, ...);
     }

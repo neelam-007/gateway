@@ -1,9 +1,7 @@
 package com.l7tech.server.ems.pages;
 
-import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.management.api.node.GatewayApi;
@@ -24,9 +22,6 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
 
     @SpringBean
     GatewayClusterClientManager gatewayClusterClientManager;
-
-    @SpringBean
-    private EmsSecurityManager securityManager;
 
     private EntityType[] entityTypes = new EntityType[] {
         EntityType.FOLDER,
@@ -107,13 +102,12 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
         }
 
         // Finally add rbac_cud into each jason content.
-        final SsgCluster ssgCluster = cluster.getCluster();
         for (SsgClusterContent content: contentList) {
             jasonContentList.add(new JSONSupport(content) {
                 @Override
                 protected void writeJson() {
                     super.writeJson();
-                    add(JSONConstants.RBAC_CUD, securityManager.hasPermission(new AttemptedDeleteSpecific(EntityType.ESM_SSG_CLUSTER, ssgCluster)));
+                    add(JSONConstants.RBAC_CUD, true);
                 }
             });
         }
