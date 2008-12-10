@@ -1,6 +1,9 @@
 package com.l7tech.objectmodel.folder;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -20,6 +23,7 @@ public class Folder extends NamedEntityImp {
     @Deprecated // For Serialization and persistence only
     public Folder() { }
 
+    @Migration(mapName = NONE, mapValue = NONE)
     public Folder getParentFolder() {
         return parentFolder;
     }
