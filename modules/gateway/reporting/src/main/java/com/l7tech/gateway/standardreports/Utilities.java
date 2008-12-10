@@ -1724,8 +1724,8 @@ END as IP_ADDRESS,
     }
 
     public static String getServiceDisplayString(String serviceName, String serviceRoutingURI){
-        String serviceNameDisplay = TextUtils.truncStringMiddle(serviceName, 26);
-        String displayRoutingURI = TextUtils.truncStringMiddle(serviceRoutingURI, 26);
+        String serviceNameDisplay = TextUtils.truncStringMiddleExact(serviceName, 20);
+        String displayRoutingURI = TextUtils.truncStringMiddleExact(serviceRoutingURI, 20);
 
         return "<font size=\"1\">"+serviceNameDisplay +"<br>" + "[" + displayRoutingURI+"]"+"</font>";
     }
@@ -1733,6 +1733,11 @@ END as IP_ADDRESS,
 
     public static String getServiceDisplayStringNotTruncated(String serviceName, String serviceRoutingURI){
         return serviceName+"["+serviceRoutingURI+"]";
+    }
+
+    public static String getOperationDisplayString(String operationName){
+        String operationNameDisplay = TextUtils.truncStringMiddleExact(operationName, 20);
+        return operationNameDisplay;
     }
 
     public static String getServiceFromDisplayString(Map<String, String> displayStringToService, String serviceName,

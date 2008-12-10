@@ -413,6 +413,49 @@ public class TextUtils {
         return s;
     }
 
+
+    /**
+     * Same idea as truncStringMiddle, except that the string is guaranteed to be the length of sizeOfReturnString,
+     * except when s is shorter than sizeOfReturnString, or is less than 5 char's, in which cases, s is returned.
+     * The return string has '...' in the middle.
+     * @param s return string should be a truncated representation of s
+     * @param sizeOfReturnString the size the returned string should be
+     * @return a truncated string, whose size is equal to sizeOfReturnString, which has '...' representing all characters
+     * which were left out for display purposes
+     */
+    public static String truncStringMiddleExact(String s, int sizeOfReturnString){
+
+        if (s == null || s.length() <= sizeOfReturnString) return s;
+
+        //5 is used as we will have a start, end and 3 '.'s in the middle
+        if(s.length() < 5 || sizeOfReturnString < 5){
+            return s;
+        }
+
+        char [] strChar = new char[sizeOfReturnString];
+
+        int middle = (strChar.length / 2);
+        boolean pastMiddle = false;
+        for(int i = 0; i < strChar.length; i++){
+
+            if(i >= middle-1 && i <= middle+1){
+                strChar[i] = '.';
+                pastMiddle = true;
+                continue;
+            }
+
+            if(pastMiddle){
+                int diff = s.length() - (sizeOfReturnString - i);
+                strChar[i] = s.charAt(diff);
+                continue;
+            }
+            
+            strChar[i] = s.charAt(i);
+        }
+
+        return new String(strChar); 
+    }
+
     /**
      * Convert the given object to a string allowing for a null value.
      *

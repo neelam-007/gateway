@@ -168,4 +168,36 @@ public class TextUtilsTest extends TestCase {
         assertEquals("foo.*blah.\\.jar", TextUtils.globToRegex("foo*blah?.jar"));
         assertEquals("snarf\\$gobble\\_blarf\\`22", TextUtils.globToRegex("snarf$gobble_blarf`22"));
     }
+
+    public void testTruncateMiddleExact(){
+
+        String s = "12345";
+        String expected = TextUtils.truncStringMiddleExact(s,2);
+        assertTrue("String equals to s should be returned, expected: "+s+", actual was: " + expected, s.equals(expected));
+
+        expected = TextUtils.truncStringMiddleExact(s,10);
+        assertTrue("String equals to s should be returned", s.equals(expected));
+
+        s = "1234567890";
+
+        expected = "1...0";
+        String actual = TextUtils.truncStringMiddleExact(s,5);
+        assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
+
+        expected = "12...0";
+        actual = TextUtils.truncStringMiddleExact(s,6);
+        assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
+
+        expected = "12...90";
+        actual = TextUtils.truncStringMiddleExact(s,7);
+        assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
+
+        expected = "123...90";
+        actual = TextUtils.truncStringMiddleExact(s,8);
+        assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
+
+        expected = "123...890";
+        actual = TextUtils.truncStringMiddleExact(s,9);
+        assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
+    }
 }
