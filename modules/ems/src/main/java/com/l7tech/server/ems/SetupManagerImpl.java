@@ -363,15 +363,16 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
      */
     @Override
     public void afterPropertiesSet() {
+        final String[] uuidHolder = new String[1];
+
         TransactionTemplate template = new TransactionTemplate(transactionManager);
         template.execute( new TransactionCallbackWithoutResult(){
             @Override
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                 try {
                     if ( clusterPropertyManager.findByUniqueName("esm.id") == null ) {
-                        String id = UUID.randomUUID().toString();
-                        clusterPropertyManager.save( new ClusterProperty( "esm.id", id ) );
-                        serverConfig.putProperty( "em.server.id", id ); // work around for application events not yet available
+                        uuidHolder[0] = UUID.randomUUID().toString();
+                        clusterPropertyManager.save( new ClusterProperty( "esm.id", uuidHolder[0] ) );
                     }
 
                     if ( identityProviderConfigManager.findAll().isEmpty() &&
@@ -465,6 +466,8 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                 }
             }
         });
+
+        serverConfig.putProperty( "em.server.id", uuidHolder[0] ); // work around for application events not yet available
     }
 
     private KeystoreFile newKeystore( final String name, final String format ) {
