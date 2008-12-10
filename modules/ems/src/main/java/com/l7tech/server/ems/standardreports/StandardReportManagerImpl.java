@@ -23,7 +23,7 @@ import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
 
 /**
- * 
+ * TODO [steve] re-enable role creation for standard reports (once viewing is role, not ownership, based)
  */
 public class StandardReportManagerImpl  extends HibernateEntityManager<StandardReport, EntityHeader> implements StandardReportManager {
 
@@ -61,7 +61,7 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
     @Override
     public void delete(StandardReport standardReport) throws DeleteException {
         super.delete(standardReport);
-        roleManager.deleteEntitySpecificRole( EntityType.ESM_STANDARD_REPORT, standardReport.getOid() );
+        // roleManager.deleteEntitySpecificRole( EntityType.ESM_STANDARD_REPORT, standardReport.getOid() );
     }
 
     @Override
@@ -73,7 +73,7 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
     public long save( final StandardReport entity ) throws SaveException {
         long oid = super.save(entity);
 
-        addReportRole( oid, entity );
+        // addReportRole( oid, entity );
 
         return oid;
     }
@@ -103,7 +103,7 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
         return criterion;
     }
 
-     public void addReportRole( final long oid, final StandardReport standardReport ) throws SaveException {
+     private void addReportRole( final long oid, final StandardReport standardReport ) throws SaveException {
         User currentUser = JaasUtils.getCurrentUser();
 
         // truncate service name in the role name to avoid going beyond 128 limit

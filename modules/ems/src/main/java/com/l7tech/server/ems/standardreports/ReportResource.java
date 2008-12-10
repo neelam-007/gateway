@@ -15,14 +15,17 @@ import java.util.logging.Level;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.l7tech.server.ems.SecureResource;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.User;
 
 /**
- * Web resource for report downloads. 
+ * Web resource for report downloads.
+ *
+ * TODO [steve] remove ownership based access check and restore rbac checks. 
  */
 public class ReportResource extends SecureResource {
 
@@ -32,7 +35,7 @@ public class ReportResource extends SecureResource {
      *
      */
     public ReportResource() {
-        super( new AttemptedReadAny(EntityType.ESM_STANDARD_REPORT) );
+        super( null );//new AttemptedReadAny(EntityType.ESM_STANDARD_REPORT) );
     }
 
     //- PROTECTED
@@ -47,7 +50,8 @@ public class ReportResource extends SecureResource {
             String id = parameters.getString("reportId");
             String type = parameters.getString("type");
 
-            if ( !hasPermission( new AttemptedReadSpecific(EntityType.ESM_STANDARD_REPORT, id) ) ) {
+            if ( !hasPermission( new AttemptedReadSpecific(EntityType.ESM_STANDARD_REPORT, id) ) &&
+                 !isOwner(id) ) {
                 resource = getAccessDeniedStream();
             } else {
                 StandardReportManager manager = getStandardReportManager();
@@ -145,4 +149,28 @@ public class ReportResource extends SecureResource {
     private static final Logger logger = Logger.getLogger(ReportResource.class.getName());
 
     private static AtomicReference<StandardReportManager> StandardReportManagerRef = new AtomicReference<StandardReportManager>();
+
+    private boolean isOwner( final String reportId ) {
+        boolean owner = false;
+
+        StandardReportManager manager = getStandardReportManager();
+        User user = JaasUtils.getCurrentUser();
+        if ( manager != null && user != null ) {
+            try {
+                StandardReport report = manager.findByPrimaryKey( Long.parseLong( reportId ) );
+                if ( report != null ) {
+                    if ( user.getId().equals( report.getUserId() ) &&
+                         user.getProviderId() == report.getProvider() ) {
+                        owner = true;
+                    }
+                }
+            } catch ( NumberFormatException nfe ) {
+                // not owner
+            } catch ( FindException e ) {
+                logger.log( Level.WARNING, "Error finding report to check resource ownership", e );
+            }
+        }
+
+        return owner;
+    }
 }

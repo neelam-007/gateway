@@ -27,7 +27,7 @@ public abstract class SecureResource extends WebResource {
         IResourceStream stream;
 
         EmsSecurityManager securityManager = securityManagerRef.get();
-        if ( securityManager != null && securityManager.hasPermission( attemptedOperation ) ) {
+        if ( attemptedOperation == null || (securityManager != null && securityManager.hasPermission( attemptedOperation )) ) {
             stream = getSecureResourceStream();
         } else {
             stream = getAccessDeniedStream();
@@ -94,6 +94,10 @@ public abstract class SecureResource extends WebResource {
 
     protected String getFilename() {
         return null;
+    }
+
+    protected EmsSecurityManager getSecurityManager() {
+        return securityManagerRef.get();
     }
 
     //- PRIVATE
