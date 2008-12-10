@@ -405,7 +405,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
 					<textElement>
 						<font size="8"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?$F{SERVICE_OPERATION_VALUE}:
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?Utilities.getOperationDisplayString($F{SERVICE_OPERATION_VALUE}):
 Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
 				</textField>
 				</frame>			</band>

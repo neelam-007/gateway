@@ -1675,7 +1675,7 @@ new Double((1 - (($V{AUTHORIZED_OPERATION_SUM}.doubleValue() - $V{COMPLETED_OPER
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{SERVICE_OPERATION_VALUE}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[Utilities.getOperationDisplayString($F{SERVICE_OPERATION_VALUE})]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
