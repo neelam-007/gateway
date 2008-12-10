@@ -175,7 +175,7 @@
                 if (absoluteTimePeriodFromDate == absoluteTimePeriodToDate) {
                     var fromHour = absoluteTimePeriodFromHourDropDown.value;
                     var toHour = absoluteTimePeriodToHourDropDown.value;
-                    valid = fromHour < toHour;
+                    valid = (fromHour - toHour) < 0;
                 } else {
                     valid = true;
                 }
@@ -378,12 +378,10 @@
         }
 
         function onChangeAbsoluteTimePeriodFromDate() {
-            // TODO set mindate of To calendar
             onChangeAbsoluteTimePeriod();
         }
 
         function onChangeAbsoluteTimePeriodToDate() {
-            // TODO set maxdate of From calendar
             onChangeAbsoluteTimePeriod();
         }
 
