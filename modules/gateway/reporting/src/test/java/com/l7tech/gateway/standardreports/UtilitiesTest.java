@@ -2872,6 +2872,50 @@ public class UtilitiesTest{
     }
 
     /**
+     * Using a canned transform xml document, transform the performance summary template jrxml file, compile and
+     * test the output for correctness.
+     * @throws Exception
+     */
+    @Test
+    public void transformAndCompilePSSummaryTemplate() throws Exception{
+        String transformXml = getResAsStringClasspath("PS_Summary_TransformDoc.xml");
+        String transformXsl = getResAsStringClasspath("PS_SummaryTransform.xsl");
+        String templateXml = getResAsStringClasspath("PS_Summary_Template.jrxml");
+
+        Document runtimeDoc = XmlUtil.stringToDocument(transformXml);
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", runtimeDoc);
+
+        Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
+        Assert.assertNotNull("Transform document should not be null", transformedRuntimeDoc);
+        compileReport(transformedRuntimeDoc);
+
+        //todo [Donal] logical tests on the transformed runtime doc
+    }
+
+    /**
+     * Using a canned transform xml document, transform the performance summary template jrxml file, compile and
+     * test the output for correctness.
+     * @throws Exception
+     */
+    @Test
+    public void transformAndCompilePSIntervalTemplate() throws Exception{
+        String transformXml = getResAsStringClasspath("PS_Interval_TransformDoc.xml");
+        String transformXsl = getResAsStringClasspath("PS_IntervalMasterTransform.xsl");
+        String templateXml = getResAsStringClasspath("PS_IntervalMasterReport_Template.jrxml");
+
+        Document runtimeDoc = XmlUtil.stringToDocument(transformXml);
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("RuntimeDoc", runtimeDoc);
+
+        Document transformedRuntimeDoc = transform(transformXsl, templateXml, params);
+        Assert.assertNotNull("Transform document should not be null", transformedRuntimeDoc);
+        compileReport(transformedRuntimeDoc);
+
+        //todo [Donal] logical tests on the transformed runtime doc
+    }
+    
+    /**
      * Validate the transformed runtime Usage Summary jrxml file. Confirms that all elements which should exist do,
      * and that the dynamic widths have been incorporated into existing template elements
      * Note: This test, tests for widths. Widths will only change in a transform if the min width set as a param

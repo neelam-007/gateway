@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<JasperRuntimeTransformation>
+    <isContextMapping>1</isContextMapping>
+    <chartLegend>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey1"
+                style="chartLegendTextField" width="820" x="0" y="0"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 1:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey2"
+                style="chartLegendTextField" width="820" x="0" y="20"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 2:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.1, CUSTOMER: Gold"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey3"
+                style="chartLegendTextField" width="820" x="0" y="40"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 3:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.1, CUSTOMER: Silver"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey4"
+                style="chartLegendTextField" width="820" x="0" y="60"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 4:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.2, CUSTOMER: Bronze"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey5"
+                style="chartLegendTextField" width="820" x="0" y="80"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 5:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey6"
+                style="chartLegendTextField" width="820" x="0" y="100"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 6:</b> Authenticated User: Donal, IP_ADDRESS: 127.0.0.2, CUSTOMER: Silver"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey7"
+                style="chartLegendTextField" width="820" x="0" y="120"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 7:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.1, CUSTOMER: Bronze"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey8"
+                style="chartLegendTextField" width="820" x="0" y="140"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 8:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.1, CUSTOMER: Gold"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey9"
+                style="chartLegendTextField" width="820" x="0" y="160"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 9:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.1, CUSTOMER: Silver"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey10"
+                style="chartLegendTextField" width="820" x="0" y="180"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 10:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.2, CUSTOMER: Bronze"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey11"
+                style="chartLegendTextField" width="820" x="0" y="200"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 11:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.2, CUSTOMER: Gold"]]></textFieldExpression>
+        </textField>
+        <textField evaluationTime="Now" hyperlinkTarget="Self"
+            hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
+            <reportElement height="18" key="chartLegendKey12"
+                style="chartLegendTextField" width="820" x="0" y="220"/>
+            <box/>
+            <textElement markup="html">
+                <font/>
+            </textElement>
+            <textFieldExpression class="java.lang.String"><![CDATA["<b>Group 12:</b> Authenticated User: Ldap User 1, IP_ADDRESS: 127.0.0.2, CUSTOMER: Silver"]]></textFieldExpression>
+        </textField>
+    </chartLegend>
+    <chartHeight>430</chartHeight>
+    <chartLegendFrameYPos>430</chartLegendFrameYPos>
+    <chartLegendHeight>240</chartLegendHeight>
+    <chartFrameHeight>688</chartFrameHeight>
+    <bandHeight>724</bandHeight>
+    <pageHeight>950</pageHeight>
+</JasperRuntimeTransformation>
