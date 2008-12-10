@@ -6,13 +6,10 @@ import com.l7tech.console.tree.RefreshTreeNodeAction;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.PolicyFolderPropertiesDialog;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.gateway.common.admin.FolderAdmin;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ConstraintViolationException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.util.DialogDisplayer;
 

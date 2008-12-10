@@ -43,6 +43,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
 
         folder = new Folder(folderHeader.getName(), parentFolder);
         folder.setOid(folderHeader.getOid());
+        folder.setVersion(folderHeader.getVersion());
 
         allActions = new Action[]{
             new EditFolderAction(folder, folderHeader, this, folderAdmin),

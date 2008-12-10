@@ -226,7 +226,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             } catch (UpdateException e){
                 if(tree != null){
                     if (ExceptionUtils.causedBy(e, StaleUpdateException.class)) {
-                        DialogDisplayer.showMessageDialog(tree,"Service was updated by another user, please refresh the tree for the updated version.",
+                        DialogDisplayer.showMessageDialog(tree, e.getMessage(),
                                 "Update Error", JOptionPane.ERROR_MESSAGE, null);
                     } else {
                         DialogDisplayer.showMessageDialog(tree,"Cannot update folder: " + e.getMessage(), "Update Error", JOptionPane.ERROR_MESSAGE, null);

@@ -295,6 +295,9 @@ CREATE TABLE rbac_predicate_entityfolder (
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+-- Add version column to the Folders table
+ALTER TABLE folder ADD COLUMN version int(11) NOT NULL AFTER objectid; 
+
 --
 -- Reenable FK at very end of script
 --

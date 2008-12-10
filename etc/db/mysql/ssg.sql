@@ -112,6 +112,7 @@ CREATE TABLE internal_user_group (
 DROP TABLE IF EXISTS folder;
 CREATE TABLE folder (
   objectid bigint(20) NOT NULL,
+  version int(11) not null,
   name varchar(128) NOT NULL,
   parent_folder_oid bigint(20),
   PRIMARY KEY  (objectid),

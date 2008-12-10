@@ -100,6 +100,8 @@
             <generator class="hilo"/>
         </id>
 
+        <version name="version" column="version" type="int"/>
+
         <property name="name" column="name" type="string"/>
 
         <many-to-one class="com.l7tech.objectmodel.folder.Folder" name="parentFolder" lazy="false" column="parent_folder_oid"/>
