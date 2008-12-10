@@ -63,7 +63,7 @@ public class StandardReportsManagementPanel extends Panel {
         final Form pageForm = new Form("form");
         add ( pageForm );
 
-        Button viewButton = new YuiAjaxButton("viewReportButton") {
+        final Button viewButton = new YuiAjaxButton("viewReportButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 String reportIdentifier = (String)form.get("reportId").getModel().getObject();
@@ -77,7 +77,7 @@ public class StandardReportsManagementPanel extends Panel {
             }
         };
 
-        Button downloadButton = new YuiAjaxButton("downloadReportButton") {
+        final Button downloadButton = new YuiAjaxButton("downloadReportButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 String reportIdentifier = (String)form.get("reportId").getModel().getObject();
@@ -123,8 +123,11 @@ public class StandardReportsManagementPanel extends Panel {
 
         HiddenField hidden = new HiddenField("reportId", new Model(""));
 
-        pageForm.add( viewButton );
-        pageForm.add( downloadButton );
+        viewButton.setEnabled(false);
+        downloadButton.setEnabled(false);
+
+        pageForm.add( viewButton.setOutputMarkupId(true) );
+        pageForm.add( downloadButton.setOutputMarkupId(true) );
         pageForm.add( deleteButton );
         pageForm.add( hidden.setOutputMarkupId(true) );
 
@@ -135,7 +138,29 @@ public class StandardReportsManagementPanel extends Panel {
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.clusterName", this, null), "clusterName", "clusterName"));
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.status", this, null), "status", "status"));
 
-        YuiDataTable table = new YuiDataTable("reportTable", columns, "statusTime", false,  new ReportDataProvider("statusTime", false), hidden, "id", true, new Button[]{ viewButton, downloadButton, deleteButton });
+        YuiDataTable table = new YuiDataTable("reportTable", columns, "statusTime", false,  new ReportDataProvider("statusTime", false), hidden, "id", true, new Button[]{ deleteButton, viewButton, downloadButton }){
+            @Override
+            @SuppressWarnings({"UnusedDeclaration"})
+            protected void onSelect(final AjaxRequestTarget ajaxRequestTarget, final String value) {
+                boolean enable = false;
+                try {
+                    StandardReport report = reportManager.findByPrimaryKey( Long.parseLong(value) );
+                    if ( "COMPLETED".equals(report.getStatus()) ) {
+                        enable = true;
+                    }
+                } catch (FindException e) {
+                    // disable buttons
+                } catch (NumberFormatException e) {
+                    // disable buttons
+                }
+
+                viewButton.setEnabled(enable);
+                downloadButton.setEnabled(enable);
+
+                ajaxRequestTarget.addComponent(downloadButton);
+                ajaxRequestTarget.addComponent(viewButton);
+            }
+        };
         tableContainer.add( table );
     }
 
