@@ -10,6 +10,7 @@ import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -35,11 +36,13 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
             super(cause);
         }
 
+        @Override
         public GatewayException getCause() {
             return (GatewayException)super.getCause();
         }
     }
 
+    @Override
     public GatewayClusterClient getGatewayClusterClient(String clusterId, final User user) throws GatewayException {
         ClientKey key = new ClientKey(clusterId, user);
         try {
@@ -53,6 +56,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
 
             final int adminPort = ssgCluster.getAdminPort();
             List<GatewayContext> nodeContexts = Functions.map(ssgCluster.getNodes(), new Functions.Unary<GatewayContext, SsgNode>() {
+                @Override
                 public GatewayContext call(SsgNode ssgNode) {
                     try {
                         final String nodeAdminAddress = ssgNode.getIpAddress();
@@ -72,12 +76,15 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
             GatewayClusterClientImpl prev = clients.putIfAbsent(key, client);
             return prev != null ? prev : client;
         } catch (GatewayContextCreationException e) {
-            throw new GatewayException(e);
+            GatewayException ge = ExceptionUtils.getCauseIfCausedBy( e, GatewayException.class );
+            if ( ge != null ) throw ge;
+            else throw new GatewayException(e);
         } catch (FindException e) {
             throw new GatewayException(e);
         }
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         Entity entity = null;
         if (event instanceof Deleted) {

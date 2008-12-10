@@ -38,7 +38,7 @@ public class GatewayContextFactoryImpl implements GatewayContextFactory {
         try {
             Map<String,String> properties =  propertyManager.getUserProperties(user);
             if ( !properties.containsKey( GatewayConsts.PROP_USER_UUID ) ) {
-                throw new GatewayException( "Missing UUID for user '"+user.getLogin()+"'.");
+                throw new GatewayNotMappedException( "Missing UUID for user '"+user.getLogin()+"'.");
             }
 
             return properties.get( GatewayConsts.PROP_USER_UUID );

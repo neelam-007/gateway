@@ -3,17 +3,14 @@ package com.l7tech.server.ems.pages;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
-import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.management.api.node.GatewayApi;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -31,9 +28,6 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
     @SpringBean
     private EmsSecurityManager securityManager;
 
-    @SpringBean
-    private UserPropertyManager userPropertyManager;
-
     private EntityType[] entityTypes = new EntityType[] {
         EntityType.FOLDER,
         EntityType.SERVICE,
@@ -43,27 +37,23 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
     protected boolean keepRootFolder = true;
 
     public SSGClusterContentSelector() {
-        Map<String,String> up = Collections.emptyMap();
-        try {
-            up = userPropertyManager.getUserProperties( getUser() );
-        } catch ( FindException fe ){
-            logger.log( Level.WARNING, "Error loading user properties", fe );
-        }
-        final Map<String,String> userProperties = up;
-
         JsonInteraction interaction = new JsonInteraction("actiondiv", "clusterContentJasonUrl", new JsonDataProvider() {
+            @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             @Override
             public Object getData() {
                 try {
                     return buildSsgClusterContent();
                 } catch (GatewayNetworkException e) {
                     return new JSONException( new Exception("Gateway not available.") );                        
+                } catch (GatewayNotMappedException e) {
+                    return new Object[0];                        
                 } catch (GatewayException e) {
                     logger.warning(e.toString());
                     return new JSONException(e);
                 }
             }
 
+            @Override
             public void setData(Object jsonData) {
                 throw new UnsupportedOperationException("setData not required in JsonInteraction");
             }
