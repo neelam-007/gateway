@@ -2,7 +2,9 @@ package com.l7tech.server.ems.standardreports;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
 
 import java.util.List;
@@ -20,5 +22,9 @@ public class MockStandardReportManager extends EntityManagerStub<StandardReport,
     @Override
     public int findCount(User user) throws FindException {
         return 0;
+    }
+
+    @Override
+    public void deleteBySsgCluster(SsgCluster ssgCluster) throws DeleteException {
     }
 }

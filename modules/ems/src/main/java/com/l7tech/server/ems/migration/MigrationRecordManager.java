@@ -1,9 +1,6 @@
 package com.l7tech.server.ems.migration;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
 
@@ -66,4 +63,12 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
      * @throws FindException If an error occurs
      */
     Collection<MigrationRecord> findPage(final User user, final SortProperty sortProperty, final boolean ascending, final int offset, final int count, final Date start, final Date end) throws FindException;
+
+    /**
+     * Delete migration records associated with the SSG cluster, which may be the source cluster or the target cluster.
+     *
+     * @param ssgCluster: a SSG cluater object to find all corresponding migration records.
+     * @throws DeleteException
+     */
+    void deleteBySsgCluster(final SsgCluster ssgCluster) throws DeleteException;
 }

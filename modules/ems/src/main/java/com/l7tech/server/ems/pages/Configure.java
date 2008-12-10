@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.migration.MigrationRecordManager;
+import com.l7tech.server.ems.standardreports.StandardReportManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
@@ -23,6 +25,8 @@ import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.hibernate.exception.ConstraintViolationException;
+import org.mortbay.util.ajax.JSON;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,6 +68,12 @@ public class Configure extends EmsPage  {
 
     @SpringBean
     private UserPropertyManager userPropertyManager;
+
+    @SpringBean
+    private StandardReportManager standardReportManager;
+
+    @SpringBean
+    private MigrationRecordManager migrationRecordManager;
 
     public Configure() {
         Map<String,String> up = Collections.emptyMap();
@@ -305,11 +315,47 @@ public class Configure extends EmsPage  {
                     return null;    // No response object expected if successful.
                 } catch (Exception e) {
                     logger.warning(e.toString());
-                    return new JSONException(e);
+                    if (ExceptionUtils.causedBy(e, ConstraintViolationException.class)) {
+                        return new JSON.Convertible() {
+                            public void toJSON(JSON.Output output) {
+                                output.add("reconfirm", true);
+                            }
+
+                            public void fromJSON(Map map) {
+                                throw new UnsupportedOperationException("Mapping from JSON not supported.");
+                            }
+                        };
+                    } else {
+                        return new JSONException(e);
+                    }
                 }
             }
         };
         deleteSSGClusterForm.add(deleteSSGClusterDialogInputId );
+
+        final HiddenField reconfirmSSGClusterDeletionDialogInputId = new HiddenField("reconfirmSSGClusterDeletionDialog_id", new Model(""));
+        Form reconfirmSSGClusterDeletionForm = new JsonDataResponseForm("reconfirmSSGClusterDeletionForm", new AttemptedDeleteAll( EntityType.ESM_SSG_CLUSTER )){
+            @Override
+            protected Object getJsonResponseData() {
+                try {
+                    String guid = reconfirmSSGClusterDeletionDialogInputId.getModelObjectAsString();
+                    SsgCluster ssgCluster = ssgClusterManager.findByGuid(guid);
+
+                    logger.info("Deleting SSG Cluster (GUID = "+ guid + ") and other related information such as Standard Reports and Migration Records.");
+                    // Delete other related info such as standard reports and migration records.
+                    standardReportManager.deleteBySsgCluster(ssgCluster);
+                    migrationRecordManager.deleteBySsgCluster(ssgCluster);
+                    // Finally delete the SSG cluster
+                    ssgClusterManager.deleteByGuid(guid);
+
+                    return null;    // No response object expected if successful.
+                } catch (Exception e) {
+                    logger.warning(e.toString());
+                    return new JSONException(e);
+                }
+            }
+        };
+        reconfirmSSGClusterDeletionForm.add(reconfirmSSGClusterDeletionDialogInputId );
 
         final Form getGatewayTrustServletInputsForm = new JsonDataResponseForm("getGatewayTrustServletInputsForm"){
             @Override
@@ -403,6 +449,7 @@ public class Configure extends EmsPage  {
         add(addSSGClusterForm);
         add(renameSSGClusterForm);
         add(deleteSSGClusterForm);
+        add(reconfirmSSGClusterDeletionForm);
         add(getGatewayTrustServletInputsForm);
         add(startSsgNodeForm);
         add(stopSsgNodeForm);

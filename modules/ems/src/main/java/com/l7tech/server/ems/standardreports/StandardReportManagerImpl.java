@@ -3,6 +3,7 @@ package com.l7tech.server.ems.standardreports;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -18,9 +19,16 @@ import static com.l7tech.gateway.common.security.rbac.OperationType.DELETE;
 
 import java.util.List;
 import java.text.MessageFormat;
+import java.util.Collection;
+import java.sql.SQLException;
 
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.Criteria;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.dao.DataAccessException;
 
 /**
  * TODO [steve] re-enable role creation for standard reports (once viewing is role, not ownership, based)
@@ -41,6 +49,27 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
     @Override
     public int findCount( final User user ) throws FindException {
         return findCount( asCriterion(user) );
+    }
+
+    @Override
+    public void deleteBySsgCluster(final SsgCluster ssgCluster) throws DeleteException {
+        try {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    final Criteria criteria = session.createCriteria(getImpClass());
+                    criteria.add(Restrictions.eq("ssgCluster", ssgCluster));
+
+                    for (StandardReport report: (Collection <StandardReport>)criteria.list()) {
+                        session.delete(report);
+                    }
+
+                    return null;
+                }
+            });
+        } catch (DataAccessException e) {
+            throw new DeleteException("Couldn't delete Standard Report", e);
+        }
     }
 
     @Override
@@ -71,18 +100,17 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
 
     @Override
     public long save( final StandardReport entity ) throws SaveException {
-        long oid = super.save(entity);
 
         // addReportRole( oid, entity );
 
-        return oid;
+        return super.save(entity);
     }
 
     //- PROTECTED
 
     @Override
     protected UniqueType getUniqueType() {
-        return UniqueType.NONE; 
+        return UniqueType.NONE;
     }
 
     //- PRIVATE
@@ -139,7 +167,7 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
                 newRole.addAssignedUser(currentUser);
             }
         }
-         
+
         roleManager.save(newRole);
     }
 }

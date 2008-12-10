@@ -125,6 +125,7 @@
             var addSSGClusterDialog;
             var renameSSGClusterDialog;
             var deleteSSGClusterDialog;
+            var reconfirmSSGClusterDeletionDialog;
             var ssgClusterTrustDialog;
             var mapAccessAccountDialog;
             var changeAccessAccountDialog;
@@ -802,11 +803,58 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
+                        if (result == null)  {
+                            // No return object expected.
+                            loadEntityTreeTable();  // Reloads to show SSG Cluster gone.
+                        } else if (result.reconfirm != undefined && result.reconfirm == true) {
+                            // Launch the dialog to reconfirm the SSG Cluster deletion with all related informatin deleted.
+                            launchReconfirmSSGClusterDeletionDialog();
+                        }
+                    }
+                }
+                deleteSSGClusterDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SSG_CLUSTER + o.statusText, localizedStrings.OK);
+                }
+            }
+
+            function initReconfirmSSGClusterDeletionDialog() {
+                reconfirmSSGClusterDeletionDialog = new YAHOO.widget.Dialog('reconfirmSSGClusterDeletionDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'async',
+                    visible     : false
+                });
+                reconfirmSSGClusterDeletionDialog.render();
+                reconfirmSSGClusterDeletionDialog.callback.success = function(o) {
+                    var result = l7.Dialog.parseJSON(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_SSG_CLUSTER) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (!l7.Util.isException(result)) {
                         // No return object expected.
                         loadEntityTreeTable();  // Reloads to show SSG Cluster gone.
                     }
                 }
-                deleteSSGClusterDialog.callback.failure = function(o) {
+                reconfirmSSGClusterDeletionDialog.callback.failure = function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SSG_CLUSTER + o.statusText, localizedStrings.OK);
                 }
             }
@@ -890,6 +938,17 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     visible     : false
                 });
                 changeAccessAccountDialog.render();
+            }
+
+            /**
+             * Launch the dialog to reconfirm the SSG Cluster deletion with all related informatin deleted.
+             */
+            function launchReconfirmSSGClusterDeletionDialog() {
+                var entity = entityTreeTable.getHighlightedEntity();
+                document.getElementById('reconfirmSSGClusterDeletionDialog_id').value = entity.id;
+                document.getElementById('reconfirmSSGClusterDeletionDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
+                reconfirmSSGClusterDeletionDialog.center();
+                reconfirmSSGClusterDeletionDialog.show();
             }
 
             /**
@@ -1016,6 +1075,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 initAddSSGClusterDialog();
                 initRenameSSGClusterDialog();
                 initDeleteSSGClusterDialog();
+                initReconfirmSSGClusterDeletionDialog();
                 initSSGClusterTrustDialog();
                 initMapAccessAccountDialog();
                 initChangeAccessAccountDialog();
@@ -1428,6 +1488,18 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             <input id="deleteSSGClusterDialog_id" wicket:id="deleteSSGClusterDialog_id" type="hidden" name="id" />
             Delete SSG Cluster &ldquo;<span id="deleteSSGClusterDialog_name"></span>&rdquo; from the enterprise tree?
             <br/>This will not destroy the SSG Cluster itself.
+        </form>
+    </div>
+</div>
+
+<div id="reconfirmSSGClusterDeletionDialog">
+    <div class="hd">Reconfirm SSG Cluster Deletion</div>
+    <div class="bd">
+        <form name="reconfirmSSGClusterDeletionForm" wicket:id="reconfirmSSGClusterDeletionForm" method="POST">
+            <input id="reconfirmSSGClusterDeletionDialog_id" wicket:id="reconfirmSSGClusterDeletionDialog_id" type="hidden" name="id" />
+            <center>Deleting the SSG Cluster &ldquo;<span id="reconfirmSSGClusterDeletionDialog_name"></span>&rdquo; will cause to delete other related information</center>
+            <center>such as Generated Report and Migration History.</center>
+            <center>Do you really delete the cluster and other related information?</center>
         </form>
     </div>
 </div>

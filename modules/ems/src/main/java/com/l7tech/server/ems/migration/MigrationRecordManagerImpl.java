@@ -3,6 +3,7 @@ package com.l7tech.server.ems.migration;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
@@ -11,10 +12,16 @@ import java.util.Date;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
+import java.sql.SQLException;
 
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.criterion.Criterion;
+import org.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.Criteria;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.dao.DataAccessException;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -65,6 +72,27 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
                                            final Date start,
                                            final Date end) throws FindException {
         return super.findPage(null, sortProperty.getPropertyName(), ascending, offset, count, asCriterion( user, start, end ));
+    }
+
+    @Override
+    public void deleteBySsgCluster(final SsgCluster ssgCluster) throws DeleteException {
+        try {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    final Criteria criteria = session.createCriteria(getImpClass());
+                    criteria.add(Restrictions.or(Restrictions.eq("sourceCluster", ssgCluster), Restrictions.eq("targetCluster", ssgCluster)));
+
+                    for (MigrationRecord record: (Collection <MigrationRecord>)criteria.list()) {
+                        session.delete(record);
+                    }
+
+                    return null;
+                }
+            });
+        } catch (DataAccessException e) {
+            throw new DeleteException("Couldn't delete Migration Record", e);
+        }
     }
 
     @Override
