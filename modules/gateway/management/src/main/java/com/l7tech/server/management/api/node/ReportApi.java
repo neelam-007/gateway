@@ -480,15 +480,23 @@ public interface ReportApi {
 
 
         public FilterPair(final String filterValue) {
-            displayValue = filterValue;
-            if(filterValue.indexOf("*") != -1){
-                this.filterValue = filterValue.replaceAll("\\*", "%");
-                this.useAnd = false;
-            }else{
-                this.filterValue = filterValue;
+            displayValue = filterValue.trim();
+
+            if(displayValue.equals("*")){
+                this.filterValue = "";
                 this.useAnd = true;
+                isEmpty = true;
+
+            }else if(filterValue.indexOf("*") != -1){
+                this.filterValue = filterValue.replaceAll("\\*", "%").trim();
+                this.useAnd = false;
+                isEmpty = false;
+            }else{
+                this.filterValue = filterValue.trim();
+                this.useAnd = true;
+                isEmpty = false;
             }
-            isEmpty = false;
+
         }
 
         /**
