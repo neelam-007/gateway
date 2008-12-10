@@ -329,9 +329,8 @@ public class CheckTestData{
         validateKeyFilterMap(keysToFilterPairs);
         
         Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
-        List<String> ops = new ArrayList<String>();
-        ops.add("listProducts");
-        ops.add("listOrders");
+
+        List<String> ops = ReportApp.loadListFromProperties(ReportApp.OPERATIONS, prop);
 
         String serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID+"_1");
         int index = 2;
@@ -357,6 +356,7 @@ public class CheckTestData{
         int queryExpectedTotal = rowsPerDistinctValue * totalValueFactor * numServices;
         //System.out.println("queryExpectedTotal: " + queryExpectedTotal);
         //System.out.println("total: " + total);
-        Assert.assertTrue(queryExpectedTotal == total);
+        Assert.assertTrue("Expected total was: " + queryExpectedTotal+" actual total was: " + total+", " +
+                "check that the operations match those in the db",queryExpectedTotal == total);
     }
 }
