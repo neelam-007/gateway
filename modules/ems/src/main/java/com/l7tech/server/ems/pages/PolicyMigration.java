@@ -54,15 +54,7 @@ import org.mortbay.util.ajax.JSON;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.io.Serializable;
 
 /**
@@ -519,11 +511,12 @@ public class PolicyMigration extends EmsPage  {
 
                     MigrationBundle export = sourceMigrationApi.exportBundle( requestedItems.asEntityHeaders() );
                     MigrationMetadata metadata = export.getMetadata();
+                    Set<Pair<EntityHeaderRef,EntityHeader>> mappings = new HashSet<Pair<EntityHeaderRef, EntityHeader>>();
                     for ( Map.Entry<Pair<DependencyKey,String>,DependencyItem> mapping : mappingModel.dependencyMap.entrySet() ) {
                         if ( mapping.getKey().left.clusterId.equals(sourceClusterId) && mapping.getKey().right.equals(targetClusterId) ) {
-                            EntityHeaderRef sourceRef = new EntityHeaderRef( mapping.getKey().left.type, mapping.getKey().left.id );
-                            metadata.mapName( sourceRef, mapping.getValue().asEntityHeader() );
-
+                            mappings.add(new Pair<EntityHeaderRef,EntityHeader>(
+                                new EntityHeaderRef( mapping.getKey().left.type, mapping.getKey().left.id ),
+                                mapping.getValue().asEntityHeader() ));
                             migrationMappingRecordManager.persistMapping(
                                     sourceCluster.getGuid(),
                                     mapping.getKey().left.asEntityHeader(),
@@ -531,6 +524,7 @@ public class PolicyMigration extends EmsPage  {
                                     mapping.getValue().asEntityHeader() );
                         }
                     }
+                    metadata.mapNames(mappings);
 
                     Collection<GatewayApi.EntityInfo> folders = targetGatewayApi.getEntityInfo( Collections.singleton(EntityType.FOLDER) );
                     EntityHeader targetFolderHeader = null;

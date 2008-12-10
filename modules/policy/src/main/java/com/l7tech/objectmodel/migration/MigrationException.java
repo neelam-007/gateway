@@ -77,6 +77,10 @@ public class MigrationException extends ObjectModelException {
         public boolean isEmpty() {
             return errors.isEmpty();
         }
+
+        public void clear() {
+            errors.clear();
+        }
     }
 
 }

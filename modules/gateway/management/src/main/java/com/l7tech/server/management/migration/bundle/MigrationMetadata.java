@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.objectmodel.migration.MigrationMappingType;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import com.l7tech.util.Pair;
 
 import javax.xml.bind.annotation.*;
 import java.util.*;
@@ -192,6 +193,32 @@ public class MigrationMetadata {
         addMappingsForTarget(mapping.getTarget(), Collections.singleton(mapping));
     }
 
+    public void mapNames(Set<Pair<EntityHeaderRef,EntityHeader>> mappings) throws MigrationException {
+        Set<Pair<EntityHeaderRef,EntityHeader>> toApply = new HashSet<Pair<EntityHeaderRef, EntityHeader>>(mappings);
+        Set<Pair<EntityHeaderRef,EntityHeader>> toRemove = new HashSet<Pair<EntityHeaderRef, EntityHeader>>();
+        MigrationException.MigrationErrors errors = new MigrationException.MigrationErrors();
+        do {
+            toRemove.clear();
+            errors.clear();
+            for(Pair<EntityHeaderRef,EntityHeader> pair : toApply) {
+                if (getMappingsForTarget(pair.getKey()).isEmpty()) {
+                    toRemove.add(pair);
+                } else {
+                    try {
+                        mapName(pair.getKey(), pair.getValue());
+                        toRemove.add(pair);
+                    } catch (Exception e) {
+                        errors.add(pair.getKey(), new MigrationException("Error applying mapping for: " + pair.getKey(), e));
+                    }
+                }
+            }
+            toApply.removeAll(toRemove);
+        } while (! toApply.isEmpty() && !toRemove.isEmpty());
+
+        if (! toApply.isEmpty())
+            throw new MigrationException("Unable to apply mappings.", errors);
+    }
+
     public void mapName(EntityHeaderRef dependency, EntityHeader newDependency) throws MigrationException {
         mapName(dependency, newDependency, true);
     }
@@ -203,6 +230,7 @@ public class MigrationMetadata {
             return;
 
         // add new header to the bundle
+        removeHeader(dependency);
         addHeader(newDependency);
 
         // incoming dependencies
@@ -211,8 +239,8 @@ public class MigrationMetadata {
             // todo: one-to-many mappings: decide how/when to apply this mapping (vs a presious / individual selection)
             mapping.setMappedTarget(newDependency, enforceMappingType);
         }
-        addMappingsForTarget(newDependency, mappingsForDependency);
         mappingsByTarget.remove(EntityHeaderRef.fromOther(dependency)); // nobody will depend on the old one
+        addMappingsForTarget(newDependency, mappingsForDependency);
 
         // outgoing dependencies
         for(MigrationMapping mapping : getMappingsForSource(dependency)) {
@@ -220,8 +248,6 @@ public class MigrationMetadata {
             mappings.remove(mapping);
         }
         mappingsBySource.remove(EntityHeaderRef.fromOther(dependency));
-
-        removeHeader(dependency);
     }
 
     /**

@@ -230,7 +230,7 @@ public class MigrationManagerImpl implements MigrationManager {
                     resolver.applyMapping(eo.entity, mapping.getPropName(), targetEo.entity, metadata.getOriginalHeader(mapping.getOriginalTarget()));
                 }
             } catch (MigrationException e) {
-                logger.log(Level.WARNING, "Errors while applying.", e);
+                logger.log(Level.WARNING, "Errors while applying mapping.", e);
                 errors.add(EntityHeaderUtils.fromEntity(eo.entity), e);
             }
         }
