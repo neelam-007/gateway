@@ -2865,7 +2865,9 @@ public class UtilitiesTest{
 
     private String getResAsStringClasspath(String path) throws IOException {
         InputStream is = getClass().getResourceAsStream(path);
-        byte[] resbytes = IOUtils.slurpStream(is, 100000);
+        //if this throws an exception during test running, just in crease the max length, as the file must have
+        //increased in size
+        byte[] resbytes = IOUtils.slurpStream(is, 150000);
         return new String(resbytes);
     }
 
@@ -3271,15 +3273,8 @@ public class UtilitiesTest{
 
     }
 
-    /**
-     * Usage template jrxml files are required as resources so are not compiled as part of the build process.
-     * This test compiles all 4 usage jrxml files
-     * @exception
-     */
-    @Test
-    public void compileUsageReports() throws Exception {
-
-        String templateXml = getResAsStringClasspath("Usage_Summary_Template.jrxml");
+    private void compileReport(String jrxmlTemplateFile) throws Exception{
+        String templateXml = getResAsStringClasspath(jrxmlTemplateFile);
         Document templateDoc = getTemplateDocument(templateXml);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         XmlUtil.nodeToOutputStream(templateDoc, baos);
@@ -3293,51 +3288,41 @@ public class UtilitiesTest{
             exceptionThrown = true;
         }
         Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);
+    }
+    /**
+     * Usage template jrxml files are required as resources so are not compiled as part of the build process.
+     * This test compiles all 4 usage jrxml files
+     * @exception
+     */
+    @Test
+    public void compileUsageReports() throws Exception {
 
-        templateXml = getResAsStringClasspath("Usage_IntervalMasterReport_Template.jrxml");
-        templateDoc = getTemplateDocument(templateXml);
-        baos = new ByteArrayOutputStream();
-        XmlUtil.nodeToOutputStream(templateDoc, baos);
-        bais = new ByteArrayInputStream(baos.toByteArray());
-        exceptionThrown = false;
-        try{
-            JasperReport compiledReport = JasperCompileManager.compileReport(bais);
-            Assert.assertTrue("Compiled report should not be null", compiledReport != null);
-        }catch(Exception ex){
-            ex.printStackTrace();
-            exceptionThrown = true;
-        }
-        Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);
+        compileReport("Usage_Summary_Template.jrxml");
 
-        templateXml = getResAsStringClasspath("Usage_SubIntervalMasterReport_Template.jrxml");
-        templateDoc = getTemplateDocument(templateXml);
-        baos = new ByteArrayOutputStream();
-        XmlUtil.nodeToOutputStream(templateDoc, baos);
-        bais = new ByteArrayInputStream(baos.toByteArray());
-        exceptionThrown = false;
-        try{
-            JasperReport compiledReport = JasperCompileManager.compileReport(bais);
-            Assert.assertTrue("Compiled report should not be null", compiledReport != null);
-        }catch(Exception ex){
-            ex.printStackTrace();
-            exceptionThrown = true;
-        }
-        Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);
+        compileReport("Usage_IntervalMasterReport_Template.jrxml");
 
-        templateXml = getResAsStringClasspath("Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
-        templateDoc = getTemplateDocument(templateXml);
-        baos = new ByteArrayOutputStream();
-        XmlUtil.nodeToOutputStream(templateDoc, baos);
-        bais = new ByteArrayInputStream(baos.toByteArray());
-        exceptionThrown = false;
-        try{
-            JasperReport compiledReport = JasperCompileManager.compileReport(bais);
-            Assert.assertTrue("Compiled report should not be null", compiledReport != null);
-        }catch(Exception ex){
-            ex.printStackTrace();
-            exceptionThrown = true;
-        }
-        Assert.assertTrue("No compile exception should have been thrown", !exceptionThrown);
+        compileReport("Usage_SubIntervalMasterReport_Template.jrxml");
+
+        compileReport("Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+
+    }
+
+    /**
+     * Performance statistics template jrxml files are required as resources so are not compiled as part of the build process.
+     * This test compiles all ps jrxml files
+     * @exception
+     */
+    @Test
+    public void compilePerformanceStatisticsReports() throws Exception {
+
+        compileReport("PS_Summary_Template.jrxml");
+
+        compileReport("PS_IntervalMasterReport_Template.jrxml");
+
+        compileReport("PS_SubIntervalMasterReport.jrxml");        
+
+        compileReport("PS_SubIntervalMasterReport_subreport0.jrxml");
+
     }
 
     private Document getTemplateDocument(String xml) throws Exception{
