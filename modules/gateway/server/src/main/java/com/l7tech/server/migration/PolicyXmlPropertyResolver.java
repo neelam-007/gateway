@@ -2,7 +2,9 @@ package com.l7tech.server.migration;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.wsp.WspWriter;
+//import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
@@ -30,7 +32,12 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
     @Override
     public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, final Method property) throws MigrationException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
-        Assertion assertion = getRootAssertion(entity, property);
+        Assertion assertion;
+        try {
+            assertion = ((Policy)entity).getAssertion();
+        } catch (IOException e) {
+            throw new MigrationException("Error getting root assertion from policy.", e);
+        }
 
         String propName = MigrationUtils.propertyNameFromGetter(property.getName());
         Map<EntityHeader, Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
@@ -43,18 +50,24 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
 
     public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws MigrationException {
         logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{EntityHeaderUtils.fromEntity(sourceEntity), propName});
-        String policyXmlPropName, assertionPropName;
+        String assertionPropName;
         int targetOrdinal;
         try {
             String[] tokens = propName.split(":");
-            policyXmlPropName = tokens[0];
             targetOrdinal = Integer.parseInt(tokens[1]);
             assertionPropName = tokens[2];
         } catch (Exception e) {
             throw new MigrationException("Error parsing property name: " + propName, e);
         }
 
-        Assertion assertion = getRootAssertion(sourceEntity, MigrationUtils.getterForPropertyName(sourceEntity, policyXmlPropName));
+        Assertion rootAssertion;
+        try {
+            rootAssertion = ((Policy)sourceEntity).getAssertion();
+        } catch (IOException e) {
+            throw new MigrationException("Error getting root assertion from policy.", e);
+        }
+
+        Assertion assertion = rootAssertion;
         Iterator iter = assertion.preorderIterator();
         while (iter.hasNext() && !(assertion.getOrdinal() == targetOrdinal)) {
             assertion = (Assertion) iter.next();
@@ -76,6 +89,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
         } catch (Exception e) {
             throw new MigrationException("Error applying mapping for " + propName, e);
         }
+        ((Policy)sourceEntity).setXml(WspWriter.getPolicyXml(rootAssertion));
     }
 
     private void getHeadersRecursive(EntityHeaderRef source, Assertion assertion, Map<EntityHeader, Set<MigrationMapping>> result, String topPropertyName) throws MigrationException {
@@ -108,6 +122,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
         }
     }
 
+/*
     private Assertion getRootAssertion(Object entity, Method property) throws MigrationException {
         if (entity == null || property == null)
             throw new MigrationException("Error getting property value for entity: entity and property method cannot be null");
@@ -130,4 +145,5 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
         }
         return assertion;
     }
+*/
 }
