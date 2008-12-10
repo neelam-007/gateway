@@ -68,4 +68,6 @@
     <bean id="reportService" class="com.l7tech.server.ems.standardreports.MockReportService" />
 
     <bean id="standardReportManager" class="com.l7tech.server.ems.standardreports.MockStandardReportManager"/>
+
+    <bean id="migrationRecordManager" class="com.l7tech.server.ems.migration.MockMigrationRecordManager"/>
 </beans>

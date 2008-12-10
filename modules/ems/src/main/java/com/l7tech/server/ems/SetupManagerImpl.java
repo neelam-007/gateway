@@ -467,7 +467,9 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             }
         });
 
-        serverConfig.putProperty( "em.server.id", uuidHolder[0] ); // work around for application events not yet available
+        if ( uuidHolder[0] != null ) {
+            serverConfig.putProperty( "em.server.id", uuidHolder[0] ); // work around for application events not yet available
+        }
     }
 
     private KeystoreFile newKeystore( final String name, final String format ) {
