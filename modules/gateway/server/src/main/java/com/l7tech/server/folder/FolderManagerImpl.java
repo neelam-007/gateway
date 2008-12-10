@@ -54,9 +54,11 @@ public class FolderManagerImpl extends HibernateEntityManager<Folder, FolderHead
     public void update(Folder entity) throws UpdateException {
         try {
             //check for circular folders
-            Folder childFolder = findByPrimaryKey(entity.getParentFolder().getOid());
-            if (entity.equals(childFolder.getParentFolder())) {
-                throw new UpdateException("The destination folder is a subfolder of the source folder");
+            if ( entity.getParentFolder() != null ) {
+                Folder childFolder = findByPrimaryKey(entity.getParentFolder().getOid());
+                if (entity.equals(childFolder.getParentFolder())) {
+                    throw new UpdateException("The destination folder is a subfolder of the source folder");
+                }
             }
         } catch (FindException fe) {
             throw new UpdateException("Couldn't find previous version(s) to check for circular folders");
