@@ -39,9 +39,11 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
                 try {
                     return buildSsgClusterContent();
                 } catch (GatewayNetworkException e) {
-                    return new JSONException( new Exception("Gateway not available.") );                        
+                    return new JSONMessage("Cluster not available.");                        
                 } catch (GatewayNotMappedException e) {
-                    return new Object[0];                        
+                    return new JSONMessage("No access account.");
+                } catch (GatewayNoTrustException e) {
+                    return new JSONMessage("Trust not established.");    
                 } catch (GatewayException e) {
                     logger.warning(e.toString());
                     return new JSONException(e);

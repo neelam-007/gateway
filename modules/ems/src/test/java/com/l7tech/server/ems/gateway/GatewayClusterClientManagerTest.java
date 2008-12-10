@@ -40,6 +40,7 @@ public class GatewayClusterClientManagerTest {
 
     public GatewayClusterClientManagerTest() {
         fooCluster = new SsgCluster("foo", "test-foo.nowhere.example.com", 8443, null);
+        fooCluster.setTrustStatus(true);
         Set<SsgNode> nodes = new LinkedHashSet<SsgNode>();
         nodes.add(makeSsgNode());
         nodes.add(makeSsgNode());

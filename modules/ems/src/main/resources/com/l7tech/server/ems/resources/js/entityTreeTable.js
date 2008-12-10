@@ -1356,11 +1356,15 @@ if (!l7.EntityTreeTable) {
              * Caller is responsible for calling clear() beforehand.
              * @public
              */
-            this.displayDataError = function() {
+            this.displayDataError = function(message) {
                 var tr = this._tbody.insertRow(-1);
                 var td = tr.insertCell(-1);
                 td.colSpan = this._config.columns.length;
-                td.innerHTML = this._localizedStrings.ENTITY_DATA_ERROR;
+                if ( message ) {
+                    td.innerHTML = message;
+                } else {
+                    td.innerHTML = this._localizedStrings.ENTITY_DATA_ERROR;
+                }
             }
 
             // --------------------------------------------------------------------------------

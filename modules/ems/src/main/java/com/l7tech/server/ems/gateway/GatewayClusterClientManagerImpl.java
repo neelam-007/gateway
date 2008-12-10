@@ -43,7 +43,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
     }
 
     @Override
-    public GatewayClusterClient getGatewayClusterClient(String clusterId, final User user) throws GatewayException {
+    public GatewayClusterClient getGatewayClusterClient( final String clusterId, final User user) throws GatewayException {
         ClientKey key = new ClientKey(clusterId, user);
         try {
             GatewayClusterClientImpl client = clients.get(key);
@@ -54,13 +54,16 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
             if (ssgCluster == null)
                 throw new GatewayException("No cluster found with ID " + clusterId);
 
+            if ( !ssgCluster.getTrustStatus() )
+                throw new GatewayNoTrustException("Bad trust status for cluster with ID " + clusterId);
+            
             final int adminPort = ssgCluster.getAdminPort();
             List<GatewayContext> nodeContexts = Functions.map(ssgCluster.getNodes(), new Functions.Unary<GatewayContext, SsgNode>() {
                 @Override
                 public GatewayContext call(SsgNode ssgNode) {
                     try {
                         final String nodeAdminAddress = ssgNode.getIpAddress();
-                        return gatewayContextFactory.getGatewayContext(user, nodeAdminAddress, adminPort);
+                        return gatewayContextFactory.getGatewayContext(user, clusterId, nodeAdminAddress, adminPort);
                     } catch (GatewayException e) {
                         throw new GatewayContextCreationException(e);
                     }

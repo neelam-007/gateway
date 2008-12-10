@@ -1,17 +1,15 @@
 package com.l7tech.server.ems.enterprise;
 
-import org.mortbay.util.ajax.JSON;
-
-import java.util.Map;
-
 import com.l7tech.objectmodel.EntityType;
 
 /**
+ * Not thread safe (see JSONSupport).
+ *
  * @Copyright: Layer 7 Tech. Inc.
  * @Author: ghuang
  * @Date: Nov 26, 2008
  */
-public class SsgClusterContent implements JSON.Convertible {
+public class SsgClusterContent extends JSONSupport {
     private static final String ROOT = "Root Node";
 
     private String id;
@@ -29,17 +27,12 @@ public class SsgClusterContent implements JSON.Convertible {
     }
 
     @Override
-    public void toJSON(JSON.Output output) {
-        output.add(JSONConstants.ID, id);
-        output.add(JSONConstants.PARENT_ID, parentId);
-        output.add(JSONConstants.TYPE, findType(entityType));
-        output.add(JSONConstants.NAME, name);
-        if (version != null) output.add(JSONConstants.VERSION, version.toString());
-    }
-
-    @Override
-    public void fromJSON(Map map) {
-        throw new UnsupportedOperationException("Mapping from JSON not supported.");
+    protected void writeJson() {
+        add(JSONConstants.ID, id);
+        add(JSONConstants.PARENT_ID, parentId);
+        add(JSONConstants.TYPE, findType(entityType));
+        add(JSONConstants.NAME, name);
+        if (version != null) add(JSONConstants.VERSION, version.toString());
     }
 
     private String findType(EntityType type) {

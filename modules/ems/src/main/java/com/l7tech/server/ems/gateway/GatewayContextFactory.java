@@ -7,4 +7,6 @@ import com.l7tech.identity.User;
  */
 public interface GatewayContextFactory {
     GatewayContext getGatewayContext( User user, String host, int port ) throws GatewayException;
+
+    GatewayContext getGatewayContext( User user, String mappingProp, String host, int port ) throws GatewayException;
 }

@@ -186,8 +186,12 @@
                             localizedStrings.CANNOT_PARSE_ENTITY_DATA,
                             localizedStrings.OK);
                     if (typeof result == 'object' && !l7.Util.isException(result)) {
-                        entityTreeTable.load(result);
-                        entityTreeTable.collapseAll();
+                        if (  result.message != undefined && result.message != null ) {
+                            entityTreeTable.displayDataError(result.message);
+                        } else {
+                            entityTreeTable.load(result);
+                            entityTreeTable.collapseAll();
+                        }
                     } else {
                         entityTreeTable.displayDataError();
                     }

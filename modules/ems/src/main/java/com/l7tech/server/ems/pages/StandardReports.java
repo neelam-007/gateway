@@ -62,21 +62,11 @@ public class StandardReports extends EmsPage  {
 
             @Override
             public void setData(Object jsonData) {
-
-                if(!(jsonData instanceof JSONException || jsonData instanceof String)){
-                    throw new IllegalArgumentException("jsonData must be either a JSONException or" +
-                            "a JSON formatted String");
-                }
-
-                if(jsonData instanceof JSONException){
+                if( jsonData instanceof JSONException ){
                     //some exception happened whilst trying to retrieve the payload from upload request
                     returnValue = jsonData;
-                    return;
-                }
-
-                Object jsonDataObj = null;
-
-                if(jsonData instanceof String){
+                } else if ( jsonData instanceof String ) {
+                    Object jsonDataObj;
                     try{
                         jsonDataObj = JSON.parse(jsonData.toString());
                     }catch(Exception e){
@@ -85,28 +75,30 @@ public class StandardReports extends EmsPage  {
                         logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
                         return;
                     }
-                }
 
-                try{
-                    if(!(jsonDataObj instanceof Map)){
-                        logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
-                        throw new ReportException("Incorrect JSON data. Not convertible to a Map");
+                    try{
+                        if(!(jsonDataObj instanceof Map)){
+                            logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
+                            throw new ReportException("Incorrect JSON data. Not convertible to a Map");
+                        }
+                        Map jsonDataMap = (Map) jsonDataObj;
+                        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonDataMap);
+                        Collection<ReportSubmissionClusterBean> clusterBeans =
+                                convertor.getReportSubmissions(jsonDataMap, getUser().getLogin());
+
+                        for(ReportSubmissionClusterBean clusterBean: clusterBeans){
+                            reportService.enqueueReport(clusterBean.getClusterId(), getUser(), clusterBean.getReportSubmission());
+                        }
+
+                        // null for success
+                        returnValue = null;
+                    }catch(ReportException ex){
+                        logger.log(Level.FINER, "Problem running report: " + ex.getMessage(), ex.getCause());
+                        returnValue = new JSONException(
+                                new Exception("Problem running report: " + ex.getMessage(), ex.getCause()));
                     }
-                    Map jsonDataMap = (Map) jsonDataObj;
-                    JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonDataMap);
-                    Collection<ReportSubmissionClusterBean> clusterBeans =
-                            convertor.getReportSubmissions(jsonDataMap, getUser().getLogin());
-
-                    for(ReportSubmissionClusterBean clusterBean: clusterBeans){
-                        reportService.enqueueReport(clusterBean.getClusterId(), getUser(), clusterBean.getReportSubmission());
-                    }
-
-                    // null for success
-                    returnValue = null;
-                }catch(ReportException ex){
-                    logger.log(Level.FINER, "Problem running report: " + ex.getMessage(), ex.getCause());
-                    returnValue = new JSONException(
-                            new Exception("Problem running report: " + ex.getMessage(), ex.getCause()));
+                } else {
+                    throw new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String");                    
                 }
             }
         }));
@@ -204,7 +196,7 @@ public class StandardReports extends EmsPage  {
                     try {
                         SsgCluster cluster = ssgClusterManager.findByGuid( clusterGuid );
                         if ( cluster != null ) {
-                            GatewayContext context = gatewayContextFactory.getGatewayContext( getUser(), cluster.getSslHostName(), cluster.getAdminPort() );
+                            GatewayContext context = gatewayContextFactory.getGatewayContext( getUser(), cluster.getGuid(), cluster.getSslHostName(), cluster.getAdminPort() );
                             ReportApi reportApi = context.getReportApi();
                             Collection<ReportApi.GroupingKey> keys = reportApi.getGroupingKeys();
                             if ( keys != null ) {

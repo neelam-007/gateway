@@ -10,4 +10,9 @@ public class MockGatewayContextFactory implements GatewayContextFactory {
     public GatewayContext getGatewayContext(User user, String host, int port) throws GatewayException {
         return null;
     }
+
+    @Override
+    public GatewayContext getGatewayContext(User user, String mappingProp, String host, int port) throws GatewayException {
+        return null;
+    }
 }

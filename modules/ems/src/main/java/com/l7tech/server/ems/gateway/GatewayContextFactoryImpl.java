@@ -25,7 +25,12 @@ public class GatewayContextFactoryImpl implements GatewayContextFactory {
 
     @Override
     public GatewayContext getGatewayContext( final User user, final String host, final int port ) throws GatewayException {
-        return new GatewayContext( defaultKey, host, port, config.getProperty("em.server.id", ""), user==null ? null : getUserUuid(user) );
+        return getGatewayContext( user, null, host, port );
+    }
+
+    @Override
+    public GatewayContext getGatewayContext( final User user, final String clusterId, final String host, final int port ) throws GatewayException {
+        return new GatewayContext( defaultKey, host, port, config.getProperty("em.server.id", ""), user==null ? null : getUserUuid(user, clusterId) );
     }
 
     //- PRIVATE
@@ -34,10 +39,11 @@ public class GatewayContextFactoryImpl implements GatewayContextFactory {
     private final DefaultKey defaultKey;
     private final UserPropertyManager propertyManager;
 
-    private String getUserUuid( final User user ) throws GatewayException {
+    private String getUserUuid( final User user, final String clusterId ) throws GatewayException {
         try {
             Map<String,String> properties =  propertyManager.getUserProperties(user);
-            if ( !properties.containsKey( GatewayConsts.PROP_USER_UUID ) ) {
+            if ( !properties.containsKey( GatewayConsts.PROP_USER_UUID ) ||
+                 (clusterId != null && !properties.containsKey("cluster." +  clusterId + ".trusteduser")) ) {
                 throw new GatewayNotMappedException( "Missing UUID for user '"+user.getLogin()+"'.");
             }
 

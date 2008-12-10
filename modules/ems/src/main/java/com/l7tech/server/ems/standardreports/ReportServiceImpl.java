@@ -11,7 +11,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.identity.User;
-import com.l7tech.util.ExceptionUtils;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -21,9 +20,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.NoRouteToHostException;
-import java.net.UnknownHostException;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -90,7 +86,7 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
         final int port = cluster.getAdminPort();
         final String submissionId;
         try {
-            GatewayContext context = contextFactory.getGatewayContext( user, host, port );
+            GatewayContext context = contextFactory.getGatewayContext( user, cluster.getGuid(), host, port );
             ReportApi reportApi = context.getReportApi();
             submissionId = reportApi.submitReport( reportSubmission, Arrays.asList( ReportApi.ReportOutputType.PDF ) );
         } catch ( GatewayException ge ) {
