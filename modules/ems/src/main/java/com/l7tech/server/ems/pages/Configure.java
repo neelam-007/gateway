@@ -163,8 +163,8 @@ public class Configure extends EmsPage  {
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                         try {
                             EnterpriseFolder parentFolder = enterpriseFolderManager.findByGuid(parentFolderGuid);
-                            String errorMsg = "A child folder must be unique in a parent folder. The folder '"
-                                + newFolderName + "' has already existed in the folder '" + parentFolder.getName() + "'.";
+                            String errorMsg = "A folder with the name '" + newFolderName + "' already exists in the folder '"
+                                + parentFolder.getName() + "'.<br/>Please specify a different name.";
                             return new JSONException(new DuplicateObjectException(errorMsg, e));
                         } catch (FindException e1) {
                             return new JSONException(e1);
@@ -196,8 +196,8 @@ public class Configure extends EmsPage  {
                         try {
                             EnterpriseFolder renamedFolder = enterpriseFolderManager.findByGuid(renamedFolderGuid);
                             EnterpriseFolder parentFolder = renamedFolder.getParentFolder();
-                            String errorMsg = "A child folder must be unique in a parent folder. The folder '"
-                                + newFolderName + "' has already existed in the folder '" + parentFolder.getName() + "'.";
+                            String errorMsg = "A folder with the name '" + newFolderName + "' already exists in the folder '"
+                                + parentFolder.getName() + "'.<br/>Please specify a different name.";
                             return new JSONException(new DuplicateObjectException(errorMsg, e));
                         } catch (FindException e1) {
                             return new JSONException(e1);
@@ -249,8 +249,8 @@ public class Configure extends EmsPage  {
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                         try {
                             EnterpriseFolder parentFolder = enterpriseFolderManager.findByGuid(parentFolderGuid);
-                            String errorMsg = "A cluster must be unique in a folder. The cluster '"
-                                + newClusterName + "' has already existed in the folder '" + parentFolder.getName() + "'.";
+                            String errorMsg = "A cluster with the name '" + newClusterName + "' already exists in the folder '"
+                                + parentFolder.getName() + "'.<br/>Please specify a different name.";
                             return new JSONException(new DuplicateObjectException(errorMsg, e));
                         } catch (FindException e1) {
                             return new JSONException(e1);
@@ -288,8 +288,8 @@ public class Configure extends EmsPage  {
                         try {
                             SsgCluster renamedCluster = ssgClusterManager.findByGuid(renamedSSGClusterGuid);
                             EnterpriseFolder parentFolder = renamedCluster.getParentFolder();
-                            String errorMsg = "A cluster must be unique in a folder. The cluster '"
-                                + newClusterName + "' has already existed in the folder '" + parentFolder.getName() + "'.";
+                            String errorMsg = "A cluster with the name '" + newClusterName + "' already exists in the folder '"
+                                + parentFolder.getName() + "'.<br/>Please specify a different name.";
                             return new JSONException(new DuplicateObjectException(errorMsg, e));
                         } catch (FindException e1) {
                             return new JSONException(e1);
