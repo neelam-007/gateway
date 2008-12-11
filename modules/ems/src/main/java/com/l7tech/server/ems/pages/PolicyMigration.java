@@ -90,6 +90,9 @@ public class PolicyMigration extends EmsPage  {
         showDependencies( destItemDependencies, Collections.emptyList() );
         destItemDependencies.add( buildDependencyDisplayBehaviour(destItemDependencies, "destItemSelectionCallbackUrl" ) );
 
+        final SearchModel searchModel = new SearchModel();
+        final Component[] searchComponents = new Component[3];
+
         Form selectionJsonForm = new Form("selectionForm");
         final HiddenField hiddenSelectionForm = new HiddenField("selectionJson", new Model(""));
         final HiddenField hiddenDestClusterId = new HiddenField("destinationClusterId", new Model(""));
@@ -151,6 +154,13 @@ public class PolicyMigration extends EmsPage  {
                                 if ( selectedItem != null ) {
                                     DependencyKey sourceKey = new DependencyKey( dir.clusterId, selectedItem.asEntityHeader() );
                                     lastSourceKey[0] = sourceKey;
+
+                                    searchModel.setSearchManner("contains");
+                                    searchModel.setSearchValue("");
+
+                                    for ( Component component : searchComponents ) {
+                                        component.setEnabled( isSearchable( selectedItem.asEntityHeader().getType() ) );
+                                    }
 
                                     List optionList = retrieveDependencyOptions( lastTargetClusterId[0], sourceKey, null );
                                     addDependencyOptions( dependenciesOptionsContainer, sourceKey, lastTargetClusterId[0], optionList, mappingModel );
@@ -262,7 +272,6 @@ public class PolicyMigration extends EmsPage  {
 
         dependenciesContainer.add( dependenciesOptionsContainer.setOutputMarkupId(true) );
 
-        final SearchModel searchModel = new SearchModel();
         String[] searchManners = new String[] {
             "contains",
             "starts with"
@@ -278,12 +287,16 @@ public class PolicyMigration extends EmsPage  {
         dependenciesOptionsContainer.add(new YuiAjaxButton("dependencySearchButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                logger.fine("Searching for dependencies with filter '"+searchModel.getSearchValue()+"'.");
-                List optionList = retrieveDependencyOptions( lastTargetClusterId[0], lastSourceKey[0], searchModel.getSearchValue() );
+                logger.fine("Searching for dependencies with filter '"+searchModel.getSearchFilter()+"'.");
+                List optionList = retrieveDependencyOptions( lastTargetClusterId[0], lastSourceKey[0], searchModel.getSearchFilter() );
                 addDependencyOptions( dependenciesOptionsContainer, lastSourceKey[0], lastTargetClusterId[0], optionList, mappingModel );
                 ajaxRequestTarget.addComponent(dependenciesOptionsContainer);
             }
         });
+
+        searchComponents[0] = dependenciesOptionsContainer.get("dependencySearchManner");
+        searchComponents[1] = dependenciesOptionsContainer.get("dependencySearchText");
+        searchComponents[2] = dependenciesOptionsContainer.get("dependencySearchButton");
 
         addDependencyOptions( dependenciesOptionsContainer, null, null, Collections.emptyList(), mappingModel );
 
@@ -794,6 +807,12 @@ public class PolicyMigration extends EmsPage  {
         return icon;
     }
 
+    private static boolean isSearchable( final EntityType type ) {
+        return  type == EntityType.POLICY ||
+                type == EntityType.USER ||
+                type == EntityType.GROUP;
+    }
+
     private static class DependencyItemsRequest implements JSON.Convertible, Serializable {
         private String clusterId;
         private DependencyItem[] entities;
@@ -1002,6 +1021,21 @@ public class PolicyMigration extends EmsPage  {
 
         public void setSearchValue(String searchValue) {
             this.searchValue = searchValue;
+        }
+
+        /**
+         * Get the filter for the selected manner/value
+         */
+        public String getSearchFilter() {
+            String filter = searchValue;
+            if ( filter == null ) {
+                filter = "";                
+            } else if ( "contains".equals(searchManner) ) {
+                filter = "*" + filter + "*";
+            } else {
+                filter = filter + "*";
+            }
+            return filter;
         }
     }
 }

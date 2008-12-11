@@ -410,18 +410,24 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 crit.setFirstResult(offset);
                 crit.setFetchSize(windowSize);
 
-                Criterion likeRestriction = null;
-                for ( String filterProperty : filterProperties ) {
-                    if ( likeRestriction == null ) {
-                        likeRestriction = Restrictions.like( filterProperty, filter );
-                    } else {
-                        likeRestriction = Restrictions.or( likeRestriction, Restrictions.like( filterProperty, filter ));
+                if ( filter != null ) {
+                    String likeCondition = filter.replace('*', '%').replace('?', '_');
+                    Criterion likeRestriction = null;
+
+                    for ( String filterProperty : filterProperties ) {
+                        if ( likeRestriction == null ) {
+                            likeRestriction = Restrictions.like( filterProperty, likeCondition );
+                        } else {
+                            likeRestriction = Restrictions.or( likeRestriction, Restrictions.like( filterProperty, likeCondition ));
+                        }
+                    }
+
+                    if ( likeRestriction != null ) {
+                        crit.add( likeRestriction );
                     }
                 }
 
-                if ( likeRestriction != null ) {
-                    crit.add( likeRestriction );
-                }
+                doFindHeaderCriteria( crit );
 
                 return crit.list();
             }
@@ -432,6 +438,14 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             headers.add(newHeader(entity));
         }
         return headers;
+    }
+
+    /**
+     * Allows implementations to add additional criteria for use with header searching.
+     *
+     * @param criteria The criteria to update
+     */
+    protected void doFindHeaderCriteria( final Criteria criteria ) {        
     }
 
     /**

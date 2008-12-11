@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.SearchableEntityManager;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -17,7 +18,7 @@ import java.util.Set;
 /**
  * @author alex
  */
-public interface PolicyManager extends EntityManager<Policy, PolicyHeader>, GuidBasedEntityManager<Policy> {
+public interface PolicyManager extends EntityManager<Policy, PolicyHeader>, GuidBasedEntityManager<Policy>, SearchableEntityManager<Policy, PolicyHeader> {
 
     /**
      * Find headers for policies of the given type.
@@ -41,10 +42,12 @@ public interface PolicyManager extends EntityManager<Policy, PolicyHeader>, Guid
 
     /**
      * Find the policy that has the specified GUID
+     * 
      * @param guid The GUID of the policy to retrieve
      * @return The policy that has the specified GUID
      * @throws FindException If no policy can be found for the specified GUID
      */
+    @Override
     Policy findByGuid(String guid) throws FindException;
 
     Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types) throws FindException;

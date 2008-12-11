@@ -9,6 +9,7 @@ import static com.l7tech.objectmodel.EntityType.*;
 import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
@@ -150,6 +151,11 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
     }
 
     @Override
+    public Collection<PolicyHeader> findHeaders(int offset, int windowSize, String filter) throws FindException {
+        return doFindHeaders( offset, windowSize, filter, "name" );
+    }
+
+    @Override
     public long save(final Policy policy) throws SaveException {
         long oid;
 
@@ -281,5 +287,9 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         return new PolicyHeader( entity );
     }
 
+    @Override
+    protected void doFindHeaderCriteria( final Criteria criteria ) {
+        criteria.add(Restrictions.eq("type", PolicyType.INCLUDE_FRAGMENT));
+    }
 }
 

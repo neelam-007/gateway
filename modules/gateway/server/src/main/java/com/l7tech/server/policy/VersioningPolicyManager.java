@@ -147,6 +147,11 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
+    public Collection<PolicyHeader> findHeaders(int offset, int windowSize, String filter) throws FindException {
+        return policyManager.findHeaders(offset, windowSize, filter);
+    }
+
+    @Override
     public Class<? extends Entity> getImpClass() {
         return policyManager.getImpClass();
     }
