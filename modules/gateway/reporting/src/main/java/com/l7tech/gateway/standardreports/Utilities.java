@@ -56,6 +56,10 @@ public class Utilities {
     private static final int FRAME_MIN_WIDTH = 820;
 
     private static final Logger logger = Logger.getLogger(Utilities.class.getName());
+    private static final long HOUR_IN_MILLISECONDS = 3600000L;
+    private static final long DAY_IN_MILLISECONDS = 86400000L;
+    private static final long WEEK_IN_MILLISECONDS = 604800000L;
+    private static final long MONTH_32DAYS_IN_MILLISECONDS = 2764800000L;
 
     public static enum UNIT_OF_TIME {
         HOUR, DAY, WEEK, MONTH
@@ -159,35 +163,18 @@ public class Utilities {
     public static final int CONSTANT_HEADER_START_X = 113;
     public static final int SERVICE_HEADER_X_POS = 50;
 
-    public static final Map<String, UsageReportHelper> helperMap = new HashMap<String, UsageReportHelper>();
-
-    public static void addHelper(String uuid, UsageReportHelper helper){
-        helperMap.put(uuid, helper);
-    }
-
-    public static UsageReportHelper getHelper(String uuid){
-        if(!helperMap.containsKey(uuid)){
-            throw new IllegalArgumentException("String: " + uuid+" not found in map");
-        }
-
-        return helperMap.get(uuid);
-    }
-
     /**
-     * Relative time is calculated to a fixed point of time depending on the unit of time supplied. For day, week
-     * and month 00:00 of the current day is used (end of time period is not exclusive) minus the unitOfTime x
-     * numberOfUnits. The start of the time period is inclusive.
-     * E.g. if the current date is (yyyy-mm-dd hh:mm) 2008-09-22 17:48 and the unitOfTime is HOUR and the numerOfUnits
-     * is 1, then the relative calculation will be done from 2008-09-22 17:00 (x) and the number of milliseconds
-     * returned will be (x - (numberOfUnits x unitOfTime)). In this example if you convert the returned long
-     * into a date, it would report it's time as 2008-09-22 16:00
-     * For day, week and month the time used for the relative calculation is 00:00 of the current day.
-     * In calculations a week = 7 days.
-     * Month uses whole months, not including any time from the current month.
+     * Relative time is calculated from a fixed point of time in the past depending on the unit of time supplied.
+     * See getCalendarForTimeUnit for details on how a Calendar is configured depending on the UNIT_OF_TIME supplied.
+     * After the calendar has been retrieved for the UNIT_OF_TIME, the numberOfUnits is subtracted from the calendar,
+     * using the Calendar.add method. See getCalendarTimeUnit for where the correct Calendar time unit field is
+     * retrieved for the UNIT_OF_TIME supplied.
+     * The return value should only be used for the inclusive start time of a time period / interval
      * @param numberOfUnits How many unitOfTime to use
      * @param timeZone when determing the end of the previous day, week or month
      * @param unitOfTime valid values are HOUR, DAY, WEEK and MONTH
-     * @return
+     * @return long milli seconds since epoch in the past for the start of the time period in the past represented by
+     * the numberOfUnits and unitOfTime
      */
     public static long getRelativeMilliSecondsInPast(int numberOfUnits, UNIT_OF_TIME unitOfTime, String timeZone){
         Calendar calendar = getCalendarForTimeUnit(unitOfTime, timeZone);
@@ -197,6 +184,13 @@ public class Utilities {
         return calendar.getTimeInMillis();
     }
 
+    /**
+     * Get the correct Calendar field which represents the unitOfTime supplied. The returned int can be used
+     * as the calendar field parameter to Calendar.add()
+     * @param unitOfTime what unit of time we want the corresponding Calendar field for
+     * @return the calendar field which represents the unitOfTime parameter
+     * @throws IllegalArgumentException if the unit of time cannot be mapped to a calendar field
+     */
     private static int getCalendarTimeUnit(UNIT_OF_TIME unitOfTime) {
         switch( unitOfTime){
             case HOUR:
@@ -208,18 +202,22 @@ public class Utilities {
             case MONTH:
                 return Calendar.MONTH;
         }
-        throw new IllegalArgumentException("Invalid unitOfTime");
+        throw new IllegalArgumentException(unitOfTime.toString()+" is not supported");
     }
 
     /**
      * Get the resolution to use in summary queries.
      * If the difference between the startTimeMilli and endTimeMilli > hourRetentionPeriod * num milli seconds in a day,
      * then the daily bin resolution is used, otherwise hourly is used.
+     * Note this should not be used directly by interval reports as its possible that its not possible at all to fulfil
+     * the report with the selections made. See getIntervalResolutionFromTimePeriod, which can default back to calling
+     * this method, once it's checked it's ok to do so.
      * @param startTimeMilli start of time period, in milliseconds, since epoch
      * @param endTimeMilli end of time period, in milliseconds, since epoch
      * @param hourRetentionPeriod SSG's current hourly bin max retention policy value, number of days hourly data is
      * kept for
-     * @return
+     * @return Integer the resolution to use 1 for hourly or 2 for daily
+     * @throws IllegalArgumentException if start time is >= end time
      */
     public static Integer getSummaryResolutionFromTimePeriod(Integer hourRetentionPeriod, Long startTimeMilli, Long endTimeMilli){
 
@@ -229,17 +227,17 @@ public class Utilities {
         long dayMillis = 86400000L;//day milli seconds
         long maxHourRenentionMilli = dayMillis * hourRetentionPeriod;
         if(duration > maxHourRenentionMilli){
-            return new Integer(2);
+            return 2;
        }else{
-            return new Integer(1);
+            return 1;
         }
     }
 
     /**
      * Get the resolution to use in interval queries.
-     * This method delegates to getSummaryResolutionFromTimePeriod after checking that if the relativeTimeUnit is
+     * This method delegates to getSummaryResolutionFromTimePeriod after checking if the relativeTimeUnit is
      * UNIT_OF_TIME.HOUR,
-     * If the end of the time period is before the oldest hourly metric bin value in the database, an IllegalStateException
+     * If the end of the time period is before the oldest hourly metric bin value in the database, an UtilityConstraintException
      * is thrown, as the report is guaranteed to have no output. If the time period overlaps with the start of the hourly
      * metric bins, then no exception will be thrown, as providing the resolution 1 allows for the possibility of data
      * being found.
@@ -249,13 +247,19 @@ public class Utilities {
      * @param startTimeMilli start of time period, in milliseconds, since epoch
      * @param endTimeMilli end of time period, in milliseconds, since epoch
      * @param
-     * @return Integer 1 for hourly metric bin or 2 for daily metric bin. If UNIT_OF_TIME was hour, then the return value
-     * can only ever be 1.
+     * @return Integer 1 for hourly metric bin or 2 for daily metric bin. If UNIT_OF_TIME was hour, then the return
+     * value can only ever be 1.
+     * @throws UtilityConstraintException if the intervalUnitOfTime is HOUR, and based on the value for hourRetentionPeriod
+     * it is not possible to use the hourly metric bin in an interval report, as the report would be guaranteed to
+     * have no data. This exception is app specific so it can be tested for and allows for more information to be
+     * sent to the user. This condition cannot easily be tested for in the UI, to do so requires the cluster property
+     * for every cluster in the report.
+     * @throws IllegalArgumentException if the start time >= end time
      */
     public static Integer getIntervalResolutionFromTimePeriod(UNIT_OF_TIME intervalTimeUnit, Integer hourRetentionPeriod,
                                                               Long startTimeMilli, Long endTimeMilli)
     throws UtilityConstraintException{
-        if(startTimeMilli >= endTimeMilli) throw new UtilityConstraintException("Start time must be before end time");
+        validateStartBeforeEndTime(startTimeMilli, endTimeMilli);
 
         if(intervalTimeUnit == UNIT_OF_TIME.HOUR){
             //If the interval is in hours, then we have to use the hourly bin
@@ -277,10 +281,22 @@ public class Utilities {
     }
 
     /**
-     * Get the date string representation of a time value in milliseconds
+     * Validates that startTimeMilli < endTimeMilli. A helper method for all functions which accept a start and a end
+     * time
+     * @param startTimeMilli milliseconds since epoch
+     * @param endTimeMilli milliseconds since epoch
+     * @throws IllegalArgumentException if startTimeMilli >= endTimeMilli
+     */
+    private static void validateStartBeforeEndTime(long startTimeMilli, long endTimeMilli){
+        if(startTimeMilli >= endTimeMilli) throw new IllegalArgumentException("Start time must be before end time");
+    }
+    /**
+     * Get the date string representation of a time value in milliseconds, for a specific timezone
      * @param timeMilliSeconds the number of milliseconds since epoch
-     * @param timeZone
-     * @return a date in the format yyyy/MM/dd HH:mm
+     * @param timeZone which timezone the epoch timeMillilSeconds parameter should be converted into
+     * @return a date in the format MMM dd, yyyy HH:mm, this format was chosen as to minimize confusion across local's
+     * without having to deal explicitly with locals in this function. The format should not cause confusion due to the
+     * string month representation and the 4 digit year 
      */
     public static String getMilliSecondAsStringDate(Long timeMilliSeconds, String timeZone){
         TimeZone tz = getTimeZone(timeZone);
@@ -292,7 +308,19 @@ public class Utilities {
         return dateFormat.format(cal.getTime());
     }
 
+    /**
+     * Get a string representation of the interval selection represented by unitOfTime and numIntervalUnits. The
+     * formatted string will have the correct pluralisation if the numberOfUnits is > 1.
+     * @param unitOfTime the unit of time. This parameter is used for it's toString value
+     * @param numIntervalUnits if > 1 then the unitOfTime.toString will have a 's' appended to it
+     * @return the string representation of the interval represented by the supplied paramaters
+     * @throws NullPointerException if unitOfTime is null
+     * @throws IllegalArgumentException if numIntervalUnits < 1
+     */
     public static String getIntervalAsString(UNIT_OF_TIME unitOfTime, int numIntervalUnits){
+        if(unitOfTime == null) throw new NullPointerException("unitOfTime cannot be null");
+        if(numIntervalUnits < 1) throw new IllegalArgumentException("numIntervalUnits must be greater than 0");
+        
         StringBuilder sb = new StringBuilder();
         String unit = unitOfTime.toString();
         sb.append(unit.substring(0,1).toUpperCase());
@@ -300,22 +328,36 @@ public class Utilities {
         if(numIntervalUnits > 1) sb.append("s");
         return sb.toString();
     }
+    
     /**
      * Get the date to display on a report. The timeMilliSecond value since epoch will be converted into a suitable
      * format to use in the report as the interval information.
-     * When an interval crosses a major time boundary for the intervalUnitOfTime supplied and if the timeMillilSeconds
-     * represents the start of the interval, based on startofInterval being true, then the string returned will be
-     * modified to highlight to the user the crossing of the time boundary
-     * E.g. across midnight when the interval unit of time is 1 hour
+     * The interval string representation depends on the UNIT_OF_TIME specified in intervalUnitOfTime. Each string
+     * representation carries enough information that if a major time boundary is crossed, it is clear it has happened
+     * and no two intervals can be confused.
+     * Here are the various formats, depending on the UNIT_OF_TIME specified in intervalUnitOfTime
+     * HOUR: MM/dd HH:MM - HH:MM
+     * DAY: E MM/dd, when a new year is crossed it is highlighed by including the string month value before the day
+     * WEEK: MM/dd - MM/dd, when a new year is crossed it is highlighed by including the string year before the month,
+     * yyyy/MM/dd - MM/dd
+     * MONTH: yyyy MMM
+     * These are not perfect and some redundant info is shown, e.g. for all weeks in January the year will also be shown
+     * for WEEK. Could be made smarter by looking at what the week number is, however any unit may be plural so the
+     * first week of an interval in January may be the 3rd week and not just the first week.
      * @param startIntervalMilliSeconds milli second value since epoch
      * @param endIntervalMilliSeconds milli second value since epoch 
      * @param intervalUnitOfTime HOUR, DAY, WEEK or MONTH
-     * @param timeZone
-     * @return String representing the date, to be displayed to the viewer of the report
+     * @param timeZone what timezone to use when converting the epoch start and end time values into strings 
+     * @return String representing the interval, to be shown alongside the interval data.
+     * @throws IllegalArgumentException if the startIntervalMilliSeconds >= endIntervalMilliSeconds
+     * @throws IllegalArgumentException if the difference between the startIntervalMilliSeconds and the
+     * endIntervalMilliSeconds is greater than the difference allowed for the UNIT_OF_TIME in intervalUnitOfTime
      */
     public static String getIntervalDisplayDate(Long startIntervalMilliSeconds, Long endIntervalMilliSeconds,
-                                        UNIT_OF_TIME intervalUnitOfTime, String timeZone){
-
+                                        UNIT_OF_TIME intervalUnitOfTime, Integer numberOfTimeUnits, String timeZone){
+        validateStartBeforeEndTime(startIntervalMilliSeconds, endIntervalMilliSeconds);
+        checkTimeDifferenceWithinRange(intervalUnitOfTime, numberOfTimeUnits, startIntervalMilliSeconds, endIntervalMilliSeconds);
+        
         TimeZone tz = getTimeZone(timeZone);
         Calendar calStart = Calendar.getInstance(tz);
         calStart.setTimeInMillis(startIntervalMilliSeconds);
@@ -325,7 +367,7 @@ public class Utilities {
 
         SimpleDateFormat weekDateFormat = new SimpleDateFormat(WEEK_DATE_STRING);
         weekDateFormat.setTimeZone(tz);
-        //todo [Donal] could validate that the end time is an hour, day..etc from the start time
+
         switch( intervalUnitOfTime){
             case HOUR:
                 SimpleDateFormat hourDateFormat = new SimpleDateFormat(HOUR_DATE_STRING);
@@ -362,16 +404,77 @@ public class Utilities {
     }
 
     /**
+     * Validate that the difference between startIntervalMilliSeconds and endIntervalMilliSeconds is not greater than
+     * the unit of time represented by unitOfTime
+     * @param unitOfTime which UNIT_OF_TIME we will use as the range
+     * @param startRangeMilliSeconds the start of the range in milliseconds since epoch
+     * @param endRangeMilliSeconds the end of the range in milliseconds since epoch
+     * @throws IllegalArgumentException if the startRangeMilliSeconds >= endRangeMilliSeconds
+     */
+    private static void checkTimeDifferenceWithinRange(UNIT_OF_TIME unitOfTime, int numberOfTimeUnits,
+                                                       Long startRangeMilliSeconds, Long endRangeMilliSeconds){
+        validateStartBeforeEndTime(startRangeMilliSeconds, endRangeMilliSeconds);
+        long diff = endRangeMilliSeconds - startRangeMilliSeconds;
+        switch(unitOfTime){
+            case HOUR:
+                if(diff > HOUR_IN_MILLISECONDS * numberOfTimeUnits) throw new IllegalArgumentException("Difference between start and end " +
+                        "range millisecond times is greater than an hour * " +  numberOfTimeUnits);
+                break;
+            case DAY:
+                if(diff > DAY_IN_MILLISECONDS * numberOfTimeUnits) throw new IllegalArgumentException("Difference between start and end " +
+                        "range millisecond times is greater than a day * " +  numberOfTimeUnits);
+                break;
+            case WEEK:
+                if(diff > WEEK_IN_MILLISECONDS * numberOfTimeUnits) throw new IllegalArgumentException("Difference between start and end " +
+                        "range millisecond times is greater than a week * " +  numberOfTimeUnits);
+                break;
+            case MONTH:
+                if(diff > MONTH_32DAYS_IN_MILLISECONDS * numberOfTimeUnits) throw new IllegalArgumentException("Difference between start and end " +
+                        "range millisecond times is greater than a 32 day month * " +  numberOfTimeUnits);
+                break;
+        }
+    }
+    
+    /**
      * Get the number of milliseconds representing the end of the period represtented by the unitOfTime
-     * For Hour this is the end of the previous hour, for Day and Week it's 00:00 today. For Months it's also the
-     * 1st day of the Month
-     * @param unitOfTime
-     * @return
+     * See getCalendarForTimeUnit for how a Calendar is configured based on the UNIT_OF_TIME supplied.
+     * Once the Calendar is retrieved it's time in milliseconds is retrieved and that is the return value.
+     * When calculating end times with the returned value the actual value should not be included. End times are
+     * always exclusive in report time period and intervals.
+     * For example a report over the last day runs 00:00 to 00:00, in code the time period is >= 00:00 and < 00:00,
+     * which gives us the entire contents of the day, and nothing from the next day
+     * @param unitOfTime for which we want the millisecond value of. The rules for getting this value are specified in
+     * getCalendarForTimeUnit.
+     * @param  timeZone The timezone is very important for configuring the calendar. The epoch value for the end of
+     * the last day, week and month are 100% dependant on the timezone chosen.
+     * @return the millisecond value since epoch of the end of the time period specified by unitOfTime
      */
     public static long getMillisForEndTimePeriod(UNIT_OF_TIME unitOfTime, String timeZone){
         return Utilities.getCalendarForTimeUnit(unitOfTime, timeZone).getTimeInMillis();
     }
 
+    /**
+     * Get a Calendar object, correctly configured to be at exactly the end time of the UNIT_OF_TIME specified, for the
+     * timezone specified.
+     * The rules are as follows, for the various values of UNIT_OF_TIME
+     * HOUR: A calendar whos minute, second and millisecond values are all set to 0. The calendar is exactly at the
+     * very start of the CURRENT hour.
+     * DAY: A calendar who's hour, minute, second and millisecond values are all set to 0. The calendar is exactly at the
+     * very start of the CURRENT day.
+     * WEEK:A calendar who's hour, minute, second and millisecond values are all set to 0. The calendar is exactly at the
+     * very start of the CURRENT day. Note this is the same as DAY
+     * MONTH:A calendar who's day of month is set to 1 and hour, minute, second and millisecond values are all set to 0.
+     * The calendar is exactly at the very start of the CURRENT month.
+     * This function is primiarly used by relative time functions. The milli second value of the returned Calendar, as is,
+     * is the end of the time period / interval. To get the start use the Calendar.add method with the correct field
+     * and a minus value to move back in time in fixed amounts, always arriving at the very start of the time period
+     * represented by UNIT_OF_TIME.
+     * Note: Where ever this calendar is used, any add functions should be using the Calendar field which matches
+     * the UNIT_OF_TIME the returned Calendar has been configured with. See getCalendarTimeUnit 
+     * @param unitOfTime
+     * @param timeZone
+     * @return
+     */
     public static Calendar getCalendarForTimeUnit(UNIT_OF_TIME unitOfTime, String timeZone){
         Calendar calendar = Calendar.getInstance(getTimeZone(timeZone));
 

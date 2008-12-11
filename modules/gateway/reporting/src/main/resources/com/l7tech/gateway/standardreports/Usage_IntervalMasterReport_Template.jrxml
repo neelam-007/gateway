@@ -816,7 +816,10 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					<subreportParameter  name="INTERVAL_UNIT_OF_TIME">
 						<subreportParameterExpression><![CDATA[$P{INTERVAL_TIME_UNIT}]]></subreportParameterExpression>
 					</subreportParameter>
-					<subreportParameter  name="REPORT_CONNECTION">
+                    <subreportParameter  name="INTERVAL_NUM_OF_TIME_UNITS">
+                        <subreportParameterExpression><![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS}]]></subreportParameterExpression>
+                    </subreportParameter>
+                    <subreportParameter  name="REPORT_CONNECTION">
 						<subreportParameterExpression><![CDATA[$P{REPORT_CONNECTION}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="KEYS_TO_LIST_FILTER_PAIRS">

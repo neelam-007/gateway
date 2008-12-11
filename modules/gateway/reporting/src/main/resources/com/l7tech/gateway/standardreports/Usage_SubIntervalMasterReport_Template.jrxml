@@ -31,7 +31,8 @@
 	<parameter name="SERVICE_NAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ROUTING_URI" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
-	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="INTERVAL_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer" />
+    <parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
     <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>    
     <parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
@@ -85,7 +86,7 @@
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.gateway.standardreports.Utilities.getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME}, $P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.gateway.standardreports.Utilities.getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME}, $P{INTERVAL_NUM_OF_TIME_UNITS}, $P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
 				</textField>
 				<subreport  isUsingCache="false">
 					<reportElement

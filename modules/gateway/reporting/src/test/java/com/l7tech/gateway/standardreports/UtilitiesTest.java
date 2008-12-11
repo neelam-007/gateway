@@ -966,26 +966,118 @@ public class UtilitiesTest{
         TimeZone tz = Utilities.getTimeZone(timeZone);
 
         String startDate = "2008/08/01 14:12";
-        String endDate = "2008/10/13 15:12";
         DATE_FORMAT.setTimeZone(tz);
+        
         Date d = DATE_FORMAT.parse(startDate);
         long startTime = d.getTime();
-        d = DATE_FORMAT.parse(endDate);
+        d = DATE_FORMAT.parse("2008/08/01 15:12");
         long endTime = d.getTime();
 
-        String timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.HOUR, timeZone);
-        Assert.assertTrue(timeDisplay.equals("08/01 14:12 - 15:12"));
+        String timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.HOUR, 1 ,timeZone);
+        String expected = "08/01 14:12 - 15:12";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
 
-        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, timeZone);
-        Assert.assertTrue(timeDisplay.equals("Fri 08/01"));
+        d = DATE_FORMAT.parse("2008/08/01 16:12");
+        endTime = d.getTime();
 
-        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.WEEK, timeZone);
-        Assert.assertTrue(timeDisplay.equals("08/01 - 10/13"));
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.HOUR, 2 ,timeZone);
+        expected = "08/01 14:12 - 16:12";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
 
-        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.MONTH, timeZone);
-        Assert.assertTrue(timeDisplay.equals("2008 Aug"));
+        d = DATE_FORMAT.parse("2008/08/02 14:12");
+        endTime = d.getTime();
 
-        //System.out.println("timeDisplay: "+ timeDisplay);
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, 1, timeZone);
+        expected = "Fri 08/01";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals("Fri 08/01"));
+
+        d = DATE_FORMAT.parse("2008/08/04 14:12");
+        endTime = d.getTime();
+
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, 3, timeZone);
+        expected = "Fri 08/01";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals("Fri 08/01"));
+
+        d = DATE_FORMAT.parse("2008/08/08 14:12");
+        endTime = d.getTime();
+
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.WEEK, 1, timeZone);
+        expected = "08/01 - 08/08";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
+
+        d = DATE_FORMAT.parse("2008/08/15 14:12");
+        endTime = d.getTime();
+
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.WEEK, 2, timeZone);
+        expected = "08/01 - 08/15";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
+
+        d = DATE_FORMAT.parse("2008/08/31 14:12");
+        endTime = d.getTime();
+
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.MONTH, 1, timeZone);
+        expected = "2008 Aug";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals("2008 Aug"));
+
+        d = DATE_FORMAT.parse("2008/09/30 14:12");
+        endTime = d.getTime();
+
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.MONTH, 2, timeZone);
+        expected = "2008 Aug";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals("2008 Aug"));
+
+        boolean exception = false;
+        try{
+            d = DATE_FORMAT.parse("2008/08/01 16:12");
+            endTime = d.getTime();
+            timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.HOUR, 1 ,timeZone);
+            expected = "08/01 14:12 - 16:12";
+            Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
+        }catch (Exception e){
+            exception = true;
+        }
+
+        Assert.assertTrue("Exception should have been thrown", exception);
+
+        exception = false;
+        try{
+            d = DATE_FORMAT.parse("2008/08/04 14:12");
+            endTime = d.getTime();
+            timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, 2, timeZone);
+            expected = "Fri 08/01";
+            Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals("Fri 08/01"));
+        }catch (Exception e){
+            exception = true;
+        }
+
+        Assert.assertTrue("Exception should have been thrown", exception);
+
+        exception = false;
+        try{
+            d = DATE_FORMAT.parse("2008/08/15 14:12");
+            endTime = d.getTime();
+            timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.WEEK, 1, timeZone);
+            expected = "08/01 - 08/15";
+            Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
+        }catch (Exception e){
+            exception = true;
+        }
+
+        Assert.assertTrue("Exception should have been thrown", exception);
+
+        exception = false;
+        try{
+            d = DATE_FORMAT.parse("2008/09/30 14:12");
+            endTime = d.getTime();
+            timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.MONTH, 1, timeZone);
+            expected = "2008 Aug";
+            Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals("2008 Aug"));
+        }catch (Exception e){
+            exception = true;
+        }
+
+        Assert.assertTrue("Exception should have been thrown", exception);
+        
     }
 
     /**
