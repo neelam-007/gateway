@@ -225,6 +225,45 @@ public class JsonConversionTests {
     }
 
     @Test
+    public void testWhenOnly1ClusterWithKeys_KeyToListParamIsSet() throws ReportException {
+        Object o = JSON.parse(psRelativeJsonSummaryOnly1ClusterWithKeys);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        Assert.assertNotNull(reportClusterBeans);
+
+        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+
+            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
+            Assert.assertNotNull(reportParams);
+
+            Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
+                    new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
+            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+                paramMap.put(rP.getName(), rP);
+            }
+
+            ReportApi.ReportSubmission.ReportParam
+                    keysToListParam = paramMap.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
+
+            Assert.assertNotNull(keysToListParam);
+
+            Assert.assertNotNull(keysToListParam.getValue());
+
+            String clusterId = clusterBean.getClusterId();
+            if(clusterId.equals(cluster2)){
+                LinkedHashMap<String, List<ReportApi.FilterPair>>
+                        keysToFilters = (LinkedHashMap<String, List<ReportApi.FilterPair>>) keysToListParam.getValue();
+
+                Assert.assertNotNull(keysToFilters);
+
+                Assert.assertTrue(keysToFilters.isEmpty());
+            }
+        }
+    }
+
+    @Test
     public void testPerfStatSummary_MappingKeysAndValues() throws ReportException {
         Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
@@ -1340,5 +1379,59 @@ public class JsonConversionTests {
             "    \"reportName\" : \"My Report\"" +
             "}";
 
+    private final static String psRelativeJsonSummaryOnly1ClusterWithKeys = "{\"reportType\":\"performance\",    " +
+            "    \"entityType\" : \"publishedService\"," +
+            "    \"entities\" : [" +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listProducts\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229376\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"publishedServiceId\" : \"229377\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"publishedServiceId\" : \"229378\"," +
+            "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
+            "            \"operation\"          : \"listOrders\"" +
+            "        }" +
+            "    ]," +
+            "    \"timePeriod\" : {" +
+            "        \"type\"     : \"relative\"," +
+            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"unitOfTime\"     : \"DAY\"," +
+            "        \"timeZone\" : \"Canada/Pacific\"" +
+            "    }," +
+            "    \"timeInterval\" : {" +
+            "        \"value\" : \"1\"," +
+            "        \"unit\"  : \"HOUR\"" +
+            "    }," +
+            "    \"groupings\" : [" +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"IP_ADDRESS\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "        {" +
+            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"messageContextKey\" : \"CUSTOMER\"," +
+            "            \"constraint\"        : \"\"" +
+            "        }," +
+            "    ]," +
+            "    \"summaryChart\" : true," +
+            "    \"summaryReport\" : true," +
+            "    \"reportName\" : \"My Report\"" +
+            "}";
 
 }
