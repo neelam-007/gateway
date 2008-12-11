@@ -13,6 +13,8 @@ import java.io.ByteArrayInputStream;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 import com.l7tech.server.ems.SecureResource;
 import com.l7tech.server.util.JaasUtils;
@@ -99,7 +101,7 @@ public class ReportResource extends SecureResource {
                             resource = new StringResourceStream( "" );
                         }
                     } catch ( NumberFormatException nfe ) {
-                        logger.warning("Invalid report id when accessing report resource '"+id+"'..");
+                        logger.warning("Invalid report id when accessing report resource '"+id+"'.");
                         resource = new StringResourceStream( "" );
                     } catch (FindException e) {
                         logger.log( Level.WARNING, "Error finding report.", e );
@@ -126,8 +128,32 @@ public class ReportResource extends SecureResource {
             String id = parameters.getString("reportId");
             String type = parameters.getString("type");
 
+            String reportName = null;
+            long reportTime = 0;
+            String clusterName = null;
+            StandardReportManager manager = getStandardReportManager();
+            if ( manager != null ) {
+                try {
+                    final StandardReport report = manager.findByPrimaryKey( Long.parseLong( id ) );
+                    if ( report != null ) {
+                        reportName = report.getName();
+                        reportTime = report.getStatusTime();
+                        clusterName = report.getSsgCluster().getName();
+                    }
+                } catch ( NumberFormatException nfe ) {
+                    logger.warning("Invalid report id when accessing report resource '"+id+"'.");
+                } catch (FindException e) {
+                    logger.log( Level.WARNING, "Error finding report for filename.", e );
+                }
+            }
+
             if ( "application/pdf".equals(type) ) {
-                name = "report_" + id + ".pdf";
+                if ( reportName == null ) {
+                    name = "report_" + id + ".pdf";
+                } else {
+                    SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
+                    name = format.format( new Date(reportTime) ) + "_" + reportName + "_" + clusterName + ".pdf";
+                }
             }
         }
 

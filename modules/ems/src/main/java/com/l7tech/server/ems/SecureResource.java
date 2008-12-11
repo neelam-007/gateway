@@ -1,6 +1,7 @@
 package com.l7tech.server.ems;
 
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.util.ValidationUtils;
 import org.apache.wicket.markup.html.WebResource;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
@@ -61,7 +62,7 @@ public abstract class SecureResource extends WebResource {
     protected void setHeaders( final WebResponse webResponse) {
         super.setHeaders(webResponse);
 
-        String filename = getFilename();
+        String filename = processFilename(getFilename());
         if ( !Strings.isEmpty(filename) ) {
             ValueMap parameters = getParameters();
             if ( "attachment".equals(parameters.getString("disposition") )) {
@@ -98,6 +99,26 @@ public abstract class SecureResource extends WebResource {
 
     protected EmsSecurityManager getSecurityManager() {
         return securityManagerRef.get();
+    }
+
+    protected String processFilename( final String filename ) {
+        String name = null;
+
+        if ( filename != null ) {
+            StringBuilder builder = new StringBuilder();
+            for ( char character : filename.toCharArray() ) {
+                if ( ValidationUtils.ALPHA_NUMERIC.indexOf(character) >= 0 ||
+                     character == '.' ||
+                     character == '-') {
+                    builder.append( character );
+                } else {
+                    builder.append( '_' );
+                }
+            }
+            name = builder.toString();
+        }
+
+        return name;
     }
 
     //- PRIVATE
