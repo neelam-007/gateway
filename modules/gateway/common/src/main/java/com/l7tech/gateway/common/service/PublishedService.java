@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.wsdl.Wsdl;
@@ -25,6 +26,7 @@ import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap12.SOAP12Operation;
 import javax.wsdl.xml.WSDLLocator;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.persistence.Transient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -75,6 +77,12 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         setSoap(objToCopy.isSoap());
         _wsdlUrl = objToCopy._wsdlUrl;
         setWsdlXml(objToCopy.getWsdlXml());
+    }
+
+    @Transient
+    @Migration(mapName = NONE, mapValue = NONE, targetType = EntityType.SERVICE_DOCUMENT)
+    public String getId() {
+        return super.getId();
     }
 
     /**

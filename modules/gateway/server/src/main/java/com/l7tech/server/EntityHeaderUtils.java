@@ -5,6 +5,7 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
@@ -54,6 +55,8 @@ public final class EntityHeaderUtils {
             return new PolicyHeader((Policy)e);
         } else if (e instanceof PublishedService) {
             return new ServiceHeader((PublishedService)e);
+        } else if ( e instanceof ServiceDocument) {
+            return new EntityHeader(e.getId(), EntityType.SERVICE_DOCUMENT, ((ServiceDocument)e).getUri(), null);
         } else if (e instanceof Folder) {
             return new FolderHeader((Folder)e);
         } else if (e instanceof PersistentUser) {

@@ -80,10 +80,10 @@ public class MigrationUtils {
     }
 
     private static Method methodForPropertyName(Object sourceEntity, String name) {
-        return methodForPropertyName(sourceEntity, name, new Class[]{});
+        return methodForPropertyName(sourceEntity, name, new Class<?>[]{});
     }
 
-    private static Method methodForPropertyName(Object sourceEntity, String name, Class... setterParam) {
+    private static Method methodForPropertyName(Object sourceEntity, String name, Class<?>... setterParam) {
         String prefix = setterParam == null || setterParam.length == 0 ? "get" : "set";
         try {
             // try with prefix first
@@ -106,7 +106,7 @@ public class MigrationUtils {
         return methodForPropertyName(sourceEntity, name);
     }
 
-    public static Method setterForPropertyName(Object sourceEntity, String name, Class... setterParam) {
+    public static Method setterForPropertyName(Object sourceEntity, String name, Class<?>... setterParam) {
         return methodForPropertyName(sourceEntity, name, setterParam);
     }
 

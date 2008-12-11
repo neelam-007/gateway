@@ -1298,6 +1298,7 @@
 
   <bean id="propertyResolverFactory" class="com.l7tech.server.migration.PropertyResolverFactory">
       <constructor-arg ref="entityFinder"/>
+      <constructor-arg ref="serviceDocumentManager"/>
   </bean>
 
   <bean id="migrationManager" class="com.l7tech.server.migration.MigrationManagerImpl">

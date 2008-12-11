@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.migration.MigrationMappingType;
 import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocument;
 
 import javax.xml.bind.annotation.*;
 import java.util.*;
@@ -35,7 +36,7 @@ import java.util.*;
  */
 @XmlRootElement
 @XmlType(propOrder={"metadata", "exportedItems"})
-@XmlSeeAlso(PublishedService.class)
+@XmlSeeAlso({PublishedService.class, ServiceDocument.class})
 public class MigrationBundle {
 
     private MigrationMetadata metadata;

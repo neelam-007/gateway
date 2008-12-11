@@ -118,11 +118,6 @@ public class MigrationManagerImpl implements MigrationManager {
 
         Map<EntityHeader, EntityOperation> entities = loadEntities(bundle, overwriteExisting, enableServices);
 
-        applyMappings(bundle, entities);
-        if (!errors.isEmpty())
-            logger.log(Level.WARNING, "Errors while applying mappings for the entities to import.", errors);
-        // todo: throw new MigrationException("Errors while applying mappings for the entities to import.", errors);
-
         try {
             Collection<MigratedItem> result = new HashSet<MigratedItem>();
             Set<EntityHeader> uploaded = new HashSet<EntityHeader>();
@@ -182,8 +177,24 @@ public class MigrationManagerImpl implements MigrationManager {
                     throw new IllegalStateException("Import operation not known: " + eo.operation);
             }
         }
+
+        // apply mappings for this entity's dependants
+        applyMappings(header, metadata, entities);
+
     }
 
+    private void applyMappings(EntityHeader dependency, MigrationMetadata metadata, Map<EntityHeader, EntityOperation> entities) throws MigrationException {
+        for(MigrationMapping mapping : metadata.getMappingsForTarget(dependency)) {
+            EntityHeader header = metadata.getHeader(mapping.getDependant());
+            EntityOperation eo = entities.get(header);
+            PropertyResolver resolver = getResolver(eo.entity, mapping.getPropName());
+            EntityOperation targetEo = entities.get(dependency);
+            if (targetEo == null || targetEo.entity == null) {
+                throw new MigrationException("Cannot apply mapping, target entity not found for dependency reference: " + mapping.getDependency());
+            }
+            resolver.applyMapping(eo.entity, mapping.getPropName(), targetEo.entity, metadata.getOriginalHeader(mapping.getSourceDependency()));
+        }
+    }
 
     private void processFolders(MigrationBundle bundle, EntityHeader targetFolder, boolean flatten) throws MigrationException {
         MigrationMetadata metadata = bundle.getMetadata();
@@ -216,9 +227,6 @@ public class MigrationManagerImpl implements MigrationManager {
             EntityOperation eo = entities.get(header);
 
             MigrationMetadata metadata = bundle.getMetadata();
-//            if ( eo.operation == IGNORE && ! metadata.isUploadedByParent(header))
-//                continue;
-
             try {
                 for (MigrationMapping mapping : metadata.getMappingsForSource(header)) {
                     PropertyResolver resolver = getResolver(eo.entity, mapping.getPropName());
@@ -372,11 +380,10 @@ public class MigrationManagerImpl implements MigrationManager {
                     throw new MigrationException("Error getting dependencies for property: " + method, e);
                 }
                 for (EntityHeader depHeader : deps.keySet()) {
+                    EntityHeader resolvedDepHeader  = resolveHeader( depHeader );
                     for ( MigrationMapping mapping : deps.get(depHeader) ) {
-                        EntityHeader resolvedHeader = resolveHeader( depHeader );
                         if ( depHeader instanceof GuidEntityHeader ) {
                             // TODO find a better way to do this
-                            EntityHeader resolvedDepHeader  = resolveHeader( depHeader );
                             if ( mapping.getDependant().getStrId().equals(((GuidEntityHeader)depHeader).getGuid()) ) {
                                 mapping.setDependant( EntityHeaderRef.fromOther(resolvedDepHeader) );
                             }
@@ -386,8 +393,8 @@ public class MigrationManagerImpl implements MigrationManager {
                         }
                         result.addMapping(mapping);
                         logger.log(Level.FINE, "Added mapping: " + mapping);
-                        if ( !result.hasHeader( resolvedHeader ) ) {
-                            findDependenciesRecursive( result, resolvedHeader );
+                        if ( !result.hasHeader( resolvedDepHeader ) ) {
+                            findDependenciesRecursive( result, resolvedDepHeader );
                         }
                     }
                 }

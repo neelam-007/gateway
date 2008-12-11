@@ -66,11 +66,18 @@ public abstract class AbstractOidPropertyResolver implements PropertyResolver {
         if ( ! (targetValue instanceof PersistentEntity) )
             throw new MigrationException("Error applying mapping for property name; invalid target value:" + targetValue);
 
-        Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, Long.class);
-        try {
-            method.invoke(sourceEntity, ((PersistentEntity)targetValue).getOid());
-        } catch (Exception e) {
-            throw new MigrationException("Error applying mapping for property name: " + propName, e);
+        Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, long.class);
+        if (method == null)
+            method = MigrationUtils.setterForPropertyName(sourceEntity, propName, Long.class);
+
+        if (method != null) {
+            try {
+                method.invoke(sourceEntity, ((PersistentEntity)targetValue).getOid());
+            } catch (Exception e) {
+                throw new MigrationException("Error applying mapping for property name: " + propName, e);
+            }
+        } else {
+            throw new MigrationException("Error applying mapping: no setter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
         }
     }
 }
