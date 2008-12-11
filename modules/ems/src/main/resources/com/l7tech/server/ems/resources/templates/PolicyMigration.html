@@ -762,22 +762,24 @@
 
                                     <br/>&nbsp;<br/>
 
-                                    <table class="dataTable" wicket:id="dependencyOptions">
-                                        <thead>
-                                            <tr>
-                                                <th></th>
-                                                <th>Name</th>
-                                                <th>Ver.</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr wicket:id="optionRepeater">
-                                                <td><input name="selectionValue" type="radio" wicket:id="uid"/></td>
-                                                <td><div wicket:id="name"/></td>
-                                                <td class="right"><div wicket:id="version"/></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <div style="border: 1px solid black; height: 200px; width: 400px; overflow: scroll">
+                                        <table class="dataTable" wicket:id="dependencyOptions" width="100%">
+                                            <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th>Name</th>
+                                                    <th>Ver.</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr wicket:id="optionRepeater">
+                                                    <td><input name="selectionValue" type="radio" wicket:id="uid"/></td>
+                                                    <td><div wicket:id="name"/></td>
+                                                    <td class="right"><div wicket:id="version"/></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </form>
                             </td>
                         </tr>
