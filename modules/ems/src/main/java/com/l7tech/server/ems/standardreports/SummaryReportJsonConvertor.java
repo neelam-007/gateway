@@ -260,6 +260,10 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             if(value.equals("")){
                 lFp.add(new ReportApi.FilterPair());
             }else{
+                if(value.length() > MAX_VALUE_CONSTRAINT_SIZE){
+                    throw new ReportException("Max size for a key value constraint is: " + MAX_VALUE_CONSTRAINT_SIZE+
+                            " string entered was: " + value.length()+" characters");
+                }
                 lFp.add(new ReportApi.FilterPair(value));
             }
         }

@@ -17,9 +17,7 @@ public interface JsonReportParameterConvertor {
     String DATE_FORMAT = "MM/dd/yyyy";
     int MAX_KEYS_PER_CLUSTER = 5;
 
-    //end gateway runtime params
-
-    //usage interval ssg runtime params
+    int MAX_VALUE_CONSTRAINT_SIZE = 255;
 
     /**
      * From the Map params, which is the client sent JSON data, convert it into n distinct ReportSubmissionClusterBean
