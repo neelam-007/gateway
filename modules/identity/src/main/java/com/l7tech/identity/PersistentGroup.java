@@ -95,7 +95,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
     }
 
     @Transient
-    @Migration(mapName = NONE, mapValue = NONE, targetType = EntityType.ID_PROVIDER_CONFIG)
+    @Migration(mapName = NONE, mapValue = NONE, export = false, targetType = EntityType.ID_PROVIDER_CONFIG)
     public long getProviderId() {
         return providerOid;
     }

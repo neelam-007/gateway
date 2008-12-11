@@ -8,6 +8,9 @@ import java.util.Map;
 
 import com.l7tech.identity.PersistentGroup;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.migration.Migration;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.Table;
@@ -45,6 +48,7 @@ public class FederatedGroup extends PersistentGroup {
 
     @Override
     @Column(name="provider_oid", nullable=false)
+    @Migration(mapName = NONE, mapValue = NONE, export = false, targetType = EntityType.ID_PROVIDER_CONFIG)
     public long getProviderId() {
         return super.getProviderId();
     }

@@ -4,6 +4,9 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.AnonymousEntityReference;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.migration.Migration;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * @author alex
@@ -16,6 +19,7 @@ public class AnonymousGroupReference extends AnonymousEntityReference implements
         this.groupBean = new GroupBean(providerOid, null);
     }
 
+    @Migration(mapName = NONE, mapValue = NONE, export = false, targetType = EntityType.ID_PROVIDER_CONFIG)
     public long getProviderId() {
         return groupBean.getProviderId();
     }
