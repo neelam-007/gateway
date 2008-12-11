@@ -475,38 +475,20 @@ public interface ReportApi {
 
 
     /**
- * Records a filter value for a mapping key. Each instance represents one value and whether the value in the
+     * Records a filter value for a mapping key. Each instance represents one value and whether the value in the
      * database should be compared using = or like.
      */
     public static class FilterPair {
         /**
          * Record the unmodified value as entered by the user, so it can be displayed to them in reports
-         * Also, for transmitting this object over the wire, only the display string needs to be sent
          */
         private final String displayValue;
-        private final String filterValue;
-        private final boolean useAnd;
-        private final boolean isEmpty;
-
+        private final boolean checkForWildCard;
 
         public FilterPair(final String filterValue) {
+            if(filterValue == null) throw new NullPointerException("filterValue cannot be null");
+            checkForWildCard = true;
             displayValue = filterValue.trim();
-
-            if(displayValue.equals("*")){
-                this.filterValue = "";
-                this.useAnd = true;
-                isEmpty = true;
-
-            }else if(filterValue.indexOf("*") != -1){
-                this.filterValue = filterValue.replaceAll("\\*", "%").trim();
-                this.useAnd = false;
-                isEmpty = false;
-            }else{
-                this.filterValue = filterValue.trim();
-                this.useAnd = true;
-                isEmpty = false;
-            }
-
         }
 
         /**
@@ -514,20 +496,16 @@ public interface ReportApi {
          * found at runtime from the database, and we don't want to modify the string found in case it contains
          * the wild card character
          * @param filterValue
-         * @param doNotCheckForWildCard not actually used
+         * @param checkForWildCard true if the wild card should be left alone, no translation into '%'
          */
-        public FilterPair(final String filterValue, boolean doNotCheckForWildCard) {
+        public FilterPair(final String filterValue, boolean checkForWildCard) {
             displayValue = filterValue;
-            this.filterValue = filterValue;
-            this.useAnd = true;
-            isEmpty = false;
+            this.checkForWildCard = checkForWildCard;
         }
 
         public FilterPair() {
-            isEmpty = true;
             displayValue = "";
-            filterValue = "";
-            useAnd = true;
+            checkForWildCard = false;
         }
 
         public String getDisplayValue() {
@@ -535,15 +513,28 @@ public interface ReportApi {
         }
 
         public String getFilterValue() {
-            return filterValue;
+            if(isEmpty()) return "";
+
+            StringBuilder sb = new StringBuilder();
+            for(int i = 0; i < displayValue.length(); i++){
+                char c = displayValue.charAt(i);
+                if(c == '*' && checkForWildCard) sb.append('%');//translate
+                else if(c == '%') sb.append("\\%");//escape
+                else if(c == '_') sb.append("\\_");//escape
+                else if(c == '\'') sb.append("\\'");//escape
+                else sb.append(c);
+            }
+
+            return sb.toString();
         }
 
         public boolean isUseAnd() {
-            return useAnd;
+            return displayValue.indexOf('*') == -1;
         }
 
         public boolean isEmpty() {
-            return isEmpty;
+            if(displayValue.equals("") || displayValue.equals("*")) return true;
+            return false;
         }
     }
 }
