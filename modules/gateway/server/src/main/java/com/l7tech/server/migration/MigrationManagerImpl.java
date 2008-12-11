@@ -161,7 +161,7 @@ public class MigrationManagerImpl implements MigrationManager {
             EntityOperation eo = entities.get(header);
             switch (eo.operation)  {
                 case IGNORE:
-                    return;
+                    break;
 
                 case UPDATE:
                     entityCrud.update(eo.entity);
