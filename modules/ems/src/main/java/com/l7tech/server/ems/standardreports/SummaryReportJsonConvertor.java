@@ -264,21 +264,35 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             }
         }
 
-        for(Map.Entry<String, LinkedHashMap<String, List<ReportApi.FilterPair>>> me: clusterToKeysToListFilterPairs.entrySet()){
-            //Ensures that groupings only reference clusters defined in the entity section
-            if(!clusterToReportParams.containsKey(me.getKey())){
-                throw new ReportException("Unknown cluster: " + me.getKey() +" found in grouping JSON");
+
+        //make sure all clusters found match a cluster from the entities section
+        for(String mappingClusterId: clusterToKeysToListFilterPairs.keySet()){
+            if(!clusterToReportParams.containsKey(mappingClusterId)){
+                throw new ReportException("Cluster id: " + mappingClusterId+" found in groupings section," +
+                        " but does not exist in entities section");
             }
+        }
 
-            Map<String, ReportApi.ReportSubmission.ReportParam> clusterParams = clusterToReportParams.get(me.getKey());
+        //iterate through based on the clusters we know about
+        //this is important as otherwise we can not set the keys to filter pairs parameter on a cluster which has
+        //had no mapping keys added for it
+        for(String clusterId: clusterToReportParams.keySet()){
 
+            Map<String, ReportApi.ReportSubmission.ReportParam> clusterParams = clusterToReportParams.get(clusterId);
             ReportApi.ReportSubmission.ReportParam keysToFilterParam = new ReportApi.ReportSubmission.ReportParam();
             keysToFilterParam.setName(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
-            keysToFilterParam.setValue(me.getValue());
+
+            if(!clusterToKeysToListFilterPairs.containsKey(clusterId)){
+                //no keys for this cluster
+                keysToFilterParam.setValue(new LinkedHashMap<String, List<ReportApi.FilterPair>>());
+                clusterParams.put(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS, keysToFilterParam);
+                continue;
+            }
+
+            keysToFilterParam.setValue(clusterToKeysToListFilterPairs.get(clusterId));
             clusterParams.put(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS, keysToFilterParam);
 
-
-            boolean isContextMapping = me.getValue().size() > 0;
+            boolean isContextMapping = clusterToKeysToListFilterPairs.get(clusterId).size() > 0;
 
             //does the ctx mapping param already exist?
             if(!clusterParams.containsKey(ReportApi.ReportParameters.IS_CONTEXT_MAPPING)){
@@ -291,8 +305,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
                         isCtxMappingParam = clusterParams.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING);
                 isCtxMappingParam.setValue(isContextMapping || (Boolean)isCtxMappingParam.getValue());
             }
-            
-            
+
         }
 
         //Usage reports MUST have at least one grouping
