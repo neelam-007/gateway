@@ -1497,9 +1497,9 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
     <div class="bd">
         <form name="reconfirmSSGClusterDeletionForm" wicket:id="reconfirmSSGClusterDeletionForm" method="POST">
             <input id="reconfirmSSGClusterDeletionDialog_id" wicket:id="reconfirmSSGClusterDeletionDialog_id" type="hidden" name="id" />
-            <center>Deleting the SSG Cluster &ldquo;<span id="reconfirmSSGClusterDeletionDialog_name"></span>&rdquo; will cause to delete other related information</center>
-            <center>such as Generated Report and Migration History.</center>
-            <center>Do you really delete the cluster and other related information?</center>
+            The SSG Cluster &ldquo;<span id="reconfirmSSGClusterDeletionDialog_name"></span>&rdquo; has related data such as generated reports
+            <br/>and migration history. Deleting the cluster will also delete them.
+            <p style="margin-top: 1em;">Proceed?</p>
         </form>
     </div>
 </div>
