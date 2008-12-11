@@ -385,6 +385,12 @@ public class PolicyMigration extends EmsPage  {
             case GROUP:
                 type = "group";
                 break;
+            case JMS_ENDPOINT:
+                type = "jms endpoint";
+                break;
+            case TRUSTED_CERT:
+                type = "trusted certificate";
+                break;
             default:
                 type = entityType.toString();
                 break;
