@@ -332,8 +332,6 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                     // don't care
                     if ( !GatewayContext.isNetworkException(sfe2) ) {
                         logger.log( Level.FINE, "Error checking gateway status using gateway api for  '"+host+"'.", ExceptionUtils.getDebugException(sfe2)  );
-                    } else {
-                        status = JSONConstants.SsgNodeOnlineState.OFF;                        
                     }
                 }
 

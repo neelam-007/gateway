@@ -527,4 +527,6 @@
         <constructor-arg index="5" ref="auditContext" />
     </bean>
 
+    <bean id="eventPublisher" class="com.l7tech.server.ems.util.ApplicationEventPublisherImpl"/>
+
 </beans>

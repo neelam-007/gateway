@@ -11,6 +11,7 @@ import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayContext;
+import com.l7tech.server.ems.gateway.GatewayRegistrationEvent;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.util.Config;
@@ -27,6 +28,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.hibernate.exception.ConstraintViolationException;
 import org.mortbay.util.ajax.JSON;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +76,9 @@ public class Configure extends EmsPage  {
 
     @SpringBean
     private MigrationRecordManager migrationRecordManager;
+
+    @SpringBean
+    ApplicationEventPublisher publisher;
 
     public Configure() {
         Map<String,String> up = Collections.emptyMap();
@@ -397,7 +402,7 @@ public class Configure extends EmsPage  {
                         // Todo: the below updating node is for demo only.  We will remove the part later on, since GatewayPoller will update node status periodically.
                         // Update the node online status
                         node.setOnlineStatus("on");
-                        ssgNodeManager.update(node);
+                        publisher.publishEvent( new GatewayRegistrationEvent(this) );
                     }
 
                     // Return the response to the client
@@ -430,7 +435,7 @@ public class Configure extends EmsPage  {
                         // Todo: the below updating node is for demo only.  We will remove this part later on, since GatewayPoller will update node status periodically.
                         // Update the node online status
                         node.setOnlineStatus("off");
-                        ssgNodeManager.update(node);
+                        publisher.publishEvent( new GatewayRegistrationEvent(this) );
                     }
 
                     // Return the response to the client
