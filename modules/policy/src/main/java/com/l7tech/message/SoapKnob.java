@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.message;
 
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -41,7 +38,7 @@ public interface SoapKnob extends MessageKnob {
      * @throws SAXException if the first part's content type is not text/xml.
      * @throws IOException if there is a problem reading XML from the first part's InputStream
      * @throws InvalidDocumentFormatException if the message is not SOAP or there is more than one Body
-     * @throws com.l7tech.xml.MissingRequiredElementException if the message looks like a SOAP fault but has a missing or empty faultcode
+     * @throws com.l7tech.util.MissingRequiredElementException if the message looks like a SOAP fault but has a missing or empty faultcode
      */
     boolean isFault() throws SAXException, IOException, InvalidDocumentFormatException;
 
@@ -53,7 +50,7 @@ public interface SoapKnob extends MessageKnob {
      * @throws SAXException if the first part's content type is not text/xml.
      * @throws IOException if there is a problem reading XML from the first part's InputStream
      * @throws com.l7tech.util.InvalidDocumentFormatException if the message is not SOAP or there is more than one Body
-     * @throws com.l7tech.xml.MissingRequiredElementException if the message looks like a SOAP fault but has a missing or empty faultcode
+     * @throws com.l7tech.util.MissingRequiredElementException if the message looks like a SOAP fault but has a missing or empty faultcode
      */
     SoapFaultDetail getFaultDetail() throws SAXException, IOException, InvalidDocumentFormatException;
 

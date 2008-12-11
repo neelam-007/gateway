@@ -1,20 +1,18 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import java.util.Collection;
-import java.util.logging.Level;
-import java.text.MessageFormat;
-
-import org.w3c.dom.Document;
-import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlCursor;
-
-import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.security.saml.SamlConstants;
-
+import com.l7tech.security.xml.processor.ProcessorResult;
+import org.apache.xmlbeans.XmlCursor;
+import org.apache.xmlbeans.XmlObject;
+import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML2.AttributeStatementType;
 import x0Assertion.oasisNamesTcSAML2.AttributeType;
+
+import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.logging.Level;
 
 
 /**
@@ -57,13 +55,10 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
         AttributeType[] receivedAttributes = attributeStatementType.getAttributeArray();
         SamlAttributeStatement.Attribute[] expectedAttributes = attribueStatementRequirements.getAttributes();
 
-        for (int i = 0; i < expectedAttributes.length; i++) {
-            SamlAttributeStatement.Attribute expectedAttribute = expectedAttributes[i];
+        for (SamlAttributeStatement.Attribute expectedAttribute : expectedAttributes) {
             if (!isAttributePresented(expectedAttribute, receivedAttributes, validationResults)) {
-                SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No matching Attribute presented. Required {0}", null, expectedAttribute, null);
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer(result.toString());
-                }
+                SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No matching Attribute presented. Required {0}", null, expectedAttribute);
+                if (logger.isLoggable(Level.FINER)) logger.finer(result.toString());
                 validationResults.add(result);
                 return;
             }
@@ -87,14 +82,13 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
         String expectedValue = expectedAttribute.getValue();
         boolean expectedAny = expectedAttribute.isAnyValue();
         if (isEmpty(expectedName)) {
-            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Invalid Attribute constraint (name is null)", null, null, null);
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Invalid Attribute constraint (name is null)", null);
             validationResults.add(result);
             logger.finer(result.toString());
             return false;
         }
 
-        for (int i = 0; i < receivedAttributes.length; i++) {
-            AttributeType receivedAttribute = receivedAttributes[i];
+        for (AttributeType receivedAttribute : receivedAttributes) {
             if (expectedName.equals(receivedAttribute.getName())) {
                 String receivedNameFormat = receivedAttribute.getNameFormat();
                 if (receivedNameFormat == null) {
@@ -105,26 +99,25 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
                     continue;
                 }
 
-                if (isEmpty(expectedValue) && receivedAttribute.getAttributeValueArray().length==0) {
+                if (isEmpty(expectedValue) && receivedAttribute.getAttributeValueArray().length == 0) {
                     if (logger.isLoggable(Level.FINER)) {
-                        logger.log(Level.FINER, "Matched name {0} with no values presented.", new Object[]{expectedName});
+                        logger.log(Level.FINER, "Matched name {0} with no values presented.", new Object[]{ expectedName });
                     }
                     return true;
                 }
 
                 XmlObject[] values = receivedAttribute.getAttributeValueArray();
-                for (int j = 0; j < values.length; j++) {
-                    XmlObject presentedValue = values[j];
+                for (XmlObject presentedValue : values) {
                     XmlCursor cursor = presentedValue.newCursor();
                     try {
                         if (expectedAny && !isEmpty(cursor.getTextValue())) {
                             if (logger.isLoggable(Level.FINER)) {
-                                logger.finer(MessageFormat.format("Matched name {0}, any value", new Object[]{expectedName, expectedValue}));
+                                logger.finer(MessageFormat.format("Matched name {0}, any value", expectedName, expectedValue));
                             }
                             return true;
                         } else if (cursor.getTextValue().equals(expectedValue)) {
                             if (logger.isLoggable(Level.FINER)) {
-                                logger.finer(MessageFormat.format("Matched name {0}, value {1} ", new Object[]{expectedName, expectedValue}));
+                                logger.finer(MessageFormat.format("Matched name {0}, value {1} ", expectedName, expectedValue));
                             }
                             return true;
                         }

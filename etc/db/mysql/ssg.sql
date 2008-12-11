@@ -252,10 +252,6 @@ CREATE TABLE policy_alias (
 
 
 --
--- Dumping data for table 'published_service'
---
-
---
 -- Table structure for table 'client_cert'
 --
 
@@ -269,16 +265,19 @@ CREATE TABLE client_cert (
   reset_counter int NOT NULL,
   thumbprint_sha1 varchar(64),
   ski varchar(64),
+  subject_dn varchar(255),
+  issuer_dn varchar(255),
+  serial varchar(64),
   PRIMARY KEY  (objectid),
   FOREIGN KEY (provider) REFERENCES identity_provider (objectid) ON DELETE CASCADE,
-  unique key i_identity (provider, user_id),
+--must be added in upgrade task or it will fail on multi-version upgrades
+--UNIQUE KEY i_issuer_serial (issuer_dn, serial),
+  UNIQUE KEY i_identity (provider, user_id),
+  INDEX i_subject_dn (subject_dn),
+  INDEX i_issuer_dn (issuer_dn),
   INDEX i_thumb (thumbprint_sha1),
   INDEX i_ski (ski)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
-
---
--- Dumping data for table 'client_cert'
---
 
 --
 -- Table structure for table 'service_resolution'
@@ -297,10 +296,6 @@ CREATE TABLE service_resolution (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
--- Dumping data for table 'service_resolution'
---
-
---
 -- Table structure for table 'cluster_info'
 --
 
@@ -316,11 +311,7 @@ CREATE TABLE cluster_info (
   avgload double NOT NULL,
   statustimestamp bigint NOT NULL,
   PRIMARY KEY(nodeid)
-)  TYPE=InnoDB DEFAULT CHARACTER SET utf8;
-
---
--- Dumping data for table 'cluster_info'
---
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table 'service_usage'
@@ -335,10 +326,6 @@ CREATE TABLE service_usage (
   completedreqnr bigint NOT NULL,
   primary key(serviceid, nodeid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
-
---
--- Dumping data for table 'service_usage'
---
 
 --
 -- Table structure for table 'jms_connection'
@@ -420,10 +407,15 @@ CREATE TABLE trusted_cert (
   trust_anchor tinyint default 1,
   revocation_type varchar(128) NOT NULL DEFAULT 'USE_DEFAULT',
   revocation_policy_oid bigint(20),
-  primary key(objectid),
-  unique i_thumb (thumbprint_sha1),
+  issuer_dn varchar(255) NOT NULL,
+  serial varchar(64),
+  PRIMARY KEY (objectid),
+  UNIQUE i_thumb (thumbprint_sha1),
+--must be added on upgrade task:
+--UNIQUE i_issuer_serial (issuer_dn, serial),
   INDEX i_ski (ski),
   INDEX i_subject_dn (subject_dn),
+  INDEX i_issuer_dn (issuer_dn),
   FOREIGN KEY (revocation_policy_oid) REFERENCES revocation_check_policy (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 

@@ -1,19 +1,19 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.security.token.X509SecurityToken;
-import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.security.token.X509SigningSecurityToken;
+import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.util.CausedIOException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
@@ -40,7 +40,7 @@ public class ServerRequestWssX509Cert extends AbstractServerAssertion implements
     public ServerRequestWssX509Cert(RequestWssX509Cert subject, ApplicationContext springContext) {
         super(subject);
         this.subject = subject;
-        auditor = new Auditor(this, springContext, logger);
+        this.auditor = new Auditor(this, springContext, logger);
     }
     
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -72,12 +72,11 @@ public class ServerRequestWssX509Cert extends AbstractServerAssertion implements
             return AssertionStatus.AUTH_REQUIRED;
         }
         X509Certificate gotACertAlready = null;
-        for (int i = 0; i < tokens.length; i++) {
-            XmlSecurityToken tok = tokens[i];
-            if (tok instanceof X509SecurityToken) {
-                X509SecurityToken x509Tok = (X509SecurityToken)tok;
+        for (XmlSecurityToken tok : tokens) {
+            if (tok instanceof X509SigningSecurityToken) {
+                X509SigningSecurityToken x509Tok = (X509SigningSecurityToken)tok;
                 if (x509Tok.isPossessionProved()) {
-                    X509Certificate okCert = x509Tok.getCertificate();
+                    X509Certificate okCert = x509Tok.getMessageSigningCertificate();
                     // todo, it is possible that a request has more than one signature by more than one
                     // identity. we should refactor request.setPrincipalCredentials to be able to remember
                     // more than one proven identity.
@@ -98,7 +97,7 @@ public class ServerRequestWssX509Cert extends AbstractServerAssertion implements
                                                         subject.getClass(),
                                                         null,
                                                         gotACertAlready));
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_CERT_LOADED, new String[] {certCN});
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_CERT_LOADED, certCN);
             return AssertionStatus.NONE;
         }
         auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NO_PROVEN_CERT);
@@ -106,6 +105,6 @@ public class ServerRequestWssX509Cert extends AbstractServerAssertion implements
         return AssertionStatus.AUTH_REQUIRED;
     }
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    private static final Logger logger = Logger.getLogger(ServerRequestWssX509Cert.class.getName());
     private RequestWssX509Cert subject;
 }

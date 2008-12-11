@@ -50,6 +50,7 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Jul 5, 2004<br/>
  */
+@SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 public class WssProcessorImpl implements WssProcessor {
     private static final Logger logger = Logger.getLogger(WssProcessorImpl.class.getName());
 
@@ -329,7 +330,7 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             } else if (securityChildToProcess.getLocalName().equals( SoapConstants.SECURITYTOKENREFERENCE_EL_NAME)) {
                 if (DomUtils.elementInNamespace(securityChildToProcess, SoapConstants.SECURITY_URIS_ARRAY)) {
-                    processSecurityTokenReference(securityChildToProcess, securityContextFinder);
+                    processSecurityTokenReference(securityChildToProcess, securityContextFinder, true);
                 } else {
                     logger.fine("Encountered SecurityTokenReference element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ')');
@@ -779,10 +780,10 @@ public class WssProcessorImpl implements WssProcessor {
      * <ul>
      * <li> Key Identifier <wsse:KeyIdentifier></li>
      * <li> Security Token Reference <wsse:Reference></li>
+     * <li> X509 issuer name and issuer serial <ds:X509IssuerName>,  <ds:X509SerialNumber></li>
      * </ul>
      * The unsupported SecurityTokeReference types are:
      * <ul>
-     * <li> X509 issuer name and issuer serial <ds:X509IssuerName>,  <ds:X509SerialNumber></li>
      * <li> Embedded token <wsse:Embedded></li>
      * <li> Key Name <ds:KeyName></li>
      * </ul>
@@ -791,10 +792,11 @@ public class WssProcessorImpl implements WssProcessor {
      *
      * @param str  the SecurityTokenReference element
      * @param securityContextFinder the context finder to perform lookups with (may be null)
+     * @param logIfNothingFound
      * @throws com.l7tech.util.InvalidDocumentFormatException if STR is invalid format or points at something unsupported
      * @throws com.l7tech.security.xml.processor.ProcessorException if a securityContextFinder is required to resolve this STR, but one was not provided
      */
-    private void processSecurityTokenReference(Element str, SecurityContextFinder securityContextFinder)
+    private void processSecurityTokenReference(Element str, SecurityContextFinder securityContextFinder, boolean logIfNothingFound)
             throws InvalidDocumentFormatException, ProcessorException
     {
         // Get identifier
@@ -803,36 +805,29 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Reference or KeyIdentifier values
         boolean isKeyIdentifier = false;
-        boolean isReference = false;
-        String value = null;
-        String valueType = null;
+        String value;
+        String valueType;
         String encodingType = null;
 
-        // Process KeyIdentifier
         Element keyIdentifierElement = DomUtils.findFirstChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
+        Element referenceElement = DomUtils.findFirstChildElementByName(str, str.getNamespaceURI(), "Reference");
         if (keyIdentifierElement != null) {
             isKeyIdentifier = true;
             value = DomUtils.getTextValue(keyIdentifierElement).trim();
             valueType = keyIdentifierElement.getAttribute("ValueType");
             encodingType = keyIdentifierElement.getAttribute("EncodingType");
-        } else {
-            // Process Reference
-            Element referenceElement = DomUtils.findFirstChildElementByName(str, str.getNamespaceURI(), "Reference");
-            if (referenceElement != null) {
-                isReference = true;
-                value = referenceElement.getAttribute("URI");
-                if (value != null && value.length()==0) {
-                    value = null; // we want null not empty string for missing URI
-                }
-                if (value != null && value.charAt(0) == '#') {
-                    value = value.substring(1);
-                }
-                valueType = referenceElement.getAttribute("ValueType");
+        } else if (referenceElement != null) {
+            value = referenceElement.getAttribute("URI");
+            if (value != null && value.length() == 0) {
+                value = null; // we want null not empty string for missing URI
             }
-        }
-
-        if(!(isReference || isKeyIdentifier)) {
-            logger.warning("Ignoring SecurityTokenReference ID=" + logId + " with no KeyIdentifier or Reference");
+            if (value != null && value.charAt(0) == '#') {
+                value = value.substring(1);
+            }
+            valueType = referenceElement.getAttribute("ValueType");
+        } else {
+            if (logIfNothingFound)
+                logger.warning(MessageFormat.format("Ignoring SecurityTokenReference ID={0} with no KeyIdentifier or Reference", logId));
             return;
         }
 
@@ -1284,16 +1279,19 @@ public class WssProcessorImpl implements WssProcessor {
                                                                 SoapConstants.SECURITYTOKENREFERENCE_EL_NAME);
         if (!secTokReferences.isEmpty()) {
             // 2. Resolve the child reference
-            Element securityTokenReference = (Element)secTokReferences.get(0);
-            List references = DomUtils.findChildElementsByName(securityTokenReference,
+            final Element securityTokenReference = (Element)secTokReferences.get(0);
+            final List<Element> references = DomUtils.findChildElementsByName(securityTokenReference,
                                                               SoapConstants.SECURITY_URIS_ARRAY,
                                                               SoapConstants.REFERENCE_EL_NAME);
-            List keyIdentifiers = DomUtils.findChildElementsByName(securityTokenReference,
+            final List<Element> keyIdentifiers = DomUtils.findChildElementsByName(securityTokenReference,
                                                                   SoapConstants.SECURITY_URIS_ARRAY,
                                                                   "KeyIdentifier");
+            final List<Element> x509datas = DomUtils.findChildElementsByName(securityTokenReference,
+                                                                             SoapConstants.DIGSIG_URI,
+                                                                             "X509Data");
             if (!references.isEmpty()) {
                 // get the URI
-                Element reference = (Element)references.get(0);
+                Element reference = references.get(0);
                 String uriAttr = reference.getAttribute("URI");
                 if (uriAttr == null || uriAttr.length() < 1) {
                     // not the food additive
@@ -1320,7 +1318,7 @@ public class WssProcessorImpl implements WssProcessor {
                 logger.fine("The reference " + uriAttr + " did not point to a X509Cert.");
             } else if (!keyIdentifiers.isEmpty()) {
                 // TODO support multiple KeyIdentifier elements
-                Element keyId = (Element)keyIdentifiers.get(0);
+                Element keyId = keyIdentifiers.get(0);
                 String valueType = keyId.getAttribute("ValueType");
                 String value = DomUtils.getTextValue(keyId).trim();
                 if (valueType != null && valueType.endsWith( SoapConstants.VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX)) {
@@ -1398,6 +1396,8 @@ public class WssProcessorImpl implements WssProcessor {
                     if(logger.isLoggable(Level.FINEST))
                         logger.finest("The KeyInfo used an unsupported KeyIdentifier ValueType: " + valueType);
                 }
+            } else if (!x509datas.isEmpty()) {
+                return handleX509Data(securityTokenReference);
             } else {
                 logger.warning("SecurityTokenReference does not contain any References");
             }
@@ -1451,64 +1451,35 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    class X509IssuerSerialOutput {
-        SigningSecurityTokenImpl signingToken;
-        X509Certificate signingCert;
-    }
-
-    public abstract class X509IssuerSerialSecurityToken extends SigningSecurityTokenImpl implements X509SecurityToken {
-        X509IssuerSerialSecurityToken(Element e) {
-            super(e);
-        }
-    }
-
-    private X509IssuerSerialOutput handleX509IssuerSerial(final Element str)
-                                                    throws InvalidDocumentFormatException, ProcessorException
-    {
+    private X509IssuerSerialSecurityToken handleX509Data(final Element str) throws InvalidDocumentFormatException {
         final Element x509data = XmlUtil.findFirstChildElementByName(str, DsigUtil.DIGSIG_URI, "X509Data");
-        if (x509data != null) {
-            Element issuerSerial = XmlUtil.findFirstChildElementByName(x509data, DsigUtil.DIGSIG_URI, "X509IssuerSerial");
-            if (issuerSerial != null) {
-                logger.info("The signature refers to an X509IssuerSerial");
-                // read ds:X509IssuerName and ds:X509SerialNumber
-                Element X509IssuerNameEl = XmlUtil.findFirstChildElementByName(issuerSerial, DsigUtil.DIGSIG_URI, "X509IssuerName");
-                Element X509SerialNumberEl = XmlUtil.findFirstChildElementByName(issuerSerial, DsigUtil.DIGSIG_URI, "X509SerialNumber");
-                if (X509IssuerNameEl != null && X509SerialNumberEl != null) {
-                    // read the values
-                    String X509IssuerName = XmlUtil.getTextValue(X509IssuerNameEl);
-                    String X509SerialNumber = XmlUtil.getTextValue(X509SerialNumberEl);
-                    if (X509IssuerName != null && X509IssuerName.length() > 0 && X509SerialNumber != null && X509SerialNumber.length() > 0) {
-                        logger.info("Trying to lookup cert from LDAP with Issuer DN '" + X509IssuerName + "' and serial '" + X509SerialNumber + "'");
-                        final X509Certificate output = securityTokenResolver.lookupByIssuerAndSerial( new X500Principal(X509IssuerName), new BigInteger(X509SerialNumber) );
-                        if (output != null) {
-                            logger.info("Certificate found");
-                            X509IssuerSerialOutput res = new X509IssuerSerialOutput();
-                            res.signingCert = output;
-                            res.signingToken = new X509IssuerSerialSecurityToken(issuerSerial) {
+        if (x509data == null) return null;
 
-                                public String getElementId() {
-                                    String id = SoapUtil.getElementWsuId(str);
-                                    if (id == null) {
-                                        id = SoapUtil.getElementWsuId(x509data);
-                                    }
-                                    return id;
-                                }
+        Element issuerSerial = XmlUtil.findFirstChildElementByName(x509data, DsigUtil.DIGSIG_URI, "X509IssuerSerial");
+        if (issuerSerial != null) {
+            logger.info("The signature refers to an X509IssuerSerial");
+            // read ds:X509IssuerName and ds:X509SerialNumber
+            Element X509IssuerNameEl = XmlUtil.findFirstChildElementByName(issuerSerial, DsigUtil.DIGSIG_URI, "X509IssuerName");
+            Element X509SerialNumberEl = XmlUtil.findFirstChildElementByName(issuerSerial, DsigUtil.DIGSIG_URI, "X509SerialNumber");
+            if (X509IssuerNameEl == null || X509SerialNumberEl == null) throw new InvalidDocumentFormatException("X509IssuerSerial was missing X509IssuerName and/or X509SerialNumber");
 
-                                public SecurityTokenType getType() {
-                                    return SecurityTokenType.X509_ISSUER_SERIAL;
-                                }
+            String X509IssuerName = XmlUtil.getTextValue(X509IssuerNameEl);
+            String X509SerialNumber = XmlUtil.getTextValue(X509SerialNumberEl);
 
-                                public X509Certificate getCertificate() {
-                                    return output;
-                                }
-                            };
-                            securityTokens.add(res.signingToken);
-                            return res;
-                        }
-                    }
-                    logger.info("Could not retrieve cert from LDAP");
-                }
+            if (X509IssuerName == null || X509IssuerName.length() <= 0 || X509SerialNumber == null || X509SerialNumber.length() <= 0)
+                throw new InvalidDocumentFormatException("X509IssuerName and/or X509SerialNumber was empty");
+
+            logger.info("Trying to lookup cert with Issuer DN '" + X509IssuerName + "' and serial '" + X509SerialNumber + "'");
+            final X509Certificate certificate = securityTokenResolver.lookupByIssuerAndSerial( new X500Principal(X509IssuerName), new BigInteger(X509SerialNumber) );
+            if (certificate == null) {
+                logger.info("Could not find cert");
+                return null;
             }
+
+            logger.info("Certificate found");
+            final X509IssuerSerialSecurityToken issuerSerialSecurityToken = new X509IssuerSerialSecurityToken(x509data, certificate);
+            securityTokens.add(issuerSerialSecurityToken);
+            return issuerSerialSecurityToken;
         }
         return null;
     }
@@ -1716,9 +1687,8 @@ public class WssProcessorImpl implements WssProcessor {
 
         // 1st, process the KeyInfo
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
-        if (keyInfoElement == null) {
-            throw new ProcessorException("KeyInfo element not found in Signature Element");
-        }
+        if (keyInfoElement == null)
+            throw new InvalidDocumentFormatException("KeyInfo element not found in Signature Element");
 
         X509Certificate signingCert = null;
         Key signingKey = null;
@@ -1751,13 +1721,7 @@ public class WssProcessorImpl implements WssProcessor {
         // Process any STR that is used within the signature
         Element keyInfoStr = DomUtils.findFirstChildElementByName(keyInfoElement, SoapConstants.SECURITY_URIS_ARRAY, "SecurityTokenReference");
         if (keyInfoStr != null) {
-            processSecurityTokenReference(keyInfoStr, securityContextFinder);
-
-            X509IssuerSerialOutput tmp = handleX509IssuerSerial(keyInfoStr);
-            if (tmp != null) {
-                signingCert = tmp.signingCert;
-                signingToken = tmp.signingToken;
-            }
+            processSecurityTokenReference(keyInfoStr, securityContextFinder, false);
         }
 
         if (signingCert == null && dkt != null) {

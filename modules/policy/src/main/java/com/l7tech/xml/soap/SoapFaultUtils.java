@@ -1,7 +1,7 @@
 package com.l7tech.xml.soap;
 
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.MissingRequiredElementException;
+import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.SoapFaultDetailImpl;
 import com.l7tech.common.io.XmlUtil;

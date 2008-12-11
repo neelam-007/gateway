@@ -1,3 +1,6 @@
+/**
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.skunkworks;
 
 import com.mysql.jdbc.Driver;
@@ -5,9 +8,6 @@ import org.hibernate.cfg.AnnotationConfiguration;
 import org.hibernate.dialect.MySQLDialect;
 import org.hibernate.tool.hbm2ddl.SchemaUpdate;
 
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 public class SchemaUpdater {
     private final AnnotationConfiguration config;
 
@@ -60,7 +60,7 @@ public class SchemaUpdater {
         config.addAnnotatedClass(com.l7tech.gateway.common.schema.SchemaEntry.class);
         config.addAnnotatedClass(com.l7tech.gateway.common.security.RevocationCheckPolicy.class);
         config.addAnnotatedClass(com.l7tech.security.cert.TrustedCert.class);
-        config.addAnnotatedClass(com.l7tech.server.identity.cert.CertEntryRow.class);
+        config.addAnnotatedClass(com.l7tech.identity.cert.CertEntryRow.class);
         config.addAnnotatedClass(com.l7tech.server.security.keystore.KeystoreFile.class);
         config.addAnnotatedClass(com.l7tech.server.security.sharedkey.SharedKeyRecord.class);
 

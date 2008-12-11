@@ -1,7 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.security.xml;
 
 import com.l7tech.message.Message;
@@ -83,8 +82,8 @@ public class WssProcessorTest extends TestCase {
         assertTrue(encrypted != null);
         if (encrypted.length > 0) {
             log.info("The following elements were encrypted:");
-            for (int j = 0; j < encrypted.length; j++) {
-                Element element = encrypted[j].asElement();
+            for (ParsedElement anEncrypted : encrypted) {
+                Element element = anEncrypted.asElement();
                 log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
             }
         } else
@@ -94,8 +93,8 @@ public class WssProcessorTest extends TestCase {
         assertTrue(signed != null);
         if (signed.length > 0) {
             log.info("The following elements were signed:");
-            for (int j = 0; j < signed.length; j++) {
-                Element element = signed[j].asElement();
+            for (SignedElement aSigned : signed) {
+                Element element = aSigned.asElement();
                 log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
             }
         } else
@@ -106,8 +105,7 @@ public class WssProcessorTest extends TestCase {
         assertTrue(tokens != null);
         if (tokens.length > 0) {
             log.info("The following security tokens were found:");
-            for (int j = 0; j < tokens.length; j++) {
-                SecurityToken token = tokens[j];
+            for (XmlSecurityToken token : tokens) {
                 if (token instanceof SamlSecurityToken) {
                     log.info("Possession proved: " + ((SamlSecurityToken)token).isPossessionProved());
                     log.info("  " + ((SamlSecurityToken)token).getSubjectCertificate());
@@ -180,6 +178,10 @@ public class WssProcessorTest extends TestCase {
         doTest(makeEttkTestDocument("ettk signed encrypted request", TestDocuments.ETTK_SIGNED_ENCRYPTED_REQUEST));
     }
 
+    public void testEttkSignedRequestIssuerSerial() throws Exception {
+        doTest(makeEttkTestDocument("ettk signed request (with X509IssuerSerial)", TestDocuments.GOOGLESPELLREQUEST_SIGNED_ISSUERSERIAL));
+    }
+
     /*public void testRequestWrappedL7Actor() throws Exception {
         doTest(makeDotNetTestDocument("request wrapped l7 actor", TestDocuments.WRAPED_L7ACTOR));
     }
@@ -230,37 +232,15 @@ public class WssProcessorTest extends TestCase {
 
     public void testBug3736StrTransform() throws Exception {
         TestDocument result;
-        try {
-            Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3736_STR_TRANSFORM_REQUEST);
-
-            result = new TestDocument("Bug3736StrTransform", d,
-                                                null,
-                                                null,
-                                                null,
-                                                null,
-                                                null);
-        } catch (Exception e) {
-            throw e;
-        }
-
+        Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3736_STR_TRANSFORM_REQUEST);
+        result = new TestDocument("Bug3736StrTransform", d, null, null, null, null, null);
         doTest(result);
     }
 
     public void testBug3611SignatureInclusiveNamespaces() throws Exception {
         TestDocument result;
-        try {
-            Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3611_SIGNATURE_INCLUSIVE_NAMESPACES);
-
-            result = new TestDocument("Bug3611SignatureInclusiveNamespaces", d,
-                                                null,
-                                                null,
-                                                null,
-                                                null,
-                                                null);
-        } catch (Exception e) {
-            throw e;
-        }
-
+        Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3611_SIGNATURE_INCLUSIVE_NAMESPACES);
+        result = new TestDocument("Bug3611SignatureInclusiveNamespaces", d, null, null, null, null, null);
         doTest(result);
     }
 
@@ -269,18 +249,8 @@ public class WssProcessorTest extends TestCase {
      */
     public void testBug3747DsigXpath() throws Exception {
         TestDocument result;
-        try {
-            Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3747_DSIG_XPATH);
-
-            result = new TestDocument("Bug3747DsigXpath", d,
-                                                null,
-                                                null,
-                                                null,
-                                                null,
-                                                null);
-        } catch (Exception e) {
-            throw e;
-        }
+        Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3747_DSIG_XPATH);
+        result = new TestDocument("Bug3747DsigXpath", d, null, null, null, null, null);
 
         try {
             doTest(result);
@@ -311,13 +281,7 @@ public class WssProcessorTest extends TestCase {
             Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "keyinfothumbreq.xml");
 
             SecurityTokenResolver securityTokenResolver = new SimpleSecurityTokenResolver(TestDocuments.getWssInteropAliceCert());
-            result = new TestDocument("KeyInfoThumbprintRequest",
-                                      d,
-                                      null,
-                                      null,
-                                      null,
-                                      null,
-                                      securityTokenResolver);
+            result = new TestDocument("KeyInfoThumbprintRequest", d, null, null, null, null, securityTokenResolver);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -331,13 +295,7 @@ public class WssProcessorTest extends TestCase {
     
     public TestDocument makeBug3754PingReqVordelSignedTestDocument() throws Exception {
         Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3754_PING_REQ_VORDEL_SIGNED);
-        return new TestDocument("Bug3754PingReqVordelSigned",
-                d,
-                null,
-                null,
-                null,
-                null,
-                null);
+        return new TestDocument("Bug3754PingReqVordelSigned", d, null, null, null, null, null);
     }
 
     // disabled because the cert that signed the test message has since expired
@@ -349,13 +307,7 @@ public class WssProcessorTest extends TestCase {
         Element security = SoapUtil.getOrMakeSecurityElement(d);
         security.appendChild(d.importNode(ass.getDocumentElement(), true));
         SecurityTokenResolver securityTokenResolver = new SimpleSecurityTokenResolver(TestDocuments.getDotNetServerCertificate());
-        r = new TestDocument("SignedSvAssertionWithThumbprintSha1",
-                             d,
-                             null,
-                             null,
-                             null,
-                             null,
-                             securityTokenResolver);
+        r = new TestDocument("SignedSvAssertionWithThumbprintSha1", d, null, null, null, null, securityTokenResolver);
         doTest(r);
     }
 
@@ -373,13 +325,7 @@ public class WssProcessorTest extends TestCase {
         //XmlUtil.nodeToOutputStream(d, new FileOutputStream("c:/eggerequest.xml"));
 
         SecurityTokenResolver securityTokenResolver = new SimpleSecurityTokenResolver(TestDocuments.getDotNetServerCertificate());
-        TestDocument td = new TestDocument("CompleteEggRequest",
-                                           d,
-                                           null,
-                                           null,
-                                           null,
-                                           null,
-                                           securityTokenResolver);
+        TestDocument td = new TestDocument("CompleteEggRequest", d, null, null, null, null, securityTokenResolver);
         doTest(td);
     }
 
@@ -389,10 +335,8 @@ public class WssProcessorTest extends TestCase {
 
         result = new TestDocument("WssInterop2005JulyResponse", d,
                                   TestDocuments.getWssInteropAliceKey(),
-                                  TestDocuments.getWssInteropAliceCert(),
-                                  null,
-                                  TestDocuments.getWssInteropBobCert(),
-                                  null);
+                                  TestDocuments.getWssInteropAliceCert(), null,
+                                  TestDocuments.getWssInteropBobCert(), null );
         doTest(result);
     }
 
@@ -401,9 +345,7 @@ public class WssProcessorTest extends TestCase {
             Document d = TestDocuments.getTestDocument(docname);
             return new TestDocument(testname, d,
                                     TestDocuments.getEttkServerPrivateKey(),
-                                    TestDocuments.getEttkServerCertificate(),
-                                    null,
-                                    null, null);
+                                    TestDocuments.getEttkServerCertificate(), null, null, null );
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -413,9 +355,7 @@ public class WssProcessorTest extends TestCase {
         try {
             return new TestDocument(testname, doc,
                                     TestDocuments.getEttkServerPrivateKey(),
-                                    TestDocuments.getEttkServerCertificate(),
-                                    null,
-                                    null, null);
+                                    TestDocuments.getEttkServerCertificate(), null, null, null );
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -481,9 +421,7 @@ public class WssProcessorTest extends TestCase {
         log.info("Input decorated message (reformatted): \n" + XmlUtil.nodeToFormattedString(d));
         WssProcessor p = new WssProcessorImpl();
 
-        ProcessorResult got = p.undecorateMessage(new Message(d),
-                                                  null,
-                                                  null,
+        ProcessorResult got = p.undecorateMessage(new Message(d), null, null,
                                                   new WrapSSTR(aliceCert,
                                                                TestDocuments.getWssInteropAliceKey(),
                                                                new SimpleSecurityTokenResolver(bobCert)));

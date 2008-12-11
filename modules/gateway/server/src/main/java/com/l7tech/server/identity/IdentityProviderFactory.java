@@ -29,8 +29,7 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public class IdentityProviderFactory
-        implements InitializingBean, ApplicationContextAware, ApplicationListener {
+public class IdentityProviderFactory implements ApplicationContextAware, ApplicationListener {
     private ApplicationContext springContext;
     private final IdentityProviderConfigManager identityProviderConfigManager;
 
@@ -145,20 +144,6 @@ public class IdentityProviderFactory
             throw e;
         } catch (Exception e) {
             throw new InvalidIdProviderCfgException(e);
-        }
-    }
-
-    /**
-     * Invoked by a BeanFactory after it has set all bean properties supplied
-     * (and satisfied BeanFactoryAware and ApplicationContextAware).
-     *
-     * @throws Exception in the event of misconfiguration (such
-     *                   as failure to set an essential property) or if initialization fails.
-     */
-    public void afterPropertiesSet() throws Exception {
-        if (!(springContext instanceof AbstractApplicationContext)) {
-            throw new IllegalStateException("application context is expected to be of '" + AbstractApplicationContext.class + "' received "
-              + springContext.getClass());
         }
     }
 

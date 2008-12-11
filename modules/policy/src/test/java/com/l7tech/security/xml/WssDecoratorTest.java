@@ -3,9 +3,14 @@
  */
 package com.l7tech.security.xml;
 
-import com.l7tech.message.Message;
+import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-//import com.l7tech.common.mime.MimeBodyTest;
+import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
@@ -16,19 +21,9 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecorationRequirements.SimpleSecureConversationSession;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.XencAlgorithm;
-import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.DomUtils;
 import com.l7tech.xml.MessageNotSoapException;
-import com.l7tech.common.TestDocuments;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.xml.soap.SoapUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -440,12 +435,7 @@ public class WssDecoratorTest extends TestCase {
 
     public TestDocument getSigningOnlyWithSecureConversationTestDocument() throws Exception {
         final Context c = new Context();
-        return new TestDocument(c,
-                                null, null,
-                                null,
-                                null,
-                                null,
-                                true,
+        return new TestDocument(c, null, null, null, null, null, true,
                                 new Element[0],
                                 new Element[]{c.body},
                                 TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
@@ -457,12 +447,7 @@ public class WssDecoratorTest extends TestCase {
 
     public TestDocument getSigningAndEncryptionWithSecureConversationTestDocument() throws Exception {
         final Context c = new Context();
-        return new TestDocument(c,
-                                null, null,
-                                null,
-                                null,
-                                null,
-                                true,
+        return new TestDocument(c, null, null, null, null, null, true,
                                 new Element[]{c.productid, c.accountid},
                                 new Element[]{c.body},
                                 TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
@@ -692,15 +677,20 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public void testSignedAndEncryptedBodyWithNoBst() throws Exception {
-        runTest(getSignedAndEncryptedBodyWithNoBstTestDocument());
+        runTest(getSignedAndEncryptedBodySkiTestDocument());
     }
 
-    public void testSignedBodyWithNoBst() throws Exception {
-        TestDocument doc = getSignedBodyWithNoBstTestDocument();
+    public void testSignedBodyWithSki() throws Exception {
+        TestDocument doc = getSignedBodyDocument(KeyInfoInclusionType.STR_SKI);
         runTest(doc);
     }
 
-    public TestDocument getSignedAndEncryptedBodyWithNoBstTestDocument() throws Exception {
+    public void testSignedBodyWithIssuerSerial() throws Exception {
+        TestDocument doc = getSignedBodyDocument(KeyInfoInclusionType.ISSUER_SERIAL);
+        runTest(doc);
+    }
+
+    public TestDocument getSignedAndEncryptedBodySkiTestDocument() throws Exception {
         final Context c = new Context();
         return new TestDocument(c,
                                 null,
@@ -716,8 +706,8 @@ public class WssDecoratorTest extends TestCase {
                                 KeyInfoInclusionType.STR_SKI);
     }
 
-    public TestDocument getSignedBodyWithNoBstTestDocument() throws Exception {
-        final Context c = new Context();
+    private TestDocument getSignedBodyDocument(final KeyInfoInclusionType keyInfoType) throws Exception {
+        Context c = new Context();
         return new TestDocument(c,
                                 null,
                                 TestDocuments.getDotNetServerCertificate(),
@@ -726,10 +716,11 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getEttkClientPrivateKey(),
                                 true,
                                 null,
-                                new Element[]{c.body},
+                                new Element[]{ c.body},
                                 null,
                                 false,
-                                KeyInfoInclusionType.STR_SKI);
+                                keyInfoType
+        );
     }
 
     public void testEncryptedUsernameToken() throws Exception {
@@ -738,23 +729,14 @@ public class WssDecoratorTest extends TestCase {
 
     public TestDocument getEncryptedUsernameTokenTestDocument() throws Exception {
         final Context c = new Context();
-        return new TestDocument(c,
-                                null,
-                                null,
-                                null,
+        return new TestDocument(c, null, null, null,
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),
-                                true,
-                                null,
-                                null,
+                                true, null, null,
                                 new Element[]{c.body},
-                                null,
-                                false,
+                                null, false,
                                 KeyInfoInclusionType.STR_SKI,
-                                true,
-                                null,
-                                null,
-                                null,
+                                true, null, null, null,
                                 new UsernameTokenImpl("testuser", "password".toCharArray()), false, false);
     }
 
@@ -764,26 +746,16 @@ public class WssDecoratorTest extends TestCase {
 
     public TestDocument getSignedAndEncryptedUsernameTokenTestDocument() throws Exception {
         final Context c = new Context();
-        return new TestDocument(c,
-                                null,
-                                null,
-                                null,
+        return new TestDocument(c, null, null, null,
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),
-                                true,
-                                null,
-                                null,
+                                true, null, null,
                                 new Element[]{c.body},
-                                null,
-                                false,
+                                null, false,
                                 KeyInfoInclusionType.STR_SKI,
-                                true,
-                                null,
-                                null,
-                                null,
+                                true, null, null, null,
                                 new UsernameTokenImpl("testuser", "password".toCharArray()),
-                                false,
-                                true);
+                                false, true);
     }
 
     public void testEncryptedUsernameTokenWithDerivedKeys() throws Exception {
@@ -792,23 +764,14 @@ public class WssDecoratorTest extends TestCase {
 
     public TestDocument getEncryptedUsernameTokenWithDerivedKeysTestDocument() throws Exception {
         final Context c = new Context();
-        return new TestDocument(c,
-                                null,
-                                null,
-                                null,
+        return new TestDocument(c, null, null, null,
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),
-                                true,
-                                null,
-                                null,
+                                true, null, null,
                                 new Element[]{c.body},
-                                null,
-                                false,
+                                null, false,
                                 KeyInfoInclusionType.STR_SKI,
-                                true,
-                                null,
-                                null,
-                                null,
+                                true, null, null, null,
                                 new UsernameTokenImpl("testuser", "password".toCharArray()),
                                 true, false);
     }
@@ -827,7 +790,7 @@ public class WssDecoratorTest extends TestCase {
                                        4,55,33,22,
                                        28,55,-25,33,
                                        -120,55,66,33,
-                83,22,44,55};
+                                       83,22,44,55};
 
         TestDocument testDocument =
                 new TestDocument(c,
@@ -854,15 +817,11 @@ public class WssDecoratorTest extends TestCase {
 
     public TestDocument getOaepKeyEncryptionTestDocument() throws Exception {
         final Context c = new Context();
-        TestDocument td = new TestDocument(
-                c,
-                null,
-                null,
-                TestDocuments.getDotNetServerCertificate(),
-                TestDocuments.getDotNetServerPrivateKey(),
-                true,
-                null,
-                new Element[]{c.body});
+        TestDocument td = new TestDocument(c, null, null,
+                                           TestDocuments.getDotNetServerCertificate(),
+                                           TestDocuments.getDotNetServerPrivateKey(),
+                                           true, null,
+                                           new Element[]{c.body});
         td.req.setKeyEncryptionAlgorithm(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
         return td;
     }
@@ -941,20 +900,13 @@ public class WssDecoratorTest extends TestCase {
                         (PrivateKey)TestDocuments.getEttkClientPrivateKey(),
                         (X509Certificate)TestDocuments.getDotNetServerCertificate(),
                         (PrivateKey)TestDocuments.getDotNetServerPrivateKey(),
-                        true,
-                        new Element[]{c.body},
-                        (String)null,
-                        new Element[]{c.body},
-                        null,
-                        false,
+                        true, new Element[]{ c.body },
+                        (String)null, new Element[]{ c.body },
+                        null, false,
                         KeyInfoInclusionType.CERT,
-                        false,
-                        null,
-                        null,
+                        false, null, null,
                         ACTOR_NONE,
-                        null,
-                        false,
-                        false);
+                        null, false, false );
         td.req.addSignatureConfirmation("abc11SignatureConfirmationValue11blahblahblah11==");
         td.req.addSignatureConfirmation("abc11SignatureConfirmationValue22blahblahblah22==");
         return td;

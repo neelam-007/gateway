@@ -1,8 +1,12 @@
+/*
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.server.identity.cert;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.identity.User;
+import com.l7tech.identity.cert.CertEntryRow;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -10,9 +14,11 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.Pair;
+import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
-import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
@@ -20,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -32,16 +39,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
- * Hibernate implementation of the ClientCertManager.
- *
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- *
- * User: flascell<br/>
- * Date: Oct 23, 2003<br/>
- * $Id$
+ * Not a {@link com.l7tech.server.HibernateEntityManager} for historical reasons.
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClientCertManagerImp extends HibernateDaoSupport implements ClientCertManager {
@@ -78,19 +77,16 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     }
 
     @Transactional(readOnly=true)
-    public boolean userCanGenCert(User user, Certificate existingCert) {
+    public boolean userCanGenCert(User user, Certificate existingCert) throws FindException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("userCanGenCert for " + getName(user));
         CertEntryRow userData = getFromTable(user);
         // if this user has no data at all, then he is allowed to generate a cert
         if (userData == null) return true;
         // if user has a cert he is only allowed is his counter is below 10
-        if (userData.getCertBase64() != null) {
-            if (existingCert instanceof X509Certificate && isCertPossiblyStale((X509Certificate)existingCert))
-                return true;
-
-            return userData.getResetCounter() < 10;
-        } else return true;
+        return userData.getCertBase64() == null
+            || existingCert instanceof X509Certificate && isCertPossiblyStale((X509Certificate)existingCert)
+            || userData.getResetCounter() < 10;
     }
 
     public void recordNewUserCert(User user, Certificate cert, boolean oldCertWasStale) throws UpdateException {
@@ -121,7 +117,12 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         */
 
         // check if operation is permitted
-        CertEntryRow userData = getFromTable(user);
+        CertEntryRow userData;
+        try {
+            userData = getFromTable(user);
+        } catch (FindException e) {
+            throw new UpdateException("Couldn't find user to update cert", e);
+        }
 
         // if this user has no data at all, then he is allowed to generate a cert
         boolean canRegenCert =
@@ -217,7 +218,12 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("revokeUserCert for " + getName(user) + (issuer==null ? "" : " issuer "+issuer.toString()));
         boolean revokedUserCertificate = false;
-        CertEntryRow currentdata = getFromTable(user);
+        CertEntryRow currentdata;
+        try {
+            currentdata = getFromTable(user);
+        } catch (FindException e) {
+            throw new UpdateException("Couldn't find user to update cert", e);
+        }
         if (currentdata != null) {
             boolean revoke = false;
             if (issuer != null) {
@@ -254,7 +260,12 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         boolean wasSystem = context.isSystem();
         context.setSystem(true);
         try {
-            CertEntryRow currentdata = getFromTable(user);
+            CertEntryRow currentdata;
+            try {
+                currentdata = getFromTable(user);
+            } catch (FindException e) {
+                throw new UpdateException("Couldn't find user to update cert", e);
+            }
             if (currentdata != null) {
                 if ( currentdata.getResetCounter() != 10 ) {
                     currentdata.setResetCounter(10);
@@ -280,30 +291,37 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     }
 
     @Transactional(readOnly=true)
-    public List findByThumbprint(String thumbprint) throws FindException {
+    public List<CertEntryRow> findByThumbprint(String thumbprint) throws FindException {
         return simpleQuery("thumbprintSha1", thumbprint);
     }
 
     @Transactional(readOnly=true)
-    public List findBySki(String ski) throws FindException {
+    public List<CertEntryRow> findBySki(String ski) throws FindException {
         return simpleQuery("ski", ski);
+    }
+
+    @Override
+    @Transactional(readOnly=true)
+    public List<CertEntryRow> findByIssuerAndSerial(final X500Principal issuer, final BigInteger serial) throws FindException {
+        if (issuer == null || serial == null) throw new NullPointerException();
+        return simpleQuery(new Pair<String, Object>("issuerDn", issuer.getName()),
+                           new Pair<String, Object>("serial", serial));
     }
 
     public List<CertInfo> findAll() throws FindException {
         List<CertInfo> allCerts = new ArrayList<CertInfo>();
 
         try {
-            List userCerts = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            @SuppressWarnings({"unchecked"})
+            List<CertEntryRow> userCerts = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    return session.createQuery(HQL_FINDALL_QUERY).list();
+                    return session.createCriteria(CertEntryRow.class).list();
                 }
             });
 
-            for (Object row : userCerts) {
-                CertEntryRow cer = (CertEntryRow) row;
+            for (CertEntryRow cer : userCerts) {
                 allCerts.add(new CertInfoImpl(cer));
             }
-
         } catch (DataAccessException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new FindException("Couldn't retrieve cert", e);
@@ -312,75 +330,53 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         return Collections.unmodifiableList(allCerts);
     }
 
-    private List simpleQuery(String fieldname, final String value) throws FindException {
-        final StringBuffer hql = new StringBuffer("FROM ");
-        hql.append("cc").append(" IN CLASS ").append(CertEntryRow.class.getName());
-        hql.append(" WHERE ").append("cc").append(".").append(fieldname).append(" ");
+    private List<CertEntryRow> simpleQuery(final String fieldname, final Object value) throws FindException {
+        return simpleQuery(new Pair<String, Object>(fieldname, value));
+    }
 
+    private List<CertEntryRow> simpleQuery(final Pair<String, Object>... nvps) throws FindException {
+        if (nvps == null || nvps.length == 0) throw new IllegalArgumentException("fieldnames and values most be non-null and not empty");
         try {
+            //noinspection unchecked
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    if (value == null) {
-                        hql.append("is null");
-                        return session.createQuery(hql.toString()).list();
+                    final Criteria crit = session.createCriteria(CertEntryRow.class);
+                    for (Pair<String, Object> nvp : nvps) {
+                        final String fieldname = nvp.left;
+                        final Object value = nvp.right;
+                        crit.add(value == null ? Restrictions.isNull(fieldname) : Restrictions.eq(fieldname, value));
                     }
-
-                    hql.append(" = ?");
-                    return session.createQuery(hql.toString()).setString(0, value.trim()).list();
+                    return crit.list();
                 }
             });
         } catch (DataAccessException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new FindException("Couldn't retrieve cert", e);
         }
     }
-
 
     /*
      * retrieves the table data for a specific user
      * @return the data in the table or null if no data exist for this user
      */
-    private CertEntryRow getFromTable(final User user) {
-        try {
-            return (CertEntryRow)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
-                public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Query q = session.createQuery(FIND_BY_USER_ID);
-                    q.setLong(0, user.getProviderId());
-                    q.setString(1, user.getId());
-                    CertEntryRow row = (CertEntryRow)q.uniqueResult();
-                    if (row != null) return row;
-                    if (user.getLogin() != null && user.getLogin().length() > 0) {
-                        // Try searching by login if userId fails
-                        q = session.createQuery(FIND_BY_LOGIN);
-                        q.setLong(0, user.getProviderId());
-                        q.setString(1, user.getLogin());
-                        return q.uniqueResult();
-                    }
-                    return null;
-                }
-            });
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "hibernate error finding cert entry for " + getName(user), e);
-            return null;
-        }
+    private CertEntryRow getFromTable(final User user) throws FindException {
+        // Try to find by providerId & userId first
+        List<CertEntryRow> rows = simpleQuery(new Pair<String, Object>(PROVIDER_COLUMN, user.getProviderId()), 
+                                              new Pair<String, Object>(USER_ID, user.getId()));
+        if (rows.size() == 1) return rows.get(0);
+
+        // Then try to find by providerId & login
+        rows = simpleQuery(new Pair<String, Object>(PROVIDER_COLUMN, user.getProviderId()),
+                           new Pair<String, Object>(USER_LOGIN, user.getLogin()));
+        if (rows.size() == 1) return rows.get(0);
+        if (rows.size() > 1) throw new FindException("Found more than one cert for this user");
+        return null;
     }
 
-    protected final Logger logger = Logger.getLogger(getClass().getName());
+    private static final Logger logger = Logger.getLogger(ClientCertManagerImp.class.getName());
 
-    private static final String TABLE_NAME = "client_cert";
     private static final String PROVIDER_COLUMN = "provider";
     private static final String USER_ID = "userId";
     private static final String USER_LOGIN = "login";
-
-    private static final String HQL_FINDALL_QUERY = "from " + CertEntryRow.class.getName();
-    
-    private static final String FIND_BY_USER_ID = "from " + TABLE_NAME + " in class " + CertEntryRow.class.getName() +
-                           " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
-                           " and " + TABLE_NAME + "." + USER_ID + " = ?";
-
-    private static final String FIND_BY_LOGIN = "from " + TABLE_NAME + " in class " + CertEntryRow.class.getName() +
-                           " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
-                           " and " + TABLE_NAME + "." + USER_LOGIN + " = ?";
 
     private static class CertInfoImpl implements CertInfo {
         private final long providerId;

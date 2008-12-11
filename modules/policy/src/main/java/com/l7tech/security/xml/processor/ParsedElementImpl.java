@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.security.xml.processor;
 
 import com.l7tech.security.token.ParsedElement;
@@ -13,7 +10,7 @@ import org.w3c.dom.Element;
  * Implementation of ParsedElement.  Single-threaded only.
  */
 class ParsedElementImpl implements ParsedElement {
-    private Element element;
+    protected Element element;
 
     public ParsedElementImpl(Element element) {
         this.element = element;

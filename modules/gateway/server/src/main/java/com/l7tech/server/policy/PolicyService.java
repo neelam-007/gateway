@@ -41,7 +41,7 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.xml.MissingRequiredElementException;
+import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.*;
@@ -50,7 +50,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.xml.XMLConstants;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.security.GeneralSecurityException;

@@ -12,21 +12,21 @@ import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
+import com.l7tech.gateway.common.security.rbac.AttributePredicate;
+import com.l7tech.gateway.common.security.rbac.ObjectIdentityPredicate;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.ScopePredicate;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsBinDetail;
 import com.l7tech.gateway.common.transport.email.EmailListenerState;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.ScopePredicate;
-import com.l7tech.gateway.common.security.rbac.ObjectIdentityPredicate;
-import com.l7tech.gateway.common.security.rbac.AttributePredicate;
 import com.l7tech.identity.GroupMembership;
+import com.l7tech.identity.cert.CertEntryRow;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.*;
 import com.l7tech.server.event.admin.*;
-import com.l7tech.server.identity.cert.CertEntryRow;
 import com.l7tech.server.logon.LogonInfo;
 import com.l7tech.server.service.resolution.ResolutionParameters;
 import com.l7tech.server.wsdm.subscription.Subscription;
@@ -141,7 +141,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         } else if (obj instanceof CertEntryRow) {
             return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "removed", null, getApplicationContext()));
         } else if (obj instanceof Entity) {
-            return new Deleted((Entity)obj);
+            return new Deleted<Entity>((Entity)obj);
         } else
             throw new IllegalStateException("Can't make a Deleted event for a " + obj.getClass().getName());
     }
@@ -154,7 +154,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         } else if (obj instanceof PolicyVersion) {
             return new PolicyVersionCreated((PolicyVersion)obj);
         } else if (obj instanceof Entity) {
-            return new Created((Entity)obj);
+            return new Created<Entity>((Entity)obj);
         } else
             throw new IllegalStateException("Can't make a Created event for a " + obj.getClass().getName());
     }
@@ -167,7 +167,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         } else if (obj instanceof PolicyVersion ) {
             return new PolicyVersionUpdated((PolicyVersion)obj, changes);
         } else if (obj instanceof Entity) {
-            return new Updated((Entity)obj, changes);
+            return new Updated<Entity>((Entity)obj, changes);
         } else
             throw new IllegalStateException("Can't make an Updated event for a " + obj.getClass().getName());
     }

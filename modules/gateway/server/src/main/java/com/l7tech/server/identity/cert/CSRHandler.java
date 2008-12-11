@@ -1,22 +1,25 @@
+/*
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.event.system.CertificateSigningServiceEvent;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.event.system.CertificateSigningServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.transport.TransportModule;
 
@@ -31,20 +34,12 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 
-
 /**
- * Servlet which handles the CSR requests coming from the Client Proxy. Must come
+ * Servlet which handles the CSR requests coming from the XML VPN Client. Must come
  * through ssl and must contain valid credentials embedded in basic auth header.
  * <p/>
  * When the node handling the csr request does not have access to the master key, it tries
- * to forward the request to the master node. In order for this to work, the root cert of the
- * cluster must be previously inserted in the trust store of this node
- * ($JAVA_HOME/jre/lib/security/cacerts).
- * <p/>
- * <br/><br/>
- * Layer 7 Technologies, inc.<br/>
- * User: flascelles<br/>
- * Date: Jul 25, 2003
+ * to forward the request to a node that has it.
  */
 public class CSRHandler extends AuthenticatableHttpServlet {
     public void init(ServletConfig config) throws ServletException {
@@ -113,14 +108,14 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         User authenticatedUser = authResult.getUser();
         X509Certificate requestCert = authResult.getAuthenticatedCert();
 
-        if (!clientCertManager.userCanGenCert(authenticatedUser, requestCert)) {
-            logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
-              " Contact your administrator for more info.");
-            return;
-        }
-
         try {
+            if (!clientCertManager.userCanGenCert(authenticatedUser, requestCert)) {
+                logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
+                  " Contact your administrator for more info.");
+                return;
+            }
+
             long oid  = authenticatedUser.getProviderId();
             IdentityProviderConfig conf = providerConfigManager.findByPrimaryKey(oid);
             if (conf instanceof LdapIdentityProviderConfig) {

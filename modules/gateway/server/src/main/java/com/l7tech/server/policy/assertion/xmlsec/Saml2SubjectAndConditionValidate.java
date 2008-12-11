@@ -24,7 +24,7 @@ class Saml2SubjectAndConditionValidate {
      */
     static void validateSubject(RequestWssSaml requestWssSaml, SubjectType subject, Calendar now, Collection validationResults) {
         if (subject == null) {
-            validationResults.add(newError("Subject Required", null, null, null));
+            validationResults.add(new SamlAssertionValidate.Error("Subject Required", null));
             return; // no point trying to continue validating a null subject
         }
         final String nameQualifier = requestWssSaml.getNameQualifier();
@@ -33,9 +33,7 @@ class Saml2SubjectAndConditionValidate {
             if (nameIdentifierType != null) {
                 String presentedNameQualifier = nameIdentifierType.getNameQualifier();
                 if (!nameQualifier.equals(presentedNameQualifier)) {
-                    Object error = newError("Name Qualifiers does not match presented/required {0}/{1}",
-                                             null,
-                                             new Object[]{presentedNameQualifier, nameQualifier}, null);
+                    SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Name Qualifiers does not match presented/required {0}/{1}", null, presentedNameQualifier, nameQualifier);
                     validationResults.add(error);
                     logger.finer(error.toString());
                     return;
@@ -52,8 +50,7 @@ class Saml2SubjectAndConditionValidate {
         if (nameIdentifierType != null) {
             presentedNameFormat = nameIdentifierType.getFormat();
             if (nameFormats != null) {
-                for (int i = 0; i < nameFormats.length; i++) {
-                    String nameFormat = nameFormats[i];
+                for (String nameFormat : nameFormats) {
                     if (nameFormat.equals(presentedNameFormat)) {
                         nameFormatMatch = true;
                         logger.fine("Matched Name Format " + nameFormat);
@@ -70,16 +67,14 @@ class Saml2SubjectAndConditionValidate {
             presentedNameFormat = "";
         }
         if (!nameFormatMatch) {
-            Object result = newError("Name Format does not match presented/required {0}/{1}",
-                                     null,
-                                     new Object[]{presentedNameFormat, Arrays.asList(nameFormats)}, null);
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Name Format does not match presented/required {0}/{1}", null, presentedNameFormat, Arrays.asList(nameFormats));
             validationResults.add(result);
             logger.finer(result.toString());
             return;
         }
 
         // map the config v1 names to v2 names
-        String[] confirmations = (String[]) ArrayUtils.copy(requestWssSaml.getSubjectConfirmations());
+        String[] confirmations = ArrayUtils.copy(requestWssSaml.getSubjectConfirmations());
         for (int i = 0; i < confirmations.length; i++) {
             String confirmation = confirmations[i];
             String saml2Confirmation = (String) SamlConstants.CONF_MAP_SAML_1TO2.get(confirmation);
@@ -91,9 +86,7 @@ class Saml2SubjectAndConditionValidate {
         final SubjectConfirmationType[] subjectConfirmations = subject.getSubjectConfirmationArray();
         List presentedConfirmations = new ArrayList();
         if (subjectConfirmations != null) {
-            for (int i = 0; i < subjectConfirmations.length; i++) {
-                SubjectConfirmationType subjectConfirmation = subjectConfirmations[i];
-
+            for (SubjectConfirmationType subjectConfirmation : subjectConfirmations) {
                 SubjectConfirmationDataType confirmationData = subjectConfirmation.getSubjectConfirmationData();
                 boolean statementValid = true;
                 if (confirmationData != null) {
@@ -105,16 +98,15 @@ class Saml2SubjectAndConditionValidate {
                     }
 
                     Calendar notOnOrAfter = confirmationData.getNotOnOrAfter();
-                    if (notOnOrAfter != null && now.equals(notOnOrAfter) || now.after(notOnOrAfter)) {
+                    if (notOnOrAfter != null && (now.equals(notOnOrAfter) || now.after(notOnOrAfter))) {
                         if (logger.isLoggable(Level.FINE))
-                            logger.fine("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
+                            logger.fine(String.format("Condition 'Not On Or After' check failed, now: %s Not Before: %s", now.toString(), notOnOrAfter.toString()));
                         statementValid = false;
                     }
 
                     if (notBefore != null && notOnOrAfter != null && !notBefore.before(notOnOrAfter)) {
                         logger.finer("Statement condition is invalid, 'Not On Or After' " + notOnOrAfter.toString() + " MUST be later than 'Not Before' " + notBefore.toString());
-                        validationResults.add(newError("Statement condition is invalid, 'Not On Or After' MUST be later than 'Not Before': {0}/{1}",
-                                                        null, new Object[]{notOnOrAfter.getTime().toString(), notBefore.getTime().toString()}, null));
+                        validationResults.add(new SamlAssertionValidate.Error("Statement condition is invalid, 'Not On Or After' MUST be later than 'Not Before': {0}/{1}", null, notOnOrAfter.getTime().toString(), notBefore.getTime().toString()));
                     }
                 }
 
@@ -122,8 +114,6 @@ class Saml2SubjectAndConditionValidate {
                     presentedConfirmations.add(subjectConfirmation.getMethod());
             }
         }
-        if (presentedConfirmations == null)
-            presentedConfirmations = Collections.EMPTY_LIST;
 
         // if no confirmations have been presented, and that is what corresponds to assertion requirements
         // no confirmation check is performed
@@ -133,8 +123,7 @@ class Saml2SubjectAndConditionValidate {
         }
 
         boolean confirmationMatch = false;
-        for (int i = 0; i < confirmations.length; i++) {
-            String confirmation = confirmations[i];
+        for (String confirmation : confirmations) {
             if (presentedConfirmations.contains(confirmation)) {
                 confirmationMatch = true;
                 logger.fine("Matched Subject Confirmation " + confirmation);
@@ -147,12 +136,9 @@ class Saml2SubjectAndConditionValidate {
             if (requestWssSaml.isNoSubjectConfirmation()) {
                 acceptedConfirmations.add("None");
             }
-            Object error = newError("Subject Confirmations mismatch presented/accepted {0}/{1}",
-                                     null,
-                                     new Object[]{presentedConfirmations, acceptedConfirmations}, null);
+            SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Subject Confirmations mismatch presented/accepted {0}/{1}", null, presentedConfirmations, acceptedConfirmations);
             validationResults.add(error);
             logger.finer(error.toString());
-            return;
         }
     }
 
@@ -165,93 +151,75 @@ class Saml2SubjectAndConditionValidate {
         } else {
             if (conditionsType == null) {
                 logger.finer("Can't validate conditions, no Conditions have been presented");
-                validationResults.add(newError("Can't validate conditions, no Conditions have been presented", null, null, null));
+                validationResults.add(new SamlAssertionValidate.Error("Can't validate conditions, no Conditions have been presented", null));
             }
             else {
                 Calendar notBefore = conditionsType.getNotBefore();
                 Calendar notOnOrAfter = conditionsType.getNotOnOrAfter();
                 if (notBefore == null || notOnOrAfter == null) {
                     logger.finer("No Validity Period conditions have been presented, cannot validate Conditions");
-                    validationResults.add(newError("No Validity Period conditions have been presented, cannot validate Conditions", null, null, null));
+                    validationResults.add(new SamlAssertionValidate.Error("No Validity Period conditions have been presented, cannot validate Conditions", null));
                 }
                 else {
                     if (now.before(notBefore)) {
                         logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
-                        validationResults.add(newError("SAML ticket does not become valid until: {0}",
-                                                        null, new Object[]{notBefore.getTime().toString()}, null));
+                        validationResults.add(new SamlAssertionValidate.Error("SAML ticket does not become valid until: {0}", null, notBefore.getTime().toString()));
                     }
 
                     if (now.equals(notOnOrAfter) || now.after(notOnOrAfter)) {
                         logger.finer("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
-                        validationResults.add(newError("SAML ticket has expired as of: {0}",
-                                                        null, new Object[]{notOnOrAfter.getTime().toString()}, null));
+                        validationResults.add(new SamlAssertionValidate.Error("SAML ticket has expired as of: {0}", null, notOnOrAfter.getTime().toString()));
                     }
                 }
             }
         }
 
-        final String audienceRestriction = requestWssSaml.getAudienceRestriction();
-        if (audienceRestriction == null || "".equals(audienceRestriction)) {
-            logger.finer("No audience restriction requested");
-        }
-        else {
-            if (conditionsType == null) {
-                Object error = newError("Can't validate conditions, no Conditions have been found", null, null, null);
-                validationResults.add(error);
-                logger.finer(error.toString());
-            }
-            else {
-                AudienceRestrictionType[] audienceRestrictionArray = conditionsType.getAudienceRestrictionArray();
-                if (audienceRestrictionArray != null && audienceRestrictionArray.length > 0) {
-                    for (int i = 0; i < audienceRestrictionArray.length; i++) {
-                        // Check each condition in turn
-                        boolean audienceRestrictionMatch = false;
-                        AudienceRestrictionType audienceRestrictionType = audienceRestrictionArray[i];
-                        String[] audienceArray = audienceRestrictionType.getAudienceArray();
-
-                        for (int j = 0; j < audienceArray.length; j++) {
-                            String s = audienceArray[j];
-                            if (audienceRestriction.equals(s)) {
-                                audienceRestrictionMatch = true;
-                                break;
-                            }
-                        }
-
-                        if (!audienceRestrictionMatch) {
-                            Object error = newError("Audience Restriction Check Failed",
-                                                     null, new Object[]{audienceRestriction}, null);
-                            logger.finer(error.toString());
-                            validationResults.add(error);
-                        }
-                    }
-                }
-                else {
-                    Object error = newError("Audience Restriction Check Failed (assertion does not specify audience)",
-                                             null, new Object[]{audienceRestriction}, null);
-                    logger.finer(error.toString());
-                    validationResults.add(error);
-                }
-            }
-        }
+        validateAudienceRestriction(requestWssSaml, conditionsType, validationResults);
 
         if (conditionsType != null) {
             if (conditionsType.getOneTimeUseArray() != null &&
                 conditionsType.getOneTimeUseArray().length > 1) {
                 logger.finer("Multiple OneTimeUse conditions are not permitted.");
-                validationResults.add(newError("Multiple OneTimeUse conditions are not permitted.",
-                                                null, null, null));
+                validationResults.add(new SamlAssertionValidate.Error("Multiple OneTimeUse conditions are not permitted.", null));
             }
 
             if (conditionsType.getProxyRestrictionArray() != null &&
                 conditionsType.getProxyRestrictionArray().length > 1) {
                 logger.finer("Multiple ProxyRestriction conditions are not permitted.");
-                validationResults.add(newError("Multiple ProxyRestriction conditions are not permitted.",
-                                                null, null, null));
+                validationResults.add(new SamlAssertionValidate.Error("Multiple ProxyRestriction conditions are not permitted.", null));
             }
         }
     }
 
-    private static SamlAssertionValidate.Error newError(String reason, Object context, Object args, Exception exception) {
-        return new SamlAssertionValidate.Error(reason, context, args, exception);
+    private static void validateAudienceRestriction(RequestWssSaml requestWssSaml, ConditionsType conditionsType, Collection validationResults) {
+        final String audienceRestriction = requestWssSaml.getAudienceRestriction();
+        if (audienceRestriction == null || "".equals(audienceRestriction)) {
+            logger.finer("No audience restriction requested");
+            return;
+        }
+
+        if (conditionsType == null) {
+            SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Can't validate conditions, no Conditions have been found", null);
+            validationResults.add(error);
+            logger.finer(error.toString());
+            return;
+        }
+
+        final AudienceRestrictionType[] audienceRestrictionArray = conditionsType.getAudienceRestrictionArray();
+        if (audienceRestrictionArray == null || audienceRestrictionArray.length <= 0) {
+            SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed (assertion does not specify audience)", null, audienceRestriction);
+            logger.finer(error.toString());
+            validationResults.add(error);
+            return;
+        }
+
+        for (AudienceRestrictionType val : audienceRestrictionArray) {
+            if (!ArrayUtils.contains(val.getAudienceArray(), audienceRestriction)) {
+                SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed", null, audienceRestriction);
+                logger.finer(error.toString());
+                validationResults.add(error);
+            }
+        }
     }
+
 }

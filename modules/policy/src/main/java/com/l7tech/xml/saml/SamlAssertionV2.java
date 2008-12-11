@@ -7,6 +7,7 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.KeyInfoElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
@@ -74,9 +75,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
      * @throws org.xml.sax.SAXException    if the format of this assertion is invalid or not supported; or,
      *                                     if the KeyInfo used a thumbprint, but no thumbprint resolver was supplied.
      */
-    public SamlAssertionV2(Element ass,
-                           SecurityTokenResolver securityTokenResolver) throws SAXException
-    {
+    public SamlAssertionV2(Element ass, SecurityTokenResolver securityTokenResolver) throws SAXException {
         super(ass);
 
         assertionElement = ass;
@@ -184,7 +183,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
                                 List strs = DomUtils.findChildElementsByName(keyInfoEl, SoapConstants.SECURITY_URIS_ARRAY, "SecurityTokenReference");
                                 if (keyInfoEl != null && !strs.isEmpty()) {
                                     try {
-                                        KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver);
+                                        KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver, KeyInfoInclusionType.ANY);
                                         subjectCertificate = kie.getCertificate();
                                     } catch (Exception e) {
                                         logger.log(Level.INFO, "KeyInfo contained a SecurityTokenReference but it wasn't a thumbprint");
@@ -203,10 +202,9 @@ public final class SamlAssertionV2 extends SamlAssertion {
                 // Extract the issuer certificate
                 KeyInfoType keyInfo = signature.getKeyInfo();
                 if (keyInfo == null) throw new SAXException("SAML issuer signature has no KeyInfo");
-                KeyInfoElement keyInfoElement = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver, true);
+                KeyInfoElement keyInfoElement = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver, KeyInfoInclusionType.ANY);
                 issuerCertificate = keyInfoElement.getCertificate();
             }
-
         } catch (XmlException e) {
             throw new SAXException(e);
         } catch (CertificateException e) {
@@ -422,7 +420,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
                 }));
             }
             catch(UnsupportedEncodingException uee) {
-                throw new IllegalStateException("Support for UTF-8 is required.");
+                throw new RuntimeException(uee); // Can't happen
             }
         }
         else {
@@ -437,7 +435,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
                 }));
             }
             catch(UnsupportedEncodingException uee) {
-                throw new IllegalStateException("Support for UTF-8 is required.");
+                throw new RuntimeException(uee); // Can't happen
             }
         }
 

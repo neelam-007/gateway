@@ -1,8 +1,6 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server;
 
 import com.l7tech.common.io.WhirlycacheFactory;
@@ -26,6 +24,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
@@ -33,13 +32,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.math.BigInteger;
 
 /**
- * Bean that can look up any certificate known to the SSG by thumbprint.
+ * Looks up any certificate known to the SSG by a variety of search criteria.
  */
 public class TrustedAndUserCertificateResolver implements SecurityTokenResolver, ApplicationListener {
     private static final Logger logger = Logger.getLogger(TrustedAndUserCertificateResolver.class.getName());
@@ -51,8 +48,7 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
 
     private final SsgKeyStoreManager keyStoreManager;
 
-    private final AtomicReference<SimpleSecurityTokenResolver> keyCache = new AtomicReference<SimpleSecurityTokenResolver>();
-
+    private volatile SimpleSecurityTokenResolver keyCache;
 
     /**
      * Construct the Gateway's security token resolver.
@@ -96,13 +92,13 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
             SignerInfo si = lookupPrivateKeyByX509Thumbprint(thumbprint);
             if (si != null) return si.getCertificateChain()[0];
 
-            List got = trustedCertManager.findByThumbprint(thumbprint);
+            List<? extends X509Entity> got = trustedCertManager.findByThumbprint(thumbprint);
             if (got != null && got.size() >= 1)
-                return ((X509Entity)got.get(0)).getCertificate();
+                return got.get(0).getCertificate();
 
             got = clientCertManager.findByThumbprint(thumbprint);
             if (got != null && got.size() >= 1)
-                return ((X509Entity)got.get(0)).getCertificate();
+                return got.get(0).getCertificate();
 
             return null;
         } catch (FindException e) {
@@ -115,13 +111,13 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
             SignerInfo si = lookupPrivateKeyBySki(ski);
             if (si != null) return si.getCertificateChain()[0];
 
-            List got = trustedCertManager.findBySki(ski);
+            List<? extends X509Entity> got = trustedCertManager.findBySki(ski);
             if (got != null && got.size() >= 1)
-                return ((X509Entity)got.get(0)).getCertificate();
+                return got.get(0).getCertificate();
 
             got = clientCertManager.findBySki(ski);
             if (got != null && got.size() >= 1)
-                return ((X509Entity)got.get(0)).getCertificate();
+                return got.get(0).getCertificate();
 
             return null;
         } catch (FindException e) {
@@ -139,11 +135,21 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
     }
 
     public X509Certificate lookupByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
-        return null;
+        try {
+            List<? extends X509Entity> got = trustedCertManager.findByIssuerAndSerial(issuer, serial);
+            if (got != null && got.size() >= 1) return got.get(0).getCertificate();
+
+            got = clientCertManager.findByIssuerAndSerial(issuer, serial);
+            if (got != null && got.size() > 1) return got.get(0).getCertificate();
+
+            return null;
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private SecurityTokenResolver getKeyCache() {
-        SimpleSecurityTokenResolver kc = keyCache.get();
+        SimpleSecurityTokenResolver kc = keyCache;
         return kc != null ? kc : rebuildKeyCache();
     }
 
@@ -184,9 +190,7 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
             }
         }
 
-        SimpleSecurityTokenResolver kc = new SimpleSecurityTokenResolver(null, infos.toArray(new SignerInfo[infos.size()]));
-        keyCache.set(kc);
-        return kc;
+        return keyCache = new SimpleSecurityTokenResolver(null, infos.toArray(new SignerInfo[infos.size()]));
     }
 
     public SignerInfo lookupPrivateKeyByCert(X509Certificate cert) {
@@ -228,7 +232,7 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
             EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
             if (KeystoreFile.class.equals(event.getEntityClass())) {
                 // Invalidate key cache so it gets rebuilt on next use
-                keyCache.set(null);
+                keyCache = null;
             }
         }
     }

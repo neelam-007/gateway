@@ -47,26 +47,27 @@ class SamlAuthenticationStatementValidate extends SamlStatementValidate {
         AuthenticationStatementType authenticationStatementType = (AuthenticationStatementType)statementAbstractType;
         String authenticationMethod = authenticationStatementType.getAuthenticationMethod();
         if (authenticationMethod == null) {
-            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No Authentication Method specified", authenticationStatementType.toString(), null, null);
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No Authentication Method specified", null);
             validationResults.add(result);
             logger.finer(result.toString());
             return;
         }
         String[] methods = filterAuthenticationMethods(authenticationStatementConstraints.getAuthenticationMethods());
         boolean methodMatches = methods.length == 0;
-        for (int i = 0; i < methods.length; i++) {
-            String method = methods[i];
+        for (String method : methods) {
             if (authenticationMethod.equals(method)) {
                 methodMatches = true;
-                logger.finer("Matched authentication method "+method);
+                logger.finer("Matched authentication method " + method);
                 break;
             }
         }
         if (!methodMatches) {
             final String msg = "Authentication method not matched expected/received: {0}/{1}";
-            validationResults.add(new SamlAssertionValidate.Error(msg, authenticationStatementType.toString(),
-                                                                  new Object[] {methods.length == 1 ? methods[0]
-                                                                                : Arrays.asList(methods).toString(), authenticationMethod}, null));
+            validationResults.add(new SamlAssertionValidate.Error(msg,
+                                                                  null,
+                                                                  methods.length == 1 ? methods[0]
+                                                                                : Arrays.asList(methods).toString(), authenticationMethod
+            ));
             logger.finer(msg);
         }
     }

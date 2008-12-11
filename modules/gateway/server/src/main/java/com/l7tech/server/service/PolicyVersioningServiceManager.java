@@ -99,7 +99,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
-    public PublishedService getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
+    public PublishedService getCachedEntity(long o, int maxAge) throws FindException {
         return serviceManager.getCachedEntity(o, maxAge);
     }
 

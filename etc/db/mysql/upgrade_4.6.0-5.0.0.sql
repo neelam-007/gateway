@@ -275,6 +275,20 @@ ALTER TABLE email_listener DROP COLUMN owner_node_id;
 ALTER TABLE email_listener DROP COLUMN last_poll_time;
 ALTER TABLE email_listener DROP COLUMN last_message_id;
 
+-- Add Issuer/Serial columns (and subject_dn, for symmetry) to client_cert
+-- Note: while the combination of Issuer DN and Serial is supposed to be unique, we can't add that index here
+-- because the columns have no values yet.
+ALTER TABLE client_cert ADD subject_dn varchar(255);
+ALTER TABLE client_cert ADD issuer_dn varchar(255);
+ALTER TABLE client_cert ADD serial varchar(64),
+CREATE INDEX i_subject_dn ON client_cert (subject_dn),
+CREATE INDEX i_issuer_dn ON client_cert (issuer_dn),
+
+-- Add Issuer/Serial columns to trusted_cert
+ALTER TABLE trusted_cert ADD issuer_dn varchar(255);
+ALTER TABLE trusted_cert ADD serial varchar(64),
+CREATE INDEX i_issuer_dn ON client_cert (issuer_dn),
+
 --
 -- Create tables for RBAC folder predicates
 --

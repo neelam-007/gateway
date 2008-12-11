@@ -7,6 +7,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.objectmodel.FindException;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
@@ -16,8 +17,6 @@ import java.math.BigInteger;
  * @author steve
  */
 public interface AuthenticatingIdentityProvider<UT extends User, GT extends Group, UMT extends UserManager<UT>, GMT extends GroupManager<UT, GT>> extends IdentityProvider<UT, GT, UMT , GMT> {
-
-
     /**
      * Called by {@link com.l7tech.server.policy.assertion.identity.ServerIdentityAssertion} to try to
      * identify a {@link com.l7tech.identity.User} based on a {@link com.l7tech.policy.assertion.credential.LoginCredentials} that was previously attached to the
@@ -33,13 +32,12 @@ public interface AuthenticatingIdentityProvider<UT extends User, GT extends Grou
      */
     AuthenticationResult authenticate( LoginCredentials pc ) throws AuthenticationException;
 
-
     /**
-     * Lookup a certificate from this provider by issuer and serial number.
+     * Lookup a certificate from this provider by issuer DN and serial number.
      *
      * @param issuer The certificiate issuers principal
      * @param serial The certificate serial number
      * @return the certificate or null if not found.
      */
-    X509Certificate findCertByIssuerAndSerial( final X500Principal issuer, final BigInteger serial );
+    X509Certificate findCertByIssuerAndSerial(final X500Principal issuer, final BigInteger serial) throws FindException;
 }

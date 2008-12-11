@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * DomUtils collects helper methods for DOM manipulation.
@@ -148,6 +149,26 @@ public class DomUtils {
         }
         return null;
     }
+
+    /**
+     * Finds one and only one child {@link Element} of a parent {@link Element}
+     * with the specified name that is in the specified namespace, and throws
+     * {@link com.l7tech.util.MissingRequiredElementException} if such an element cannot be found.
+     *
+     * The parent must belong to a DOM produced by a namespace-aware parser,
+     * and the name must be undecorated.
+     *
+     * @param parent the {@link Element} in which to search for children. Must be non-null.
+     * @param nsuri the URI of the namespace to which the child must belong, NOT THE PREFIX!  Use null to match localName in any namespace.
+     * @param name the name of the element to find. Must be non-null.
+     * @return First matching child {@link Element}
+     * @throws TooManyChildElementsException if multiple matching child nodes are found
+     * @throws MissingRequiredElementException if no matching child node is found
+     */
+    public static Element findExactlyOneChildElementByName( Element parent, String nsuri, String name ) throws TooManyChildElementsException, MissingRequiredElementException {
+        return findOnlyOneChildElementByName0(parent, nsuri, name, true);
+    }
+
     /**
      * Finds one and only one child {@link Element} of a parent {@link Element}
      * with the specified name that is in the specified namespace.
@@ -162,6 +183,15 @@ public class DomUtils {
      * @throws TooManyChildElementsException if multiple matching child nodes are found
      */
     public static Element findOnlyOneChildElementByName( Element parent, String nsuri, String name ) throws TooManyChildElementsException {
+        try {
+            return findOnlyOneChildElementByName0(parent, nsuri, name, false);
+        } catch (MissingRequiredElementException e) {
+            throw new RuntimeException(e); // Can't happen--honest!
+        }
+    }
+
+    private static Element findOnlyOneChildElementByName0(Element parent, String nsuri, String name, boolean mustBePresent)
+        throws TooManyChildElementsException, MissingRequiredElementException {
         if ( name == null ) throw new IllegalArgumentException( "name must be non-null!" );
         NodeList children = parent.getChildNodes();
         Element result = null;
@@ -174,6 +204,7 @@ public class DomUtils {
                 result = (Element)n;
             }
         }
+        if (mustBePresent && result == null) throw new MissingRequiredElementException(MessageFormat.format("Required element {{0}}{1} not found", nsuri, name));
         return result;
     }
 
@@ -1126,4 +1157,5 @@ public class DomUtils {
             }
         }
     }
+
 }

@@ -4,24 +4,24 @@
  */
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
+import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML1.*;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
-import java.io.StringWriter;
-import java.io.IOException;
-import java.text.MessageFormat;
 
 /**
  * Validates the SAML Assertion within the Document. The Document must represent a well formed
@@ -36,7 +36,7 @@ public class SamlAssertionValidate {
     protected final Logger logger = Logger.getLogger(getClass().getName());
     protected Collection errorCollector = new ArrayList();
     protected final RequestWssSaml requestWssSaml;
-    private Map validators = new HashMap();
+    private Map<Class, SamlStatementValidate> validators = new HashMap<Class, SamlStatementValidate>();
 
     /**
      * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
@@ -70,7 +70,7 @@ public class SamlAssertionValidate {
     public void validate(Document soapMessageDoc, LoginCredentials credentials, ProcessorResult wssResults, Collection validationResults) {
         String securityNS = wssResults.getSecurityNS();
         if (null == securityNS) {  // assume no security header was found
-            Error result = new Error("No Security Header found", soapMessageDoc, null, null);
+            Error result = new Error("No Security Header found", null);
             validationResults.add(result);
             logger.finer(result.toString());
             return;
@@ -84,41 +84,38 @@ public class SamlAssertionValidate {
         try {
             SamlAssertion assertion = null;
             XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
-            for (int i = 0; i < tokens.length; i++) {
-                SecurityToken token = tokens[i];
-                if ((token.getType() == SecurityTokenType.SAML_ASSERTION && acceptV1)||
+            for (XmlSecurityToken token : tokens) {
+                if ((token.getType() == SecurityTokenType.SAML_ASSERTION && acceptV1) ||
                     (token.getType() == SecurityTokenType.SAML2_ASSERTION && acceptV2)) {
                     assertion = (SamlAssertion)token;
                     XmlObject xmlObject = assertion.getXmlBeansAssertionType();
                     boolean assertionMatch = false;
 
                     if (xmlObject instanceof AssertionType) {
-                        AssertionType assertionType = (AssertionType) xmlObject;
+                        AssertionType assertionType = (AssertionType)xmlObject;
                         Collection statementList = new ArrayList();
                         statementList.addAll(Arrays.asList(assertionType.getAuthenticationStatementArray()));
                         statementList.addAll(Arrays.asList(assertionType.getAuthorizationDecisionStatementArray()));
                         statementList.addAll(Arrays.asList(assertionType.getAttributeStatementArray()));
 
-                        StatementAbstractType[] statementArray = (StatementAbstractType[])statementList.toArray(new StatementAbstractType[]{});
+                        StatementAbstractType[] statementArray = (StatementAbstractType[])statementList.toArray(new StatementAbstractType[]{ });
 
-                        for (int j = 0; j < statementArray.length; j++) {
-                            StatementAbstractType statementAbstractType = statementArray[j];
+                        for (StatementAbstractType statementAbstractType : statementArray) {
                             Set keys = validators.keySet();
-                            for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-                                Class clazz = (Class)iterator.next();
+                            for (Object key : keys) {
+                                Class clazz = (Class)key;
                                 if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
                                     assertionMatch = true;
-                                    SamlStatementValidate statementValidate = (SamlStatementValidate)validators.get(clazz);
+                                    SamlStatementValidate statementValidate = validators.get(clazz);
                                     validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults);
                                     validateConditions(assertionType, validationResults);
                                     statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults);
                                 }
                             }
                         }
-                    }
-                    else if (xmlObject instanceof x0Assertion.oasisNamesTcSAML2.AssertionType) {
+                    } else if (xmlObject instanceof x0Assertion.oasisNamesTcSAML2.AssertionType) {
                         x0Assertion.oasisNamesTcSAML2.AssertionType assertionType =
-                                (x0Assertion.oasisNamesTcSAML2.AssertionType) xmlObject;
+                            (x0Assertion.oasisNamesTcSAML2.AssertionType)xmlObject;
                         validateConditions(assertionType.getConditions(), now, validationResults);
                         validateSubjectConfirmation(assertionType.getSubject(), now, validationResults);
 
@@ -127,16 +124,15 @@ public class SamlAssertionValidate {
                         statementList.addAll(Arrays.asList(assertionType.getAuthzDecisionStatementArray()));
                         statementList.addAll(Arrays.asList(assertionType.getAttributeStatementArray()));
 
-                        XmlObject[] statementArray = (XmlObject[]) statementList.toArray(new XmlObject[]{});
+                        XmlObject[] statementArray = (XmlObject[])statementList.toArray(new XmlObject[]{ });
 
-                        for (int j = 0; j < statementArray.length; j++) {
-                            XmlObject statementAbstractType = statementArray[j];
+                        for (XmlObject statementAbstractType : statementArray) {
                             Set keys = validators.keySet();
-                            for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-                                Class clazz = (Class)iterator.next();
+                            for (Object key : keys) {
+                                Class clazz = (Class)key;
                                 if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
                                     assertionMatch = true;
-                                    SamlStatementValidate statementValidate = (SamlStatementValidate)validators.get(clazz);
+                                    SamlStatementValidate statementValidate = validators.get(clazz);
                                     statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults);
                                 }
                             }
@@ -148,7 +144,7 @@ public class SamlAssertionValidate {
                     }
 
                     if (!assertionMatch) {
-                        Error result = new Error("No SAML assertion has been presented that matches specified constraints", soapMessageDoc, null, null);
+                        Error result = new Error("No SAML assertion has been presented that matches specified constraints", null);
                         validationResults.add(result);
                         logger.finer(result.toString());
                         return;
@@ -157,19 +153,19 @@ public class SamlAssertionValidate {
             }
 
             if (assertion == null) {
-                Error result = new Error("No SAML assertion found in security Header", soapMessageDoc, null, null);
+                Error result = new Error("No SAML assertion found in security Header", null);
                 validationResults.add(result);
                 logger.finer(result.toString());
                 return;
             }
             final SigningSecurityToken[] signingTokens = wssResults.getSigningTokens(assertion.asElement());
             if (signingTokens.length == 0) {
-                Error result = new Error("Unsigned SAML assertion found in security Header", soapMessageDoc, null, null);
+                Error result = new Error("Unsigned SAML assertion found in security Header", null);
                 validationResults.add(result);
                 logger.finer(result.toString());
                 return;
             } else if (signingTokens.length > 1) {
-                Error result = new Error("SAML assertion was signed by more than one security token", soapMessageDoc, null, null);
+                Error result = new Error("SAML assertion was signed by more than one security token", null);
                 validationResults.add(result);
                 logger.finer(result.toString());
                 return;
@@ -181,7 +177,7 @@ public class SamlAssertionValidate {
                         X509SigningSecurityToken signingSecurityToken = (X509SigningSecurityToken)signingTokens[0];
                         assertion.setIssuerCertificate(signingSecurityToken.getMessageSigningCertificate());
                     } else {
-                        Error result = new Error("Assertion was signed by non-X509 SecurityToken " + signingTokens[0].getClass(), soapMessageDoc, null, null);
+                        Error result = new Error("Assertion was signed by non-X509 SecurityToken " + signingTokens[0].getClass(), null);
                         validationResults.add(result);
                         logger.finer(result.toString());
                         return;
@@ -192,28 +188,25 @@ public class SamlAssertionValidate {
             if (assertion.isHolderOfKey() && requestWssSaml.isRequireHolderOfKeyWithMessageSignature()) {
                 X509Certificate subjectCertificate = assertion.getSubjectCertificate();
                 if (subjectCertificate == null) {
-                    Error result = new Error("Subject Certificate is required for Holder-Of-Key Assertion", soapMessageDoc, null, null);
+                    Error result = new Error("Subject Certificate is required for Holder-Of-Key Assertion", null);
                     validationResults.add(result);
                     logger.finer(result.toString());
                     return;
                 }
                 // validate that the assertion is the soap:Body signer
                 if (!isBodySigned(assertion.getSignedElements())) {
-                    Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed with the Subject Confirmation Certificate", soapMessageDoc, null, null);
+                    Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed with the Subject Confirmation Certificate", null);
                     validationResults.add(result);
                     logger.finer(result.toString());
-                    return;
                 }
-
             } else if (assertion.isSenderVouches() && requestWssSaml.isRequireSenderVouchesWithMessageSignature()) {
                 // make sure ther soap:Body is signed. The actual trust verification is in FIP SamlAuthorizationHandler
                 X509Certificate bodySigner = getBodySigner(wssResults);
 
                 if (bodySigner == null) {
-                    Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed", soapMessageDoc, null, null);
+                    Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed", null);
                     validationResults.add(result);
                     logger.finer(result.toString());
-                    return;
                 } else {
                     assertion.setAttestingEntity(bodySigner);
                 }
@@ -222,13 +215,13 @@ public class SamlAssertionValidate {
                 if (assertion.isHolderOfKey()) {
                     X509Certificate subjectCertificate = assertion.getSubjectCertificate();
                     if (subjectCertificate == null) {
-                        Error result = new Error("Subject Certificate is required for Holder-Of-Key Assertion", soapMessageDoc, null, null);
+                        Error result = new Error("Subject Certificate is required for Holder-Of-Key Assertion", null);
                         validationResults.add(result);
                         logger.finer(result.toString());
                         return;
                     }
                     if (!subjectCertificate.equals(sslCert)) {
-                        Error result = new Error("SSL Certificate and Holder-Of-Key Subject Certificate mismatch", soapMessageDoc, null, null);
+                        Error result = new Error("SSL Certificate and Holder-Of-Key Subject Certificate mismatch", null);
                         validationResults.add(result);
                         logger.finer(result.toString());
                         return;
@@ -236,7 +229,7 @@ public class SamlAssertionValidate {
                     assertion.setAttestingEntity(subjectCertificate); // for HOK the attesting entity is subject cert
                 } else if (assertion.isSenderVouches()) {
                     if (sslCert == null) {
-                         Error result = new Error("SSL Client Certificate is required for Sender-Vouches Assertion and unsigned message", soapMessageDoc, null, null);
+                         Error result = new Error("SSL Client Certificate is required for Sender-Vouches Assertion and unsigned message", null);
                          validationResults.add(result);
                          logger.finer(result.toString());
                          return;
@@ -245,19 +238,16 @@ public class SamlAssertionValidate {
                 }
             }
         } catch (InvalidDocumentFormatException e) {
-            validationResults.add(new Error("Can't process non SOAP messages", soapMessageDoc, null, e));
+            validationResults.add(new Error("Can't process non SOAP messages", e));
         } catch (IOException e) {
-            validationResults.add(new Error("Can't process non SOAP messages", soapMessageDoc, null, e));
+            validationResults.add(new Error("Can't process non SOAP messages", e));
         }
     }
 
     private boolean isBodySigned(SignedElement[] signedElements)
       throws InvalidDocumentFormatException {
-        for (int i = 0; i < signedElements.length; i++) {
-            SignedElement signedElement = signedElements[i];
-            if (SoapUtil.isBody(signedElement.asElement())) {
-                return true;
-            }
+        for (SignedElement signedElement : signedElements) {
+            if (SoapUtil.isBody(signedElement.asElement())) return true;
         }
         return false;
     }
@@ -272,9 +262,8 @@ public class SamlAssertionValidate {
     private X509Certificate getBodySigner(ProcessorResult wssResult)
       throws InvalidDocumentFormatException {
         SignedElement[] signedElements = wssResult.getElementsThatWereSigned();
-        for (int i = 0; i < signedElements.length; i++) {
-            SignedElement signedElement = signedElements[i];
-            if ( SoapUtil.isBody(signedElement.asElement())) {
+        for (SignedElement signedElement : signedElements) {
+            if (SoapUtil.isBody(signedElement.asElement())) {
                 SigningSecurityToken signingSecurityToken = signedElement.getSigningSecurityToken();
                 if (!(signingSecurityToken instanceof X509SecurityToken)) {
                     throw new InvalidDocumentFormatException("Response body was signed, but not with an X509 Security Token");
@@ -301,7 +290,7 @@ public class SamlAssertionValidate {
                 logger.finer("Can't validate conditions, no Conditions have been presented");
                 StringWriter sw = new StringWriter();
                 assertionType.save(sw);
-                validationResults.add(new Error("Can't validate conditions, no Conditions have been presented", sw.toString(), null, null));
+                validationResults.add(new Error("Can't validate conditions, no Conditions have been presented", null));
                 return;
             }
             Calendar notBefore = conditionsType.getNotBefore();
@@ -310,7 +299,7 @@ public class SamlAssertionValidate {
                 logger.finer("No Validity Period conditions have been presented, cannot validate Conditions");
                 StringWriter sw = new StringWriter();
                 assertionType.save(sw);
-                validationResults.add(new Error("No Validity Period conditions have been presented, cannot validate Conditions", sw.toString(), null, null));
+                validationResults.add(new Error("No Validity Period conditions have been presented, cannot validate Conditions", null));
                 return;
             }
 
@@ -319,13 +308,17 @@ public class SamlAssertionValidate {
             if (now.before(notBefore)) {
                 logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
                 validationResults.add(new Error("SAML ticket does not become valid until: {0}",
-                                                conditionsType.toString(), new Object[]{notBefore.getTime().toString()}, null));
+                                                null,
+                                                notBefore.getTime().toString()
+                ));
             }
 
             if (now.equals(notOnOrAfter) || now.after(notOnOrAfter)) {
                 logger.finer("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
                 validationResults.add(new Error("SAML ticket has expired as of: {0}",
-                                                conditionsType.toString(), new Object[]{notOnOrAfter.getTime().toString()}, null));
+                                                null,
+                                                notOnOrAfter.getTime().toString()
+                ));
             }
         }
 
@@ -338,7 +331,7 @@ public class SamlAssertionValidate {
         if (conditionsType == null) {
             StringWriter sw = new StringWriter();
             assertionType.save(sw);
-            Error result = new Error("Can't validate conditions, no Conditions have been found", sw.toString(), null, null);
+            Error result = new Error("Can't validate conditions, no Conditions have been found", null);
             validationResults.add(result);
             logger.finer(result.toString());
             return;
@@ -346,11 +339,9 @@ public class SamlAssertionValidate {
 
         AudienceRestrictionConditionType[] audienceRestrictionArray = conditionsType.getAudienceRestrictionConditionArray();
         boolean audienceRestrictionMatch = false;
-        for (int i = 0; i < audienceRestrictionArray.length; i++) {
-            AudienceRestrictionConditionType audienceRestrictionConditionType = audienceRestrictionArray[i];
+        for (AudienceRestrictionConditionType audienceRestrictionConditionType : audienceRestrictionArray) {
             String[] audienceArray = audienceRestrictionConditionType.getAudienceArray();
-            for (int j = 0; j < audienceArray.length; j++) {
-                String s = audienceArray[j];
+            for (String s : audienceArray) {
                 if (audienceRestriction.equals(s)) {
                     audienceRestrictionMatch = true;
                     break;
@@ -358,8 +349,7 @@ public class SamlAssertionValidate {
             }
         }
         if (!audienceRestrictionMatch) {
-            Error result = new Error("Audience Restriction Check Failed",
-                                     conditionsType.toString(), new Object[]{audienceRestriction}, null);
+            Error result = new Error("Audience Restriction Check Failed", null, audienceRestriction);
             logger.finer(result.toString());
             validationResults.add(result);
         }
@@ -369,19 +359,22 @@ public class SamlAssertionValidate {
      * Subject validation for 1.x
      */
     private void validateSubjectConfirmation(SubjectStatementAbstractType subjectStatementAbstractType, Collection validationResults) {
-        SubjectType subject = subjectStatementAbstractType.getSubject();
+        final SubjectType subject = subjectStatementAbstractType.getSubject();
         if (subject == null) {
-            validationResults.add(new Error("Subject Statement Required", subjectStatementAbstractType.toString(), null, null));
+            validationResults.add(new Error("Subject Statement Required", null));
+            return;
         }
+
         final String nameQualifier = requestWssSaml.getNameQualifier();
-        NameIdentifierType nameIdentifierType = subject.getNameIdentifier();
+        final NameIdentifierType nameIdentifierType = subject.getNameIdentifier();
         if (nameQualifier != null && !"".equals(nameQualifier)) {
             if (nameIdentifierType != null) {
                 String presentedNameQualifier = nameIdentifierType.getNameQualifier();
                 if (!nameQualifier.equals(presentedNameQualifier)) {
                     Error result = new Error("Name Qualifiers does not match presented/required {0}/{1}",
-                                             subjectStatementAbstractType.toString(),
-                                             new Object[]{presentedNameQualifier, nameQualifier}, null);
+                                             null,
+                                             presentedNameQualifier, nameQualifier
+                    );
                     validationResults.add(result);
                     logger.finer(result.toString());
                     return;
@@ -396,13 +389,12 @@ public class SamlAssertionValidate {
         if (nameIdentifierType != null) {
             presentedNameFormat = nameIdentifierType.getFormat();
             if (presentedNameFormat != null) {
-                for (int i = 0; i < nameFormats.length; i++) {
-                    String nameFormat = nameFormats[i];
+                for (String nameFormat : nameFormats) {
                     if (nameFormat.equals(presentedNameFormat)) {
                         nameFormatMatch = true;
                         logger.fine("Matched Name Format " + nameFormat);
                         break;
-            } else if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED)) {
+                    } else if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED)) {
                         nameFormatMatch = true;
                         logger.fine("Matched Name Format " + nameFormat);
                         break;
@@ -415,8 +407,9 @@ public class SamlAssertionValidate {
         }
         if (!nameFormatMatch) {
             Error result = new Error("Name Format does not match presented/required {0}/{1}",
-                                     subjectStatementAbstractType.toString(),
-                                     new Object[]{presentedNameFormat, Arrays.asList(nameFormats)}, null);
+                                     null,
+                                     presentedNameFormat, Arrays.asList(nameFormats)
+            );
             validationResults.add(result);
             logger.finer(result.toString());
             return;
@@ -440,8 +433,7 @@ public class SamlAssertionValidate {
         }
 
         boolean confirmationMatch = false;
-        for (int i = 0; i < confirmations.length; i++) {
-            String confirmation = confirmations[i];
+        for (String confirmation : confirmations) {
             if (presentedConfirmations.contains(confirmation)) {
                 confirmationMatch = true;
                 logger.fine("Matched Subject Confirmation " + confirmation);
@@ -455,11 +447,11 @@ public class SamlAssertionValidate {
                 acceptedConfirmations.add("None");
             }
             Error result = new Error("Subject Confirmations mismatch presented/accepted {0}/{1}",
-                                     subjectStatementAbstractType.toString(),
-                                     new Object[]{presentedConfirmations, acceptedConfirmations}, null);
+                                     null,
+                                     presentedConfirmations, acceptedConfirmations
+            );
             validationResults.add(result);
             logger.finer(result.toString());
-            return;
         }
     }
 
@@ -502,10 +494,9 @@ public class SamlAssertionValidate {
         private final Exception exception;
         private final String formattedReason;
 
-        protected Error(String reason, Object context, Object args, Exception exception) {
-            if (reason == null) {
-                throw new IllegalArgumentException("Reason is required");
-            }
+        protected Error(String reason, Exception exception, Object... args) {
+            if (reason == null) throw new IllegalArgumentException("Reason is required");
+
             this.arguments = getArguments(args);
             this.formattedReason = MessageFormat.format(reason, arguments);
             this.exception = exception;

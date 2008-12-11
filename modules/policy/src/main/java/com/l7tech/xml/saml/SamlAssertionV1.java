@@ -6,6 +6,7 @@ import com.ibm.xml.dsig.Validity;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.KeyInfoElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
@@ -69,10 +70,7 @@ public class SamlAssertionV1 extends SamlAssertion {
      * @throws org.xml.sax.SAXException    if the format of this assertion is invalid or not supported
      * @throws org.xml.sax.SAXException    if the KeyInfo used a thumbprint, but no thumbprint resolver was supplied.
      */
-    public SamlAssertionV1(Element ass,
-                         SecurityTokenResolver securityTokenResolver)
-            throws SAXException
-    {
+    public SamlAssertionV1(Element ass, SecurityTokenResolver securityTokenResolver) throws SAXException {
         super(ass);
         assertionElement = ass;
         assertionId = assertionElement.getAttribute("AssertionID");
@@ -88,28 +86,23 @@ public class SamlAssertionV1 extends SamlAssertion {
               (SubjectStatementAbstractType[])statementList.toArray(new SubjectStatementAbstractType[]{});
 
             SubjectType subject = null;
-            // all the statements must have the same subject (L7 requirement).
-            for (int i = 0; i < subjectStatements.length; i++) {
-                StatementAbstractType statementAbstractType = subjectStatements[i];
-                if (statementAbstractType instanceof SubjectStatementAbstractType) {
-                    // Extract subject certificate
-                    SubjectStatementAbstractType subjectStatement = (SubjectStatementAbstractType)statementAbstractType;
-                    subject = subjectStatement.getSubject();
-                    if ( subject != null ) {
-                        NameIdentifierType nameIdentifier = subject.getNameIdentifier();
-                        if (nameIdentifier != null) {
-                            this.nameIdentifierFormat = nameIdentifier.getFormat();
-                            this.nameQualifier = nameIdentifier.getNameQualifier();
-                            this.nameIdentifierValue = nameIdentifier.getStringValue();
-                        }
-                    }
-                    if (statementAbstractType instanceof AuthenticationStatementType) {
-                        AuthenticationStatementType authenticationStatementType = (AuthenticationStatementType)statementAbstractType;
-                        authenticationMethod = authenticationStatementType.getAuthenticationMethod();
 
+            // all the statements must have the same subject (L7 requirement).
+            for (SubjectStatementAbstractType statement : subjectStatements) {
+                // Extract subject certificate
+                subject = statement.getSubject();
+                if (subject != null) {
+                    NameIdentifierType nameIdentifier = subject.getNameIdentifier();
+                    if (nameIdentifier != null) {
+                        this.nameIdentifierFormat = nameIdentifier.getFormat();
+                        this.nameQualifier = nameIdentifier.getNameQualifier();
+                        this.nameIdentifierValue = nameIdentifier.getStringValue();
                     }
-                } else {
-                    logger.warning("Unknown and skipped statement type " + statementAbstractType.getClass());
+                }
+
+                if (statement instanceof AuthenticationStatementType) {
+                    AuthenticationStatementType authenticationStatementType = (AuthenticationStatementType)statement;
+                    authenticationMethod = authenticationStatementType.getAuthenticationMethod();
                 }
             }
             if (subject == null) {
@@ -156,7 +149,7 @@ public class SamlAssertionV1 extends SamlAssertion {
                             List strs = DomUtils.findChildElementsByName(keyInfoEl, SoapConstants.SECURITY_URIS_ARRAY, "SecurityTokenReference");
                             if (keyInfoEl != null && !strs.isEmpty()) {
                                 try {
-                                    KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver);
+                                    KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver, KeyInfoInclusionType.ANY);
                                     subjectCertificate = kie.getCertificate();
                                 } catch (Exception e) {
                                     logger.log(Level.INFO, "KeyInfo contained a SecurityTokenReference but it wasn't a thumbprint");
@@ -174,10 +167,9 @@ public class SamlAssertionV1 extends SamlAssertion {
                 // Extract the issuer certificate
                 Element keyinfo = DomUtils.findOnlyOneChildElementByName(signature, SoapConstants.DIGSIG_URI, "KeyInfo");
                 if (keyinfo == null) throw new SAXException("SAML issuer signature has no KeyInfo");
-                KeyInfoElement keyInfo = KeyInfoElement.parse(keyinfo, securityTokenResolver, true);
+                KeyInfoElement keyInfo = KeyInfoElement.parse(keyinfo, securityTokenResolver, KeyInfoInclusionType.ANY);
                 issuerCertificate = keyInfo.getCertificate();
             }
-
         } catch (XmlException e) {
             throw new SAXException(e);
         } catch (CertificateException e) {
@@ -395,8 +387,8 @@ public class SamlAssertionV1 extends SamlAssertion {
                         assertion.getSignature().getSignatureValue().getByteArrayValue()
                 }));
             }
-            catch(UnsupportedEncodingException uee) {
-                throw new IllegalStateException("Support for UTF-8 is required.");
+            catch (UnsupportedEncodingException uee) {
+                throw new RuntimeException(uee); // Can't happen
             }
         }
         else {
@@ -410,8 +402,8 @@ public class SamlAssertionV1 extends SamlAssertion {
                         safeToString(confirmationMethod).getBytes("UTF-8")
                 }));
             }
-            catch(UnsupportedEncodingException uee) {
-                throw new IllegalStateException("Support for UTF-8 is required.");
+            catch (UnsupportedEncodingException uee) {
+                throw new RuntimeException(uee); // Can't happen
             }
         }
 

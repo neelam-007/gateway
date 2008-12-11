@@ -161,7 +161,7 @@
                 <value>com.l7tech.gateway.common.schema.SchemaEntry</value>
                 <value>com.l7tech.gateway.common.security.RevocationCheckPolicy</value>
                 <value>com.l7tech.security.cert.TrustedCert</value>
-                <value>com.l7tech.server.identity.cert.CertEntryRow</value>
+                <value>com.l7tech.identity.cert.CertEntryRow</value>
                 <value>com.l7tech.server.logon.LogonInfo</value>
                 <value>com.l7tech.server.security.keystore.KeystoreFile</value>
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>

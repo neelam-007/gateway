@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.identity.cert;
 
@@ -7,7 +7,9 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.HibernateEntityManager;
@@ -18,25 +20,25 @@ import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
+import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.security.auth.x500.X500Principal;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.security.cert.CertificateException;
+import java.math.BigInteger;
 import java.security.cert.X509Certificate;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -91,9 +93,10 @@ public class TrustedCertManagerImp
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
     @Transactional(readOnly=true)
-    public List findByThumbprint(String thumbprint) throws FindException {
+    public List<TrustedCert> findByThumbprint(String thumbprint) throws FindException {
         StringBuffer hql = new StringBuffer("FROM ");
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
         hql.append(" WHERE ").append(getTableName()).append(".thumbprintSha1 ");
@@ -111,9 +114,10 @@ public class TrustedCertManagerImp
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
     @Transactional(readOnly=true)
-    public List findBySki(String ski) throws FindException {
+    public List<TrustedCert> findBySki(String ski) throws FindException {
         StringBuffer hql = new StringBuffer("FROM ");
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
         hql.append(" WHERE ").append(getTableName()).append(".ski ");
@@ -132,29 +136,17 @@ public class TrustedCertManagerImp
     }
 
     @Override
-    public long save(TrustedCert cert) throws SaveException {
-        try {
-            checkCachable(cert);
-            return super.save(cert);
-        } catch (CacheVeto e) {
-            logger.log(Level.WARNING, e.getMessage(), e.getCause());
-            throw new SaveException(e.getMessage(), e.getCause());
-        }
-    }
-
-    @Override
-    public void update(TrustedCert cert) throws UpdateException {
-        try {
-            checkCachable(cert);
-            super.update(cert);
-        } catch (DataAccessException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new UpdateException("Couldn't update cert", e);
-        } catch (CacheVeto e) {
-            final String msg = e.getMessage();
-            logger.log(Level.WARNING, msg, e.getCause());
-            throw new UpdateException(msg, e.getCause());
-        }
+    public List<TrustedCert> findByIssuerAndSerial(final X500Principal issuer, final BigInteger serial) throws FindException {
+        //noinspection unchecked
+        return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            @Override
+            protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                final Criteria crit = session.createCriteria(getImpClass());
+                crit.add(Restrictions.eq("issuerDn", issuer.getName()));
+                crit.add(Restrictions.eq("serial", serial));
+                return crit.list();
+            }
+        });
     }
 
     @Override
@@ -187,29 +179,7 @@ public class TrustedCertManagerImp
     }
 
     @Override
-    @Transactional(readOnly=true)
-    public TrustedCert getCachedCertByOid(long o, int maxAge) throws FindException, CertificateException {
-        try {
-            return getCachedEntity(o, maxAge);
-        } catch (CacheVeto e) {
-            logger.log(Level.SEVERE, e.getMessage(), e.getCause());
-            return null;
-        }
-    }
-
-    @Override
     protected void initDao() throws Exception {
-        if (transactionManager == null) {
-            throw new IllegalArgumentException("Transaction Manager is required");
-        }
-
-        new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
-            @Override
-            protected void doInTransactionWithoutResult(TransactionStatus status) {
-                peruseTrustedCertificates();
-            }
-        });
-
         long period;
         final String value = serverConfig.getPropertyCached(ServerConfig.PARAM_CERT_EXPIRY_CHECK_PERIOD);
         try {
@@ -238,19 +208,6 @@ public class TrustedCertManagerImp
     @Override
     protected UniqueType getUniqueType() {
         return UniqueType.OTHER;
-    }
-
-    private void peruseTrustedCertificates() {
-        try {
-            for (TrustedCert cert : findAll()) {
-                checkCachable(cert);
-                logger.info("Caching cert #" + cert.getOid() + " (" + cert.getSubjectDn() + ")");
-            }
-        } catch (FindException e) {
-            logger.log(Level.SEVERE, "Couldn't find cert", e);
-        } catch (CacheVeto e) {
-            logger.log(Level.WARNING, "Couldn't cache cert: " + ExceptionUtils.getMessage(e.getCause()));
-        }
     }
 
     @Override

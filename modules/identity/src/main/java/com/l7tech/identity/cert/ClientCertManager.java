@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.identity.cert;
 
 import com.l7tech.identity.User;
@@ -6,19 +9,15 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 
 import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
- * This is our internal CA. It manages the client_cert data.
- *
- * <br/><br/>
- * User: flascell<br/>
- * Date: Jul 29, 2003<br/>
+ * DAO interface for {@link CertEntryRow}s.
  */
 public interface ClientCertManager {
-
     /**
      * checks whether the user passwd is authorized to generate a new cert.
      * if the user already has a cert and it has been consumed, this will return false;
@@ -29,7 +28,7 @@ public interface ClientCertManager {
      * return true
      *
      */
-    boolean userCanGenCert(User user, Certificate requestCert);
+    boolean userCanGenCert(User user, Certificate requestCert) throws FindException;
 
     /**
      * Check if the specified user certificate looks like it was probably signed by an earlier version of the
@@ -84,9 +83,11 @@ public interface ClientCertManager {
      * @return {@link com.l7tech.security.cert.TrustedCert}s with the matching base64'd SHA-1 thumbprint. Never null, but may be empty.
      * @param thumbprint the base64'd SHA-1 thumbprint value to search for. May be null.
      */
-    List findByThumbprint(String thumbprint) throws FindException;
+    List<CertEntryRow> findByThumbprint(String thumbprint) throws FindException;
 
-    List findBySki(String ski) throws FindException;
+    List<CertEntryRow> findBySki(String ski) throws FindException;
+
+    List<CertEntryRow> findByIssuerAndSerial(X500Principal issuer, BigInteger serial) throws FindException;
 
     /**
      * Get information on all existing keys.

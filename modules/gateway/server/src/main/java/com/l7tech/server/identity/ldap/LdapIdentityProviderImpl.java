@@ -43,18 +43,17 @@ import org.springframework.context.ApplicationContextAware;
 import javax.naming.*;
 import javax.naming.directory.*;
 import javax.security.auth.x500.X500Principal;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.math.BigInteger;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * Server-side implementation of the LDAP provider.
@@ -66,6 +65,7 @@ import java.beans.PropertyChangeEvent;
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
  */
+@SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 public class LdapIdentityProviderImpl
         implements LdapIdentityProvider, InitializingBean, DisposableBean, ApplicationContextAware, ConfigurableIdentityProvider, PropertyChangeListener
 {
@@ -151,8 +151,6 @@ public class LdapIdentityProviderImpl
      * a lock for accessing the index above
      */
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
-    private final AtomicBoolean certsEnabled = new AtomicBoolean(true);
-
 
     public void getIndexRebuildIntervalProperty() {
         logger.fine("Checking the ldap cache rebuild interval property");
@@ -405,9 +403,7 @@ public class LdapIdentityProviderImpl
     }
 
     private boolean certsAreEnabled() {
-        boolean enabled = getConfig().isUserCertsEnabled();
-        certsEnabled.set(enabled);
-        return certsEnabled.get();
+        return getConfig().isUserCertsEnabled();
     }
 
     public void setServerConfig(ServerConfig serverConfig) {
@@ -591,9 +587,7 @@ public class LdapIdentityProviderImpl
                                                                              config.getCertificateValidationType(),
                                                                              auditor, false);
                         } catch (CertificateException e) {
-                            String msg = "Problem decoding cert located in LDAP";
-                            logger.log(Level.WARNING, msg, e);
-                            throw new AuthenticationException(msg + " " + e.getMessage());
+                            throw new AuthenticationException("Problem decoding cert located in LDAP: " + ExceptionUtils.getMessage(e), e);
                         }
                     } else {
                         return certificateAuthenticator.authenticateX509Credentials(pc, realUser, config.getCertificateValidationType(), auditor);
@@ -784,7 +778,7 @@ public class LdapIdentityProviderImpl
 
                 context = getBrowseContext();
                 Attributes attributes = context.getAttributes(dnforcert);
-                Object tmp = null;
+                Object tmp;
                 for (UserMappingConfig mapping : mappings) {
                     String userCertAttrName = mapping.getUserCertAttrName();
                     if (userCertAttrName == null || "".equals(userCertAttrName)) {
@@ -861,11 +855,9 @@ public class LdapIdentityProviderImpl
             output.setMaxExceeded(getMaxSearchResultSize());
             // dont throw here, we still want to return what we got
         } catch (javax.naming.AuthenticationException ae) {
-            logger.log(Level.WARNING, "LDAP authentication error '" + ExceptionUtils.getMessage(ae) + "'.", ExceptionUtils.getDebugException(ae));
-            throw new FindException("LDAP search error: Authentication failed.");
+            throw new FindException("LDAP search error: Authentication failed.", ae);
         } catch (NamingException e) {
-            logger.log(Level.WARNING, "error searching with filter: " + filter, e);
-            throw new FindException("LDAP search error", e);
+            throw new FindException("LDAP search error with filter " + filter, e);
         } finally {
             if (context != null) {
                 if (answer != null) {
@@ -1070,9 +1062,7 @@ public class LdapIdentityProviderImpl
             try {
                 context.search(config.getSearchBase(), "(objectClass=*)", sc);
             } catch (NamingException e) {
-                String msg = "Cannot search using base: " + config.getSearchBase();
-                logger.log(Level.INFO, "ldap config test failure " + msg, e);
-                throw new InvalidIdProviderCfgException(msg);
+                throw new InvalidIdProviderCfgException("Cannot search using base: " + config.getSearchBase(), e);
             }
 
             // check user mappings. make sure they work
@@ -1224,26 +1214,17 @@ public class LdapIdentityProviderImpl
                 //check where we should be looking for the cert, the cert could reside either in LDAP or gateway
                 if (certsAreEnabled()) {
                     //telling use to search cert through ldap
-                    if (ldapUser.getLdapCert() != null) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    return ldapUser.getLdapCert() != null;
                 } else {
                     //telling use to search the gateway
-                    if (clientCertManager.getUserCert(ldapUser) != null ) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    return clientCertManager.getUserCert(ldapUser) != null;
                 }
             } else {
                 //we cant even find the user, so there won't be a cert available
                 return false;
             }
         } catch (FindException fe) {
-                logger.log(Level.FINE, "Couldn't find user '" + lc.getLogin() + "'");
-                throw new AuthenticationException("Failed on ldap user '" + lc.getLogin() + "' lookup");
+            throw new AuthenticationException(String.format("Couldn't find user '%s'", lc.getLogin()), fe);
         }
     }
 

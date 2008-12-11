@@ -1,22 +1,15 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.event;
 
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.identity.cert.CertEntryRow;
+import com.l7tech.identity.cert.CertEntryRow;
 import org.springframework.context.ApplicationContext;
 
-/**
- * @author alex
- * @version $Revision$
- */
 public class UserCertEventInfo {
     public UserCertEventInfo(final CertEntryRow cer, String verb, EntityChangeSet changes, ApplicationContext springContext) {
         try {

@@ -3,24 +3,21 @@
  */
 package com.l7tech.security.xml;
 
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
+import com.l7tech.security.WsiBSPValidator;
+import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.*;
-import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.XencAlgorithm;
-import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.DomUtils;
-import com.l7tech.xml.saml.SamlAssertion;
-import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Functions;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
-import com.l7tech.security.WsiBSPValidator;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.saml.SamlAssertion;
+import com.l7tech.xml.soap.SoapUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -286,15 +283,15 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getSoapWithSignedEncryptedAttachmentTestDocument()));
     }
 
-    public void testSignedAndEncryptedBodyWithNoBst() throws Exception {
+    public void testSignedAndEncryptedBodyWithSki() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedAndEncryptedBodyWithNoBst",
-                                               wssDecoratorTest.getSignedAndEncryptedBodyWithNoBstTestDocument()));
+                                               wssDecoratorTest.getSignedAndEncryptedBodySkiTestDocument()));
     }
 
     public void testEncryptedUsernameToken() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedUsernameToken",
                                                wssDecoratorTest.getEncryptedUsernameTokenTestDocument()),
-                         false);
+                                               false);
     }
 
     public void testEncryptedUsernameTokenWithDerivedKeys() throws Exception {

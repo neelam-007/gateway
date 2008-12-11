@@ -51,10 +51,9 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
         AttributeType[] receivedAttributes = attributeStatementType.getAttributeArray();
         SamlAttributeStatement.Attribute[] expectedAttributes = attribueStatementRequirements.getAttributes();
 
-        for (int i = 0; i < expectedAttributes.length; i++) {
-            SamlAttributeStatement.Attribute expectedAttribute = expectedAttributes[i];
+        for (SamlAttributeStatement.Attribute expectedAttribute : expectedAttributes) {
             if (!isAttributePresented(expectedAttribute, receivedAttributes, validationResults)) {
-                SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No matching Attribute presented. Required {0}", null, expectedAttribute, null);
+                SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No matching Attribute presented. Required {0}", null, expectedAttribute);
                 if (logger.isLoggable(Level.FINER)) {
                     logger.finer(result.toString());
                 }
@@ -77,31 +76,29 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
         String expectedValue = expectedAttribute.getValue();
         boolean expectedAny = expectedAttribute.isAnyValue();
         if (isEmpty(expectedName) || (!expectedAny && isEmpty(expectedValue))) {
-            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Invalid Attribute constraint (name or value is null)", null, null, null);
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Invalid Attribute constraint (name or value is null)", null);
             validationResults.add(result);
             logger.finer(result.toString());
             return false;
         }
 
-        for (int i = 0; i < receivedAttributes.length; i++) {
-            AttributeType receivedAttribute = receivedAttributes[i];
+        for (AttributeType receivedAttribute : receivedAttributes) {
             if (expectedName.equals(receivedAttribute.getAttributeName())) {
                 if (!isEmpty(expectedNamespace) && !expectedNamespace.equals(receivedAttribute.getAttributeNamespace())) {
                     continue;
                 }
                 XmlObject[] values = receivedAttribute.getAttributeValueArray();
-                for (int j = 0; j < values.length; j++) {
-                    XmlObject presentedValue = values[j];
+                for (XmlObject presentedValue : values) {
                     XmlCursor cursor = presentedValue.newCursor();
                     try {
                         if (expectedAny && !isEmpty(cursor.getTextValue())) {
                             if (logger.isLoggable(Level.FINER)) {
-                                logger.finer(MessageFormat.format("Matched name {0}, any value", new Object[]{expectedName, expectedValue}));
+                                logger.finer(MessageFormat.format("Matched name {0}, any value", expectedName, expectedValue));
                             }
                             return true;
                         } else if (cursor.getTextValue().equals(expectedValue)) {
                             if (logger.isLoggable(Level.FINER)) {
-                                logger.finer(MessageFormat.format("Matched name {0}, value {1} ", new Object[]{expectedName, expectedValue}));
+                                logger.finer(MessageFormat.format("Matched name {0}, value {1} ", expectedName, expectedValue));
                             }
                             return true;
                         }

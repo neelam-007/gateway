@@ -1,32 +1,29 @@
 package com.l7tech.server;
 
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.util.Background;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
+import org.springframework.beans.factory.InitializingBean;
 
 import javax.security.auth.x500.X500Principal;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.TimerTask;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.math.BigInteger;
+import java.security.cert.X509Certificate;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
-import java.math.BigInteger;
-
-import org.springframework.beans.factory.InitializingBean;
 
 /**
  * SecurityTokenResolver that looks up certificates using an identity provider.
  *
  * <p>If the users certificate is not found then the resolution request is passed on to a delegate.</p>
  */
+@SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 public class IdentityProviderDelegatingSecurityTokenResolver implements SecurityTokenResolver, InitializingBean {
 
     //- PUBLIC
@@ -55,8 +52,15 @@ public class IdentityProviderDelegatingSecurityTokenResolver implements Security
     public X509Certificate lookupByIssuerAndSerial(X500Principal issuer, BigInteger serial) {
         X509Certificate certificate = null;
 
-        for ( AuthenticatingIdentityProvider provider : providers.get() ) {
-            certificate = provider.findCertByIssuerAndSerial( issuer, serial );
+        for (AuthenticatingIdentityProvider provider : providers) {
+            try {
+                certificate = provider.findCertByIssuerAndSerial( issuer, serial );
+            } catch (FindException e) {
+                logger.log(Level.WARNING,
+                           String.format("Unable to find certs in %s: %s", provider.getConfig().getName(), ExceptionUtils.getMessage(e)),
+                           ExceptionUtils.getDebugException(e));
+                continue;
+            }
             if ( certificate != null ) break;            
         }
 
@@ -105,7 +109,7 @@ public class IdentityProviderDelegatingSecurityTokenResolver implements Security
 
     private final IdentityProviderFactory identityProviderFactory;
     private final SecurityTokenResolver delegate;
-    private final AtomicReference<Collection<AuthenticatingIdentityProvider>> providers = new AtomicReference<Collection<AuthenticatingIdentityProvider>>();
+    private volatile Collection<AuthenticatingIdentityProvider> providers = Collections.emptyList();
 
     private synchronized void initiateLDAPGetters() {
         buildAuthenticatingProviderList();
@@ -119,7 +123,7 @@ public class IdentityProviderDelegatingSecurityTokenResolver implements Security
 
     private void buildAuthenticatingProviderList() {
         logger.fine("Rebuilding the list of LDAP providers that might contain certs");
-        ArrayList<AuthenticatingIdentityProvider> tmp = new ArrayList<AuthenticatingIdentityProvider>();
+        List<AuthenticatingIdentityProvider> tmp = new ArrayList<AuthenticatingIdentityProvider>();
         try {
             for (IdentityProvider provider : identityProviderFactory.findAllIdentityProviders()) {
                 if (provider instanceof AuthenticatingIdentityProvider) {
@@ -127,7 +131,7 @@ public class IdentityProviderDelegatingSecurityTokenResolver implements Security
                 }
             }
 
-            providers.set( Collections.unmodifiableList(tmp) );
+            providers = Collections.unmodifiableList(tmp);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Problem getting ldap cert getters. " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }

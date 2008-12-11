@@ -1,26 +1,22 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.identity.cert.CertEntryRow;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.UpdateException;
 
+import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.List;
 import java.util.Collections;
-import javax.security.auth.x500.X500Principal;
+import java.util.List;
 
-/**
- * @author emil
- * @version Feb 14, 2005
- */
 public class ClientCertManagerStub implements ClientCertManager {
     /**
      * record the fact that the a user cert was used successfully in an authentication operation
@@ -39,6 +35,11 @@ public class ClientCertManagerStub implements ClientCertManager {
     }
 
     public List findBySki(String ski) throws FindException {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public List<CertEntryRow> findByIssuerAndSerial(X500Principal issuer, BigInteger serial) throws FindException {
         throw new RuntimeException("Not implemented");
     }
 

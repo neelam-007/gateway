@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.security.cert;
 
 import com.l7tech.objectmodel.EntityHeader;
@@ -11,14 +8,14 @@ import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Cacheable;
 
+import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.security.cert.CertificateException;
 import java.util.Collection;
 import java.util.List;
 
 /**
  * Provides access to CRUD functionality for {@link TrustedCert} objects.
- * @author alex
- * @version $Revision$
  */
 public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHeader> {
     /**
@@ -31,12 +28,9 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
     Collection<TrustedCert> findBySubjectDn(String dn) throws FindException;
 
     /**
-     * Retrieves the TrustedCert instances with the specified subject DN from a cache,
-     * if it was cached less than maxAge milliseconds ago.
-     * <p>
-     * If the cached version is more than the specified maximum age, the manager will check
-     * the database for the latest version.  If it has been updated, it will retrieve the new
-     * version and update the cache.
+     * Retrieves the TrustedCert instances with the specified subject DN.  Only different from
+     * {@link #findBySubjectDn(String)} in that this version is {@link Cacheable} and the instances it returns are 
+     * immutable.
      *
      * @param dn the Subject DN to search by
      * @return the TrustedCert with the specified Subject DN, or null if no such cert exists.
@@ -46,31 +40,25 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
     Collection<TrustedCert> getCachedCertsBySubjectDn(String dn) throws FindException;
 
     /**
-     * Retrieves the TrustedCert with the specified oid from a cache,
-     * if it was cached less than maxAge milliseconds ago.
-     * <p>
-     * If the cached version is more than the specified maximum age, the manager will check
-     * the database for the latest version.  If it has been updated, it will retrieve the new
-     * version and update the cache.
-     *
-     * @param oid the oid to search by
-     * @param maxAge the maximum age of cache entries that will be returned without a database version check
-     * @return the TrustedCert with the specified Subject DN, or null if no such cert exists.
-     * @throws FindException if the TrustedCert cannot be found.
-     */
-    TrustedCert getCachedCertByOid(long oid, int maxAge) throws FindException, CertificateException;
-
-    /**
      * @return {@link TrustedCert}s with the matching base64'd SHA-1 thumbprint. Never null, but may be empty.
      * @param thumbprint the base64'd SHA-1 thumbprint value to search for. May be null.
      */
-    List findByThumbprint(String thumbprint) throws FindException;
+    List<TrustedCert> findByThumbprint(String thumbprint) throws FindException;
 
     /**
      * @return {@link TrustedCert}s with the matching base64'd SKI. Never null, but may be empty.
      * @param ski the base64'd SKI value to search for. May be null.
      */
-    List findBySki(String ski) throws FindException;
+    List<TrustedCert> findBySki(String ski) throws FindException;
+
+    /**
+     * Finds TrustedCerts whose issuer DN matches the specified X500Principal, and having the specified serial number.
+     *
+     * @param issuer the X.500 Principal of the issuer DN. Must not be null.
+     * @param serial the serial number of the subject certificate. Must not be null.
+     * @return {@link TrustedCert}s with the matching Issuer DN and serial number.  Never null, but may be empty.
+     */
+    List<TrustedCert> findByIssuerAndSerial(X500Principal issuer, BigInteger serial) throws FindException;
 
     /**
      * Subclass of certificate exception thrown when a certificate is not known.

@@ -1,28 +1,24 @@
 /*
  * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- *
  */
 package com.l7tech.security.xml.decorator;
 
 import com.ibm.xml.dsig.*;
-import com.l7tech.message.Message;
-import com.l7tech.message.MimeKnob;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.PartIterator;
-import com.l7tech.security.keys.AesKey;
 import com.l7tech.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.kerberos.KerberosUtils;
+import com.l7tech.message.Message;
+import com.l7tech.message.MimeKnob;
+import com.l7tech.security.keys.AesKey;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
-import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.XmlUtil;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
-import org.w3.x2000.x09.xmldsig.X509DataType;
-import org.w3.x2000.x09.xmldsig.X509IssuerSerialType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -205,12 +201,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     senderCertKeyInfo = KeyInfoDetails.makeKeyId(senderSki, SoapConstants.VALUETYPE_SKI);
                     break;
                 case ISSUER_SERIAL:
-                    KeyInfoType kit = KeyInfoType.Factory.newInstance();
-                    X509DataType xdt = kit.addNewX509Data();
-                    X509IssuerSerialType xist = xdt.addNewX509IssuerSerial();
-                    xist.setX509IssuerName(dreq.getSenderMessageSigningCertificate().getIssuerDN().getName());
-                    xist.setX509SerialNumber(dreq.getSenderMessageSigningCertificate().getSerialNumber());
-                    keyInfoType = kit;
+                    senderCertKeyInfo = KeyInfoDetails.makeIssuerSerial(dreq.getSenderMessageSigningCertificate(), true);
                     break;
                 default:
                     throw new DecoratorException("Unsupported KeyInfoInclusionType: " + dreq.getKeyInfoInclusionType());

@@ -1,7 +1,9 @@
+/*
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
+ */
 package com.l7tech.server.identity.internal;
 
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.util.HexUtils;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalGroup;
@@ -10,30 +12,30 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.identity.Authenticated;
-import com.l7tech.server.identity.*;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.ConfigurableIdentityProvider;
+import com.l7tech.server.identity.DigestAuthenticator;
+import com.l7tech.server.identity.PersistentIdentityProviderImpl;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import com.l7tech.server.logon.LogonService;
-import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.util.HexUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.math.BigInteger;
 
 /**
- * IdentityProvider implementation for the internal identity provider.
- * 
- * <br/><br/>
- * Layer 7 Technologies, inc.<br/>
- * User: flascelles<br/>
- * Date: Jun 24, 2003
+ * The internal identity provider.  Currently there is always exactly one of these in an SSG, but there's no practical
+ * reason why there couldn't be more.
+ *
+ * TODO consider splitting up SSM authentication and message processing authentication into separate providers and/or separate mixed-in provider aspects
  */
 @Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public class InternalIdentityProviderImpl
@@ -41,7 +43,6 @@ public class InternalIdentityProviderImpl
         implements ApplicationContextAware, InternalIdentityProvider, ConfigurableIdentityProvider
 {
     private static final Logger logger = Logger.getLogger(InternalIdentityProviderImpl.class.getName());
-    public static final String ENCODING = "UTF-8";
 
     private IdentityProviderConfig config;
     private InternalUserManager userManager;
@@ -114,11 +115,6 @@ public class InternalIdentityProviderImpl
                 springContext.publishEvent(new Authenticated(ar));
             }
         }
-    }
-
-    @Transactional(propagation=Propagation.SUPPORTS)
-    public X509Certificate findCertByIssuerAndSerial(X500Principal issuer, BigInteger serial) {
-        return null;
     }
 
     private AuthenticationResult autenticatePasswordCredentials(LoginCredentials pc, InternalUser dbUser)
@@ -249,7 +245,7 @@ public class InternalIdentityProviderImpl
 
     public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
         String login = lc.getLogin();
-        InternalUser dbUser = null;
+        InternalUser dbUser;
         try {
             dbUser = userManager.findByLogin(login);
             if (dbUser == null) return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.common.io;
 
@@ -44,8 +44,10 @@ public class CertUtils {
     public static final String PEM_DSAKEY_END_MARKER = "-----END DSA PRIVATE KEY-----";
     public static final String PEM_CRL_BEGIN_MARKER = "-----BEGIN X509 CRL-----";
     public static final String PEM_CRL_END_MARKER = "-----END X509 CRL-----";
-    private static final String PEM_CSR_BEGIN_MARKER = "-----BEGIN NEW CERTIFICATE REQUEST-----";
-    private static final String PEM_CSR_END_MARKER = "-----END NEW CERTIFICATE REQUEST-----";
+    private static final String PEM_CSR_BEGIN_MARKER = "-----BEGIN CERTIFICATE REQUEST-----";
+    private static final String PEM_CSR_END_MARKER = "-----END CERTIFICATE REQUEST-----";
+    private static final String PEM_CSR_BEGIN_NEW_MARKER = "-----BEGIN NEW CERTIFICATE REQUEST-----";
+    private static final String PEM_CSR_END_NEW_MARKER = "-----END NEW CERTIFICATE REQUEST-----";
 
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static final String PROPBASE = CertUtils.class.getName();
@@ -82,6 +84,7 @@ public class CertUtils {
     private static final String REGEX_BASE64 = "\\s*([a-zA-Z0-9+/\\s]+=*)\\s*";
     private static final Pattern PATTERN_BASE64 = Pattern.compile(REGEX_BASE64);
     private static final Pattern PATTERN_CRL = Pattern.compile(PEM_CSR_BEGIN_MARKER + REGEX_BASE64 + PEM_CSR_END_MARKER);
+    private static final Pattern PATTERN_NEW_CRL = Pattern.compile(PEM_CSR_BEGIN_NEW_MARKER + REGEX_BASE64 + PEM_CSR_END_NEW_MARKER);
 
     public static boolean isCertCaCapable(X509Certificate cert) {
         if (cert == null) return false;
@@ -234,13 +237,19 @@ public class CertUtils {
     public static byte[] csrPemToBinary(byte[] contents) throws IOException {
         String str = new String(contents, "UTF-8").trim();
         String b64 = null;
-        Matcher matcher = PATTERN_CRL.matcher(str);
+        Matcher matcher = PATTERN_NEW_CRL.matcher(str);
         if (matcher.find()) {
             b64 = matcher.group(1);
         } else {
-            matcher = PATTERN_BASE64.matcher(str);
-            if (matcher.matches())
+            matcher = PATTERN_CRL.matcher(str);
+            if (matcher.matches()) {
                 b64 = matcher.group(1);
+            } else {
+                matcher = PATTERN_BASE64.matcher(str);
+                if (matcher.matches()) {
+                    b64 = matcher.group(1);
+                }
+            }
         }
         if (b64 == null)
             throw new IOException("CSR does not appear to be PEM encoded");

@@ -3,50 +3,51 @@
  */
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.common.io.CertificateExpiry;
-import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.objectmodel.*;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.EntityManagerStub;
 
-import java.security.cert.CertificateException;
+import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.security.cert.X509Certificate;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager {
     public Collection<TrustedCert> findBySubjectDn(String dn) throws FindException {
-        throw new RuntimeException("Not implemented");
+        throw new UnsupportedOperationException();
     }
 
     public Collection<TrustedCert> getCachedCertsBySubjectDn(String dn) throws FindException {
         return findBySubjectDn(dn);
     }
 
-    public TrustedCert getCachedCertByOid(long oid, int maxAge) throws FindException, CertificateException {
-        throw new RuntimeException("Not implemented");
+    @Override
+    public List<TrustedCert> findByIssuerAndSerial(X500Principal issuer, BigInteger serial) throws FindException {
+        List<TrustedCert> tcs = new ArrayList<TrustedCert>();
+        for (TrustedCert trustedCert : entities.values()) {
+            X509Certificate cert = trustedCert.getCertificate();
+            if (cert.getIssuerDN().equals(issuer) && cert.getSerialNumber().equals(serial)) tcs.add(trustedCert);
+        }
+        return tcs;
     }
 
-    public void logWillExpire(TrustedCert cert, CertificateExpiry e) {
-        throw new RuntimeException("Not implemented");
+    public List<TrustedCert> findByThumbprint(String thumbprint) throws FindException {
+        throw new UnsupportedOperationException();
     }
 
-    public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
+    public List<TrustedCert> findBySki(String ski) throws FindException {
+        throw new UnsupportedOperationException();
     }
 
-    public List findByThumbprint(String thumbprint) throws FindException {
-        throw new RuntimeException("Not implemented");
-    }
-
-    public List findBySki(String ski) throws FindException {
-        throw new RuntimeException("Not implemented");
-    }
-
-    public Class getImpClass() {
+    public Class<TrustedCert> getImpClass() {
         return TrustedCert.class;
     }
 
-    public Class getInterfaceClass() {
+    public Class<TrustedCert> getInterfaceClass() {
         return TrustedCert.class;
     }
 }

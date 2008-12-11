@@ -80,6 +80,8 @@ public final class TestDocuments {
     public static final String WSSKEYSTORE_BOB   = DIR + "wssInterop/bob.pfx";
     public static final String WSSKEYSTORE_WSSIP   = DIR + "wssInterop/wssip.pfx";
 
+    public static final String GOOGLESPELLREQUEST_SIGNED_ISSUERSERIAL = DIR + "googleSpellRequestWithIssuerSerialSignature.xml";
+
     private static final String ETTK_KS = DIR + "ibmEttkKeystore.db";
     private static final String ETTK_KS_PROPERTIES = DIR + "ibmEttkKeystore.properties";
     private static final String SSL_KS = DIR + "rikerssl.ks";

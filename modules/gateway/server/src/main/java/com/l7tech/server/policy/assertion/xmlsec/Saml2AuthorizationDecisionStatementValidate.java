@@ -1,17 +1,15 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import java.util.Collection;
-
-import org.w3c.dom.Document;
-import org.apache.xmlbeans.XmlObject;
-
-import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.security.xml.processor.ProcessorResult;
-
+import org.apache.xmlbeans.XmlObject;
+import org.w3c.dom.Document;
+import x0Assertion.oasisNamesTcSAML2.ActionType;
 import x0Assertion.oasisNamesTcSAML2.AuthzDecisionStatementType;
 import x0Assertion.oasisNamesTcSAML2.DecisionType;
-import x0Assertion.oasisNamesTcSAML2.ActionType;
+
+import java.util.Collection;
 
 
 /**
@@ -55,7 +53,7 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
 
         String resource = authorizationDecisionStatementType.getResource();
         if (resource == null) {
-            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No Resource specified", authorizationDecisionStatementType.toString(), null, null);
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No Resource specified", null);
             logger.finer(result.toString());
             validationResults.add(result);
             return;
@@ -64,8 +62,8 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
         if (!resource.equals(authorizationStatementRequirements.getResource())) {
             SamlAssertionValidate.Error result =
               new SamlAssertionValidate.Error("Resource does not match, received {0}, expected {1}",
-                                              authorizationDecisionStatementType.toString(),
-                                              new Object[]{resource, authorizationStatementRequirements.getResource()}, null);
+                                              null, resource, authorizationStatementRequirements.getResource()
+              );
             validationResults.add(result);
             logger.finer(result.toString());
             return;
@@ -73,13 +71,13 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
 
         DecisionType.Enum decision = authorizationDecisionStatementType.getDecision();
         if (decision == null) {
-            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No Decision specified", authorizationDecisionStatementType.toString(), null, null);
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No Decision specified", null);
             validationResults.add(result);
             logger.finer(result.toString());
             return;
         }
         if (!DecisionType.PERMIT.equals(decision)) {
-            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Permit Decision expected", authorizationDecisionStatementType.toString(), null, null);
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Permit Decision expected", null);
             validationResults.add(result);
             logger.finer(result.toString());
             return;
@@ -93,12 +91,10 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
         String constraintsActionNameSpace = authorizationStatementRequirements.getActionNamespace();
         ActionType[] actionArray = authorizationDecisionStatementType.getActionArray();
 
-        for (int i = 0; i < actionArray.length; i++) {
-            ActionType actionType = actionArray[i];
-
+        for (ActionType actionType : actionArray) {
             if (isNullOrEmpty(constraintsAction)) {
                 logger.finer("Matched empty Action");
-            } else if(constraintsAction.equals(actionType.getStringValue())) {
+            } else if (constraintsAction.equals(actionType.getStringValue())) {
                 logger.finer("Matched Action " + constraintsAction);
             } else {
                 continue;
@@ -106,7 +102,7 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
 
             if (isNullOrEmpty(constraintsActionNameSpace)) {
                 logger.finer("Matched empty Namespace");
-            } else if(constraintsActionNameSpace.equals(actionType.getNamespace())) {
+            } else if (constraintsActionNameSpace.equals(actionType.getNamespace())) {
                 logger.finer("Matched Action Namespace" + constraintsActionNameSpace);
             } else {
                 continue;
@@ -116,10 +112,10 @@ class Saml2AuthorizationDecisionStatementValidate extends SamlStatementValidate 
             return;
         }
         if (!isNullOrEmpty(constraintsActionNameSpace)) {
-            validationResults.add(new SamlAssertionValidate.Error("No match for action/namespace: {0}/{1}", authorizationDecisionStatementType.toString(),
-                                                                                       new Object[]{constraintsAction, constraintsActionNameSpace}, null));
+            validationResults.add(new SamlAssertionValidate.Error("No match for action/namespace: {0}/{1}",
+                                                                  null, constraintsAction, constraintsActionNameSpace));
         } else {
-            validationResults.add(new SamlAssertionValidate.Error("No match for action: {0}", authorizationDecisionStatementType.toString(), constraintsAction, null));
+            validationResults.add(new SamlAssertionValidate.Error("No match for action: {0}", null, constraintsAction));
         }
     }
 

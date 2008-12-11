@@ -1,29 +1,23 @@
-package com.l7tech.server.identity.cert;
+/*
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
+ */
+package com.l7tech.identity.cert;
 
 import com.l7tech.security.cert.X509Entity;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.AttributeOverride;
 
 /**
- * Bean representation of a row in the client_cert table. This bean class is meant to be used by hibernate only.
- *
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- *
- * User: flascell<br/>
- * Date: Oct 23, 2003<br/>
- * $Id$
+ * A certificate for a user in an SSG Identity Provider; not necessarily a certificate issued by the SSG's CA.
  */
 @Entity
 @Table(name="client_cert")
 @AttributeOverride(name="certBase64",column=@Column(name="cert"))
 public class CertEntryRow extends X509Entity {
-
-    @Column(name="provider",nullable=false)
+    @Column(name="provider", nullable=false)
     public long getProvider() {
         return provider;
     }

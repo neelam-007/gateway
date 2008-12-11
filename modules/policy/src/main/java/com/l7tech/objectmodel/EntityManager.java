@@ -3,8 +3,8 @@
  */
 package com.l7tech.objectmodel;
 
-import java.util.Map;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Interface for DAOs that provide CRUD services for {@link PersistentEntity} instances.
@@ -45,9 +45,8 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
      * @param maxAge the maximum age of a cached Entity to return, in milliseconds.
      * @return the Entity with the specified OID, or <code>null</code> if it does not exist.
      * @throws FindException in the event of a database problem
-     * @throws CacheVeto thrown by an implementor
      */
-    public ET getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto;
+    public ET getCachedEntity( long o, int maxAge ) throws FindException;
 
     Class<? extends Entity> getInterfaceClass();
 
@@ -70,16 +69,6 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
     void update(ET entity) throws UpdateException;
 
     ET findByHeader(EntityHeader header) throws FindException;
-
-    /**
-     * Thrown by EntityManagers who override <code>checkCachable</code>
-     * to prevent an Entity from being cached.
-     */
-    public static class CacheVeto extends Exception {
-        public CacheVeto(String msg, Throwable cause) {
-            super(msg, cause);
-        }
-    }
 
     public static enum UniqueType {
         NONE, NAME, OTHER

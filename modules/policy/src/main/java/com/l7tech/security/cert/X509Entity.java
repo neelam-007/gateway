@@ -4,17 +4,19 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import org.hibernate.annotations.Type;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.persistence.Column;
 import javax.persistence.Lob;
-import javax.persistence.Transient;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,6 +33,8 @@ public abstract class X509Entity extends PersistentEntityImp {
     private String thumbprintSha1;
     private String ski;
     private String subjectDn;
+    private String issuerDn;
+    private BigInteger serial;
     private boolean readOnly = false;
 
 
@@ -89,22 +93,29 @@ public abstract class X509Entity extends PersistentEntityImp {
     protected void setCertDerivedFields(X509Certificate cert) {
         mutate();
         String subjectDn = null;
+        String issuerDn = null;
         String ski = null;
         String thumbprintSha1 = null;
+        BigInteger serial = null;
         try {
             if (cert != null) {
                 subjectDn = cert.getSubjectDN().toString();
+                issuerDn = cert.getIssuerDN().toString();
                 ski = CertUtils.getSki(cert);
                 thumbprintSha1 = CertUtils.getCertificateFingerprint(cert, CertUtils.ALG_SHA1, CertUtils.FINGERPRINT_BASE64);
+                serial = cert.getSerialNumber();
             }
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Unable to find SHA-1 algorithm", e); // can't happen
         } catch (CertificateEncodingException e) {
             logger.log(Level.WARNING, "Cert with DN '" + cert.getSubjectDN() + "' could not be encoded: " + ExceptionUtils.getMessage(e), e);
         }
+        
         this.subjectDn = subjectDn;
+        this.issuerDn = issuerDn;
         this.ski = ski;
         this.thumbprintSha1 = thumbprintSha1;
+        this.serial = serial;
     }
 
     /**
@@ -145,7 +156,7 @@ public abstract class X509Entity extends PersistentEntityImp {
     /**
      * @return the subjectDn from the cert, or null.
      */
-    @Transient
+    @Column(name="subject_dn", length=255)
     public String getSubjectDn() {
         return subjectDn;
     }
@@ -153,7 +164,7 @@ public abstract class X509Entity extends PersistentEntityImp {
     /**
      * @param subjectDn subject DN, or null.  Overrides any that was read from the cert or certb64.
      */
-    protected void setSubjectDn(String subjectDn) {
+    public void setSubjectDn(String subjectDn) {
         mutate();
         this.subjectDn = subjectDn;
     }
@@ -166,6 +177,26 @@ public abstract class X509Entity extends PersistentEntityImp {
     @Lob
     public String getCertBase64() {
         return certBase64;
+    }
+
+    @Column(name="issuer_dn")
+    public String getIssuerDn() {
+        return issuerDn;
+    }
+
+    public void setIssuerDn(String issuerDn) {
+        mutate();
+        this.issuerDn = issuerDn;
+    }
+
+    @Type(type="com.l7tech.server.util.BigIntegerBase64UserType")
+    public BigInteger getSerial() {
+        return serial;
+    }
+
+    public void setSerial(BigInteger serial) {
+        mutate();
+        this.serial = serial;
     }
 
     /**
@@ -210,20 +241,24 @@ public abstract class X509Entity extends PersistentEntityImp {
         this.readOnly = true;
     }
 
-    /** @noinspection RedundantIfStatement*/
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
 
-        final X509Entity that = (X509Entity)o;
+        X509Entity that = (X509Entity)o;
 
         if (certBase64 != null ? !certBase64.equals(that.certBase64) : that.certBase64 != null) return false;
 
         return true;
     }
 
+    @Override
     public int hashCode() {
-        return (certBase64 != null ? certBase64.hashCode() : 0);
+        int result = super.hashCode();
+        result = 31 * result + (certBase64 != null ? certBase64.hashCode() : 0);
+        return result;
     }
 
     protected void copyFrom(X509Entity that) {
@@ -232,5 +267,7 @@ public abstract class X509Entity extends PersistentEntityImp {
         this.cachedCert = that.cachedCert;
         this.thumbprintSha1 = that.thumbprintSha1;
         this.subjectDn = that.subjectDn;
+        this.issuerDn = that.issuerDn;
+        this.serial = that.serial;
     }
 }

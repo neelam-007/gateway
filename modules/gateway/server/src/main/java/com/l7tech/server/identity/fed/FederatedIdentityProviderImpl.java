@@ -1,7 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.io.CertUtils;
@@ -26,13 +25,10 @@ import com.l7tech.util.ExceptionUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.security.auth.x500.X500Principal;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.math.BigInteger;
 
 /**
  * The Federated Identity Provider allows authorization of {@link User}s and {@link Group}s
@@ -40,7 +36,6 @@ import java.math.BigInteger;
  * that have been provided using both X509 and SAML.
  *
  * @see FederatedIdentityProviderConfig
- * @author alex
  */
 @Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public class FederatedIdentityProviderImpl
@@ -85,11 +80,6 @@ public class FederatedIdentityProviderImpl
         } else {
             throw new BadCredentialsException("Can't authenticate without SAML or X.509 certificate credentials");
         }
-    }
-
-    @Transactional(propagation=Propagation.SUPPORTS)
-    public X509Certificate findCertByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
-        return null;
     }
 
     /**
@@ -165,7 +155,7 @@ public class FederatedIdentityProviderImpl
         for (long certOid : certOids) {
             String msg = "Federated Identity Provider '" + providerConfig.getName() + "' refers to Trusted Cert #" + certOid;
             try {
-                TrustedCert trust = trustedCertManager.getCachedCertByOid(certOid, MAX_CACHE_AGE);
+                TrustedCert trust = trustedCertManager.getCachedEntity(certOid, MAX_CACHE_AGE);
                 if (trust == null) {
                     logger.log(Level.WARNING, msg + ", which no longer exists");
                     continue;
@@ -173,8 +163,6 @@ public class FederatedIdentityProviderImpl
                 validTrustedCertOids.add(certOid);
             } catch (FindException e) {
                 logger.log(Level.SEVERE, msg + ", which could not be found", e);
-            } catch (CertificateException e) {
-                logger.log(Level.WARNING, msg + ", which is not valid", e);
             }
         }
 

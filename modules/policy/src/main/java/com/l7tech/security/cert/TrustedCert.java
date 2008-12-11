@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.security.cert;
 
@@ -232,23 +232,6 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
      */
     public void setVerifyHostname(boolean verifyHostname) {
         this.verifyHostname = verifyHostname;
-    }
-
-    /**
-     * Gets the cert subject's DN (distinguished name)
-     * @return the cert subject's DN (distinguished name)
-     */
-    @Column(name="subject_dn", length=255)
-    public String getSubjectDn() {
-        return super.getSubjectDn();
-    }
-
-    /**
-     * Sets the cert subject's DN (distinguished name)
-     * @param subjectDn the cert subject's DN (distinguished name)
-     */
-    public void setSubjectDn( String subjectDn ) {
-        super.setSubjectDn(subjectDn);
     }
 
     /**

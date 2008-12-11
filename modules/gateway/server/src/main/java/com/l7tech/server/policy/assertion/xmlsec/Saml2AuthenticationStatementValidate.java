@@ -1,19 +1,17 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import java.util.Collection;
-import java.util.Arrays;
-
-import org.w3c.dom.Document;
-import org.apache.xmlbeans.XmlObject;
-
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.ArrayUtils;
-
-import x0Assertion.oasisNamesTcSAML2.AuthnStatementType;
+import org.apache.xmlbeans.XmlObject;
+import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML2.AuthnContextType;
+import x0Assertion.oasisNamesTcSAML2.AuthnStatementType;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  * Validation for SAML 2.x Authentication statement.
@@ -57,12 +55,12 @@ class Saml2AuthenticationStatementValidate extends SamlStatementValidate {
             authenticationMethod = authnContext.getAuthnContextClassRef();
         }
         if (authenticationMethod == null) {
-            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No Authentication Method specified", authenticationStatementType.toString(), null, null);
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No Authentication Method specified", null);
             validationResults.add(result);
             logger.finer(result.toString());
             return;
         }
-        String[] methods = (String[]) ArrayUtils.copy(authenticationStatementConstraints.getAuthenticationMethods());
+        String[] methods = ArrayUtils.copy(authenticationStatementConstraints.getAuthenticationMethods());
         for (int i = 0; i < methods.length; i++) {
             String method = methods[i];
             String v2method = (String) SamlConstants.AUTH_MAP_SAML_1TO2.get(method);
@@ -72,19 +70,18 @@ class Saml2AuthenticationStatementValidate extends SamlStatementValidate {
         }
 
         boolean methodMatches = methods.length == 0;
-        for (int i = 0; i < methods.length; i++) {
-            String method = methods[i];
+        for (String method : methods) {
             if (authenticationMethod.equals(method)) {
                 methodMatches = true;
-                logger.finer("Matched authentication method "+method);
+                logger.finer("Matched authentication method " + method);
                 break;
             }
         }
         if (!methodMatches) {
             final String msg = "Authentication method not matched expected/received: {0}/{1}";
-            validationResults.add(new SamlAssertionValidate.Error(msg, authenticationStatementType.toString(),
-                                                                  new Object[] {methods.length == 1 ? methods[0]
-                                                                                : Arrays.asList(methods).toString(), authenticationMethod}, null));
+            validationResults.add(new SamlAssertionValidate.Error(msg, null,
+                                                                  methods.length == 1 ? methods[0]
+                                                                                : Arrays.asList(methods).toString(), authenticationMethod));
             logger.finer(msg);
         }
     }

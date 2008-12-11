@@ -35,7 +35,8 @@ import java.util.logging.Logger;
  * The default {@link com.l7tech.objectmodel.EntityManager} implementation for Hibernate-managed
  * {@link com.l7tech.objectmodel.PersistentEntity persistent entities}.
  *
- * @author alex
+ * Implementations only need to implement {@link #getInterfaceClass()}, {@link #getImpClass()} and
+ * {@link #getTableName()}, although two of those are only for historical reasons.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public abstract class HibernateEntityManager<ET extends PersistentEntity, HT extends EntityHeader>
@@ -590,8 +591,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             });
         } catch (RuntimeException e) {
             throw new FindException(ExceptionUtils.getMessage(e), e);
-        } catch (CacheVeto e) {
-            throw new FindException("Couldn't cache entity", e);
         } finally {
             if (read != null) read.unlock();
         }
@@ -637,11 +636,10 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @param maxAge the age, in milliseconds, that a cached entity must attain before it is considered stale
      * @return the object with the specified ID, from a cache if possible.
      * @throws FindException
-     * @throws CacheVeto
      */
     @Override
     @Transactional(propagation=SUPPORTS, readOnly=true)
-    public ET getCachedEntity(final long objectid, int maxAge) throws FindException, CacheVeto {
+    public ET getCachedEntity(final long objectid, int maxAge) throws FindException {
         ET entity;
 
         Lock read = cacheLock.readLock();
@@ -678,7 +676,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
-    private ET freshen(CacheInfo<ET> cacheInfo, int maxAge) throws FindException, CacheVeto {
+    private ET freshen(CacheInfo<ET> cacheInfo, int maxAge) throws FindException {
         if (cacheInfo.timestamp + maxAge < System.currentTimeMillis()) {
             // Time for a version check (getVersion() always goes to the database)
             Integer currentVersion = getVersion(cacheInfo.entity.getOid());
@@ -721,15 +719,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @param ent the Entity that has been removed
      */
     protected void removedFromCache(Entity ent) { }
-
-    /**
-     * Override this method to check an Entity before it's added to the cache.
-     * The cache lock is not held when this method is invoked.
-     *
-     * @param ent the Entity to check for suitability
-     * @throws CacheVeto to prevent the Entity from being added.
-     */
-    protected void checkCachable(Entity ent) throws CacheVeto { }
 
     /**
      * Override this method to be notified when an Entity has been added to the cache.
@@ -775,9 +764,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
-    protected ET checkAndCache(ET thing) throws CacheVeto {
+    protected ET checkAndCache(ET thing) {
         final Long oid = thing.getOid();
-        checkCachable(thing);
 
         CacheInfo<ET> info = null;
 

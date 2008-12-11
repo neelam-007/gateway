@@ -107,7 +107,7 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
-    public Policy getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
+    public Policy getCachedEntity(long o, int maxAge) throws FindException {
         return policyManager.getCachedEntity(o, maxAge);
     }
 

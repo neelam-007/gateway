@@ -18,10 +18,13 @@ import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.*;
 import com.l7tech.util.*;
-import com.l7tech.xml.*;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.saml.SamlAssertion;
+import com.l7tech.xml.WsTrustRequestType;
+import com.l7tech.xml.SoapFaultDetail;
+import com.l7tech.xml.MessageNotSoapException;
+import com.l7tech.xml.UnsupportedDocumentFormatException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 
 import org.w3c.dom.*;
