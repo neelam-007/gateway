@@ -33,6 +33,7 @@ public class GenericEnumSetUserType implements UserType, ParameterizedType {
     private Method valueOfMethod;
     private boolean ignoreInvalidEnumArguments = false;
 
+    @Override
     public void setParameterValues(Properties parameters) {
         String enumClassName = parameters.getProperty("enumClass");
         try {
@@ -51,19 +52,21 @@ public class GenericEnumSetUserType implements UserType, ParameterizedType {
         ignoreInvalidEnumArguments = Boolean.valueOf(parameters.getProperty("ignoreInvalidEnumArguments"));
     }
 
+    @Override
     public Class returnedClass() {
         return EnumSet.class;
     }
 
+    @Override
     public Object nullSafeGet(ResultSet rs, String[] names, Object owner) throws HibernateException, SQLException {
-
         if (names.length != 1)
             throw new HibernateException("Exactly one column name expected; got: " + Arrays.toString(names));
 
-        String sqlValue = rs.getString(names[0]);
-        if (sqlValue == null) return null;
-
         EnumSet result = EnumSet.noneOf(enumClass);
+
+        String sqlValue = rs.getString(names[0]);
+        if (sqlValue == null || sqlValue.isEmpty()) return result;
+
         String[] stringValues = sqlValue.split(",");
         for (String stringValue : stringValues) {
             try {
@@ -84,6 +87,7 @@ public class GenericEnumSetUserType implements UserType, ParameterizedType {
         return result;
     }
 
+    @Override
     public void nullSafeSet(PreparedStatement st, Object value, int index) throws HibernateException, SQLException {
         if (value == null) {
             st.setNull(index, java.sql.Types.VARCHAR);
@@ -100,34 +104,42 @@ public class GenericEnumSetUserType implements UserType, ParameterizedType {
         }
     }
 
+    @Override
     public int[] sqlTypes() {
         return SQL_TYPES;
     }
 
+    @Override
     public Object assemble(Serializable cached, Object owner) throws HibernateException {
         return cached;
     }
 
+    @Override
     public Object deepCopy(Object value) throws HibernateException {
         return value;
     }
 
+    @Override
     public Serializable disassemble(Object value) throws HibernateException {
         return (Serializable) value;
     }
 
+    @Override
     public boolean equals(Object x, Object y) throws HibernateException {
         return x == y;
     }
 
+    @Override
     public int hashCode(Object x) throws HibernateException {
         return x.hashCode();
     }
 
+    @Override
     public boolean isMutable() {
         return false;
     }
 
+    @Override
     public Object replace(Object original, Object target, Object owner) throws HibernateException {
         return original;
     }
