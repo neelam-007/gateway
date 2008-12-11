@@ -106,6 +106,8 @@
 
             var migrateButton;
             var identifyDependenciesButton;
+            var srcSSGClusterSelectorWindow;
+            var destSSGClusterSelectorWindow;
             var srcSSGClusterContentSelectorWindow;
             var destSSGClusterContentSelectorWindow;
 
@@ -173,41 +175,9 @@
              */
             function onHighlightSsgCluster(previous, ssgCluster, callbackId) {
                 if (callbackId == 'srcSSGClusterSelector') {
-                    srcSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback(onLoadSrcSSGClusterContent);
-                    srcSSGClusterContentSelectorWindow.setEntityTristateCheckboxClickedCallback(onChangeSrcSSGClusterContentSelection);
-                    srcSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
-                        [
-                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
-                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
-                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
-                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
-                    ], onItemHighlighted);
-                    srcSSGClusterContentSelectorWindow.loadSsgClusterContent(
-                        ssgCluster,
-                        [
-                            l7.EntityTreeTable.ENTITY.SERVICE_FOLDER,
-                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
-                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
-                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
-                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
-                        ],
-                        null);
+                    loadSrcSSGClusterContentSelector(ssgCluster);
                 } else if (callbackId == 'destSSGClusterSelector') {
-                    destSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback(onLoadDestSSGClusterContent);
-                    destSSGClusterContentSelectorWindow.setEntityRadioButtonClickedCallback(onChangeDestSSGClusterContentSelection);
-                    destSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
-                        [
-                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
-                            l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
-                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
-                            l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
-                    ], onItemHighlighted);
-                    destSSGClusterContentSelectorWindow.loadSsgClusterContent(
-                        ssgCluster,
-                        null,
-                        [
-                            l7.EntityTreeTable.ENTITY.SERVICE_FOLDER
-                        ]);
+                    loadDestSSGClusterContentSelector(ssgCluster);
                 }
             }
 
@@ -313,6 +283,66 @@
                 migrationAction();
             }
 
+            function loadSrcSSGClusterContentSelector(ssgCluster) {
+                srcSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback(onLoadSrcSSGClusterContent);
+                srcSSGClusterContentSelectorWindow.setEntityTristateCheckboxClickedCallback(onChangeSrcSSGClusterContentSelection);
+                srcSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
+                    [
+                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
+                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
+                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
+                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                    ], onItemHighlighted);
+                srcSSGClusterContentSelectorWindow.loadSsgClusterContent(
+                    ssgCluster,
+                    [
+                        l7.EntityTreeTable.ENTITY.SERVICE_FOLDER,
+                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
+                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
+                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
+                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                    ],
+                    null);
+            }
+
+            function loadDestSSGClusterContentSelector(ssgCluster) {
+                destSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback(onLoadDestSSGClusterContent);
+                destSSGClusterContentSelectorWindow.setEntityRadioButtonClickedCallback(onChangeDestSSGClusterContentSelection);
+                destSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
+                    [
+                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
+                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
+                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
+                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                    ], onItemHighlighted);
+                destSSGClusterContentSelectorWindow.loadSsgClusterContent(
+                    ssgCluster,
+                    null,
+                    [
+                        l7.EntityTreeTable.ENTITY.SERVICE_FOLDER
+                    ]);
+            }
+
+            function refreshSrcSsgClusterSelector() {
+                srcSSGClusterSelectorWindow.loadEntityTreeTable();
+                loadSrcSSGClusterContentSelector(null);     // Because no cluster is now selected.
+            }
+
+            function refreshDestSsgClusterSelector() {
+                destSSGClusterSelectorWindow.loadEntityTreeTable();
+                loadDestSSGClusterContentSelector(null);    // Because no cluster is now selected.
+            }
+
+            function refreshSrcSsgClusterContentSelector() {
+                var ssgCluster = srcSSGClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
+                loadSrcSSGClusterContentSelector(ssgCluster);
+            }
+
+            function refreshDestSsgClusterContentSelector() {
+                var ssgCluster = destSSGClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
+                loadDestSSGClusterContentSelector(ssgCluster);
+            }
+
             function initSSGClusterSelector(iframe) {
                 iframe.contentWindow.setCallbackId(iframe.id);
                 iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
@@ -352,6 +382,8 @@
             }
 
             function init() {
+                srcSSGClusterSelectorWindow = document.getElementById('srcSSGClusterSelector').contentWindow;
+                destSSGClusterSelectorWindow = document.getElementById('destSSGClusterSelector').contentWindow;
                 srcSSGClusterContentSelectorWindow = document.getElementById('srcSSGClusterContentSelector').contentWindow;
                 destSSGClusterContentSelectorWindow = document.getElementById('destSSGClusterContentSelector').contentWindow;
 
@@ -500,6 +532,7 @@
                         <tr>
                             <td class="nowrap">Select a source SSG Cluster:</td>
                             <td class="right" width="100%">
+                                <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshSrcSsgClusterSelector();"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
                                      onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
@@ -514,6 +547,7 @@
                         <tr>
                             <td class="nowrap">Select a destination SSG Cluster:</td>
                             <td class="right" width="100%">
+                                <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshDestSsgClusterSelector();"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
                                      onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
@@ -540,6 +574,7 @@
                         <tr>
                             <td class="nowrap">Select items to migrate:</td>
                             <td class="right" width="100%">
+                                <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshSrcSsgClusterContentSelector();"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
                                      onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
@@ -562,6 +597,7 @@
                                 </span>
                             </td>
                             <td class="nowrap">
+                                <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshDestSsgClusterContentSelector();"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
                                      onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
