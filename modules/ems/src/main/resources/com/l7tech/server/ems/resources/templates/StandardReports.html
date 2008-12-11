@@ -596,7 +596,7 @@
         function refreshSsgClusterContentSelector() {
             var ssgCluster = ssgClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
             var entityType = getEntityType();
-            ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, [entityType], null);
+            ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, [entityType, l7.EntityTreeTable.ENTITY.SERVICE_FOLDER], null);
         }
 
         /**
@@ -607,7 +607,7 @@
          */
         function onHighlightSsgCluster(previous, ssgCluster, callbackId) {
             var entityType = getEntityType();
-            ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, [entityType], null);
+            ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, [entityType, l7.EntityTreeTable.ENTITY.SERVICE_FOLDER], null);
         }
 
         /**
@@ -758,7 +758,7 @@
                     publishedService = ssgClusterContentSelectorWindow.getEntityTreeTable().getParentEntity(entity);
                     operation = entity.name;
                 } else {
-                    YAHOO.log('Invalid entity type: ' + entity.type, 'error', 'StandardReports.html onClickAddEntity')
+                    continue;
                 }
 
                 // Skips this if already added.
