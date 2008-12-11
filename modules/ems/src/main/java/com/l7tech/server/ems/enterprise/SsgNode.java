@@ -66,7 +66,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         this.onlineStatus = onlineStatus;
     }
 
-    @Column(name="software_version", length=10)
+    @Column(name="software_version", length=32)
     public String getSoftwareVersion() {
         return softwareVersion;
     }
