@@ -121,7 +121,7 @@ CREATE TABLE folder (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 
-INSERT INTO folder VALUES (-5002, 'Root Node', NULL);
+INSERT INTO folder VALUES (-5002, 0, 'Root Node', NULL);
 
 --
 -- Table to record system logon activity
