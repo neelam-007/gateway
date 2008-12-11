@@ -98,9 +98,9 @@ public class ConfigInterviewer {
 
                     try {
                         if ( "".equals(cmd) ) {
-                            if ( val!=null && !val.equals(cb.getConfigValue()) ) {
+                            if ( cb.getConfigValue()==null && dflt!=null ) {
                                 // set from default
-                                cb.setConfigValue(val);
+                                cb.setConfigValue(dflt);
                             }
                             if ( cb.getConfigValue() == null ) {
                                 break;

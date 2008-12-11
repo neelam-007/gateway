@@ -7,6 +7,8 @@ import com.l7tech.util.ExceptionUtils;
 import java.text.ParseException;
 import java.text.Format;
 import java.util.regex.Pattern;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  *
@@ -57,7 +59,7 @@ public class TypedConfigurableBean<T> extends EditableConfigurationBean<T>  {
                 throw new ConfigurationException( validationFailureMessage );
             }
         } catch (ParseException e) {
-            throw new ConfigurationException( ExceptionUtils.getMessage(e), e ); 
+            throw new ConfigurationException( ExceptionUtils.getMessage(e), e );
         }
 
         return result;
@@ -76,7 +78,12 @@ public class TypedConfigurableBean<T> extends EditableConfigurationBean<T>  {
 
         Format format = type.getFormat();
         if ( format != null && value != null ) {
-            description.append( format.format( value ) );
+            try {
+                description.append( format.format( value ) );
+            } catch ( IllegalArgumentException iae ) {
+                logger.log( Level.WARNING, "Error formatting value for display '"+(value.getClass().getName())+"', '"+value+"', message is '"+ExceptionUtils.getMessage(iae)+"'." );
+                description.append( value.toString() );
+            }
         } else if ( value != null ) {
             description.append( value.toString() );    
         }
@@ -90,6 +97,8 @@ public class TypedConfigurableBean<T> extends EditableConfigurationBean<T>  {
     }
 
     //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(TypedConfigurableBean.class.getName());
 
     private final String validationFailureMessage;
     private final OptionType type;
