@@ -137,6 +137,7 @@ public class StandardReportsManagementPanel extends Panel {
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.date", this, null), "statusTime", "statusTime"));
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.clusterName", this, null), "clusterName", "clusterName"));
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.status", this, null), "status", "status"));
+        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.statusMessage", this, null), "statusMessage", "statusMessage"));
 
         YuiDataTable table = new YuiDataTable("reportTable", columns, "statusTime", false,  new ReportDataProvider("statusTime", false), hidden, "id", true, new Button[]{ deleteButton, viewButton, downloadButton }){
             @Override
@@ -180,25 +181,29 @@ public class StandardReportsManagementPanel extends Panel {
         private final Date date;
         private final String clusterName;
         private final String status;
+        private final String statusMessage;
 
         ReportModel( final StandardReport report ) {
             this( report.getId(),
                   report.getName(),
                   new Date(report.getStatusTime()),
                   report.getSsgCluster().getName(),
-                  report.getStatus() );
+                  report.getStatus(),
+                  report.getStatusMessage() );
         }
 
         ReportModel( final String id,
                      final String name,
                      final Date date,
                      final String clusterName,
-                     final String status ) {
+                     final String status,
+                     final String statusMessage ) {
             this.id = id;
             this.name = name;
             this.date = date;
             this.clusterName = clusterName;
             this.status = status;
+            this.statusMessage = statusMessage == null ? "" : statusMessage;
         }
 
         public String getId() {
@@ -220,6 +225,10 @@ public class StandardReportsManagementPanel extends Panel {
         public String getStatus() {
             return status;
         }
+
+       public String getStatusMessage() {
+           return statusMessage;
+       }
     }
 
     private class ReportDataProvider extends SortableDataProvider {

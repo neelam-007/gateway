@@ -1168,6 +1168,12 @@
     </bean>
 
     <bean id="reportApiImpl" class="com.l7tech.server.cluster.ReportApiImpl">
+        <constructor-arg index="0" ref="transactionManager"/>
+        <constructor-arg index="1">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Report Processor"/>
+            </bean>
+        </constructor-arg>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 

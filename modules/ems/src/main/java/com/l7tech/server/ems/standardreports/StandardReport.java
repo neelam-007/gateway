@@ -75,6 +75,15 @@ public class StandardReport extends NamedEntityImp {
         this.status = status;
     }
 
+    @Column(name="status_message", length=255)
+    public String getStatusMessage() {
+        return statusMessage;
+    }
+
+    public void setStatusMessage(String statusMessage) {
+        this.statusMessage = statusMessage;
+    }
+
     @Column(name="status_time", nullable=false)
     public long getStatusTime() {
         return statusTime;
@@ -132,6 +141,7 @@ public class StandardReport extends NamedEntityImp {
 
     private long time;  // created
     private long statusTime;
+    private String statusMessage;
 
     private SsgCluster cluster;
     private String submissionHost;

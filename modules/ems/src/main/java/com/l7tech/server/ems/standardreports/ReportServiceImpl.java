@@ -212,6 +212,13 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                                     default:
                                         report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
                                         report.setStatusTime( System.currentTimeMillis() );
+                                        if ( status.getMessage() != null ) {
+                                            if ( status.getMessage().length() > 255 ) {
+                                                report.setStatusMessage( status.getMessage().substring(0, 255) );
+                                            } else {
+                                                report.setStatusMessage( status.getMessage() );
+                                            }
+                                        }
                                         break;
                                 }
                             }

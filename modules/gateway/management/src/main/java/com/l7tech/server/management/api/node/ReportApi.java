@@ -154,6 +154,7 @@ public interface ReportApi {
         public enum Status { PENDING, RUNNING, COMPLETED, FAILED }
 
         private String id;
+        private String message;
         private long time;
         private Status status;
 
@@ -182,6 +183,15 @@ public interface ReportApi {
 
         public void setStatus(Status status) {
             this.status = status;
+        }
+
+        @XmlElement
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
         }
 
         @Override
