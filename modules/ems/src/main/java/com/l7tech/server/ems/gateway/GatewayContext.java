@@ -28,6 +28,10 @@ import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * GatewayContext provides access to a Gateway from the ESM.
@@ -91,6 +95,11 @@ public class GatewayContext {
     private static final String CONTROLLER_URL = SyspropUtil.getString(PROP_CONTROLLER_URL, "https://{0}:{1}/services/nodeManagementApi");
     private static final String MIGRATION_URL = SyspropUtil.getString(PROP_MIGRATION_URL, "https://{0}:{1}/ssg/services/migrationApi");
 
+    /**
+     * See bug 6300 for why we have a global lock for CXF
+     */
+    private static final Object globalSync = new Object();
+
     private final String cookie;
     private final GatewayApi api;
     private final ReportApi reportApi;
@@ -147,6 +156,18 @@ public class GatewayContext {
         });
 
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean(cfb);
-        return (T) factory.create();
+        final T api =  (T) factory.create();
+        return (T) Proxy.newProxyInstance( GatewayContext.class.getClassLoader(), new Class[]{apiClass}, new InvocationHandler(){
+            @Override
+            public Object invoke( final Object proxy, final Method method, final Object[] args ) throws Throwable {
+                try {
+                    synchronized ( globalSync ) {                    
+                        return method.invoke( api, args );
+                    }
+                } catch ( InvocationTargetException ite ) {
+                    throw ite.getCause();
+                }
+            }
+        } );
     }
 }
