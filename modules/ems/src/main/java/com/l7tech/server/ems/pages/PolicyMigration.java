@@ -22,7 +22,6 @@ import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.objectmodel.migration.MigrationMapping;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
@@ -477,7 +476,7 @@ public class PolicyMigration extends EmsPage  {
         markupContainer.setEnabled( targetClusterId != null );
     }
 
-    private Collection<DependencyItem> retrieveDependencies( final DependencyItemsRequest request ) throws FindException, GatewayException, MigrationException {
+    private Collection<DependencyItem> retrieveDependencies( final DependencyItemsRequest request ) throws FindException, GatewayException, MigrationApi.MigrationException {
         Collection<DependencyItem> deps = new LinkedHashSet<DependencyItem>();
 
         SsgCluster cluster = ssgClusterManager.findByGuid(request.clusterId);
@@ -525,7 +524,7 @@ public class PolicyMigration extends EmsPage  {
             logger.log( Level.WARNING, "Error while gettings dependency options.", ge );
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error while gettings dependency options.", fe );
-        } catch ( MigrationException me ) {
+        } catch ( MigrationApi.MigrationException me ) {
             logger.log( Level.WARNING, "Error while gettings dependency options.", me );
         } catch ( SOAPFaultException sfe ) {
             logger.log( Level.WARNING, "Error while gettings dependency options.", sfe );
@@ -592,7 +591,7 @@ public class PolicyMigration extends EmsPage  {
         } catch ( GatewayException e ) {
             logger.log( Level.WARNING, "Error while checking dependencies for migration.", e );
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(e)+"'.");
-        } catch ( MigrationException e ) {
+        } catch ( MigrationApi.MigrationException e ) {
             logger.log( Level.WARNING, "Error while checking dependencies for migration.", e );
             throw new MigrationFailedException(summarizeMigrationException(e));
         } catch ( SOAPFaultException sfe ) {
@@ -671,7 +670,7 @@ public class PolicyMigration extends EmsPage  {
         } catch ( SaveException se ) {
             logger.log( Level.WARNING, "Error while performing migration.", se );
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(se)+"'.");
-        } catch ( MigrationException me ) {
+        } catch ( MigrationApi.MigrationException me ) {
             logger.log( Level.WARNING, "Error while performing migration.", me );
             throw new MigrationFailedException(summarizeMigrationException(me));
         } catch (GatewayApi.GatewayException ge) {
@@ -685,20 +684,8 @@ public class PolicyMigration extends EmsPage  {
         return summary;
     }
 
-    private String summarizeMigrationException(MigrationException me) {
-        MigrationException.MigrationErrors errors = me.getErrors();
-        if (errors.isEmpty()) {
-            return "Migration failed '"+ ExceptionUtils.getMessage(me)+"'.";
-        } else {
-            StringBuilder sb = new StringBuilder("Migration failed:\n\n");
-            for (Object errorSource : me.getErrors().getSources()) {
-                sb.append("\t").append(errorSource).append(" : ");
-                for (MigrationException ex : errors.getExceptions(errorSource)) {
-                    sb.append("\t\t").append(ExceptionUtils.getMessage(ex)).append("\n");
-                }
-            }
-            return sb.toString();
-        }
+    private String summarizeMigrationException(MigrationApi.MigrationException me) {
+        return "Migration failed: " + me.getMessage() + (me.hasErrors() ? " : \n\n" + me.getErrors() : "");
     }
 
     /**

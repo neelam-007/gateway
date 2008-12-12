@@ -2,7 +2,6 @@ package com.l7tech.objectmodel.migration;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityHeaderRef;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 
 import java.util.Set;
@@ -22,7 +21,7 @@ import java.lang.reflect.Method;
 public class UserGroupResolver extends DefaultEntityPropertyResolver {
 
     @Override
-    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, Method property) throws MigrationException {
+    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, Method property) throws PropertyResolverException {
         Map<EntityHeader, Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
         Map<EntityHeader, Set<MigrationMapping>> dependencies = super.getDependencies(source, entity, property);
         for(EntityHeader header : dependencies.keySet()) {

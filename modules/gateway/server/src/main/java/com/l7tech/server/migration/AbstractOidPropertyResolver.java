@@ -33,7 +33,7 @@ public abstract class AbstractOidPropertyResolver implements PropertyResolver {
     public abstract EntityType getTargetType();
 
     // gets a persistent entity's header out of a long/OID property and its type
-    public final Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, Method property) throws MigrationException {
+    public final Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, Method property) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
@@ -46,7 +46,7 @@ public abstract class AbstractOidPropertyResolver implements PropertyResolver {
         try {
             oid = (Long) property.invoke(entity);
         } catch (Exception e) {
-            throw new MigrationException("Error getting property value for entity: " + entity, e);
+            throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 
         Map<EntityHeader,Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
@@ -60,11 +60,11 @@ public abstract class AbstractOidPropertyResolver implements PropertyResolver {
     }
 
     // assigns the targetEntity's OID to the sourceEntity's property
-    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalValue) throws MigrationException {
+    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalValue) throws PropertyResolverException {
         logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{EntityHeaderUtils.fromEntity(sourceEntity), propName});
 
         if ( ! (targetValue instanceof PersistentEntity) )
-            throw new MigrationException("Error applying mapping for property name; invalid target value:" + targetValue);
+            throw new PropertyResolverException("Error applying mapping for property name; invalid target value:" + targetValue);
 
         Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, long.class);
         if (method == null)
@@ -74,10 +74,10 @@ public abstract class AbstractOidPropertyResolver implements PropertyResolver {
             try {
                 method.invoke(sourceEntity, ((PersistentEntity)targetValue).getOid());
             } catch (Exception e) {
-                throw new MigrationException("Error applying mapping for property name: " + propName, e);
+                throw new PropertyResolverException("Error applying mapping for property name: " + propName, e);
             }
         } else {
-            throw new MigrationException("Error applying mapping: no setter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
+            throw new PropertyResolverException("Error applying mapping: no setter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
         }
     }
 }

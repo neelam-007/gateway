@@ -5,17 +5,17 @@ import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.ExportedItem;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.server.management.migration.MigrationManager;
-import com.l7tech.objectmodel.migration.MigrationException;
+import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.*;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
-import static com.l7tech.objectmodel.migration.MigrationException.*;
 import com.l7tech.server.*;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import static com.l7tech.server.migration.MigrationManagerImpl.ImportOperation.*;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.gateway.common.service.PublishedService;
 
 import java.util.*;
@@ -48,17 +48,17 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @Override
-    public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
+    public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Listing entities for class: {0}", clazz.getName());
         try {
             return entityCrud.findAll(clazz);
         } catch (FindException e) {
-            throw new MigrationException("Error listing entities for " + clazz + " : " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new MigrationApi.MigrationException("Error listing entities for " + clazz + " : " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 
     @Override
-    public MigrationMetadata findDependencies(Collection<EntityHeader> headers ) throws MigrationException {
+    public MigrationMetadata findDependencies(Collection<EntityHeader> headers ) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Finding dependencies for headers: {0}", headers);
         Collection<EntityHeader> resolvedHeaders = resolveHeaders( headers );
 
@@ -66,14 +66,18 @@ public class MigrationManagerImpl implements MigrationManager {
         result.setHeaders( resolvedHeaders );
 
         for ( EntityHeader header : resolvedHeaders ) {
-            findDependenciesRecursive(result, header);
+            try {
+                findDependenciesRecursive(result, header);
+            } catch (PropertyResolverException e) {
+                throw new MigrationApi.MigrationException(e);
+            }
         }
 
         return result;
     }
 
     @Override
-    public MigrationBundle exportBundle(final Collection<EntityHeader> headers) throws MigrationException {
+    public MigrationBundle exportBundle(final Collection<EntityHeader> headers) throws MigrationApi.MigrationException {
         MigrationMetadata metadata = findDependencies(headers);
         MigrationBundle bundle = new MigrationBundle(metadata);
         for (EntityHeader header : metadata.getHeaders()) {
@@ -90,7 +94,7 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @Override
-    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables, String filter) throws MigrationException {
+    public Map<EntityHeader, EntityHeaderSet> retrieveMappingCandidates(Collection<EntityHeader> mappables, String filter) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Retrieving mapping candidates for {0}.", mappables);
         Map<EntityHeader,EntityHeaderSet> result = new HashMap<EntityHeader,EntityHeaderSet>();
 
@@ -100,7 +104,7 @@ public class MigrationManagerImpl implements MigrationManager {
                 logger.log(Level.FINEST, "Found {0} mapping candidates for header {1}.", new Object[]{candidates != null ? candidates.size() : 0, header});
                 result.put(header, candidates);
             } catch (FindException e) {
-                throw new MigrationException("Error retrieving mapping candidate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                throw new MigrationApi.MigrationException("Error retrieving mapping candidate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
 
@@ -110,10 +114,10 @@ public class MigrationManagerImpl implements MigrationManager {
 
     @Override
     public Collection<MigratedItem> importBundle(MigrationBundle bundle, EntityHeader targetFolder,
-                                                 boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationException {
+                                                 boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Importing bundle: {0}", bundle);
 
-        MigrationErrors errors = processFolders(bundle, targetFolder, flattenFolders);
+        Collection<String> errors = processFolders(bundle, targetFolder, flattenFolders);
 
         errors.addAll(validateBundle(bundle));
 
@@ -122,7 +126,7 @@ public class MigrationManagerImpl implements MigrationManager {
         errors.addAll(checkServiceResolution(entities));
 
         if (!errors.isEmpty())
-            throw new MigrationException("Migration failed.", errors);
+            throw new MigrationApi.MigrationException(errors);
 
 
         try {
@@ -139,12 +143,12 @@ public class MigrationManagerImpl implements MigrationManager {
                 }
             }
             return result;
-        } catch (ObjectModelException e) {
-            throw new MigrationException("Import failed.", e);
+        } catch (Exception e) {
+            throw new MigrationApi.MigrationException("Import failed.", e);
         }
     }
 
-    private void uploadEntityRecursive(EntityHeader header, Map<EntityHeader, EntityOperation> entities, MigrationMetadata metadata, Set<EntityHeader> uploaded, boolean dryRun) throws MigrationException, UpdateException, SaveException {
+    private void uploadEntityRecursive(EntityHeader header, Map<EntityHeader, EntityOperation> entities, MigrationMetadata metadata, Set<EntityHeader> uploaded, boolean dryRun) throws UpdateException, SaveException, MigrationApi.MigrationException {
 
         if (uploaded.contains(header)) {
             logger.log(Level.WARNING, "Circular dependency reached during entity upload for header {0}.", header);
@@ -186,26 +190,30 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         // apply mappings for this entity's dependants
-        applyMappings(header, metadata, entities);
+        try {
+            applyMappings(header, metadata, entities);
+        } catch (PropertyResolverException e) {
+            throw new MigrationApi.MigrationException(e);
+        }
 
     }
 
-    private void applyMappings(EntityHeader dependency, MigrationMetadata metadata, Map<EntityHeader, EntityOperation> entities) throws MigrationException {
+    private void applyMappings(EntityHeader dependency, MigrationMetadata metadata, Map<EntityHeader, EntityOperation> entities) throws MigrationApi.MigrationException, PropertyResolverException {
         for(MigrationMapping mapping : metadata.getMappingsForTarget(dependency)) {
             EntityHeader header = metadata.getHeader(mapping.getDependant());
             EntityOperation eo = entities.get(header);
             PropertyResolver resolver = getResolver(eo.entity, mapping.getPropName());
             EntityOperation targetEo = entities.get(dependency);
             if (targetEo == null || targetEo.entity == null) {
-                throw new MigrationException("Cannot apply mapping, target entity not found for dependency reference: " + mapping.getDependency());
+                throw new MigrationApi.MigrationException("Cannot apply mapping, target entity not found for dependency reference: " + mapping.getDependency());
             }
             resolver.applyMapping(eo.entity, mapping.getPropName(), targetEo.entity, metadata.getOriginalHeader(mapping.getSourceDependency()));
         }
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    private MigrationErrors processFolders(MigrationBundle bundle, EntityHeader targetFolder, boolean flatten) {
-        MigrationErrors errors = new MigrationErrors();
+    private Collection<String> processFolders(MigrationBundle bundle, EntityHeader targetFolder, boolean flatten) {
+        Collection<String> errors = new HashSet<String>();
         MigrationMetadata metadata = bundle.getMetadata();
         if (flatten) {
             // replace all folder dependencies withe the (unique) targetFolder
@@ -223,12 +231,12 @@ public class MigrationManagerImpl implements MigrationManager {
         } else {
             // map root folder to target folder
             if (!metadata.hasHeader(ROOT_FOLDER_REF)) {
-                errors.add(ROOT_FOLDER_REF, new MigrationException("Root folder not found in the bundle."));
+                errors.add("Root folder not found in the bundle.");
             } else {
                 try {
                     metadata.mapName(ROOT_FOLDER_REF, targetFolder, false);
-                } catch (MigrationException e) {
-                    errors.add(targetFolder, e);
+                } catch (MigrationApi.MigrationException e) {
+                    errors.add(ExceptionUtils.getMessage(e));
                 }
             }
         }
@@ -236,8 +244,8 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    private MigrationErrors applyMappings(MigrationBundle bundle, Map<EntityHeader, EntityOperation> entities) throws MigrationException {
-        MigrationErrors errors = new MigrationErrors();
+    private Collection<Pair<Object,MigrationApi.MigrationException>> applyMappings(MigrationBundle bundle, Map<EntityHeader, EntityOperation> entities) {
+        Collection<Pair<Object,MigrationApi.MigrationException>> errors = new HashSet<Pair<Object, MigrationApi.MigrationException>>();
 
         for (EntityHeader header : entities.keySet()) {
             EntityOperation eo = entities.get(header);
@@ -248,14 +256,16 @@ public class MigrationManagerImpl implements MigrationManager {
                     PropertyResolver resolver = getResolver(eo.entity, mapping.getPropName());
                     EntityOperation targetEo = entities.get(metadata.getHeader(mapping.getDependency()));
                     if (targetEo == null || targetEo.entity == null) {
-                        errors.add(EntityHeaderUtils.fromEntity(eo.entity), new MigrationException("Cannot apply mapping, target entity not found for dependency reference: " + mapping.getDependency()));
+                        errors.add(new Pair<Object, MigrationApi.MigrationException>(
+                            EntityHeaderUtils.fromEntity(eo.entity),
+                            new MigrationApi.MigrationException("Cannot apply mapping, target entity not found for dependency reference: " + mapping.getDependency())));
                         continue;
                     }
                     resolver.applyMapping(eo.entity, mapping.getPropName(), targetEo.entity, metadata.getOriginalHeader(mapping.getSourceDependency()));
                 }
-            } catch (MigrationException e) {
+            } catch (PropertyResolverException e) {
                 logger.log(Level.WARNING, "Errors while applying mapping.", e);
-                errors.add(EntityHeaderUtils.fromEntity(eo.entity), e);
+                errors.add(new Pair<Object, MigrationApi.MigrationException>(EntityHeaderUtils.fromEntity(eo.entity), new MigrationApi.MigrationException(e)));
             }
         }
         return errors;
@@ -278,7 +288,7 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    private Map<EntityHeader,EntityOperation> loadEntities(MigrationBundle bundle, boolean overwriteExisting, boolean enableServices, final MigrationErrors errors) {
+    private Map<EntityHeader,EntityOperation> loadEntities(MigrationBundle bundle, boolean overwriteExisting, boolean enableServices, final Collection<String> errors) {
 
         Map<EntityHeader, EntityOperation> result = new HashMap<EntityHeader, EntityOperation>();
 
@@ -288,14 +298,14 @@ public class MigrationManagerImpl implements MigrationManager {
         for (EntityHeader header : metadata.getHeaders()) {
             try {
                 existing = loadEntity(header);
-            } catch (MigrationException e) {
+            } catch (MigrationApi.MigrationException e) {
                 existing = null;
             }
             item = bundle.getExportedItem(header);
             fromBundle = item == null ? null : item.getValue();
 
             if (fromBundle == null && existing == null) {
-                errors.add(header, new MigrationException("Entity not found for header (unresolved mapping not validated?):" + header));
+                errors.add("Entity not found for header (unresolved mapping not validated?):" + header);
                 continue;
             }
 
@@ -319,7 +329,7 @@ public class MigrationManagerImpl implements MigrationManager {
         return result;
     }
 
-    private PropertyResolver getResolver(Entity sourceEntity, String propName) throws MigrationException {
+    private PropertyResolver getResolver(Entity sourceEntity, String propName) throws PropertyResolverException {
 
         PropertyResolver annotatedResolver = MigrationUtils.getResolver(sourceEntity, propName);
 
@@ -330,9 +340,9 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    private MigrationErrors validateBundle(MigrationBundle bundle) {
+    private Collection<String> validateBundle(MigrationBundle bundle) {
         logger.log(Level.FINEST, "Validating bundle: {0}", bundle);
-        MigrationErrors errors = new MigrationErrors();
+        Collection<String> errors = new HashSet<String>();
         MigrationMetadata metadata = bundle.getMetadata();
 
         // check that entity values are available for all headers, either in the bundle or already on the SSG
@@ -340,9 +350,9 @@ public class MigrationManagerImpl implements MigrationManager {
             if (! bundle.hasItem(header)) {
                 try {
                     if (loadEntity(header) == null)
-                        errors.add(header, new MigrationException("Null entity retrived for header: " + header));
-                } catch (MigrationException e) {
-                    errors.add(header, e);
+                        errors.add("Null entity retrived for header: " + header);
+                } catch (MigrationApi.MigrationException e) {
+                    errors.add(ExceptionUtils.getMessage(e));
                 }
             }
         }
@@ -355,19 +365,19 @@ public class MigrationManagerImpl implements MigrationManager {
             // all headers present in the metadata
             EntityHeaderRef header = mapping.getDependant();
             if (! metadata.hasHeader(header))
-                errors.add(header, new MigrationException("Header listed as the source of a dependency, but not included in bundle metadata: " + header));
+                errors.add("Header listed as the source of a dependency, but not included in bundle metadata: " + header);
             header = mapping.getDependency();
             if (! metadata.hasHeader(header))
-                errors.add(header, new MigrationException("Header listed as a dependency, but not included in bundle metadata: " + header));
+                errors.add("Header listed as a dependency, but not included in bundle metadata: " + header);
 
             // name-mapping required
             if (mapping.getType().getNameMapping() == REQUIRED && ! mapping.isMappedDependency())
-                errors.add(mapping, new MigrationException("Unresolved name-mapping: " + mapping));
+                errors.add("Unresolved name-mapping: " + mapping);
 
             // value-mapping required
             if (! mapping.isMappedDependency() && mapping.getType().getValueMapping() == REQUIRED &&
                 (bundle.getExportedItem(mapping.getDependency()) == null || ! bundle.getExportedItem(mapping.getDependency()).isMappedValue()) ) {
-                errors.add(mapping, new MigrationException("Unresolved value-mapping: " + mapping));
+                errors.add("Unresolved value-mapping: " + mapping);
             }
         }
 
@@ -375,23 +385,23 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    private MigrationErrors checkServiceResolution(Map<EntityHeader, EntityOperation> entities) {
-        MigrationErrors errors = new MigrationErrors();
+    private Collection<String> checkServiceResolution(Map<EntityHeader, EntityOperation> entities) {
+        Collection<String> errors = new HashSet<String>();
         for (EntityHeader header : entities.keySet()) {
             if (header.getType() == EntityType.SERVICE && entities.get(header).operation == CREATE) {
                 try {
                     resolutionManager.checkDuplicateResolution((PublishedService) entities.get(header).entity);
                 } catch (DuplicateObjectException e) {
-                    errors.add(header, new MigrationException("Duplicate resolution parameters: " + e.getMessage(), e));
+                    errors.add("Service resolution error: " + ExceptionUtils.getMessage(e));
                 } catch (ServiceResolutionException e) {
-                    errors.add(header, new MigrationException("Error getting service resolution parametes.", e));
+                    errors.add("Error getting service resolution parametes: " + ExceptionUtils.getMessage(e));
                 }
             }
         }
         return errors;
     }
 
-    private void findDependenciesRecursive(MigrationMetadata result, EntityHeader header) throws MigrationException {
+    private void findDependenciesRecursive(MigrationMetadata result, EntityHeader header) throws MigrationApi.MigrationException, PropertyResolverException {
         logger.log(Level.FINE, "Finding dependencies for: " + header.toStringVerbose());
 
         Entity entity = null;
@@ -409,11 +419,7 @@ public class MigrationManagerImpl implements MigrationManager {
             if (MigrationUtils.isDependency(method)) {
                 PropertyResolver resolver = getResolver(entity, method.getName());
                 Map<EntityHeader, Set<MigrationMapping>> deps;
-                try {
-                    deps = resolver.getDependencies(header, entity, method);
-                } catch (MigrationException e) {
-                    throw new MigrationException("Error getting dependencies for property: " + method, e);
-                }
+                deps = resolver.getDependencies(header, entity, method);
                 for (EntityHeader depHeader : deps.keySet()) {
                     EntityHeader resolvedDepHeader  = resolveHeader( depHeader );
                     for ( MigrationMapping mapping : deps.get(depHeader) ) {
@@ -437,11 +443,11 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
-    private EntityHeader resolveHeader( final EntityHeader header ) throws MigrationException {
+    private EntityHeader resolveHeader( final EntityHeader header ) throws MigrationApi.MigrationException {
         return EntityHeaderUtils.fromEntity( loadEntity(header) );
     }
 
-    private Collection<EntityHeader> resolveHeaders( final Collection<EntityHeader> headers ) throws MigrationException {
+    private Collection<EntityHeader> resolveHeaders( final Collection<EntityHeader> headers ) throws MigrationApi.MigrationException {
         List<EntityHeader> resolvedHeaders = new ArrayList<EntityHeader>( headers.size() );
 
         for ( EntityHeader header : headers ) {
@@ -451,15 +457,15 @@ public class MigrationManagerImpl implements MigrationManager {
         return resolvedHeaders;
     }
 
-    private Entity loadEntity( final EntityHeader header ) throws MigrationException {
+    private Entity loadEntity( final EntityHeader header ) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Loading entity for header: {0}", header);
         try {
             Entity ent = entityCrud.find(header); // load the entity
             if (ent == null)
-                throw new MigrationException("Error loading the entity for header "+ header.getType() +", " + header.getName() + "(#"+header.getOid()+")");
+                throw new MigrationApi.MigrationException("Error loading the entity for header "+ header.getType() +", " + header.getName() + "(#"+header.getOid()+")");
             return ent;
         } catch (FindException e) {
-            throw new MigrationException("Error loading the entity for header: " + header, e);
+            throw new MigrationApi.MigrationException("Error loading the entity for header: " + header, e);
         }
     }
 }

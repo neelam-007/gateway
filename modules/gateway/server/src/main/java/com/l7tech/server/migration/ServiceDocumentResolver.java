@@ -26,14 +26,14 @@ public class ServiceDocumentResolver implements PropertyResolver {
         this.documentManager = documentManager;
     }
 
-    public final Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, Method property) throws MigrationException {
+    public final Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, Method property) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         final Long serviceOid;
         try {
             serviceOid = Long.parseLong((String) property.invoke(entity));
         } catch (Exception e) {
-            throw new MigrationException("Error getting property value for entity: " + entity, e);
+            throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 
         Map<EntityHeader,Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
@@ -48,7 +48,7 @@ public class ServiceDocumentResolver implements PropertyResolver {
         return result;
     }
 
-    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws MigrationException {
+    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
         // nothing to do here; this is an inverse dependency: the service entity is applied as a property of the service document
     }
 }

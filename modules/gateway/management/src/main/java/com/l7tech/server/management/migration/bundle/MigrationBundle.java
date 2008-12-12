@@ -3,10 +3,10 @@ package com.l7tech.server.management.migration.bundle;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.MigrationMapping;
 import com.l7tech.objectmodel.migration.MigrationMappingType;
-import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.server.management.api.node.MigrationApi;
 
 import javax.xml.bind.annotation.*;
 import java.util.*;
@@ -111,7 +111,7 @@ public class MigrationBundle {
 
     // --- mapping operations ---
 
-    public void mapValue(EntityHeaderRef dependency, Entity newValue) throws MigrationException {
+    public void mapValue(EntityHeaderRef dependency, Entity newValue) throws MigrationApi.MigrationException {
 
         Set<MigrationMapping> mappingsForDependency = metadata.getMappingsForTarget(dependency);
 
@@ -121,7 +121,7 @@ public class MigrationBundle {
         // check for conflicting mapping types for this value-mapped dependency
         for (MigrationMapping mapping : mappingsForDependency) {
             if (mapping.getType() == MigrationMappingType.BOTH_NONE)
-                throw new MigrationException("Cannot map value for dependency; mapping set to NONE for: " + mapping);
+                throw new MigrationApi.MigrationException("Cannot map value for dependency; mapping set to NONE for: " + mapping);
         }
 
         // update mapping
@@ -133,7 +133,7 @@ public class MigrationBundle {
         item.setMappedValue(newValue);
     }
 
-    public Set<MigrationMapping> getUnresolvedMappings() throws MigrationException {
+    public Set<MigrationMapping> getUnresolvedMappings() throws MigrationApi.MigrationException {
         Set<MigrationMapping> result = new HashSet<MigrationMapping>();
         for(MigrationMapping m : metadata.getMappings()) {
             MigrationMappingType type = m.getType();
@@ -145,7 +145,7 @@ public class MigrationBundle {
             switch (type.getNameMapping()) {
                 case NONE:
                     if ( ! hasSourceValue )
-                        throw new MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
+                        throw new MigrationApi.MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
                     break;
                 case OPTIONAL:
                     if ( ! hasSourceValue && ! m.isMappedDependency())
@@ -162,7 +162,7 @@ public class MigrationBundle {
             switch (type.getValueMapping()) {
                 case NONE: // requirement only if there's no name-mapping
                     if ( ! hasSourceValue && type.getNameMapping() != MigrationMappingSelection.NONE && ! m.isMappedDependency())
-                        throw new MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
+                        throw new MigrationApi.MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
                     break;
                 case OPTIONAL:
                     if ( ! hasSourceValue && ! hasMappedValue)

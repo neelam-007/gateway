@@ -3,9 +3,10 @@ package com.l7tech.server.management.migration.bundle;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.MigrationMapping;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.MigrationException;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.server.management.api.node.MigrationApi;
 
 import javax.xml.bind.annotation.*;
 import java.util.*;
@@ -134,7 +135,7 @@ public class MigrationMetadata {
         getOriginalHeadersMap().put(EntityHeaderRef.fromOther(headerRef), getHeadersMap().remove(ref));
     }
 
-    public boolean isMappingRequired(EntityHeaderRef headerRef) throws MigrationException {
+    public boolean isMappingRequired(EntityHeaderRef headerRef) throws MigrationApi.MigrationException {
         for (MigrationMapping mapping : getMappingsForTarget(EntityHeaderRef.fromOther(headerRef))) {
             if ( mapping.getType().getNameMapping() == MigrationMappingSelection.REQUIRED ||
                  mapping.getType().getValueMapping() == MigrationMappingSelection.REQUIRED)
@@ -143,7 +144,7 @@ public class MigrationMetadata {
         return false;
     }
 
-    public boolean includeInExport(EntityHeaderRef headerRef) throws MigrationException {
+    public boolean includeInExport(EntityHeaderRef headerRef) throws MigrationApi.MigrationException {
         if (isMappingRequired(headerRef)) {
             return false;
         } else {
@@ -179,7 +180,7 @@ public class MigrationMetadata {
         return mappings;
     }
 
-    public void setMappings(Set<MigrationMapping> mappings) throws MigrationException {
+    public void setMappings(Set<MigrationMapping> mappings) throws MigrationApi.MigrationException {
         // state reset: switching to "map cache uninitialized"
         this.mappingsBySource = null;
         this.mappingsByTarget = null;
@@ -195,13 +196,13 @@ public class MigrationMetadata {
         return result;
     }
 
-    public void addMappings(Set<MigrationMapping> mappings) throws MigrationException {
+    public void addMappings(Set<MigrationMapping> mappings) throws MigrationApi.MigrationException {
         for (MigrationMapping mapping : mappings) {
             addMapping(mapping);
         }
     }
 
-    public void addMapping(MigrationMapping mapping) throws MigrationException {
+    public void addMapping(MigrationMapping mapping) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Adding mapping: {0}", mapping);
         if (mapping == null) return;
 
@@ -209,7 +210,7 @@ public class MigrationMetadata {
         MigrationMapping conflicting = hasConflictingMapping(mapping);
         if (conflicting != null) {
             if (mapping.getType().getValueMapping() != MigrationMappingSelection.OPTIONAL) {
-                throw new MigrationException("New mapping: " + mapping + " conflicts with: " + conflicting);
+                throw new MigrationApi.MigrationException("New mapping: " + mapping + " conflicts with: " + conflicting);
             } else {
                 logger.log(Level.WARNING, "New mapping would create a conflict; switching value-mapping from OPTIONAL to REQUIRED for: " + mapping);
                 mapping.getType().setValueMapping(MigrationMappingSelection.REQUIRED);
@@ -222,10 +223,11 @@ public class MigrationMetadata {
         addMappingsForTarget(mapping.getDependency(), Collections.singleton(mapping));
     }
 
-    public void mapNames(Set<Pair<EntityHeaderRef,EntityHeader>> mappings) throws MigrationException {
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    public void mapNames(Set<Pair<EntityHeaderRef,EntityHeader>> mappings) throws MigrationApi.MigrationException {
         Set<Pair<EntityHeaderRef,EntityHeader>> toApply = new HashSet<Pair<EntityHeaderRef, EntityHeader>>(mappings);
         Set<Pair<EntityHeaderRef,EntityHeader>> toRemove = new HashSet<Pair<EntityHeaderRef, EntityHeader>>();
-        MigrationException.MigrationErrors errors = new MigrationException.MigrationErrors();
+        Collection<String> errors = new HashSet<String>();
         do {
             toRemove.clear();
             errors.clear();
@@ -237,7 +239,7 @@ public class MigrationMetadata {
                         mapName(pair.getKey(), pair.getValue());
                         toRemove.add(pair);
                     } catch (Exception e) {
-                        errors.add(pair.getKey(), new MigrationException("Error applying mapping for: " + pair.getKey(), e));
+                        errors.add("Error applying mapping for " + pair.getKey() + " : " + ExceptionUtils.getMessage(e));
                     }
                 }
             }
@@ -245,17 +247,17 @@ public class MigrationMetadata {
         } while (! toApply.isEmpty() && !toRemove.isEmpty());
 
         if (! toApply.isEmpty())
-            throw new MigrationException("Unable to apply mappings.", errors);
+            throw new MigrationApi.MigrationException("Unable to apply mappings.", errors);
     }
 
-    public void mapName(EntityHeaderRef dependency, EntityHeader newDependency) throws MigrationException {
+    public void mapName(EntityHeaderRef dependency, EntityHeader newDependency) throws MigrationApi.MigrationException {
         mapName(dependency, newDependency, true);
     }
 
-    public void mapName(EntityHeaderRef dependency, EntityHeader newDependency, boolean enforceMappingType) throws MigrationException {
+    public void mapName(EntityHeaderRef dependency, EntityHeader newDependency, boolean enforceMappingType) throws MigrationApi.MigrationException {
 
         logger.log(Level.FINE, "Name-mapping: {0} -> {1}.", new Object[]{dependency, newDependency});
-        if (dependency == null || newDependency == null /*|| dependency.equals(EntityHeaderRef.fromOther(newDependency))*/)
+        if (dependency == null || newDependency == null)
             return;
 
         // add new header to the bundle
@@ -288,7 +290,7 @@ public class MigrationMetadata {
      *
      * @return the first conflicting mapping found, or null if no conflicting mappings are found.
      */
-    private MigrationMapping hasConflictingMapping(MigrationMapping newMapping) throws MigrationException {
+    private MigrationMapping hasConflictingMapping(MigrationMapping newMapping) throws MigrationApi.MigrationException {
 
         if (newMapping == null || newMapping.getType().getNameMapping() != NONE)
             return null;

@@ -8,7 +8,6 @@ import com.l7tech.server.management.migration.MigrationManager;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.Collection;

@@ -23,7 +23,7 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
 
     private static final Logger logger = Logger.getLogger(DefaultEntityPropertyResolver.class.getName());
 
-    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, final Method property) throws MigrationException {
+    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, final Method property) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
         if (!MigrationUtils.isDefaultDependency(property))
             throw new IllegalArgumentException("Cannot handle property: " + property);
@@ -37,7 +37,7 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
         try {
             propertyValue = property.invoke(entity);
         } catch (Exception e) {
-            throw new MigrationException("Error getting property value for entity: " + entity, e);
+            throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 
         Map<EntityHeader, Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
@@ -70,7 +70,7 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
                 }
             } else {
                 // should not happen
-                throw new MigrationException(this.getClass().getName() + " cannot handle properties of type: " + propertyValue.getClass().getName());
+                throw new PropertyResolverException(this.getClass().getName() + " cannot handle properties of type: " + propertyValue.getClass().getName());
             }
         }
 
@@ -89,7 +89,7 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
         mappingsForHeader.add(mapping);
     }
 
-    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws MigrationException {
+    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
         logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{MigrationUtils.getHeaderFromEntity(sourceEntity), propName});
         Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, targetValue.getClass());
 
@@ -97,7 +97,7 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
             // todo: handle multi-value target values
             method.invoke(sourceEntity, targetValue);
         } catch (Exception e) {
-            throw new MigrationException("Error applying mapping for property name: " + propName, e);
+            throw new PropertyResolverException("Error applying mapping for property name: " + propName, e);
         }
     }
 }

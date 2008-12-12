@@ -32,27 +32,27 @@ public class MigrationUtils {
      * @throws MigrationException if the resolver cannot be instantiated
      * @see com.l7tech.objectmodel.migration.Migration, PropertyResolver
      */
-    public static PropertyResolver getResolver(Method property) throws MigrationException {
+    public static PropertyResolver getResolver(Method property) throws PropertyResolverException {
 
         Class<? extends PropertyResolver> resolverClass;
         if (isDependency(property)) {
             resolverClass = property.isAnnotationPresent(Migration.class) ? property.getAnnotation(Migration.class).resolver() : DefaultEntityPropertyResolver.class;
         } else {
-            throw new MigrationException("Property " + property + " is not a dependency.");
+            throw new PropertyResolverException("Property " + property + " is not a dependency.");
         }
         try {
             return resolverClass.newInstance();
         } catch (Exception e) {
-            throw new MigrationException("Error getting property resolver for: " + property, e);
+            throw new PropertyResolverException("Error getting property resolver for: " + property, e);
         }
     }
 
-    public static PropertyResolver getResolver(Entity sourceEntity, String propName) throws MigrationException {
+    public static PropertyResolver getResolver(Entity sourceEntity, String propName) throws PropertyResolverException {
 
         String name = stripPropertyName(propName);
         Method method = getterForPropertyName(sourceEntity, name);
         if (method == null)
-            throw new MigrationException("No getter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
+            throw new PropertyResolverException("No getter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
 
         // we have the method, get the resolver for it (if it's a dependency etc)
         return getResolver(method);
@@ -66,11 +66,11 @@ public class MigrationUtils {
         return name;
     }
 
-    public static EntityType getTargetType(Entity sourceEntity, String propName) throws MigrationException {
+    public static EntityType getTargetType(Entity sourceEntity, String propName) throws PropertyResolverException {
         String name = stripPropertyName(propName);
         Method method = getterForPropertyName(sourceEntity, name);
         if (method == null)
-            throw new MigrationException("No getter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
+            throw new PropertyResolverException("No getter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
 
         // we have the method, get the target type for it
         if (method.isAnnotationPresent(Migration.class))

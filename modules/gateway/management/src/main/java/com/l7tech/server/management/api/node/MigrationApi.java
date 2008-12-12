@@ -3,7 +3,6 @@ package com.l7tech.server.management.api.node;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.migration.MigrationException;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
@@ -12,10 +11,8 @@ import javax.jws.WebService;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.Collection;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import javax.xml.bind.annotation.XmlElement;
+import java.util.*;
 
 /**
  * API for Policy Migration.
@@ -98,6 +95,51 @@ public interface MigrationApi {
             }
 
             return map;
+        }
+    }
+
+    @XmlRootElement
+    public static class MigrationException extends Exception {
+
+        private String errors;
+
+        public MigrationException() {}
+
+        public MigrationException(String message) {
+            super(message);
+        }
+
+        public MigrationException(Collection<String> errors) {
+            this(null, errors);
+        }
+
+        public MigrationException(String message, Collection<String> errors) {
+            super(message);
+            StringBuffer sb = new StringBuffer();
+            for (String error : errors) {
+                sb.append(error).append("\n");
+            }
+            this.errors = sb.toString();
+        }
+
+        public MigrationException(Throwable cause) {
+            super(cause);
+        }
+
+        public MigrationException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public String getErrors() {
+            return errors;
+        }
+
+        public void setErrors(String errors) {
+            this.errors = errors;
+        }
+
+        public boolean hasErrors() {
+            return errors != null && errors.length() > 0;
         }
     }
 }
