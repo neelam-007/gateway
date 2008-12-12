@@ -253,6 +253,7 @@ CREATE TABLE policy_alias (
 
 --
 -- Table structure for table 'client_cert'
+-- UNIQUE KEY i_issuer_serial (issuer_dn, serial), --must be added in upgrade task or it will fail on multi-version upgrades
 --
 
 DROP TABLE IF EXISTS client_cert;
@@ -270,8 +271,6 @@ CREATE TABLE client_cert (
   serial varchar(64),
   PRIMARY KEY  (objectid),
   FOREIGN KEY (provider) REFERENCES identity_provider (objectid) ON DELETE CASCADE,
---must be added in upgrade task or it will fail on multi-version upgrades
---UNIQUE KEY i_issuer_serial (issuer_dn, serial),
   UNIQUE KEY i_identity (provider, user_id),
   INDEX i_subject_dn (subject_dn),
   INDEX i_issuer_dn (issuer_dn),
@@ -387,6 +386,8 @@ CREATE TABLE revocation_check_policy (
 
 --
 -- Table structure for table 'trusted_cert'
+-- must be added on upgrade task:
+-- UNIQUE i_issuer_serial (issuer_dn, serial),
 --
 
 DROP TABLE IF EXISTS trusted_cert;
@@ -411,8 +412,6 @@ CREATE TABLE trusted_cert (
   serial varchar(64),
   PRIMARY KEY (objectid),
   UNIQUE i_thumb (thumbprint_sha1),
---must be added on upgrade task:
---UNIQUE i_issuer_serial (issuer_dn, serial),
   INDEX i_ski (ski),
   INDEX i_subject_dn (subject_dn),
   INDEX i_issuer_dn (issuer_dn),
