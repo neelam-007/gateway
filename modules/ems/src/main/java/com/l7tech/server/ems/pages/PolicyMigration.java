@@ -297,6 +297,9 @@ public class PolicyMigration extends EmsPage  {
         searchComponents[0] = dependenciesOptionsContainer.get("dependencySearchManner");
         searchComponents[1] = dependenciesOptionsContainer.get("dependencySearchText");
         searchComponents[2] = dependenciesOptionsContainer.get("dependencySearchButton");
+        for ( Component component : searchComponents ) {
+            component.setEnabled( false );
+        }
 
         addDependencyOptions( dependenciesOptionsContainer, null, null, Collections.emptyList(), mappingModel );
 
