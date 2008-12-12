@@ -1304,6 +1304,7 @@
   <bean id="migrationManager" class="com.l7tech.server.migration.MigrationManagerImpl">
       <constructor-arg ref="entityCrud"/>
       <constructor-arg ref="propertyResolverFactory"/>
+      <constructor-arg ref="resolutionManager"/>
   </bean>
 
 </beans>

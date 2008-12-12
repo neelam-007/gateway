@@ -565,7 +565,7 @@ public class PolicyMigration extends EmsPage  {
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(e)+"'.");
         } catch ( MigrationException e ) {
             logger.log( Level.WARNING, "Error while checking dependencies for migration.", e );
-            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(e)+"'.");
+            throw new MigrationFailedException(summarizeMigrationException(e));
         } catch ( SOAPFaultException sfe ) {
             logger.log( Level.WARNING, "Error while checking dependencies for migration.", sfe );
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(sfe)+"'.");
@@ -644,7 +644,7 @@ public class PolicyMigration extends EmsPage  {
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(se)+"'.");
         } catch ( MigrationException me ) {
             logger.log( Level.WARNING, "Error while performing migration.", me );
-            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(me)+"'.");
+            throw new MigrationFailedException(summarizeMigrationException(me));
         } catch (GatewayApi.GatewayException ge) {
             logger.log( Level.WARNING, "Error while performing migration.", ge );
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(ge)+"'.");
@@ -654,6 +654,22 @@ public class PolicyMigration extends EmsPage  {
         }
 
         return summary;
+    }
+
+    private String summarizeMigrationException(MigrationException me) {
+        MigrationException.MigrationErrors errors = me.getErrors();
+        if (errors.isEmpty()) {
+            return "Migration failed '"+ ExceptionUtils.getMessage(me)+"'.";
+        } else {
+            StringBuilder sb = new StringBuilder("Migration failed:\n\n");
+            for (Object errorSource : me.getErrors().getSources()) {
+                sb.append("\t").append(errorSource).append(" : ");
+                for (MigrationException ex : errors.getExceptions(errorSource)) {
+                    sb.append("\t\t").append(ExceptionUtils.getMessage(ex)).append("\n");
+                }
+            }
+            return sb.toString();
+        }
     }
 
     /**

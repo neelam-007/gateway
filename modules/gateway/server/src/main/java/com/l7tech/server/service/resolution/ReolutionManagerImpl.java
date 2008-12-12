@@ -204,6 +204,10 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         }
     }
 
+    public void checkDuplicateResolution(PublishedService service) throws DuplicateObjectException, ServiceResolutionException {
+        checkForDuplicateResolutionParameters(getDistinct(service), -1);
+    }
+
     /**
      * This is a temporary bandage to detect duplicate resolution params as the DuplicateObjectException
      * in this class are not working/never thrown for the duplicate param scenario, so the caller does not
@@ -224,8 +228,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
      * @throws DuplicateObjectException on duplicate detect
      * @throws HibernateException       on hibernate error
      */
-    private void checkForDuplicateResolutionParameters(Collection parameters, long serviceIdToIgnore)
-      throws HibernateException, DuplicateObjectException {
+    private void checkForDuplicateResolutionParameters(Collection parameters, long serviceIdToIgnore) throws DuplicateObjectException {
 
         Set duplicates = new HashSet();
         List results = getHibernateTemplate().find(HQL_FIND_ALL);

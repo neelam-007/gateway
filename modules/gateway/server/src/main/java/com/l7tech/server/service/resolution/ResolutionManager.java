@@ -15,4 +15,6 @@ public interface ResolutionManager {
     void recordResolutionParameters(PublishedService service) throws DuplicateObjectException, UpdateException;
 
     void deleteResolutionParameters(long serviceOid) throws DeleteException;
+
+    void checkDuplicateResolution(PublishedService service) throws DuplicateObjectException, ServiceResolutionException;
 }

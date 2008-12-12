@@ -12,6 +12,8 @@ import com.l7tech.objectmodel.migration.*;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 import static com.l7tech.objectmodel.migration.MigrationException.*;
 import com.l7tech.server.*;
+import com.l7tech.server.service.resolution.ResolutionManager;
+import com.l7tech.server.service.resolution.ServiceResolutionException;
 import static com.l7tech.server.migration.MigrationManagerImpl.ImportOperation.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -37,10 +39,12 @@ public class MigrationManagerImpl implements MigrationManager {
     private EntityCrud entityCrud;
     private PropertyResolverFactory resolverFactory;
     private static final EntityHeaderRef ROOT_FOLDER_REF = new EntityHeaderRef(EntityType.FOLDER, "-5002");
+    private ResolutionManager resolutionManager;
 
-    public MigrationManagerImpl(EntityCrud entityCrud, PropertyResolverFactory resolverFactory) {
+    public MigrationManagerImpl(EntityCrud entityCrud, PropertyResolverFactory resolverFactory, ResolutionManager resolutionManager) {
         this.entityCrud = entityCrud;
         this.resolverFactory = resolverFactory;
+        this.resolutionManager = resolutionManager;
     }
 
     @Override
@@ -109,14 +113,17 @@ public class MigrationManagerImpl implements MigrationManager {
                                                  boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationException {
         logger.log(Level.FINEST, "Importing bundle: {0}", bundle);
 
-        processFolders(bundle, targetFolder, flattenFolders);
+        MigrationErrors errors = processFolders(bundle, targetFolder, flattenFolders);
 
-        MigrationErrors errors = validateBundle(bundle);
+        errors.addAll(validateBundle(bundle));
+
+        Map<EntityHeader, EntityOperation> entities = loadEntities(bundle, overwriteExisting, enableServices, errors);
+
+        errors.addAll(checkServiceResolution(entities));
+
         if (!errors.isEmpty())
-            logger.log(Level.WARNING, "Migration bundle validation failed.", errors);
-        // todo: enable strict validation : throw new MigrationException("Migration bundle validation failed.", errors);
+            throw new MigrationException("Migration failed.", errors);
 
-        Map<EntityHeader, EntityOperation> entities = loadEntities(bundle, overwriteExisting, enableServices);
 
         try {
             Collection<MigratedItem> result = new HashSet<MigratedItem>();
@@ -196,7 +203,9 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
-    private void processFolders(MigrationBundle bundle, EntityHeader targetFolder, boolean flatten) throws MigrationException {
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    private MigrationErrors processFolders(MigrationBundle bundle, EntityHeader targetFolder, boolean flatten) {
+        MigrationErrors errors = new MigrationErrors();
         MigrationMetadata metadata = bundle.getMetadata();
         if (flatten) {
             // replace all folder dependencies withe the (unique) targetFolder
@@ -213,10 +222,17 @@ public class MigrationManagerImpl implements MigrationManager {
             metadata.addHeader(targetFolder);
         } else {
             // map root folder to target folder
-            if (!metadata.hasHeader(ROOT_FOLDER_REF))
-                throw new MigrationException("Root folder not found in the bundle.");
-            metadata.mapName(ROOT_FOLDER_REF, targetFolder, false);
+            if (!metadata.hasHeader(ROOT_FOLDER_REF)) {
+                errors.add(ROOT_FOLDER_REF, new MigrationException("Root folder not found in the bundle."));
+            } else {
+                try {
+                    metadata.mapName(ROOT_FOLDER_REF, targetFolder, false);
+                } catch (MigrationException e) {
+                    errors.add(targetFolder, e);
+                }
+            }
         }
+        return errors;
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
@@ -261,7 +277,8 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
-    private Map<EntityHeader,EntityOperation> loadEntities(MigrationBundle bundle, boolean overwriteExisting, boolean enableServices) throws MigrationException {
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    private Map<EntityHeader,EntityOperation> loadEntities(MigrationBundle bundle, boolean overwriteExisting, boolean enableServices, final MigrationErrors errors) {
 
         Map<EntityHeader, EntityOperation> result = new HashMap<EntityHeader, EntityOperation>();
 
@@ -278,7 +295,8 @@ public class MigrationManagerImpl implements MigrationManager {
             fromBundle = item == null ? null : item.getValue();
 
             if (fromBundle == null && existing == null) {
-                throw new MigrationException("Entity not found for header (unresolved mapping not validated?):" + header);
+                errors.add(header, new MigrationException("Entity not found for header (unresolved mapping not validated?):" + header));
+                continue;
             }
 
             if (metadata.isUploadedByParent(header)) {
@@ -353,6 +371,23 @@ public class MigrationManagerImpl implements MigrationManager {
             }
         }
 
+        return errors;
+    }
+
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    private MigrationErrors checkServiceResolution(Map<EntityHeader, EntityOperation> entities) {
+        MigrationErrors errors = new MigrationErrors();
+        for (EntityHeader header : entities.keySet()) {
+            if (header.getType() == EntityType.SERVICE && entities.get(header).operation == CREATE) {
+                try {
+                    resolutionManager.checkDuplicateResolution((PublishedService) entities.get(header).entity);
+                } catch (DuplicateObjectException e) {
+                    errors.add(header, new MigrationException("Duplicate resolution parameters: " + e.getMessage(), e));
+                } catch (ServiceResolutionException e) {
+                    errors.add(header, new MigrationException("Error getting service resolution parametes.", e));
+                }
+            }
+        }
         return errors;
     }
 

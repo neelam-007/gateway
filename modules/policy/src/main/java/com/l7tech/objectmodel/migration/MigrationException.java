@@ -81,6 +81,13 @@ public class MigrationException extends ObjectModelException {
         public void clear() {
             errors.clear();
         }
-    }
 
+        public Set<Object> getSources() {
+            return errors.keySet();
+        }
+
+        public Set<MigrationException> getExceptions(Object source) {
+            return errors.get(source);
+        }
+    }
 }
