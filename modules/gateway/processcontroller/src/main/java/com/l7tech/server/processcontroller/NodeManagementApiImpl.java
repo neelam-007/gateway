@@ -122,6 +122,9 @@ public class NodeManagementApiImpl implements NodeManagementApi {
 
         try {
             NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), enabled, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
+        } catch (NodeConfigurationManager.NodeConfigurationException nce) {
+            logger.log(Level.WARNING, "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'.", ExceptionUtils.getDebugException(nce) );
+            throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'");
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
@@ -185,6 +188,9 @@ public class NodeManagementApiImpl implements NodeManagementApi {
 
         try {
             NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), clusterPassphrase, databaseConfig, failoverDatabaseConfig  );
+        } catch (NodeConfigurationManager.NodeConfigurationException nce) {
+            logger.log(Level.WARNING, "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'.", ExceptionUtils.getDebugException(nce) );
+            throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'");
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Error during node configuration.", ioe );
             throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");

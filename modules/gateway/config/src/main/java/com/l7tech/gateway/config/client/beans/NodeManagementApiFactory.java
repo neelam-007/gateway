@@ -13,6 +13,7 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
@@ -89,8 +90,11 @@ public class NodeManagementApiFactory {
             @Override
             public TrustManager[] getTrustManagers() {
                 return new TrustManager[] { new X509TrustManager() {
+                    @Override
                     public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                    @Override
                     public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                    @Override
                     public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
                 }};
             }
@@ -107,6 +111,7 @@ public class NodeManagementApiFactory {
     private NodeManagementApi buildDirectManagementService() throws IOException {
         final Collection<Pair<NodeConfig, File>> nodes = NodeConfigurationManager.loadNodeConfigs(true);
         return new NodeManagementApi(){
+            @Override
             public Collection<NodeHeader> listNodes() throws FindException {
                 Collection<NodeHeader> headers = new ArrayList<NodeHeader>();
 
@@ -118,10 +123,12 @@ public class NodeManagementApiFactory {
                 return headers;
             }
 
+            @Override
             public NodeConfig getNode(final String nodeName) throws FindException {
                 return doGetNode( nodeName );
             }
 
+            @Override
             public void createDatabase( final String nodeName, final DatabaseConfig dbconfig, final Collection<String> dbHosts, final String adminLogin, final String adminPassword ) throws DatabaseCreationException {
                 try {
                     NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword);
@@ -130,10 +137,13 @@ public class NodeManagementApiFactory {
                 }
             }
 
+            @Override
             public NodeConfig createNode( final NodeConfig node) throws SaveException {
                 if ( doGetNode(node.getName()) == null ) {
                     try {
                         NodeConfigurationManager.configureGatewayNode( node.getName(), null, true, node.getClusterPassphrase(), node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ), null );
+                    } catch ( NodeConfigurationManager.NodeConfigurationException nce ) {
+                        throw new SaveException( ExceptionUtils.getMessage(nce), nce );
                     } catch ( IOException ioe ) {
                         throw new SaveException( ioe );
                     }
@@ -144,10 +154,13 @@ public class NodeManagementApiFactory {
                 return node;
             }
 
+            @Override
             public void updateNode(final NodeConfig node) throws UpdateException, RestartRequiredException {
                 if ( doGetNode(node.getName()) != null ) {
                     try {
                         NodeConfigurationManager.configureGatewayNode( node.getName(), null, true, node.getClusterPassphrase(), node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ), null );
+                    } catch ( NodeConfigurationManager.NodeConfigurationException nce ) {
+                        throw new UpdateException( ExceptionUtils.getMessage(nce), nce );
                     } catch ( IOException ioe ) {
                         throw new UpdateException( ioe );
                     }
@@ -171,10 +184,15 @@ public class NodeManagementApiFactory {
             }
 
             // unsupported operations
+            @Override
             public void deleteNode( String nodeName, int shutdownTimeout) throws DeleteException, ForcedShutdownException { throw new UnsupportedOperationException(); }
+            @Override
             public String uploadNodeSoftware(DataHandler softwareData) throws IOException, UpdateException { throw new UnsupportedOperationException(); }
+            @Override
             public void upgradeNode(String nodeName, String targetVersion) throws UpdateException, RestartRequiredException { throw new UnsupportedOperationException(); }
+            @Override
             public NodeStateType startNode(String nodeName) throws FindException, StartupException { throw new UnsupportedOperationException(); }
+            @Override
             public void stopNode(String nodeName, int timeout) throws FindException, ForcedShutdownException { throw new UnsupportedOperationException(); }
         };
     }

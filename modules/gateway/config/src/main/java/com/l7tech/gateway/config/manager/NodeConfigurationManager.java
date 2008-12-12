@@ -46,6 +46,16 @@ public class NodeConfigurationManager {
 
     private static final DBActions dbActions = new DBActions();
 
+    public static final class NodeConfigurationException extends Exception {
+        public NodeConfigurationException( final String message ) {
+            super(message);
+        }
+
+        public NodeConfigurationException( final String message, final Throwable cause ) {
+            super(message, cause);
+        }
+    }
+
     /**
      * Configure a gateway node properties and create database if required..
      *
@@ -62,7 +72,7 @@ public class NodeConfigurationManager {
                                              final Boolean enabled,
                                              final String clusterPassword,
                                              final DatabaseConfig databaseConfig,
-                                             final DatabaseConfig database2ndConfig ) throws IOException {
+                                             final DatabaseConfig database2ndConfig ) throws IOException, NodeConfigurationException {
         String nodeName = name;
         if ( nodeName == null ) {
             nodeName = "default";
@@ -84,9 +94,9 @@ public class NodeConfigurationManager {
 
             String dbVersion = dbActions.checkDbVersion( databaseConfig );
             if ( dbVersion != null && !dbVersion.equals(BuildInfo.getFormalProductVersion()) ) {
-                throw new CausedIOException("Database version mismatch '"+dbVersion+"'.");
+                throw new NodeConfigurationException("Database version mismatch '"+dbVersion+"'.");
             } else if ( dbVersion == null ) {
-                throw new CausedIOException("Cannot connect to database.");
+                throw new NodeConfigurationException("Cannot connect to database.");
             }
         }
 
@@ -115,7 +125,7 @@ public class NodeConfigurationManager {
         } else {
             // validate that we have enough settings to create a valid configuration
             if ( nodeid == null || clusterPassword == null || databaseConfig == null ) {
-                throw new CausedIOException("Missing configuration parameters, cannot create new configuration for node '"+nodeName+"'.");
+                throw new NodeConfigurationException("Missing configuration parameters, cannot create new configuration for node '"+nodeName+"'.");
             }
 
             if ( setEnabled == null ) setEnabled = true;

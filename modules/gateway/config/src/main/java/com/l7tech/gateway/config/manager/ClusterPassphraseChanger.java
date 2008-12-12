@@ -70,7 +70,7 @@ public class ClusterPassphraseChanger {
         }
     }
 
-    private void run( final String configurationDirPath ) throws IOException, SAXException {
+    private void run( final String configurationDirPath ) throws IOException, SAXException, NodeConfigurationManager.NodeConfigurationException {
         File configDirectory = new File( configurationDirPath );
         File ompFile = new File( configDirectory, "omp.dat" );
         if ( !ompFile.exists() ) {
