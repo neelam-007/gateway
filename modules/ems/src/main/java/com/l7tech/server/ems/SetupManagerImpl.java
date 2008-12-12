@@ -163,7 +163,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
     public String saveSsl( final PrivateKey key, final X509Certificate[] certificateChain ) throws SetupException {
         try {
             // save key
-            String alias = findUnusedAlias("SSL");
+            String alias = findUnusedAlias("ssl");
             SsgKeyStore sks = findFirstMutableKeystore();
             SsgKeyEntry entry = new SsgKeyEntry( sks.getOid(), alias, certificateChain, key );
             sks.storePrivateKeyEntry( entry, false );
@@ -179,7 +179,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
     public String generateSsl( final String hostname ) throws SetupException {
         try {
             // generate key and save
-            String alias = findUnusedAlias("SSL");
+            String alias = findUnusedAlias("ssl");
             SsgKeyStore sks = findFirstMutableKeystore();
             generateKeyPair( hostname, sks, alias );
             return alias;

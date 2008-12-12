@@ -38,6 +38,7 @@ import java.io.Serializable;
 import com.l7tech.server.ems.SetupManager;
 import com.l7tech.server.ems.SetupException;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ExceptionUtils;
 
 /**
  * Panel for generation / upload of SSL key / certificate.
@@ -104,16 +105,13 @@ public class SslEditPanel extends Panel {
             protected void onSubmit( final AjaxRequestTarget target ) {
                 logger.info("Processing SSL update.");
 
-                if ( successScript != null && target != null) {
-                    target.prependJavascript(successScript);
-                }
-
                 String alias = null;
                 if ( "gen".equals( group.getModelObjectAsString() ) ) {
                     String hostValue = sslFormModel.getHostname();
                     try {
                         alias = setupManager.generateSsl( hostValue );
                     } catch ( SetupException se ) {
+                        feedback.error( "Could not generate SSL certificate for host '"+hostValue+"'" );
                         logger.log( Level.WARNING, "Error configuring ssl for hostname '"+hostValue+"'.", se );
                     }
                 } else {
@@ -142,27 +140,35 @@ public class SslEditPanel extends Panel {
                                  alias = setupManager.saveSsl( (PrivateKey)keystore.getKey(aliasValue, passwordValue.toCharArray()), xcerts );
                             } else {
                                 logger.warning("Keystore not present in upload!");
+                                feedback.error( "Error processing keystore, please try again." );
                             }
                         } finally {
                             if (upload != null) upload.closeStreams();
                         }
                     } catch ( SetupException se ) {
                         logger.log( Level.WARNING, "Error configuring ssl with keystore.", se );
+                        feedback.error( "Error configuring ssl with keystore." );
                     } catch ( KeyStoreException ke ) {
                         logger.log( Level.WARNING, "Error configuring ssl with keystore.", ke );
+                        feedback.error( "Error configuring ssl with keystore." );
                     } catch (IOException e) {
-                        logger.log( Level.WARNING, "Error configuring ssl with keystore.", e );
+                        logger.log( Level.WARNING, "Error configuring ssl with keystore '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
+                        feedback.error( "Error configuring ssl with keystore, keystore file may be invalid.." );
                     } catch (NoSuchAlgorithmException e) {
                         logger.log( Level.WARNING, "Error configuring ssl with keystore.", e );
+                        feedback.error( "Error configuring ssl with keystore." );
                     } catch (CertificateException e) {
                         logger.log( Level.WARNING, "Error configuring ssl with keystore.", e );
+                        feedback.error( "Error configuring ssl with keystore." );
                     } catch (UnrecoverableKeyException e) {
                         logger.log( Level.WARNING, "Error configuring ssl with keystore.", e );
+                        feedback.error( "Error configuring ssl with keystore." );
                     }
                 }
 
                 if ( alias != null ) {
                     try {
+                        Thread.sleep(100L); // keystore mutation occurs in another thread ...
                         setupManager.setSslAlias( alias );
                         Thread.sleep(100L); // default key invalidation occurs in another thread ...
                     } catch ( SetupException se ) {
@@ -170,9 +176,15 @@ public class SslEditPanel extends Panel {
                     } catch ( InterruptedException ie ) {
                         Thread.currentThread().interrupt();
                     }
-                }
 
-                SslEditPanel.this.onSubmit( target );
+                    if ( successScript != null && target != null) {
+                        target.prependJavascript(successScript);
+                    }
+
+                    SslEditPanel.this.onSubmit( target );
+                } else {
+                    target.addComponent( feedback );
+                }
             }
         };
 
