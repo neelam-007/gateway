@@ -101,7 +101,14 @@ public final class RootNode extends FolderNode {
                     EntityHeader eH2 = ((EntityHeaderNode)o2).getEntityHeader();
 
                     String name1 = eH1.getName();
+                    if (o1 instanceof ServiceNode) {    //use full name for service display name + URI
+                        name1 = ((ServiceNode)o1).getName();
+                    }
+
                     String name2 = eH2.getName();
+                    if (o2 instanceof ServiceNode) {
+                        name2 = ((ServiceNode)o2).getName();
+                    }
 
                     String eT1 = eH1.getType().toString();
                     String eT2 = eH2.getType().toString();
