@@ -59,6 +59,8 @@ public interface FolderAdmin {
      * @param oid the OID of the folder to search for
      * @return the folder with the specified OID, or null if no such folder exists.
      */
+    @Transactional(readOnly=true)
     @Secured(types=EntityType.FOLDER, stereotype=MethodStereotype.FIND_ENTITY)
+    @Administrative(licensed=false)            
     Folder findByPrimaryKey(long oid) throws FindException;
 }
