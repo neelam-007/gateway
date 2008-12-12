@@ -23,6 +23,7 @@ import javax.net.ssl.X509TrustManager;
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.UnknownHostException;
+import java.net.SocketTimeoutException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
@@ -79,7 +80,8 @@ public class GatewayContext {
     public static boolean isNetworkException( final RuntimeException sfe ) {
         return ExceptionUtils.causedBy( sfe, ConnectException.class ) ||
                ExceptionUtils.causedBy( sfe, NoRouteToHostException.class ) ||
-               ExceptionUtils.causedBy( sfe, UnknownHostException.class );
+               ExceptionUtils.causedBy( sfe, UnknownHostException.class ) ||
+               ExceptionUtils.causedBy( sfe, SocketTimeoutException.class );
     }
 
     //- PRIVATE
