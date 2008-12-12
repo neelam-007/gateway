@@ -25,7 +25,11 @@ public interface ProcessControllerApi {
     void connectorDeleted(SsgConnector connector);
 
     public static class ReservedPortException extends Exception {
-        private final int port;
+        private int port;
+
+        public ReservedPortException(String message) {
+            super(message);
+        }
 
         public ReservedPortException(int port) {
             super(MessageFormat.format("Port {0} is reserved", port));

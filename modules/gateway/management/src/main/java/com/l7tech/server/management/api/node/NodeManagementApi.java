@@ -272,8 +272,12 @@ public interface NodeManagementApi {
      * Thrown if a node is unable to start
      */
     public class StartupException extends Exception {
+        public StartupException(String message) {
+            super(message);
+        }
+
         public StartupException(String node, String reason) {
-            super(MessageFormat.format("{0} could not be started: {1}", node, reason));
+            this(MessageFormat.format("{0} could not be started: {1}", node, reason));
         }
     }
 
@@ -281,8 +285,12 @@ public interface NodeManagementApi {
      * Thrown if a node was unable to shutdown cleanly within the provided timeout period
      */
     public class ForcedShutdownException extends Exception {
+        public ForcedShutdownException(String message) {
+            super(message);
+        }
+
         public ForcedShutdownException(String nodeName, int timeout) {
-            super(MessageFormat.format("{0} did not shutdown cleanly within {1}ms and has been killed", nodeName, timeout));
+            this(MessageFormat.format("{0} did not shutdown cleanly within {1}ms and has been killed", nodeName, timeout));
         }
     }
 }
