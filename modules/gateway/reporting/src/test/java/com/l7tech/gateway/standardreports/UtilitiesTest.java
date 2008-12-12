@@ -956,6 +956,53 @@ public class UtilitiesTest{
         Assert.assertTrue(control.getTimeInMillis() == cal.getTimeInMillis());
     }
 
+
+    /**
+     * Specific tests for Utilities.getIntervalDisplayDate when the unit of time parameter is DAY
+     */
+    @Test
+    public void testGetIntervalDisplayDate_Day() throws ParseException {
+        String timeZone = "Canada/Pacific";
+        TimeZone tz = Utilities.getTimeZone(timeZone);
+
+        String startDate = "2008/08/31 14:12";
+        DATE_FORMAT.setTimeZone(tz);
+        Date d = DATE_FORMAT.parse(startDate);
+
+        long startTime = d.getTime();
+        d = DATE_FORMAT.parse("2008/09/01 14:12");
+        long endTime = d.getTime();
+
+        //Test day when it goes over a month bounday - when only 1 day is interval
+        String timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, 1 ,timeZone);
+        String expected = "Sun Aug 31";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
+
+        //when 2 day interval
+        d = DATE_FORMAT.parse("2008/09/02 14:12");
+        endTime = d.getTime();
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, 2 ,timeZone);
+        expected = "Sun Aug 31-Sep 2";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
+
+        //Test day when it goes over a year boundary - when only 1 day interval
+        d = DATE_FORMAT.parse("2008/12/31 14:12");
+        startTime = d.getTime();
+        d = DATE_FORMAT.parse("2009/01/01 14:12");
+        endTime = d.getTime();
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, 1 ,timeZone);
+        expected = "Wed Dec 31 '09";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
+
+        //when 2 day interval
+        d = DATE_FORMAT.parse("2008/12/31 14:12");
+        startTime = d.getTime();
+        d = DATE_FORMAT.parse("2009/01/02 14:12");
+        endTime = d.getTime();
+        timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, 2 ,timeZone);
+        expected = "Wed Dec 31-Jan 2 '09";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
+    }
     /**
      * Test that the display string returned from getIntervalDisplayDate are correct
      * @throws Exception
@@ -988,15 +1035,15 @@ public class UtilitiesTest{
         endTime = d.getTime();
 
         timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, 1, timeZone);
-        expected = "Fri 08/01";
-        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals("Fri 08/01"));
+        expected = "Fri Aug 1";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
 
         d = DATE_FORMAT.parse("2008/08/04 14:12");
         endTime = d.getTime();
 
         timeDisplay = Utilities.getIntervalDisplayDate(startTime, endTime, Utilities.UNIT_OF_TIME.DAY, 3, timeZone);
-        expected = "Fri 08/01";
-        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals("Fri 08/01"));
+        expected = "Fri Aug 1-4";
+        Assert.assertTrue("Interval display string should equal: " + expected+" it was: " + timeDisplay, timeDisplay.equals(expected));
 
         d = DATE_FORMAT.parse("2008/08/08 14:12");
         endTime = d.getTime();
@@ -1077,7 +1124,6 @@ public class UtilitiesTest{
         }
 
         Assert.assertTrue("Exception should have been thrown", exception);
-        
     }
 
     /**

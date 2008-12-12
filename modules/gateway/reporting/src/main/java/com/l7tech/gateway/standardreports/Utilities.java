@@ -30,8 +30,11 @@ public class Utilities {
     public static final String DATE_STRING = "yyyy/MM/dd HH:mm";
     private static final String HOUR_DATE_STRING = "HH:mm";
     private static final String DAY_HOUR_DATE_STRING = "MM/dd HH:mm";
-    private static final String DAY_DATE_STRING = "E MM/dd";
-    private static final String DAY_MONTH_DATE_STRING = "M E MM/dd";
+    //private static final String DAY_DATE_STRING = "E MM/dd";
+    private static final String DAY_DATE_STRING = "E MMM d";
+    private static final String DAY_DATE_STRING_END = "MMM d";
+    private static final String DAY_DATE_ONLY = "d";
+    private static final String YEAR_TWO_DIGIT = "yy";
     private static final String WEEK_DATE_STRING = "MM/dd";
     private static final String WEEK_YEAR_DATE_STRING = "yyyy/MM/dd";
     private static final String MONTH_DATE_STRING = "yyyy MMM";
@@ -337,7 +340,10 @@ public class Utilities {
      * and no two intervals can be confused.
      * Here are the various formats, depending on the UNIT_OF_TIME specified in intervalUnitOfTime
      * HOUR: MM/dd HH:MM - HH:MM
-     * DAY: E MM/dd, when a new year is crossed it is highlighed by including the string month value before the day
+     * DAY: E MMM d, when the interval num units is 1, E MMM d-d when the num interval units is > 1, E MMM d-MMM d when
+     * the num interval units is > 1 and a month boundary is crossed. If a year boundary is also crossed in this condition,
+     * then 'yy is apppended to the date string. 
+     * when a new year is crossed it is highlighed by including the string month value before the day
      * WEEK: MM/dd - MM/dd, when a new year is crossed it is highlighed by including the string year before the month,
      * yyyy/MM/dd - MM/dd
      * MONTH: yyyy MMM
@@ -377,14 +383,37 @@ public class Utilities {
                 return dateHourDateFormat.format(calStart.getTime()) + " - " +
                             hourDateFormat.format(calEnd.getTime());
             case DAY:
-                if(calStart.get(Calendar.MONTH) == Calendar.JANUARY){
-                    SimpleDateFormat dayMonthDateFormat = new SimpleDateFormat(DAY_MONTH_DATE_STRING);
-                    dayMonthDateFormat.setTimeZone(tz);
-                    return dayMonthDateFormat.format(calStart.getTime());
-                }
+                //if the years are different from start to end date, then we are showing the end date year
+                boolean showYear = calStart.get(Calendar.YEAR) != calEnd.get(Calendar.YEAR);
+                //if the months are different show it for both start and end month
+                boolean showBothMonths = calStart.get(Calendar.MONTH) != calEnd.get(Calendar.MONTH);
+
                 SimpleDateFormat dateDateFormat = new SimpleDateFormat(DAY_DATE_STRING);
                 dateDateFormat.setTimeZone(tz);
-                return dateDateFormat.format(calStart.getTime());
+                SimpleDateFormat endDateFormat;
+                if(showBothMonths){
+                    endDateFormat = new SimpleDateFormat(DAY_DATE_STRING_END);
+                }else{
+                    endDateFormat = new SimpleDateFormat(DAY_DATE_ONLY);
+                }
+                
+                endDateFormat.setTimeZone(tz);
+
+                StringBuilder sb = new StringBuilder();
+                if(numberOfTimeUnits > 1){
+                    sb.append(dateDateFormat.format(calStart.getTime()) + "-" + endDateFormat.format(calEnd.getTime()));
+                }else{
+                    sb.append(dateDateFormat.format(calStart.getTime()));
+                }
+
+                if(showYear && showBothMonths){
+                    //only want to show the year when were showing two months, and end month is in the new year
+                    SimpleDateFormat yearFormat = new SimpleDateFormat(YEAR_TWO_DIGIT);
+                    yearFormat.setTimeZone(tz);
+                    sb.append(" '"+yearFormat.format(calEnd.getTime()));
+                }
+                return sb.toString();
+
             case WEEK:
                 if(calStart.get(Calendar.MONTH) == Calendar.JANUARY){
                     SimpleDateFormat weekYearDateFormat = new SimpleDateFormat(WEEK_YEAR_DATE_STRING);
