@@ -79,8 +79,10 @@
                 ENTITY_DATA_ERROR : 'Data error.',
                 CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Failed to get data from server for establishing trust by SSG Cluster: ',
                 CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Failed to get data from server for mapping access account: ',
-                FOLDER_NAME_HINT : 'must be 1 to 128 characters; no slash "/", leading or trailing spaces',
-                SSG_CLUSTER_NAME_HINT : 'must be 1 to 128 characters; no slash "/", leading or trailing spaces',
+                INVALID_NAME_LENGTH : 'must be 1 to 128 characters',
+                INVALID_NAME_SLASH : 'slash "/" not allowed',
+                INVALID_NAME_LEADING_SPACES : 'leading spaces not allowed',
+                INVALID_NAME_TRAILING_SPACES : 'trailing spaces not allowed',
                 SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
                 STARTING_SSG_NODE : 'Starting SSG Node ',
                 STOPPING_SSG_NODE : 'Stopping SSG Node ',
@@ -270,27 +272,27 @@
             }
 
             /**
-             * @param {string} name
-             * @return {boolean}
+             * @param {string} name     the folder name to validate
+             * @return {string} null if valid; displayable error message if invalid
              */
-            function isValidFolderName(name) {
-                return name.length > 0 &&
-                       name.length <= 128 &&
-                       name.search(/^\s/) == -1 &&      // no leading spaces
-                       name.search(/\s$/) == -1 &&      // no trailing spaces
-                       name.indexOf('/') == -1;
+            function validateFolderName(name) {
+                if (name.length < 1 || name.length > 128) return localizedStrings.INVALID_NAME_LENGTH;
+                if (name.indexOf('/') != -1) return localizedStrings.INVALID_NAME_SLASH;
+                if (name.search(/^\s/) != -1) return localizedStrings.INVALID_NAME_LEADING_SPACES;
+                if (name.search(/\s$/) != -1) return localizedStrings.INVALID_NAME_TRAILING_SPACES;
+                return null;
             }
 
             /**
-             * @param {string} name
-             * @return {boolean}
+             * @param {string} name     the folder name to validate
+             * @return {string} null if valid; displayable error message if invalid
              */
-            function isValidSSGClusterName(name) {
-                return name.length > 0 &&
-                       name.length <= 128 &&
-                       name.search(/^\s/) == -1 &&      // no leading spaces
-                       name.search(/\s$/) == -1 &&      // no trailing spaces
-                       name.indexOf('/') == -1;
+            function validateSSGClusterName(name) {
+                if (name.length < 1 || name.length > 128) return localizedStrings.INVALID_NAME_LENGTH;
+                if (name.indexOf('/') != -1) return localizedStrings.INVALID_NAME_SLASH;
+                if (name.search(/^\s/) != -1) return localizedStrings.INVALID_NAME_LEADING_SPACES;
+                if (name.search(/\s$/) != -1) return localizedStrings.INVALID_NAME_TRAILING_SPACES;
+                return null;
             }
 
             function onClickAddFolder(event) {
@@ -461,13 +463,14 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             function validateAddFolderDialog() {
                 var nameTextBox = document.getElementById('addFolderDialog_name');
                 var name = nameTextBox.value;
-                var nameIsValid = isValidFolderName(name);
+                var errMsg = validateFolderName(name);
+                var nameIsValid = errMsg == null;
                 if (nameIsValid || name.length == 0) {
                     YAHOO.util.Dom.removeClass(nameTextBox, 'invalid');
                     document.getElementById('addFolderDialog_name_hint').innerHTML = '';
                 } else if (name.length != 0) {
                     YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
-                    document.getElementById('addFolderDialog_name_hint').innerHTML = '(' + localizedStrings.FOLDER_NAME_HINT + ')';
+                    document.getElementById('addFolderDialog_name_hint').innerHTML = '(' + errMsg + ')';
                 }
 
                 var okButton = addFolderDialog.getButtons()[0];
@@ -481,13 +484,14 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             function validateRenameFolderDialog() {
                 var nameTextBox = document.getElementById('renameFolderDialog_name');
                 var name = nameTextBox.value;
-                var nameIsValid = isValidFolderName(name);
+                var errMsg = validateFolderName(name);
+                var nameIsValid = errMsg == null;
                 if (nameIsValid || name.length == 0) {
                     YAHOO.util.Dom.removeClass(nameTextBox, 'invalid');
                     document.getElementById('renameFolderDialog_name_hint').innerHTML = '';
                 } else if (name.length != 0) {
                     YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
-                    document.getElementById('renameFolderDialog_name_hint').innerHTML = '(' + localizedStrings.FOLDER_NAME_HINT + ')';
+                    document.getElementById('renameFolderDialog_name_hint').innerHTML = '(' + errMsg + ')';
                 }
 
                 var okButton = renameFolderDialog.getButtons()[0];
@@ -501,13 +505,14 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             function validateAddSSGClusterDialog() {
                 var nameTextBox = document.getElementById('addSSGClusterDialog_name');
                 var name = nameTextBox.value;
-                var nameIsValid = isValidSSGClusterName(name);
+                var errMsg = validateSSGClusterName(name);
+                var nameIsValid = errMsg == null;
                 if (nameIsValid || name.length == 0) {
                     YAHOO.util.Dom.removeClass(nameTextBox, 'invalid');
                     document.getElementById('addSSGClusterDialog_name_hint').innerHTML = '';
                 } else if (name.length != 0) {
                     YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
-                    document.getElementById('addSSGClusterDialog_name_hint').innerHTML = '(' + localizedStrings.SSG_CLUSTER_NAME_HINT + ')';
+                    document.getElementById('addSSGClusterDialog_name_hint').innerHTML = '(' + errMsg + ')';
                 }
 
                 var hostNameIsValid = document.getElementById('addSSGClusterDialog_hostName').value.length > 0;
@@ -534,13 +539,14 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             function validateRenameSSGClusterDialog() {
                 var nameTextBox = document.getElementById('renameSSGClusterDialog_name');
                 var name = nameTextBox.value;
-                var nameIsValid = isValidSSGClusterName(name);
+                var errMsg = validateSSGClusterName(name);
+                var nameIsValid = errMsg == null;
                 if (nameIsValid || name.length == 0) {
                     YAHOO.util.Dom.removeClass(nameTextBox, 'invalid');
                     document.getElementById('renameSSGClusterDialog_name_hint').innerHTML = '';
                 } else if (name.length != 0) {
                     YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
-                    document.getElementById('renameSSGClusterDialog_name_hint').innerHTML = '(' + localizedStrings.SSG_CLUSTER_NAME_HINT + ')';
+                    document.getElementById('renameSSGClusterDialog_name_hint').innerHTML = '(' + errMsg + ')';
                 }
 
                 var okButton = renameSSGClusterDialog.getButtons()[0];
