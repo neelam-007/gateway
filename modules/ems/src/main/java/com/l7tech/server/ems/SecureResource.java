@@ -68,7 +68,10 @@ public abstract class SecureResource extends WebResource {
             if ( "attachment".equals(parameters.getString("disposition") )) {
                 webResponse.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
             } else {
-                webResponse.setHeader("Content-Disposition", "inline; filename=\"" + filename + "\"");
+                // Bug 6123: remove the filename in the below header setting.
+                // In RFC2183, all examples of "inline" do not have "filename"
+                // It seems if filename was there with the "inline" setting, IE interpret the presence of filename to mean download.
+                webResponse.setHeader("Content-Disposition", "inline;");
             }
         }
     }
