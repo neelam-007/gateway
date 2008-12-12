@@ -109,7 +109,7 @@ public class UserRoles extends EmsPage {
         YuiAjaxButton buttonToUnassignRole = new YuiAjaxButton("button.unassignRole") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, Form form) {
-                final String userId = (String) form.get("assignedUserId").getModelObject();
+                final String userId =  YuiDataTable.unescapeIdentitifer((String) form.get("assignedUserId").getModelObject());
                 try {
                     Role role = roleManager.findByPrimaryKey(roleModel.selectedRole.getOid());
                     role.removeAssignedUser(emsAccountManager.findByLogin(userId));
@@ -156,7 +156,7 @@ public class UserRoles extends EmsPage {
         YuiAjaxButton buttonToAssignRole = new YuiAjaxButton("button.assignRole") {
             @Override
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
-                final String userId = (String) form.get("unassignedUserId").getModelObject();
+                final String userId = YuiDataTable.unescapeIdentitifer((String) form.get("unassignedUserId").getModelObject());
                 try {
                     Role role = roleManager.findByPrimaryKey(roleModel.selectedRole.getOid());
                     role.addAssignedUser(emsAccountManager.findByLogin(userId));
