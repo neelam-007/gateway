@@ -133,7 +133,7 @@
                 return srcSSGClusterContentSelectorWindow.getSsgCluster() != null &&
                        srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected().length > 0 &&
                        destSSGClusterContentSelectorWindow.getSsgCluster() != null &&
-                       srcSSGClusterContentSelectorWindow.getSsgCluster() != destSSGClusterContentSelectorWindow.getSsgCluster();
+                       srcSSGClusterContentSelectorWindow.getSsgCluster().id != destSSGClusterContentSelectorWindow.getSsgCluster().id;
             }
 
             function updateMigrateButton() {
@@ -762,7 +762,7 @@
 
                                     <br/>&nbsp;<br/>
 
-                                    <div style="border: 1px solid black; height: 200px; width: 400px; overflow: scroll">
+                                    <div style="border: 1px solid black; height: 170px; width: 400px; overflow: scroll">
                                         <table class="dataTable" wicket:id="dependencyOptions" width="100%">
                                             <thead>
                                                 <tr>
@@ -780,6 +780,9 @@
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    <br/>
+                                    <button type="submit" wicket:id="dependencyClearButton">Clear Selection</button>                                    
                                 </form>
                             </td>
                         </tr>
