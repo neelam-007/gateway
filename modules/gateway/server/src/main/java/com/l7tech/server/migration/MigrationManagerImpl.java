@@ -17,6 +17,7 @@ import static com.l7tech.server.migration.MigrationManagerImpl.ImportOperation.*
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -69,7 +70,9 @@ public class MigrationManagerImpl implements MigrationManager {
             try {
                 findDependenciesRecursive(result, header);
             } catch (PropertyResolverException e) {
-                throw new MigrationApi.MigrationException(e);
+                throw new MigrationApi.MigrationException(composeErrorMessage(header, e));
+            } catch (MigrationApi.MigrationException e) {
+                throw new MigrationApi.MigrationException(composeErrorMessage(header, e));
             }
         }
 
@@ -457,12 +460,23 @@ public class MigrationManagerImpl implements MigrationManager {
         return resolvedHeaders;
     }
 
+    private String composeErrorMessage( final EntityHeader header, final Exception root ) {
+        String message = "Error when processing entity:\n";
+        if ( header instanceof ServiceHeader) {
+            message += header.getType() +", " + ((ServiceHeader)header).getDisplayName() + " (#"+header.getOid()+")\ndue to:\n";
+        } else {
+            message += header.getType() +", " + (header.getName()==null? "" : header.getName()) + " (#"+header.getOid()+")\ndue to:\n";
+        }
+        message += ExceptionUtils.getMessage(root);
+        return message;
+    }
+
     private Entity loadEntity( final EntityHeader header ) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Loading entity for header: {0}", header);
         try {
             Entity ent = entityCrud.find(header); // load the entity
             if (ent == null)
-                throw new MigrationApi.MigrationException("Error loading the entity for header "+ header.getType() +", " + header.getName() + "(#"+header.getOid()+")");
+                throw new MigrationApi.MigrationException("Error loading the entity for header "+ header.getType() +", " + (header.getName()==null? "" : header.getName()) + " (#"+header.getOid()+")");
             return ent;
         } catch (FindException e) {
             throw new MigrationApi.MigrationException("Error loading the entity for header: " + header, e);

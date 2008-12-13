@@ -199,8 +199,38 @@ public class PolicyMigration extends EmsPage  {
                     YuiDialog dialog = new YuiDialog("dialog", "Identified Dependencies", YuiDialog.Style.CLOSE, label, null);
                     dialogContainer.replace( dialog );
                     target.addComponent( dialogContainer );
-                } catch ( Exception e ) {
-                    logger.log( Level.WARNING, "Error processing selection.", e);
+                } catch ( FindException fe ) {
+                    logger.log( Level.WARNING, "Unexpected error when processing selection.", fe );
+                    String failureMessage = ExceptionUtils.getMessage(fe);
+                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                    dialogContainer.replace( resultDialog );
+                    target.addComponent( dialogContainer );
+                } catch ( GatewayException ge ) {
+                    String failureMessage = ExceptionUtils.getMessage(ge);
+                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                    dialogContainer.replace( resultDialog );
+                    target.addComponent( dialogContainer );
+                } catch ( MigrationApi.MigrationException mfe ) {
+                    String failureMessage = mfe.getMessage();
+                    YuiDialog resultDialog;
+                    if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
+                        resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                    } else {
+                        resultDialog = new YuiDialog("dialog", " Error Identifying Dependencies", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(failureMessage)), null, "600px");
+                    }
+                    dialogContainer.replace( resultDialog );
+                    target.addComponent( dialogContainer );
+                } catch ( SOAPFaultException e ) {
+                    String failureMessage;
+                    if ( GatewayContext.isNetworkException( e ) ) {
+                        failureMessage = "Could not connect to cluster.";
+                    } else {
+                        failureMessage = "Unexpected error from cluster.";                                
+                        logger.log( Level.WARNING, "Error processing selection.", e);
+                    }
+                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                    dialogContainer.replace( resultDialog );
+                    target.addComponent( dialogContainer );
                 }
             }
             @Override
@@ -249,7 +279,13 @@ public class PolicyMigration extends EmsPage  {
                                             YuiDialog resultDialog = new YuiDialog("dialog", "Migration Result", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(message)), null, "600px");
                                             dialogContainer.replace( resultDialog );
                                         } catch ( MigrationFailedException mfe ) {
-                                            YuiDialog resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), mfe.getMessage()), null);
+                                            String failureMessage = mfe.getMessage();
+                                            YuiDialog resultDialog;
+                                            if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
+                                                resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                                            } else {
+                                                resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(failureMessage)), null, "600px");
+                                            }
                                             dialogContainer.replace( resultDialog );
                                             target.addComponent( dialogContainer );
                                         }
@@ -268,8 +304,17 @@ public class PolicyMigration extends EmsPage  {
                         dialogContainer.replace( dialog );
                         target.addComponent( dialogContainer );
                     }
-                } catch ( Exception e ) {
-                    logger.log( Level.WARNING, "Error processing selection.", e);
+                } catch ( SOAPFaultException e ) {
+                    String failureMessage;
+                    if ( GatewayContext.isNetworkException( e ) ) {
+                        failureMessage = "Could not connect to cluster.";
+                    } else {
+                        failureMessage = "Unexpected error from cluster.";
+                        logger.log( Level.WARNING, "Error processing selection.", e);
+                    }
+                    YuiDialog resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                    dialogContainer.replace( resultDialog );
+                    target.addComponent( dialogContainer );
                 }
             }
             @Override
@@ -338,7 +383,8 @@ public class PolicyMigration extends EmsPage  {
     @SpringBean
     private GatewayContextFactory gatewayContextFactory;
 
-    private AbstractDefaultAjaxBehavior buildDependencyDisplayBehaviour( final WebMarkupContainer itemDependenciesContainer, final String jsVar ) {
+    private AbstractDefaultAjaxBehavior buildDependencyDisplayBehaviour( final WebMarkupContainer itemDependenciesContainer,
+                                                                         final String jsVar ) {
         return new AbstractDefaultAjaxBehavior(){
             @Override
             public void renderHead( final IHeaderResponse iHeaderResponse ) {
@@ -367,9 +413,18 @@ public class PolicyMigration extends EmsPage  {
                             itemIter.remove();
                         }
                     }
-                } catch (Exception e) {
-                    logger.log( Level.WARNING, "Error processing selection.", e);
+                } catch ( MigrationApi.MigrationException me ) {
+                    logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(me)+"'." );
+                } catch ( SOAPFaultException sfe ) {
+                    if ( !GatewayContext.isNetworkException(sfe) ) {
+                        logger.log( Level.WARNING, "Error processing selection.", sfe);
+                    }
+                } catch ( GatewayException ge ) {
+                    logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
+                } catch ( FindException fe ) {
+                    logger.log( Level.WARNING, "Error processing selection.", fe );
                 }
+                
                 showDependencies( itemDependenciesContainer, options );
                 ajaxRequestTarget.addComponent( itemDependenciesContainer );
             }
@@ -521,13 +576,15 @@ public class PolicyMigration extends EmsPage  {
                 }
             }
         } catch ( GatewayException ge ) {
-            logger.log( Level.WARNING, "Error while gettings dependency options.", ge );
+            logger.log( Level.INFO, "Error while gettings dependency options '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error while gettings dependency options.", fe );
         } catch ( MigrationApi.MigrationException me ) {
-            logger.log( Level.WARNING, "Error while gettings dependency options.", me );
+            logger.log( Level.INFO, "Error while gettings dependency options '"+ExceptionUtils.getMessage(me)+"'.", ExceptionUtils.getDebugException(me) );
         } catch ( SOAPFaultException sfe ) {
-            logger.log( Level.WARNING, "Error while gettings dependency options.", sfe );
+            if ( !GatewayContext.isNetworkException( sfe ) ) {
+                logger.log( Level.WARNING, "Error while gettings dependency options.", sfe );
+            }
         }
 
         return deps;
@@ -589,14 +646,11 @@ public class PolicyMigration extends EmsPage  {
             logger.log( Level.WARNING, "Error while checking dependencies for migration.", fe );
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(fe)+"'.");
         } catch ( GatewayException e ) {
-            logger.log( Level.WARNING, "Error while checking dependencies for migration.", e );
+            logger.log( Level.INFO, "Error while checking dependencies for migration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(e)+"'.");
         } catch ( MigrationApi.MigrationException e ) {
-            logger.log( Level.WARNING, "Error while checking dependencies for migration.", e );
+            logger.log( Level.INFO, "Error while checking dependencies for migration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
             throw new MigrationFailedException(summarizeMigrationException(e));
-        } catch ( SOAPFaultException sfe ) {
-            logger.log( Level.WARNING, "Error while checking dependencies for migration.", sfe );
-            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(sfe)+"'.");
         }
 
         return summary;
@@ -662,7 +716,7 @@ public class PolicyMigration extends EmsPage  {
                 }
             }
         } catch ( GatewayException ge ) {
-            logger.log( Level.WARNING, "Error while performing migration.", ge );
+            logger.log( Level.INFO, "Error while performing migration '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(ge)+"'.");
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error while performing migration.", fe );
@@ -671,14 +725,11 @@ public class PolicyMigration extends EmsPage  {
             logger.log( Level.WARNING, "Error while performing migration.", se );
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(se)+"'.");
         } catch ( MigrationApi.MigrationException me ) {
-            logger.log( Level.WARNING, "Error while performing migration.", me );
+            logger.log( Level.INFO, "Error while performing migration '"+ExceptionUtils.getMessage(me)+"'.", ExceptionUtils.getDebugException(me) );
             throw new MigrationFailedException(summarizeMigrationException(me));
         } catch (GatewayApi.GatewayException ge) {
-            logger.log( Level.WARNING, "Error while performing migration.", ge );
+            logger.log( Level.INFO, "Error while performing migration '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(ge)+"'.");
-        } catch (SOAPFaultException sfe) {
-            logger.log( Level.WARNING, "Error while performing migration.", sfe );
-            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(sfe)+"'.");
         }
 
         return summary;
