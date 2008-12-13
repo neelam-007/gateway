@@ -268,6 +268,7 @@ public class PolicyMigration extends EmsPage  {
                             final boolean enableServices = Boolean.valueOf(enableNewServices);
                             final boolean overwrite = Boolean.valueOf(overwriteDependencies);
 
+                            loadMappings( mappingModel, dir.clusterId, targetClusterId, buildDependencyItems(dir) );
                             TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel, true )));
                             YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, textPanel, new YuiDialog.OkCancelCallback(){
                                 @Override
@@ -311,8 +312,14 @@ public class PolicyMigration extends EmsPage  {
                             target.addComponent( dialogContainer );
                         }
                     } catch ( MigrationFailedException mfe ) {
-                        YuiDialog dialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), mfe.getMessage()), null);
-                        dialogContainer.replace( dialog );
+                        String failureMessage = mfe.getMessage();
+                        YuiDialog resultDialog;
+                        if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
+                            resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                        } else {
+                            resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(failureMessage)), null, "600px");
+                        }
+                        dialogContainer.replace( resultDialog );
                         target.addComponent( dialogContainer );
                     }
                 } catch ( SOAPFaultException e ) {
@@ -599,6 +606,16 @@ public class PolicyMigration extends EmsPage  {
         }
 
         return deps;
+    }
+
+    private Collection<DependencyItem> buildDependencyItems( final DependencyItemsRequest dependencyItemsRequest ) {
+        Collection<DependencyItem> items = new ArrayList<DependencyItem>();
+
+        for ( EntityHeader entityHeader : dependencyItemsRequest.asEntityHeaders() ) {
+            items.add( new DependencyItem( entityHeader, true ) );
+        }
+
+        return items;
     }
 
     private void loadMappings( final EntityMappingModel mappingModel,
