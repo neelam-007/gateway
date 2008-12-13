@@ -49,6 +49,7 @@
             CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Failed to download list of saved settings: ',
             CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Failed to download list of message context keys for the selected SSG Clusers: ',
             SSG_CLUSTER_NOT_APPLICABLE : 'None of the selected entities belong to this SSG Cluster. Please delete or reselect.',
+            TOO_MANY_UNIQUE_MESSAGE_CONTEXT_KEYS: 'Cannot use more than 5 unique message context keys per SSG cluster',
             STANDARD_MESSAGE_CONTEXT_MAPPING : 'Standard Mapping',
             CUSTOM_MESSAGE_CONTEXT_MAPPING : 'Custom Mapping',
             RELATIVE_TIME_PERIOD_HINT : 'Must be positive integer',
@@ -208,19 +209,60 @@
 
         /**
          * Verifies if a grouping is valid and raise or clear any warning UI.
-         * It is valid if the SSG Cluster has entities selected.
          * @return {boolean} true if valid
          */
         function validateGrouping(tr) {
-            var ssgClusterDropDown = tr._ssgClusterDropDown;
-            var valid = false;
-            for (var j = 0; j < ssgClustersWithSelectedEntities.length; ++j) {
-                if (ssgClustersWithSelectedEntities[j].id == ssgClusterDropDown.value) {
-                    valid = true;
-                    break;
+            // Tests if SSG Cluster is still amongst the selected entities.
+            var ssgClusterId = tr._ssgClusterDropDown.value;
+            var valid = l7.Util.findArrayElementsByProperty(ssgClustersWithSelectedEntities, 'id', ssgClusterId).length != 0;
+            tr._ssgClusterWarningImg.title = valid ? null : localizedStrings.SSG_CLUSTER_NOT_APPLICABLE;
+            tr._ssgClusterWarningImg.style.display = valid ? 'none' : '';
+            return valid;
+        }
+
+        /**
+         * Verifies if number of unique message context keys specified per cluster is at most 5.
+         * @return {boolean} true if valid
+         */
+        function validateGroupingMessageContextKey() {
+            var valid = true;
+            var trs = groupingTableBody.rows;
+
+            // First, sort the rows by SSG Cluster and message context key
+            // using a map whose key is SSG Cluster ID and map value is a child map.
+            // The child map key is message context key and map value is an array of TR elements.
+            var map = {};
+            for (var i = 0; i < trs.length; ++i) {
+                var tr = trs[i];
+                var ssgClusterId = tr._ssgClusterDropDown.value;
+                var messageContextKey = tr._messageContextDropDown.value;
+                if (!map[ssgClusterId]) {
+                    map[ssgClusterId] = {};
+                }
+                if (!map[ssgClusterId][messageContextKey]) {
+                    map[ssgClusterId][messageContextKey] = [];
+                }
+                map[ssgClusterId][messageContextKey].push(tr);
+            }
+
+            // Then count and warn.
+            for (ssgClusterId in map) {
+                var numUniqueKeys = 0;
+                for (messageContextKey in map[ssgClusterId]) {
+                    ++ numUniqueKeys;
+                }
+                var validMsgCtxKey = numUniqueKeys <= 5;
+                for (messageContextKey in map[ssgClusterId]) {
+                    var trsWithKey = map[ssgClusterId][messageContextKey];
+                    for (i = 0; i < trsWithKey.length; ++i) {
+                        tr = trsWithKey[i];
+                        tr._msgCtxKeyWarningImg.title = validMsgCtxKey ? null : localizedStrings.TOO_MANY_UNIQUE_MESSAGE_CONTEXT_KEYS;
+                        tr._msgCtxKeyWarningImg.style.display = validMsgCtxKey ? 'none' : '';
+                    }
+                    valid = valid && validMsgCtxKey;
                 }
             }
-            tr._warningImg.style.display = valid ? 'none' : '';
+
             return valid;
         }
 
@@ -233,8 +275,12 @@
             var trs = groupingTableBody.rows;
             for (var i = 0; i < trs.length; ++i) {
                 var tr = trs[i];
-                valid = valid && validateGrouping(tr);
+                if (!validateGrouping(tr)) {    // Do not optimize using short-ciruit!
+                    valid = false;
+                }
             }
+
+            validateGroupingMessageContextKey();
 
             if (reportTypeDropDown.value == ReportType.USAGE && trs.length == 0) {
                 groupingHint.innerHTML = '(' + localizedStrings.NUM_GROUPING_HINT + ')';
@@ -841,17 +887,21 @@
             td = tr.insertCell(-1);
             td.appendChild(ssgClusterDropDown);
             // Warning icon; appears when the SSG Cluster selected in the drop down list
-            // is not long part of selected entities.
-            var warningImg = document.createElement('img');
-            warningImg.src = '../images/warning.png';
-            warningImg.className = 'middle';
-            warningImg.title = localizedStrings.SSG_CLUSTER_NOT_APPLICABLE;
-            warningImg.style.display = 'none';
-            td.appendChild(warningImg);
+            // is no long part of selected entities.
+            var ssgClusterWarningImg = document.createElement('img');
+            ssgClusterWarningImg.src = '../images/warning.png';
+            ssgClusterWarningImg.className = 'middle';
+            ssgClusterWarningImg.style.display = 'none';
+            td.appendChild(ssgClusterWarningImg);
 
             // Message context drop down list column.
             var messageContextDropDown = document.createElement('select');
             populateGroupingMessageContextDropDown(messageContextDropDown, ssgClusterDropDown.value);
+            YAHOO.util.Event.addListener(messageContextDropDown, 'change',
+                function(event) {
+                    validateGroupingMessageContextKey();
+                }
+            );
             td = tr.insertCell(-1);
             td.appendChild(messageContextDropDown);
             YAHOO.util.Event.addListener(ssgClusterDropDown, 'change',
@@ -859,10 +909,17 @@
                     var ssgClusterDropDown = tr._ssgClusterDropDown;
                     var messageContextDropDown = tr._messageContextDropDown;
                     validateGrouping(tr);
+                    validateGroupingMessageContextKey();
                     populateGroupingMessageContextDropDown(messageContextDropDown, ssgClusterDropDown.value);
                 },
                 tr
             );
+            // Warning icon; appears when the number of unique keys specified per SSG Cluster exceeds 5.
+            var msgCtxKeyWarningImg = document.createElement('img');
+            msgCtxKeyWarningImg.src = '../images/warning.png';
+            msgCtxKeyWarningImg.className = 'middle';
+            msgCtxKeyWarningImg.style.display = 'none';
+            td.appendChild(msgCtxKeyWarningImg);
 
             // Constraint value column.
             var constraintTextBox = document.createElement('input');
@@ -874,8 +931,9 @@
 
             // Stashes the HTML element into the TR element for easy reference.
             tr._ssgClusterDropDown = ssgClusterDropDown;
+            tr._ssgClusterWarningImg = ssgClusterWarningImg;
             tr._messageContextDropDown = messageContextDropDown;
-            tr._warningImg = warningImg;
+            tr._msgCtxKeyWarningImg = msgCtxKeyWarningImg;
             tr._constraintTextBox = constraintTextBox;
 
             onChangeGroupings();
