@@ -387,14 +387,15 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
                             // save the file
                             try {
+                                File newFile = new File(name);
                                 //if file already exists, we need to ask for confirmation to overwrite. (Bug 6026)
-                                if (chooser.getSelectedFile().exists()) {
-                                    int result = JOptionPane.showOptionDialog(chooser, "The file '" + chooser.getSelectedFile().getName() + "' already exists.  Overwrite?",
+                                if (newFile.exists()) {
+                                    int result = JOptionPane.showOptionDialog(chooser, "The file '" + newFile.getName() + "' already exists.  Overwrite?",
                                                         "Warning",JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
                                     if (result != JOptionPane.YES_OPTION)
                                         return;
                                 }
-                                FileUtils.save(new ByteArrayInputStream(bytes), new File(name));
+                                FileUtils.save(new ByteArrayInputStream(bytes), newFile);
                             } catch (IOException e) {
                                 logger.log(Level.WARNING, "error saving CSR", e);
                                 DialogDisplayer.showMessageDialog(generateCSRButton, "Error Saving CSR " + e.getMessage(),
@@ -513,15 +514,17 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                         if (name.indexOf('.') < 0)
                             name = name + ".p12";
 
+                        File newFile = new File(name);
+
                         //if file already exists, we need to ask for confirmation to overwrite.
-                        if (chooser.getSelectedFile().exists()) {
-                            int result = JOptionPane.showOptionDialog(chooser, "The file '" + chooser.getSelectedFile().getName() + "' already exists.  Overwrite?",
+                        if (newFile.exists()) {
+                            int result = JOptionPane.showOptionDialog(chooser, "The file '" + newFile.getName() + "' already exists.  Overwrite?",
                                     "Warning",JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
                             if (result != JOptionPane.YES_OPTION) {
                                 return;
                             }
                         }
-                        FileUtils.save(new ByteArrayInputStream(p12bytes), new File(name));
+                        FileUtils.save(new ByteArrayInputStream(p12bytes), newFile);
                     } catch (IOException e) {
                         showErrorMessage("Unable to Save", "Unable to save PKCS#12 file: " + ExceptionUtils.getMessage(e), e);
                     }

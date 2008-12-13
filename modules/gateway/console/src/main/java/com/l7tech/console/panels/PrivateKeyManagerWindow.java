@@ -297,6 +297,8 @@ public class PrivateKeyManagerWindow extends JDialog {
         //if user did not append .pem extension, we'll append to it
         if (!file.getName().endsWith(".pem")){
             file = new File(file.toString() + ".pem");
+        } else {
+            file = new File(file.getParent(), file.getName());
         }
 
         try {
