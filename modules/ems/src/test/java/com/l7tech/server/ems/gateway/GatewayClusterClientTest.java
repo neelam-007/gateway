@@ -4,12 +4,13 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.test.BugNumber;
 import static org.junit.Assert.*;
 import org.junit.*;
 
 import javax.xml.ws.ProtocolException;
-import java.util.*;
 import java.net.ConnectException;
+import java.util.*;
 
 /**
  *
@@ -203,5 +204,15 @@ public class GatewayClusterClientTest {
         }
 
         assertEquals("Failover not attempted for application-level exception", 0, failoverAttemptsDetected);
+    }
+    
+    @Test
+    @BugNumber(6312)
+    public void testBug6312ApiReturningNull() throws Exception {
+        GatewayClusterClientImpl cc = new GatewayClusterClientImpl(fooCluster, nodeContexts);
+        entityInfoToReturn = null;
+        Collection<GatewayApi.EntityInfo> got = cc.getEntityInfo(Arrays.asList(EntityType.FOLDER));
+        assertNotNull("getEntityInfo absorbs nulls returned by WS client", got);
+        assertTrue("getEntityInfo translates nulls back into an empty collection", got.isEmpty());
     }
 }

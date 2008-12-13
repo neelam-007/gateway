@@ -14,10 +14,7 @@ import com.l7tech.util.SyspropUtil;
 import javax.xml.ws.ProtocolException;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.lang.ref.SoftReference;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Implementation of {@link GatewayClusterClient}.
@@ -79,6 +76,9 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
             }
         });
 
+        if (allInfos == null)
+            return Collections.emptyList();
+
         final Set<EntityType> types = entityTypes instanceof Set ? (Set<EntityType>)entityTypes : EnumSet.copyOf(entityTypes);
 
         return Functions.grep(allInfos, new Functions.Unary<Boolean, GatewayApi.EntityInfo>() {
@@ -118,7 +118,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
          * Implementors could, for example, call getApi().getGatewayInfo() using the specified context.
          *
          * @param context a GatewayContext representing a particular remote call target.  Required.
-         * @return the result of doing something with context.
+         * @return the result of doing something with context.  May be null.
          * @throws GatewayApi.GatewayException if a GatewayApi method fails with this exception
          * @throws SOAPFaultException if there is a problem at the SOAP layer.
          */
@@ -135,7 +135,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
      * @param failover  a FailoverStrategy that will decide the order in which to try the GatewayContext instances.  Required.
      * @param numAttempts the number of times to attempt to invoke the contextUser before giving up.  Required.
      * @param contextUser a snippet of code that, when given a GatewayContext, will invoke one or more remote methods using it and return a result of type R (or throw an exception).  Required.
-     * @return the result returned from contextUser.
+     * @return the result returned from contextUser.  May be null if the contextUser can return null.
      * @throws GatewayException if any invocation failed with an exception other than a network related exception;
      *                          if numAttempts invocation attempts failed with a network related exception; or,
      *                          if the failover strategy signalled to give up by returning null from {@link FailoverStrategy#selectService()}.
@@ -178,7 +178,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
      *
      * @param cached    a cache that may hold some data of type R.  Required (although the cache may be empty).
      * @param contextUser  remote call for refilling cache.  See {@link #callWithFailover} for more information.
-     * @return cached data, or the result of invoking {@link #callWithFailover}.
+     * @return cached data, or the result of invoking {@link #callWithFailover}.  May be null if the contextUser can return null.
      * @throws GatewayException @see #callWithFailover
      */
     private <R> R cacheGet(Cached<R> cached, GatewayContextUser<R> contextUser) throws GatewayException {
