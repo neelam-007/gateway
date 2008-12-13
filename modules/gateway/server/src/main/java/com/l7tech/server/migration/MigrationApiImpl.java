@@ -65,12 +65,12 @@ public class MigrationApiImpl implements MigrationApi {
     public MigrationBundle exportBundle(Collection<EntityHeader> headers) throws MigrationException {
         try {
             return manager.exportBundle(headers);
+        } catch ( MigrationException e ) {
+            logger.log( Level.WARNING, "Error in Migration API '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
+            throw e;
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Unexpected error in Migration API.", e );
-            if (e instanceof MigrationException)
-                throw (MigrationException)e;
-            else
-                throw ExceptionUtils.wrap(e);
+            throw ExceptionUtils.wrap(e);
         }
     }
 
@@ -91,12 +91,12 @@ public class MigrationApiImpl implements MigrationApi {
         try {
             auditContext.setSystem(true);
             return manager.importBundle(bundle, targetFolder, flattenFolders, overwriteExisting, enableServices, dryRun);
+        } catch ( MigrationException e ) {
+            logger.log( Level.WARNING, "Error in Migration API '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
+            throw e;
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Unexpected error in Migration API.", e );
-            if (e instanceof MigrationException) 
-                throw (MigrationException)e;
-            else
-                throw ExceptionUtils.wrap(e);
+            throw ExceptionUtils.wrap(e);
         } finally {
             auditContext.setSystem(oldSystem);
         }

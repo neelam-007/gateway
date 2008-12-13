@@ -258,9 +258,9 @@ public class PolicyMigration extends EmsPage  {
                     dir.fromJSON(jsonMap);
 
                     try {
-                        String depenencyValidationMessage = validateDependencies( dir.clusterId, targetClusterId, dir, mappingModel );
-                        if ( depenencyValidationMessage != null && !depenencyValidationMessage.isEmpty() ) {
-                            TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(depenencyValidationMessage));
+                        String dependencyValidationMessage = validateDependencies( dir.clusterId, targetClusterId, dir, mappingModel );
+                        if ( dependencyValidationMessage != null && !dependencyValidationMessage.isEmpty() ) {
+                            TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(dependencyValidationMessage));
                             YuiDialog dialog = new YuiDialog("dialog", "Dependency Mapping Required", YuiDialog.Style.CLOSE, textPanel, null, "600px");
                             dialogContainer.replace( dialog );
                             target.addComponent( dialogContainer );
@@ -286,6 +286,17 @@ public class PolicyMigration extends EmsPage  {
                                             } else {
                                                 resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(failureMessage)), null, "600px");
                                             }
+                                            dialogContainer.replace( resultDialog );
+                                            target.addComponent( dialogContainer );
+                                        } catch ( SOAPFaultException e ) {
+                                            String failureMessage;
+                                            if ( GatewayContext.isNetworkException( e ) ) {
+                                                failureMessage = "Could not connect to cluster.";
+                                            } else {
+                                                failureMessage = "Unexpected error from cluster.";
+                                                logger.log( Level.WARNING, "Error processing selection.", e);
+                                            }
+                                            YuiDialog resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
                                             dialogContainer.replace( resultDialog );
                                             target.addComponent( dialogContainer );
                                         }

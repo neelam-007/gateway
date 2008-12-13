@@ -83,9 +83,9 @@ public class MigrationManagerImpl implements MigrationManager {
             try {
                 findDependenciesRecursive(result, header);
             } catch (PropertyResolverException e) {
-                throw new MigrationApi.MigrationException(composeErrorMessage(header, e));
+                throw new MigrationApi.MigrationException(composeErrorMessage("Error when processing entity", header, e));
             } catch (MigrationApi.MigrationException e) {
-                throw new MigrationApi.MigrationException(composeErrorMessage(header, e));
+                throw new MigrationApi.MigrationException(composeErrorMessage("Error when processing entity", header, e));
             }
         }
 
@@ -150,15 +150,21 @@ public class MigrationManagerImpl implements MigrationManager {
             Set<EntityHeader> uploaded = new HashSet<EntityHeader>();
             // add to result
             for(EntityHeader header : bundle.getMetadata().getHeaders()) {
-                if (! uploaded.contains(header)) {
-                    uploadEntityRecursive(header, entities, bundle.getMetadata(), uploaded, dryRun);
-                }
-                EntityOperation eo = entities.get(header);
-                if (eo.operation != IGNORE) {
-                    result.add(new MigratedItem(header, EntityHeaderUtils.fromEntity(eo.entity), dryRun ? eo.operation.toString() : eo.operation.toString() + "D"));
+                try {
+                    if (! uploaded.contains(header)) {
+                        uploadEntityRecursive(header, entities, bundle.getMetadata(), uploaded, dryRun);
+                    }
+                    EntityOperation eo = entities.get(header);
+                    if (eo.operation != IGNORE) {
+                        result.add(new MigratedItem(header, EntityHeaderUtils.fromEntity(eo.entity), dryRun ? eo.operation.toString() : eo.operation.toString() + "D"));
+                    }
+                } catch ( ObjectModelException ome ) {
+                    throw new MigrationApi.MigrationException(composeErrorMessage("Import failed when processing entity", header, ome));
                 }
             }
             return result;
+        } catch (MigrationApi.MigrationException e) {
+            throw e;
         } catch (Exception e) {
             throw new MigrationApi.MigrationException("Import failed.", e);
         }
@@ -473,8 +479,8 @@ public class MigrationManagerImpl implements MigrationManager {
         return resolvedHeaders;
     }
 
-    private String composeErrorMessage( final EntityHeader header, final Exception root ) {
-        String message = "Error when processing entity:\n";
+    private String composeErrorMessage( final String summary, final EntityHeader header, final Exception root ) {
+        String message = summary + ":\n";
         if ( header instanceof ServiceHeader) {
             message += header.getType() +", " + ((ServiceHeader)header).getDisplayName() + " (#"+header.getOid()+")\ndue to:\n";
         } else {
