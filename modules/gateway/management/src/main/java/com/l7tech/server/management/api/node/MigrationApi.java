@@ -11,7 +11,6 @@ import javax.jws.WebService;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlElement;
 import java.util.*;
 
 /**
@@ -24,6 +23,9 @@ public interface MigrationApi {
 
     @WebMethod(operationName="ListEntities")
     Collection<EntityHeader> listEntities(  @WebParam(name="EntityClass") Class<? extends Entity> clazz ) throws MigrationException;
+
+    @WebMethod(operationName="CheckHeaders")
+    Collection<EntityHeader> checkHeaders( @WebParam(name="EntityHeaders") Collection<EntityHeader> headers);
 
     @WebMethod(operationName="FindDependencies")
     MigrationMetadata findDependencies( @WebParam(name="EntityHeaders") Collection<EntityHeader> headers ) throws MigrationException;

@@ -58,6 +58,19 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
+    public Collection<EntityHeader> checkHeaders(Collection<EntityHeader> headers) {
+        Collection<EntityHeader> result = new HashSet<EntityHeader>();
+        for (EntityHeader header : headers) {
+            try {
+                loadEntity(header);
+                result.add(header);
+            } catch (MigrationApi.MigrationException e) {
+                // entity not found, header won't be returned
+            }
+        }
+        return result;
+    }
+
     @Override
     public MigrationMetadata findDependencies(Collection<EntityHeader> headers ) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Finding dependencies for headers: {0}", headers);

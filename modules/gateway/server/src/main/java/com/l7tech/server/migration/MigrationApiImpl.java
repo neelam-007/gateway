@@ -10,6 +10,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.util.ExceptionUtils;
 
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
 import java.util.Collection;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -36,6 +38,16 @@ public class MigrationApiImpl implements MigrationApi {
         } catch ( RuntimeException re ) {
             logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
             throw re;
+        }
+    }
+
+    @WebMethod(operationName = "CheckHeaders")
+    public Collection<EntityHeader> checkHeaders(@WebParam(name = "EntityHeaders")Collection<EntityHeader> headers) {
+        try {
+            return manager.checkHeaders(headers);
+        } catch ( Exception e ) {
+            logger.log( Level.WARNING, "Unexpected error in Migration API.", e );
+            throw ExceptionUtils.wrap(e);
         }
     }
 

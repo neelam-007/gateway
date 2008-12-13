@@ -596,6 +596,7 @@ public class PolicyMigration extends EmsPage  {
                                final Collection<DependencyItem> dependencyItems ) {
         if ( !dependencyItems.isEmpty() ) {
             try {
+                // load mappings saved in EM db
                 for ( DependencyItem item : dependencyItems ) {
                     DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
                     Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
@@ -606,8 +607,36 @@ public class PolicyMigration extends EmsPage  {
                         }
                     }
                 }
+
+
             } catch ( FindException fe ) {
                 logger.log( Level.WARNING, "Error loading dependency mappings.", fe );
+            }
+
+            try {
+                // discard the dependencies that no longer exist on the target cluster
+                SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
+                GatewayContext targetContext = gatewayContextFactory.getGatewayContext(getUser(), targetCluster.getSslHostName(), targetCluster.getAdminPort());
+                MigrationApi targetMigrationApi = targetContext.getMigrationApi();
+
+                Collection<EntityHeader> headersToCheck = new HashSet<EntityHeader>();
+                for (DependencyItem dependencyItem : mappingModel.dependencyMap.values()) {
+                    headersToCheck.add(dependencyItem.asEntityHeader());
+                }
+                Collection<EntityHeader> validatedHeaders = targetMigrationApi.checkHeaders(headersToCheck);
+                if (validatedHeaders != null && validatedHeaders.size() > 0) {
+                    for(Pair<DependencyKey,String> mapKey : mappingModel.dependencyMap.keySet()) {
+                        DependencyItem dependencyItem = mappingModel.dependencyMap.get(mapKey);
+                        if (dependencyItem == null || ! validatedHeaders.contains(dependencyItem.asEntityHeader())) {
+                            mappingModel.dependencyMap.remove(mapKey);
+                        }
+                    }
+                } else {
+                    mappingModel.dependencyMap.clear();
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Error validating mappings against the target cluster.", e);
+                mappingModel.dependencyMap.clear();
             }
         }
     }
@@ -765,7 +794,7 @@ public class PolicyMigration extends EmsPage  {
             DependencyKey sourceKey = new DependencyKey( request.clusterId, item.asEntityHeader() );
             Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
             if ( !item.optional && mappings.dependencyMap.get(mapKey)==null ) {
-                count++;    
+                count++;
             }
         }
         builder.append(count);
