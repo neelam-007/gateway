@@ -627,7 +627,7 @@ public class PolicyMigration extends EmsPage  {
                     for ( DependencyItem item : items ) {
                         DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
                         Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-                        if ( !item.optional && !mappingModel.dependencyMap.containsKey(mapKey) ) {
+                        if ( !item.optional && mappingModel.dependencyMap.get(mapKey) == null ) {
                             EntityHeader ih = item.asEntityHeader();
                             builder.append(ih.getType().getName()).append(", ").append(ih.getName())
                                 .append("(#").append(ih.getStrId()).append(")\n");
@@ -711,6 +711,16 @@ public class PolicyMigration extends EmsPage  {
                     Collection<MigratedItem> migratedItems = targetMigrationApi.importBundle( export, targetFolderHeader, false, overwriteDependencies, enableNewServices, dryRun);
                     summary = summarize(export, migratedItems, summarize(folders, targetFolderId), enableNewServices, overwriteDependencies, dryRun);
                     if ( !dryRun ) {
+                        if ( migratedItems != null ) {
+                            for ( MigratedItem item : migratedItems ) {
+                                EntityHeader source = item.getSourceHeader();
+                                EntityHeader target = item.getTargetHeader();
+
+                                if ( source != null && target != null ) {
+                                    migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), source, targetCluster.getGuid(), target );
+                                }
+                            }
+                        }
                         migrationRecordManager.create( null, getUser(), sourceCluster, targetCluster, summary, new byte[]{} ); // TODO save migrated bundle
                     }
                 }
@@ -754,7 +764,7 @@ public class PolicyMigration extends EmsPage  {
         for ( DependencyItem item : dependencies ) {
             DependencyKey sourceKey = new DependencyKey( request.clusterId, item.asEntityHeader() );
             Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-            if ( !item.optional && mappings.dependencyMap.get(mapKey)!=null ) {
+            if ( !item.optional && mappings.dependencyMap.get(mapKey)==null ) {
                 count++;    
             }
         }
