@@ -5,6 +5,7 @@ import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.migration.MigrationRecord;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
@@ -30,6 +31,7 @@ import org.apache.wicket.RequestCycle;
 
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.io.Serializable;
 
 /**
@@ -113,9 +115,11 @@ public class PolicyMapping extends EmsPage  {
      * Initialize the migration-table container, which contains a migration table and a migration-deletion form
      */
     private void initMigrationTableContainer() {
-        // Create a form to delete a migration
-        Form deleteMigrationForm = new Form("deleteMigrationForm");
+        // Create a form for selected migration
+        Form migrationForm = new Form("deleteMigrationForm");
         HiddenField hiddenFieldForMigration = new HiddenField("migrationId", new Model(""));
+
+        // Add delete action
         YuiAjaxButton deleteMigrationButton = new YuiAjaxButton("deleteMigrationButton") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
@@ -138,7 +142,7 @@ public class PolicyMapping extends EmsPage  {
                                 target.addComponent(migrationTableContainer);
                                 target.addComponent(migrationSummaryContainer);
                             } catch (Exception e) {
-                                logger.warning("Cannot delete the migration (OID = " + migrationId + ")");
+                                logger.warning("Cannot delete the migration (OID = " + migrationId + "), '"+ ExceptionUtils.getMessage(e)+"'");
                             }
                         }
                         dynamicDialogHolder.replace(new EmptyPanel("dynamic.holder.content"));
@@ -150,11 +154,59 @@ public class PolicyMapping extends EmsPage  {
                 ajaxRequestTarget.addComponent(dynamicDialogHolder);
             }
         };
-        deleteMigrationForm.add(hiddenFieldForMigration.setOutputMarkupId(true));
-        deleteMigrationForm.add(deleteMigrationButton.setEnabled(false));
+        migrationForm.add(hiddenFieldForMigration.setOutputMarkupId(true));
+        migrationForm.add(deleteMigrationButton.setEnabled(false));
+
+        YuiAjaxButton renameMigrationButton = new YuiAjaxButton("renameMigrationButton") {
+            @Override
+            protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
+                final String migrationId = (String) form.get("migrationId").getModelObject();
+
+                MigrationRecord record = null;
+                try {
+                    record = migrationManager.findByPrimaryKey(Long.parseLong(migrationId));
+                } catch ( FindException fe ) {
+                    logger.log( Level.WARNING, "Error loading migration record.", fe );
+                } catch ( NumberFormatException nfe ) {
+                    logger.log( Level.INFO, "Ignoring invalid migration id '"+migrationId+"'." );    
+                }
+
+                if ( record != null ) {
+                    final MigrationRecord editRecord = record;
+                    MigrationRecordEditPanel editPanel = new MigrationRecordEditPanel( YuiDialog.getContentId(), record );
+                    YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Migration Properties", YuiDialog.Style.OK_CANCEL, editPanel, new YuiDialog.OkCancelCallback() {
+                        @Override
+                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
+                            if ( button == YuiDialog.Button.OK ) {
+                                try {
+                                    logger.info("Renaming the migration (OID = " + migrationId + ")");
+
+                                    if ( editRecord.getName() == null ) editRecord.setName("");
+                                    migrationManager.update( editRecord );
+                                    selectedMigrationModel.setMigrationRecord( editRecord );                            
+
+                                    target.addComponent(migrationTableContainer);
+                                    target.addComponent(migrationSummaryContainer);
+                                } catch (Exception e) {
+                                    logger.warning("Cannot update the migration (OID = " + migrationId + "), '"+ ExceptionUtils.getMessage(e)+"'.");
+                                }
+                            }
+                            dynamicDialogHolder.replace(new EmptyPanel("dynamic.holder.content"));
+                            target.addComponent(dynamicDialogHolder);
+                        }
+                    });
+
+                    dynamicDialogHolder.replace(dialog);
+                    ajaxRequestTarget.addComponent(dynamicDialogHolder);
+                }
+            }
+        };
+        migrationForm.add(hiddenFieldForMigration.setOutputMarkupId(true));
+        migrationForm.add(deleteMigrationButton);
+        migrationForm.add(renameMigrationButton);
 
         // Create a migration table
-        Panel migrationTable = buildMigrationTablePanel(hiddenFieldForMigration, deleteMigrationButton);
+        Panel migrationTable = buildMigrationTablePanel(hiddenFieldForMigration, new Button[]{deleteMigrationButton, renameMigrationButton});
 
         // Add the above two components into the migrationTableContainer
         if (migrationTableContainer == null) {
@@ -163,7 +215,7 @@ public class PolicyMapping extends EmsPage  {
             migrationTableContainer.removeAll();
         }
         migrationTableContainer.add(migrationTable);
-        migrationTableContainer.add(deleteMigrationForm);
+        migrationTableContainer.add(migrationForm);
         migrationTableContainer.setOutputMarkupId(true);
     }
 
@@ -171,10 +223,10 @@ public class PolicyMapping extends EmsPage  {
      * Build a migration table based on given the start date and the end date.
      *
      * @param hidden: the hidden field to store the selected migration id.
-     * @param button: the button needed to be updated after the migration is selected.
+     * @param selectionComponents: the buttons needed to be updated after the migration is selected.
      * @return a panel that contains a migration table.
      */
-    private Panel buildMigrationTablePanel( final HiddenField hidden, final Button button ) {
+    private Panel buildMigrationTablePanel( final HiddenField hidden, final Button[] selectionComponents ) {
         List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
         columns.add(new PropertyColumn(new Model("id"), "id"));
         columns.add(new PropertyColumn(new StringResourceModel("migration.column.name", this, null), "NAME", "name"));
@@ -185,11 +237,9 @@ public class PolicyMapping extends EmsPage  {
         Date start = startOfDay((Date)dateStartModel.getObject());
         Date end = new Date(startOfDay((Date)dateEndModel.getObject()).getTime() + TimeUnit.DAYS.toMillis(1));
 
-        return new YuiDataTable("migrationTable", columns, "timeCreated", false, new MigrationDataProvider(start, end, "timeCreated", false), hidden, "id", true, new Button[]{button}) {
+        return new YuiDataTable("migrationTable", columns, "timeCreated", false, new MigrationDataProvider(start, end, "timeCreated", false), hidden, "id", true, selectionComponents) {
             @Override
             protected void onSelect(AjaxRequestTarget ajaxRequestTarget, String value) {
-                boolean downloadButtonEnabled;
-
                 if (value != null && value.length() > 0) {
                     boolean visible = false;
                     try {
@@ -205,13 +255,7 @@ public class PolicyMapping extends EmsPage  {
 
                     migrationSummaryContainer.setVisible(visible);
                     ajaxRequestTarget.addComponent(migrationSummaryContainer);
-
-                    downloadButtonEnabled = true;
-                } else {
-                    downloadButtonEnabled = false;
                 }
-                button.setEnabled(downloadButtonEnabled);
-                ajaxRequestTarget.addComponent(button);
             }
         };
     }
