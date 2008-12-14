@@ -1,0 +1,265 @@
+<testSuiteReport name="Performance" xmlns="http://www.sun.com/japex/testSuiteReport">
+  <chartType>barchart</chartType>
+  <classPath>/home/rmak/Dev/rel4_6_5_rc3/UneasyRooster/lib/*.jar
+/home/rmak/Dev/rel4_6_5_rc3/UneasyRooster/lib/crypto/bc/*.jar
+/home/rmak/Dev/rel4_6_5_rc3/UneasyRooster/lib/tools/jdsl-1.0.jar
+/home/rmak/Dev/rel4_6_5_rc3/UneasyRooster/lib/tools/junit*.jar
+/home/rmak/Dev/rel4_6_5_rc3/UneasyRooster/build/classes
+/home/rmak/Dev/rel4_6_5_rc3/UneasyRooster/build/test-classes</classPath>
+  <configFile>japex-config.xml</configFile>
+  <dateTime>1 Dec 2008/16:57:59 PST</dateTime> <!-- Test ran on 2008-12-13 02:00 AM but back-dated to revision time. -->
+  <hostName>tyan64.l7tech.com</hostName>
+  <numberOfCpus>4</numberOfCpus>
+  <numberOfThreads>1</numberOfThreads>
+  <osArchitecture>amd64</osArchitecture>
+  <osName>Linux</osName>
+  <plotDrivers>false</plotDrivers>
+  <plotGroupSize>5</plotGroupSize>
+  <reportsDirectory>/home/rmak/Dev/rel4_6_5_rc3/UneasyRooster/build/tmp-testperf-20081213020040</reportsDirectory>
+  <resultAxis>normal</resultAxis>
+  <resultAxisX>normal</resultAxisX>
+  <resultUnit>tps</resultUnit>
+  <runTime>02:00</runTime>
+  <runsPerDriver>1</runsPerDriver>
+  <version>1.1.0</version>
+  <vmInfo>Sun Microsystems Inc. 1.6.0_03-b05</vmInfo>
+  <warmupTime>30</warmupTime>
+  <warmupsPerDriver>0</warmupsPerDriver>
+  <layer7.name xmlns="">4.6.5_final</layer7.name>
+  <layer7.notes xmlns="">4.6.5 final (tag rel4_6_5rc3)</layer7.notes>
+  <layer7.version xmlns="">v4.6.5</layer7.version>
+  <driver name="JUnitDriver">
+    <driverClass>com.l7tech.test.performance.JUnitDriver</driverClass>
+    <resultAritMean>2497.736</resultAritMean>
+    <resultGeomMean>1988.771</resultGeomMean>
+    <resultHarmMean>1291.434</resultHarmMean>
+    <description xmlns="">Layer 7 Japex Driver</description>
+    <layer7.runInInitializeDriver xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest.setUpClass</layer7.runInInitializeDriver>
+    <layer7.runInTerminateDriver xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest.tearDownClass</layer7.runInTerminateDriver>
+    <testCase name="PolicyProcessingPerformanceTest.testSQLAttack">
+      <resultIterations>285917.000</resultIterations>
+      <resultTime>119.841</resultTime>
+      <resultValue>2385.810</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testSQLAttack</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testRequestSizeLimit">
+      <resultIterations>487787.000</resultIterations>
+      <resultTime>119.838</resultTime>
+      <resultValue>4070.399</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testRequestSizeLimit</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testDocumentStructure">
+      <resultIterations>362057.000</resultIterations>
+      <resultTime>119.816</resultTime>
+      <resultValue>3021.781</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testDocumentStructure</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testFaultLevel">
+      <resultIterations>562157.000</resultIterations>
+      <resultTime>119.836</resultTime>
+      <resultValue>4691.058</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testFaultLevel</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testXPathCreds">
+      <resultIterations>454944.000</resultIterations>
+      <resultTime>119.804</resultTime>
+      <resultValue>3797.393</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testXPathCreds</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testUsernameToken_1">
+      <resultIterations>407634.000</resultIterations>
+      <resultTime>119.816</resultTime>
+      <resultValue>3402.176</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testUsernameToken_1</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testUsernameToken_2">
+      <resultIterations>412899.000</resultIterations>
+      <resultTime>119.766</resultTime>
+      <resultValue>3447.539</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testUsernameToken_2</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testHttpRoutingCookie">
+      <resultIterations>363687.000</resultIterations>
+      <resultTime>119.816</resultTime>
+      <resultValue>3035.367</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testHttpRoutingCookie</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testHttpRoutingCookieNone">
+      <resultIterations>387107.000</resultIterations>
+      <resultTime>119.817</resultTime>
+      <resultValue>3230.823</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testHttpRoutingCookieNone</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testHttpRoutingSticky">
+      <resultIterations>363013.000</resultIterations>
+      <resultTime>119.816</resultTime>
+      <resultValue>3029.759</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testHttpRoutingSticky</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testHttpWssHeaderLeave">
+      <resultIterations>226120.000</resultIterations>
+      <resultTime>119.804</resultTime>
+      <resultValue>1887.409</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testHttpWssHeaderLeave</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testHttpWssHeaderRemove">
+      <resultIterations>251694.000</resultIterations>
+      <resultTime>119.816</resultTime>
+      <resultValue>2100.668</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testHttpWssHeaderRemove</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testHttpWssHeaderPromote">
+      <resultIterations>225562.000</resultIterations>
+      <resultTime>119.814</resultTime>
+      <resultValue>1882.594</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testHttpWssHeaderPromote</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testSchemaValidationRequest">
+      <resultIterations>193395.000</resultIterations>
+      <resultTime>119.799</resultTime>
+      <resultValue>1614.334</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testSchemaValidationRequest</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testSchemaValidationResponse">
+      <resultIterations>135259.000</resultIterations>
+      <resultTime>119.788</resultTime>
+      <resultValue>1129.155</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testSchemaValidationResponse</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testEmptyPolicy">
+      <resultIterations>567786.000</resultIterations>
+      <resultTime>119.800</resultTime>
+      <resultValue>4739.434</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testEmptyPolicy</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testEvaluateRequestXpath">
+      <resultIterations>354310.000</resultIterations>
+      <resultTime>119.800</resultTime>
+      <resultValue>2957.502</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testEvaluateRequestXpath</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testEvaluateResponseXpath">
+      <resultIterations>196832.000</resultIterations>
+      <resultTime>119.800</resultTime>
+      <resultValue>1643.005</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testEvaluateResponseXpath</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testPolicyLogic">
+      <resultIterations>337839.000</resultIterations>
+      <resultTime>119.796</resultTime>
+      <resultValue>2820.121</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testPolicyLogic</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testRegularExpression">
+      <resultIterations>361701.000</resultIterations>
+      <resultTime>119.798</resultTime>
+      <resultValue>3019.269</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testRegularExpression</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testWsdlOperation">
+      <resultIterations>355789.000</resultIterations>
+      <resultTime>119.801</resultTime>
+      <resultValue>2969.845</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testWsdlOperation</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testXslTransformationRequest">
+      <resultIterations>59195.000</resultIterations>
+      <resultTime>119.794</resultTime>
+      <resultValue>494.142</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testXslTransformationRequest</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testXslTransformationResponse">
+      <resultIterations>46148.000</resultIterations>
+      <resultTime>119.815</resultTime>
+      <resultValue>385.161</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testXslTransformationResponse</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testWssSignedRequest">
+      <resultIterations>54630.000</resultIterations>
+      <resultTime>119.814</resultTime>
+      <resultValue>455.957</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testWssSignedRequest</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+    <testCase name="PolicyProcessingPerformanceTest.testWssEncryptedRequest">
+      <resultIterations>27860.000</resultIterations>
+      <resultTime>119.727</resultTime>
+      <resultValue>232.697</resultValue>
+      <layer7.className xmlns="">com.l7tech.server.PolicyProcessingPerformanceTest</layer7.className>
+      <layer7.methodName xmlns="">testWssEncryptedRequest</layer7.methodName>
+      <layer7.runInFinish xmlns="">tearDown</layer7.runInFinish>
+      <layer7.runInPrepare xmlns="">setUp</layer7.runInPrepare>
+    </testCase>
+  </driver>
+</testSuiteReport>
