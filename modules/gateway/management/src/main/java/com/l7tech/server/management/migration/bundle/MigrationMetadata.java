@@ -232,15 +232,11 @@ public class MigrationMetadata {
             toRemove.clear();
             errors.clear();
             for(Pair<EntityHeaderRef,EntityHeader> pair : toApply) {
-                if (getMappingsForTarget(pair.getKey()).isEmpty()) {
+                try {
+                    mapName(pair.getKey(), pair.getValue());
                     toRemove.add(pair);
-                } else {
-                    try {
-                        mapName(pair.getKey(), pair.getValue());
-                        toRemove.add(pair);
-                    } catch (Exception e) {
-                        errors.add("Error applying mapping for " + pair.getKey() + " : " + ExceptionUtils.getMessage(e));
-                    }
+                } catch (Exception e) {
+                    errors.add("Error applying mapping for " + pair.getKey() + " : " + ExceptionUtils.getMessage(e));
                 }
             }
             toApply.removeAll(toRemove);
