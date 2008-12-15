@@ -41,8 +41,8 @@ public class MigrationApiImpl implements MigrationApi {
         }
     }
 
-    @WebMethod(operationName = "CheckHeaders")
-    public Collection<EntityHeader> checkHeaders(@WebParam(name = "EntityHeaders")Collection<EntityHeader> headers) {
+    @Override
+    public Collection<EntityHeader> checkHeaders(Collection<EntityHeader> headers) {
         try {
             return manager.checkHeaders(headers);
         } catch ( Exception e ) {

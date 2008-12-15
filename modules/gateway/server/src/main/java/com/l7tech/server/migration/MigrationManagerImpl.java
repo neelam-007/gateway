@@ -50,6 +50,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
     @Override
     public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationApi.MigrationException {
+        if ( clazz == null ) throw new MigrationApi.MigrationException("Missing required parameter.");
         logger.log(Level.FINEST, "Listing entities for class: {0}", clazz.getName());
         try {
             return entityCrud.findAll(clazz);
@@ -58,14 +59,18 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
+    @Override
     public Collection<EntityHeader> checkHeaders(Collection<EntityHeader> headers) {
         Collection<EntityHeader> result = new HashSet<EntityHeader>();
-        for (EntityHeader header : headers) {
-            try {
-                loadEntity(header);
-                result.add(header);
-            } catch (MigrationApi.MigrationException e) {
-                // entity not found, header won't be returned
+
+        if ( headers != null ) {
+            for (EntityHeader header : headers) {
+                try {
+                    loadEntity(header);
+                    result.add(header);
+                } catch (MigrationApi.MigrationException e) {
+                    // entity not found, header won't be returned
+                }
             }
         }
         return result;
@@ -74,18 +79,20 @@ public class MigrationManagerImpl implements MigrationManager {
     @Override
     public MigrationMetadata findDependencies(Collection<EntityHeader> headers ) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Finding dependencies for headers: {0}", headers);
-        Collection<EntityHeader> resolvedHeaders = resolveHeaders( headers );
-
         MigrationMetadata result = new MigrationMetadata();
-        result.setHeaders( resolvedHeaders );
 
-        for ( EntityHeader header : resolvedHeaders ) {
-            try {
-                findDependenciesRecursive(result, header);
-            } catch (PropertyResolverException e) {
-                throw new MigrationApi.MigrationException(composeErrorMessage("Error when processing entity", header, e));
-            } catch (MigrationApi.MigrationException e) {
-                throw new MigrationApi.MigrationException(composeErrorMessage("Error when processing entity", header, e));
+        if ( headers != null ) {
+            Collection<EntityHeader> resolvedHeaders = resolveHeaders( headers );
+            result.setHeaders( resolvedHeaders );
+
+            for ( EntityHeader header : resolvedHeaders ) {
+                try {
+                    findDependenciesRecursive(result, header);
+                } catch (PropertyResolverException e) {
+                    throw new MigrationApi.MigrationException(composeErrorMessage("Error when processing entity", header, e));
+                } catch (MigrationApi.MigrationException e) {
+                    throw new MigrationApi.MigrationException(composeErrorMessage("Error when processing entity", header, e));
+                }
             }
         }
 
@@ -94,6 +101,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
     @Override
     public MigrationBundle exportBundle(final Collection<EntityHeader> headers) throws MigrationApi.MigrationException {
+        if ( headers == null || headers.isEmpty() ) throw new MigrationApi.MigrationException("Missing required parameter.");        
         MigrationMetadata metadata = findDependencies(headers);
         MigrationBundle bundle = new MigrationBundle(metadata);
         for (EntityHeader header : metadata.getHeaders()) {
@@ -114,13 +122,15 @@ public class MigrationManagerImpl implements MigrationManager {
         logger.log(Level.FINEST, "Retrieving mapping candidates for {0}.", mappables);
         Map<EntityHeader,EntityHeaderSet> result = new HashMap<EntityHeader,EntityHeaderSet>();
 
-        for (EntityHeader header : mappables) {
-            try {
-                EntityHeaderSet<EntityHeader> candidates = entityCrud.findAll(EntityHeaderUtils.getEntityClass(header), filter, 0, 50 );
-                logger.log(Level.FINEST, "Found {0} mapping candidates for header {1}.", new Object[]{candidates != null ? candidates.size() : 0, header});
-                result.put(header, candidates);
-            } catch (FindException e) {
-                throw new MigrationApi.MigrationException("Error retrieving mapping candidate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        if ( mappables != null ) {
+            for (EntityHeader header : mappables) {
+                try {
+                    EntityHeaderSet<EntityHeader> candidates = entityCrud.findAll(EntityHeaderUtils.getEntityClass(header), filter, 0, 50 );
+                    logger.log(Level.FINEST, "Found {0} mapping candidates for header {1}.", new Object[]{candidates != null ? candidates.size() : 0, header});
+                    result.put(header, candidates);
+                } catch (FindException e) {
+                    throw new MigrationApi.MigrationException("Error retrieving mapping candidate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
             }
         }
 
@@ -132,6 +142,8 @@ public class MigrationManagerImpl implements MigrationManager {
     public Collection<MigratedItem> importBundle(MigrationBundle bundle, EntityHeader targetFolder,
                                                  boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Importing bundle: {0}", bundle);
+        if ( bundle == null ) throw new MigrationApi.MigrationException("Missing required parameter.");
+        if ( targetFolder == null ) throw new MigrationApi.MigrationException("Missing required parameter.");                
 
         Collection<String> errors = processFolders(bundle, targetFolder, flattenFolders);
 
