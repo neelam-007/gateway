@@ -55,7 +55,6 @@ abstract class LdapIdentityBase implements LdapIdentity, Serializable {
         return cn;
     }
 
-    @Migration(mapName = NONE, mapValue = NONE, export = false, targetType = EntityType.ID_PROVIDER_CONFIG)
     public long getProviderId() {
         return providerId;
     }

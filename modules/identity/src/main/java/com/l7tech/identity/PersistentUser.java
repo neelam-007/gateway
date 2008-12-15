@@ -60,7 +60,6 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
     /**
      * this is not persisted, it is set at run time by the provider who creates the object
      */
-    @Migration(mapName = NONE, mapValue = NONE, export = false, targetType = EntityType.ID_PROVIDER_CONFIG)
     @Transient
     public long getProviderId() {
         return providerOid;

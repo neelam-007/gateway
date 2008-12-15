@@ -33,7 +33,6 @@ public class FederatedUser extends PersistentUser {
 
     @Override
     @Column(name="provider_oid")
-    @Migration(mapName = NONE, mapValue = NONE, export = false, targetType = EntityType.ID_PROVIDER_CONFIG)
     public long getProviderId() {
         return super.getProviderId();
     }

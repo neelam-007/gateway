@@ -13,7 +13,7 @@ import java.lang.reflect.Method;
  * Customizes the mapping types returned for the specified properties as follows:
  * <ul>
  * <li>dependencies of type USER and GROUP will be marked as requiring mapping</li>
- * <li>dependencies of other types will have the mapping type specified in the property method migration annotation</li>
+ * <li>dependencies of other types (typically identity provider configuration) will not be added as dependencies</li>
  * </ul>
  *
  * @author jbufu
