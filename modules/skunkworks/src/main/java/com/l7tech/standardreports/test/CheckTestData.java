@@ -37,7 +37,7 @@ public class CheckTestData{
     @Before
     public void setUp() throws Exception {
         prop = new Properties();
-        InputStream is = new FileInputStream(new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/report.properties"));
+        InputStream is = new FileInputStream(new File("testdata.properties"));
         prop.load(is);
         conn = ReportApp.getConnection(prop);
         stmt = conn.createStatement();
@@ -65,7 +65,7 @@ public class CheckTestData{
     @Test
     public void testCreatedData_NumValueRows() throws Exception {
         int numRows = getNumValueRows();
-        Assert.assertTrue(numRows == 24);
+        Assert.assertTrue("numRows should equal 24, it was: " +numRows ,numRows == 24);
     }
 
     private int getNumDailyRows() throws Exception{
@@ -77,7 +77,7 @@ public class CheckTestData{
     @Test
     public void testCreatedData_NumDailyMetricRows() throws Exception {
         int numRows = getNumDailyRows();
-        Assert.assertTrue(numRows == 43680);
+        Assert.assertTrue("numRows should equal 43680, it was: " +numRows, numRows == 43680);
     }
 
     private int getMetricRowsPerDistinctValue() throws Exception {
@@ -110,7 +110,7 @@ public class CheckTestData{
         authFilters.add(new ReportApi.FilterPair());
         keysToFilterPairs.put("AUTH_USER", authFilters);
 
-        //Assert.assertTrue("2 mapping keys should be specified in report.properties", keysToFilterPairs.keySet().size() == 2);
+       // Assert.assertTrue("2 mapping keys should be specified in report.properties", keysToFilterPairs.keySet().size() == 2);
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         //is usage is false, as keys must be specified for this test
@@ -306,7 +306,7 @@ public class CheckTestData{
         int queryExpectedTotal = rowsPerDistinctValue * totalValueFactor * numServices;
         //System.out.println("queryExpectedTotal: " + queryExpectedTotal);
         //System.out.println("total: " + total);
-        Assert.assertTrue(queryExpectedTotal == total);
+        Assert.assertTrue("Expected: " + queryExpectedTotal+" rows, found: " + total,queryExpectedTotal == total);
     }
 
     private void validateKeyFilterMap(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) {

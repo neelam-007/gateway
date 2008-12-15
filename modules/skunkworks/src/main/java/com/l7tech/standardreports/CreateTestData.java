@@ -386,7 +386,7 @@ public class CreateTestData {
      */
     public static void main(String [] args) throws Exception{
         System.out.println("Starting");
-        FileInputStream fileInputStream = new FileInputStream("report.properties");
+        FileInputStream fileInputStream = new FileInputStream("testdata.properties");
         Properties prop = new Properties();
         prop.load(fileInputStream);
 
