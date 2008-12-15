@@ -2185,13 +2185,6 @@ public class LogPanel extends JPanel {
     }
 
     /**
-     * Stop any running threads.
-     */
-    public void stopWorkers() {
-        auditLogTableSorterModel.stopWorkers();
-    }
-
-    /**
      * Control panel for selecting times of audit events to download.
      */
     private static class LogPanelControlPanel {

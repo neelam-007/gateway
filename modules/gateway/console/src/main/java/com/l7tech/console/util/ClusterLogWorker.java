@@ -17,6 +17,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,6 +40,7 @@ public class ClusterLogWorker extends SwingWorker {
     private Map<Long, LogMessage> retrievedLogs;
     private java.util.Date currentClusterSystemTime = null;
     static Logger logger = Logger.getLogger(ClusterLogWorker.class.getName());
+    private AtomicBoolean cancelled;
 
     /**
      * Create a new cluster log worker.
@@ -52,7 +54,8 @@ public class ClusterLogWorker extends SwingWorker {
     public ClusterLogWorker(ClusterStatusAdmin clusterStatusService,
                             AuditAdmin logService,
                             int logType,
-                            LogRequest logRequest) {
+                            LogRequest logRequest,
+                            AtomicBoolean cancelled) {
 
         if (logService == null || clusterStatusService == null) {
             throw new IllegalArgumentException();
@@ -62,6 +65,7 @@ public class ClusterLogWorker extends SwingWorker {
         this.logService = logService;
         this.logType = logType;
         this.logRequest = logRequest;
+        this.cancelled = cancelled;
 
         retrievedLogs = new HashMap<Long, LogMessage>();
     }
@@ -112,134 +116,126 @@ public class ClusterLogWorker extends SwingWorker {
         Map<String, String> nodeNameIdMap = new HashMap<String, String>();
         // create a new empty node list
         newNodeList = new HashMap<String, GatewayStatus>();
-
-        // retrieve node status
-        ClusterNodeInfo[] clusterNodes = new ClusterNodeInfo[0];
-
         try {
-            clusterNodes = clusterStatusService.getClusterStatus();
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to find cluster status from server", e);
-        }
-
-        if (clusterNodes == null) {
-            return null;
-        }
-
-        for (ClusterNodeInfo nodeInfo : clusterNodes) {
-            GatewayStatus nodeStatus = new GatewayStatus(nodeInfo);
-            String clusterNodeId = nodeStatus.getNodeId();
-            if (clusterNodeId != null) {
-
-                // add the node to the new list
-                newNodeList.put(nodeStatus.getNodeId(), nodeStatus);
-                nodeNameIdMap.put(nodeStatus.getName(), nodeStatus.getNodeId());
-            }
-        }
-
-        SSGLogRecord[] rawLogs;
-        AuditRecordHeader[] rawHeaders;
-        if (logRequest != null) {
-            Map<Long, LogMessage> newLogs = new HashMap<Long, LogMessage>();
+        // retrieve node status
+            ClusterNodeInfo[] clusterNodes = new ClusterNodeInfo[0];
 
             try {
-                LogMessage logMsg;
-//                    System.out.println("Calling getSystemLog with start#='"+logRequest.getStartMsgNumber()+"', end#='"+logRequest.getEndMsgNumber()+"', startDate='"+logRequest.getStartMsgDate()+"', endDate='"+logRequest.getEndMsgDate()+"'.");
-                switch (logType) {
-                    case GenericLogAdmin.TYPE_AUDIT:
-                        AuditSearchCriteria asc = new AuditSearchCriteria.Builder(logRequest).
-                                nodeId(nodeNameIdMap.get(logRequest.getNodeName())).
-                                maxRecords(AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE).build();
-
-                        rawHeaders = logService.findHeaders(asc).toArray(new AuditRecordHeader[0]);
-                        if (rawHeaders.length > 0) {
-                            long lowest = -1;
-                            long oldest = -1;
-                            GatewayStatus nodeStatus;
-                            for (int j = 0; j < (rawHeaders.length) && (newLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
-                                AuditRecordHeader header = rawHeaders[j];
-                                logMsg = new LogMessage(header);
-                                nodeStatus = newNodeList.get(header.getNodeId());
-                                if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster
-                                    if (j == 0) {
-                                        lowest = logMsg.getMsgNumber();
-                                        oldest = logMsg.getHeader().getTimestamp();
-                                    } else if (lowest > logMsg.getMsgNumber()) {
-                                        lowest = logMsg.getMsgNumber();
-                                        oldest = logMsg.getHeader().getTimestamp();
-                                    }
-                                    logMsg.setNodeName(nodeStatus.getName());
-                                    newLogs.put(logMsg.getMsgNumber(), logMsg);
-
-                                }
-                            }
-                            logRequest.setEndMsgNumber(lowest);
-                            logRequest.setEndMsgDate(new Date(oldest + 1)); // end date is exclusive
-
-                        } else {
-                            //we are done
-                            logRequest = null;
-                        }
-                        break;
-                    case GenericLogAdmin.TYPE_LOG:
-                        rawLogs = logService.getSystemLog(logRequest.getNodeName(),
-                                logRequest.getStartMsgNumber(),
-                                logRequest.getEndMsgNumber(),
-                                logRequest.getStartMsgDate(),
-                                logRequest.getEndMsgDate(),
-                                AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE);
-
-                        if (rawLogs.length > 0) {
-                            long lowest = -1;
-                            long oldest = -1;
-                            GatewayStatus nodeStatus;
-                            for (int j = 0; j < (rawLogs.length) && (newLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
-                                logMsg = new LogMessage(rawLogs[j]);
-                                nodeStatus = newNodeList.get(logMsg.getSSGLogRecord().getNodeId());
-                                if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster
-                                    if (j == 0) {
-                                        lowest = logMsg.getMsgNumber();
-                                        oldest = logMsg.getSSGLogRecord().getMillis();
-                                    } else if (lowest > logMsg.getMsgNumber()) {
-                                        lowest = logMsg.getMsgNumber();
-                                        oldest = logMsg.getSSGLogRecord().getMillis();
-                                    }
-                                    logMsg.setNodeName(nodeStatus.getName());
-                                    newLogs.put(logMsg.getMsgNumber(), logMsg);
-                                }
-                            }
-                            logRequest.setStartMsgNumber(lowest);
-                            logRequest.setEndMsgDate(new Date(oldest + 1)); // end date is exclusive
-                        } else {
-                            System.out.println("setting log request to null");
-                            //we are done
-                            logRequest = null;
-                        }
-                        break;
-                }
+                clusterNodes = clusterStatusService.getClusterStatus();
             } catch (FindException e) {
-                logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
-            } catch (RuntimeException re) {
-                if (ExceptionUtils.causedBy(re, TimeoutRuntimeException.class)) {
-                    logger.log(Level.INFO, "Client connection lost, audit data returned from gateway no longer needed.");
-                    logRequest = null;
-                    return null;
-                } else {
-                    throw re;
+                logger.log(Level.WARNING, "Unable to find cluster status from server", e);
+            }
+
+            if (clusterNodes == null) {
+                return null;
+            }
+
+            for (ClusterNodeInfo nodeInfo : clusterNodes) {
+                GatewayStatus nodeStatus = new GatewayStatus(nodeInfo);
+                String clusterNodeId = nodeStatus.getNodeId();
+                if (clusterNodeId != null) {
+
+                    // add the node to the new list
+                    newNodeList.put(nodeStatus.getNodeId(), nodeStatus);
+                    nodeNameIdMap.put(nodeStatus.getName(), nodeStatus.getNodeId());
                 }
             }
 
-            if (newLogs.size() > 0) {
-                retrievedLogs.putAll(newLogs);
-                logRequest.addRetrievedLogCount(newLogs.size());
-            }
+            SSGLogRecord[] rawLogs;
+            AuditRecordHeader[] rawHeaders;
+            if (logRequest != null) {
+                Map<Long, LogMessage> newLogs = new HashMap<Long, LogMessage>();
 
-            if(this.logType == GenericLogAdmin.TYPE_LOG){
-                logRequest = null;
-            }
-        }
+                try {
+                    LogMessage logMsg;
+//                    System.out.println("Calling getSystemLog with start#='"+logRequest.getStartMsgNumber()+"', end#='"+logRequest.getEndMsgNumber()+"', startDate='"+logRequest.getStartMsgDate()+"', endDate='"+logRequest.getEndMsgDate()+"'.");
+                    switch (logType) {
+                        case GenericLogAdmin.TYPE_AUDIT:
+                            AuditSearchCriteria asc = new AuditSearchCriteria.Builder(logRequest).
+                                    nodeId(nodeNameIdMap.get(logRequest.getNodeName())).
+                                    maxRecords(AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE).build();
 
-        try {
+                            logger.info("Start time to grab data:: " + new Date(System.currentTimeMillis()));
+                            rawHeaders = logService.findHeaders(asc).toArray(new AuditRecordHeader[0]);
+                            logger.info("End time of grab data:: " + new Date(System.currentTimeMillis()));
+                            if (rawHeaders.length > 0) {
+                                long lowest = -1;
+                                long oldest = -1;
+                                GatewayStatus nodeStatus;
+                                for (int j = 0; j < (rawHeaders.length) && (newLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
+                                    AuditRecordHeader header = rawHeaders[j];
+                                    logMsg = new LogMessage(header);
+                                    nodeStatus = newNodeList.get(header.getNodeId());
+                                    if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster
+                                        if (j == 0) {
+                                            lowest = logMsg.getMsgNumber();
+                                            oldest = logMsg.getHeader().getTimestamp();
+                                        } else if (lowest > logMsg.getMsgNumber()) {
+                                            lowest = logMsg.getMsgNumber();
+                                            oldest = logMsg.getHeader().getTimestamp();
+                                        }
+                                        logMsg.setNodeName(nodeStatus.getName());
+                                        newLogs.put(logMsg.getMsgNumber(), logMsg);
+
+                                    }
+                                }
+                                logRequest.setEndMsgNumber(lowest);
+                                logRequest.setEndMsgDate(new Date(oldest + 1)); // end date is exclusive
+
+                            } else {
+                                //we are done
+                                logRequest = null;
+                            }
+                            break;
+                        case GenericLogAdmin.TYPE_LOG:
+                            rawLogs = logService.getSystemLog(logRequest.getNodeName(),
+                                    logRequest.getStartMsgNumber(),
+                                    logRequest.getEndMsgNumber(),
+                                    logRequest.getStartMsgDate(),
+                                    logRequest.getEndMsgDate(),
+                                    AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE);
+
+                            if (rawLogs.length > 0) {
+                                long lowest = -1;
+                                long oldest = -1;
+                                GatewayStatus nodeStatus;
+                                for (int j = 0; j < (rawLogs.length) && (newLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
+                                    logMsg = new LogMessage(rawLogs[j]);
+                                    nodeStatus = newNodeList.get(logMsg.getSSGLogRecord().getNodeId());
+                                    if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster
+                                        if (j == 0) {
+                                            lowest = logMsg.getMsgNumber();
+                                            oldest = logMsg.getSSGLogRecord().getMillis();
+                                        } else if (lowest > logMsg.getMsgNumber()) {
+                                            lowest = logMsg.getMsgNumber();
+                                            oldest = logMsg.getSSGLogRecord().getMillis();
+                                        }
+                                        logMsg.setNodeName(nodeStatus.getName());
+                                        newLogs.put(logMsg.getMsgNumber(), logMsg);
+                                    }
+                                }
+                                logRequest.setStartMsgNumber(lowest);
+                                logRequest.setEndMsgDate(new Date(oldest + 1)); // end date is exclusive
+                            } else {
+                                System.out.println("setting log request to null");
+                                //we are done
+                                logRequest = null;
+                            }
+                            break;
+                    }
+                } catch (FindException e) {
+                    logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
+                }
+
+                if (newLogs.size() > 0) {
+                    retrievedLogs.putAll(newLogs);
+                    logRequest.addRetrievedLogCount(newLogs.size());
+                }
+
+                if (this.logType == GenericLogAdmin.TYPE_LOG) {
+                    logRequest = null;
+                }
+            }
             currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
 
             if (currentClusterSystemTime == null) {
@@ -248,15 +244,15 @@ public class ClusterLogWorker extends SwingWorker {
                 return newNodeList;
             }
         } catch (RuntimeException re) {
-            logger.log(Level.INFO, "Client connection lost, we don't need to continue further.");
-            logRequest = null;
-            return null;
+            if (cancelled.get()) { // eat any exceptions if we've been cancelled
+                logger.log(Level.INFO, "Ignoring error for cancelled operation ''{0}''.", ExceptionUtils.getMessage(re));
+                logRequest = null;
+                return null;
+            } else {
+                throw re;
+            }
         }
     }
 
-    @Override
-    public boolean isAlive() {
-        return super.isAlive();
-    }
 }
 

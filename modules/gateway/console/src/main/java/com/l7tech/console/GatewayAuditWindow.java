@@ -236,7 +236,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
             Properties prop = Utilities.getWindowStatus(this);
             preferences.updateFromProperties(prop, true);
             preferences.store();
-            logPane.stopWorkers();
+            getLogPane().onDisconnect();
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to save divider location.", e);
         }
