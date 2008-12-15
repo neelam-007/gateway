@@ -4,20 +4,19 @@
 <head profile="http://www.w3.org/2005/10/profile">
     <title><wicket:message key="label.title">Log In [Enterprise Service Manager]</wicket:message></title>
     <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
-    <wicket:head>
-        <script type="text/javascript">
-            function updateSubmitButton() {
-                var username = document.getElementById('username').value;
-                var password = document.getElementById('password').value;
-                YAHOO.widget.Button.getButton('submit').set('disabled', username == '' || password == '');
-            }
+    <link rel="icon" type="image/png" href="/images/favicon.ico" />
+    <script type="text/javascript">
+        function updateSubmitButton() {
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+            YAHOO.widget.Button.getButton('submit').set('disabled', username == '' || password == '');
+        }
 
-            function init() {
-                updateSubmitButton();
-                document.getElementById('username').focus();
-            }
-        </script>
-    </wicket:head>
+        function init() {
+            updateSubmitButton();
+            document.getElementById('username').focus();
+        }
+    </script>
 </head>
 <body class="yui-skin-sam" onload="init();">
 <table width="100%">

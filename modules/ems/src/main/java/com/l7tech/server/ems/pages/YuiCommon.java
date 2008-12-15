@@ -8,9 +8,11 @@ import java.util.TimeZone;
 import java.text.SimpleDateFormat;
 
 /**
+ * YuiCommon resources and functions.
  *
+ * <p>Note that this class must be public, due to the the resource references.</p>
  */
-class YuiCommon {
+public class YuiCommon {
 
     //- PACKAGE
 

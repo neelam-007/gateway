@@ -319,7 +319,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     public boolean canAccess(  final HttpSession session, final HttpServletRequest request ) {
         // TODO Clean this up (use secured and unsecured sections?)
         return session.getAttribute(ATTR_ID) != null ||
-                request.getRequestURI().equals("/favicon.ico") ||
+                request.getRequestURI().equals("/favicon.ico") || // We don't have a "/favicon.ico" but browsers like to ask for this
                 request.getRequestURI().equals("/Login.html") ||
                 (request.getRequestURI().equals("/") && TextUtils.toString(request.getQueryString()).contains("wicket:interface")) ||
                 request.getRequestURI().startsWith("/css") ||
@@ -335,7 +335,6 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
                 request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/button/button-min.js") ||
                 request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/css/l7-yui-skin.css") ||
                 request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/assets/skins/sam/sprite.png");
-
     }
 
     /**
