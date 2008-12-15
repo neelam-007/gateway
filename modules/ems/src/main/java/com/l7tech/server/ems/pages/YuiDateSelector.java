@@ -17,6 +17,7 @@ import java.text.ParseException;
 import java.text.DateFormat;
 import java.util.Locale;
 import java.util.Date;
+import java.util.TimeZone;
 import java.io.Serializable;
 
 /**
@@ -60,8 +61,8 @@ public class YuiDateSelector extends Panel {
      * @param minDate Minimum permitted date (may be null)
      * @param maxDate Maximumn permitted date (may be null)
      */
-    public YuiDateSelector( final String id, final String dateFieldMarkupId, final Model model, final Date minDate, final Date maxDate) {
-        this(id, dateFieldMarkupId, model, minDate, maxDate, false) ;
+    public YuiDateSelector( final String id, final String dateFieldMarkupId, final Model model, final Date minDate, final Date maxDate, final String newTimeZoneUsed) {
+        this(id, dateFieldMarkupId, model, minDate, maxDate, false, newTimeZoneUsed);
     }
 
     /**
@@ -75,8 +76,24 @@ public class YuiDateSelector extends Panel {
      * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
      */
     public YuiDateSelector(final String id, final String dateFieldMarkupId, final Model model, final Date minDate, final Date maxDate, final boolean ignoreFirstSelect) {
+        this(id, dateFieldMarkupId, model, minDate, maxDate, ignoreFirstSelect, null);
+    }
+
+    /**
+     * Create a DateSelector with the given model.
+     *
+     * @param id The component identifier.
+     * @param dateFieldMarkupId The html markup id of the date text field (may be null)
+     * @param model The {@link java.util.Date Date} model.
+     * @param minDate Minimum permitted date (may be null)
+     * @param maxDate Maximumn permitted date (may be null)
+     * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
+     * @param newTimeZoneUsed The new time zone used by the date selector.
+     */
+    public YuiDateSelector(final String id, final String dateFieldMarkupId, final Model model, final Date minDate, final Date maxDate, final boolean ignoreFirstSelect, final String newTimeZoneUsed) {
         super(id, model);
         this.ignoreFirstSelect = ignoreFirstSelect;
+        this.newTimeZoneUsed = newTimeZoneUsed;
 
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CONTAINER ) );
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_BUTTON ) );
@@ -97,7 +114,11 @@ public class YuiDateSelector extends Panel {
                 return new IConverter() {
                     public DateFormat getDateFormat() {
                         EmsSession session = ((EmsSession) RequestCycle.get().getSession());
-                        return session.buildDateFormat( false );
+                        DateFormat format = session.buildDateFormat( false );
+                        if (YuiDateSelector.this.newTimeZoneUsed != null) {
+                            format.setTimeZone(TimeZone.getTimeZone(YuiDateSelector.this.newTimeZoneUsed));
+                        }
+                        return format;
                     }
 
                     @Override
@@ -148,6 +169,14 @@ public class YuiDateSelector extends Panel {
         return dateTextField;
     }
 
+    public Label getJavascriptLabel() {
+        return javascriptLabel;
+    }
+
+    public void setNewTimeZoneUsed(String newTimeZoneUsed) {
+        this.newTimeZoneUsed = newTimeZoneUsed;
+    }
+
     public void setDateSelectorModel(Date minDate, Date maxDate) {
         javascriptLabel.setModel(new PropertyModel(new DateSelectorModel(minDate, maxDate), "script"));
     }
@@ -159,6 +188,7 @@ public class YuiDateSelector extends Panel {
     private WebMarkupContainer calendarDiv;
     private WebMarkupContainer calendarBody;
     private boolean ignoreFirstSelect;
+    private String newTimeZoneUsed;
 
     /**
      * A model to store a javascript of the date selector settings based on min date and max date.
@@ -210,7 +240,7 @@ public class YuiDateSelector extends Panel {
      */
     private String buildDateSelectorJavascript(Date minDate, Date maxDate) {
         EmsSession session = ((EmsSession) RequestCycle.get().getSession());
-        String timeZoneId = session.getTimeZoneId();
+        String timeZoneId = newTimeZoneUsed == null? session.getTimeZoneId() : newTimeZoneUsed;
 
         StringBuilder scriptBuilder = new StringBuilder();
         scriptBuilder.append("YAHOO.util.Event.onDOMReady( function(){ initDateSelector('");

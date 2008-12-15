@@ -42,7 +42,11 @@ public class StandardReports extends EmsPage  {
     @SpringBean
     private GatewayContextFactory gatewayContextFactory;
 
+    // Keep tracking on the time-zone changing.
+    private String currentTimeZoneId;
+
     public StandardReports() {
+        currentTimeZoneId = getSession().getTimeZoneId();
 
         add(new JsonPostInteraction("postReportParameters", "generateReportUrl", new JsonDataProvider(){
 
@@ -100,25 +104,11 @@ public class StandardReports extends EmsPage  {
 
         Form form = new Form("form");
 
-        List<String> zoneIds = Arrays.asList(TimeZone.getAvailableIDs());
-        Collections.sort(zoneIds);
-        form.add(new DropDownChoice("timezone", new Model(getSession().getTimeZoneId()), zoneIds, new IChoiceRenderer(){
-            @Override
-            public Object getDisplayValue(Object object) {
-                return object;
-            }
-
-            @Override
-            public String getIdValue(Object object, int index) {
-                return object.toString();
-            }
-        }));
-
-        final Date now = new Date();
+        Date now = new Date();
         final YuiDateSelector fromDateField = new YuiDateSelector("fromDate", "absoluteTimePeriodFromDateTextBox",
-            new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(1))), null, now);
+            new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(1))), null, now, currentTimeZoneId);
         final YuiDateSelector toDateField = new YuiDateSelector("toDate", "absoluteTimePeriodToDateTextBox",
-            new Model(new Date(now.getTime())), new Date(now.getTime() - TimeUnit.DAYS.toMillis(1)), now);
+            new Model(new Date(now.getTime())), new Date(now.getTime() - TimeUnit.DAYS.toMillis(1)), now, currentTimeZoneId);
 
         final Label fromDateJavascript = new Label("fromDateJavascript", buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
         fromDateJavascript.setEscapeModelStrings(false);
@@ -128,27 +118,67 @@ public class StandardReports extends EmsPage  {
 
         fromDateField.getDateTextField().add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
-            protected void onUpdate(AjaxRequestTarget target) {
+            protected void onUpdate(AjaxRequestTarget ajaxRequestTarget) {
                 // update the hidden form fields with the date in the expected format
                 fromDateJavascript.setModelObject(buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
-                target.addComponent(fromDateJavascript);
+                ajaxRequestTarget.addComponent(fromDateJavascript);
 
-                toDateField.setDateSelectorModel((Date)fromDateField.getModelObject(), now);
-                target.addComponent(toDateField);
+                toDateField.setDateSelectorModel((Date)fromDateField.getModelObject(), new Date());
+                ajaxRequestTarget.addComponent(toDateField);
             }
         });
         toDateField.getDateTextField().add(new AjaxFormComponentUpdatingBehavior("onchange"){
             @Override
-            protected void onUpdate(final AjaxRequestTarget target) {
+            protected void onUpdate(final AjaxRequestTarget ajaxRequestTarget) {
                 // update the hidden form fields with the date in the expected format
                 toDateJavascript.setModelObject(buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
-                target.addComponent(toDateJavascript);
-                
+                ajaxRequestTarget.addComponent(toDateJavascript);
+
                 fromDateField.setDateSelectorModel(null, (Date)toDateField.getModelObject());
-                target.addComponent(fromDateField);
+                ajaxRequestTarget.addComponent(fromDateField);
             }
         });
 
+        List<String> zoneIds = Arrays.asList(TimeZone.getAvailableIDs());
+        Collections.sort(zoneIds);
+        final DropDownChoice timeZoneChoice = new DropDownChoice("timezone", new Model(getSession().getTimeZoneId()), zoneIds, new IChoiceRenderer(){
+            @Override
+            public Object getDisplayValue(Object object) {
+                return object;
+            }
+
+            @Override
+            public String getIdValue(Object object, int index) {
+                return object.toString();
+            }
+        });
+        timeZoneChoice.add(new AjaxFormComponentUpdatingBehavior("onchange") {
+            @Override
+            protected void onUpdate(AjaxRequestTarget ajaxRequestTarget) {
+                Date now = new Date();
+                String newTimeZoneId = (String)timeZoneChoice.getModelObject();
+                format.setTimeZone(TimeZone.getTimeZone(newTimeZoneId));
+                fromDateField.setNewTimeZoneUsed(newTimeZoneId);
+                toDateField.setNewTimeZoneUsed(newTimeZoneId);
+
+                fromDateField.getDateTextField().setModelObject(new Date(now.getTime() - TimeUnit.DAYS.toMillis(1)));
+                fromDateField.setDateSelectorModel(null, now);
+                fromDateJavascript.setModelObject(buildDateJavascript(true, fromDateField.getModelObject()));
+                ajaxRequestTarget.addComponent(fromDateJavascript);
+                ajaxRequestTarget.addComponent(fromDateField);
+
+                toDateField.getDateTextField().setModelObject(now);
+                toDateField.setDateSelectorModel(new Date(now.getTime() - TimeUnit.DAYS.toMillis(1)), now);
+                toDateJavascript.setModelObject(buildDateJavascript(false, toDateField.getModelObject()));
+                ajaxRequestTarget.addComponent(toDateJavascript);
+                ajaxRequestTarget.addComponent(toDateField);
+
+                currentTimeZoneId = newTimeZoneId;
+            }
+        });
+        timeZoneChoice.setMarkupId("timePeriodTimeZoneDropDown");
+
+        form.add( timeZoneChoice );
         form.add( fromDateField.setOutputMarkupId(true) );
         form.add( toDateField.setOutputMarkupId(true) );
 
@@ -170,7 +200,7 @@ public class StandardReports extends EmsPage  {
         StringBuilder scriptBuilder = new StringBuilder();
         scriptBuilder.append( "YAHOO.util.Event.onDOMReady( function(){ " );
         scriptBuilder.append(fromDate? "absoluteTimePeriodFromDate" : "absoluteTimePeriodToDate").append(" = '").append(format.format(date)).append("'; ");
-        scriptBuilder.append("onChangeAbsoluteTimePeriod(); ");
+        scriptBuilder.append("onChangeAbsoluteTimePeriod(); onChangeTimePeriodType(); ");
         scriptBuilder.append( "} );" );
 
         return scriptBuilder.toString();
