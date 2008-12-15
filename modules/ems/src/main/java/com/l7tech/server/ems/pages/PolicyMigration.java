@@ -653,11 +653,15 @@ public class PolicyMigration extends EmsPage  {
                 }
                 Collection<EntityHeader> validatedHeaders = targetMigrationApi.checkHeaders(headersToCheck);
                 if (validatedHeaders != null && validatedHeaders.size() > 0) {
+                    Set<Pair<DependencyKey,String>> keysToRemove = new HashSet<Pair<DependencyKey, String>>();
                     for(Pair<DependencyKey,String> mapKey : mappingModel.dependencyMap.keySet()) {
                         DependencyItem dependencyItem = mappingModel.dependencyMap.get(mapKey);
                         if (dependencyItem == null || ! validatedHeaders.contains(dependencyItem.asEntityHeader())) {
-                            mappingModel.dependencyMap.remove(mapKey);
+                            keysToRemove.add(mapKey);
                         }
+                    }
+                    for(Pair<DependencyKey,String> mapKey : keysToRemove) {
+                        mappingModel.dependencyMap.remove(mapKey);
                     }
                 } else {
                     mappingModel.dependencyMap.clear();
