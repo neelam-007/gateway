@@ -55,7 +55,6 @@
             RELATIVE_TIME_PERIOD_HINT : 'Must be positive integer',
             ABSOLUTE_TIME_PERIOD_HINT : 'From time must be earlier than To time',
             TIME_INTERVAL_HINT : 'Must be positive integer',
-            NUM_GROUPING_HINT : 'There must be at least one message context grouping for Usage Report.',
             SUBMITTING_GENERATE_REPORT : 'Submitting standard report generation',
             CANNOT_SUBMIT_GENERATE_REPORT : 'Failed to submit standard report generation: '
         }
@@ -283,10 +282,10 @@
             validateGroupingMessageContextKey();
 
             if (reportTypeDropDown.value == ReportType.USAGE && trs.length == 0) {
-                groupingHint.innerHTML = '(' + localizedStrings.NUM_GROUPING_HINT + ')';
+                groupingHint.style.display = '';
                 valid = false;
             } else {
-                groupingHint.innerHTML = '';
+                groupingHint.style.display = 'none';
             }
 
             return valid;
@@ -1352,8 +1351,16 @@
                                     <td>
                                         <div class="panel noMargin">
                                             <div class="panelToolbar">
-                                                <button id="addGroupingButton">Add Group by Message Context</button>
-                                                <span id="groupingHint" class="red note"></span>
+                                                <table>
+                                                    <tr>
+                                                        <td><button id="addGroupingButton">Add Grouping by Message Context Key</button></td>
+                                                        <td class="top" width="100%">
+                                                            <span class="note">Use grouping only if service policy contains Message Context Assertion(s).</span>
+                                                            <br/>
+                                                            <span id="groupingHint" class="red note">There must be at least one grouping for Usage Report.</span>
+                                                        </td>
+                                                    </tr>
+                                                </table>
                                             </div>
                                             <div class="panelContent smallPadding">
                                                 <table class="dataTable">
@@ -1362,12 +1369,12 @@
                                                             <th><!-- deletion image button --></th>
                                                             <th>SSG Cluster</th>
                                                             <th>Message Context Key</th>
-                                                            <th width="100%">Constraint Value <span class="note">(optional, wildcard * allowed)</span></th>
+                                                            <th width="100%">Key Value Filter <span class="note">(optional, wildcard * allowed)</span></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="messageWhenNoGrouping">
                                                         <tr>
-                                                            <td colspan="4">No grouping by message context.</td>
+                                                            <td colspan="4">None specified.</td>
                                                         </tr>
                                                     </tbody>
                                                     <tbody id="groupingTableBody"></tbody>
