@@ -32,7 +32,7 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
     protected boolean keepRootFolder = true;
 
     public SSGClusterContentSelector() {
-        JsonInteraction interaction = new JsonInteraction("actiondiv", "clusterContentJasonUrl", new JsonDataProvider() {
+        JsonInteraction interaction = new JsonInteraction("actiondiv", "clusterContentJsonUrl", new JsonDataProvider() {
             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             @Override
             public Object getData() {
@@ -74,7 +74,7 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
      * @throws GatewayException if there is a problem accessing the Gateway cluster
      */
     private List<Object> buildSsgClusterContent() throws GatewayException {
-        List<Object> jasonContentList = new ArrayList<Object>();
+        List<Object> jsonContentList = new ArrayList<Object>();
 
         // Get the content of entities using GatewayApi
         String ssgClusterId = RequestCycle.get().getRequest().getParameter("ssgClusterId");
@@ -108,9 +108,9 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
             }
         }
 
-        // Finally add rbac_cud into each jason content.
+        // Finally add rbac_cud into each json content.
         for (SsgClusterContent content: contentList) {
-            jasonContentList.add(new JSONSupport(content) {
+            jsonContentList.add(new JSONSupport(content) {
                 @Override
                 protected void writeJson() {
                     super.writeJson();
@@ -119,7 +119,7 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
             });
         }
 
-        return jasonContentList;
+        return jsonContentList;
     }
 
     /**

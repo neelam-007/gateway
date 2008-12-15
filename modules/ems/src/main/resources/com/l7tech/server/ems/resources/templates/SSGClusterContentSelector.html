@@ -212,7 +212,7 @@
             if (ssgCluster != null) {
                 var postData = 'ssgClusterId=' + ssgCluster.id;
                 l7.Dialog.showWaitDialog(localizedStrings.ACCESSING_SERVER);
-                YAHOO.util.Connect.asyncRequest('POST', clusterContentJasonUrl, callback, postData);
+                YAHOO.util.Connect.asyncRequest('POST', clusterContentJsonUrl, callback, postData);
             }
         }
 

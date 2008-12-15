@@ -48,7 +48,7 @@ public class SSGClusterSelector extends EmsBaseWebPage {
         }
         final Map<String,String> userProperties = up;
 
-        JsonInteraction interaction = new JsonInteraction("actiondiv", "ssgClusterJasonUrl", new JsonDataProvider(){
+        JsonInteraction interaction = new JsonInteraction("actiondiv", "ssgClusterJsonUrl", new JsonDataProvider(){
             @Override
             public Object getData() {
                 try {
