@@ -91,7 +91,7 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
                 break;
             }
         }
-        preorderTraversal(sortedEntitiesInfo, root, rawEntitiesInfo);
+        orderEntityInfosByPreorder(sortedEntitiesInfo, root, 0, rawEntitiesInfo);
         if (! keepRootFolder) sortedEntitiesInfo.remove(0);
 
         // Convert EntityInfo to SsgClusterContent while adding opertions content if a publiished service has opertions.
@@ -123,23 +123,54 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
     }
 
     /**
-     * Generate a new list of all entities content according to the preorder of folders, published services, and policy fragments.
-     * @param sort
-     * @param parent
-     * @param raw
+     * Sort a list of entity infos in preorder.  In every same level, the order of entity infos is Folder, Published Service, Policy Fragment.
+     *
+     * @param sort The list to store the ordered entity infos.
+     * @param parent The parent entity info used to find all children entity infos.
+     * @param insertIndex The index where the parent should be inserted into the "sort" list.
+     * @param raw The original list of the unsorted entity infos.
+     * @return an integer indicating how many entity infos have been inserted into the "sort" list.
      */
-    private void preorderTraversal(Collection<GatewayApi.EntityInfo> sort, GatewayApi.EntityInfo parent, Collection<GatewayApi.EntityInfo> raw) {
-        if (parent == null) return;
+    private int orderEntityInfosByPreorder(List<GatewayApi.EntityInfo> sort, GatewayApi.EntityInfo parent, int insertIndex, Collection<GatewayApi.EntityInfo> raw) {
+        int count = 0;
+        int index = insertIndex;
 
-        sort.add(parent);
+        // Step 1: validate the parent and insert it into the sort list if it is not null.
+        if (parent == null) {
+            return 0;
+        } else {
+            sort.add(index++, parent); // add the parent into the sort list
+            raw.remove(parent);        // remove the parent from the raw list to save memory and also save time for later recursives.
+            count++;                   // increment the counter
+        }
 
-        // If the entity is service or fragment, do not run the next step any more.
-        if (parent.getEntityType().equals(EntityType.SERVICE) || parent.getEntityType().equals(EntityType.POLICY)) return;
-
-        for (GatewayApi.EntityInfo child: raw) {
-            if (parent.getId().equals(child.getParentId())) {
-                preorderTraversal(sort, child, raw);
+        // Step 2: find all published services and policy fragments and directly insert them into the "sort" list.
+        // Also, find all children folders of the parent without insertion and store them into a temp list, folderList.
+        // The temp list will be used in Step 3.
+        List<GatewayApi.EntityInfo> folderList = new ArrayList<GatewayApi.EntityInfo>();
+        for (EntityType type: entityTypes) {               // run insertions by each entity type, so the order of inserted entity infos is the same as the order of the entity types in the type list.
+            for (Iterator<GatewayApi.EntityInfo> itr = raw.iterator(); itr.hasNext();) {
+                GatewayApi.EntityInfo info = itr.next();
+                if (info.getEntityType().equals(type) && parent.getId().equals(info.getParentId())) {
+                    if (type.equals(EntityType.FOLDER)) {  // add a folder into the temp folder list if the type is Folder.
+                        folderList.add(info);
+                    } else {                               // insert a published service or policy fragment into the sort list if the type is not Folder
+                        sort.add(index++, info);
+                        count++;
+                    }
+                    itr.remove();
+                }
             }
         }
+
+        // Step 3: recursively run through the children folder list to add decedants into the "sort" list in preorder.
+        index = insertIndex + 1;   // initiate the insertion index of the first recursive
+        for (GatewayApi.EntityInfo info: folderList) {
+            int n = orderEntityInfosByPreorder(sort, info, index, raw);
+            index += n;            // update the insertion index for the next recursive.
+            count += n;            // increment the counter.
+        }
+
+        return count;
     }
 }
