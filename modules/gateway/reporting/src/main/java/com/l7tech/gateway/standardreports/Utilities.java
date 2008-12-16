@@ -1678,22 +1678,56 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         return returnMap;
     }
 
+    /**
+     * Add the resolution constraint to the sql query
+     * @param resolution valid resolution 1 or 2, not rechecked here
+     * @param sb string bulder to add the sql to
+     */
     private static void addResolutionConstraint(int resolution, StringBuilder sb) {
-        sb.append(" AND sm.resolution = " + resolution+" ");
+        sb.append(" AND sm.resolution = ").append(resolution).append(" ");
     }
 
+    /**
+     * Add the time constrain to the sql. startIntervalMilliSeconds is inclusive, endTimeInclusiveMilli is exclusive
+     * @param startTimeInclusiveMilli  start of the time period inclusive
+     * @param endTimeInclusiveMilli end of the time period exclusive
+     * @param sb string builder to add the sql to
+     */
     private static void addTimeConstraint(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli, StringBuilder sb) {
         sb.append(" AND sm.period_start >=").append(startTimeInclusiveMilli);
         sb.append(" AND sm.period_start <").append(endTimeInclusiveMilli);
     }
 
+    /**
+     * Add the group by clause. Used by both performance statistics queries and usage queries. Ensures the group by
+     * is added in the correct order to ensure that the largest group is always first. The group ordering is:-<br>
+     * p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3,
+     * MAPPING_VALUE_4 and MAPPING_VALUE_5
+     * @param sb string builder to add the sql to 
+     */
     private static void addGroupBy(StringBuilder sb) {
         sb.append(" GROUP BY p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER ");
         for(int i = 0; i < NUM_MAPPING_KEYS; i++){
-            sb.append(", ").append("MAPPING_VALUE_" + (i+1));
+            sb.append(", ").append("MAPPING_VALUE_").append((i+1));
         }
     }
 
+    /**
+     * Determine for the report type and whether the report is a detail query or not, whether the keysToFilterValues
+     * parameter is valid. Return boolean valud indicates whether or not valid keys have been supplied for a query
+     * Keys do not need to be supplied for a performance statistics report when it's a detail report, howevere they
+     * must always be supplied for a usage report.
+     * @param keysToFilterValues a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true.
+     * @param isDetail is the usage of the keys for a detail report?
+     * @param isUsageQuery is the usage of the keys a usage report?
+     * @return boolean true when the keys were supplied and are valid, false otherwise. False will never be returned
+     * when isUsage is true and keysToFilterValues is null or empty.
+     * @throws IllegalArgumentException if isUsageQuery is true, and keysToFilterValues is null or empty. Also thrown
+     * if isDetail is false and keysToFilterValues is null or empty 
+
+     */
     private static boolean checkMappingQueryParams(Map<String, List<ReportApi.FilterPair>> keysToFilterValues,
                                                    boolean isDetail, boolean isUsageQuery) {
         //we need at least one key. However both user and operation are technically keys, so if we have either
@@ -1714,10 +1748,11 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
     }
 
     /**
-     * Find out if the time paramters should be included in the query
-     * @param startTimeInclusiveMilli
-     * @param endTimeInclusiveMilli
-     * @return
+     * Validate the time parameters. Time params are valid when they are both not null and the start time is < the end
+     * time
+     * @param startTimeInclusiveMilli start of the time period inclusive
+     * @param endTimeInclusiveMilli end of the time period exclusive
+     * @return boolean true when the time parameters should be included in a sql query, false when not.
      * @throws IllegalArgumentException if both params are not both null or both not null, or of startTimeInclusiveMilli
      * is >= endIntervalMilliSeconds 
      */
@@ -1737,12 +1772,29 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         return false;
     }
 
+    /**
+     * Validate the resolution parameter. It should only represent 1 or 2, hourly or daily
+     * @param resolution resolution to validate
+     * @throws IllegalArgumentException if the resolution is not 1 or 2
+     */
     private static void checkResolutionParameter(int resolution){
         if(resolution != 1 && resolution != 2){
             throw new IllegalArgumentException("Resolution can only be 1 (Hourly) or 2 (Daily)");
         }
     }
 
+    /**
+     * Add the order by query to the sql. Ensures that the order by is added in the correct order. The ordering is
+     * very important and the logic of the jasper reports is 100% dependent on this ordering never changing. If this
+     * function is updated, then all usages of the sql queries, which are built using this query, must have their
+     * usages examined and understand how this ordering will affect the runinng of the jasper reports.<br>
+     * <em>THIS IS ONLY TO BE USED WHEN GENERATING SQL FOR PERFORMANCE STATISTICS REPORTS</em>
+     * The order is as follows:-<br>
+     * AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5,
+     * p.objectid, SERVICE_OPERATION_VALUE
+     *
+     * @param sb string builder to add the sql to
+     */
     private static void addMappingOrder(StringBuilder sb) {
         sb.append(" ORDER BY AUTHENTICATED_USER, ");
         for(int i = 0; i < NUM_MAPPING_KEYS; i++){
@@ -1752,6 +1804,17 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         sb.append(" ,p.objectid, SERVICE_OPERATION_VALUE ");
     }
 
+    /**
+     * Add the order by query to the sql. Ensures that the order by is added in the correct order. The ordering is
+     * very important and the logic of the jasper reports is 100% dependent on this ordering never changing. If this
+     * function is updated, then all usages of the sql queries, which are built using this query, must have their
+     * usages examined and understand how this ordering will affect the runinng of the jasper reports.<br>
+     * <em>THIS IS ONLY TO BE USED WHEN GENERATING SQL FOR USAGE REPORTS</em>
+     * The order is as follows:-<br>
+     * p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3,
+     * MAPPING_VALUE_4, MAPPING_VALUE_5,
+     * @param sb string builder to add the sql to
+     */
     private static void addUsageMappingOrder(StringBuilder sb) {
         sb.append(" ORDER BY p.objectid, SERVICE_OPERATION_VALUE ");
         sb.append(" ,AUTHENTICATED_USER, ");
@@ -1761,34 +1824,61 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         }
     }
 
+
+    /**
+     * This is currently only used by getUsageDistinctMappingQuery, which is only used from ReportGenerator. It's used
+     * to get meta data about what data the report will get at runtime, to prepare data to be given to the report
+     * as a parameter. The order is not strictly required.
+     * //todo look into removing this function
+     * @param sb string builder to add the sql to
+     */
     private static void addUsageDistinctMappingOrder(StringBuilder sb) {
         sb.append(" ORDER BY AUTHENTICATED_USER, ");
         for(int i = 0; i < NUM_MAPPING_KEYS; i++){
             if(i != 0) sb.append(", ");
-            sb.append("MAPPING_VALUE_" + (i+1));
+            sb.append("MAPPING_VALUE_").append((i+1));
         }
     }
 
     /**
-     * For every key in keysToFilters, add a constraint
-     * @param keysToFilters
-     * @param sb
-     */
-    private static void addMappingConstraint(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, StringBuilder sb) {
-/*(
-Value is included in all or none, comment is just illustrative
-    AND
-	(mcmk.mapping1_key = 'IP_ADDRESS' AND (mcmk.mapping1_value = '127.0.0.1' OR  mcmk.mapping1_value = '127.0.0.2'))
+     * Add key and value constraints to the sql query being generated. To understand how key and values are constrained
+     * it's important to understand that there is an implicit relationship between the key at index x(x:1-5) in
+     * message_context_mapping_keys and the value at index x(x:1-5) in message_context_mapping_values<br>
+     * <em>When the AUTH_USER key is found, it is ignored. It is treated separately. AUTH_USER never causes a constraint
+     * to be added here. When it is found, it is ignored</em><br>
+     * For each key included in keysToFilters, an AND block is added. This AND block will constrain each of the
+     * mapping keys 1 to 5 with the key value. Each of these constraints are OR'd within the AND block. This constraint
+     * means that <em>AT LEAST ONE MAPPING KEY COLUMN MUST MATCH THE KEY</em><br>
+     *
+     * Each key in keysToFilters maps to 0..* FilterPair's. For every FilterPair in the list, that each key maps to,
+     * who's isEmpty() method returns false, is included in the AND block as follows:-<br>
+     * For each OR constaint within the AND block, it's has a sub AND block added. Within this sub AND block, the
+     * corresponding mcmk.mappingX_value (x:1-5) column is constrained. There is a constraint added for each non empty
+     * FilterPair, which are all OR'd together. Whether the constraint is AND or LIKE is determined by each FilterPair.
+     * It is possible that within a sub AND block, that the values have a mix of AND and LIKE<br>
+     * <pre>
+     *     AND -- this is the start of an AND block for key IP_ADDRESS
+	(mcmk.mapping1_key = 'IP_ADDRESS' AND --this is the start of the sub AND block
+     (mcmk.mapping1_value = '127.0.0.1' OR  mcmk.mapping1_value = '127.0.0.2' --there were two non empty FilterPairs))
 	OR
-	(mcmk.mapping2_key = 'IP_ADDRESS' AND (mcmk.mapping2_value = '127.0.0.1' OR  mcmk.mapping2_value = '127.0.0.2'))
+     --the key is constrained for EVERY mcmk.mappingX_key(x:1-5)
+    (mcmk.mapping2_key = 'IP_ADDRESS' AND (mcmk.mapping2_value = '127.0.0.1' OR  mcmk.mapping2_value = '127.0.0.2'))
 	OR
-	(mcmk.mapping3_key = 'IP_ADDRESS' AND (mcmk.mapping3_value = '127.0.0.1' OR  mcmk.mapping3_value = '127.0.0.2'))
+	(mcmk.mapping3_key = 'IP_ADDRESS' AND (mcmk.mapping3_value = '127.0.0.1' OR  mcmk.mapping3_value LIKE '127.0.%.2'))
 	OR
 	(mcmk.mapping4_key = 'IP_ADDRESS' AND (mcmk.mapping4_value = '127.0.0.1' OR  mcmk.mapping4_value = '127.0.0.2'))
 	OR
 	(mcmk.mapping5_key = 'IP_ADDRESS' AND (mcmk.mapping5_value = '127.0.0.1' OR  mcmk.mapping5_value = '127.0.0.2'))
-    )*/
-
+    )
+     * </pre>
+     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     * hash map.
+     * @param sb string builder to add the sql to
+     */
+    private static void addMappingConstraint(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, StringBuilder sb) {
         if(keysToFilters == null || keysToFilters.isEmpty()){
             throw new IllegalArgumentException("keysToFilters cannot be empty");
         }
@@ -1837,51 +1927,22 @@ Value is included in all or none, comment is just illustrative
     }
 
     /**
-     *
-     * @param key
-     * @param value can be null, when it is then we are just constraining rows which the the correct key with any value
-     * @param andValue
-     * @return
+     * Add the AUTH_USER constraint to the sql. This creates an AND block and within it the mcmv.auth_user_id
+     * is constrained using EQUALS or LIKE, depending on the FilterPair, which are all OR'd together<br>
+     * <pre>
+     * AND(mcmv.auth_user_id = 'Donal' OR mcmv.auth_user_id LIKE 'Ldap%')
+     * </pre>
+     * Note: Any caller of this function should ensure that teh list authUserFilterPairs only contains FilterPairs
+     * which are related to AUTH_USER mapping key. See usages for where this is done.<br>
+     * Note: Any caller has already determined that calling this function is required, based on the set of mapping keys
+     * submitted to a callers function. 
+     * //todo possibly refactor FilterPair to include the mapping key, so we can validate here that only AUTH_USER fp's are received
+     * @param authUserFilterPairs the list of all FilterPairs, representing the AUTH_USER mapping key
+     * @param sb string builder to add the sql to
      */
-    private static String createOrKeyValueBlock(String key, String value, boolean andValue){
-/*(
-Value is included in all or none, comment is just illustrative
-	(mcmk.mapping1_key = 'IP_ADDRESS' AND mcmk.mapping1_value = '127.0.0.1')
-	OR
-	(mcmk.mapping2_key = 'IP_ADDRESS')
-	OR
-	(mcmk.mapping3_key = 'IP_ADDRESS')
-	OR
-	(mcmk.mapping4_key = 'IP_ADDRESS')
-	OR
-	(mcmk.mapping5_key = 'IP_ADDRESS')
-    )*/
-        StringBuilder sb = new StringBuilder();
-        for(int i = 1; i <= NUM_MAPPING_KEYS; i++){
-            if(i != 1){
-                sb.append(" OR ");
-            }
-            sb.append("( mcmk.mapping").append(i).append("_key");
-            sb.append(" = '").append(key).append("' ");
-
-            if(value != null && !value.equals("")){
-                sb.append("AND mcmv.mapping").append(i).append("_value");
-                if(andValue){
-                    sb.append(" = '").append(value).append("' ");
-                }else{
-                    sb.append(" LIKE '").append(value).append("' ");
-                }
-
-            }
-            sb.append(")");
-        }
-        return sb.toString();
-    }
-
     private static void addUserConstraint(List<ReportApi.FilterPair> authUserFilterPairs, StringBuilder sb) {
         if(authUserFilterPairs.isEmpty()) throw new IllegalArgumentException("authUserFilterPairs cannot be empty");
 
-        //AND(mcmv.auth_user_id = 'Donal' OR mcmv.auth_user_id LIKE 'Ldap%')
         sb.append(" AND (");
 
         int index = 0;
@@ -1900,26 +1961,15 @@ Value is included in all or none, comment is just illustrative
         sb.append(") ");
     }
 
-//    private static void addUserConstraint(List<String> authenticatedUsers, StringBuilder sb) {
-//        sb.append(" AND mcmv.auth_user_id IN (");
-//        for (int i = 0; i < authenticatedUsers.size(); i++) {
-//            String s = authenticatedUsers.get(i);
-//            if(i != 0) sb.append(",");
-//            sb.append("'" + s + "'");
-//        }
-//        sb.append(") ");
-//    }
-
-    private static void addOperationConstraint(List<String> operations, StringBuilder sb) {
-        sb.append(" AND mcmv.service_operation IN (");
-        for (int i = 0; i < operations.size(); i++) {
-            String s = operations.get(i);
-            if(i != 0) sb.append(",");
-            sb.append("'" + s + "'");
-        }
-        sb.append(") ");
-    }
-
+    /**
+     * When no operation are required, as the report is not a detail report, then the sql only needs to be
+     * constrained by the service ids. For each service id in serviceIds, it is added to an IN constraint
+     * <br>
+     * Note: A caller has already decided that this function is required. Calling this function means the sql
+     * being generated is not for a detail report
+     * @param serviceIds the list of service ids the sql should be constrained by
+     * @param sb string builder to add the sql to
+     */
     private static void addServiceIdConstraint(Collection<String> serviceIds, StringBuilder sb) {
         sb.append(" AND p.objectid IN (");
         boolean first = true;
@@ -1931,11 +1981,48 @@ Value is included in all or none, comment is just illustrative
         sb.append(")");
     }
 
+    /**
+     * Performance Statistics and Usage reports <em>ALWAYS</em> call this function. Every single query created which is
+     * used as a master query or sub report query in the jasper reports, <em>MUST</em> have called this function to ensure
+     * that all mapping keys are always added to the SELECT list.<br>
+     * <em>For every String key, which is NOT EQUAL to AUTH_USER, addCaseSQLForKey is called. AUTH_USER is handled
+     * separately</em><br>
+     * After all keys have been added, the SQL_PLACE_HOLDER value is added for mapping keys whose index were not used
+     * due to the size of keys. This ensures that all queries ALWAYS return mapping_value_x (x:1-5)<br>
+     * The reports WILL BREAK if this was to change.<br>
+     * <br>
+     * <em>Note the parameter is just a list of keys. This order of this list is extremelly important. What ever index
+     * a key is at in this list, then that key must be in the SAME index, in any other ordered data structure used
+     * in other functions within this class, for the same sql statement being generated.
+     *  If not the reports are not correct and the queries are junk</em>
+     *
+     * Sample output for a list with 2 keys:<br>
+     * <pre>
+     * CASE
+	WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
+	WHEN mcmk.mapping2_key = 'IP_ADDRESS' THEN mcmv.mapping2_value
+	WHEN mcmk.mapping3_key = 'IP_ADDRESS' THEN mcmv.mapping3_value
+	WHEN mcmk.mapping4_key = 'IP_ADDRESS' THEN mcmv.mapping4_value
+	WHEN mcmk.mapping5_key = 'IP_ADDRESS' THEN mcmv.mapping5_value
+END AS MAPPING_VALUE_1,
+CASE
+	WHEN mcmk.mapping1_key = 'CUSTOMER' THEN mcmv.mapping1_value
+	WHEN mcmk.mapping2_key = 'CUSTOMER' THEN mcmv.mapping2_value
+	WHEN mcmk.mapping3_key = 'CUSTOMER' THEN mcmv.mapping3_value
+	WHEN mcmk.mapping4_key = 'CUSTOMER' THEN mcmv.mapping4_value
+	WHEN mcmk.mapping5_key = 'CUSTOMER' THEN mcmv.mapping5_value
+END AS MAPPING_VALUE_2,
+';' AS MAPPING_VALUE_3, ';' AS MAPPING_VALUE_4, ';' AS MAPPING_VALUE_5
+
+     * </pre>
+     * Note how even though there are only 2 keys, that all 5 mapping value columns are created
+     * @param keys the mapping keys values
+     * @param sb string builder to add the sql to
+     */
     private static void addCaseSQL(List<String> keys, StringBuilder sb) {
         int max = 0;
         if(keys != null && !keys.isEmpty()){
-            for (int i1 = 0; i1 < keys.size(); i1++) {
-                String s = keys.get(i1);
+            for (String s : keys) {
                 if (!s.equals(MessageContextMapping.MappingType.AUTH_USER.toString())) {
                     sb.append(",").append(addCaseSQLForKey(s, max + 1));
                     max++;
@@ -1945,48 +2032,90 @@ Value is included in all or none, comment is just illustrative
 
         //if were not using all 5 possible mappings, then we need to create the missing to help jasper report impl
         for(int i = max+1; i <= NUM_MAPPING_KEYS; i++){
-            //sb.append(", 1 AS MAPPING_VALUE_"+i);
-            sb.append(", '"+SQL_PLACE_HOLDER+"' AS MAPPING_VALUE_"+i);
+            sb.append(", '").append(SQL_PLACE_HOLDER).append("' AS MAPPING_VALUE_").append(i);
         }
     }
 
-
+    /**
+     * Add a correct case statement block for the specified key, which is taking the position specified by index, in
+     * the list of MAPPING_VALUE_x (x:1-5) being added to a sql select list.<br>
+     * The case statement created searches for the key value in each of the mapping key indexes. When the key is found
+     * then the value from the corresponding index in message_context_mapping_values is selected as the value.<br>
+     * This enforces the implicit relationship between the mapping key and value columns in
+     * message_context_mapping_keys and message_context_mapping_values
+     *
+     * Sample output for a key 'CUSTOMER' at index 2:-<br>
+     * <pre>
+     * CASE
+	WHEN mcmk.mapping1_key = 'CUSTOMER' THEN mcmv.mapping1_value
+	WHEN mcmk.mapping2_key = 'CUSTOMER' THEN mcmv.mapping2_value
+	WHEN mcmk.mapping3_key = 'CUSTOMER' THEN mcmv.mapping3_value
+	WHEN mcmk.mapping4_key = 'CUSTOMER' THEN mcmv.mapping4_value
+	WHEN mcmk.mapping5_key = 'CUSTOMER' THEN mcmv.mapping5_value
+END AS MAPPING_VALUE_2
+     * </pre>
+     *
+     * @param key the key value to create the case statement for. The key is not validated in any way.
+     * @param index the index for the column MAPPING_VALUE_ being created. The index will be appended. If the index is 2,
+     * then the column created is MAPPING_VALUE_2
+     * @return the String representing the complete case statement for the supplied key
+     */
     private static String addCaseSQLForKey(String key, int index){
-       /*CASE WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
-WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
-WHEN mcmk.mapping2_key = 'IP_ADDRESS' THEN mcmv.mapping2_value
-WHEN mcmk.mapping3_key = 'IP_ADDRESS' THEN mcmv.mapping3_value
-WHEN mcmk.mapping4_key = 'IP_ADDRESS' THEN mcmv.mapping4_value
-WHEN mcmk.mapping5_key = 'IP_ADDRESS' THEN mcmv.mapping5_value
-END as IP_ADDRESS,
-*/
+        if(key == null) throw new NullPointerException("key cannot be null");
+        if(key.equals("")) throw new IllegalArgumentException("key cannot be the empty string");
+        
         StringBuilder sb = new StringBuilder(" CASE ");
         for(int i = 1; i <= NUM_MAPPING_KEYS; i++){
-            sb.append(" WHEN mcmk.mapping"+i+"_key = ").append("'"+key+"'");
-            sb.append(" THEN mcmv.mapping"+i+"_value");
+            sb.append(" WHEN mcmk.mapping").append(i).append("_key = ").append("'").append(key).append("'");
+            sb.append(" THEN mcmv.mapping").append(i).append("_value");
         }
-        sb.append(" END AS MAPPING_VALUE_" + index);
+        sb.append(" END AS MAPPING_VALUE_").append(index);
         return sb.toString();
     }
 
+    /**
+     * Convenient method to test if a string value represents the SQL_PLACE_HOLDER value. This is predominantly indended
+     * for use within actual reports, which when running through the result set for a query generated by functions in this
+     * class, needs to know if it's got a real value or just a place holder. Using this function means the reports
+     * don't care about what the actual SQL_PLACE_HOLDER value is.
+     *
+     * @param testVal String value being tested to see if its the SQL_PLACE_HOLDER value. Can be null and the empty String
+     * @return true if testVal is equal to SQL_PLACE_HOLDER
+     */
     public static boolean isPlaceHolderValue(String testVal){
         if(testVal == null || testVal.equals("")) return false;
         else return testVal.equals(SQL_PLACE_HOLDER);
     }
 
     /**
-     * Calls getMappingValueDisplayString to get how the authUser, keys and keyValues are displayed as a string. Uses
-     * that string to look up the group from displayStringToMappingGroup, this is the value that will be shown as
-     * the category value on a chart.
+     * Called from within the Chart component of the jasper reports. See the chart definition within the jrxml files.
+     * The value returned is used as the Category value. Everytime this is called, a new category is being generated
+     * within the chart.<br>
+     * Calls getMappingValueDisplayString to get how the authUser, keys and keyValues are displayed as a string.
+     * Uses that string to then look up the group from displayStringToMappingGroup, this is the value that will be shown as
+     * the category value on a chart.<br>
+     * The data structure displayStringToMappingGroup is created before the report is ran. The creation of this data
+     * structure must also use getMappingValueDisplayString for creating key values. This ensures that the values from
+     * the report passed to this function, when turned into a key, will <em>ALWAYS</em> match a key in
+     * displayStringToMappingGroup.
+     * <br> 
      * see Utilities.getMappingValueDisplayString()
-     * @param displayStringToMappingGroup
-     * @param authUser
-     * @param keyValues
-     * @return
+     * @param displayStringToMappingGroup the map of string values to a string group value. This string group value is
+     * what's used as a Category value in a chart.
+     * @param authUser the value for AUTH_USER. May be the sql place holder value.
+     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     * hash map.
+     * @param keyValues mapping key values. This <em>MUST BE OF LENGTH 5</em>, or what ever the current number of mapping
+     * has been updated to. Any values which do have have a valid index in keysToFilters, should be the SQL_PLACE_HOLDER
+     * @return the String value to be displayed as a category in the chart used in the report output
      */
     public static String getCategoryMappingDisplayString(Map<String, String> displayStringToMappingGroup,
                                                                String authUser,
-                                                               LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, String [] keyValues){
+                                                               LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
+                                                               String [] keyValues){
 
         String displayString = getMappingValueDisplayString(keysToFilters, authUser, keyValues, false, null);
         if(!displayStringToMappingGroup.containsKey(displayString)) throw new IllegalArgumentException("Group for " +
@@ -1996,9 +2125,15 @@ END as IP_ADDRESS,
     }
 
     /**
-     * Get the string to display to the user, for the time at which the report was ran
-     * @param timeZone
-     * @return
+     * Used from within reports to get the value to go with 'Report Generated At:'. for the current timezone the a
+     * String representing the current date and time is returned.<br>
+     *
+     * The format of this string is: MMM dd, yyyy HH:mm, this has been chosen so that it's clear, regardless of what
+     * timezone is selected, what the date and time is, as string values are used for month. This allows us to not have
+     * to deal with a setting for display date and time within reports, yet.
+     *
+     * @param timeZone the String id value of a timezone, which we want the current date and time for
+     * @return a String representation of the current date and time in the supplied timezone
      */
     public static String getCurrentDateAndTime(String timeZone){
         TimeZone tz = getTimeZone(timeZone);
@@ -2009,23 +2144,89 @@ END as IP_ADDRESS,
         return dateFormat.format(currentDate);
     }
 
+    /**
+     * Used from with reports when a service name and routing uri need to be displayed, and there is a space limitation
+     * on how much data can be shown. This is currently only an issue for summary reports, as they attempt to display
+     * the service name and routing uri in column 1 of tabular data.<br>
+     * The service name and routing uri are both truncated in the middle using TextUtils.truncStringMiddleExact<br>
+     * The returned String is HTML formatted. There is a &lt br &gt tag in between the service name and routing uri in
+     * the returned String<br>
+     * Both routing uri may be null or empty, service name must not be.<br>
+     * <em>In the jasper report, any text element which uses this string, must be set to use HTML formatting</em>
+     * @param serviceName service name to truncate
+     * @param serviceRoutingURI routing uri to truncate, can be null or the emtpy string
+     * @return a HTML formatted version of the truncated service name, followed by a line break, followed by the routing
+     * uri. If the servivce name and routing uri are short, they may not have been truncated at all. The font size of 1
+     * is used to ensure that the font is small, as two lines of information are going to be displayed where normally
+     * only 1 is
+     * @throws NullPointerException if service name is null
+     * @throws IllegalArgumentException if service name is equal to the empty string
+     */
     public static String getServiceDisplayString(String serviceName, String serviceRoutingURI){
+        if(serviceName == null) throw new NullPointerException("serviceName must be non null");
+        if(serviceName.equals("")) throw new IllegalArgumentException("serviceName must not be the emtpy string");
+        
         String serviceNameDisplay = TextUtils.truncStringMiddleExact(serviceName, 20);
         String displayRoutingURI = TextUtils.truncStringMiddleExact(serviceRoutingURI, 20);
 
         return "<font size=\"1\">"+serviceNameDisplay +"<br>" + "[" + displayRoutingURI+"]"+"</font>";
     }
 
-
+    /**
+     * Used from within reports where ever a service name and routing uri are to be displayed in report output, where
+     * there is room for their entire length, as their component can stretch. The returned string is in the
+     * format serviceName [routingURI], if the routing uri is valid, otherwise just the service name
+     * @param serviceName service name to format. Cannot be null or the empty string
+     * @param serviceRoutingURI routing uri, can be null and the emtpy string
+     * @return a formatted string. if the routign uri is valid: serviceName [routing uri], otherwise just the service
+     * name
+     * @throws NullPointerException if service name is null
+     * @throws IllegalArgumentException if service name is equal to the empty string
+     */
     public static String getServiceDisplayStringNotTruncated(String serviceName, String serviceRoutingURI){
+        if(serviceName == null) throw new NullPointerException("serviceName must be non null");
+        if(serviceName.equals("")) throw new IllegalArgumentException("serviceName must not be the emtpy string");
+
+        if(serviceRoutingURI == null || serviceRoutingURI.equals("")) return serviceName;
+
         return serviceName+"["+serviceRoutingURI+"]";
     }
 
+    /**
+     * Get a display string representing the operation. If the operationName is too large it will be truncated in the
+     * middle using TextUtils.truncStringMiddleExact.
+     * @param operationName operation name to truncate if too large
+     * @return the truncated operation name, or the operation name unmodified, if it doesn't need truncation
+     * @throws NullPointerException if operation name is null
+     * @throws IllegalArgumentException if operation name is equal to the empty string
+     */
     public static String getOperationDisplayString(String operationName){
-        String operationNameDisplay = TextUtils.truncStringMiddleExact(operationName, 20);
-        return operationNameDisplay;
+        if(operationName == null) throw new NullPointerException("operationName must be non null");
+        if(operationName.equals("")) throw new IllegalArgumentException("operationName must not be the emtpy string");
+
+        return TextUtils.truncStringMiddleExact(operationName, 20);
     }
 
+    /**
+     * Called from within the Chart component of the jasper reports, only by performance statistics reports.
+     * See the chart definition within the jrxml files.<br>
+     * The value returned is used as the Category value. Everytime this is called, a new category is being generated
+     * within the chart.<br>
+     * Calls getServiceDisplayStringNotTruncated to get how the serviceName and routingURI are displayed as a string.
+     * Uses that string to then look up the service identifier from displayStringToService, this is the value that will
+     * be shown as the category value on a chart. e.g. Service1 or Service 1 etc...<br>
+     * The data structure displayStringToService is created before the report is ran. The creation of this data
+     * structure must also use getServiceDisplayStringNotTruncated for creating key values. This ensures that the values
+     * from the report passed to this function, when turned into a key, will <em>ALWAYS</em> match a key in
+     * displayStringToService.
+     * <br>
+     * see Utilities.getServiceDisplayStringNotTruncated()
+     * @param displayStringToService the map of string values to a string service identifier value. This string service
+     * id identifier value is what's used as a Category value in a chart.
+     * @param  serviceName service name, should not be null or empty string
+     * @param routingURI routing uri, can be null and empty string
+     * @return the String value to be displayed as a category in the chart used in the report output
+     */
     public static String getServiceFromDisplayString(Map<String, String> displayStringToService, String serviceName,
                                                  String routingURI){
 
@@ -2036,29 +2237,29 @@ END as IP_ADDRESS,
         return displayStringToService.get(displayString);
     }
 
-
     /**
      * Creates a display string from the supplied parameters. Any values which are the place holder are ignored.
-     * The display string starts with the authenticated user, if valid, then moves through the keys list and for each
-     * key it will display its value.
+     * The display string starts with the authenticated user, if valid, then for each key in keysToFilters it displays
+     * the key and possibly it's value from keyValues
+     *
+     * The string at index i in keyValues, IMPLICITLY matches the key at the same index in keysToFilters. THIS IS WHY THIS
+     * DATA STRUCTURE IS ALWAYS A LINKED HASH MAP, AS ORDER MUST BE MAINTAINED.
+     *
+     * This function is used to create a unique key string by which to identify a set of mapping values and also to
+     * display the mapping values to the user in report output. As a result a prefix can be added for display purposes.
+     *
+     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     * hash map.
      * @param authUser value for the authenticated user, can be the place holder value
      * @param keyValues array of Strings. Array is used as it's easier from with Jasper reports than using a
-     * Collection
-     * @param keys the keys chosen by the user
-     * @return display String
-     * @throws IllegalArgumentException if the length of keyValues is less than the size of keys
-     * @throws NullPointerException if any argument is null or empty for it's type
-     * @throws IllegalStateException if keyValues ever has the place holder value for any value from keys
-     */
-
-    /**
-     * Creates a display string from the supplied parameters. Any values which are the place holder are ignored.
-     * The display string starts with the authenticated user, if valid, then moves through the keys list and for each
-     * key it will display its value.
-     * @param authUser value for the authenticated user, can be the place holder value
-     * @param keyValues array of Strings. Array is used as it's easier from with Jasper reports than using a
-     * Collection
-     * @return display String
+     * Collection.
+     * @param includePreFix true if the supplied prefix should be at the start of the returned string
+     * @param prefix stirng to include at the start of the returned string. If includePreFix is true, it cannot be
+     * null or the empty string
+     * @return a string representing all the supplied parameters
      * @throws IllegalArgumentException if the length of keyValues is less than the size of keys
      * @throws NullPointerException if any argument is null or empty for it's type
      * @throws IllegalStateException if keyValues ever has the place holder value for any value from keys
@@ -2072,7 +2273,7 @@ END as IP_ADDRESS,
             throw new NullPointerException("authUser must have a non null and non empty value. " +
                     "It can be the placeholder value");//as it always exists in select
 
-        if(authUser.equals(SQL_PLACE_HOLDER) && (keysToFilters == null || keysToFilters.isEmpty())
+        if(authUser.equals(SQL_PLACE_HOLDER) && keysToFilters.isEmpty()
                 && (keyValues == null || keyValues.length == 0)){
             throw new IllegalArgumentException("authUser must be supplied (non null, emtpy and not a placeholder or" +
                     " valid keys and values must be supplied");
@@ -2092,7 +2293,7 @@ END as IP_ADDRESS,
         StringBuilder sb = new StringBuilder();
         boolean firstComma = false;
         if(!authUser.equals(SQL_PLACE_HOLDER)){
-            sb.append("Authenticated User: " + authUser);
+            sb.append("Authenticated User: ").append(authUser);
             firstComma = true;
         }
 
@@ -2111,12 +2312,13 @@ END as IP_ADDRESS,
             if(index != 0){
                 sb.append(", ");
             }
-            sb.append(me.getKey()+": " + keyValues[index]);
+            sb.append(me.getKey()).append(": ").append(keyValues[index]);
 
             index++;
         }
 
         if(sb.toString().equals("")){
+            //todo [Donal] there is a bug open for this. Update the logic here
             return "Detail Report";
         }else{
             if(includePreFix) sb.insert(0, prefix);
@@ -2124,11 +2326,14 @@ END as IP_ADDRESS,
         }
     }
 
-
     /**
      * From the auth user, keys, values and filter constraints get a string which displays this information for the user
      * in the report info section of a report
-     * @param isDetail
+     * @param keysToFilters all the keys to FilterPairs, which we want converted into a nice string for the user
+     * @param isDetail is used in validating the parameters, some constrains are relative to the query being a detail
+     * query or not.  The keysToFilters cannot be validated without knowing if the report is at the operation level.
+     * In addition, isDetail determins whether we just constrain by service id or service id and operation
+     * @param isUsage needed in order to validate the input parameters
      * @return String for displaying in report info section of report
      */
     public static String getMappingReportInfoDisplayString(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters
@@ -2136,7 +2341,7 @@ END as IP_ADDRESS,
 
         boolean keysSupplied = checkMappingQueryParams(keysToFilters, isDetail, isUsage);
 
-        boolean useUser = (keysSupplied)?isUserSupplied(keysToFilters):false;
+        boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
         StringBuilder sb = new StringBuilder();
         boolean firstComma = false;
@@ -2202,6 +2407,7 @@ END as IP_ADDRESS,
             if(tempIndex > 0) sb.append(tempBuilder);
             index++;
         }
+        //todo [Donal] confirm the use case this supports. If an error case, catch it when validating the parameters
         if(sb.toString().equals("")) return "None";
         return sb.toString();
     }
