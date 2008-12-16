@@ -3,7 +3,7 @@
 -->
 <wicket:panel xmlns:wicket="http://wicket.apache.org/">
 
-    <div class="panel">
+    <div class="panel" style="height: 320px; overflow: hidden">
         <div class="panelTitle tippy">
             <img id="outputTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'outputDiv')" />
             <span class="clickable" onclick="l7.Tippy.toggleTippy('outputTippy', 'outputDiv')">Generated Reports</span>
@@ -28,6 +28,7 @@
                 <div wicket:id="reportTable"/>
             </div>
         </div>
+        <div class="panelContent" style="height: 100%">&nbsp;</div>
     </div>
 
 </wicket:panel>
