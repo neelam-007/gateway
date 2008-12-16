@@ -18,6 +18,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.awt.*;
@@ -78,6 +79,7 @@ public class CreateFolderAction extends SecureAction {
                     final AbstractTreeNode sn = new FolderNode(header, parentFolder);
                     model.insertNodeInto(sn, parentNode, parentNode.getInsertPosition(sn, RootNode.getComparator()));
 
+                    tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
                             //reset filter
