@@ -80,6 +80,7 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
         String ssgClusterId = RequestCycle.get().getRequest().getParameter("ssgClusterId");
         GatewayClusterClient cluster = gatewayClusterClientManager.getGatewayClusterClient(ssgClusterId, getUser());
         Collection<GatewayApi.EntityInfo> rawEntitiesInfo = cluster.getEntityInfo(Arrays.asList(entityTypes));
+        // Sort the raw list by entity name with case insensitive.
         Collections.sort((List<GatewayApi.EntityInfo>)rawEntitiesInfo);
 
         // Find the root folder and sort the raw entities data to have an ordered tree.
@@ -91,7 +92,7 @@ public class SSGClusterContentSelector extends EmsBaseWebPage {
                 break;
             }
         }
-        orderEntityInfosByPreorder(sortedEntitiesInfo, root, 0, rawEntitiesInfo);
+        orderEntityInfosByPreorder(sortedEntitiesInfo, root, 0, rawEntitiesInfo);  // the raw list has been sorted by entity name first with case insensitive.
         if (! keepRootFolder) sortedEntitiesInfo.remove(0);
 
         // Convert EntityInfo to SsgClusterContent while adding opertions content if a publiished service has opertions.

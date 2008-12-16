@@ -188,7 +188,7 @@ public interface GatewayApi {
 
         @Override
         public int compareTo(Object o) {
-            return name.compareTo(((EntityInfo)o).getName());
+            return name.compareToIgnoreCase(((EntityInfo)o).getName());
         }
     }
     
