@@ -18,6 +18,8 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
+import com.l7tech.gateway.common.service.ServiceDocument;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -422,9 +424,13 @@ public class MigrationManagerImpl implements MigrationManager {
     private Collection<String> checkServiceResolution(Map<EntityHeader, EntityOperation> entities) {
         Collection<String> errors = new HashSet<String>();
         for (EntityHeader header : entities.keySet()) {
-            if (header.getType() == EntityType.SERVICE && entities.get(header).operation == CREATE) {
+            if (header.getType() == EntityType.SERVICE &&
+                ( entities.get(header).operation == CREATE ||
+                  entities.get(header).operation == UPDATE ) ) {
                 try {
-                    resolutionManager.checkDuplicateResolution((PublishedService) entities.get(header).entity);
+                    PublishedService service = (PublishedService) entities.get(header).entity;
+                    service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(findServiceDocuments(service, entities)) );
+                    resolutionManager.checkDuplicateResolution( service );
                 } catch (DuplicateObjectException e) {
                     errors.add("Service resolution error: " + ExceptionUtils.getMessage(e));
                 } catch (ServiceResolutionException e) {
@@ -433,6 +439,22 @@ public class MigrationManagerImpl implements MigrationManager {
             }
         }
         return errors;
+    }
+
+    private Collection<ServiceDocument> findServiceDocuments( final PublishedService service, final Map<EntityHeader, EntityOperation> entities  ) {
+        Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
+
+        //TODO lookup service document entities here        
+//        for (EntityHeader header : entities.keySet()) {
+//            if (header.getType() == EntityType.SERVICE_DOCUMENT ) {
+//                ServiceDocument serviceDocument = (ServiceDocument) entities.get(header).entity;
+//                if ( serviceDocument.getServiceId() == service.getOid()  ) {
+//                    serviceDocuments.add( serviceDocument );
+//                }
+//            }
+//        }
+
+        return serviceDocuments;
     }
 
     private void findDependenciesRecursive(MigrationMetadata result, EntityHeader header) throws MigrationApi.MigrationException, PropertyResolverException {
