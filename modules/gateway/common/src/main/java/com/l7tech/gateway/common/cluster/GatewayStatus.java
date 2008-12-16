@@ -116,7 +116,14 @@ public class GatewayStatus {
      * Get timestamp of when the node last booted
      */
     public long getUptime() {
-        return clusterInfo.getUptime();
+        long uptime = clusterInfo.getUptime();
+
+        //if the node status is unknown we'll show an invalid uptime value to denote that the node
+        //is at a unknown status
+        if (status == NODE_STATUS_UNKNOWN) {
+            uptime = -1;
+        }
+        return uptime;
     }
 
     /**

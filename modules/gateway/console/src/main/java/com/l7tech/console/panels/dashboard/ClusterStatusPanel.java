@@ -468,6 +468,7 @@ public class ClusterStatusPanel extends JPanel {
      * @return String  The string representation of the uptime
      */
     private String convertUptimeToString(long uptime) {
+        if (uptime == -1) return new String("");    //unknown uptime
 
         if (uptime == 0) return "0 mins";
 
