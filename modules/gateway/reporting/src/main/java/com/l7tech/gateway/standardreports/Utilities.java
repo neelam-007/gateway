@@ -1014,7 +1014,7 @@ public class Utilities {
 
     /**
      * Create the sql required to get performance statistics for a specific period of time, for a possible specifc set of
-     * service id's, operations, mapping keys and values, mapping values AND or LIKE logic and authenticated users.
+     * service id's, operations, mapping keys and values, mapping values EQUAL or LIKE logic and authenticated users.
      * Below is an example query. The comments in the code relate to the section's listed in the query here in the
      * javadoc
      * <br>
@@ -1078,7 +1078,7 @@ public class Utilities {
      * If serviceIdToOperations is null or empty, then no constraint is put on services or operations.
      * <br>
      * SECTION J: (Optional) If the AUTH_USER key has been added, and it has one or more FilterPair's in keysToFilters,
-     * then an AND block is created. Within the AND block, there is a constrain for every FilterPair. AND or LIKE is
+     * then an AND block is created. Within the AND block, there is a constrain for every FilterPair. EQUAL or LIKE is
      * used depending on the FilterPair's isUseAnd() method.<br>
      * All the constraints are OR'd together within the AND block.
      * <br>
@@ -1273,7 +1273,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
         //----SECTION A----
-        StringBuilder sb = null;
+        StringBuilder sb;
         if(isMasterQuery){
             sb = new StringBuilder(distinctFrom);
         }else{
@@ -1854,7 +1854,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * who's isEmpty() method returns false, is included in the AND block as follows:-<br>
      * For each OR constaint within the AND block, it's has a sub AND block added. Within this sub AND block, the
      * corresponding mcmk.mappingX_value (x:1-5) column is constrained. There is a constraint added for each non empty
-     * FilterPair, which are all OR'd together. Whether the constraint is AND or LIKE is determined by each FilterPair.
+     * FilterPair, which are all OR'd together. Whether the constraint is EQUAL or LIKE is determined by each FilterPair.
      * It is possible that within a sub AND block, that the values have a mix of AND and LIKE<br>
      * <pre>
      *     AND -- this is the start of an AND block for key IP_ADDRESS
