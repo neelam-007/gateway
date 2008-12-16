@@ -4,7 +4,7 @@
 
 
 <beans>
-<!--                                    se
+    <!--      
      * singleton using the factory method. This is transitional, as it is referencef from
      * too many places.
      -->
@@ -37,13 +37,12 @@
     </bean>
 
     <!-- server side service manager -->
-    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub">
+    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub" depends-on="wsdlStrategyServiceDocumentsInitializer">
         <constructor-arg ref="policyCache"/>
         <constructor-arg><null/></constructor-arg>
         <constructor-arg ref="serviceManager"/>
         <constructor-arg ref="serviceUsageManager"/>
         <constructor-arg ref="clusterInfoManager"/>
-        <constructor-arg><list/></constructor-arg>
         <constructor-arg><null/></constructor-arg>
     </bean>
 
@@ -290,4 +289,17 @@
     <bean id="distributedMessageIdManager" class="com.l7tech.server.StubMessageIdManager"/>
 
     <bean id="messageContextMappingManager" class="com.l7tech.server.mapping.MessageContextMappingManagerStub"/>
+
+    <bean id="serviceDocumentManager" class="com.l7tech.server.service.ServiceDocumentManagerStub"/> 
+
+    <bean id="wsdlStrategyServiceDocumentsInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.service.PersistentServiceDocumentWsdlStrategy"/>
+        <property name="targetMethod" value="setServiceDocumentManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="serviceDocumentManager"/>
+            </list>
+        </property>
+    </bean>
+
 </beans>

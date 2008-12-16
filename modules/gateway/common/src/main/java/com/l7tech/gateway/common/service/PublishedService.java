@@ -16,7 +16,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
-import org.xml.sax.InputSource;
+import com.l7tech.util.Service;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Port;
@@ -24,12 +24,10 @@ import javax.wsdl.WSDLException;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap12.SOAP12Operation;
-import javax.wsdl.xml.WSDLLocator;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.Transient;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
@@ -79,6 +77,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         setWsdlXml(objToCopy.getWsdlXml());
     }
 
+    @Override
     @Transient
     @Migration(mapName = NONE, mapValue = NONE, targetType = EntityType.SERVICE_DOCUMENT)
     public String getId() {
@@ -200,7 +199,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
                 WsdlStrategy strategy = wsdlStrategy;
                 if (strategy == null)
                     strategy = new DefaultWsdlStrategy();
-                _parsedWsdl = strategy.parseWsdl(getBaseURI(), cachedWsdl);
+                _parsedWsdl = strategy.parseWsdl(this, getBaseURI(), cachedWsdl);
             }
         }
         return _parsedWsdl;
@@ -471,11 +470,13 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         this.laxResolution = laxResolution;
     }
 
+    @Override
     @Migration(mapName = NONE, mapValue = NONE)
     public Folder getFolder() {
         return folder;
     }
 
+    @Override
     public void setFolder(Folder folder) {
         this.folder = folder;
     }
@@ -493,15 +494,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
      *
      */
     public static interface WsdlStrategy {
-        public Wsdl parseWsdl(String uri, String wsdl) throws WSDLException;
-    }
-
-    public static interface WSDLLocatorFactory {
-        public WSDLLocator getWSDLLocator(String uri) throws WSDLException;
-    }
-
-    public static void setWSDLLocatorFactory(WSDLLocatorFactory wsdlLocatorFactory) {
-        WSDL_LOCATOR_FACTORY = wsdlLocatorFactory;
+        public Wsdl parseWsdl(PublishedService service, String uri, String wsdl) throws WSDLException;
     }
 
     /**
@@ -543,19 +536,28 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
 
     private transient Boolean multipart;
 
-    private static WSDLLocatorFactory WSDL_LOCATOR_FACTORY = null;
-
+    /**
+     * The default strategy resolves based on lookup of an resolver in the
+     * local environment.
+     */
     private static class DefaultWsdlStrategy implements WsdlStrategy {
-        public Wsdl parseWsdl(String uri, String wsdl) throws WSDLException {
-            WSDLLocatorFactory wsdlLocatorFactory = WSDL_LOCATOR_FACTORY;
-            if(wsdlLocatorFactory == null) {
-                InputSource source = new InputSource();
-                source.setSystemId(uri);
-                source.setCharacterStream(new StringReader(wsdl));
-                return Wsdl.newInstance(uri, source);
-            } else {
-                return Wsdl.newInstance(wsdlLocatorFactory.getWSDLLocator(uri));
+        private final WsdlStrategy delegate;
+
+        public DefaultWsdlStrategy() {
+            WsdlStrategy strategy = null;
+            Iterator providerIter = Service.providers(WsdlStrategy.class);
+            if ( providerIter != null && providerIter.hasNext() ) {
+                strategy = (WsdlStrategy) providerIter.next();
             }
+            delegate = strategy;
+        }
+
+        @Override
+        public Wsdl parseWsdl(PublishedService service, String uri, String wsdl) throws WSDLException {
+            if ( delegate == null )
+                throw new WSDLException( WSDLException.CONFIGURATION_ERROR, "Missing strategy to load WSDL for '"+uri+"'." );
+
+            return delegate.parseWsdl( service, uri, wsdl );
         }
     }
 }

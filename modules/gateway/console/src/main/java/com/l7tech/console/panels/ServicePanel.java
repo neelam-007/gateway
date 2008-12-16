@@ -23,6 +23,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 
 /**
  * Service panel is the first stage for the Publish Service wizard.
@@ -106,6 +107,7 @@ public class ServicePanel extends WizardStepPanel {
               sa = (PublishServiceWizard.ServiceAndAssertion)settings;
             PublishedService publishedService = sa.getService();
 
+            publishedService.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
             publishedService.setName(service.getName());
             publishedService.setWsdlUrl(service.getWsdlUrl());
             publishedService.setWsdlXml(service.getWsdlXml());
@@ -176,6 +178,7 @@ public class ServicePanel extends WizardStepPanel {
         wsdlLocationPanel = new WsdlLocationPanel(getOwner(), logger,
                 true, SearchWsdlDialog.uddiEnabled());
         wsdlLocationPanel.addPropertyListener(new PropertyChangeListener(){
+            @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 notifyListeners();
             }
@@ -206,8 +209,6 @@ public class ServicePanel extends WizardStepPanel {
                 } else {
                     service.setName(serviceName);
                 }
-                service.setWsdlUrl(wsdlUrl.startsWith("http") ? wsdlUrl : null);
-                service.setWsdlXml(resolvedDoc);
                 serviceDocuments.clear();
 
                 for (int i=1; i<wsdlLocationPanel.getWsdlCount(); i++) {
@@ -219,6 +220,9 @@ public class ServicePanel extends WizardStepPanel {
                     serviceDocuments.add(sd);
                 }
 
+                service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
+                service.setWsdlUrl(wsdlUrl.startsWith("http") ? wsdlUrl : null);
+                service.setWsdlXml(resolvedDoc);
                 processed = true;
                 notifyListeners();
             }

@@ -24,7 +24,10 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.common.TestDocuments;
+import com.l7tech.server.service.PersistentServiceDocumentWsdlStrategy;
+import com.l7tech.server.service.ServiceDocumentManagerStub;
 
 import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
@@ -59,6 +62,7 @@ public class StubDataStore {
     public synchronized static StubDataStore defaultStore() {
         if (defaultStore != null) return defaultStore;
         try {
+            PersistentServiceDocumentWsdlStrategy.setServiceDocumentManager( new ServiceDocumentManagerStub() );
             File storeFile = File.createTempFile(DEFAULT_STORE_NAME, DEFAULT_STORE_EXT);
             storeFile.deleteOnExit();
             defaultStore = new StubDataStore(storeFile.getAbsolutePath());

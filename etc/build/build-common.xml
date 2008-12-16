@@ -226,7 +226,7 @@
             <mkdir dir="${classes.main.dir}"/>
             <unjar src="${jar.include.@{name}.text}" dest="@{dir}">
                 <patternset>
-                    <exclude name="META-INF/**/*"/>
+                    <exclude name="META-INF/*"/>
                     <exclude name="META-INF"/>
                 </patternset>
             </unjar>

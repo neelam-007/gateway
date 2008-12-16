@@ -11,6 +11,8 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
+import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
@@ -23,6 +25,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.util.Set;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,9 +53,11 @@ public class PublishInternalServiceWizard extends Wizard {
         wizardInput = templateHolder;
 
         addWizardListener(new WizardListener() {
+            @Override
             public void wizardSelectionChanged(WizardEvent e) {
                 // dont care
             }
+            @Override
             public void wizardFinished(WizardEvent e) {
                 try {
                     completeTask(null);
@@ -60,11 +65,13 @@ public class PublishInternalServiceWizard extends Wizard {
                     throw new RuntimeException(e1);
                 }
             }
+            @Override
             public void wizardCanceled(WizardEvent e) {
                 // dont care
             }
         });
         getButtonHelp().addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(PublishInternalServiceWizard.this);
             }
@@ -86,6 +93,7 @@ public class PublishInternalServiceWizard extends Wizard {
 
             service.setSoap(true);
             service.setInternal(true);
+            service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(toSave.getServiceDocuments()) );
             service.setWsdlXml(toSave.getWsdlXml());
             service.setWsdlUrl(toSave.getWsdlUrl());
 

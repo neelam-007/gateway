@@ -123,11 +123,6 @@ public class AppletMain extends JApplet implements SheetHolder {
             // Install WSDL Factory that is safe for Applet use
             Wsdl.setWSDLFactoryBuilder( WsdlUtils.getWSDLFactoryBuilder() );
         }
-        PublishedService.setWSDLLocatorFactory(new PublishedService.WSDLLocatorFactory() {
-            public WSDLLocator getWSDLLocator(String uri) throws WSDLException {
-                return new AppletWsdlLocator(uri);
-            }
-        });
     }
 
     /**

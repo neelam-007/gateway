@@ -25,9 +25,9 @@
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="optional; test->default,test"/>
         <dependency name="layer7-gui" rev="latest.integration" force="true" conf="optional"/>
         <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="optional"/>
-        <dependency name="layer7-gateway-console" rev="latest.integration" force="true" conf="optional"/>
         <dependency name="layer7-gateway-server" rev="latest.integration" force="true"
                     conf="optional; test->default,test"/>
+        <dependency name="layer7-gateway-console" rev="latest.integration" force="true" conf="optional"/>
         <dependency org="com.intellij" name="forms_rt" rev="7.0.1" force="true" conf="optional"/>
         <dependency org="org.springframework" name="spring-test" rev="2.5.6" force="true" conf="test"/>
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>

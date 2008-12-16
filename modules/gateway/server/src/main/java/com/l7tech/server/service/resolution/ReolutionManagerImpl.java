@@ -5,7 +5,6 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.Decorator;
 
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
@@ -47,10 +46,10 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
     private UrnResolver urnresolver;
     private UriResolver uriresolver;
 
-    public ReolutionManagerImpl(Collection<Decorator<PublishedService>> decorators) {
-        this.decorators = decorators;
+    public ReolutionManagerImpl() {
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         soapresolver = new SoapActionResolver(applicationContext);
         urnresolver = new UrnResolver(applicationContext);
@@ -71,15 +70,15 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
      *                                  the passed service and the ones of another service. should rollback at that point.
      * @throws UpdateException          something went wrong, should rollback at that point
      */
+    @Override
     public void recordResolutionParameters(PublishedService publishedService) throws DuplicateObjectException, UpdateException {
-        PublishedService service = decorate(publishedService);
         Collection distinctItemsToSave;
         try {
-            distinctItemsToSave = getDistinct(service);
+            distinctItemsToSave = getDistinct(publishedService);
         } catch (ServiceResolutionException sre) {
             throw new UpdateException("Cannot get service resolution data for service.", sre);
         }
-        Collection existingParameters = existingResolutionParameters(service.getOid());
+        Collection existingParameters = existingResolutionParameters(publishedService.getOid());
 
         if (isSameParameters(distinctItemsToSave, existingParameters)) {
             logger.finest("resolution parameters unchanged");
@@ -89,7 +88,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         }
 
         try {
-            checkForDuplicateResolutionParameters(distinctItemsToSave, service.getOid());
+            checkForDuplicateResolutionParameters(distinctItemsToSave, publishedService.getOid());
         } catch (HibernateException e) {
             String msg = "error checking for duplicate resolution parameters";
             logger.log(Level.WARNING, msg, e);
@@ -126,7 +125,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
                     getHibernateTemplate().save(maybeToAdd);
                 }
             }
-            logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + service.getOid());
+            logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + publishedService.getOid());
         } catch (HibernateException e) {
             throw new UpdateException("error adding resolution parameters.", e);
         }
@@ -137,9 +136,11 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
      *
      * @param serviceOid id of the service for which recorded resolution parameters will be recorded
      */
+    @Override
     public void deleteResolutionParameters(final long serviceOid) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_SERVICE_OID);
                     q.setLong(0, serviceOid);
@@ -192,6 +193,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
     private Collection existingResolutionParameters(final long serviceid) {
         try {
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_SERVICE_OID);
                     q.setLong(0, serviceid);
@@ -204,6 +206,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         }
     }
 
+    @Override
     public void checkDuplicateResolution(PublishedService service) throws DuplicateObjectException, ServiceResolutionException {
         checkForDuplicateResolutionParameters(getDistinct(service), -1);
     }
@@ -250,17 +253,5 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         }
     }
 
-    /**
-     * Run decorators
-     */
-    private PublishedService decorate(PublishedService publishedService) {
-        PublishedService decorated = publishedService;
-        for(Decorator<PublishedService> decorator : decorators) {
-            decorated = decorator.decorate(decorated);
-        }
-        return decorated;
-    }    
-
     protected final Logger logger = Logger.getLogger(getClass().getName());
-    private final Collection<Decorator<PublishedService>> decorators;
 }

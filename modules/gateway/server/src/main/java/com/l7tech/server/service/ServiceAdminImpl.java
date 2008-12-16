@@ -105,6 +105,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
 
     private CollectionUpdateProducer<ServiceHeader, FindException> publishedServicesUpdateProducer =
             new CollectionUpdateProducer<ServiceHeader, FindException>(5 * 60 * 1000, 100, new ServiceHeaderDifferentiator()) {
+                @Override
                 protected Collection<ServiceHeader> getCollection() throws FindException {
                     return serviceManager.findAllHeaders();
                 }
@@ -147,6 +148,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue);
     }
 
+    @Override
     public String resolveWsdlTarget(String url) throws IOException {
         GetMethod get = null;
         try {
@@ -200,6 +202,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         }
     }
 
+    @Override
     public PublishedService findServiceByID(String serviceID) throws FindException {
         long oid = toLong(serviceID);
         PublishedService service = serviceManager.findByPrimaryKey(oid);
@@ -215,35 +218,42 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return service;
     }
 
+    @Override
     public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws FindException  {
         long oid = toLong(serviceID);
         return serviceDocumentManager.findByServiceId(oid);
     }
 
+    @Override
     public ServiceHeader[] findAllPublishedServices() throws FindException {
         Collection<ServiceHeader> res = serviceManager.findAllHeaders();
         return collectionToHeaderArray(res);
     }
 
+    @Override
     public ServiceHeader[] findAllPublishedServices(boolean includeAliases) throws FindException {
         Collection<ServiceHeader> res = serviceManager.findAllHeaders(includeAliases);
         return collectionToHeaderArray(res);
     }
 
+    @Override
     public ServiceHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
                     throws FindException {
             Collection<ServiceHeader> res = serviceManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
     }
 
+    @Override
     public PublishedServiceAlias findAliasByEntityAndFolder(Long serviceOid, Long folderOid) throws FindException {
         return serviceAliasManager.findAliasByEntityAndFolder(serviceOid, folderOid);
     }
 
+    @Override
     public CollectionUpdate<ServiceHeader> getPublishedServicesUpdate(final int oldVersionID) throws FindException {
         return publishedServicesUpdateProducer.createUpdate(oldVersionID);
     }
 
+    @Override
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
                                                        final PolicyType policyType,
                                                        final boolean soap,
@@ -261,6 +271,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
 
     private JobId<PolicyValidatorResult> validatePolicy(final Assertion assertion, final PolicyType policyType, final boolean soap, final Wsdl wsdl) {
         return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find(false).wrapCallable(new Callable<PolicyValidatorResult>() {
+            @Override
             public PolicyValidatorResult call() throws Exception {
                 try {
                     return policyValidator.validate(assertion, policyType, wsdl, soap, licenseManager);
@@ -272,6 +283,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         })), PolicyValidatorResult.class);
     }
 
+    @Override
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, final PolicyType policyType, final boolean soap, Wsdl wsdl, HashMap<String, Policy> fragments) {
         final Assertion assertion;
         try {
@@ -311,6 +323,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
      * @param service the object to be saved or upodated
      *
      */
+    @Override
     public long savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
@@ -352,6 +365,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return oid;
     }
 
+    @Override
     public long saveAlias(PublishedServiceAlias psa) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
         long oid;
         try {
@@ -381,6 +395,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
      * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
      * @param service the object to be saved or upodated
      */
+    @Override
     public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> serviceDocuments)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
@@ -391,7 +406,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             newService = false;
         }
 
-        service.parseWsdlStrategy(new SafeWsdlPublishedService(serviceDocuments));
+        service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
         oid = savePublishedService(service);
 
         try {
@@ -417,6 +432,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return oid;
     }
 
+    @Override
     public void deletePublishedService(String serviceID) throws DeleteException {
         final PublishedService service;
         try {
@@ -435,6 +451,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         }
     }
 
+    @Override
     public void deleteEntityAlias(String serviceID) throws DeleteException {
         final PublishedServiceAlias alias;
         try {
@@ -467,6 +484,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return output;
     }
 
+    @Override
     public String[] findUDDIRegistryURLs() throws FindException {
         Properties uddiProps;
         try {
@@ -505,6 +523,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
      * @throws FindException   if there was a problem accessing the requested information.
      */
+    @Override
     public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(final String uddiURL,
                                                    final UDDIRegistryInfo info,
                                                    final String username,
@@ -516,6 +535,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             WsdlInfo[] wsdlInfo = uddiAgent.getWsdlByServiceName(uddiURL, info, username, password, namePattern, caseSensitive);
             //noinspection unchecked
             Arrays.sort(wsdlInfo, new ResolvingComparator(new Resolver<WsdlInfo,String>(){
+                @Override
                 public String resolve(WsdlInfo key) {
                     return key.getName();
                 }
@@ -528,19 +548,23 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         }
     }
 
+    @Override
     public String[] listExistingCounterNames() throws FindException {
         // get all the names for the counters
         return counterIDManager.getDistinctCounterNames();
     }
 
+    @Override
     public SampleMessage findSampleMessageById(long oid) throws FindException {
         return sampleMessageManager.findByPrimaryKey(oid);
     }
 
+    @Override
     public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws FindException {
         return sampleMessageManager.findHeaders(serviceOid, operationName);
     }
 
+    @Override
     public long saveSampleMessage(SampleMessage sm) throws SaveException {
         long oid = sm.getOid();
         if (sm.getOid() == SampleMessage.DEFAULT_OID) {
@@ -555,10 +579,12 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return oid;
     }
 
+    @Override
     public void deleteSampleMessage(SampleMessage message) throws DeleteException {
         sampleMessageManager.delete(message);
     }
 
+    @Override
     public Set<ServiceTemplate> findAllTemplates() {
         return serviceTemplateManager.findAll();
     }
@@ -612,18 +638,22 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             final int fport = url.getPort() == -1 ? 443 : url.getPort();
             hconf = new HostConfiguration();
             Protocol protocol = new Protocol(url.getProtocol(), (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
+                @Override
                 public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
                     return getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
                 }
 
+                @Override
                 public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
                     return getSSLContext().getSocketFactory().createSocket(host, port, clientAddress, clientPort);
                 }
 
+                @Override
                 public Socket createSocket(String host, int port) throws IOException {
                     return getSSLContext().getSocketFactory().createSocket(host, port);
                 }
 
+                @Override
                 public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
                     Socket socket = getSSLContext().getSocketFactory().createSocket();
                     int connectTimeout = httpConnectionParams.getConnectionTimeout();
@@ -645,30 +675,37 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return hconf;
     }
 
+    @Override
     public String getPolicyURL(String serviceoid) throws FindException {
         return registryPublicationManager.getExternalSSGPolicyURL(serviceoid);
     }
 
+    @Override
     public String getConsumptionURL(String serviceoid) throws FindException {
         return registryPublicationManager.getExternalSSGConsumptionURL(serviceoid);
     }
 
+    @Override
     public Collection<UDDIRegistryInfo> getUDDIRegistryInfo() {
         return uddiTemplateManager.getTemplatesAsUDDIRegistryInfo();
     }
 
+    @Override
     public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         return asyncSupport.getJobStatus(jobId);
     }
 
+    @Override
     public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
         return asyncSupport.getJobResult(jobId);
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);
     }
 
+    @Override
     public void destroy() throws Exception {
         if (validatorExecutor != null) validatorExecutor.shutdown();
     }

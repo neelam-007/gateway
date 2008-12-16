@@ -23,7 +23,6 @@ import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.util.Decorator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ArrayUtils;
@@ -77,7 +76,6 @@ public class ServiceCache
     private final Map<Long, ServiceStatistics> serviceStatistics = new HashMap<Long, ServiceStatistics>();
     private final Map<Long, String> servicesThatAreThrowing = new HashMap<Long, String>();
     private final Set<Long> servicesThatAreDisabled = new HashSet<Long>();
-    private final Collection<Decorator<PublishedService>> decorators;
 
     private final PlatformTransactionManager transactionManager;
     private final ServiceManager serviceManager;
@@ -121,17 +119,12 @@ public class ServiceCache
                         ServiceManager serviceManager,
                         ServiceUsageManager serviceUsageManager,
                         ClusterInfoManager clusterInfoManager,
-                        Collection<Decorator<PublishedService>> decorators,
                         Timer timer)
     {
         if (policyCache == null) throw new IllegalArgumentException("Policy Cache is required");
         if (timer == null) timer = new Timer("Service cache refresh", true);
 
         this.policyCache = policyCache;
-        if (decorators == null)
-            this.decorators = Collections.emptyList();
-        else
-            this.decorators = decorators;
         this.checker = timer;
         this.transactionManager = transactionManager;
         this.serviceManager = serviceManager;
@@ -177,6 +170,7 @@ public class ServiceCache
         }
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof ServiceCacheEvent.Updated) {
             doCacheUpdate((ServiceCacheEvent.Updated) applicationEvent);
@@ -528,8 +522,11 @@ public class ServiceCache
         if ( metadata == null ) {
             // use defaults
             metadata = new PolicyMetadata() {
+                @Override
                 public boolean isTarariWanted() { return false; }
+                @Override
                 public boolean isWssInPolicy() { return false; }
+                @Override
                 public boolean isMultipart() { return false; }
             };
         }
@@ -563,6 +560,7 @@ public class ServiceCache
 
     private void notifyListeners(final List<Pair<Long, CachedServiceNotificationType>> notificationList) {
         threadPool.execute(new Runnable() {
+            @Override
             public void run() {
                 final List<Long> oids = new LinkedList<Long>();
                 final List<Character> ops = new LinkedList<Character>();
@@ -615,8 +613,7 @@ public class ServiceCache
     /**
      * Caller must hold lock protecting {@link #services}
      */
-    private void cacheNoLock(PublishedService newService, List<Pair<Long, CachedServiceNotificationType>> notificationList) throws ServerPolicyException {
-        final PublishedService service = decorate(newService);
+    private void cacheNoLock(PublishedService service, List<Pair<Long, CachedServiceNotificationType>> notificationList) throws ServerPolicyException {
         final Long oid = service.getOid();
         final PublishedService oldService = services.get(oid);
 
@@ -625,9 +622,9 @@ public class ServiceCache
             update = false;
         } else {
             update = true;
-            if (oldService.isDisabled() && !newService.isDisabled()) {
+            if (oldService.isDisabled() && !service.isDisabled()) {
                 notificationList.add(new Pair<Long, CachedServiceNotificationType>(oid, CachedServiceNotificationType.ENABLED));
-            } else if (newService.isDisabled() && !oldService.isDisabled()) {
+            } else if (service.isDisabled() && !oldService.isDisabled()) {
                 notificationList.add(new Pair<Long, CachedServiceNotificationType>(oid, CachedServiceNotificationType.DISABLED));
             }
         }
@@ -898,6 +895,7 @@ public class ServiceCache
      * @throws Exception
      * @see InitializingBean
      */
+    @Override
     public void afterPropertiesSet() throws Exception {
         this.auditor = new Auditor(this, getApplicationContext(), logger);
         initializeServiceStatistics();
@@ -907,6 +905,7 @@ public class ServiceCache
      * @throws Exception
      * @see DisposableBean
      */
+    @Override
     public void destroy() throws Exception {
         checker.cancel();
         if (threadPool != null)
@@ -1041,17 +1040,6 @@ public class ServiceCache
                 break;
             }
         }
-    }
-
-    /**
-     * Run service decorators
-     */
-    private PublishedService decorate(PublishedService publishedService) {
-        PublishedService decorated = publishedService;
-        for(Decorator<PublishedService> decorator : decorators) {
-            decorated = decorator.decorate(decorated);
-        }
-        return decorated;
     }
 
     /**

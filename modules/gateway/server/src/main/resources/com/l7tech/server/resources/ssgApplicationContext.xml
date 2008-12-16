@@ -356,19 +356,12 @@
         <constructor-arg ref="licenseManager"/>
     </bean>
     <!-- server side service cache -->
-    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
+    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache" depends-on="wsdlStrategyServiceDocumentsInitializer">
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="serviceManager"/>
         <constructor-arg ref="serviceUsageManager"/>
         <constructor-arg ref="clusterInfoManager"/>
-        <constructor-arg>
-            <list>
-                <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">
-                    <constructor-arg ref="serviceDocumentManager"/>
-                </bean>
-            </list>
-        </constructor-arg>
         <constructor-arg>
             <bean class="com.l7tech.server.util.ManagedTimer">
                 <constructor-arg value="Service cache refresh"/>
@@ -511,14 +504,7 @@
     <bean id="serviceAliasManager" class="com.l7tech.server.service.ServiceAliasManagerImpl" parent="hibernateBean" />
 
     <!-- server side resolution manager -->
-    <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl">
-        <constructor-arg>
-            <list>
-                <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">
-                    <constructor-arg ref="serviceDocumentManager"/>
-                </bean>
-            </list>
-        </constructor-arg>
+    <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl" depends-on="wsdlStrategyServiceDocumentsInitializer">
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
@@ -1306,5 +1292,15 @@
       <constructor-arg ref="propertyResolverFactory"/>
       <constructor-arg ref="resolutionManager"/>
   </bean>
+
+    <bean id="wsdlStrategyServiceDocumentsInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.service.PersistentServiceDocumentWsdlStrategy"/>
+        <property name="targetMethod" value="setServiceDocumentManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="serviceDocumentManager"/>
+            </list>
+        </property>
+    </bean>
 
 </beans>

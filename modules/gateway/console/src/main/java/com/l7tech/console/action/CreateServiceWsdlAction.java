@@ -19,6 +19,7 @@ import static com.l7tech.objectmodel.EntityType.SERVICE;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DuplicateObjectException;
@@ -168,7 +169,6 @@ public class CreateServiceWsdlAction extends SecureAction {
                 }
 
                 // OK to update service here (not an edit)
-                service.setWsdlXml(sw.toString());
                 service.setName(ws.getServiceName());
                 service.setDisabled(true);
                 final String serviceAddress = getServiceAddress(def);
@@ -199,6 +199,9 @@ public class CreateServiceWsdlAction extends SecureAction {
                     sd.setContents(writer.toString());
                     sourceDocs.add(sd);
                 }
+
+                service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(sourceDocs) );                
+                service.setWsdlXml(sw.toString());
 
                 tryToPublish = true;
             } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
