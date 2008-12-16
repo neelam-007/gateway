@@ -231,10 +231,12 @@ public class SystemSettings extends EmsPage {
                         protected void onSubmit(final AjaxRequestTarget target) {
                             sslModel.detach();
 
-                            target.addComponent( sslIssuerLabel );
-                            target.addComponent( sslSerialNumberLabel );
-                            target.addComponent( sslSubjectLabel );
-                            target.addComponent( sslThumbprint );
+                            if ( target != null ) {
+                                target.addComponent( sslIssuerLabel );
+                                target.addComponent( sslSerialNumberLabel );
+                                target.addComponent( sslSubjectLabel );
+                                target.addComponent( sslThumbprint );
+                            }
                         }
                     };
                     YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Change SSL Settings", YuiDialog.Style.OK_CANCEL, sslEditPanel, new YuiDialog.OkCancelCallback(){

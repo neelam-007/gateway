@@ -108,11 +108,15 @@ public class SslEditPanel extends Panel {
                 String alias = null;
                 if ( "gen".equals( group.getModelObjectAsString() ) ) {
                     String hostValue = sslFormModel.getHostname();
-                    try {
-                        alias = setupManager.generateSsl( hostValue );
-                    } catch ( SetupException se ) {
-                        feedback.error( "Could not generate SSL certificate for host '"+hostValue+"'" );
-                        logger.log( Level.WARNING, "Error configuring ssl for hostname '"+hostValue+"'.", se );
+                    if ( hostValue != null && !hostValue.isEmpty() ) {
+                        try {
+                            alias = setupManager.generateSsl( hostValue );
+                        } catch ( SetupException se ) {
+                            feedback.error( "Could not generate SSL certificate for host '"+hostValue+"'" );
+                            logger.log( Level.WARNING, "Error configuring ssl for hostname '"+hostValue+"'.", se );
+                        }
+                    } else {
+                        feedback.error( "Could not generate SSL certificate for host '"+hostValue+"'" );                        
                     }
                 } else {
                     String passwordValue = sslFormModel.getPassword();
@@ -123,6 +127,8 @@ public class SslEditPanel extends Panel {
                             upload = keystore.getFileUpload();
                             if ( upload != null ) {
                                 KeyStore keystore = KeyStore.getInstance("PKCS12");
+
+                                if ( passwordValue == null ) passwordValue = "";
                                 keystore.load( upload.getInputStream(), passwordValue.toCharArray() );
 
                                 if ( aliasValue == null || aliasValue.trim().isEmpty() ) {
@@ -153,7 +159,7 @@ public class SslEditPanel extends Panel {
                         feedback.error( "Error configuring ssl with keystore." );
                     } catch (IOException e) {
                         logger.log( Level.WARNING, "Error configuring ssl with keystore '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
-                        feedback.error( "Error configuring ssl with keystore, keystore file may be invalid.." );
+                        feedback.error( "Error configuring ssl with keystore, keystore file may be invalid." );
                     } catch (NoSuchAlgorithmException e) {
                         logger.log( Level.WARNING, "Error configuring ssl with keystore.", e );
                         feedback.error( "Error configuring ssl with keystore." );
@@ -177,12 +183,12 @@ public class SslEditPanel extends Panel {
                         Thread.currentThread().interrupt();
                     }
 
-                    if ( successScript != null && target != null) {
+                    if ( successScript != null && target != null ) {
                         target.prependJavascript(successScript);
                     }
 
                     SslEditPanel.this.onSubmit( target );
-                } else {
+                } else if ( target != null ){
                     target.addComponent( feedback );
                 }
             }
