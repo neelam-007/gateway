@@ -172,6 +172,7 @@ public class Utilities {
      * After the calendar has been retrieved for the UNIT_OF_TIME, the numberOfUnits is subtracted from the calendar,
      * using the Calendar.add method. See getCalendarTimeUnit for where the correct Calendar time unit field is
      * retrieved for the UNIT_OF_TIME supplied.
+     * <br>
      * The return value should only be used for the inclusive start time of a time period / interval
      * @param numberOfUnits How many unitOfTime to use
      * @param timeZone when determing the end of the previous day, week or month
@@ -209,12 +210,12 @@ public class Utilities {
     }
 
     /**
-     * Get the resolution to use in summary queries.
+     * Get the resolution to use in summary queries.<br>
      * If the difference between the startTimeMilli and endTimeMilli > hourRetentionPeriod * num milli seconds in a day,
      * then the daily bin resolution is used, otherwise hourly is used.
      * Note this should not be used directly by interval reports as its possible that its not possible at all to fulfil
      * the report with the selections made. See getIntervalResolutionFromTimePeriod, which can default back to calling
-     * this method, once it's checked it's ok to do so.
+     * this method, once it's checked it's ok to do so. <br>
      * @param startTimeMilli start of time period, in milliseconds, since epoch
      * @param endTimeMilli end of time period, in milliseconds, since epoch
      * @param hourRetentionPeriod SSG's current hourly bin max retention policy value, number of days hourly data is
@@ -237,9 +238,10 @@ public class Utilities {
     }
 
     /**
-     * Get the resolution to use in interval queries.
+     * Get the resolution to use in interval queries.       <br>
      * This method delegates to getSummaryResolutionFromTimePeriod after checking if the relativeTimeUnit is
-     * UNIT_OF_TIME.HOUR,
+     * UNIT_OF_TIME.HOUR
+     *  <br>
      * If the end of the time period is before the oldest hourly metric bin value in the database, an UtilityConstraintException
      * is thrown, as the report is guaranteed to have no output. If the time period overlaps with the start of the hourly
      * metric bins, then no exception will be thrown, as providing the resolution 1 allows for the possibility of data
@@ -335,18 +337,20 @@ public class Utilities {
     /**
      * Get the date to display on a report. The timeMilliSecond value since epoch will be converted into a suitable
      * format to use in the report as the interval information.
+     * <br>
      * The interval string representation depends on the UNIT_OF_TIME specified in intervalUnitOfTime. Each string
      * representation carries enough information that if a major time boundary is crossed, it is clear it has happened
      * and no two intervals can be confused.
-     * Here are the various formats, depending on the UNIT_OF_TIME specified in intervalUnitOfTime
-     * HOUR: MM/dd HH:MM - HH:MM
+     * <br>
+     * Here are the various formats, depending on the UNIT_OF_TIME specified in intervalUnitOfTime<br>
+     * HOUR: MM/dd HH:MM - HH:MM<br>
      * DAY: E MMM d, when the interval num units is 1, E MMM d-d when the num interval units is > 1, E MMM d-MMM d when
      * the num interval units is > 1 and a month boundary is crossed. If a year boundary is also crossed in this condition,
-     * then 'yy is apppended to the date string. 
-     * when a new year is crossed it is highlighed by including the string month value before the day
+     * then 'yy is apppended to the date string.<br>
+     * when a new year is crossed it is highlighed by including the string month value before the day<br>
      * WEEK: MM/dd - MM/dd, when a new year is crossed it is highlighed by including the string year before the month,
-     * yyyy/MM/dd - MM/dd
-     * MONTH: yyyy MMM
+     * yyyy/MM/dd - MM/dd<br>
+     * MONTH: yyyy MMM<br>
      * These are not perfect and some redundant info is shown, e.g. for all weeks in January the year will also be shown
      * for WEEK. Could be made smarter by looking at what the week number is, however any unit may be plural so the
      * first week of an interval in January may be the 3rd week and not just the first week.
@@ -470,6 +474,7 @@ public class Utilities {
      * Once the Calendar is retrieved it's time in milliseconds is retrieved and that is the return value.
      * When calculating end times with the returned value the actual value should not be included. End times are
      * always exclusive in report time period and intervals.
+     * <br>
      * For example a report over the last day runs 00:00 to 00:00, in code the time period is >= 00:00 and < 00:00,
      * which gives us the entire contents of the day, and nothing from the next day
      * @param unitOfTime for which we want the millisecond value of. The rules for getting this value are specified in
@@ -484,20 +489,20 @@ public class Utilities {
 
     /**
      * Get a Calendar object, correctly configured to be at exactly the end time of the UNIT_OF_TIME specified, for the
-     * timezone specified.
-     * The rules are as follows, for the various values of UNIT_OF_TIME
+     * timezone specified.<br>
+     * The rules are as follows, for the various values of UNIT_OF_TIME<br>
      * HOUR: A calendar whos minute, second and millisecond values are all set to 0. The calendar is exactly at the
-     * very start of the CURRENT hour.
+     * very start of the CURRENT hour.<br>
      * DAY: A calendar who's hour, minute, second and millisecond values are all set to 0. The calendar is exactly at the
-     * very start of the CURRENT day.
+     * very start of the CURRENT day.<br>
      * WEEK:A calendar who's hour, minute, second and millisecond values are all set to 0. The calendar is exactly at the
-     * very start of the CURRENT day. Note this is the same as DAY
+     * very start of the CURRENT day. Note this is the same as DAY<br>
      * MONTH:A calendar who's day of month is set to 1 and hour, minute, second and millisecond values are all set to 0.
-     * The calendar is exactly at the very start of the CURRENT month.
+     * The calendar is exactly at the very start of the CURRENT month.<br>
      * This function is primiarly used by relative time functions. The milli second value of the returned Calendar, as is,
      * is the end of the time period / interval. To get the start use the Calendar.add method with the correct field
      * and a minus value to move back in time in fixed amounts, always arriving at the very start of the time period
-     * represented by UNIT_OF_TIME.
+     * represented by UNIT_OF_TIME.<br>
      * Note: Where ever this calendar is used, any add functions should be using the Calendar field which matches
      * the UNIT_OF_TIME the returned Calendar has been configured with. See getCalendarTimeUnit 
      * @param unitOfTime
@@ -527,8 +532,8 @@ public class Utilities {
 
 
     /**
-     * Return a millisecond value from the start of epoch up to the date
-     * represented by the date parameter. If you specify Europe/Paris as the timezone, then the date will be parsed
+     * Return a millisecond value from the start of epoch up to the date represented by the String date parameter.
+     * If you specify Europe/Paris as the timezone, then the date will be parsed
      * and the GMT millisecond value represented by that paris date time will be returned.
      * Any date parsed with a timezone is returning the millisecond value since epoch relative to the specified timezone
      * If you specify 2008/11/28 23:00 with Europe/Paris and then 2008/11/28 14:00 Canada/Pacific, you will get the
@@ -537,6 +542,7 @@ public class Utilities {
      * @param date The format MUST BE in the format 'yyyy/MM/dd HH:mm'
      * @param timeZone timezone in which the date supplied belongs
      * @return The number of milliseconds since epoch represented by the supplied date and timezone
+     * @throws ParseException if the supplied string date cannot be parsed
      */
     public static long getAbsoluteMilliSeconds(String date, String timeZone) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_STRING);
@@ -545,6 +551,12 @@ public class Utilities {
         return d.getTime();
     }
 
+    /**
+     * Convenience method to retrieve a TimeZone object from the timezone id represented by the timeZone parameter 
+     * @param timeZone the timezone required
+     * @return the correct timezone which matches the timeZone parameter. Only the correct timezone is returned. Never null
+     * @throws IllegalArgumentException if the timezone requested is not found
+     */
     public static TimeZone getTimeZone(String timeZone){
 
         TimeZone tz = TimeZone.getTimeZone(timeZone);
@@ -559,18 +571,21 @@ public class Utilities {
     /**
      * For the specified relative time period, get the distinct list of intervals which make up that time period
      * The first long in the returned list is the very start of the time period and the last long is the end
-     * of the very last interval.
-     * The returned List should be used as follows: Interval 0 = list(i) >= interval < list(i+1) therefore an interval
-     * is inclusive of it's start and exclusive of it's end.
+     * of the very last interval.<br>
+     * The returned List should be used as follows: Interval 0, i= 0: list(i) >= interval < list(i+1) therefore an
+     * interval is inclusive of it's start and exclusive of it's end.<br>
      * Note: The last interval may be shorter than expected if the interval does not divide evenly into the time period
      * @param timePeriodStartInclusive When does the time period start. See Utilities.getRelativeMilliSeconds() for
      * how to get the timePeriodStartInclusive value
      * @param timePeriodEndExclusive end of time period
      * @param intervalNumberOfUnits The length of an interval is numberOfUnits x unitOfTime
      * @param intervalUnitOfTime valid values are HOUR, DAY, WEEK and MONTH
-     * @param timeZone
-     * @return List<Long> the ordered list of long's representing the start of each interval. The last long represents
+     * @param timeZone the timezone to use when formatting the timePeriodStartInclusive and timePeriodEndExclusive
+     * in the case when there is an IllegalArgumentException 
+     * @return List<Long> the ordered list of long's representing the <em>start</em> of each interval. The last long represents
      * the end of the last interval.
+     * @throws IllegalArgumentException if the end start time period is >= end time period or if the intervalNumberOfUnits
+     * is <= 0
      */
     public static List<Long> getIntervalsForTimePeriod(Long timePeriodStartInclusive, Long timePeriodEndExclusive,
                                                                int intervalNumberOfUnits,
@@ -589,7 +604,6 @@ public class Utilities {
             startDate+" value = "+ timePeriodStartInclusive+" end: " + endDate+" value = " + timePeriodEndExclusive);
         }
 
-//        checkUnitOfTime(intervalUnitOfTime, new String[]{HOUR, DAY, WEEK, MONTH});
         if(intervalNumberOfUnits <= 0) throw new IllegalArgumentException("intervalNumberOfUnits must greater than 0");
 
         int calendarUnitOfTime = getCalendarTimeUnit(intervalUnitOfTime);
@@ -627,7 +641,7 @@ public class Utilities {
 
     /**
      * Create a string representation of all string values contained in the values collection
-     * @param values The Collection of strings to be placed into a single string for user info
+     * @param values The Collection of strings to be placed into a single string for display purposes
      * @return string with all the strings from values concat'ed with " " between them
      */
     public static String getStringNamesFromCollection(Collection values){
@@ -645,15 +659,36 @@ public class Utilities {
     }
 
     /**
-     * Get a distinct query, which for all the input params, will return sql to get the set of
-     * values represented by the inputs. This query never includes operation, although it is a mapping
-     * value, it has a special meaning and is never used in conjunction with the other mapping values
-     * @param startTimeInclusiveMilli
-     * @param endTimeInclusiveMilli
-     * @param serviceIdToOperations
-     * @param resolution
-     * @param isDetail
-     * @return
+     * Get the sql query, which for a time period, will return the complete list of distinct mapping value sets, for all
+     * the constrains represented by the parameters.
+     * <br>
+     * To understand this, you need to understand that the rows of message context mapping keys, contains a row
+     * for every distinct combination of mapping keys, regardless of what index they exist in a row of this table.
+     * Based on the keysToFilters the possible rows are filtered such that only values are returned when the row has
+     * a key for every key in keysToFilters, in any of it's mapping indexes, and if a value constraint is specified,
+     * then its actual value in message context mapping values must match the constraint.
+     * @param startTimeInclusiveMilli start of the time period
+     * @param endTimeInclusiveMilli end of the time period
+     * @param serviceIdToOperations a map of service id to the set of operations. The data is filtered such that the
+     * mapping keys / values must match, but so must the link to published_service table. If isDetail is true, then the
+     * query is further constrained so that the operation value in message context mapping values is constrained to the
+     * list of operations specified here. Operation constrains are always in relation to a service. 
+     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     * hash map.
+     * @param resolution which resolution bin to use, hourly or daily
+     * @param isDetail is used in validating the parameters, some constrains are relative to the query being a detail
+     * query or not.  The keysToFilters cannot be validated without knowing if the report is at the operation level.
+     * In addition, isDetail determins whether we just constrain by service id or service id and operation
+     * @param isUsage needed in order to validate the input parameters
+     * @return sql string, ready to be ran against a database. This sql query will ALWAYS produce the following columns
+     * of data: <pre>
+     * AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     * </pre>
+     * Note operation is not included. It is a mapping key under the covers but it has special meaning. Notice how
+     * authenticated_user is returned. To the user and to business logic, authenticated user is a normal mapping key
      */
     public static String getUsageDistinctMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Map<String, Set<String>> serviceIdToOperations,
@@ -662,18 +697,18 @@ public class Utilities {
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
-        boolean keysSupplied = checkMappingQueryParamsNew(keysToFilters, isDetail, isUsage);
+        boolean keysSupplied = checkMappingQueryParams(keysToFilters, isDetail, isUsage);
 
         boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
-        //if(!serviceIdsOk) throw new IllegalArgumentException("There must be at least one service id specified as a key in serviceIdToOperations");
+
         checkResolutionParameter(resolution);
 
-        boolean useUser = (keysSupplied)?isUserSupplied(keysToFilters):false;
+        boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
         StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
 
         addUserToSelect(false, useUser, sb);
-        List<String> keys = new ArrayList();
+        List<String> keys = new ArrayList<String>();
         if(keysSupplied) keys.addAll(keysToFilters.keySet());
         addCaseSQL(keys, sb);
 
@@ -716,7 +751,26 @@ public class Utilities {
      * Mapping values are not needed in the output of this query as they do not mean anything at the master report
      * level. All parameters will supplied will be used as constraints on the query. The order of this query is simply
      * service id followed by operation, which may be a place holder
-     * @return
+     * @param startTimeInclusiveMilli start of the time period
+     * @param endTimeInclusiveMilli end of the time period
+     * @param serviceIdToOperations a map of service id to the set of operations. The data is filtered such that the
+     * mapping keys / values must match, but so must the link to published_service table. If isDetail is true, then the
+     * query is further constrained so that the operation value in message context mapping values is constrained to the
+     * list of operations specified here. Operation constrains are always in relation to a service.
+     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     * hash map.
+     * @param resolution which resolution bin to use, hourly or daily
+     * @param isDetail is used in validating the parameters, some constrains are relative to the query being a detail
+     * query or not.  The keysToFilters cannot be validated without knowing if the report is at the operation level.
+     * In addition, isDetail determins whether we just constrain by service id or service id and operation
+     * @return a valid sql string ready to be ran against a database. The sql will always produce the following fields:-
+     * <pre>
+     * SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
+     * </pre>
+     *
      */
     public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Map<String, Set<String>> serviceIdToOperations,
@@ -725,14 +779,13 @@ public class Utilities {
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
-        boolean keysSupplied = checkMappingQueryParamsNew(keysToFilters, isDetail, true);
+        boolean keysSupplied = checkMappingQueryParams(keysToFilters, isDetail, true);
 
         boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
-        //if(!serviceIdsOk) throw new IllegalArgumentException("There must be at least one service id specified as a key in serviceIdToOperations");
 
         checkResolutionParameter(resolution);
 
-        boolean useUser = (keysSupplied)?isUserSupplied(keysToFilters):false;
+        boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
         StringBuilder sb = new StringBuilder(distinctFrom);
 
@@ -765,7 +818,6 @@ public class Utilities {
             }
         }
 
-        //----SECTION K----
         if(keysSupplied){
             addMappingConstraint(keysToFilters, sb);
         }
@@ -777,18 +829,31 @@ public class Utilities {
     }
 
     /**
-     * Usage query is only interested in one value - the sum of requests - constrained by all inputs
+     * Usage query is only interested in one value - the sum of throughput requests - constrained by all inputs
      * This query is used by both the summary and interval usage reports. When it's used by the base sub report
      * in an interval query the serviceIds and operations list have only 1 value each, as at that level we are
-     * querying for a particular service and possibly an operation, for those queries
-     * @param startTimeInclusiveMilli
-     * @param endTimeInclusiveMilli
-     * @param serviceIdToOperations
-     * @param resolution
-     * @param isDetail
-     * @return
+     * querying for a particular service and possibly an operation
+     * @param startTimeInclusiveMilli start of the time period
+     * @param endTimeInclusiveMilli end of the time period
+     * @param serviceIdToOperations a map of service id to the set of operations. The data is filtered such that the
+     * mapping keys / values must match, but so must the link to published_service table. If isDetail is true, then the
+     * query is further constrained so that the operation value in message context mapping values is constrained to the
+     * list of operations specified here. Operation constrains are always in relation to a service.
+     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     * hash map.
+     * @param resolution which resolution bin to use, hourly or daily
+     * @param isDetail is used in validating the parameters, some constrains are relative to the query being a detail
+     * query or not.  The keysToFilters cannot be validated without knowing if the report is at the operation level.
+     * In addition, isDetail determins whether we just constrain by service id or service id and operation
+     * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
+     * <pre>
+     *  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER | 
+     * SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     * </pre>
      */
-
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Map<String, Set<String>> serviceIdToOperations,
                                             LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
@@ -796,14 +861,13 @@ public class Utilities {
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
-        boolean keysSupplied = checkMappingQueryParamsNew(keysToFilters, isDetail, true);
+        boolean keysSupplied = checkMappingQueryParams(keysToFilters, isDetail, true);
 
         boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
-        //if(!serviceIdsOk) throw new IllegalArgumentException("There must be at least one service id specified as a key in serviceIdToOperations");
 
         checkResolutionParameter(resolution);
 
-        boolean useUser = (keysSupplied)?isUserSupplied(keysToFilters):false;
+        boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
         //----SECTION A----
         StringBuilder sb = new StringBuilder(usageAggregateSelect);
@@ -813,8 +877,8 @@ public class Utilities {
         //----SECTION C----
         addOperationToSelect(isDetail, sb);
         //----SECTION D's----
-        List<String> keys = new ArrayList();
-        //this is a usage query, no npe due to checkMappingQueryParamsNew above 
+        List<String> keys = new ArrayList<String>();
+        //this is a usage query, no npe due to checkMappingQueryParams above
         keys.addAll(keysToFilters.keySet());
         addCaseSQL(keys, sb);
         //----SECTION E----
@@ -865,6 +929,32 @@ public class Utilities {
         return sb.toString();
     }
 
+    /**
+     * This version of getUsageQuery accecpts a single serviceId and operation, as this query is called from the lowest
+     * sub report when the report is an interval usage report. At that level the query is interested in the usage data
+     * represented by the constraints, at the service and or possibly the operation level. This method will delegate to the
+     * other implementation after converting the service id and operation into a collection.
+     * <br>
+     * This function is for convenience, so the report doesn't need to provide the service id and operation as a collection
+     * @param startTimeInclusiveMilli start of the time period
+     * @param endTimeInclusiveMilli end of the time period
+     * @param serviceId the service id which we want usage data for
+     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     * hash map.
+     * @param resolution which resolution bin to use, hourly or daily
+     * @param isDetail is used in validating the parameters, some constrains are relative to the query being a detail
+     * query or not.  The keysToFilters cannot be validated without knowing if the report is at the operation level.
+     * In addition, isDetail determins whether we just constrain by service id or service id and operation
+     * @param operation the operation, if isDetail is true, that we want usage data for
+     * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
+     * <pre>
+     *  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     * SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     * </pre>
+     */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Long serviceId,
                                             LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
@@ -883,23 +973,29 @@ public class Utilities {
 
     }
 
-
     /**
      * From the keysToFilters map, determine if the AUTH_USER mapping key has been specified
-     * @param keysToFilters
-     * @return
+     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true. 
+     * @return true if the AUTH_USER is one of the mapping keys in keysToFilter, otherwise false
      */
     private static boolean isUserSupplied(Map<String, List<ReportApi.FilterPair>> keysToFilters){
-        if(keysToFilters.containsKey(MessageContextMapping.MappingType.AUTH_USER.toString())){
-            return true;
-        }
-        return false;
+         return keysToFilters.containsKey(MessageContextMapping.MappingType.AUTH_USER.toString());
     }
 
     /**
-     * Extract all the FilterPair's which relate to the context mapping key AUTH_USER
-     * @param keysToFilters
+     * Extract all the FilterPair's which relate to the context mapping key AUTH_USER<br>
+     * This should only be called when isUserSupplied && checkMappingQueryParams is true, see usages for how it's used.
+     * The presence of the key AUTH_USER, implies that we will retrieve the real value of auth user id from the mapping
+     * values table, however the list returned from this method, will determine if we actually need to add any constraint
+     * on the authenticated user value in the sql query that is being generated
+     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. The AUTH_USER key is searched for, and if it is found the list of FilterPairs it
+     * maps to will be returned, any FilterPairs whos isEmpty() method returns true, are not returned
      * @return the list of FilterPair's supplied to createMappingQuery, empty list if non were specified in keysToFilters
+     * @throws IllegalStateException if the AUTH_USER key is not found in keysToFilters, the caller should know before
+     * this method is called, that the key exists.
      */
     private static List<ReportApi.FilterPair> getAuthenticatedUserFilterPairs(Map<String, List<ReportApi.FilterPair>> keysToFilters){
         for(Map.Entry<String, List<ReportApi.FilterPair>> me: keysToFilters.entrySet()){
@@ -916,82 +1012,97 @@ public class Utilities {
         throw new IllegalStateException("No authenticated user filter pairs were found");
     }
 
-    //todo [Donal] update as now out of date
     /**
      * Create the sql required to get performance statistics for a specific period of time, for a possible specifc set of
      * service id's, operations, mapping keys and values, mapping values AND or LIKE logic and authenticated users.
      * Below is an example query. The comments in the code relate to the section's listed in the query here in the
      * javadoc
-     * PLACEHOLDERS: Any where below where ';' could be selected is done for the following reasons:-
-     * 1) The reporting software will always get fields, for which it has defined variables
+     * <br>
+     * Note: this query returns exactly the same columns as getNoMappingQuery when the parameter isMasterQuery has the
+     * same value
+     * <br>
+     * PLACEHOLDERS: Any where below where ';' could be selected is done for the following reasons:-<br>
+     * 1) The reporting software will always get fields, for which it has defined variables<br>
      * 2) Group by can always include this column, so long as the placeholder value is the same for all columns, the
-     * results are unaltered
+     * results are unaltered<br>
      * 3) Order by can always include this column, so long as the placeholder value is the same for all columns, the
-     * results are unaltered
+     * results are unaltered<br>
      *
+     * <br>
      * SECTION A: The logic for determing the performance statistics for a specific interval of time is hard coded, and
      * has no need to change at runtime. This hardcoded query also contains logic to make processing easier.
-     *
+     *<br>
      * SECTION B: AUTHENTICATED_USER column ALWAYS appears in the select statement HOWEVER it either has the real value
      * of mcmv.auth_user_id OR it is selected as ';'.
-     *
+     * <br>
      * SECTION C: SERVICE_OPERATION_VALUE column ALWAYS appears in the select statement HOWEVER it either has the real value
      * of mcmv.auth_user_id OR it is selected as ';'.
-     *
+     * <br>
      * SECTION D 1: For every key in the List<String> keys, a case statement is created. It is very important to understand
      * how this section works, as it explains why these queries work when the entries in message_context_message_values
-     * (mcmv) can contain keys from message_context_message_keys (mcmk) in any order.
+     * (mcmv) can contain keys from message_context_message_keys (mcmk) in any order.<br>
      * Although the keys can appear in any order in mcmv, we select these values out of any of the mappingx_key (x:1-5)
      * columns and place it into a derived column with the value MAPPING_VALUE_X (x:1-5). The order of the keys in
-     * List<String> keys, determines what MAPPING_VALUE_X column it applies to.
+     * List<String> keys, determines what MAPPING_VALUE_X column it applies to.<br>
      * Within each case statement we are looking for the existence of a specific key in any of 5 column locations. The
      * key WILL ALWAYS exist due to the WHERE constraint that follows. The WHERE constraint guarantees that any rows
      * found from the joins in the from clause, will ALWAYS contain rows which have ALL of the keys in List<String> keys
      * Note: The implementation of service_metric_detail bins, normalizes the keys used by any mcmv bin instance. This
      * means that although the keys can be in any order in a message context assertion, any assertion with the same
      * keys in any order, will always use the same key from mcmk.
-     *
+     * <br>
      * SECTION D 2: We ALWAYS select out every MAPPINGX_VALUE (X:1-5) values from mcmv. After we have created a CASE
      * statement for each key in List<String> keys, the remaining unused values are selected out with the place holder
      * value of ';'.
-     *
+     * <br>
      * SECTION E: The tables used in the query are not dynamic and neither are any of the joins
-     *
+     * <br>
      * SECTION F: The value of resolution can be either 1 (Hourly) or 2 (Daily)
-     *
+     * <br>
      * SECTION G: The time period for the query is for A SPECIFIC interval. The interval is inclusive of the start time
      * and exclusive of the end time.
-     *
+     * <br>
      * SECTION H & I: (Optional) Sections H & I determine if and how service id's and operations are constrained. The
-     * general rule is that an operation is never constrained without it also being constrained to a service.
+     * general rule is that an operation is never constrained without it also being constrained to a service.<br>
      * serviceIdToOperations is a map of service ids to a list of operations. There is domain logic applied depending
-     * on what the values of the keys in the map are, and whether isDetail is true or false:-
+     * on what the values of the keys in the map are, and whether isDetail is true or false:-<br>
      * H) When any of the keys has a non null and non empty list of operations, then the query produced is for a set
      * of services, with each service id constrained by specific operations. If any service in the map contains a null
      * or empty list of operations, it is simply left out of the query. isDetail must be true for this behaviour to happen.
+     * <br>
      * I) When all of the keys have null or empty lists of operations, then the query is only constrained by service ids.
      * If isDetail is true, then this turns the query into a blanket operation query, in which all operations for the
      * selected services are returned.
+     * <br>
      *
      * If serviceIdToOperations is null or empty, then no constraint is put on services or operations.
+     * <br>
+     * SECTION J: (Optional) If the AUTH_USER key has been added, and it has one or more FilterPair's in keysToFilters,
+     * then an AND block is created. Within the AND block, there is a constrain for every FilterPair. AND or LIKE is
+     * used depending on the FilterPair's isUseAnd() method.<br>
+     * All the constraints are OR'd together within the AND block.
+     * <br>
+     * SECTION K: This section compliments the CASE queries in the select clause. For every key in keysToFilters
+     * for which a CASE statement was created, it's guaranteed that a corresponding AND block is created here.<br>
+     * For each key, the AND block ensures that any matching rows, contains the key in any of the key locations 1-5.
+     * Note: to the user AUTH_USER is a mapping key, however if AUTH_USER is supplied as a key in keysToFilters,
+     * it's handled separately in the J block above.
+     * <br>
+     * For each key, if it has 1 or more FilterPair's whose isEmpty method is not true, a constraint is added within
+     * the AND block for the keys.
+     * <br>
+     * SECTION K1: If only one constraint is needed, then a single constraint is added within an AND block
+     * <br>
+     * SECTION K2: If a key has more than one constraint required, then the AND block contains the 2 or more constraints
+     * each of which are OR'd together.
+     * <br>
+     * For both K1 and k2, if the FilterPair's isUseAnd() method returns true, then AND is used in the constraint,
+     * otherwise LIKE is used.
+     * <br>
      *
-     * SECTION J: (Optional) If useUser is true AND authenticatedUsers is not null or empty, then all values from the
-     * Collection are placed inside an IN constraint, otherwise no SQL is added to the overall query
-     *
-     * SECTION K: This section compliments the CASE queries in the select clause. For every key in List<String> keys,
-     * for which a CASE statement was created, it's guaranteed that a corresponding AND block is created here.
-     * For each key, the AND block ensures that any matching rows, contain the key in any of the key locations 1-5.
-     *
-     * SECTION K 1: If it is determined that valid values for value constraints have been supplied, see
-     * keyValuesSupplied variable below, then the AND block also includes a constraint on the mcmk value column. Note
-     * that there is an implicit logical relationship between a mappingx_value and mappingx_key columns, even though
-     * there is no referential relationship. For each possible location of a key, the corresponding value column is
-     * checked, to confirm that when the key has a specific value, that the value matches the supplied filter constraint.
-     * Whether the constraint is expressed as AND or LIKE is determined by the values of valueConstraintAndOrLike.
-     * NOTE: It is outside the logic of this method to do any wild card translating on the filter values contained in
-     * keyValueConstraints. If a key's value is to be constrained by LIKE, then the value must have the sql wildcard
-     * characters, '%' and '_', at the correct locations already, if required
-     *
+     * Note: FilterPair handles all translation of the * wildcard into the SQL % wildcard. Additionally it ensures
+     * that the characters '%' and '_' can be used literally in a constraint value.
+     * <br>
      * SECTION L: The group by order is important. Performance Statistics information can never be grouped across
      * services, although it can be aggreated across services, after grouping. The major group element is therefore
      * service id, followed by operation. This guarantees that any resulting row is always at the service level, and
@@ -999,12 +1110,12 @@ public class Utilities {
      * reality be in any order here however due to how the keys are processed in the CASE statements, being determined
      * from the List<String> keys supplied, the first X mapping values are NEVER placeholders, placeholders always come
      * last.
-     *
+     * <br>
      * SECTION M: The order by order is important. Mapping values are ALWAYS ordered first, AUTHENTICATED_USER IS A
      * mapping value. They are the major order aspect, by which we want to view data. We want to look at data in terms
-     * of a set of mapping values, which represent the concept of an individual requestor type, of a service.
+     * of a set of mapping values, which represent the concept of an individual requestor type, of a service.<br>
      * Note that due to how the keys are processed in the CASE statements, being determined from the List<String> keys
-     * supplied, the first X mapping values are NEVER placeholders, placeholders always come last.
+     * supplied, the first X mapping values are NEVER placeholders, placeholders always come last.<br>
      * Following the mapping values is the service id and the operation. Service id must come before operation, as it
      * is a bigger group type. We want to either view the mapping data at the service level and from there possibly the
      * operation level.
@@ -1012,20 +1123,28 @@ public class Utilities {
      * <pre>
 SELECT
      ----SECTION A----
-p.objectid as SERVICE_ID,
+SELECT p.objectid as SERVICE_ID,
 p.name as SERVICE_NAME,
 p.routing_uri as ROUTING_URI,
-SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT,
+SUM(smd.attempted) as ATTEMPTED,
+SUM(smd.completed) as COMPLETED,
+SUM(smd.authorized) as AUTHORIZED,
+SUM(smd.front_sum) as FRONT_SUM,
+SUM(smd.back_sum) as BACK_SUM,
+SUM(smd.completed) as THROUGHPUT,
+SUM(smd.attempted)-SUM(smd.authorized) as POLICY_VIOLATIONS,
+SUM(smd.authorized)-SUM(smd.completed) as ROUTING_FAILURES,
 MIN(smd.front_min) as FRTM,
 MAX(smd.front_max) as FRTMX,
 if(SUM(smd.front_sum), if(SUM(smd.attempted), SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA,
 MIN(smd.back_min) as BRTM,
 MAX(smd.back_max) as BRTMX,
 if(SUM(smd.back_sum), if(SUM(smd.completed), SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA,
-if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP' ,
-     ----SECTION B----
+if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as AP ,
+1 as CONSTANT_GROUP ,
+----SECTION B----
 mcmv.auth_user_id AS AUTHENTICATED_USER,
-     ----SECTION C----
+----SECTION C----
 mcmv.service_operation AS SERVICE_OPERATION_VALUE,
      ----SECTION D 1----
 CASE
@@ -1073,38 +1192,42 @@ sm.period_start <1222844459000 AND
     p.objectid IN (229384, 229382, 229380, 229376, 229378)
 
      ----SECTION J----
-AND mcmv.auth_user_id IN ('Ldap User 1')  AND
+    AND
+    (
+	    mcmv.auth_user_id LIKE 'Ld%'  OR mcmv.auth_user_id LIKE 'Do%'
+    )
     ----SECTION K----
-(
-	( mcmk.mapping1_key  = 'IP_ADDRESS'
-     ----SECTION K 1----
-     AND mcmv.mapping1_value  = '127.0.0.2'
+     AND
+     (
+         ( mcmk.mapping1_key = 'IP_ADDRESS'
+     ----SECTION K1----
+     AND ( mcmv.mapping1_value LIKE '127.%'  )  )  OR
+     ---- END K1 ----
+         ( mcmk.mapping2_key = 'IP_ADDRESS'  AND ( mcmv.mapping2_value LIKE '127.%'  )  )  OR
+         ( mcmk.mapping3_key = 'IP_ADDRESS'  AND ( mcmv.mapping3_value LIKE '127.%'  )  )  OR
+         ( mcmk.mapping4_key = 'IP_ADDRESS'  AND ( mcmv.mapping4_value LIKE '127.%'  )  )  OR
+         ( mcmk.mapping5_key = 'IP_ADDRESS'  AND ( mcmv.mapping5_value LIKE '127.%'  )  )
      )
-	OR
-	( mcmk.mapping2_key  = 'IP_ADDRESS'  AND mcmv.mapping2_value  = '127.0.0.2' )
-	OR
-	( mcmk.mapping3_key  = 'IP_ADDRESS'  AND mcmv.mapping3_value  = '127.0.0.2' )
-	OR
-	( mcmk.mapping4_key  = 'IP_ADDRESS'  AND mcmv.mapping4_value  = '127.0.0.2' )
-	OR
-	( mcmk.mapping5_key  = 'IP_ADDRESS'  AND mcmv.mapping5_value  = '127.0.0.2' )
-) AND
-(
-	( mcmk.mapping1_key  = 'CUSTOMER'  AND mcmv.mapping1_value  = 'Silver' )
-	OR
-	( mcmk.mapping2_key  = 'CUSTOMER'  AND mcmv.mapping2_value  = 'Silver' )
-	OR
-	( mcmk.mapping3_key  = 'CUSTOMER'  AND mcmv.mapping3_value  = 'Silver' )
-	OR
-	( mcmk.mapping4_key  = 'CUSTOMER'  AND mcmv.mapping4_value  = 'Silver' )
-	OR
-	( mcmk.mapping5_key  = 'CUSTOMER'  AND mcmv.mapping5_value  = 'Silver' )
-)
+     AND
+     (
+         ( mcmk.mapping1_key = 'CUSTOMER'  AND
+     ----SECTION K2----
+     ( mcmv.mapping1_value = 'GOLD'  OR  mcmv.mapping1_value LIKE 'S%'  )
+     ----END SECTION K2----
+     )  OR
+         ( mcmk.mapping2_key = 'CUSTOMER'  AND ( mcmv.mapping2_value = 'GOLD'  OR  mcmv.mapping2_value LIKE 'S%'  )  )  OR
+         ( mcmk.mapping3_key = 'CUSTOMER'  AND ( mcmv.mapping3_value = 'GOLD'  OR  mcmv.mapping3_value LIKE 'S%'  )  )  OR
+         ( mcmk.mapping4_key = 'CUSTOMER'  AND ( mcmv.mapping4_value = 'GOLD'  OR  mcmv.mapping4_value LIKE 'S%'  )  )  OR
+         ( mcmk.mapping5_key = 'CUSTOMER'  AND ( mcmv.mapping5_value = 'GOLD'  OR  mcmv.mapping5_value LIKE 'S%'  )  )
+     )
      ----SECTION L----
 GROUP BY p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER , MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5
      ----SECTION M----
 ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5 ,p.objectid, SERVICE_OPERATION_VALUE
 </pre>
+     * @param isMasterQuery if true, this query will only return the SERVICE_ID, SERVICE_NAME, ROUTING_URI and
+     * CONSTANT_GROUP. Set to true when you want to find out what services match the supplied criteria. This is used
+     * to drive the master interval reports, where we will run a sub report for every serivce id found.
      * @param startTimeInclusiveMilli time_period start time inclusive
      * @param endTimeInclusiveMilli time_period end time exclsuvie
      * @param serviceIdToOperations if supplied the published_service_oid from service_metrics will be constrained by these keys.
@@ -1112,22 +1235,27 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * If any service has a non null and non empty list of operations, then services will only be returned which have operations
      * specified. if all values are null or empty, then the query is constrained with just service id's, and all operations data
      * will come back for each service supplied
-     * @param keys the list of keys representing the mapping keys
-     * @param keyValueConstraints the values which each key must be equal to, Can be null or empty
-     * @param valueConstraintAndOrLike for each key and value, if a value constraint exists as the index, the index into this
      * list dictitates whether an = or like constraint is applied. Can be null or empty. Cannot have values if
      * keyValueConstraints is null or empty
+     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     * hash map.
      * @param resolution 1 = hourly, 2 = daily. Which resolution from service_metrics to use
      * @param isDetail if true then the service_operation's real value is used in the select, group and order by,
      * otherwise operation is selected as 1. To facilitate this service_operation is always selected as
      * SERVICE_OPERATION_VALUE so that the real column is not used when isDetail is false
      * table message_context_mapping_values, with the values in operaitons
-     * @param useUser if true the auth_user_id column from message_context_mapping_values will be included in the
-     * select, group by and order by clauses
-     * @param authenticatedUsers if useUser is true, the where clause will constrain the values of
      * message_context_mapping_values, with the values in authenticatedUsers
-     * @return String query
-     * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
+     * @param isUsage needed in order to validate the input parameters
+     * @return String query if isMasterQuery is true, it has the following columns:
+     * SERVICE_ID, SERVICE_NAME, ROUTING_URI and CONSTANT_GROUP.
+     * If isMasterQuery is false, it has the following columns:-
+     * SERVICE_ID | SERVICE_NAME | ROUTING_URI | ATTEMPTED | COMPLETED | AUTHORIZED | FRONT_SUM | BACK_SUM | THROUGHPUT
+     * | POLICY_VIOLATIONS | ROUTING_FAILURES | FRTM | FRTMX | FRTA   | BRTM | BRTMX | BRTA   | AP     | CONSTANT_GROUP
+     * | AUTHENTICATED_USER | SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 |
+     * MAPPING_VALUE_4 | MAPPING_VALUE_5
      */
     public static String createMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                Map<String, Set<String>> serviceIdToOperations,
@@ -1136,14 +1264,13 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
-        boolean keysSupplied = checkMappingQueryParamsNew(keysToFilters, isDetail, isUsage);
+        boolean keysSupplied = checkMappingQueryParams(keysToFilters, isDetail, isUsage);
 
         boolean serviceIdsOk = (serviceIdToOperations != null && !serviceIdToOperations.keySet().isEmpty());
-        //if(!serviceIdsOk) throw new IllegalArgumentException("There must be at least one service id specified as a key in serviceIdToOperations");
 
         checkResolutionParameter(resolution);
 
-        boolean useUser = (keysSupplied)?isUserSupplied(keysToFilters):false;
+        boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
         //----SECTION A----
         StringBuilder sb = null;
@@ -1158,7 +1285,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         //----SECTION C----
         addOperationToSelect(isDetail, sb);
         //----SECTION D's----
-        List<String> keys = new ArrayList();
+        List<String> keys = new ArrayList<String>();
         if(keysSupplied) keys.addAll(keysToFilters.keySet());
         addCaseSQL(keys, sb);
         //----SECTION E----
@@ -1208,7 +1335,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         //----SECTION M----
         addMappingOrder(sb);
 
-        logger.log(Level.FINER,"createMappingQueryNew: " + sb.toString());
+        logger.log(Level.FINER,"createMappingQuery: " + sb.toString());
         return sb.toString();
     }
 
@@ -1217,10 +1344,18 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * therefore only included in a query when they can be explicitly constrained by a service id. This ensures that
      * when a selection of operations are made by the user, that operations from other services with the same name won't
      * also be included in report output.
-     * @param serviceIdToOperations
-     * @param sb
-     */
-    public static void addServiceAndOperationConstraint(Map<String, Set<String>> serviceIdToOperations, StringBuilder sb) {
+     * <br>
+     * Note: it's possible that calling this
+     * @param serviceIdToOperations a map of service id to the set of operations.
+     * @param sb the string builder to add sql to
+     * @throws IllegalArgumentException if serviceIdToOperations is null or empty. Calling code should ensure that this
+     * function is only called when it is required. See usages
+     * */ 
+    protected static void addServiceAndOperationConstraint(Map<String, Set<String>> serviceIdToOperations, StringBuilder sb) {
+        if(serviceIdToOperations == null || serviceIdToOperations.isEmpty()){
+            throw new IllegalArgumentException("serviceIdToOperations cannot be null and cannot be empty");
+        }
+
         int index = 0;
         //and surrounds the entire constraint
         sb.append(" AND (");
@@ -1252,16 +1387,20 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
     }
 
     /**
-     * The map serviceIdToOperations lists all service ids and any operations they map to. If a single service id maps
-     * to an operation then the result is true. If every single service id key maps to a null or empty list, then false
-     * is returned, as the query will not need to constrain the service id's with operation information 
-     * @param serviceIdToOperations
-     * @return
+     * Find out if services need to be constrained by operations. Based on the standard reports UI some of the conditions
+     * this allows for does not happen, but the sql query logic deals with it.
+     * <br>
+     * If a selection was allowed when operations and services could be selected together, then this determines if as a
+     * general policy for the sql being generated, whether or not service id's should be constrained by operations or not.
+     *
+     * @param serviceIdToOperations The map serviceIdToOperations lists all service ids and any operations they map to.
+     * If a single service id maps to an operation then the result is false. If every single service id key maps to a
+     * null or empty list, then true is returned, as the query will not need to constrain the service id's with operation
+     * information
+     * @return true if the serviceIdToOperations should be treated as a service id only constraint, or false indicating
+     * that operations should be included in the sql constraint
      */
     private static boolean isBlanketOperationQuery(Map<String, Set<String>> serviceIdToOperations) {
-//        if(serviceIdToOperations == null) throw new NullPointerException("serviceIdToOperations cannot be null");
-//        if(serviceIdToOperations.isEmpty()) throw new IllegalArgumentException("serviceIdToOperations must contain at least one key");
-
         if(serviceIdToOperations == null || serviceIdToOperations.isEmpty()){
             return true;
         }
@@ -1279,52 +1418,28 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
     /**
      * Convenience method called from sub reports. Instead of taking in collections of service ids, operations and
      * authenticated users, it takes in string values, places them in a collection and then calls createMappingQuery,
-     * which this method delegates to.
-     * See createMappingQuery for an explanation of how the query returned is created and how it works.
-     * @param startTimeInclusiveMilli start of the time period to query for inclusive, can be null, so long as
-     * endTimeInclusiveMilli is also null
-     * @param endTimeInclusiveMilli end of the time period to query for exclusive, can be null, so long as
-     * startTimeInclusiveMilli is also null
-     * @param serviceId service ids to constrain query with
-     * @param keys mapping keys to use, must be at least 1
-     * @param keyValueConstraints values to constrain possible key values with
-     * @param valueConstraintAndOrLike and or like in sql for any values supplied as constraints on keys, can be null
-     * and empty. If it is, then AND is used by default.
-     * @param resolution hourly or daily = 1 or 2
-     * @param isDetail true when the sql represents a detail master report, which means service_operation is included
-     * in the distinct select list. When isDetail is true, the values in the operations list is used as a filter constraint.
-     * @param operation if isDetail is true and operations is non null and non empty, then the sql returned
-     * will be filtered by the values in operations
-     * @param useUser if true the auth_user_id column from message_context_mapping_values will be included in the
-     * select, group by and order by clauses
-     * @param authenticatedUser if useUser is true, the where clause will constrain the values of
-     * message_context_mapping_values, with the value of authenticatedUsers 
-     * @return String sql
-     * @throws NullPointerException if startIntervalMilliSeconds or endIntervalMilliSeconds is null
-     * @return String sql query
+     * which this method delegates to.<br>
+     * See createMappingQuery for more details<br>
+     * Note: this query returns exactly the same columns as getNoMappingQuery 
+     * @param startTimeInclusiveMilli time_period start time inclusive
+     * @param endTimeInclusiveMilli time_period end time exclsuvie
+     * @param serviceId the service id we want a mapping query for
+     * @param keysToFilterValues a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     * hash map.
+     * @param resolution 1 = hourly, 2 = daily. Which resolution from service_metrics to use
+     * @param isDetail if true then the service_operation's real value is used in the select, group and order by,
+     * otherwise operation is selected as 1. To facilitate this service_operation is always selected as
+     * SERVICE_OPERATION_VALUE so that the real column is not used when isDetail is false
+     * table message_context_mapping_values, with the values in operaitons
+     * message_context_mapping_values, with the values in authenticatedUsers
+     * @param operation if isDetail is true, the operation we want performance statistics information for
+     * @param isUsage needed in order to validate the input parameters
+     * @return String query, see createMappingQuery for details of the return columns
+     * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
-//    public static String createMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-//                                            Long serviceId, List<String> keys,
-//                                            List<String> keyValueConstraints,
-//                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-//                                            String operation, boolean useUser, String authenticatedUser){
-//
-//        if(serviceId == null) throw new IllegalArgumentException("Service Id must be supplied");
-//        Set<String> operationSet = new HashSet<String>();
-//        if(operation != null && !operation.equals("") && !operation.equals(SQL_PLACE_HOLDER)){
-//            operationSet.add(operation);
-//        }
-//        Map<String, Set<String>> serviceIdToOperations = new HashMap<String, Set<String>>();
-//        serviceIdToOperations.put(serviceId.toString(), operationSet);
-//
-//        List<String> authUsers = new ArrayList<String>();
-//        if(authenticatedUser != null && !authenticatedUser.equals("") && !authenticatedUser.equals(SQL_PLACE_HOLDER)){
-//            authUsers.add(authenticatedUser);
-//        }
-//        return createMappingQuery(false, startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIdToOperations, keys,
-//                keyValueConstraints, valueConstraintAndOrLike, resolution, isDetail, useUser, authUsers);
-//    }
-
     public static String createMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Long serviceId, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterValues,
                                             int resolution, boolean isDetail,String operation, boolean isUsage){
@@ -1341,6 +1456,14 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
                 keysToFilterValues, resolution, isDetail, isUsage);
     }
 
+    /**
+     * Add sql to sb for selecting out the auth_user_id from message context mapping values. The user is ALWAYS
+     * added to all select lists for performance statistics queries, however this method determines whether or not
+     * the real column is selected or the placeholder is selected.
+     * @param addComma should a comma be added before any sql is written to sb
+     * @param useUser should the real value of mcmv.auth_user_id be used or the sql place holder
+     * @param sb the string builder to write the sql to
+     */
     private static void addUserToSelect(boolean addComma, boolean useUser, StringBuilder sb) {
         if(addComma) sb.append(",");
         if(useUser){
@@ -1350,6 +1473,27 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         }
     }
 
+    /**
+     * Get the sql query for performance statistics reports with no mappings involved. The sql returned will be constrained
+     * based on the input parameters
+     * Note: this query returns exactly the same columns as createMappingQuery when the parameter isMasterQuery has the
+     * same value
+     * @param isMasterQuery if true, this query will only return the SERVICE_ID, SERVICE_NAME, ROUTING_URI and
+     * CONSTANT_GROUP. Set to true when you want to find out what services match the supplied criteria. This is used
+     * to drive the master interval reports, where we will run a sub report for every serivce id found.
+     * @param startTimeInclusiveMilli start of the time period
+     * @param endTimeInclusiveMilli end of the time period
+     * @param serviceIds list of service ids to constrain the query with
+     * @param resolution which resolution bin to use, hourly or daily
+     * @return String query if isMasterQuery is true, it has the following columns:
+     * SERVICE_ID, SERVICE_NAME, ROUTING_URI and CONSTANT_GROUP.
+     * If isMasterQuery is false, it has the following columns:-
+     * SERVICE_ID | SERVICE_NAME | ROUTING_URI | ATTEMPTED | COMPLETED | AUTHORIZED | FRONT_SUM | BACK_SUM | THROUGHPUT
+     * | POLICY_VIOLATIONS | ROUTING_FAILURES | FRTM | FRTMX | FRTA   | BRTM | BRTMX | BRTA   | AP     | CONSTANT_GROUP
+     * | AUTHENTICATED_USER | SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 |
+     * MAPPING_VALUE_4 | MAPPING_VALUE_5
+     * @throws IllegalArgumentException if both start and end time parameters have not been specified 
+     */
     public static String getNoMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Collection<String> serviceIds, int resolution){
 
@@ -1358,7 +1502,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         if(!useTime) throw new IllegalArgumentException("Both start and end time must be specified");
         checkResolutionParameter(resolution);
 
-        StringBuilder sb = null;
+        StringBuilder sb;
         if(isMasterQuery){
             sb = new StringBuilder(distinctFrom);
         }else{
@@ -1395,6 +1539,15 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         return sb.toString();
     }
 
+    /**
+     * Convenience method for sub reports. Delegates to getNoMappingQuery, adding the service id to a Collection
+     * @param startTimeInclusiveMilli start of the time period
+     * @param endTimeInclusiveMilli end of the time period
+     * @param serviceId the service id to constrain the query with
+     * @param resolution which resolution bin to use, hourly or daily
+     * @return String sql. See getNoMappingQuery for details of return columns
+     * @throws IllegalArgumentException if service id is null or empty
+     */
     public static String getNoMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Long serviceId, int resolution){
 
@@ -1405,47 +1558,96 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         return getNoMappingQuery(false, startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, resolution);
     }
 
+    /**
+     * Add a select value so that the column SERVICE_OPERATION_VALUE is always contained in the sql generated.
+     * Whether or not the value of SERVICE_OPERATION_VALUE is the sql place holder or mcmv.service_operation is
+     * determined by isDetail being true or false
+     * @param isDetail if true, add the real column to the select, else add the sql place holder
+     * @param sb the string builder to add the sql to
+     */
     private static void addOperationToSelect(boolean isDetail, StringBuilder sb) {
         if(isDetail){
             sb.append(",  mcmv.service_operation AS SERVICE_OPERATION_VALUE");
         }else{
-            //sb.append(",  1 AS SERVICE_OPERATION_VALUE");
             sb.append(",  '" + SQL_PLACE_HOLDER + "' AS SERVICE_OPERATION_VALUE");
         }
     }
 
     /**
-     * Convert the supplied map into a more restricted map with only 1 value per key. This is a convenience method for sub queries, which is going to
-     * select out aggregate values for SPECIFIC values of keys for a specific interval. The sub query is fed values
-     * for each mapping value from it's master report. Before it can call createMappingQuery it needs to know what
-     * specific values to constrain the keys for, for this sub query.
-     * We are only interested in values of args, which have an index within the size of keys. Keys will have up to
-     * 5 values, and args WILL have 5 values, currently. However some of args will just be placeholders, with the value
-     * SQL_PLACE_HOLDER. This is as all queries always include all mapping_value_x (x:1-5), so when less than 5 keys are used, then
+     * Essentially create a new keysToFilterPairs representation, where each key has only one value. The returned
+     * linked hash map can then be used as the input to methods like createMappingQuery which require a linked has map
+     * representing the key and value constraints.<br>
+     * This method is called from the performance statistics sub report, at which level it is querying for SPECIFIC
+     * values of keys and not a general constrain as is supplied in the master reports.<br>
+     * Therefore we need to convert the supplied map into a more restricted map with only 1 value per key.<br>
+     * This is a convenience method for sub queries, which is going to select out aggregate values for SPECIFIC values
+     * of keys for a specific interval.<br>
+     * The sub query is fed values for each mapping value from it's master report as report parameters, this includes
+     * AUTH_USER.
+     * <br>
+     * <br>
+     *
+     * runtimeMappingDistinctSetArray is a String array who's length should equal the number of max keys the ssg
+     * currently supports, which is currently 5.
+     * <br>
+     * <br>
+     *
+     * <em>
+     * The string at index i IMPLICITLY matches the key at the same index in keysToFilterPairs. THIS IS WHY THIS
+     * DATA STRUCTURE IS ALWAYS A LINKED HASH MAP, AS ORDER MUST BE MAINTAINED.
+     * </em>
+     * <br>
+     * <br>
+     *
+     * <em>
+     * Every key in keysToFilterPairs MUST HAVE a NON NULL and NON SQL PLACEHOLDER value in
+     * runtimeMappingDistinctSetArray. If not an IllegalArgumentException is thrown as this represents a serious logic
+     * error in the reports.
+     * </em>
+     * <br>
+     * indexes of runtimeMappingDistinctSetArray for which have a higher index than the last key in keysToFilterPairs,
+     * is not important and should be the SQL_PLACE_HOLDER.
+     * This is as all queries always include all mapping_value_x (x:1-5), so when less than 5 keys are used, then
      * their select value is just SQL_PLACE_HOLDER, so it has no affect on group and order by operations.
-     * If any of the string values equal SQL_PLACE_HOLDER indicating a placeholder, then null is added into that location
-     * in the returned list
-     * ONLY CALL FROM PERFORMANCE STATISTICS REPORTS - DO NOT CALL FROM USAGE REPORTS
-     * @return List representation of the args
+     * <br>
+     * <em>ONLY CALL FROM PERFORMANCE STATISTICS REPORTS - DO NOT CALL FROM USAGE REPORTS</em>
+     * <br>
+     * @param keysToFilterPairs a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     * represent it's constraints. This linked hash map represents all keys and all FilterPairs used for the entire
+     * report. This is to be passed down to the sub report via parameters.
+     * @param runtimeMappingDistinctSetArray the array of mapping key values 1- max num mappings (currently 5). This is
+     * an array as this function IS called from performance statistics interval sub reports, which have been fed in
+     * string values for each mapping values as a parameter to the report
+     * @param authUser String value for authenticated user to use when creating queries
+     * @param isDetail required for validating the input parameters 
+     * @return LinkedHashMap representation of the args. Essentially is keysToFilterPairs, for all keys, but for specific
+     * values of those keys, 1 value per key
      * @throws IllegalArgumentException if any index from keys results in a null or SQL_PLACE_HOLDER value from args
      */
     public static LinkedHashMap<String, List<ReportApi.FilterPair>> createDistinctKeyToFilterMap(
             LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs, String [] runtimeMappingDistinctSetArray,
             String authUser, boolean isDetail){
 
-        if(keysToFilterPairs.keySet().size() > runtimeMappingDistinctSetArray.length) throw new IllegalArgumentException("Parameter keys must never be greater in size " +
-                "than parameter args");
-
-        boolean keysSupplied = checkMappingQueryParamsNew(keysToFilterPairs, isDetail, false);
+        if(runtimeMappingDistinctSetArray.length != NUM_MAPPING_KEYS){
+            throw new IllegalArgumentException("Currently: " + NUM_MAPPING_KEYS+" are supported. This many keys must" +
+                    "be supplied in runtimeMappingDistinctSetArray. Any values not required should be the sql place holder");
+        }
 
         LinkedHashMap<String, List<ReportApi.FilterPair>> returnMap = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+
         if(keysToFilterPairs == null){
             //it's a ps report calling this, so it's possible the only mapping is isDetail = true
             return returnMap;
         }
-        
+
+        if(keysToFilterPairs.keySet().size() > runtimeMappingDistinctSetArray.length)
+            throw new IllegalArgumentException("Parameter keys must never be greater in size " +
+                "than parameter args");
+
+        boolean keysSupplied = checkMappingQueryParams(keysToFilterPairs, isDetail, false);
+
         //check auth user
-        boolean useUser = (keysSupplied)?isUserSupplied(keysToFilterPairs):false;
+        boolean useUser = (keysSupplied) && isUserSupplied(keysToFilterPairs);
         if(useUser){
             if(authUser == null || authUser.equals(SQL_PLACE_HOLDER)){
                 throw new IllegalArgumentException("Authenticated User cannot have the place holder value, when it was " +
@@ -1453,10 +1655,9 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             }
             List<ReportApi.FilterPair> authList = new ArrayList<ReportApi.FilterPair>();
             //in case values have the * symbol, tell FilterPair not to be smart
-            authList.add(new ReportApi.FilterPair(authUser, true));
+            authList.add(new ReportApi.FilterPair(authUser, false));
             returnMap.put(MessageContextMapping.MappingType.AUTH_USER.toString(), authList);
         }
-
 
         int index = 0;
         //order is really important, implied from LinkedHashMap
@@ -1470,7 +1671,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
 
             List<ReportApi.FilterPair> fpList = new ArrayList<ReportApi.FilterPair>();
             //in case values have the * symbol, tell FilterPair not to be smart
-            fpList.add(new ReportApi.FilterPair(runTimeMappingValue, true));
+            fpList.add(new ReportApi.FilterPair(runTimeMappingValue, false));
             returnMap.put(s, fpList);
             index++;
         }
@@ -1493,54 +1694,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         }
     }
 
-    private static boolean checkMappingQueryParams(List<String> keys, List<String> keyValueConstraints,
-                                                   List<String> valueConstraintAndOrLike,
-                                                   boolean isDetail,
-                                                   boolean useUser) {
-        //we need at least one key. However both user and operation are technically keys, so if we have either
-        //a user or an operation, they we have conceptually a key
-        boolean keysOk = true;
-        if(keys == null || keys.isEmpty()){
-            if(!useUser){
-                if(!isDetail){
-                    throw new IllegalArgumentException("Non detail mapping queries require at least one value in " +
-                            "the keys list");
-
-                }
-            }
-            keysOk = false;
-        }else{
-            //ensure all keys are unique
-            Set<String> s = new HashSet<String>(keys);
-            if(s.size() != keys.size()){
-                throw new IllegalArgumentException("keys may not contain any duplicates");
-            }
-        }
-
-        boolean keyValuesSupplied = false;
-        if(keyValueConstraints != null && !keyValueConstraints.isEmpty()){
-            if(keys.size() != keyValueConstraints.size()){
-                throw new IllegalArgumentException("The length of keys must match the length of the keyValueConstraints");
-            }
-            if(valueConstraintAndOrLike != null && !valueConstraintAndOrLike.isEmpty()){
-                if(valueConstraintAndOrLike.size() != keyValueConstraints.size()){
-                    throw new IllegalArgumentException("The length of valueConstraintAndOrLike must match the length of the keyValueConstraints");
-                }
-            }
-            keyValuesSupplied = true;
-        }else{
-            //only throw an exception if keys are not null or empty
-            if(keysOk) throw new IllegalArgumentException("The size of keyValueConstraints must match the size of keys");            
-            //if keyValueConstraint are not supplied, then we can't have valueConstraintAndOrLike supplied either
-//            if(valueConstraintAndOrLike != null && !valueConstraintAndOrLike.isEmpty()){
-//                throw new IllegalArgumentException("Cannot supply valueConstraintAndOrLike with values if no values in" +
-//                        " keyValueConstraints have been supplied, on which they would be applied");
-//            }
-        }
-        return keyValuesSupplied;
-    }
-
-    private static boolean checkMappingQueryParamsNew(Map<String, List<ReportApi.FilterPair>> keysToFilterValues,
+    private static boolean checkMappingQueryParams(Map<String, List<ReportApi.FilterPair>> keysToFilterValues,
                                                    boolean isDetail, boolean isUsageQuery) {
         //we need at least one key. However both user and operation are technically keys, so if we have either
         //a user or an operation, they we have conceptually a key
@@ -1980,7 +2134,7 @@ END as IP_ADDRESS,
     public static String getMappingReportInfoDisplayString(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters
                                                            ,boolean isDetail, boolean isUsage){
 
-        boolean keysSupplied = checkMappingQueryParamsNew(keysToFilters, isDetail, isUsage);
+        boolean keysSupplied = checkMappingQueryParams(keysToFilters, isDetail, isUsage);
 
         boolean useUser = (keysSupplied)?isUserSupplied(keysToFilters):false;
 
@@ -2288,7 +2442,7 @@ END as IP_ADDRESS,
                                               LinkedHashSet<List<String>> distinctMappingSets) {
 
         //is detail is not considered a valid key for usage queries
-        checkMappingQueryParamsNew(keysToFilters, false, true);
+        checkMappingQueryParams(keysToFilters, false, true);
 
         LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilters, distinctMappingSets);
         /*
@@ -2529,7 +2683,7 @@ END as IP_ADDRESS,
                                               LinkedHashSet<List<String>> distinctMappingSets) {
 
         //usage queires do not use isDetail to determine validity of parameters, it's not considered a key for usage reports
-        checkMappingQueryParamsNew(keysToFilters, false, true);
+        checkMappingQueryParams(keysToFilters, false, true);
 
         LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilters, distinctMappingSets);
 

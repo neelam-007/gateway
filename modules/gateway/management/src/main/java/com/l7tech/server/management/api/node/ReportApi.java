@@ -492,7 +492,7 @@ public interface ReportApi {
         }
 
         /**
-         * Has a very specifi use in Utilities.createDistinctKeyToFilterMap, where the filter pair holds a value,
+         * Has a very specific use in Utilities.createDistinctKeyToFilterMap, where the filter pair holds a value,
          * found at runtime from the database, and we don't want to modify the string found in case it contains
          * the wild card character
          * @param filterValue
