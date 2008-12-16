@@ -649,6 +649,7 @@ public class PolicyMigration extends EmsPage  {
 
                 Collection<EntityHeader> headersToCheck = new HashSet<EntityHeader>();
                 for (DependencyItem dependencyItem : mappingModel.dependencyMap.values()) {
+                    if (dependencyItem == null) continue;
                     headersToCheck.add(dependencyItem.asEntityHeader());
                 }
                 Collection<EntityHeader> validatedHeaders = targetMigrationApi.checkHeaders(headersToCheck);
