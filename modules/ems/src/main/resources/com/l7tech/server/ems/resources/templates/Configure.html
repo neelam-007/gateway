@@ -142,6 +142,17 @@
             }
 
             /**
+             * Decode HTML character entities.
+             * @param {string} s        string with HTML character entities
+             * @return {string} string with HTML character entities decoded
+             */
+            function decodeHtmlCharacterEntities(s) {
+                var decoder = document.getElementById('htmlCharacterEntityDecoder');
+                decoder.innerHTML = s;
+                return decoder.childNodes[0].nodeValue;
+            }
+
+            /**
              * @param {object} entity   the entity object literal
              * @param {string} action
              */
@@ -307,7 +318,7 @@
             function onClickRenameFolder(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('renameFolderDialog_id').value = entity.id;
-                document.getElementById('renameFolderDialog_name').value = entity.name;
+                document.getElementById('renameFolderDialog_name').value = decodeHtmlCharacterEntities(entity.name);
                 validateRenameFolderDialog();
                 renameFolderDialog.center();
                 renameFolderDialog.show();
@@ -316,7 +327,7 @@
             function onClickRenameSSGCluster(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('renameSSGClusterDialog_id').value = entity.id;
-                document.getElementById('renameSSGClusterDialog_name').value = entity.name;
+                document.getElementById('renameSSGClusterDialog_name').value = decodeHtmlCharacterEntities(entity.name);
                 validateRenameSSGClusterDialog();
                 renameSSGClusterDialog.center();
                 renameSSGClusterDialog.show();
@@ -1525,6 +1536,8 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
         </form>
     </div>
 </div>
+
+<span id="htmlCharacterEntityDecoder" style="display: none;"></span>
 
                 </wicket:extend>
             </div>
