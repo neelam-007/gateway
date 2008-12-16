@@ -53,7 +53,7 @@ $P{MAPPING_VALUE_5}}, $P{AUTHENTICATED_USER}, $P{IS_DETAIL}.booleanValue())
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
-com.l7tech.gateway.standardreports.Utilities.createMappingQuery($P{INTERVAL_START},
+com.l7tech.gateway.standardreports.Utilities.getPerformanceStatisticsMappingQuery($P{INTERVAL_START},
 $P{INTERVAL_END},$P{SERVICE_ID}, $P{distinctKeyMapValues},
 $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE}, false)
 :

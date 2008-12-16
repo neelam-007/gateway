@@ -993,7 +993,7 @@ public class Utilities {
      * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
      * represent it's constraints. The AUTH_USER key is searched for, and if it is found the list of FilterPairs it
      * maps to will be returned, any FilterPairs whos isEmpty() method returns true, are not returned
-     * @return the list of FilterPair's supplied to createMappingQuery, empty list if non were specified in keysToFilters
+     * @return the list of FilterPair's supplied to getPerformanceStatisticsMappingQuery, empty list if non were specified in keysToFilters
      * @throws IllegalStateException if the AUTH_USER key is not found in keysToFilters, the caller should know before
      * this method is called, that the key exists.
      */
@@ -1257,7 +1257,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * | AUTHENTICATED_USER | SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 |
      * MAPPING_VALUE_4 | MAPPING_VALUE_5
      */
-    public static String createMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+    public static String getPerformanceStatisticsMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                Map<String, Set<String>> serviceIdToOperations,
                                                LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
                                                boolean isDetail, boolean isUsage){
@@ -1335,7 +1335,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         //----SECTION M----
         addMappingOrder(sb);
 
-        logger.log(Level.FINER,"createMappingQuery: " + sb.toString());
+        logger.log(Level.FINER,"getPerformanceStatisticsMappingQuery: " + sb.toString());
         return sb.toString();
     }
 
@@ -1417,9 +1417,9 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
 
     /**
      * Convenience method called from sub reports. Instead of taking in collections of service ids, operations and
-     * authenticated users, it takes in string values, places them in a collection and then calls createMappingQuery,
+     * authenticated users, it takes in string values, places them in a collection and then calls getPerformanceStatisticsMappingQuery,
      * which this method delegates to.<br>
-     * See createMappingQuery for more details<br>
+     * See getPerformanceStatisticsMappingQuery for more details<br>
      * Note: this query returns exactly the same columns as getNoMappingQuery 
      * @param startTimeInclusiveMilli time_period start time inclusive
      * @param endTimeInclusiveMilli time_period end time exclsuvie
@@ -1437,10 +1437,10 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
      * message_context_mapping_values, with the values in authenticatedUsers
      * @param operation if isDetail is true, the operation we want performance statistics information for
      * @param isUsage needed in order to validate the input parameters
-     * @return String query, see createMappingQuery for details of the return columns
+     * @return String query, see getPerformanceStatisticsMappingQuery for details of the return columns
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
-    public static String createMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+    public static String getPerformanceStatisticsMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                             Long serviceId, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterValues,
                                             int resolution, boolean isDetail,String operation, boolean isUsage){
 
@@ -1452,7 +1452,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
         Map<String, Set<String>> serviceIdToOperations = new HashMap<String, Set<String>>();
         serviceIdToOperations.put(serviceId.toString(), operationSet);
 
-        return createMappingQuery(false, startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIdToOperations,
+        return getPerformanceStatisticsMappingQuery(false, startTimeInclusiveMilli, endTimeInclusiveMilli, serviceIdToOperations,
                 keysToFilterValues, resolution, isDetail, isUsage);
     }
 
@@ -1476,7 +1476,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
     /**
      * Get the sql query for performance statistics reports with no mappings involved. The sql returned will be constrained
      * based on the input parameters
-     * Note: this query returns exactly the same columns as createMappingQuery when the parameter isMasterQuery has the
+     * Note: this query returns exactly the same columns as getPerformanceStatisticsMappingQuery when the parameter isMasterQuery has the
      * same value
      * @param isMasterQuery if true, this query will only return the SERVICE_ID, SERVICE_NAME, ROUTING_URI and
      * CONSTANT_GROUP. Set to true when you want to find out what services match the supplied criteria. This is used
@@ -1575,7 +1575,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
 
     /**
      * Essentially create a new keysToFilterPairs representation, where each key has only one value. The returned
-     * linked hash map can then be used as the input to methods like createMappingQuery which require a linked has map
+     * linked hash map can then be used as the input to methods like getPerformanceStatisticsMappingQuery which require a linked has map
      * representing the key and value constraints.<br>
      * This method is called from the performance statistics sub report, at which level it is querying for SPECIFIC
      * values of keys and not a general constrain as is supplied in the master reports.<br>

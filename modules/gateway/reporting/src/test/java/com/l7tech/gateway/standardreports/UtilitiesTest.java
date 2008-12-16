@@ -37,7 +37,7 @@ import net.sf.jasperreports.engine.JasperCompileManager;
 
 /**
  * Test coverage for class Utilities
- * Various tests test the method createMappingQuery. Each test is testing a specific characteristic of the sql
+ * Various tests test the method getPerformanceStatisticsMappingQuery. Each test is testing a specific characteristic of the sql
  * returned based on the parameter list supplied.
  */
 public class UtilitiesTest{
@@ -50,7 +50,7 @@ public class UtilitiesTest{
      * Checks that all other mapping keys are supplied in the select sql
      */
     @Test
-    public void testCreateMappingQuery_OneKey(){
+    public void testGetPerformanceStatisticsMappingQuery_OneKey(){
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
         List<ReportApi.FilterPair> idFilters = new ArrayList<ReportApi.FilterPair>();
         idFilters.add(new ReportApi.FilterPair());
@@ -59,7 +59,7 @@ public class UtilitiesTest{
         Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
 
         String sql =
-                Utilities.createMappingQuery(false, null,null,serviceIdToOp ,keysToFilterPairs,1,false, true);
+                Utilities.getPerformanceStatisticsMappingQuery(false, null,null,serviceIdToOp ,keysToFilterPairs,1,false, true);
 
         //There should only be 1 CASE statement in SQL
         int index = sql.indexOf("CASE", 0);
@@ -183,7 +183,7 @@ public class UtilitiesTest{
 //        Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
 //
 //        String sql =
-//                Utilities.createMappingQuery(false, null,null,serviceIdToOp ,keys ,values ,null,1,false, false,null);
+//                Utilities.getPerformanceStatisticsMappingQuery(false, null,null,serviceIdToOp ,keys ,values ,null,1,false, false,null);
 //        System.out.println("Sql: " + sql);
 //
 //    }
@@ -201,7 +201,7 @@ public class UtilitiesTest{
 //        boolean exception = false;
 //        try{
 //            String sql =
-//                    Utilities.createMappingQuery(false, null,null,serviceIdToOp ,keysToFilterPairs,1,false, true);
+//                    Utilities.getPerformanceStatisticsMappingQuery(false, null,null,serviceIdToOp ,keysToFilterPairs,1,false, true);
 //        }catch(Exception e){
 //            exception = true;
 //        }
@@ -225,7 +225,7 @@ public class UtilitiesTest{
 
         Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
 
-        String sql = Utilities.createMappingQuery(true, null,null,serviceIdToOp, keysToFilterPairs ,1 ,false
+        String sql = Utilities.getPerformanceStatisticsMappingQuery(true, null,null,serviceIdToOp, keysToFilterPairs ,1 ,false
                 ,true);
 
         System.out.println(sql);
@@ -280,7 +280,7 @@ public class UtilitiesTest{
         ops.add("listOrders");
         serviceIdsToOps.put("360450", new HashSet<String>(ops));
 
-        String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps, keysToFilterPairs ,1 ,true ,
+        String sql = Utilities.getPerformanceStatisticsMappingQuery(false, null,null, serviceIdsToOps, keysToFilterPairs ,1 ,true ,
                 true);
 
         System.out.println(sql);
@@ -295,7 +295,7 @@ public class UtilitiesTest{
      * Checks that all values supplied as constraints on keys are used correctly in the generated sql
      */
     @Test
-    public void testCreateMappingQuery_KeyValues(){
+    public void testGetPerformanceStatisticsMappingQuery_KeyValues(){
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
         List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
         ipFilters.add(new ReportApi.FilterPair("127.0.0.1"));
@@ -307,7 +307,7 @@ public class UtilitiesTest{
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
-        String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,keysToFilterPairs,1 ,false
+        String sql = Utilities.getPerformanceStatisticsMappingQuery(false, null,null, serviceIdsToOps,keysToFilterPairs,1 ,false
                 ,true);
 
         //System.out.println("Value Sql: "+sql);
@@ -353,7 +353,7 @@ public class UtilitiesTest{
      * Check that any AND / LIKE filter constraints supplied are used correctly
      */
     @Test
-    public void testCreateMappingQuery_KeyValuesFilters(){
+    public void testGetPerformanceStatisticsMappingQuery_KeyValuesFilters(){
 
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
         List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
@@ -371,7 +371,7 @@ public class UtilitiesTest{
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
-        String sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,keysToFilterPairs, 1 ,false
+        String sql = Utilities.getPerformanceStatisticsMappingQuery(false, null,null, serviceIdsToOps,keysToFilterPairs, 1 ,false
                 ,true);
 
         System.out.println("Filter Sql: "+sql);
@@ -416,11 +416,11 @@ public class UtilitiesTest{
      * Checks that the real value of mcmv.service_operation is selected and not a placeholder
      */
     @Test
-    public void testCreateMappingQuery_OnlyDetail(){
+    public void testGetPerformanceStatisticsMappingQuery_OnlyDetail(){
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
         String sql =
-                Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,null,1,
+                Utilities.getPerformanceStatisticsMappingQuery(false, null,null, serviceIdsToOps ,null,1,
                         true ,false);
 
         int index = sql.indexOf("mcmv.service_operation AS SERVICE_OPERATION_VALUE");
@@ -434,12 +434,12 @@ public class UtilitiesTest{
     @Test
     public void testNonUsageQueryNoKeysNeeded(){
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,null,1,
+        Utilities.getPerformanceStatisticsMappingQuery(false, null,null, serviceIdsToOps ,null,1,
                         true ,false);
 
         boolean exception = false;
         try{
-            Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,null,1,
+            Utilities.getPerformanceStatisticsMappingQuery(false, null,null, serviceIdsToOps ,null,1,
                             true ,true);
         }
         catch(Exception ex){
@@ -456,7 +456,7 @@ public class UtilitiesTest{
      *
      */
     @Test
-    public void testCreateMappingQuery_UseUser(){
+    public void testGetPerformanceStatisticsMappingQuery_UseUser(){
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
         List<ReportApi.FilterPair> userFilters = new ArrayList<ReportApi.FilterPair>();
         userFilters.add(new ReportApi.FilterPair("Donal"));
@@ -466,7 +466,7 @@ public class UtilitiesTest{
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
 
         String sql =
-                Utilities.createMappingQuery(false, null,null, serviceIdsToOps ,keysToFilterPairs,1,
+                Utilities.getPerformanceStatisticsMappingQuery(false, null,null, serviceIdsToOps ,keysToFilterPairs,1,
                         true ,false);
 
         int index = sql.indexOf("mcmv.auth_user_id AS AUTHENTICATED_USER");
@@ -486,17 +486,17 @@ public class UtilitiesTest{
      * Checks that any resolution other than 1 or 2, causes an exception
      */
     @Test
-    public void testCreateMappingQuery_Resolution(){
+    public void testGetPerformanceStatisticsMappingQuery_Resolution(){
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql =
-                Utilities.createMappingQuery(false, null,null,serviceIdsToOps,null,1,
+                Utilities.getPerformanceStatisticsMappingQuery(false, null,null,serviceIdsToOps,null,1,
                         true ,false);
 
         int index = sql.indexOf("sm.resolution = 1");
         Assert.assertTrue(index != -1);
 
-        sql = Utilities.createMappingQuery(false, null,null, serviceIdsToOps,null,2,true
+        sql = Utilities.getPerformanceStatisticsMappingQuery(false, null,null, serviceIdsToOps,null,2,true
                 ,false);
         index = sql.indexOf("sm.resolution = 2");
         Assert.assertTrue(index != -1);
@@ -504,7 +504,7 @@ public class UtilitiesTest{
 
         boolean exception = false;
         try{
-            Utilities.createMappingQuery(false, null,null, serviceIdsToOps, null,3 ,true
+            Utilities.getPerformanceStatisticsMappingQuery(false, null,null, serviceIdsToOps, null,3 ,true
                     ,false);
         }catch(IllegalArgumentException iae){
             exception = true;
@@ -517,7 +517,7 @@ public class UtilitiesTest{
      * Checks that incorrect values cause an exception
      */
     @Test
-    public void testCreateMappingQuery_Time(){
+    public void testGetPerformanceStatisticsMappingQuery_Time(){
         String timeZone = "Canada/Pacific";
         TimeZone tz = Utilities.getTimeZone(timeZone);
 
@@ -526,7 +526,7 @@ public class UtilitiesTest{
         long endTime = cal.getTimeInMillis();
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String sql = Utilities.createMappingQuery(false, startTime, endTime ,serviceIdsToOps,null,1,true ,false);
+        String sql = Utilities.getPerformanceStatisticsMappingQuery(false, startTime, endTime ,serviceIdsToOps,null,1,true ,false);
 
         int index = sql.indexOf("sm.period_start >="+startTime);
         Assert.assertTrue(index != -1);
@@ -536,7 +536,7 @@ public class UtilitiesTest{
 
         boolean exception = false;
         try{
-            Utilities.createMappingQuery(false, endTime, startTime, serviceIdsToOps, null,1 ,true ,false);
+            Utilities.getPerformanceStatisticsMappingQuery(false, endTime, startTime, serviceIdsToOps, null,1 ,true ,false);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
@@ -549,14 +549,14 @@ public class UtilitiesTest{
      * Checks that when no ids are supplied, there is no constraint in the generated sql
      */
     @Test
-    public void testCreateMappingQuery_ServiceIds(){
+    public void testGetPerformanceStatisticsMappingQuery_ServiceIds(){
 
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         serviceIdsToOps.put("12345", null);
         serviceIdsToOps.put("67890", null);
 
-        String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+        String sql = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
                 false);
 
         //System.out.println("Service Ids: "+sql);
@@ -572,14 +572,14 @@ public class UtilitiesTest{
 
         //check no constraint when no ids supplied
         serviceIdsToOps.clear();
-        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+        sql = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
                 false);
         index = sql.indexOf("p.objectid IN");
         Assert.assertTrue(index == -1);
     }
 
     @Test
-    public void testCreateMappingQuery_Operations(){
+    public void testGetPerformanceStatisticsMappingQuery_Operations(){
 
         Set<String> operations = new HashSet<String>();
         operations.add("listProducts");
@@ -592,7 +592,7 @@ public class UtilitiesTest{
         serviceIdsToOps.put("229382", new HashSet<String>(operations));
         serviceIdsToOps.put("229384", new HashSet<String>(operations));
 
-        String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+        String sql = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
                 false);
 
         //System.out.println("Operation: "+sql);
@@ -608,7 +608,7 @@ public class UtilitiesTest{
 
         //check no constraint when no ids supplied
         serviceIdsToOps.clear();
-        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+        sql = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
                 false);
         index = sql.indexOf("mcmv.service_operation IN");
         //System.out.println("Operation: "+sql);
@@ -621,7 +621,7 @@ public class UtilitiesTest{
         serviceIdsToOps.put("229384", new HashSet<String>());
 
         //also check when just the serivce id's are supplied, but no operations are
-        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+        sql = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
                 false);
         index = sql.indexOf("mcmv.service_operation IN");
         //System.out.println("Operation: "+sql);
@@ -635,7 +635,7 @@ public class UtilitiesTest{
         serviceIdsToOps.put("229382", null);
         serviceIdsToOps.put("229384", new HashSet<String>());
 
-        sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+        sql = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
                 false);
         index = sql.indexOf("mcmv.service_operation IN");
         //System.out.println("Operation: "+sql);
@@ -648,10 +648,10 @@ public class UtilitiesTest{
      * Confirms that all fields which should be selected, are.
      */
     @Test
-    public void testCreateMappingQuery_SelectFields(){
+    public void testGetPerformanceStatisticsMappingQuery_SelectFields(){
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String sql = Utilities.createMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
+        String sql = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, null, 1, true,
                 false);
 
         //System.out.println("Select Fields: "+sql);
@@ -749,10 +749,10 @@ public class UtilitiesTest{
      * Checks that the gruop by order has all columns required present, and in the correct order.
      */
     @Test
-    public void testCreateMappingQuery_GroupBy(){
+    public void testGetPerformanceStatisticsMappingQuery_GroupBy(){
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql =
-                Utilities.createMappingQuery(false, null,null,serviceIdsToOps,null,1, true, false);
+                Utilities.getPerformanceStatisticsMappingQuery(false, null,null,serviceIdsToOps,null,1, true, false);
         //System.out.println("Group by: "+sql);
         int index = sql.indexOf("GROUP BY p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER , MAPPING_VALUE_1, " +
                 "MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5");
@@ -763,10 +763,10 @@ public class UtilitiesTest{
      * Checks that the gruop by order has all columns required present, and in the correct order.
      */
     @Test
-    public void testCreateMappingQuery_OrderBy(){
+    public void testGetPerformanceStatisticsMappingQuery_OrderBy(){
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         String sql =
-                Utilities.createMappingQuery(false, null,null,serviceIdsToOps,null,1, true, false);
+                Utilities.getPerformanceStatisticsMappingQuery(false, null,null,serviceIdsToOps,null,1, true, false);
 //        System.out.println("Order by: "+sql);
         int index = sql.indexOf("ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, " +
                 "MAPPING_VALUE_4, MAPPING_VALUE_5 ,p.objectid, SERVICE_OPERATION_VALUE");
@@ -792,10 +792,10 @@ public class UtilitiesTest{
      * When the mapping query is a distinct query, check that all the expected fields are returned.
      */
     @Test
-    public void testCreateMappingQuery_SelectDistinctFields(){
+    public void testGetPerformanceStatisticsMappingQuery_SelectDistinctFields(){
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String sql = Utilities.createMappingQuery(true, null, null, serviceIdsToOps, null, 1, true,
+        String sql = Utilities.getPerformanceStatisticsMappingQuery(true, null, null, serviceIdsToOps, null, 1, true,
                 false);
 
         System.out.println("Select Distinct Fields: "+sql);
