@@ -230,8 +230,6 @@ public class MigrationManagerImpl implements MigrationManager {
 
         // apply mappings for this entity's dependants
         try {
-            if (header.getType() == EntityType.FOLDER)
-                return;
             applyMappings(header, metadata, entities);
         } catch (PropertyResolverException e) {
             throw new MigrationApi.MigrationException(e);
@@ -243,6 +241,8 @@ public class MigrationManagerImpl implements MigrationManager {
         for(MigrationMapping mapping : metadata.getMappingsForTarget(dependency)) {
             EntityHeader header = metadata.getHeaderMappedOrOriginal(mapping.getDependant());
             EntityOperation eo = entities.get(header);
+            if (dependency.getType() == EntityType.FOLDER && eo.operation != CREATE)
+                continue;
             PropertyResolver resolver = getResolver(eo.entity, mapping.getPropName());
             EntityOperation targetEo = entities.get(dependency);
             if (targetEo == null || targetEo.entity == null) {
