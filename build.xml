@@ -2375,8 +2375,7 @@
         <property name="build.product" value="Layer 7 SecureSpan Suite"/>
         <property name="build.vendor" value="Layer 7 Technologies"/>
         <property name="build.vendor.id" value="com.l7tech"/>
-        <echoproperties destfile="${build.etc}/filter.properties" prefix="build"/>
-        <echoproperties destfile="${build.etc}/filter.properties" prefix="install"/>
+        <echoproperties destfile="${build.etc}/filter.properties" regex="^(build|install)\..*"/>
     </target>
 
     <!--
