@@ -118,6 +118,7 @@ public class PolicyMapping extends EmsPage  {
         // Create a form for selected migration
         Form migrationForm = new Form("deleteMigrationForm");
         HiddenField hiddenFieldForMigration = new HiddenField("migrationId", new Model(""));
+        migrationForm.add(hiddenFieldForMigration.setOutputMarkupId(true));
 
         // Add delete action
         YuiAjaxButton deleteMigrationButton = new YuiAjaxButton("deleteMigrationButton") {
@@ -136,7 +137,6 @@ public class PolicyMapping extends EmsPage  {
                                 logger.info("Deleting the migration (OID = " + migrationId + ")");
 
                                 migrationManager.delete(Long.parseLong(migrationId));
-                                form.get("deleteMigrationButton").setEnabled(false);
                                 migrationSummaryContainer.setVisible(false);
 
                                 target.addComponent(migrationTableContainer);
@@ -154,8 +154,7 @@ public class PolicyMapping extends EmsPage  {
                 ajaxRequestTarget.addComponent(dynamicDialogHolder);
             }
         };
-        migrationForm.add(hiddenFieldForMigration.setOutputMarkupId(true));
-        migrationForm.add(deleteMigrationButton.setEnabled(false));
+        migrationForm.add(deleteMigrationButton);
 
         YuiAjaxButton renameMigrationButton = new YuiAjaxButton("renameMigrationButton") {
             @Override
