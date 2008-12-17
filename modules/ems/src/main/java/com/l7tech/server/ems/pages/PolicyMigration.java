@@ -65,8 +65,6 @@ public class PolicyMigration extends EmsPage  {
     //- PUBLIC
 
     public PolicyMigration() {
-        final DependencyKey[] lastSourceKey = new DependencyKey[1];
-        final String[] lastTargetClusterId = new String[1];
         final EntityMappingModel mappingModel = new EntityMappingModel();
 
         final WebMarkupContainer dialogContainer = new WebMarkupContainer("dialogContainer");
@@ -74,7 +72,6 @@ public class PolicyMigration extends EmsPage  {
         add( dialogContainer.setOutputMarkupId(true) );
 
         final WebMarkupContainer dependenciesContainer = new WebMarkupContainer("dependencies");
-        dependenciesContainer.setVisible(false);
         dependenciesContainer.setOutputMarkupPlaceholderTag(true);
         final Form dependenciesOptionsContainer = new Form("dependencyOptionsContainer");
         YuiDataTable.contributeHeaders(this);
@@ -89,15 +86,18 @@ public class PolicyMigration extends EmsPage  {
         showDependencies( destItemDependencies, Collections.emptyList() );
         destItemDependencies.add( buildDependencyDisplayBehaviour(destItemDependencies, "destItemSelectionCallbackUrl" ) );
 
+        final DepenencySummaryModel dependencySummaryModel = new DepenencySummaryModel();
+        final CandidateModel candidateModel = new CandidateModel();
         final SearchModel searchModel = new SearchModel();
-        final Component[] searchComponents = new Component[3];
 
         final YuiAjaxButton clearDependencyButton = new YuiAjaxButton("dependencyClearButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(lastSourceKey[0], lastTargetClusterId[0]);
+                final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(lastSourceKey, lastTargetClusterId);
                 mappingModel.dependencyMap.put( mappingKey, null ); // put null so we don't reload the mapping from history
+                updateDependencies( dependenciesContainer, dependenciesOptionsContainer, candidateModel, searchModel, mappingModel, dependencySummaryModel );
                 setEnabled(false);
+                for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
                 ajaxRequestTarget.addComponent( dependenciesOptionsContainer );
             }
         };
@@ -117,80 +117,26 @@ public class PolicyMigration extends EmsPage  {
             @Override
             protected void onSubmit(final AjaxRequestTarget target) {
                 final String value = hiddenSelectionForm.getModelObjectAsString();
-                lastTargetClusterId[0] = hiddenDestClusterId.getModelObjectAsString();
+                lastTargetClusterId = hiddenDestClusterId.getModelObjectAsString();
                 try {
                     String jsonData = value.replaceAll("&quot;", "\"");
 
                     Map jsonMap = (Map) JSON.parse(jsonData);
                     final DependencyItemsRequest dir = new DependencyItemsRequest();
                     dir.fromJSON(jsonMap);
+                    lastSourceClusterId = dir.clusterId;
 
-                    final String targetClusterId = lastTargetClusterId[0];
+                    final String sourceClusterId = dir.clusterId;
+                    final String targetClusterId = lastTargetClusterId;
                     final Collection<DependencyItem> deps = retrieveDependencies(dir);
-                    loadMappings( mappingModel, dir.clusterId, targetClusterId, deps );
-                    YuiDataTable ydt = new YuiDataTable(
-                            "dependenciesTable",
-                            Arrays.asList(
-                                    new PropertyColumn(new Model(""), "uid"),
-                                    new TypedPropertyColumn(new Model(""), "optional", "optional", String.class, false),
-                                    new PropertyColumn(new Model("Name"), "name", "name"),
-                                    new TypedPropertyColumn(new Model("Ver."), "version", "version", Integer.class, true),
-                                    new PropertyColumn(new Model("Type"), "type", "type")
-                            ),
-                            "name",
-                            true,
-                            deps,
-                            null,
-                            "uid",
-                            true,
-                            null
-                    ){
-                        @Override
-                        @SuppressWarnings({"UnusedDeclaration"})
-                        protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String value ) {
-                            if ( lastTargetClusterId[0] != null && !lastTargetClusterId[0].isEmpty() && value != null && !value.isEmpty() ) {
-                                String[] typeIdPair = value.split(":", 2);
-                                logger.fine("Selected dependency for mapping id '"+typeIdPair[1]+"', type '"+typeIdPair[0]+"'.");
 
-                                DependencyItem selectedItem = null;
-                                for ( DependencyItem item : deps ) {
-                                    if ( item.type.equals(typeIdPair[0]) && item.id.equals(typeIdPair[1]) ) {
-                                        selectedItem = item;
-                                        break;
-                                    }
-                                }
+                    lastDependencyItems = deps;
+                    lastSourceKey = null;
+                    candidateModel.reset();                    
 
-                                if ( selectedItem != null ) {
-                                    DependencyKey sourceKey = new DependencyKey( dir.clusterId, selectedItem.asEntityHeader() );
-                                    lastSourceKey[0] = sourceKey;
-
-                                    searchModel.setSearchManner("contains");
-                                    searchModel.setSearchValue("");
-
-                                    for ( Component component : searchComponents ) {
-                                        component.setEnabled( isSearchable( selectedItem.asEntityHeader().getType() ) );
-                                    }
-
-                                    List optionList = retrieveDependencyOptions( lastTargetClusterId[0], sourceKey, null );
-                                    addDependencyOptions( dependenciesOptionsContainer, clearDependencyButton, sourceKey, lastTargetClusterId[0], optionList, mappingModel );
-                                } else {
-                                    for ( Component component : searchComponents ) {
-                                        component.setEnabled( false );
-                                    }
-                                    addDependencyOptions( dependenciesOptionsContainer, clearDependencyButton, null, null, Collections.emptyList(), mappingModel );
-                                }
-
-                                ajaxRequestTarget.addComponent(dependenciesOptionsContainer);
-                            }
-                        }
-                    };
-
-                    for ( Component component : searchComponents ) {
-                        component.setEnabled( false );
-                    }
-                    addDependencyOptions( dependenciesOptionsContainer, clearDependencyButton, null, null, Collections.emptyList(), mappingModel );
-                    dependenciesContainer.setVisible(true);
-                    dependenciesContainer.replace(ydt);
+                    loadMappings( mappingModel, sourceClusterId, targetClusterId, deps );
+                    updateDependencies( dependenciesContainer, dependenciesOptionsContainer, candidateModel, searchModel, mappingModel, dependencySummaryModel );
+                    addDependencyOptions( dependenciesContainer, dependenciesOptionsContainer, candidateModel, searchModel, mappingModel, dependencySummaryModel );
                     target.addComponent( dependenciesContainer );
 
                     // build info dialog
@@ -346,7 +292,10 @@ public class PolicyMigration extends EmsPage  {
 
         add( selectionJsonForm );
 
-        dependenciesContainer.add( new Label("dependenciesTable", "") );
+        dependenciesContainer.add( new Label("dependenciesTotalLabel", new PropertyModel(dependencySummaryModel, "totalDependencies")).setOutputMarkupId(true) );
+        dependenciesContainer.add( new Label("dependenciesUnmappedLabel", new PropertyModel(dependencySummaryModel, "unmappedDependencies")).setOutputMarkupId(true) );
+        dependenciesContainer.add( new Label("dependenciesRequiredUnmappedLabel", new PropertyModel(dependencySummaryModel, "requiredUnmappedDependencies")).setOutputMarkupId(true) );
+        updateDependencies( dependenciesContainer, dependenciesOptionsContainer, candidateModel, searchModel, mappingModel, dependencySummaryModel );
 
         dependenciesContainer.add( dependenciesOptionsContainer.setOutputMarkupId(true) );
 
@@ -366,21 +315,15 @@ public class PolicyMigration extends EmsPage  {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 logger.fine("Searching for dependencies with filter '"+searchModel.getSearchFilter()+"'.");
-                List optionList = retrieveDependencyOptions( lastTargetClusterId[0], lastSourceKey[0], searchModel.getSearchFilter() );
-                addDependencyOptions( dependenciesOptionsContainer, clearDependencyButton, lastSourceKey[0], lastTargetClusterId[0], optionList, mappingModel );
+                addDependencyOptions( dependenciesContainer, dependenciesOptionsContainer, candidateModel, searchModel, mappingModel, dependencySummaryModel );
                 ajaxRequestTarget.addComponent(dependenciesOptionsContainer);
             }
         });
         dependenciesOptionsContainer.add( clearDependencyButton.setOutputMarkupId(true) );
+        dependenciesOptionsContainer.add( new Label("dependencyCandidateName", new PropertyModel(candidateModel, "name")) );
+        dependenciesOptionsContainer.add( new Label("dependencyCandidateType", new PropertyModel(candidateModel, "type")) );
 
-        searchComponents[0] = dependenciesOptionsContainer.get("dependencySearchManner");
-        searchComponents[1] = dependenciesOptionsContainer.get("dependencySearchText");
-        searchComponents[2] = dependenciesOptionsContainer.get("dependencySearchButton");
-        for ( Component component : searchComponents ) {
-            component.setEnabled( false );
-        }
-
-        addDependencyOptions( dependenciesOptionsContainer, clearDependencyButton, null, null, Collections.emptyList(), mappingModel );
+        addDependencyOptions( dependenciesContainer, dependenciesOptionsContainer, candidateModel, searchModel, mappingModel, dependencySummaryModel );
 
         add( dependenciesContainer.setOutputMarkupId(true) );
     }
@@ -388,6 +331,10 @@ public class PolicyMigration extends EmsPage  {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( PolicyMigration.class.getName() );
+
+    private static final String[] DEPENDENCY_REFRESH_COMPONENTS = { "dependenciesTable", "dependenciesTotalLabel", "dependenciesUnmappedLabel", "dependenciesRequiredUnmappedLabel" };
+    private static final String[] SEARCH_REFRESH_COMPONENTS = { "dependencySearchManner", "dependencySearchText", "dependencySearchButton" };
+    private static final String[] SELECTION_REFRESH_COMPONENTS = { "dependencyClearButton" };
 
     @SpringBean
     private SsgClusterManager ssgClusterManager;
@@ -400,6 +347,11 @@ public class PolicyMigration extends EmsPage  {
 
     @SpringBean
     private GatewayContextFactory gatewayContextFactory;
+
+    private DependencyKey lastSourceKey;
+    private String lastSourceClusterId;
+    private String lastTargetClusterId;
+    private Collection<DependencyItem> lastDependencyItems = Collections.emptyList();
 
     private AbstractDefaultAjaxBehavior buildDependencyDisplayBehaviour( final WebMarkupContainer itemDependenciesContainer,
                                                                          final String jsVar ) {
@@ -504,12 +456,93 @@ public class PolicyMigration extends EmsPage  {
         return type;
     }
 
-    private void addDependencyOptions( final WebMarkupContainer dependenciesOptionsContainer,
-                                       final Component selectionComponent,
-                                       final DependencyKey sourceKey,
-                                       final String targetClusterId,
-                                       final List options,
-                                       final EntityMappingModel mappingModel ) {
+    private void updateDependencies( final WebMarkupContainer dependenciesContainer,
+                                     final WebMarkupContainer dependenciesOptionsContainer,
+                                     final CandidateModel candidateModel,
+                                     final SearchModel searchModel,
+                                     final EntityMappingModel mappingModel,
+                                     final DepenencySummaryModel dependencySummaryModel ) {
+        final String sourceClusterId = this.lastSourceClusterId;
+        final String targetClusterId = this.lastTargetClusterId;
+        final Collection<DependencyItem> items = this.lastDependencyItems;
+
+        // update dependency counts and items destination names
+        dependencySummaryModel.reset();
+        for ( DependencyItem item : items ) {
+            DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
+            Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(sourceKey, targetClusterId);
+            DependencyItem mappedItem = mappingModel.dependencyMap.get( mappingKey );
+            if ( mappedItem != null ) {
+                item.destName = mappedItem.name;
+                dependencySummaryModel.incrementTotalDependencies();
+            } else {
+                item.destName = "-";
+                if ( item.optional ) {
+                    dependencySummaryModel.incrementUnmappedDependencies();
+                } else {
+                    dependencySummaryModel.incrementRequiredUnmappedDependencies();
+                }
+            }
+        }
+
+        // update UI
+        final List<PropertyColumn> dependencyColumns =  Arrays.asList(
+            new PropertyColumn(new Model(""), "uid"),
+            new TypedPropertyColumn(new Model(""), "optional", "optional", String.class, false),
+            new PropertyColumn(new Model("Name"), "name", "name"),
+            new TypedPropertyColumn(new Model("Ver."), "version", "version", Integer.class, true),
+            new PropertyColumn(new Model("Type"), "type", "type"),
+            new PropertyColumn(new Model("Dest. Name"), "destName", "destName")
+        );
+
+        final YuiDataTable ydt = new YuiDataTable( "dependenciesTable", dependencyColumns, "name", true, items, null, "uid", true, null ){
+            @Override
+            @SuppressWarnings({"UnusedDeclaration"})
+            protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String value ) {
+                if ( targetClusterId != null && !targetClusterId.isEmpty() && value != null && !value.isEmpty() ) {
+                    String[] typeIdPair = value.split(":", 2);
+                    logger.fine("Selected dependency for mapping id '"+typeIdPair[1]+"', type '"+typeIdPair[0]+"'.");
+
+                    DependencyItem selectedItem = null;
+                    for ( DependencyItem item : items ) {
+                        if ( item.type.equals(typeIdPair[0]) && item.id.equals(typeIdPair[1]) ) {
+                            selectedItem = item;
+                            break;
+                        }
+                    }
+
+                    if ( selectedItem != null ) {
+                        lastSourceKey = new DependencyKey( sourceClusterId, selectedItem.asEntityHeader() );
+                        candidateModel.setName( selectedItem.name );
+                        candidateModel.setType( selectedItem.getType() );                        
+                    } else {
+                        lastSourceKey = null;
+                        candidateModel.reset();
+                    }
+
+                    addDependencyOptions( dependenciesContainer, dependenciesOptionsContainer, candidateModel, searchModel, mappingModel, dependencySummaryModel );
+                    ajaxRequestTarget.addComponent(dependenciesOptionsContainer);
+                }
+            }
+        };
+
+        if ( dependenciesContainer.get( ydt.getId() ) == null ) {
+            dependenciesContainer.add( ydt );
+        } else {
+            dependenciesContainer.replace( ydt );
+        }
+    }
+
+    private void addDependencyOptions( final WebMarkupContainer dependenciesContainer,
+                                       final WebMarkupContainer dependenciesOptionsContainer,
+                                       final CandidateModel candidateModel,
+                                       final SearchModel searchModel,
+                                       final EntityMappingModel mappingModel,
+                                       final DepenencySummaryModel dependencySummaryModel ) {
+        String targetClusterId = lastTargetClusterId;
+        DependencyKey sourceKey = lastSourceKey;
+        final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(sourceKey, targetClusterId);
+
         WebMarkupContainer markupContainer = new WebMarkupContainer("dependencyOptions");
         if ( dependenciesOptionsContainer.get( markupContainer.getId() ) == null ) {
             dependenciesOptionsContainer.add( markupContainer.setOutputMarkupId(true) );
@@ -517,9 +550,31 @@ public class PolicyMigration extends EmsPage  {
             dependenciesOptionsContainer.replace( markupContainer.setOutputMarkupId(true) );
         }
 
-        final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(sourceKey, targetClusterId);
-        DependencyItem currentItem = mappingModel.dependencyMap.get( mappingKey );
-        selectionComponent.setEnabled( currentItem != null );
+        searchModel.setSearchManner("contains");
+        searchModel.setSearchValue("");
+
+        List<DependencyItem> options;
+        if ( sourceKey == null  ) {
+            options = Collections.emptyList();
+
+            for ( String id : SEARCH_REFRESH_COMPONENTS ) {
+                Component component = dependenciesOptionsContainer.get(id);
+                component.setEnabled( false );
+            }
+        } else {
+            options = retrieveDependencyOptions( lastTargetClusterId, lastSourceKey, searchModel.getSearchFilter() );
+
+            for ( String id : SEARCH_REFRESH_COMPONENTS ) {
+                Component component = dependenciesOptionsContainer.get(id);
+                component.setEnabled( isSearchable( sourceKey.asEntityHeader().getType() ) );
+            }
+        }
+
+        boolean selectedItem = mappingModel.dependencyMap.get( mappingKey ) != null;
+        for ( String id : SELECTION_REFRESH_COMPONENTS ) {
+            Component component = dependenciesOptionsContainer.get(id);
+            component.setEnabled( selectedItem );
+        }
 
         markupContainer.add(new ListView("optionRepeater", options) {
             @Override
@@ -528,11 +583,18 @@ public class PolicyMigration extends EmsPage  {
 
                 Component radioComponent = new WebComponent("uid").add( new AjaxEventBehavior("onchange"){
                     @Override
-                    protected void onEvent(final AjaxRequestTarget target) {
+                    protected void onEvent( final AjaxRequestTarget ajaxRequestTarget ) {
                         logger.fine("Selection callback for : " + dependencyItem);
                         mappingModel.dependencyMap.put( mappingKey, dependencyItem );
-                        selectionComponent.setEnabled(true);
-                        target.addComponent( selectionComponent );
+                        updateDependencies( dependenciesContainer, dependenciesOptionsContainer, candidateModel, searchModel, mappingModel, dependencySummaryModel );
+
+                        for ( String id : SELECTION_REFRESH_COMPONENTS ) {
+                            Component component = dependenciesOptionsContainer.get(id);
+                            component.setEnabled( true );
+                        }
+                        
+                        for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
+                        ajaxRequestTarget.addComponent( dependenciesOptionsContainer );
                     }
                 } );
 
@@ -546,7 +608,6 @@ public class PolicyMigration extends EmsPage  {
                 item.add(new Label("version", dependencyItem.getVersionAsString()));
             }
         });
-        markupContainer.setEnabled( targetClusterId != null );
     }
 
     private Collection<DependencyItem> retrieveDependencies( final DependencyItemsRequest request ) throws FindException, GatewayException, MigrationApi.MigrationException {
@@ -1070,6 +1131,8 @@ public class PolicyMigration extends EmsPage  {
         private String name;
         private boolean optional;
         private Integer version;
+        @SuppressWarnings({"UnusedDeclaration"})
+        private String destName;
 
         public DependencyItem() {
         }
@@ -1191,6 +1254,93 @@ public class PolicyMigration extends EmsPage  {
                 filter = filter + "*";
             }
             return filter;
+        }
+    }
+
+    /**
+     * Model to store candidate information
+     */
+    public static final class CandidateModel implements Serializable {
+        private String name;
+        private String type;
+
+        public CandidateModel() {
+            reset();
+        }
+
+        public void reset() {
+            name = "-";
+            type = "-";
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+    }
+
+    /**
+     * A model to store dependency summary
+     */
+    public final static class DepenencySummaryModel implements Serializable {
+        private int totalDependencies;
+        private int unmappedDependencies;
+        private int requiredUnmappedDependencies;
+
+        public void reset() {
+            totalDependencies = 0;
+            unmappedDependencies = 0;
+            requiredUnmappedDependencies = 0;    
+        }
+
+        public void incrementTotalDependencies() {
+            totalDependencies++;
+        }
+
+        public void incrementUnmappedDependencies() {
+            totalDependencies++;
+            unmappedDependencies++;
+        }
+
+        public void incrementRequiredUnmappedDependencies() {
+            totalDependencies++;
+            unmappedDependencies++;
+            requiredUnmappedDependencies++;
+        }
+
+        public int getRequiredUnmappedDependencies() {
+            return requiredUnmappedDependencies;
+        }
+
+        public void setRequiredUnmappedDependencies(int requiredUnmappedDependencies) {
+            this.requiredUnmappedDependencies = requiredUnmappedDependencies;
+        }
+
+        public int getTotalDependencies() {
+            return totalDependencies;
+        }
+
+        public void setTotalDependencies(int totalDependencies) {
+            this.totalDependencies = totalDependencies;
+        }
+
+        public int getUnmappedDependencies() {
+            return unmappedDependencies;
+        }
+
+        public void setUnmappedDependencies(int unmappedDependencies) {
+            this.unmappedDependencies = unmappedDependencies;
         }
     }
 }

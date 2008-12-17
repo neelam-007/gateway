@@ -233,6 +233,10 @@ public class YuiDataTable extends Panel {
         pagingContainer.setOutputMarkupId( true );
         tableContainer.setOutputMarkupId( true );
 
+        if ( !isServerSortAndPage ) {
+            pagingContainer.setVisible( false );    
+        }
+
         add( pagingContainer );
         add( tableContainer );
 

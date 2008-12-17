@@ -27,7 +27,6 @@
         <style type="text/css">
             th.dependencyExplorer {
                 font-weight: normal;
-                padding-bottom: 4px;
                 text-align: left;
                 white-space: nowrap;
             }
@@ -736,53 +735,96 @@
             </div>
             <div class="panel">
                 <div class="panelTitle">Dependencies Mapping</div>
-                <div class="panelContent">
-                    <table width="100%" wicket:id="dependencies">
+                <div class="panelContent" style="height: 350px; overflow: hidden">
+                    <table width="100%" wicket:id="dependencies" cellpadding="0" cellspacing="0">
                         <tr>
-                            <th width="50%"><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width -->
+                            <th width="49%"><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width -->
                             </th>
-                            <th width="50%"><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width -->
+                            <th width="2%"></th>
+                            <th width="49%"><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width -->
                             </th>
                         </tr>
                         <tr>
                             <th class="dependencyExplorer">Select an item to resolve:</th>
+                            <th class="dependencyExplorer">&nbsp;</th>
                             <th class="dependencyExplorer">Choose mapping from destination candidates:</th>
                         </tr>
                         <tr>
-                            <td class="dependencyExplorer">
+                            <td valign="top">
+                                <div class="panelToolbar" style="height: 80px; padding: 4px">
+                                    <p>Dependencies that must be mapped for migration are shown by: <img src="/images/unresolved.png" class="middle"/></p>
+                                    <p>Some dependencies (such as policy fragments) do not require mapping.</p>
+
+                                    <table class="indent spaced">
+                                        <tr>
+                                            <th>Total number of dependencies:</th>
+                                            <td><div wicket:id="dependenciesTotalLabel"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Number of unmapped dependencies :</th>
+                                            <td><div wicket:id="dependenciesUnmappedLabel"/></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Number of required unmapped dependencies :</th>
+                                            <td><div wicket:id="dependenciesRequiredUnmappedLabel"/></td>
+                                        </tr>
+                                     </table>
+                                </div>
+
                                <div wicket:id="dependenciesTable"/>
                             </td>
-                            <td class="dependencyExplorer">
-                                <div id="mappingCandidatesPagination" class="panelToolbar"></div>
+                            <td></td>
+                            <td valign="top">
                                 <form wicket:id="dependencyOptionsContainer">
-                                    Mapping <select wicket:id="dependencySearchManner"/>
-                                    :
-                                    <input type="text" wicket:id="dependencySearchText" value="" size="30" />
-                                    <button type="submit" wicket:id="dependencySearchButton">Search</button>
+                                    <div class="panelToolbar" style="height: 80px; padding: 4px">
+                                        <p>Showing destination mapping candidates for:</p>
 
-                                    <br/>&nbsp;<br/>
-
-                                    <div style="border: 1px solid black; height: 170px; width: 400px; overflow: scroll">
-                                        <table class="dataTable" wicket:id="dependencyOptions" width="100%">
-                                            <thead>
-                                                <tr>
-                                                    <th></th>
-                                                    <th>Name</th>
-                                                    <th>Ver.</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr wicket:id="optionRepeater">
-                                                    <td><input name="selectionValue" type="radio" wicket:id="uid"/></td>
-                                                    <td><div wicket:id="name"/></td>
-                                                    <td class="right"><div wicket:id="version"/></td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                        <table class="indent spaced">
+                                            <tr>
+                                                <th>Name:</th>
+                                                <td><div wicket:id="dependencyCandidateName"/></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Type:</th>
+                                                <td><div wicket:id="dependencyCandidateType"/></td>
+                                            </tr>
+                                         </table>
                                     </div>
+                                    <div>
+                                        <table>
+                                            <tr>
+                                                <td class="middle">Mapping&nbsp;</td>
+                                                <td class="middle"><select wicket:id="dependencySearchManner"/>&nbsp;</td>
+                                                <td class="middle">:&nbsp;</td>
+                                                <td class="middle"><input type="text" wicket:id="dependencySearchText" value="" size="30" />&nbsp;</td>
+                                                <td class="middle"><button type="submit" wicket:id="dependencySearchButton">Search</button></td>
+                                            </tr>
+                                        </table>
 
-                                    <br/>
-                                    <button type="submit" wicket:id="dependencyClearButton">Clear Selection</button>                                    
+                                        <br/>
+
+                                        <div style="border: 1px solid black; height: 165px; width: 400px; overflow: scroll">
+                                            <table class="dataTable" wicket:id="dependencyOptions" width="100%">
+                                                <thead>
+                                                    <tr>
+                                                        <th></th>
+                                                        <th>Name</th>
+                                                        <th>Ver.</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr wicket:id="optionRepeater">
+                                                        <td><input name="selectionValue" type="radio" wicket:id="uid"/></td>
+                                                        <td><div wicket:id="name"/></td>
+                                                        <td class="right"><div wicket:id="version"/></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <br/>
+                                        <button type="submit" wicket:id="dependencyClearButton">Clear Selection</button>
+                                    </div>
                                 </form>
                             </td>
                         </tr>
