@@ -37,9 +37,9 @@ public class SortComponents implements LogonListener {
         AlterFilterAction filterPolicyAction = new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, filterLabel);
 
         //set default action state
-        filterAllAction.setEnabled(false);
-        filterServiceAction.setEnabled(false);
-        filterPolicyAction.setEnabled(false);
+        filterAllAction.setEnabled(true);
+        filterServiceAction.setEnabled(true);
+        filterPolicyAction.setEnabled(true);
 
         //add to logon listener for the list of actions
         listenerList.add(LogonListener.class, filterAllAction);
@@ -67,10 +67,10 @@ public class SortComponents implements LogonListener {
         AlterDefaultSortAction sortTypeAscAction = new SortAscendingAction(AlterDefaultSortAction.SortType.TYPE);
         AlterDefaultSortAction sortTypeDescAction = new SortDescendingAction(AlterDefaultSortAction.SortType.TYPE);
 
-        sortNameAscAction.setEnabled(false);
-        sortNameDescAction.setEnabled(false);
-        sortTypeAscAction.setEnabled(false);
-        sortTypeDescAction.setEnabled(false);
+        sortNameAscAction.setEnabled(true);
+        sortNameDescAction.setEnabled(true);
+        sortTypeAscAction.setEnabled(true);
+        sortTypeDescAction.setEnabled(true);
 
         //add actions to logon listeners
         listenerList.add(LogonListener.class, sortNameAscAction);

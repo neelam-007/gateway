@@ -269,6 +269,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             listener.onLogon(event);
         }
         disconnected = false;
+        setFilterAndSortMenuEnabled(true);
     }
 
     /**
@@ -285,6 +286,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
         disconnected = true;
         descriptionText.setText("");
+        setFilterAndSortMenuEnabled(false);
     }
 
     public boolean isDisconnected() {
@@ -3144,5 +3146,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         updateTopMenu(tasksMenu);
         updateTopMenu(viewMenu);
         updateTopMenu(helpMenu);
+    }
+
+    /**
+     * Forces to set the status of the filter and sort menu to the specified status.
+     *
+     * @param status    TRUE to enable the filter and sort menu.
+     */
+    private void setFilterAndSortMenuEnabled(boolean status) {
+        getFilterServiceAndPolicyTreeMenu().setEnabled(status);
+        getSortServiceAndPolicyTreeMenu().setEnabled(status);
     }
 }

@@ -317,7 +317,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         }
 
         //register host name
-        System.out.println("Storing hostname : " + hostname);
+        //System.out.println("Storing hostname : " + hostname);
         serviceUrl = hostname;
 
         String port = getParameter("port");
