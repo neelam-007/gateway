@@ -12,10 +12,7 @@ import javax.jws.WebService;
 import javax.jws.WebMethod;
 import javax.jws.WebResult;
 import javax.jws.WebParam;
-import java.util.Collection;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * EMS / Gateway reporting API

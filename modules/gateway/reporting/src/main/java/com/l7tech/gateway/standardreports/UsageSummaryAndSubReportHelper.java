@@ -13,7 +13,6 @@ import net.sf.jasperreports.engine.fill.JRFillVariable;
 
 import java.util.LinkedHashMap;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 public class UsageSummaryAndSubReportHelper extends JRDefaultScriptlet {
 
@@ -28,15 +27,12 @@ public class UsageSummaryAndSubReportHelper extends JRDefaultScriptlet {
     }
 
     public Long getColumnValue(String varName, String authUser, String [] mappingValues){
-        String mappingValue = Utilities.getMappingValueString(authUser, mappingValues);
+        String mappingValue = RuntimeDocUtilities.getMappingValueString(authUser, mappingValues);
 
         JRFillField field = (JRFillField) this.fieldsMap.get("USAGE_SUM");
         String colVarName = keyToColumnMap.get(mappingValue);
 
-        //System.out.println("Looking up: " + mappingValue);
-
         if(varName.equals(colVarName)){
-            //System.out.println(colVarName+" is " + field.getValue());
             return (Long) field.getValue();
         }
 
@@ -46,14 +42,12 @@ public class UsageSummaryAndSubReportHelper extends JRDefaultScriptlet {
     }
 
     public Long getVariableValue(String varName, String authUser, String [] mappingValues){
-        String mappingValue = Utilities.getMappingValueString(authUser, mappingValues);
+        String mappingValue = RuntimeDocUtilities.getMappingValueString(authUser, mappingValues);
 
         JRFillField field = (JRFillField) this.fieldsMap.get("USAGE_SUM");
         String colVarName = keyToColumnMap.get(mappingValue);
 
-//        System.out.println("Looking up: " + mappingValue);
         if(varName.equals(colVarName)){
-//            System.out.println(colVarName+" is " + field.getValue());
             return (Long) field.getValue();
         }
 
@@ -63,16 +57,10 @@ public class UsageSummaryAndSubReportHelper extends JRDefaultScriptlet {
 
     public Long getDirectVariableValue(String varName){
         if(!this.variablesMap.containsKey(varName)){
-//            System.out.println("Printing out available variables");
-//            for(Object o: this.variablesMap.keySet()){
-//                System.out.println("Var: " + o);
-//            }
             throw new IllegalArgumentException("varName: " + varName+" not found");
         }
 
-        //System.out.println("Getting variable: " + varName);
         JRFillVariable jrFillVariable = (JRFillVariable) this.variablesMap.get(varName);
-        //System.out.println("Getting variable: " + varName + " with value " + jrFillVariable.getValue());
         return (Long) jrFillVariable.getValue();
     }
     
@@ -92,22 +80,16 @@ public class UsageSummaryAndSubReportHelper extends JRDefaultScriptlet {
      * @return Long, the value for the column, which represents the unique set of mapping values supplied
      */
     public Long getUsageChartCategoryValue(String authUser, String [] mappingValues, String variablePrefix) throws JRScriptletException {
-        String mappingValue = Utilities.getMappingValueString(authUser, mappingValues);
+        String mappingValue = RuntimeDocUtilities.getMappingValueString(authUser, mappingValues);
 
-        //System.out.println("Getting column name for: " + mappingValue);
         if(!keyToColumnMap.containsKey(mappingValue)){
             System.out.println("Throwing exception");
             throw new IllegalArgumentException("Key: " + mappingValue +" not found in keyToColumnName map");
         }
         String columnName = keyToColumnMap.get(mappingValue);
         String index = columnName.substring(columnName.indexOf("_")+1, columnName.length());
-        //System.out.println("Index is: " + index);
         int i = Integer.valueOf(index);
-        //System.out.println("Column name is: " + variablePrefix+i);
         Long returnValue = this.getDirectVariableValue(variablePrefix+i);
-        //System.out.println("value is: " + returnValue);
         return returnValue;
     }
-    
-    
 }

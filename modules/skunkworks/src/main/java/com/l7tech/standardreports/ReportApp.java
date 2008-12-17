@@ -20,6 +20,7 @@ import com.l7tech.common.io.IOUtils;
 import com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper;
 import com.l7tech.gateway.standardreports.UsageReportHelper;
 import com.l7tech.gateway.standardreports.Utilities;
+import com.l7tech.gateway.standardreports.RuntimeDocUtilities;
 import com.l7tech.server.management.api.node.ReportApi;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -337,18 +338,18 @@ public class ReportApp
         UsageReportHelper helper = (UsageReportHelper) scriplet;
         Connection connection = getConnection(prop);
         LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-        LinkedHashMap<String, String> keyToColumnName = Utilities.getKeyToColumnValues(distinctMappingSets);
+        LinkedHashMap<String, String> keyToColumnName = RuntimeDocUtilities.getKeyToColumnValues(distinctMappingSets);
         helper.setKeyToColumnMap(keyToColumnName);
         UsageSummaryAndSubReportHelper summaryAndSubReportHelper = new UsageSummaryAndSubReportHelper();
         summaryAndSubReportHelper.setKeyToColumnMap(keyToColumnName);
         parameters.put(SUB_REPORT_HELPER, summaryAndSubReportHelper);
 
-        LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
+        LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
         LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend);
         helper.setIndexToGroupMap(groupIndexToGroup);
         
         //Master report first
-        Document transformDoc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
 
         File f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageMasterTransformDoc.xml");
         f.createNewFile();
@@ -381,7 +382,7 @@ public class ReportApp
         }
 
         //MasterSubInterval report
-        transformDoc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+        transformDoc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageSubIntervalTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
@@ -410,7 +411,7 @@ public class ReportApp
         }
 
         //subreport report
-        transformDoc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        transformDoc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageSubReportTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
@@ -489,7 +490,7 @@ public class ReportApp
 
         if(isContextMapping){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
+            LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -517,7 +518,7 @@ public class ReportApp
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
 
-        Document transformDoc = Utilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
+        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
 
         String xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SummaryTransform.xsl");
         String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH+"/PS_Summary_Template.jrxml");
@@ -588,7 +589,7 @@ public class ReportApp
         
         if(isContextMapping){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
+            LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -614,7 +615,7 @@ public class ReportApp
         }
 
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
-        transformDoc = Utilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
+        transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
 
         File f = new File(SKUNKWORK_RELATIVE_PATH+"/PS_IntervalTransformDoc.xml");
         f.createNewFile();
@@ -677,13 +678,13 @@ public class ReportApp
         UsageSummaryAndSubReportHelper helper = (UsageSummaryAndSubReportHelper) scriplet;
         Connection connection = getConnection(prop);
         LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-        LinkedHashMap<String, String> keyToColumnName = Utilities.getKeyToColumnValues(distinctMappingSets);
+        LinkedHashMap<String, String> keyToColumnName = RuntimeDocUtilities.getKeyToColumnValues(distinctMappingSets);
         helper.setKeyToColumnMap(keyToColumnName);
-        LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
+        LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
         LinkedHashMap<String, String> displayStringToGroup = Utilities.getLegendDisplayStringToGroupMap(mappingValuesLegend);
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
-        Document transformDoc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         File f = new File(SKUNKWORK_RELATIVE_PATH+"/UsageTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);

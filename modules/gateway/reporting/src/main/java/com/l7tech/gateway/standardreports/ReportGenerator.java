@@ -297,7 +297,7 @@ public class ReportGenerator {
         if( isContextMapping ){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
             reportParams.put(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS, distinctMappingSets);
-            LinkedHashSet<String> mappingValuesLegend = Utilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
+            LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -311,12 +311,12 @@ public class ReportGenerator {
 
             if(reportType == ReportApi.ReportType.USAGE_SUMMARY){
                 UsageSummaryAndSubReportHelper helper = new UsageSummaryAndSubReportHelper();
-                LinkedHashMap<String, String> keyToColumnName = Utilities.getKeyToColumnValues(distinctMappingSets);
+                LinkedHashMap<String, String> keyToColumnName = RuntimeDocUtilities.getKeyToColumnValues(distinctMappingSets);
                 helper.setKeyToColumnMap(keyToColumnName);
                 reportParams.put(ReportApi.ReportParameters.REPORT_SCRIPTLET, helper);
             }else if(reportType == ReportApi.ReportType.USAGE_INTERVAL){
                 UsageSummaryAndSubReportHelper summaryAndSubReportHelper = new UsageSummaryAndSubReportHelper();
-                LinkedHashMap<String, String> keyToColumnName = Utilities.getKeyToColumnValues(distinctMappingSets);
+                LinkedHashMap<String, String> keyToColumnName = RuntimeDocUtilities.getKeyToColumnValues(distinctMappingSets);
                 summaryAndSubReportHelper.setKeyToColumnMap(keyToColumnName);
                 reportParams.put(ReportApi.ReportParameters.SUB_REPORT_HELPER, summaryAndSubReportHelper);
 
@@ -364,7 +364,7 @@ public class ReportGenerator {
 
         if(template.getType() == ReportApi.ReportType.PERFORMANCE_SUMMARY ||
                 template.getType() == ReportApi.ReportType.PERFORMANCE_INTERVAL){
-            runtimeDocument = Utilities.getPerfStatAnyRuntimeDoc(
+            runtimeDocument = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(
                     Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING).toString()),
                     (LinkedHashMap<String,String>)reportParameters.get(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING) );
             return runtimeDocument;
@@ -384,13 +384,13 @@ public class ReportGenerator {
                 reportParameters.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);        
 
         if(template.getType() == ReportApi.ReportType.USAGE_SUMMARY){
-            runtimeDocument = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+            runtimeDocument = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         }else if(template.getType() == ReportApi.ReportType.USAGE_INTERVAL && subReportParamName == null){
-            runtimeDocument = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+            runtimeDocument = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         }else if(subReportParamName.equals(ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT)){
-            runtimeDocument = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+            runtimeDocument = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         }else if(subReportParamName.equals(ReportApi.ReportParameters.SUB_REPORT)){
-            runtimeDocument = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+            runtimeDocument = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         }
 
         return runtimeDocument;
@@ -481,7 +481,7 @@ public class ReportGenerator {
     }
 
     public static LinkedHashMap<String, String> getKeyToColumnValues(LinkedHashSet<List<String>> distinctMappingSets) {
-        LinkedHashSet<String> mappingValues = getMappingValues(distinctMappingSets);
+        LinkedHashSet<String> mappingValues = RuntimeDocUtilities.getMappingValues(distinctMappingSets);
         LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
         int count = 1;
         //System.out.println("Key to column map");
@@ -493,28 +493,6 @@ public class ReportGenerator {
         return keyToColumnName;
     }
     
-    private static LinkedHashSet<String> getMappingValues(LinkedHashSet<List<String>> distinctMappingSets){
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
-
-        for(List<String> set: distinctMappingSets){
-            List<String> mappingStrings = new ArrayList<String>();
-            boolean first = true;
-            String authUser = null;
-            for(String s: set){
-                if(first){
-                    authUser = s;
-                    first = false;
-                    continue;
-                }
-                mappingStrings.add(s);
-            }
-            String mappingValue = Utilities.getMappingValueString(authUser, mappingStrings.toArray(new String[]{}));
-            mappingValues.add(mappingValue);
-        }
-
-        return mappingValues;
-    }
-
     /**
      * Get the ordered set of distinct mapping sets for the keys and values in the sql string from the db
      */

@@ -1783,7 +1783,7 @@ public class UtilitiesTest{
     public void testGetUsageRuntimeDoc_NullParams(){
         boolean exception = false;
         try{
-            Utilities.getUsageRuntimeDoc(null, null);
+            RuntimeDocUtilities.getUsageRuntimeDoc(null, null);
         }catch(IllegalArgumentException iae){
             exception = true;
         }
@@ -1795,7 +1795,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Assert.assertNotNull(doc);
     }
 
@@ -1837,7 +1837,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         Assert.assertTrue(list.getLength() == 1);
@@ -1872,7 +1872,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
@@ -1891,7 +1891,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
         String [] variableNames = new String[]{"COLUMN_","COLUMN_MAPPING_TOTAL_","COLUMN_SERVICE_TOTAL_"};
@@ -1951,7 +1951,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
@@ -1966,7 +1966,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -2039,7 +2039,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
@@ -2053,7 +2053,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //printOutDocument(doc);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
@@ -2138,7 +2138,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
         list = list.item(0).getChildNodes();
@@ -2152,7 +2152,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -2232,7 +2232,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         //Ensure all the first level elements exist
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         list = list.item(0).getChildNodes();
@@ -2246,7 +2246,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -2325,7 +2325,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
         testWidths(rootNode, distinctMappingSets.size());
     }
@@ -2339,7 +2339,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
         String [] variableNames = new String[]{"COLUMN_SERVICE_","COLUMN_OPERATION_","COLUMN_REPORT_"};
@@ -2401,7 +2401,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_HEADER);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -2470,7 +2470,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.RETURN_VALUE);
         list = list.item(0).getChildNodes();
         String [] variableNames = new String[]{"COLUMN_SERVICE_","COLUMN_OPERATION_","COLUMN_REPORT_"};
@@ -2513,7 +2513,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         NodeList list = doc.getElementsByTagName(elementName);
         list = list.item(0).getChildNodes();
         for(int i = 0 ; i < list.getLength(); i++){
@@ -2648,7 +2648,7 @@ public class UtilitiesTest{
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
         testWidths(rootNode, distinctMappingSets.size());
     }
@@ -2657,7 +2657,7 @@ public class UtilitiesTest{
     public void getUsageSubIntervalMasterRuntimeDoc_Variables(){
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
 
@@ -2697,7 +2697,7 @@ public class UtilitiesTest{
     @Test
     public void getUsageSubIntervalMasterRuntimeDoc_CheckSubReport(){
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.RETURN_VALUE);
         list = list.item(0).getChildNodes();
 
@@ -2732,7 +2732,7 @@ public class UtilitiesTest{
     public void getUsageSubIntervalMasterRuntimeDoc_CheckWidths(){
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
 
         Node subReportWidth = findFirstChildElementByName(rootNode, "subReportWidth");
@@ -2756,7 +2756,7 @@ public class UtilitiesTest{
     public void getUsageSubReportRuntimeDoc_Variables(){
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
         list = list.item(0).getChildNodes();
 
@@ -2807,7 +2807,7 @@ public class UtilitiesTest{
     public void getUsageSubReportRuntimeDoc_serviceAndOperationFooter_CheckElements(){
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
         list = list.item(0).getChildNodes();
 
@@ -2891,7 +2891,7 @@ public class UtilitiesTest{
     public void getUsageSubReportRuntimeDoc_noData_CheckElements(){
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         NodeList list = doc.getElementsByTagName(Utilities.NO_DATA);
         list = list.item(0).getChildNodes();
 
@@ -2959,7 +2959,7 @@ public class UtilitiesTest{
     public void getUsageSubReportRuntimeDoc_CheckWidths(){
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         Element rootNode = doc.getDocumentElement();
 
         Node pageWidth = findFirstChildElementByName(rootNode, "pageWidth");

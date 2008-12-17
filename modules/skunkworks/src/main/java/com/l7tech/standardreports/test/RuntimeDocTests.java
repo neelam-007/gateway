@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.io.*;
 
 import com.l7tech.gateway.standardreports.Utilities;
+import com.l7tech.gateway.standardreports.RuntimeDocUtilities;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.standardreports.ReportApp;
@@ -71,7 +72,7 @@ public class RuntimeDocTests {
 
         LinkedHashSet<List<String>> distinctMappingSets = ReportApp.getDistinctMappingSets(conn, sql);
         
-        Document doc = Utilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Assert.assertTrue(doc != null);
         XmlUtil.format(doc, true);
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
@@ -109,7 +110,7 @@ public class RuntimeDocTests {
 
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
@@ -126,7 +127,7 @@ public class RuntimeDocTests {
     @Test
     public void testGetUsageSubIntervalMasterRuntimeDoc() throws Exception{
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
-        Document doc = Utilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
@@ -144,7 +145,7 @@ public class RuntimeDocTests {
     public void testGetUsageSubReportRuntimeDoc() throws Exception{
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = Utilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
@@ -167,7 +168,7 @@ public class RuntimeDocTests {
         linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.3, CUSTOMER: GOLD");
         linkedHashMap.put("Group 4", "IP_ADDRESS: 127.0.0.4, CUSTOMER: GOLD");
 
-        Document doc = Utilities.getPerfStatAnyRuntimeDoc(true, linkedHashMap);
+        Document doc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(true, linkedHashMap);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
