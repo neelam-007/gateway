@@ -429,7 +429,7 @@ public class MigrationManagerImpl implements MigrationManager {
                   entities.get(header).operation == UPDATE ) ) {
                 try {
                     PublishedService service = (PublishedService) entities.get(header).entity;
-                    service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(findServiceDocuments(service, entities)) );
+                    service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(findServiceDocuments(header, entities)) );
                     resolutionManager.checkDuplicateResolution( service );
                 } catch (DuplicateObjectException e) {
                     errors.add("Service resolution error: " + ExceptionUtils.getMessage(e));
@@ -441,18 +441,17 @@ public class MigrationManagerImpl implements MigrationManager {
         return errors;
     }
 
-    private Collection<ServiceDocument> findServiceDocuments( final PublishedService service, final Map<EntityHeader, EntityOperation> entities  ) {
+    private Collection<ServiceDocument> findServiceDocuments( final EntityHeader serviceHeader, final Map<EntityHeader, EntityOperation> entities  ) {
         Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
 
-        //TODO lookup service document entities here        
-//        for (EntityHeader header : entities.keySet()) {
-//            if (header.getType() == EntityType.SERVICE_DOCUMENT ) {
-//                ServiceDocument serviceDocument = (ServiceDocument) entities.get(header).entity;
-//                if ( serviceDocument.getServiceId() == service.getOid()  ) {
-//                    serviceDocuments.add( serviceDocument );
-//                }
-//            }
-//        }
+        for (EntityHeader header : entities.keySet()) {
+            if (header.getType() == EntityType.SERVICE_DOCUMENT ) {
+                ServiceDocument serviceDocument = (ServiceDocument) entities.get(header).entity;
+                if ( serviceDocument.getServiceId() == serviceHeader.getOid()  ) {
+                    serviceDocuments.add( serviceDocument );
+                }
+            }
+        }
 
         return serviceDocuments;
     }
