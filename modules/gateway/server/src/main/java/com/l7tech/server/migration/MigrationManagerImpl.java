@@ -20,6 +20,8 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -368,6 +370,9 @@ public class MigrationManagerImpl implements MigrationManager {
                     ((PublishedService)fromBundle).getPolicy().setOid(((PublishedService)existing).getPolicy().getOid());
                     ((PublishedService)fromBundle).getPolicy().setVersion(((PublishedService)existing).getPolicy().getVersion());
                     ((PublishedService)fromBundle).setFolder(((PublishedService)existing).getFolder());
+                }
+                if (fromBundle instanceof Policy && existing instanceof Policy && ((Policy)fromBundle).getType() == PolicyType.INCLUDE_FRAGMENT) {
+                    ((Policy)fromBundle).setFolder(((Policy)existing).getFolder());
                 }
                 result.put(header, new EntityOperation(fromBundle, UPDATE));
             } else {
