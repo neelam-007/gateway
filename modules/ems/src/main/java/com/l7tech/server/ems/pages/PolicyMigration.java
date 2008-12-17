@@ -78,12 +78,12 @@ public class PolicyMigration extends EmsPage  {
 
         final WebMarkupContainer srcItemDependencies = new WebMarkupContainer("srcItemDependencies");
         add( srcItemDependencies.setOutputMarkupId(true) );
-        showDependencies( srcItemDependencies, Collections.emptyList() );
+        showDependencies( srcItemDependencies, Collections.<DependencyItem>emptyList() );
         srcItemDependencies.add( buildDependencyDisplayBehaviour(srcItemDependencies, "srcItemSelectionCallbackUrl" ) );
 
         final WebMarkupContainer destItemDependencies = new WebMarkupContainer("destItemDependencies");
         add( destItemDependencies.setOutputMarkupId(true) );
-        showDependencies( destItemDependencies, Collections.emptyList() );
+        showDependencies( destItemDependencies, Collections.<DependencyItem>emptyList() );
         destItemDependencies.add( buildDependencyDisplayBehaviour(destItemDependencies, "destItemSelectionCallbackUrl" ) );
 
         final DepenencySummaryModel dependencySummaryModel = new DepenencySummaryModel();
@@ -140,7 +140,7 @@ public class PolicyMigration extends EmsPage  {
                     target.addComponent( dependenciesContainer );
 
                     // build info dialog
-                    Label label = new Label(YuiDialog.getContentId(), summarize(dir, targetClusterId, deps, mappingModel));
+                    Label label = new Label(YuiDialog.getContentId(), summarize(dir, targetClusterId, visible(deps), mappingModel));
                     label.setEscapeModelStrings(false);
                     YuiDialog dialog = new YuiDialog("dialog", "Identified Dependencies", YuiDialog.Style.CLOSE, label, null);
                     dialogContainer.replace( dialog );
@@ -379,7 +379,7 @@ public class PolicyMigration extends EmsPage  {
                     options = new ArrayList<DependencyItem>(retrieveDependencies( dir ));
                     for ( Iterator<DependencyItem> itemIter = options.iterator(); itemIter.hasNext();  ) {
                         DependencyItem item = itemIter.next();
-                        if ( EntityType.FOLDER.toString().equals(item.type) ) {
+                        if ( item.hidden || EntityType.FOLDER.toString().equals(item.type) ) {
                             itemIter.remove();
                         }
                     }
@@ -401,8 +401,18 @@ public class PolicyMigration extends EmsPage  {
         };
     }
 
-    private void showDependencies( final WebMarkupContainer container, final List options ) {
-        ListView listView = new ListView("optionRepeater", options) {
+    private List<DependencyItem> visible( final Collection<DependencyItem> items ) {
+        List<DependencyItem> visibleDeps = new ArrayList<DependencyItem>( items.size() );
+
+        for ( DependencyItem item : items ) {
+            if ( !item.hidden ) visibleDeps.add( item );
+        }
+
+        return visibleDeps;
+    }
+
+    private void showDependencies( final WebMarkupContainer container, final List<DependencyItem> options ) {
+        ListView listView = new ListView("optionRepeater", visible(options)) {
             @Override
             protected void populateItem( final ListItem item ) {
                 final DependencyItem dependencyItem = ((DependencyItem)item.getModelObject());
@@ -464,7 +474,7 @@ public class PolicyMigration extends EmsPage  {
                                      final DepenencySummaryModel dependencySummaryModel ) {
         final String sourceClusterId = this.lastSourceClusterId;
         final String targetClusterId = this.lastTargetClusterId;
-        final Collection<DependencyItem> items = this.lastDependencyItems;
+        final Collection<DependencyItem> items = visible(this.lastDependencyItems);
 
         // update dependency counts and items destination names
         dependencySummaryModel.reset();
@@ -621,6 +631,19 @@ public class PolicyMigration extends EmsPage  {
                 MigrationMetadata metadata = api.findDependencies( request.asEntityHeaders() );
                 for (EntityHeader header : metadata.getMappableDependencies()) {
                     deps.add( new DependencyItem( header, !metadata.isMappingRequired(header) ) );
+                }
+
+                for (EntityHeader header : metadata.getHeaders() ) {
+                    boolean alreadyPresent = false;
+
+                    for ( DependencyItem item : deps ) {
+                        if ( item.asEntityHeader().equals(header) ) {
+                            alreadyPresent = true;
+                            break;
+                        }
+                    }
+
+                    if ( !alreadyPresent ) deps.add( new DependencyItem( header, true, true ) );
                 }
             }
         }
@@ -1130,6 +1153,7 @@ public class PolicyMigration extends EmsPage  {
         private String type;
         private String name;
         private boolean optional;
+        private boolean hidden;
         private Integer version;
         @SuppressWarnings({"UnusedDeclaration"})
         private String destName;
@@ -1137,13 +1161,21 @@ public class PolicyMigration extends EmsPage  {
         public DependencyItem() {
         }
 
-        public DependencyItem( final EntityHeader entityHeader, final boolean optional ) {
+        public DependencyItem( final EntityHeader entityHeader,
+                               final boolean optional ) {
+            this( entityHeader, optional, false );
+        }
+
+        public DependencyItem( final EntityHeader entityHeader,
+                               final boolean optional,
+                               final boolean hidden ) {
             this.entityHeader = entityHeader;
             this.uid = entityHeader.getType().toString() +":" + entityHeader.getStrId();
             this.id = entityHeader.getStrId();
             this.type = entityHeader.getType().toString();
             this.name = entityHeader.getName();
             this.optional = optional;
+            this.hidden = hidden;
             this.version = entityHeader.getVersion();
         }
 
