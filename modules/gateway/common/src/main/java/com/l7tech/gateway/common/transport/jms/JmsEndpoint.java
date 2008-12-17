@@ -9,6 +9,7 @@ package com.l7tech.gateway.common.transport.jms;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.migration.Migration;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.Entity;
@@ -75,6 +76,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
                : null;
     }
 
+    @Migration(dependency = false)
     public EntityHeader toEntityHeader() {
         return new EntityHeader(getOid(), EntityType.JMS_ENDPOINT, getName(), getDestinationName());
     }
