@@ -32,7 +32,7 @@ public class AuditDownloadPanel extends Panel {
         setOutputMarkupId(true);
 
         final Date now = new Date();
-        final YuiDateSelector startDateField = new YuiDateSelector("audit.startdate", new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), now, true);
+        final YuiDateSelector startDateField = new YuiDateSelector("audit.startdate", new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), now);
         final YuiDateSelector endDateField = new YuiDateSelector("audit.enddate", new Model(new Date(now.getTime())), now);
 
         startDateField.getDateTextField().add(DateValidator.maximum(now));

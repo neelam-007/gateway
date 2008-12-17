@@ -145,7 +145,7 @@ function initDateSelector( inputId, calContainerId, calBodyId, longDates, txtDat
     calendar.selectEvent.subscribe(selectHandler, calendar, true);
 
     var firstSelect = ignoreFirstSelect;
-    YAHOO.util.Event.on(inputId, "focus", function() {
+    YAHOO.util.Event.on(inputId, "click", function() {
         if ( firstSelect ) {
             firstSelect = false;
         } else {
