@@ -94,6 +94,7 @@ public class Utilities {
     private final static String aggregateSelect = "SELECT p.objectid as SERVICE_ID, " +
             "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
             "SUM({0}.attempted) as ATTEMPTED, "+
+            //todo [Donal] duplicate column creaped in, check if this is being used, if it is replace usages with THROUGHPUT
             "SUM({0}.completed) as COMPLETED, "+
             "SUM({0}.authorized) as AUTHORIZED, "+
             "SUM({0}.front_sum) as FRONT_SUM, "+
