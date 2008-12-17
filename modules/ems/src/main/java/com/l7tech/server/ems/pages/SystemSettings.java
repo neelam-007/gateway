@@ -409,7 +409,7 @@ public class SystemSettings extends EmsPage {
             info( new StringResourceModel("license.message.updated", this, null).getString() );
         } catch (InvalidLicenseException e) {
             error(ExceptionUtils.getMessage(e));
-            logger.log( Level.WARNING, "Error installing new license", e );
+            logger.log( Level.WARNING, "Error installing new license '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
         } catch (UpdateException e) {
             error(ExceptionUtils.getMessage(e));
             logger.log( Level.WARNING, "Error installing new license", e );
