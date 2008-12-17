@@ -214,6 +214,7 @@ public class PolicyMigration extends EmsPage  {
                             final boolean enableServices = Boolean.valueOf(enableNewServices);
                             final boolean overwrite = Boolean.valueOf(overwriteDependencies);
 
+                            // load mappings for top-level items that have been previously migrated
                             loadMappings( mappingModel, dir.clusterId, targetClusterId, buildDependencyItems(dir) );
                             TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel, true )));
                             YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, textPanel, new YuiDialog.OkCancelCallback(){
@@ -769,6 +770,7 @@ public class PolicyMigration extends EmsPage  {
             if ( sourceCluster != null && targetCluster != null) {
                 if ( sourceCluster.getTrustStatus() && targetCluster.getTrustStatus() ) {
                     Collection<DependencyItem> items = retrieveDependencies( requestedItems );
+                    loadMappings( mappingModel, requestedItems.clusterId, targetClusterId, items );
                     StringBuilder builder = new StringBuilder();
                     for ( DependencyItem item : items ) {
                         DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
