@@ -7,16 +7,12 @@
 package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.migration.Migration;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.Column;
-import javax.persistence.Basic;
 import javax.persistence.Enumerated;
 import javax.persistence.EnumType;
 import java.io.Serializable;
@@ -74,11 +70,6 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         return _username != null && _password != null
                ? new PasswordAuthentication( _username, _password.toCharArray() )
                : null;
-    }
-
-    @Migration(dependency = false)
-    public EntityHeader toEntityHeader() {
-        return new EntityHeader(getOid(), EntityType.JMS_ENDPOINT, getName(), getDestinationName());
     }
 
     @Column(name="username",length=32)
@@ -224,10 +215,12 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         this.useMessageIdForCorrelation = useMessageIdForCorrelation;
     }
 
+    @Override
     public String toString() {
         return "<JmsEndpoint connectionOid=\"" + _connectionOid + "\" name=\"" + _name + "\"/>";
     }
 
+    @Override
     public int compareTo(Object o) {
         if (o.getClass().equals(JmsEndpoint.class)) {
             JmsEndpoint that = (JmsEndpoint) o;

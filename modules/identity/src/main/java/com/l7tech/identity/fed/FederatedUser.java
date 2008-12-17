@@ -7,9 +7,6 @@ package com.l7tech.identity.fed;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.objectmodel.migration.Migration;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.objectmodel.EntityType;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.Entity;
@@ -43,6 +40,7 @@ public class FederatedUser extends PersistentUser {
         return super.getSubjectDn();
     }
 
+    @Override
     public void copyFrom( User objToCopy ) {
         FederatedUser imp = (FederatedUser)objToCopy;
         setOid(imp.getOid());

@@ -4,8 +4,6 @@
 
 package com.l7tech.gateway.common.transport.jms;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -91,10 +89,6 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     @Override
     public String toString() {
         return "<JmsConnection oid=\"" + _oid + "\" name=\"" + _name + "\"/>";
-    }
-
-    public EntityHeader toEntityHeader() {
-        return new EntityHeader(getOid(), EntityType.JMS_CONNECTION, getName(), null, getVersion());
     }
 
     @Column(name="username", length=32)
