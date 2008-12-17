@@ -136,22 +136,22 @@
                         <div class="panelContent">
                             <div wicket:id="feedback" class="center"/>
                             <form action="EnterpriseUsers.html" method="POST" wicket:id="editUserForm">
-                                <table class="indent spaced">
+                                <table class="spaced" width="100%">
                                     <tr>
                                         <th>Email:</th>
-                                        <td><input id="email" name="email" type="text" wicket:id="email"/></td>
+                                        <td width="100%"><input id="email" name="email" type="text" size="40" maxlength="128" wicket:id="email"/></td>
                                     </tr>
                                     <tr>
                                         <th>Surname:</th>
-                                        <td><input id="lastName" name="lastName" type="text" wicket:id="lastName"/></td>
+                                        <td><input id="lastName" name="lastName" type="text" size="40" maxlength="32" wicket:id="lastName"/></td>
                                     </tr>
                                     <tr>
                                         <th>Given Name:</th>
-                                        <td><input id="firstName" name="firstName" type="text" wicket:id="firstName"/></td>
+                                        <td><input id="firstName" name="firstName" type="text" size="40" maxlength="32" wicket:id="firstName"/></td>
                                     </tr>
                                     <tr>
                                         <th>Description:</th>
-                                        <td><input id="description" name="description" type="text" wicket:id="description"/></td>
+                                        <td><input id="description" name="description" type="text" maxlength="255" style="width: 97%;" wicket:id="description"/></td>
                                     </tr>
                                  </table>
                             </form>
