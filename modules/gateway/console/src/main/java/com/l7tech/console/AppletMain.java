@@ -63,6 +63,7 @@ public class AppletMain extends JApplet implements SheetHolder {
     private String helpRootUrl = DEFAULT_HELP_ROOT_RELATIVE_URL;
     private String helpTarget = "managerAppletHelp";
     private JRootPane placeholderRootPane = null;
+    private String serviceUrl;
 
     public AppletMain() throws HeadlessException {
         instances.add(this);
@@ -123,6 +124,7 @@ public class AppletMain extends JApplet implements SheetHolder {
             // Install WSDL Factory that is safe for Applet use
             Wsdl.setWSDLFactoryBuilder( WsdlUtils.getWSDLFactoryBuilder() );
         }
+        TopComponents.getInstance().setServiceUrl(serviceUrl);
     }
 
     /**
@@ -313,6 +315,10 @@ public class AppletMain extends JApplet implements SheetHolder {
                 hostname = "";
             }
         }
+
+        //register host name
+        System.out.println("Storing hostname : " + hostname);
+        serviceUrl = hostname;
 
         String port = getParameter("port");
         if (port == null || port.length() < 1) {

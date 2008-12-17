@@ -69,6 +69,10 @@ public class TopComponents {
         ssgURL = url;
     }
 
+    public void setServiceUrl(String url) {
+        getMainWindow().setServiceUrl(url);
+    }
+
     public SsmPreferences getPreferences() {
         return getMainWindow().getPreferences();
     }

@@ -206,6 +206,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private AuditAlertChecker auditAlertChecker;
     private X509Certificate serverSslCert;
     private RootNode rootNode;
+    private String serviceUrl = null;
     public final static String FILTER_STATUS_NONE = "Filter: None";
     public final static String FILTER_STATUS_SERVICES = "Filter: Services";
     public final static String FILTER_STATUS_POLICY_FRAGMENTS = "Filter: Policy Fragments";
@@ -1453,6 +1454,23 @@ public class MainWindow extends JFrame implements SheetHolder {
         return servicesAndPoliciesTree;
     }
 
+    public void setServiceUrl(String url) {
+        serviceUrl = url;
+    }
+
+    /**
+     * @return  The gateway's name that the manager is connecting to.
+     */
+    private String getServiceUrl() {
+        String url = "";
+        if (serviceUrl != null) {
+            url = serviceUrl;
+        } else {
+            url = preferences.getString(SsmPreferences.SERVICE_URL);
+        }
+        return url;
+    }
+
     /**
      * Initialize the workspace. Invoked on successfull login.
      */
@@ -1475,7 +1493,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         identitiesTree.setRootVisible(true);
         identitiesTree.setModel(treeModel);
 
-        final String url = preferences.getString(SsmPreferences.SERVICE_URL);
+        final String url = getServiceUrl();
         rootNode = new RootNode(url);
         rootNode.setSortComponents(((ServicesAndPoliciesTree) getServicesAndPoliciesTree()).getSortComponents());
 
