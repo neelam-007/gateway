@@ -207,8 +207,9 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
     }
 
     @Override
+    @Transactional(propagation=Propagation.REQUIRED, readOnly = true)
     public void checkDuplicateResolution(PublishedService service) throws DuplicateObjectException, ServiceResolutionException {
-        checkForDuplicateResolutionParameters(getDistinct(service), -1);
+        checkForDuplicateResolutionParameters(getDistinct(service), service.getOid());
     }
 
     /**

@@ -276,7 +276,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         return _name;
     }
 
-    @Migration(mapName = NONE, mapValue = NONE, uploadedByParent = true)
+    @Migration(mapName = NONE, mapValue = NONE, uploadedByParent = true, targetType = EntityType.POLICY_ALIAS)
     public Policy getPolicy() {
         return policy;
     }

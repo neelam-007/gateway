@@ -28,7 +28,9 @@ public class PropertyResolverFactory {
     private void initRegistry() {
         // todo: better registry initialization
         registry.put(EntityType.ANY, new DefaultEntityPropertyResolver());
+        // todo: these two should be merged, policy should not really be a dependency
         registry.put(EntityType.POLICY, new PolicyXmlPropertyResolver());
+        registry.put(EntityType.POLICY_ALIAS, new ServicePolicyPropertyResolver());
         registry.put(EntityType.SERVICE_DOCUMENT, new ServiceDocumentResolver(serviceDocumentManager));
         registry.put(EntityType.SERVICE, new AbstractOidPropertyResolver(entityFinder) {
             public EntityType getTargetType() { return EntityType.SERVICE; }

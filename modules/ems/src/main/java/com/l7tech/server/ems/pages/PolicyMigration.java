@@ -1004,6 +1004,7 @@ public class PolicyMigration extends EmsPage  {
                 EntityHeaderRef targetRef = mapping.getMappedDependency();
                 EntityHeader sourceHeader = metadata.getOriginalHeader( sourceRef );
                 EntityHeader targetHeader = metadata.getHeader( targetRef );
+                if (targetHeader == null) continue;
                 mappingBuilder.append( fromEntityType(sourceRef.getType()) );
                 mappingBuilder.append( ", " );
                 mappingBuilder.append( sourceHeader.getName() );

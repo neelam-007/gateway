@@ -9,6 +9,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.management.api.node.MigrationApi;
 
 import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -27,7 +28,7 @@ import java.util.logging.Level;
  * @author jbufu
  */
 @XmlRootElement
-@XmlType(propOrder={"headers", "mappings", "originalHeaders"})
+@XmlType(propOrder={"headers", "mappings", "originalHeaders", "unMapped"})
 public class MigrationMetadata {
 
     private static final Logger logger = Logger.getLogger(MigrationMetadata.class.getName());
@@ -48,6 +49,8 @@ public class MigrationMetadata {
     // easy access to dependencies / dependents
     private Map<EntityHeaderRef, Set<MigrationMapping>> mappingsBySource;
     private Map<EntityHeaderRef, Set<MigrationMapping>> mappingsByTarget;
+
+    private Map<EntityHeader, EntityHeaderRef> unMapped = new HashMap<EntityHeader, EntityHeaderRef>();
 
     // --- header operations ---
 
@@ -126,13 +129,18 @@ public class MigrationMetadata {
         return getHeadersMap().get(EntityHeaderRef.fromOther(headerRef));
     }
 
+    public EntityHeader getHeaderMappedOrOriginal(EntityHeaderRef headerRef) {
+        EntityHeader header = getHeader(headerRef);
+        return header != null ? header : getOriginalHeader(headerRef);
+    }
+
     public EntityHeader getOriginalHeader(EntityHeaderRef headerRef) {
         return getOriginalHeadersMap().get(EntityHeaderRef.fromOther(headerRef));
     }
 
     public void removeHeader(EntityHeaderRef headerRef) {
         EntityHeaderRef ref = EntityHeaderRef.fromOther(headerRef);
-        getOriginalHeadersMap().put(EntityHeaderRef.fromOther(headerRef), getHeadersMap().remove(ref));
+        getOriginalHeadersMap().put(ref, getHeadersMap().remove(ref));
     }
 
     public boolean isMappingRequired(EntityHeaderRef headerRef) throws MigrationApi.MigrationException {
@@ -253,14 +261,21 @@ public class MigrationMetadata {
     public void mapName(EntityHeaderRef dependency, EntityHeader newDependency, boolean enforceMappingType) throws MigrationApi.MigrationException {
 
         logger.log(Level.FINE, "Name-mapping: {0} -> {1}.", new Object[]{dependency, newDependency});
-        if (dependency == null || newDependency == null)
+
+        if (dependency == null || newDependency == null || ! hasHeader(dependency) || getHeader(dependency).equals(newDependency)) {
+            logger.log(Level.FINE, "Ignoring name-mapping: {0} -> {1}.", new Object[]{dependency, newDependency});
             return;
+        }
+
+        // keep track of the swap
+        unMapped.put(newDependency, dependency);
+
+        removeDependency(dependency);
 
         // add new header to the bundle
-        removeHeader(dependency);
         addHeader(newDependency);
 
-        // incoming dependencies
+        // update incoming dependencies
         Set<MigrationMapping> mappingsForDependency = getMappingsForTarget(dependency);
         for (MigrationMapping mapping : mappingsForDependency) {
             // todo: one-to-many mappings: decide how/when to apply this mapping (vs a presious / individual selection)
@@ -268,13 +283,41 @@ public class MigrationMetadata {
         }
         mappingsByTarget.remove(EntityHeaderRef.fromOther(dependency)); // nobody will depend on the old one
         addMappingsForTarget(newDependency, mappingsForDependency);
+    }
 
-        // outgoing dependencies
-        for(MigrationMapping mapping : getMappingsForSource(dependency)) {
-            getMappingsForTarget(mapping.getDependency()).remove(mapping);
-            mappings.remove(mapping);
+    private void removeDependency(EntityHeaderRef dependency) {
+
+        // remove this dependency
+        removeHeader(dependency);
+        //removeMappings(dependency);
+        boolean changed = true;
+
+        // remove headers of all other dependencies with no top-level dependants
+        while (changed) {
+            changed = false;
+            Set<EntityHeader> toRemove = new HashSet<EntityHeader>();
+            for(EntityHeader header : getHeaders()) {
+                Set<MigrationMapping> inMappings = getMappingsForTarget(header);
+                if (inMappings.isEmpty()) // this header is a top-level entry, don't remove
+                    continue;
+                boolean hasTopLevelDependant = false;
+                for (MigrationMapping mapping : inMappings) {
+                    if (hasHeader(mapping.getDependant())) {
+                        hasTopLevelDependant = true;
+                        break;
+                    }
+                }
+                if (! hasTopLevelDependant) {
+                    toRemove.add(header);
+                    changed = true;
+                }
+            }
+            for(EntityHeader header : toRemove) {
+                removeHeader(header);
+            }
         }
-        mappingsBySource.remove(EntityHeaderRef.fromOther(dependency));
+
+        // entries mappingsBy[Source|Target] needed for update operations
     }
 
     /**
@@ -340,5 +383,18 @@ public class MigrationMetadata {
                 return true;
         }
         return false;
+    }
+
+    public EntityHeaderRef getUnMapped(EntityHeader header) {
+        return unMapped.get(header);
+    }
+
+    @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
+    public Map<EntityHeader, EntityHeaderRef> getUnMapped() {
+        return unMapped;
+    }
+
+    public void setUnMapped(Map<EntityHeader, EntityHeaderRef> unMapped) {
+        this.unMapped = unMapped;
     }
 }

@@ -130,32 +130,4 @@ public class MigrationMapping {
     public String toString() {
         return "dependant: " + dependant.toString() + "\npropName: " + propName + "\nmapping type: " + type.toString() + "\ndependency: " + getDependency().toString();
     }
-
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        MigrationMapping that = (MigrationMapping) o;
-
-        EntityHeaderRef thisDependency = getDependency();
-        EntityHeaderRef thatDependency = that.getDependency();
-
-        if (propName != null ? !propName.equals(that.propName) : that.propName != null) return false;
-        if (dependant != null ? !dependant.equals(that.dependant) : that.dependant != null) return false;
-        if (thisDependency != null ? ! thisDependency.equals(thatDependency) : thatDependency != null) return false;
-        //noinspection RedundantIfStatement
-        if (type != null ? !type.equals(that.type) : that.type != null) return false;
-
-        return true;
-    }
-
-    public int hashCode() {
-        int result;
-        EntityHeaderRef dependency = getDependency();
-        result = (dependant != null ? dependant.hashCode() : 0);
-        result = 31 * result + (dependency != null ? dependency.hashCode() : 0);
-        result = 31 * result + (propName != null ? propName.hashCode() : 0);
-        result = 31 * result + (type != null ? type.hashCode() : 0);
-        return result;
-    }
 }

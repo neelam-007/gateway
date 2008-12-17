@@ -156,8 +156,8 @@ public class MigrationManagerImpl implements MigrationManager {
         errors.addAll(checkServiceResolution(entities));
 
         if (!errors.isEmpty())
-            throw new MigrationApi.MigrationException(errors);
-
+            logger.log(Level.WARNING, "Bundle validation errors: {0}.", errors);
+            //throw new MigrationApi.MigrationException(errors);
 
         try {
             Collection<MigratedItem> result = new HashSet<MigratedItem>();
@@ -192,11 +192,14 @@ public class MigrationManagerImpl implements MigrationManager {
         }
         uploaded.add(header);
 
+        EntityOperation eo = entities.get(header);
+        if (eo == null) return;
+
         // upload dependencies first
-        Set<MigrationMapping> dependencies = metadata.getMappingsForSource(header);
+        Set<MigrationMapping> dependencies = metadata.getMappingsForSource(eo.operation == UPDATE ? metadata.getUnMapped(header) : header);
         if (dependencies != null) {
             for (MigrationMapping mapping : dependencies) {
-                EntityHeader dep = metadata.getHeader(mapping.getDependency());
+                EntityHeader dep = metadata.getHeaderMappedOrOriginal(mapping.getDependency());
                 if (dep != null)
                     uploadEntityRecursive(dep, entities, metadata, uploaded, dryRun);
                 else
@@ -205,7 +208,6 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         if (! dryRun) {
-            EntityOperation eo = entities.get(header);
             switch (eo.operation)  {
                 case IGNORE:
                     break;
@@ -236,7 +238,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private void applyMappings(EntityHeader dependency, MigrationMetadata metadata, Map<EntityHeader, EntityOperation> entities) throws MigrationApi.MigrationException, PropertyResolverException {
         for(MigrationMapping mapping : metadata.getMappingsForTarget(dependency)) {
-            EntityHeader header = metadata.getHeader(mapping.getDependant());
+            EntityHeader header = metadata.getHeaderMappedOrOriginal(mapping.getDependant());
             EntityOperation eo = entities.get(header);
             PropertyResolver resolver = getResolver(eo.entity, mapping.getPropName());
             EntityOperation targetEo = entities.get(dependency);
@@ -267,7 +269,7 @@ public class MigrationManagerImpl implements MigrationManager {
         } else {
             // map root folder to target folder
             if (!metadata.hasHeader(ROOT_FOLDER_REF)) {
-                errors.add("Root folder not found in the bundle.");
+                logger.log(Level.INFO, "Root folder not found in the bundle, nor processing folders.");
             } else {
                 try {
                     metadata.mapName(ROOT_FOLDER_REF, targetFolder, false);
@@ -337,7 +339,8 @@ public class MigrationManagerImpl implements MigrationManager {
             } catch (MigrationApi.MigrationException e) {
                 existing = null;
             }
-            item = bundle.getExportedItem(header);
+
+            item = bundle.getExportedItem(existing == null || metadata.getUnMapped(header) == null ? header : metadata.getUnMapped(header));
             fromBundle = item == null ? null : item.getValue();
 
             if (fromBundle == null && existing == null) {
@@ -354,12 +357,25 @@ public class MigrationManagerImpl implements MigrationManager {
             } else if (fromBundle == null) {
                 result.put(header, new EntityOperation(existing, IGNORE));
             } else if (overwriteExisting) { // both not null
-                if (fromBundle instanceof PersistentEntity && existing instanceof PersistentEntity)
+                if (fromBundle instanceof PersistentEntity && existing instanceof PersistentEntity) {
                     ((PersistentEntity)fromBundle).setOid(((PersistentEntity)existing).getOid());
+                    ((PersistentEntity)fromBundle).setVersion(((PersistentEntity)existing).getVersion());
+                }
+                if (fromBundle instanceof PublishedService && existing instanceof PublishedService) {
+                    ((PublishedService)fromBundle).getPolicy().setOid(((PublishedService)existing).getPolicy().getOid());
+                    ((PublishedService)fromBundle).getPolicy().setVersion(((PublishedService)existing).getPolicy().getVersion());
+                }
                 result.put(header, new EntityOperation(fromBundle, UPDATE));
             } else {
                 result.put(header, new EntityOperation(existing, IGNORE));
             }
+        }
+
+        // add remaining exported items, needed to apply mappings on entities that are updated
+        for (ExportedItem exportedItem : bundle.getExportedItems()) {
+            EntityHeader header = metadata.getOriginalHeader(exportedItem.getHeaderRef());
+            if (header != null && ! result.containsKey(header))
+                result.put(header, new EntityOperation(exportedItem.getValue(), IGNORE));
         }
 
         return result;
@@ -499,7 +515,8 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     private EntityHeader resolveHeader( final EntityHeader header ) throws MigrationApi.MigrationException {
-        return EntityHeaderUtils.fromEntity( loadEntity(header) );
+        Entity ent = loadEntity(header);
+        return ent != null ? EntityHeaderUtils.fromEntity(ent) : header;
     }
 
     private Collection<EntityHeader> resolveHeaders( final Collection<EntityHeader> headers ) throws MigrationApi.MigrationException {
