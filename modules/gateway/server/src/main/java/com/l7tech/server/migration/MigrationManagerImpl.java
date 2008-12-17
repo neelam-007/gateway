@@ -196,7 +196,8 @@ public class MigrationManagerImpl implements MigrationManager {
         if (eo == null) return;
 
         // upload dependencies first
-        Set<MigrationMapping> dependencies = metadata.getMappingsForSource(eo.operation == UPDATE ? metadata.getUnMapped(header) : header);
+        EntityHeaderRef headerForDependencies = eo.operation == UPDATE ? metadata.getUnMapped(header) : header;
+        Set<MigrationMapping> dependencies = headerForDependencies != null ? metadata.getMappingsForSource(headerForDependencies) : null;
         if (dependencies != null) {
             for (MigrationMapping mapping : dependencies) {
                 EntityHeader dep = metadata.getHeaderMappedOrOriginal(mapping.getDependency());
