@@ -240,6 +240,11 @@ public class MigrationMetadata {
             toRemove.clear();
             errors.clear();
             for(Pair<EntityHeaderRef,EntityHeader> pair : toApply) {
+                // do not map folders, they get special handling in the manager
+                if (pair.getKey().getType() == EntityType.FOLDER) {
+                    toRemove.add(pair);
+                    continue;
+                }
                 try {
                     mapName(pair.getKey(), pair.getValue());
                     toRemove.add(pair);
@@ -262,8 +267,10 @@ public class MigrationMetadata {
 
         logger.log(Level.FINE, "Name-mapping: {0} -> {1}.", new Object[]{dependency, newDependency});
 
-        if (dependency == null || newDependency == null || ! hasHeader(dependency) || getHeader(dependency).equals(newDependency)) {
+        EntityHeader originalDepHeader = getHeader(dependency);
+        if (dependency == null || newDependency == null || ! hasHeader(dependency) || originalDepHeader.equals(newDependency)) {
             logger.log(Level.FINE, "Ignoring name-mapping: {0} -> {1}.", new Object[]{dependency, newDependency});
+            if (hasHeader(dependency)) getOriginalHeadersMap().put(dependency, originalDepHeader);
             return;
         }
 
