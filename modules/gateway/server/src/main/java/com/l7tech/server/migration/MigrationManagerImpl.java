@@ -230,6 +230,8 @@ public class MigrationManagerImpl implements MigrationManager {
 
         // apply mappings for this entity's dependants
         try {
+            if (header.getType() == EntityType.FOLDER)
+                return;
             applyMappings(header, metadata, entities);
         } catch (PropertyResolverException e) {
             throw new MigrationApi.MigrationException(e);
@@ -365,6 +367,7 @@ public class MigrationManagerImpl implements MigrationManager {
                 if (fromBundle instanceof PublishedService && existing instanceof PublishedService) {
                     ((PublishedService)fromBundle).getPolicy().setOid(((PublishedService)existing).getPolicy().getOid());
                     ((PublishedService)fromBundle).getPolicy().setVersion(((PublishedService)existing).getPolicy().getVersion());
+                    ((PublishedService)fromBundle).setFolder(((PublishedService)existing).getFolder());
                 }
                 result.put(header, new EntityOperation(fromBundle, UPDATE));
             } else {
