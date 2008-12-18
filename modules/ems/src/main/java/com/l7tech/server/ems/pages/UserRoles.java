@@ -281,7 +281,7 @@ public class UserRoles extends EmsPage {
                         target.addComponent(roleManagementContainer);
                     }
                 });
-                add(listChoice);
+                add(listChoice.setEscapeModelStrings(false));
             } catch (FindException e) {
                 logger.warning("Cannot find roles.");
             }
