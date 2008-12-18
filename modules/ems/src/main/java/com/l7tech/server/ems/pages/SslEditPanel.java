@@ -140,10 +140,14 @@ public class SslEditPanel extends Panel {
                                 }
 
                                 Certificate[] certs = keystore.getCertificateChain(aliasValue);
-                                X509Certificate[] xcerts = new X509Certificate[certs.length];
-                                System.arraycopy(certs, 0, xcerts, 0, certs.length);
+                                if ( certs != null ) {
+                                    X509Certificate[] xcerts = new X509Certificate[certs.length];
+                                    System.arraycopy(certs, 0, xcerts, 0, certs.length);
 
-                                 alias = setupManager.saveSsl( (PrivateKey)keystore.getKey(aliasValue, passwordValue.toCharArray()), xcerts );
+                                    alias = setupManager.saveSsl( (PrivateKey)keystore.getKey(aliasValue, passwordValue.toCharArray()), xcerts );
+                                } else {
+                                    feedback.error( "Alias not found '"+aliasValue+"'." );
+                                }
                             } else {
                                 logger.warning("Keystore not present in upload!");
                                 feedback.error( "Error processing keystore, please try again." );
