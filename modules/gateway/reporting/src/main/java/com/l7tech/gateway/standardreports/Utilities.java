@@ -72,6 +72,8 @@ public class Utilities {
     public static final String SERVICE_NAME = "SERVICE_NAME";
     public static final String ROUTING_URI = "ROUTING_URI";
     public static final String THROUGHPUT = "THROUGHPUT";
+    public static final String POLICY_VIOLATIONS = "POLICY_VIOLATIONS";
+    public static final String ROUTING_FAILURES = "ROUTING_FAILURES";
     public static final String FRTM = "FRTM";
     public static final String FRTMX = "FRTMX";
     public static final String FRTA = "FRTA";
