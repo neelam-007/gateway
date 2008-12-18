@@ -44,8 +44,8 @@ public class FederatedUserManagerImpl
 
     @Override
     @Transactional(propagation=Propagation.SUPPORTS)
-    public IdentityHeader userToHeader(FederatedUser user ) {
-        return new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getName(), null, user.getName(), user.getVersion());
+    public IdentityHeader userToHeader( final FederatedUser user ) {
+        return newHeader( user );
     }
 
     @Override
@@ -155,6 +155,11 @@ public class FederatedUserManagerImpl
     @Override
     protected String getNameFieldname() {
         return "name";
+    }
+
+    @Override
+    protected IdentityHeader newHeader( final FederatedUser user ) {
+        return new IdentityHeader(user.getProviderId(), user.getOid(), EntityType.USER, user.getName(), null, user.getName(), user.getVersion());
     }
 
     @Override

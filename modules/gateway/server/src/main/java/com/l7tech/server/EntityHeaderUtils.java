@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.identity.*;
+import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
@@ -59,6 +60,9 @@ public final class EntityHeaderUtils {
             return new EntityHeader(e.getId(), EntityType.SERVICE_DOCUMENT, ((ServiceDocument)e).getUri(), null);
         } else if (e instanceof Folder) {
             return new FolderHeader((Folder)e);
+        } else if (e instanceof FederatedUser) {
+            FederatedUser user = (FederatedUser)e;
+            return new IdentityHeader(user.getProviderId(), user.getOid(), EntityType.USER, user.getName(), null, user.getName(), user.getVersion());
         } else if (e instanceof PersistentUser) {
             PersistentUser user = (PersistentUser)e;
             return new IdentityHeader(user.getProviderId(), user.getOid(), EntityType.USER, user.getLogin(), null, user.getName(), user.getVersion());
