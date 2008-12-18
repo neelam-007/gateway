@@ -641,7 +641,11 @@
         function refreshSsgClusterContentSelector() {
             var ssgCluster = ssgClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
             var entityType = getEntityType();
-            ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, [entityType, l7.EntityTreeTable.ENTITY.SERVICE_FOLDER], null);
+            var entitiesWithTristateCheckbox = [l7.EntityTreeTable.ENTITY.SERVICE_FOLDER, entityType];
+            if (entityType == l7.EntityTreeTable.ENTITY.OPERATION) {
+                entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE);
+            }
+            ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, entitiesWithTristateCheckbox, null);
         }
 
         /**
@@ -651,8 +655,7 @@
          * @param {string} callbackId
          */
         function onHighlightSsgCluster(previous, ssgCluster, callbackId) {
-            var entityType = getEntityType();
-            ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, [entityType, l7.EntityTreeTable.ENTITY.SERVICE_FOLDER], null);
+            refreshSsgClusterContentSelector();
         }
 
         /**
@@ -791,9 +794,14 @@
         function onClickAddEntity() {
             var ssgCluster = ssgClusterContentSelectorWindow.getSsgCluster();
             var entities = ssgClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected();
+            var entityType = getEntityType();
 
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
+
+                if (entity.type != entityType) {
+                    continue;
+                }
 
                 var publishedService;
                 var operation;
@@ -802,8 +810,6 @@
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.OPERATION) {
                     publishedService = ssgClusterContentSelectorWindow.getEntityTreeTable().getParentEntity(entity);
                     operation = entity.name;
-                } else {
-                    continue;
                 }
 
                 // Skips this if already added.
