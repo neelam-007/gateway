@@ -1,10 +1,12 @@
 package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.RequestCycle;
@@ -98,25 +100,43 @@ public class StandardReportsManagementPanel extends Panel {
                 String reportIdentifier = (String)form.get("reportId").getModel().getObject();
                 if ( reportIdentifier != null && reportIdentifier.length() > 0 ) {
                     try {
-                        StandardReport report = reportManager.findByPrimaryKey( Long.parseLong(reportIdentifier) );
+                        final StandardReport report = reportManager.findByPrimaryKey( Long.parseLong(reportIdentifier) );
                         if ( report != null ) {
-                            if ( securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_STANDARD_REPORT, report) ) ) {
-                                reportManager.delete( report );
-                            } else {
-                                logger.log( Level.WARNING, "Report deletion not permitted." );
-                            }
+
+                            // Pop up a warning dialog to let the user confirm the report deletion.
+                            String warningText = "Really delete report \"" + report.getName() + "\"?";
+                            Label label = new Label(YuiDialog.getContentId(), warningText);
+                            label.setEscapeModelStrings(false);
+                            YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Confirm Generated Report Deletion", YuiDialog.Style.OK_CANCEL, label, new YuiDialog.OkCancelCallback() {
+                                @Override
+                                public void onAction( final YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
+                                    if ( button == YuiDialog.Button.OK ) {
+                                        if ( securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_STANDARD_REPORT, report) ) ) {
+                                            try {
+                                                reportManager.delete( report );
+                                                target.addComponent( tableContainer );
+                                            } catch (DeleteException e) {
+                                                logger.log( Level.WARNING, "Error deleting report.", e );
+                                            }
+                                        } else {
+                                            logger.log( Level.WARNING, "Report deletion not permitted." );
+                                        }
+                                    }
+                                    dynamicDialogHolder.replace(new EmptyPanel("dynamic.holder.content"));
+                                    target.addComponent(dynamicDialogHolder);
+                                }
+                            });
+
+                            dynamicDialogHolder.replace(dialog);
+                            ajaxRequestTarget.addComponent(dynamicDialogHolder);
                         } else {
                             logger.log( Level.INFO, "Report deletion request ignored for unknown report '"+reportIdentifier+"'." );
                         }
-                    } catch ( DeleteException e ) {
-                        logger.log( Level.WARNING, "Error deleting report.", e );
                     } catch ( FindException e ) {
                         logger.log( Level.WARNING, "Error deleting report.", e );
                     } catch ( NumberFormatException nfe ) {
                         logger.log( Level.INFO, "Report deletion request ignored for unknown report '"+reportIdentifier+"'." );
                     }
-
-                    ajaxRequestTarget.addComponent( tableContainer );
                 }
             }
         };
@@ -163,6 +183,10 @@ public class StandardReportsManagementPanel extends Panel {
             }
         };
         tableContainer.add( table );
+
+        // Create a dynamic holder just in case for displaying a warning dialog.
+        initDynamicDialogHolder();
+        add(dynamicDialogHolder);
     }
 
     //- PRIVATE
@@ -174,6 +198,17 @@ public class StandardReportsManagementPanel extends Panel {
 
     @SpringBean
     private EmsSecurityManager securityManager;
+
+    private WebMarkupContainer dynamicDialogHolder;
+
+    /**
+     * Initialize the dynamic dialog holder/container.
+     */
+    private void initDynamicDialogHolder() {
+        dynamicDialogHolder = new WebMarkupContainer("dynamic.holder");
+        dynamicDialogHolder.add(new EmptyPanel("dynamic.holder.content"));
+        dynamicDialogHolder.setOutputMarkupId(true);
+    }
 
    private static final class ReportModel implements Serializable {
         private final String id;
