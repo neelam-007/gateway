@@ -33,10 +33,10 @@ function fail() {
 cd "${SSEM_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSEM_HOME}" 
 
 if [ -z "${EM_USER}" ] ; then
-  "${JAVA_HOME}/bin/java" -jar EnterpriseManager.jar &>/dev/null <&- &
+  "${JAVA_HOME}/bin/java" -Xmx256m -jar EnterpriseManager.jar &>/dev/null <&- &
 else
   export JAVA_HOME EM_PIDTEMP
-  runuser "${EM_USER}" -c '"${JAVA_HOME}/bin/java" -jar EnterpriseManager.jar &>/dev/null <&- & echo "${!}" > "${EM_PIDTEMP}"'
+  runuser "${EM_USER}" -c '"${JAVA_HOME}/bin/java" -Xmx256m -jar EnterpriseManager.jar &>/dev/null <&- & echo "${!}" > "${EM_PIDTEMP}"'
 fi
 
 if [ ${?} -eq 0 ] ; then
