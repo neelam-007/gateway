@@ -6,10 +6,7 @@ import com.l7tech.gateway.common.admin.AliasAdmin;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.folder.FolderHeader;
-import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.folder.HasFolderOid;
+import com.l7tech.objectmodel.folder.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ExceptionUtils;
@@ -128,7 +125,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                         if(transferNode instanceof FolderNode) {
                             FolderNode child = (FolderNode) transferNode;
                             Folder movedFolder = child.getFolder();
-                            movedFolder.setParentFolder(newParentFolder);
+                            movedFolder.reParent(newParentFolder);
                             try {
                                 Registry.getDefault().getFolderAdmin().saveFolder(movedFolder);
                             } catch(ConstraintViolationException e) {
@@ -218,6 +215,11 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                         model.nodeChanged(transferNode);
                     }
                 }
+            } catch (InvalidParentFolderException e) {
+                if(tree != null){
+                    DialogDisplayer.showMessageDialog(tree, ExceptionUtils.getMessage(e), "Folder Error", JOptionPane.ERROR_MESSAGE, null);
+                }
+                return false;
             } catch (SaveException e) {
                 if(tree != null){
                     DialogDisplayer.showMessageDialog(tree,"Cannot save folder: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE, null);
@@ -240,7 +242,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                    }
                 }
                 return false;
-            } finally {                
+            } finally {
                 TreePath rootPath = tree.getPathForRow(0);
                 final Enumeration pathEnum = tree.getExpandedDescendants(rootPath);
 

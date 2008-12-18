@@ -2,7 +2,6 @@ package com.l7tech.objectmodel.folder;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -14,6 +13,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 public class Folder extends NamedEntityImp {
     private Folder parentFolder;
+    private static final int MAX_NESTING_CHECK_LEVEL = 1000;
 
     public Folder(String name, Folder parentFolder) {
         this._name = name;
@@ -28,10 +28,14 @@ public class Folder extends NamedEntityImp {
         return parentFolder;
     }
 
-    /**
-     * Not deprecated, because setting the parent is the cleanest way to move a folder around.
-     */
+    @Deprecated // For Serialization and persistence only; don't want exceptions thrown, like the alternative reParent() does
     public void setParentFolder(Folder parentFolder) {
+        this.parentFolder = parentFolder;
+    }
+
+    public void reParent(Folder parentFolder) throws InvalidParentFolderException {
+        if (isParentOf(parentFolder))
+            throw new InvalidParentFolderException("The destination folder is a subfolder of the source folder");
         this.parentFolder = parentFolder;
     }
 
@@ -45,7 +49,20 @@ public class Folder extends NamedEntityImp {
      */
     public Folder(final Folder folder) {
         super(folder);
-        setParentFolder(folder.getParentFolder());
+        this.parentFolder = folder.getParentFolder();
     }
 
+    public boolean isParentOf(Folder targetFolder) {
+        if (targetFolder == null)
+            return false;
+
+        int nesting = 0;
+        Folder parent = targetFolder.getParentFolder();
+        while(parent != null && nesting++ < MAX_NESTING_CHECK_LEVEL) {
+            if (parent.getOid() == _oid)
+                return true;
+            parent = parent.getParentFolder();
+        }
+        return false;
+    }
 }

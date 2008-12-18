@@ -391,7 +391,7 @@ public final class RootNode extends FolderNode {
         FolderNode node = new FolderNode(root, null);
         for(Iterator<OrganizationHeader> it = organizationHeaders.iterator();it.hasNext();) {
             OrganizationHeader header = it.next();
-            if(header.getFolderOid() == root.getOid()) {
+            if(header.getFolderOid() != null && header.getFolderOid() == root.getOid()) {
                 AbstractTreeNode child = node.addEntityNode(header);
                 it.remove();
                 if(header.isAlias()){
