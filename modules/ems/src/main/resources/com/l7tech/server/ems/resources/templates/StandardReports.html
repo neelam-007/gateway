@@ -279,7 +279,7 @@
                 }
             }
 
-            validateGroupingMessageContextKey();
+            valid = valid && validateGroupingMessageContextKey();
 
             if (reportTypeDropDown.value == ReportType.USAGE && trs.length == 0) {
                 groupingHint.style.display = '';
@@ -898,7 +898,9 @@
             populateGroupingMessageContextDropDown(messageContextDropDown, ssgClusterDropDown.value);
             YAHOO.util.Event.addListener(messageContextDropDown, 'change',
                 function(event) {
-                    validateGroupingMessageContextKey();
+                    updateSaveSettingsButton();
+                    updateSaveDefaultButton();
+                    updateGenerateButton();
                 }
             );
             td = tr.insertCell(-1);
@@ -907,9 +909,10 @@
                 function(event, tr) {
                     var ssgClusterDropDown = tr._ssgClusterDropDown;
                     var messageContextDropDown = tr._messageContextDropDown;
-                    validateGrouping(tr);
-                    validateGroupingMessageContextKey();
                     populateGroupingMessageContextDropDown(messageContextDropDown, ssgClusterDropDown.value);
+                    updateSaveSettingsButton();
+                    updateSaveDefaultButton();
+                    updateGenerateButton();
                 },
                 tr
             );
