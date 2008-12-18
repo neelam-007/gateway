@@ -4,10 +4,12 @@ import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.util.Pair;
 import org.apache.cxf.transport.servlet.CXFServlet;
 import org.mortbay.jetty.Server;
+import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.DefaultServlet;
 import org.mortbay.jetty.servlet.ServletHolder;
+import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.resource.Resource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
@@ -20,6 +22,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.servlet.Filter;
 import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -136,6 +139,11 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         final Map<String, String> initParams = root.getInitParams();
         initParams.put("contextConfigLocation", "classpath:com/l7tech/server/processcontroller/resources/processControllerWebApplicationContext.xml");
         initParams.put(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
+
+        // Add CXF global lock filter (see bug 6300)
+        final Filter cxfFilter = new CxfFilter();
+        FilterHolder fsHolder = new FilterHolder(cxfFilter);
+        root.addFilter(fsHolder, "/services/*", Handler.REQUEST);
 
         final CXFServlet cxfServlet = new CXFServlet();
         final ServletHolder cxfHolder = new ServletHolder(cxfServlet);
