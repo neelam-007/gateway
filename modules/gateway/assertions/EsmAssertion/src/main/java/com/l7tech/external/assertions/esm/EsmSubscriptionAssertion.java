@@ -109,15 +109,7 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
                                     null));
 
             // check to see if it's an XML service, display appropriate warning
-            if (wsdl == null) {
-                result.addWarning(new PolicyValidatorResult.Warning(
-                                   assertion,
-                                   path,
-                                   "Assertion not intended for this policy. Should be used for SOAP services only",
-                                   null));
-            }
-            // check that the tns of the wsdl definition for the policy matches the expected ESM Subscription service
-            else if (!ESMSM.equals(wsdl.getTargetNamespace())) {
+            if (( wsdl == null) || (!ESMSM.equals(wsdl.getTargetNamespace())) ) {
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
                                    path,

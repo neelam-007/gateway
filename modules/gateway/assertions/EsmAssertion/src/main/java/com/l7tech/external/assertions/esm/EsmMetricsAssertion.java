@@ -83,15 +83,8 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
         public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
 
             // check to see if it's an XML service, display appropriate warning
-            if (wsdl == null) {
-                result.addWarning(new PolicyValidatorResult.Warning(
-                                   assertion,
-                                   path,
-                                   "Assertion not intended for this policy. Should be used for SOAP services only",
-                                   null));
-            }
-            // check that the tns of the wsdl definition for the policy matches the expected ESM QosMetrics service
-            else if (!QOSMW.equals(wsdl.getTargetNamespace())) {
+
+            if ( (wsdl == null) || (!QOSMW.equals(wsdl.getTargetNamespace())) ){
                 // add warning
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
