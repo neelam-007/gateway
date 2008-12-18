@@ -78,7 +78,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         }
 
         if (!configService.getTrustedRemoteNodeManagementCerts().contains(certificate)) {
-            logger.info( "Client certificate was not trusted for remote management '" + certificate.getSubjectDN().toString() + "'." );
+            logger.info( "Client certificate was not trusted for remote management '" + certificate.getSubjectDN().toString() + "' from '"+req.getRemoteAddr()+"'." );
             throw new IllegalArgumentException(AUTH_FAILURE);
         }
 
