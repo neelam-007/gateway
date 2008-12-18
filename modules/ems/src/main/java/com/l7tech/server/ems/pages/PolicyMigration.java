@@ -1284,7 +1284,7 @@ public class PolicyMigration extends EmsPage  {
             if ( filter == null ) {
                 filter = "";                
             } else if ( "contains".equals(searchManner) ) {
-                filter = "*" + filter + "*";
+                filter = "*" + filter + (filter.length() > 0 ? "*" : "");
             } else {
                 filter = filter + "*";
             }
