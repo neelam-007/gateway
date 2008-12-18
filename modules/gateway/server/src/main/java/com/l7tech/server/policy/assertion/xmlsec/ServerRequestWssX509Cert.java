@@ -82,7 +82,7 @@ public class ServerRequestWssX509Cert extends AbstractServerAssertion implements
                     // more than one proven identity.
                     if (gotACertAlready != null) {
                         auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_TOO_MANY_VALID_SIG);
-                        return AssertionStatus.NOT_YET_IMPLEMENTED;
+                        return AssertionStatus.BAD_REQUEST;
                     }
                     gotACertAlready = okCert;
                 }

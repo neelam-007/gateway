@@ -37,7 +37,7 @@ public class AssertionStatus {
     public static final AssertionStatus SERVICE_NOT_FOUND = make( statuses, CLIENT + 4, Level.INFO, "Service Not Found.  The request may have been sent to an invalid URL, or intended for an unsupported operation." );
 
     /** Assertion not yet implemented. */
-    public static final AssertionStatus NOT_YET_IMPLEMENTED = make( statuses, MISC + 0, Level.INFO, "Not yet implemented!" );
+    @Deprecated public static final AssertionStatus __NOT_YET_IMPLEMENTED = make( statuses, MISC + 0, Level.INFO, "Not yet implemented!" );
     public static final AssertionStatus NOT_APPLICABLE      = make( statuses, MISC + 1, Level.INFO, "Not applicable in this context" );
 
     /** Generic catch-all status */
