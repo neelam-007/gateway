@@ -1881,7 +1881,7 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
                 if(me.getValue() == null || me.getValue().isEmpty()){
                     throw new IllegalArgumentException("Each key must have a list of FilterPairs");
                 }
-                StringBuffer tempBuffer = new StringBuffer();
+                StringBuilder tempBuffer = new StringBuilder();
                 tempBuffer.append(" AND (");
                 boolean constraintAdded = false;
                 int index = 0;
@@ -2336,7 +2336,7 @@ END AS MAPPING_VALUE_2
         }
         if(useUser){
             List<ReportApi.FilterPair> authUsers = keysToFilters.get(MessageContextMapping.MappingType.AUTH_USER.toString());
-            StringBuffer tempBuffer = new StringBuffer();
+            StringBuilder tempBuffer = new StringBuilder();
             tempBuffer.append(": (");
             int index = 0;
             boolean valueFound = false;
