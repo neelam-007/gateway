@@ -6,23 +6,18 @@
   <body>  
       <wicket:head>
         <style type="text/css">
-            .dateselector-container .bd:after {content:".";display:block;clear:left;height:0;visibility:hidden;}
-            .dateselector-container .bd {padding:0;}
-            .dateselector-calendar {border:none;padding:1em}
             .dateselector input, .dateselector {vertical-align:middle}
             .dateselector input {width:17em}
         </style>
       </wicket:head>
       <wicket:panel>
         <div class="dateselector">
-            <input wicket:id="date" name="date" type="text" value="" maxlength="12" readonly="readonly"/>
+            <input wicket:id="date" style="width:15em" name="date" type="text" value="" maxlength="12" readonly="readonly"/>
         </div>
           
         <div style="visibility:hidden;">
-            <div wicket:id="calendar" class="dateselector-container">
-                <div class="bd">
-                    <div wicket:id="calendar-body" class="dateselector-calendar"/>
-                </div>
+            <div wicket:id="calendar" style="border:none;position:absolute;">
+                <div wicket:id="calendar-body"/>
            </div>
         </div>
           
