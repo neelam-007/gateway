@@ -103,6 +103,24 @@ if (!l7.Util) {
         };
 
         /**
+         * Searches for an ancestor element with a matching tag name.
+         *
+         * @param {HTMLElement} startElement    the element whose ancestors are to be searched
+         * @param {string} tagName              tag name to search for
+         * @return {HTMLElement} the ancestor element found; null if not found
+         */
+        l7.Util.getAncestorElementByTagName = function(startElement, tagName) {
+            var result = null;
+            for (var el = startElement.parentNode; el != null; el = el.parentNode) {
+                if (el.nodeName.toLowerCase() == tagName.toLowerCase()) {
+                    result = el;
+                    break;
+                }
+            }
+            return result;
+        }
+
+        /**
          * Returns the parent folder of a given path, include the trailing slash.
          *
          * @static
@@ -417,7 +435,7 @@ if (!l7.Util) {
         /**
          * Formats a date object into a string.
          * @static
-         * @param {Date} date
+         * @param {Date} date       a JavaScript Date object
          * @param {string} format   "yyyy-MM-dd", "MMM d, yyyy", "MM/dd/yyyy", or "yyyy/MM/dd"
          */
         l7.Util.formatDate = function(date, format) {
@@ -455,6 +473,24 @@ if (!l7.Util) {
          */
         l7.Util.setMonthShortNames = function(names) {
             _monthShortNames = names;
+        }
+
+        /**
+         * Replace indexed placeholders in a pattern by supplied objects.
+         * Placeholders have the form "{i}" where i starts at 0 and matches the
+         * position of the passed parameters. For example, "{0}" is replaced
+         * by the 2nd parameter.
+         * @param {string} pattern      the message format pattern
+         * @param {object} varargs      objects for insertion into the pattern
+         * @return {object}
+         */
+        l7.Util.formatMessage = function(pattern /* , varargs ... */) {
+            var result = pattern;
+            for (var i = 1; i < arguments.length; ++i) {
+                var placeholder = '{' + (i - 1) + '}';
+                result = result.replace(placeholder, arguments[i]);
+            }
+            return result;
         }
 
         /**

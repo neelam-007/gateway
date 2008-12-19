@@ -1360,7 +1360,7 @@ if (!l7.EntityTreeTable) {
                 var tr = this._tbody.insertRow(-1);
                 var td = tr.insertCell(-1);
                 td.colSpan = this._config.columns.length;
-                if ( message ) {
+                if (message) {
                     td.innerHTML = message;
                 } else {
                     td.innerHTML = this._localizedStrings.ENTITY_DATA_ERROR;

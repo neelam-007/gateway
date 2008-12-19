@@ -434,7 +434,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 };
                 var url = document.forms['startSsgNodeForm'].action;
                 var postData = 'startSsgNode_id=' + encodeURIComponent(entity.id);
-                l7.Dialog.showWaitDialog(localizedStrings.STARTING_SSG_NODE + '&ldquo;' + entity.name + '&rdquo;...');
+                l7.Dialog.showWaitDialog(l7.Util.formatMessage(localizedStrings.STARTING_SSG_NODE, entity.name));
                 YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
             }
 
@@ -461,7 +461,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 };
                 var url = document.forms['stopSsgNodeForm'].action;
                 var postData = 'stopSsgNode_id=' + encodeURIComponent(entity.id);
-                l7.Dialog.showWaitDialog(localizedStrings.STOPPING_SSG_NODE + '&ldquo;' + entity.name + '&rdquo;...');
+                l7.Dialog.showWaitDialog(l7.Util.formatMessage(localizedStrings.STOPPING_SSG_NODE, entity.name));
                 YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
             }
 

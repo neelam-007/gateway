@@ -37,10 +37,10 @@
         var localizedStrings = {
             REPORT_TYPE_PERFORMANCE : 'Performance Statistics',
             REPORT_TYPE_USAGE : 'Usage Report',
-            SAVE_DEFAULT_BUTTON_LABEL : 'Save Settings as Default for &ldquo;REPORT_TYPE&rdquo;',
+            SAVE_DEFAULT_BUTTON_LABEL : 'Save Settings as Default for &ldquo;{0}&rdquo;',
             PUBLISHED_SERVICE_S : 'Published Service(s)',
             OPERATION_S : 'Operation(s)',
-            ADD_ENTITY_BUTTON_LABEL : 'Add Checked ENTITY_TYPE',
+            ADD_ENTITY_BUTTON_LABEL : 'Add Checked {0}',
             REMOVE : 'Remove',
             OK : 'OK',
             CANCEL : 'Cancel',
@@ -353,7 +353,7 @@
 
         function updateSaveDefaultButton() {
             var selected = reportTypeDropDown.options[reportTypeDropDown.selectedIndex];
-            saveDefaultButton.set('label', localizedStrings.SAVE_DEFAULT_BUTTON_LABEL.replace('REPORT_TYPE', selected.text));
+            saveDefaultButton.set('label', l7.Util.formatMessage(localizedStrings.SAVE_DEFAULT_BUTTON_LABEL, selected.text));
             saveDefaultButton.set('disabled', !validateSettings());
         }
 
@@ -389,7 +389,7 @@
             } else if (entityType == l7.EntityTreeTable.ENTITY.OPERATION) {
                 entityTypeText = localizedStrings.OPERATION_S;
             }
-            addEntityButton.set('label', localizedStrings.ADD_ENTITY_BUTTON_LABEL.replace('ENTITY_TYPE', entityTypeText));
+            addEntityButton.set('label', l7.Util.formatMessage(localizedStrings.ADD_ENTITY_BUTTON_LABEL, entityTypeText));
 
             updateAddGroupingButton();
             updateSaveSettingsButton();
