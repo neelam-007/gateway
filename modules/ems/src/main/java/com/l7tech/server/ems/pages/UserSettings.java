@@ -1,11 +1,9 @@
 package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
-import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.PasswordTextField;
-import org.apache.wicket.markup.html.form.DropDownChoice;
-import org.apache.wicket.markup.html.form.IChoiceRenderer;
+import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.markup.html.form.validation.EqualPasswordInputValidator;
+import org.apache.wicket.markup.html.form.validation.AbstractFormValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
@@ -180,6 +178,7 @@ public class UserSettings extends EmsPage {
             add(pass3.setRequired(true));
 
             add( new EqualPasswordInputValidator(pass2, pass3) );
+            add( new DifferentPasswordInputValidator(pass1, pass2, pass3) );
         }
 
         @Override
@@ -258,4 +257,67 @@ public class UserSettings extends EmsPage {
         }
     }
 
+    /**
+     * A validator class to validate if the new password and retype new password must be different from the old password.
+     * If all of them are the same, then an error will be sent to the feedback panel in the form.
+     */
+    private final class DifferentPasswordInputValidator extends AbstractFormValidator {
+
+        // Form components to be validated.
+        private final FormComponent[] formComponents;
+
+        /**
+         * Constructor to specify three password text fields to check if the new password is different from the old password.
+         *
+         * Note: the reason of specifying two new passwords is to check if two new passwords are the same.  If they are not
+         * the same, the validator will not make a validation and report any error.
+         *
+         * @param fc1 The old password
+         * @param fc2 The new password
+         * @param fc3 The retype new password.
+         */
+        public DifferentPasswordInputValidator(FormComponent fc1, FormComponent fc2, FormComponent fc3) {
+            if (fc1 == null || fc2 == null || fc3 ==null) {
+                throw new IllegalArgumentException("FormComponent cannot be null");
+            }
+            formComponents = new FormComponent[] {fc1, fc2, fc3};
+        }
+
+        @Override
+        public FormComponent[] getDependentFormComponents() {
+            return formComponents;
+        }
+
+        @Override
+        public void validate(Form form) {
+            String oldPassword = formComponents[0].getInput();
+            String newPassword = formComponents[1].getInput();
+            String retypeNewPassword = formComponents[2].getInput();
+
+            // Precheck if these passwords are null.
+            if (oldPassword == null || newPassword == null || retypeNewPassword == null) {
+                return;
+            }
+
+            // If all of them are the same, report an error.
+            if (newPassword.equals(retypeNewPassword) && oldPassword.equals(newPassword)) {
+                String errorMessage = new StringResourceModel(resourceKey(), UserSettings.this, null).getString();
+                form.error(errorMessage, variablesMap());
+            }
+        }
+
+        @Override
+        protected String resourceKey() {
+            return "DifferentPasswordInputValidator.message";
+        }
+
+        @Override
+        protected Map variablesMap() {
+            Map<String, Object> map = super.variablesMap();
+            map.put("OldPasswordFieldName", new StringResourceModel("passwordForm.password", UserSettings.this, null).getString());
+            map.put("NewPasswordFieldName", new StringResourceModel("passwordForm.newPassword", UserSettings.this, null).getString());
+
+            return map;
+        }
+    }
 }
