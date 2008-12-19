@@ -94,8 +94,8 @@ public class PublishInternalServiceWizard extends Wizard {
             service.setSoap(true);
             service.setInternal(true);
             service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(toSave.getServiceDocuments()) );
-            service.setWsdlXml(toSave.getWsdlXml());
             service.setWsdlUrl(toSave.getWsdlUrl());
+            service.setWsdlXml(toSave.getWsdlXml());
 
             service.setDisabled(false);
         }
