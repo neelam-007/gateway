@@ -186,7 +186,10 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                             ssgClusterManager.update( cluster );
                                         }
                                     }
-                                    newInfoSet = new HashSet<GatewayApi.GatewayInfo>(api.getGatewayInfo());
+                                    Collection<GatewayApi.GatewayInfo> gatewayInfoCollection = api.getGatewayInfo();
+                                    if ( gatewayInfoCollection != null ) {
+                                        newInfoSet = new HashSet<GatewayApi.GatewayInfo>( gatewayInfoCollection );
+                                    }
                                 } catch ( SOAPFaultException sfe ) {
                                     if ( GatewayContext.isNetworkException(sfe) ) {
                                         logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
@@ -295,22 +298,24 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
             NodeManagementApi nodeApi = gatewayContextFactory.getGatewayContext( null, host, 0 ).getManagementApi();
             Collection<NodeManagementApi.NodeHeader> nodeHeaders = nodeApi.listNodes();
             trusted = true;
-            for ( NodeManagementApi.NodeHeader header : nodeHeaders ) {
-                if ( header.getName().equals( "default" ) ) {
-                    switch ( header.getState() ) {
-                        case UNKNOWN:
-                        case WONT_START:
-                        case CRASHED:
-                            status = JSONConstants.SsgNodeOnlineState.DOWN;
-                            break;
-                        case STARTING:
-                        case RUNNING:
-                            status = JSONConstants.SsgNodeOnlineState.ON;
-                            break;
-                        case STOPPING:
-                        case STOPPED:
-                            status = JSONConstants.SsgNodeOnlineState.OFF;
-                            break;
+            if ( nodeHeaders != null ) {
+                for ( NodeManagementApi.NodeHeader header : nodeHeaders ) {
+                    if ( header.getName().equals( "default" ) ) {
+                        switch ( header.getState() ) {
+                            case UNKNOWN:
+                            case WONT_START:
+                            case CRASHED:
+                                status = JSONConstants.SsgNodeOnlineState.DOWN;
+                                break;
+                            case STARTING:
+                            case RUNNING:
+                                status = JSONConstants.SsgNodeOnlineState.ON;
+                                break;
+                            case STOPPING:
+                            case STOPPED:
+                                status = JSONConstants.SsgNodeOnlineState.OFF;
+                                break;
+                        }
                     }
                 }
             }
