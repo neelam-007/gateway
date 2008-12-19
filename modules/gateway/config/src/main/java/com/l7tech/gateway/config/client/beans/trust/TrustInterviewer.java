@@ -49,10 +49,14 @@ public class TrustInterviewer {
         final File etcConfDirectory = new File(etcDirectory, "conf");
 
         final File hostPropsFile = new File(etcDirectory, "host.properties");
-        final Properties hostProps;
 
+        doTrustInterview( hostPropsFile, new File(etcConfDirectory, "omp.dat"), etcDirectory );
+    }
+
+    static void doTrustInterview( final File hostPropsFile, final File masterPasswordFile, final File etcDirectory ) {
         try {
 
+            final Properties hostProps;
             try {
                 hostProps = readHostProperties(hostPropsFile);
             } catch ( ConfigurationException ce ) {
@@ -69,7 +73,7 @@ public class TrustInterviewer {
             String listenIpAddr = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS, "127.0.0.1");
             String listenPort = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_PORT, "8765");
 
-            final MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(etcConfDirectory, "omp.dat") ) );
+            final MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( masterPasswordFile ) );
 
             List<ConfigurationBean> inBeans = new ArrayList<ConfigurationBean>();
             inBeans.add(new RemoteNodeManagementEnabled(enabled));
@@ -108,9 +112,10 @@ public class TrustInterviewer {
                 }
             } 
 
+            ResourceBundle bundle = ResourceBundle.getBundle("com/l7tech/gateway/config/client/beans/trust/TrustInterviewerMessages");
             List<ConfigurationBean> outBeans;
             try {
-                outBeans = new ConfigInterviewer(inBeans.toArray(new ConfigurationBean[inBeans.size()])).doInterview();
+                outBeans = new ConfigInterviewer(bundle, inBeans.toArray(new ConfigurationBean[inBeans.size()])).doInterview();
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Error during configuration", e);
                 throw new ExitErrorException(1, "Error during configuration");
@@ -268,7 +273,7 @@ public class TrustInterviewer {
             String alias = aliases.nextElement();
             Certificate cert = trustStore.getCertificate(alias);
             if (!(cert instanceof X509Certificate)) continue;
-            beansFromTruststore.put(new ConfiguredTrustedCert((X509Certificate)cert, true), alias);
+            beansFromTruststore.put(new ConfiguredTrustedCert((X509Certificate)cert), alias);
         }
         return beansFromTruststore;
     }

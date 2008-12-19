@@ -15,6 +15,16 @@ public class ConfirmDeletion extends BooleanConfigurableBean {
     }
 
     @Override
+    public String getDisplayValue() {
+        return super.getShortValueDescription();
+    }
+
+    @Override
+    public String getShortValueDescription() {
+        return victim.getShortValueDescription();
+    }
+
+    @Override
     public ConfigResult onConfiguration(Boolean value, ConfigurationContext context) {
         if (value) {
             context.removeBean(victim);

@@ -16,6 +16,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.regex.Pattern;
 
 /** @author alex */
 public class TrustedCertUrl extends UrlConfigurableBean {
@@ -25,6 +26,7 @@ public class TrustedCertUrl extends UrlConfigurableBean {
         super("host.controller.remoteNodeManagement.tempTrustedCertUrl", "HTTPS URL", null, "https");
     }
 
+    @Override
     public void validate(URL value) throws ConfigurationException {
         URLConnection conn;
         try {
@@ -40,7 +42,7 @@ public class TrustedCertUrl extends UrlConfigurableBean {
             if (!(certs[0] instanceof X509Certificate)) throw new ConfigurationException("Server certificate wasn't X.509");
             cert = (X509Certificate)certs[0];
         } catch (IOException e) {
-            throw new ConfigurationException("Unable to connect to provided URL", e);
+            throw new ConfigurationException("Unable to connect to the provided URL, please check that you have\nentered the correct host and port and that the server is running.", e);
         }
     }
 
@@ -48,5 +50,22 @@ public class TrustedCertUrl extends UrlConfigurableBean {
     public ConfigResult onConfiguration(URL value, ConfigurationContext context) {
         if (cert == null) throw new IllegalStateException("cert is null");
         return ConfigResult.chain(new ConfirmTrustedCert(cert));
+    }
+
+    @Override
+    protected String processUserInput( final String userInput ) {
+        String value = userInput;
+
+        if ( !userInput.startsWith("https://") && (
+                !Pattern.matches("^[a-zA-Z]{1,10}:.*", userInput) ||
+                userInput.startsWith("localhost")
+        )) {
+            if ( value.indexOf(':') < 0 ) {
+                value += ":8182";
+            }
+            value = "https://" + value;
+        }
+
+        return value;
     }
 }

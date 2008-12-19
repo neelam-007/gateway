@@ -4,18 +4,14 @@
 package com.l7tech.gateway.config.client.beans.trust;
 
 import com.l7tech.config.client.beans.ConfigurationBean;
-import com.l7tech.gateway.config.client.beans.Repeatable;
 
 import java.security.cert.X509Certificate;
 
 /** @author alex */
-public class ConfiguredTrustedCert extends ConfigurationBean<X509Certificate> implements Repeatable {
-    private int index;
-    private final boolean existing;
+public class ConfiguredTrustedCert extends ConfigurationBean<X509Certificate> {
 
-    ConfiguredTrustedCert(X509Certificate cert, boolean existing) {
+    ConfiguredTrustedCert(X509Certificate cert) {
         super("host.controller.remoteNodeManagement.trustedCert", "Trusted Certificate", cert, null, true);
-        this.existing = existing;
     }
 
     @Override
@@ -24,18 +20,4 @@ public class ConfiguredTrustedCert extends ConfigurationBean<X509Certificate> im
         if (cert == null) return null;
         return cert.getSubjectDN().getName();
     }
-
-    public void setIndex(int index) {
-        this.index = index;
-    }
-
-    public int getIndex() {
-        return index;
-    }
-
-    public boolean isExisting() {
-        return existing;
-    }
-
-
 }

@@ -23,6 +23,11 @@ public class ConfirmTrustedCert extends BooleanConfigurableBean {
     }
 
     @Override
+    public String getDisplayValue() {
+        return super.getShortValueDescription();
+    }
+
+    @Override
     public String getShortValueDescription() {
        StringBuilder description = new StringBuilder();
 
@@ -38,7 +43,6 @@ public class ConfirmTrustedCert extends BooleanConfigurableBean {
         description.append("\n");
         description.append("  Thumbprint   : ");
         description.append(getCertificateThumbprint(cert));
-        description.append("\n");
 
         return description.toString();
     }
@@ -55,7 +59,7 @@ public class ConfirmTrustedCert extends BooleanConfigurableBean {
                     }
                 }
             }
-            return ConfigResult.pop(new ConfiguredTrustedCert(cert, true));
+            return ConfigResult.pop(new ConfiguredTrustedCert(cert));
         } else {
             return ConfigResult.pop();
         }

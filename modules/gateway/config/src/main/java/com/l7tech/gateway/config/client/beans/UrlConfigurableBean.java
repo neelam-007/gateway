@@ -28,10 +28,14 @@ public abstract class UrlConfigurableBean extends EditableConfigurationBean<URL>
         this.protocols = tempProtos;
     }
 
+    protected String processUserInput( final String userInput ){
+        return userInput;
+    }
+
     @Override
     public final URL parse(String userInput) throws ConfigurationException {
         try {
-            URL url = new URL(userInput);
+            URL url = new URL(processUserInput(userInput));
             if (!protocols.isEmpty() && !protocols.contains(url.getProtocol())) {
                 throw new ConfigurationException("Unsupported protocol (accepts " + protocols.toString() + ")");
             }

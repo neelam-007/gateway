@@ -14,19 +14,23 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /** @author alex */
 public class ConfigInterviewer {
     private static final Logger logger = Logger.getLogger(ConfigInterviewer.class.getName());
 
     private final ConfigurationBean[] beans;
+    private final ResourceBundle bundle;
     private static final Pair<MenuResultType,DynamicConfigurationBean> MENU_QUIT = new Pair<MenuResultType, DynamicConfigurationBean>(MenuResultType.QUIT, null);
     private static final Pair<MenuResultType,DynamicConfigurationBean> MENU_REPEAT = new Pair<MenuResultType, DynamicConfigurationBean>(MenuResultType.REPEAT, null);
 
-    public ConfigInterviewer(ConfigurationBean... beans) {
+    public ConfigInterviewer( final ResourceBundle bundle, final ConfigurationBean... beans ) {
         this.beans = beans;
+        this.bundle = bundle;
     }
 
     @SuppressWarnings({"unchecked"})
@@ -73,18 +77,10 @@ public class ConfigInterviewer {
                     Object val = cb.getDisplayValue();
                     if (val == null) val = dflt;
 
-                    System.out.println("Configuring " + cb.getConfigName());
                     System.out.println();
-                    System.out.println("Name : " + cb.getConfigName());
-                    if ( cb.getShortValueDescription() != null ) {
-                        System.out.println("Value: " + cb.getShortValueDescription());
-                    }
+                    System.out.println( getDescription( cb ) );
                     System.out.println();
-                    System.out.print("Enter new value");
-                    if ( val != null ) {
-                        System.out.print(" [" + val + "]");
-                    }
-                    System.out.print(": ");
+                    System.out.print( getPrompt( cb, val ) );
 
                     final String cmd = inReader.readLine().trim();
                     System.out.println();
@@ -101,6 +97,7 @@ public class ConfigInterviewer {
                             if ( cb.getConfigValue()==null && dflt!=null ) {
                                 // set from default
                                 cb.setConfigValue(dflt);
+                                val = dflt;
                             }
                             if ( cb.getConfigValue() == null ) {
                                 break;
@@ -151,6 +148,60 @@ public class ConfigInterviewer {
             }
         }
         throw new IllegalStateException();
+    }
+
+    private String getPrompt( final EditableConfigurationBean cb, final Object value ) {
+        StringBuilder builder = new StringBuilder();
+
+        String resourceKeyDesc = cb.getId() + ".prompt";
+        if ( bundle != null && bundle.containsKey( resourceKeyDesc ) ) {
+            builder.append(bundle.getString( resourceKeyDesc ));
+        } else {
+            builder.append("Enter new value");
+        }
+
+        if ( value != null ) {
+            builder.append( " [" );
+            builder.append( value );
+            builder.append( "]" );
+        }
+        builder.append(": ");
+
+        return builder.toString();
+    }
+
+    private String getDescription( final EditableConfigurationBean cb ) {
+        String description;
+
+        String resourceKeyDesc = cb.getId() + ".description";
+        if ( bundle != null && bundle.containsKey( resourceKeyDesc ) ) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(bundle.getString( resourceKeyDesc ));
+
+            String resourceKeyValue = cb.getId() + ".value";
+            if ( bundle.containsKey( resourceKeyValue ) && cb.getShortValueDescription() != null ) {
+                builder.append("\n");
+                builder.append(MessageFormat.format(bundle.getString( resourceKeyValue ), cb.getShortValueDescription()));
+            }
+            description = builder.toString();
+        } else {
+            // Build default description
+            StringBuilder builder = new StringBuilder();
+            builder.append("Configuring ");
+            builder.append(cb.getConfigName());
+            builder.append("\n\n");
+            builder.append("Name : ");
+            builder.append(cb.getConfigName());
+            builder.append("\n");
+            if ( cb.getShortValueDescription() != null ) {
+                builder.append("Value: ");
+                builder.append(cb.getShortValueDescription());
+                builder.append("\n");
+            }
+            description = builder.toString();
+        }
+
+        return description;
     }
 
     private static enum MenuResultType {
