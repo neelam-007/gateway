@@ -85,7 +85,7 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
             Attribute[] attributes = new Attribute[] {
                     new Attribute("EM-UUID", "urn:oasis:names:tc:SAML:2.0:attrname-format:basic", config.getProperty("em.server.id", "")),
                     new Attribute("EM-USER-UUID", "urn:oasis:names:tc:SAML:2.0:attrname-format:basic", userUuid),
-                    new Attribute("EM-USER-DESC", "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified", user.getEmail()!=null ? user.getEmail() : user.getLogin()),
+                    new Attribute("EM-USER-DESC", "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified", user.getLogin()),
             };
 
             SubjectStatement statement = SubjectStatement.createAttributeStatement(
