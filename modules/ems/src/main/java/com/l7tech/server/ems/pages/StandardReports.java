@@ -105,10 +105,9 @@ public class StandardReports extends EmsPage  {
         Form form = new Form("form");
 
         Date now = new Date();
-        final YuiDateSelector fromDateField = new YuiDateSelector("fromDate", "absoluteTimePeriodFromDateTextBox",
-            new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(1))), null, now, currentTimeZoneId);
-        final YuiDateSelector toDateField = new YuiDateSelector("toDate", "absoluteTimePeriodToDateTextBox",
-            new Model(new Date(now.getTime())), new Date(now.getTime() - TimeUnit.DAYS.toMillis(1)), now, currentTimeZoneId);
+        Date yesterday = new Date(now.getTime() - TimeUnit.DAYS.toMillis(1));
+        final YuiDateSelector fromDateField = new YuiDateSelector("fromDate", "absoluteTimePeriodFromDateTextBox", new Model(yesterday), null, now, currentTimeZoneId);
+        final YuiDateSelector toDateField = new YuiDateSelector("toDate", "absoluteTimePeriodToDateTextBox", new Model(now), yesterday, now, currentTimeZoneId);
 
         final Label fromDateJavascript = new Label("fromDateJavascript", buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
         fromDateJavascript.setEscapeModelStrings(false);
@@ -116,26 +115,18 @@ public class StandardReports extends EmsPage  {
         final Label toDateJavascript = new Label("toDateJavascript", buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
         toDateJavascript.setEscapeModelStrings(false);
 
-        fromDateField.getDateTextField().add(new AjaxFormComponentUpdatingBehavior("onchange") {
+        fromDateField.addInteractionWithOtherDateSelector(toDateField, false, new YuiDateSelector.InteractionTasker() {
             @Override
-            protected void onUpdate(AjaxRequestTarget ajaxRequestTarget) {
-                // update the hidden form fields with the date in the expected format
+            protected void doExtraTask(AjaxRequestTarget ajaxRequestTarget) {
                 fromDateJavascript.setModelObject(buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
                 ajaxRequestTarget.addComponent(fromDateJavascript);
-
-                toDateField.setDateSelectorModel((Date)fromDateField.getModelObject(), new Date());
-                ajaxRequestTarget.addComponent(toDateField);
             }
         });
-        toDateField.getDateTextField().add(new AjaxFormComponentUpdatingBehavior("onchange"){
+        toDateField.addInteractionWithOtherDateSelector(fromDateField, true, new YuiDateSelector.InteractionTasker() {
             @Override
-            protected void onUpdate(final AjaxRequestTarget ajaxRequestTarget) {
-                // update the hidden form fields with the date in the expected format
+            protected void doExtraTask(AjaxRequestTarget ajaxRequestTarget) {
                 toDateJavascript.setModelObject(buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
                 ajaxRequestTarget.addComponent(toDateJavascript);
-
-                fromDateField.setDateSelectorModel(null, (Date)toDateField.getModelObject());
-                ajaxRequestTarget.addComponent(fromDateField);
             }
         });
 

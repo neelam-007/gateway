@@ -8,7 +8,6 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
-import org.apache.wicket.validation.validator.DateValidator;
 import org.apache.wicket.util.value.ValueMap;
 
 import java.util.Date;
@@ -32,11 +31,12 @@ public class AuditDownloadPanel extends Panel {
         setOutputMarkupId(true);
 
         final Date now = new Date();
-        final YuiDateSelector startDateField = new YuiDateSelector("audit.startdate", new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7))), now);
-        final YuiDateSelector endDateField = new YuiDateSelector("audit.enddate", new Model(new Date(now.getTime())), now);
+        Date last7thDay = new Date(now.getTime() - TimeUnit.DAYS.toMillis(7));
+        final YuiDateSelector startDateField = new YuiDateSelector("audit.startdate", new Model(last7thDay), null, now);
+        final YuiDateSelector endDateField = new YuiDateSelector("audit.enddate", new Model(now), last7thDay, now);
 
-        startDateField.getDateTextField().add(DateValidator.maximum(now));
-        endDateField.getDateTextField().add(DateValidator.maximum(now));
+        startDateField.addInteractionWithOtherDateSelector(endDateField, false, new YuiDateSelector.InteractionTasker());
+        endDateField.addInteractionWithOtherDateSelector(startDateField, true, new YuiDateSelector.InteractionTasker());
 
         Form form = new SecureForm("audit.form", new AttemptedReadAll(EntityType.AUDIT_RECORD)){
             @Override

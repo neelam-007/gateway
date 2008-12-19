@@ -9,6 +9,8 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.RequestCycle;
+import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.util.convert.IConverter;
 import com.l7tech.server.ems.EmsSession;
 import com.l7tech.server.ems.EmsApplication;
@@ -34,22 +36,11 @@ public class YuiDateSelector extends Panel {
      *
      * @param id The component identifier.
      * @param model The {@link java.util.Date Date} model.
+     * @param minDate Minimum permitted date (may be null)
      * @param maxDate Maximumn permitted date (may be null)
      */
-    public YuiDateSelector( final String id, final Model model, final Date maxDate ) {
-        this(id, null, model, null, maxDate, false) ;
-    }
-
-    /**
-     * Create a DateSelector with the given model.
-     *
-     * @param id The component identifier.
-     * @param model The {@link java.util.Date Date} model.
-     * @param maxDate Maximumn permitted date (may be null)
-     * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
-     */
-    public YuiDateSelector( final String id, final Model model, final Date maxDate, final boolean ignoreFirstSelect) {
-        this(id, null, model, null, maxDate, ignoreFirstSelect);
+    public YuiDateSelector( final String id, final Model model, final Date minDate, final Date maxDate ) {
+        this(id, null, model, minDate, maxDate, false, null) ;
     }
 
     /**
@@ -60,23 +51,10 @@ public class YuiDateSelector extends Panel {
      * @param model The {@link java.util.Date Date} model.
      * @param minDate Minimum permitted date (may be null)
      * @param maxDate Maximumn permitted date (may be null)
+     * @param newTimeZoneUsed The new time zone used by the date selector.
      */
     public YuiDateSelector( final String id, final String dateFieldMarkupId, final Model model, final Date minDate, final Date maxDate, final String newTimeZoneUsed) {
         this(id, dateFieldMarkupId, model, minDate, maxDate, false, newTimeZoneUsed);
-    }
-
-    /**
-     * Create a DateSelector with the given model.
-     *
-     * @param id The component identifier.
-     * @param dateFieldMarkupId The html markup id of the date text field (may be null)
-     * @param model The {@link java.util.Date Date} model.
-     * @param minDate Minimum permitted date (may be null)
-     * @param maxDate Maximumn permitted date (may be null)
-     * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
-     */
-    public YuiDateSelector(final String id, final String dateFieldMarkupId, final Model model, final Date minDate, final Date maxDate, final boolean ignoreFirstSelect) {
-        this(id, dateFieldMarkupId, model, minDate, maxDate, ignoreFirstSelect, null);
     }
 
     /**
@@ -179,6 +157,58 @@ public class YuiDateSelector extends Panel {
 
     public void setDateSelectorModel(Date minDate, Date maxDate) {
         javascriptLabel.setModel(new PropertyModel(new DateSelectorModel(minDate, maxDate), "script"));
+    }
+
+    /**
+     * Add interaction between this date selector and other date selector.  When a selected date is changed in this date
+     * selector, the other date selector will be updated as well.
+     *
+     * @param otherDateSelector The other date selector, which this date selector interacts with.
+     * @param isFromDateSelector A flag indicating if the other date selector is a calendar to choose a "from" date rather than a "to" date.
+     * @param tasker The tasker to update the other date selector.
+     */
+    public void addInteractionWithOtherDateSelector(final YuiDateSelector otherDateSelector, final boolean isFromDateSelector, final InteractionTasker tasker) {
+        otherDateSelector.setOutputMarkupId(true);
+
+        dateTextField.add(new AjaxFormComponentUpdatingBehavior("onchange") {
+            @Override
+            protected void onUpdate(AjaxRequestTarget ajaxRequestTarget) {
+                tasker.doBasicTask(YuiDateSelector.this, otherDateSelector, isFromDateSelector, ajaxRequestTarget);
+                tasker.doExtraTask(ajaxRequestTarget);
+            }
+        });
+    }
+
+    /**
+     * This class defines how many tasks should be done for two date selectors interaction.
+     */
+    public static class InteractionTasker implements Serializable {
+
+        /**
+         * Update the other date selector when the current date selector has a date change.
+         *
+         * @param currentDateSelector The current date selector, which has a date change.
+         * @param otherDateSelector The other date selector, which will be updated.
+         * @param isFromDateSelector A flag indicating if the other date selector is a calendar to choose a "from" date rather than a "to" date.
+         * @param ajaxRequestTarget
+         */
+        private void doBasicTask(YuiDateSelector currentDateSelector, YuiDateSelector otherDateSelector, boolean isFromDateSelector, AjaxRequestTarget ajaxRequestTarget) {
+            if (isFromDateSelector) {
+                otherDateSelector.setDateSelectorModel(null, (Date) currentDateSelector.getModelObject());
+            } else {
+                otherDateSelector.setDateSelectorModel((Date) currentDateSelector.getModelObject(), new Date());
+            }
+            ajaxRequestTarget.addComponent(otherDateSelector);
+        }
+
+        /**
+         * Perform other task besides the basic task when the interaction occurs.
+         * Note: normally this mehtod is overriden/redefined in the subclass. 
+         *
+         * @param ajaxRequestTarget
+         */
+        protected void doExtraTask(AjaxRequestTarget ajaxRequestTarget) {
+        }
     }
 
     //- PRIVATE

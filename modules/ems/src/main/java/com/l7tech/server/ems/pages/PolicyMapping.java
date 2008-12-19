@@ -21,7 +21,6 @@ import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.validation.validator.DateValidator;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -79,12 +78,15 @@ public class PolicyMapping extends EmsPage  {
         Form form = new Form(componentId);
 
         Date now = new Date();
-        dateStartModel = new Model(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)));
-        YuiDateSelector startDate = new YuiDateSelector("migrationStartSelector", dateStartModel, now);
-        startDate.getDateTextField().add(DateValidator.maximum(new Date()));
+        Date last7thDay = new Date(now.getTime() - TimeUnit.DAYS.toMillis(7));
+        dateStartModel = new Model(last7thDay);
+        dateEndModel = new Model(now);
+        
+        YuiDateSelector startDate = new YuiDateSelector("migrationStartSelector", dateStartModel, null, now);
+        YuiDateSelector endDate = new YuiDateSelector("migrationEndSelector", dateEndModel, last7thDay, now);
 
-        dateEndModel = new Model(new Date());
-        YuiDateSelector endDate = new YuiDateSelector("migrationEndSelector", dateEndModel, now);
+        startDate.addInteractionWithOtherDateSelector(endDate, false, new YuiDateSelector.InteractionTasker());
+        endDate.addInteractionWithOtherDateSelector(startDate, true, new YuiDateSelector.InteractionTasker());
 
         form.add(startDate);
         form.add(endDate);

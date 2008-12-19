@@ -30,7 +30,6 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.validation.validator.DateValidator;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.protocol.http.WebRequest;
 
@@ -100,16 +99,19 @@ public class Audits extends EmsPage {
 
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
         Date now = new Date();
-        final Model dateStartModel = new Model(new Date(now.getTime() - TimeUnit.DAYS.toMillis(7)));
-        final Model dateEndModel = new Model(new Date(now.getTime()));
+        Date last7thDay = new Date(now.getTime() - TimeUnit.DAYS.toMillis(7));
+        final Model dateStartModel = new Model(last7thDay);
+        final Model dateEndModel = new Model(now);
         final Model typeModel = new Model(values[0]);
         final WebMarkupContainer tableContainer = new WebMarkupContainer("audittable.container");
         tableContainer.setOutputMarkupId(true);
         Form auditSelectionForm = new Form("auditselectform");
-        final YuiDateSelector startDate = new YuiDateSelector("auditstart", dateStartModel, now );
-        final YuiDateSelector endDate = new YuiDateSelector("auditend", dateEndModel, now );
-        startDate.getDateTextField().add(DateValidator.maximum(now));
-        endDate.getDateTextField().add(DateValidator.maximum(now));
+        final YuiDateSelector startDate = new YuiDateSelector("auditstart", dateStartModel, null, now );
+        final YuiDateSelector endDate = new YuiDateSelector("auditend", dateEndModel, last7thDay, now );
+
+        startDate.addInteractionWithOtherDateSelector(endDate, false, new YuiDateSelector.InteractionTasker());
+        endDate.addInteractionWithOtherDateSelector(startDate, true, new YuiDateSelector.InteractionTasker());
+
         auditSelectionForm.add( startDate );
         auditSelectionForm.add( endDate );
         auditSelectionForm.add( new DropDownChoice( "audittype", typeModel, Arrays.asList(values), new IChoiceRenderer(){
