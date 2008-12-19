@@ -349,6 +349,11 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             // Authenticate with username/password
             String username = param.get("username");
             String password = param.get("password");
+
+            if ( username == null || username.isEmpty() ) {
+                throw new LoginException("Empty username");
+            }
+
             result = adminLogin.login(username, password);
         }
 
