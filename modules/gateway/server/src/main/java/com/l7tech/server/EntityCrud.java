@@ -50,4 +50,6 @@ public interface EntityCrud extends EntityFinder {
     //@Secured(stereotype=MethodStereotype.FIND_HEADERS)
     @Override
     EntityHeader findHeader(EntityType etype, Serializable pk) throws FindException;
+
+    void evict( Entity entity );
 }

@@ -345,6 +345,9 @@ public class MigrationManagerImpl implements MigrationManager {
                 existing = null;
             }
 
+            // evict from hibernate session
+            entityCrud.evict( existing );
+
             item = bundle.getExportedItem(existing == null || metadata.getUnMapped(header) == null ? header : metadata.getUnMapped(header));
             fromBundle = item == null ? null : item.getValue();
 

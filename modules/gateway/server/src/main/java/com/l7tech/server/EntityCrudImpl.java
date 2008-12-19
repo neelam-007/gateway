@@ -149,6 +149,19 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         });
     }
 
+    @Override
+    public void evict( final Entity entity ) {
+        if ( entity instanceof PersistentEntity ) {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
+                public Object doInHibernate( final Session session ) throws HibernateException, SQLException {
+                    session.evict( entity );
+                    return null;
+                }
+            });
+        }
+    }
+
     private ReadOnlyEntityManager getReadOnlyManager(Class<? extends Entity> clazz) {
         return managersByClass.get(clazz);
     }
