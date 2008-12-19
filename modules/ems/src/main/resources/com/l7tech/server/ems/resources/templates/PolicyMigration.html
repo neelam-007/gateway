@@ -735,7 +735,7 @@
             </div>
             <div class="panel">
                 <div class="panelTitle">Dependencies Mapping</div>
-                <div class="panelContent" style="height: 370px; overflow: hidden">
+                <div class="panelContent" style="height: 380px; overflow: hidden">
                     <table width="100%" wicket:id="dependencies" cellpadding="0" cellspacing="0">
                         <tr>
                             <th width="49%"><img src="../images/spacer.png" alt="" height="0" width="350" /><!-- minimum width -->
@@ -750,46 +750,50 @@
                             <th class="dependencyExplorer">Choose mapping from destination candidates:</th>
                         </tr>
                         <tr>
-                            <td valign="top">
-                                <div class="panelToolbar" style="height: 80px; padding: 4px">
-                                    <p>Dependencies that must be mapped for migration are shown by: <img src="/images/unresolved.png" class="middle"/></p>
-                                    <p>For some dependencies (such as policy fragments) mapping is optional.</p>
+                            <td class="panelToolbar" style="padding: 4px; vertical-align: top">
+                                <p>Dependencies that must be mapped for migration are shown by: <img src="/images/unresolved.png" class="middle"/></p>
+                                <p>For some dependencies (such as policy fragments) mapping is optional.</p>
+
+                                <table class="indent spaced">
+                                    <tr>
+                                        <th>Total number of dependencies:</th>
+                                        <td><div wicket:id="dependenciesTotalLabel"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Number of unmapped dependencies :</th>
+                                        <td><div wicket:id="dependenciesUnmappedLabel"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Number of required unmapped dependencies :</th>
+                                        <td><div wicket:id="dependenciesRequiredUnmappedLabel"/></td>
+                                    </tr>
+                                 </table>
+                            </td>
+                            <td></td>
+                            <td class="panelToolbar" style="padding: 4px; vertical-align: top">
+                                <div wicket:id="dependencyCandidateContainer">
+                                    <p>Showing destination mapping candidates for:</p>
 
                                     <table class="indent spaced">
                                         <tr>
-                                            <th>Total number of dependencies:</th>
-                                            <td><div wicket:id="dependenciesTotalLabel"/></td>
+                                            <th>Name:</th>
+                                            <td><div wicket:id="dependencyCandidateName"/></td>
                                         </tr>
                                         <tr>
-                                            <th>Number of unmapped dependencies :</th>
-                                            <td><div wicket:id="dependenciesUnmappedLabel"/></td>
-                                        </tr>
-                                        <tr>
-                                            <th>Number of required unmapped dependencies :</th>
-                                            <td><div wicket:id="dependenciesRequiredUnmappedLabel"/></td>
+                                            <th>Type:</th>
+                                            <td><div wicket:id="dependencyCandidateType"/></td>
                                         </tr>
                                      </table>
                                 </div>
-
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">
                                <div wicket:id="dependenciesTable"/>
                             </td>
                             <td></td>
                             <td valign="top">
                                 <form wicket:id="dependencyOptionsContainer">
-                                    <div class="panelToolbar" style="height: 80px; padding: 4px">
-                                        <p>Showing destination mapping candidates for:</p>
-
-                                        <table class="indent spaced">
-                                            <tr>
-                                                <th>Name:</th>
-                                                <td><div wicket:id="dependencyCandidateName"/></td>
-                                            </tr>
-                                            <tr>
-                                                <th>Type:</th>
-                                                <td><div wicket:id="dependencyCandidateType"/></td>
-                                            </tr>
-                                         </table>
-                                    </div>
                                     <div>
                                         <table>
                                             <tr>
