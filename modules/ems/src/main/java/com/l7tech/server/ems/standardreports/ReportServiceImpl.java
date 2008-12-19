@@ -155,94 +155,92 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
      */
     private void processReportsWithTransaction() {
         try {
-            for ( StandardReport report : reportManager.findAll() ) {    // TODO [steve] process by status
-                if ( "SUBMITTED".equals( report.getStatus() ) ) {
-                    logger.info("Processing report submission '"+report.getSubmissionId()+"'.");
+            for ( StandardReport report : reportManager.findByStatus("SUBMITTED") ) {
+                logger.info("Processing report submission '"+report.getSubmissionId()+"'.");
 
-                    SsgCluster cluster = report.getSsgCluster();
-                    if ( cluster == null ) {
-                        logger.info("Missing cluster for report submission '"+report.getSubmissionId()+"', marking FAILED.");
-                        report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
-                        report.setStatusTime( System.currentTimeMillis() );
-                    } else {
-                        final String host = report.getSubmissionHost();
-                        final int port = cluster.getAdminPort();
-                        try {
-                            GatewayContext context = contextFactory.getGatewayContext( null, host, port );
-                            ReportApi reportApi = context.getReportApi();
-                            Collection<ReportApi.ReportStatus> statusCollection =
-                                    reportApi.getReportStatus( Arrays.asList( report.getSubmissionId() ) );
-                            ReportApi.ReportStatus status = null;
-                            for ( ReportApi.ReportStatus rs : statusCollection ) {
-                                if ( report.getSubmissionId().equals( rs.getId() ) ) {
-                                    status = rs;
-                                    break;
-                                }
+                SsgCluster cluster = report.getSsgCluster();
+                if ( cluster == null ) {
+                    logger.info("Missing cluster for report submission '"+report.getSubmissionId()+"', marking FAILED.");
+                    report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
+                    report.setStatusTime( System.currentTimeMillis() );
+                } else {
+                    final String host = report.getSubmissionHost();
+                    final int port = cluster.getAdminPort();
+                    try {
+                        GatewayContext context = contextFactory.getGatewayContext( null, host, port );
+                        ReportApi reportApi = context.getReportApi();
+                        Collection<ReportApi.ReportStatus> statusCollection =
+                                reportApi.getReportStatus( Arrays.asList( report.getSubmissionId() ) );
+                        ReportApi.ReportStatus status = null;
+                        for ( ReportApi.ReportStatus rs : statusCollection ) {
+                            if ( report.getSubmissionId().equals( rs.getId() ) ) {
+                                status = rs;
+                                break;
                             }
+                        }
 
-                            if ( status == null ) {
-                                logger.info("Could not get status for report submission '"+report.getSubmissionId()+"', marking FAILED.");
-                                report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
-                                report.setStatusTime( System.currentTimeMillis() );
-                            } else {
-                                logger.info("Report submission '"+report.getSubmissionId()+"', is '"+status.getStatus()+"'.");
-                                switch ( status.getStatus() ) {
-                                    case PENDING:
-                                    case RUNNING:
-                                        break;
-                                    case COMPLETED:
-                                        try {
-                                            // Get artifacts
-                                            ReportApi.ReportResult result = reportApi.getReportResult( report.getSubmissionId(), ReportApi.ReportOutputType.PDF );
-                                            StandardReportArtifact artifact = new StandardReportArtifact();
-                                            artifact.setContentType( "application/pdf" );
-                                            artifact.setReport( report );
-                                            ByteArrayOutputStream out = new ByteArrayOutputStream( 4094 );
-                                            result.getData().writeTo( out );
-                                            artifact.setReportData( out.toByteArray() );
-                                            report.getArtifacts().add( artifact );
-                                            report.setStatus( ReportApi.ReportStatus.Status.COMPLETED.toString() );
-                                            report.setStatusTime( System.currentTimeMillis() );
-                                        } catch ( IOException e ) {
-                                            logger.log( Level.WARNING, "Error getting result for report '"+report.getSubmissionId()+"'.", e );
-                                            report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
-                                            report.setStatusTime( System.currentTimeMillis() );
-                                        }
-                                        break;
-                                    default:
-                                        report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
-                                        report.setStatusTime( System.currentTimeMillis() );
-                                        if ( status.getMessage() != null ) {
-                                            if ( status.getMessage().length() > 255 ) {
-                                                report.setStatusMessage( status.getMessage().substring(0, 255) );
-                                            } else {
-                                                report.setStatusMessage( status.getMessage() );
-                                            }
-                                        }
-                                        break;
-                                }
-                            }
-                        } catch ( GatewayException ge ) {
-                            logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", ge );
-                        } catch ( ReportApi.ReportException re ) {
-                            logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", re );                            
+                        if ( status == null ) {
+                            logger.info("Could not get status for report submission '"+report.getSubmissionId()+"', marking FAILED.");
                             report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
                             report.setStatusTime( System.currentTimeMillis() );
-                        } catch ( SOAPFaultException sfe ) {
-                            if ( GatewayContext.isNetworkException(sfe) ) {
-                                logger.log( Level.FINE, "Connection failed for cluster '"+host+"'." );
-                            } else if ( "Authentication Required".equals(sfe.getMessage()) ){
-                                logger.log( Level.FINE, "Trust failed for cluster '"+host+"'." );
-                            } else{
-                                logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", sfe );
+                        } else {
+                            logger.info("Report submission '"+report.getSubmissionId()+"', is '"+status.getStatus()+"'.");
+                            switch ( status.getStatus() ) {
+                                case PENDING:
+                                case RUNNING:
+                                    break;
+                                case COMPLETED:
+                                    try {
+                                        // Get artifacts
+                                        ReportApi.ReportResult result = reportApi.getReportResult( report.getSubmissionId(), ReportApi.ReportOutputType.PDF );
+                                        StandardReportArtifact artifact = new StandardReportArtifact();
+                                        artifact.setContentType( "application/pdf" );
+                                        artifact.setReport( report );
+                                        ByteArrayOutputStream out = new ByteArrayOutputStream( 4094 );
+                                        result.getData().writeTo( out );
+                                        artifact.setReportData( out.toByteArray() );
+                                        report.getArtifacts().add( artifact );
+                                        report.setStatus( ReportApi.ReportStatus.Status.COMPLETED.toString() );
+                                        report.setStatusTime( System.currentTimeMillis() );
+                                    } catch ( IOException e ) {
+                                        logger.log( Level.WARNING, "Error getting result for report '"+report.getSubmissionId()+"'.", e );
+                                        report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
+                                        report.setStatusTime( System.currentTimeMillis() );
+                                    }
+                                    break;
+                                default:
+                                    report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
+                                    report.setStatusTime( System.currentTimeMillis() );
+                                    if ( status.getMessage() != null ) {
+                                        if ( status.getMessage().length() > 255 ) {
+                                            report.setStatusMessage( status.getMessage().substring(0, 255) );
+                                        } else {
+                                            report.setStatusMessage( status.getMessage() );
+                                        }
+                                    }
+                                    break;
                             }
                         }
-
-                        try {
-                            reportManager.update( report );
-                        } catch ( UpdateException se ) {
-                            logger.log( Level.WARNING, "Error updating status for report '"+report.getSubmissionId()+"'.", se );
+                    } catch ( GatewayException ge ) {
+                        logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", ge );
+                    } catch ( ReportApi.ReportException re ) {
+                        logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", re );
+                        report.setStatus( ReportApi.ReportStatus.Status.FAILED.toString() );
+                        report.setStatusTime( System.currentTimeMillis() );
+                    } catch ( SOAPFaultException sfe ) {
+                        if ( GatewayContext.isNetworkException(sfe) ) {
+                            logger.log( Level.FINE, "Connection failed for cluster '"+host+"'." );
+                        } else if ( "Authentication Required".equals(sfe.getMessage()) ){
+                            logger.log( Level.FINE, "Trust failed for cluster '"+host+"'." );
+                        } else{
+                            logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", sfe );
                         }
+                    }
+
+                    try {
+                        reportManager.update( report );
+                    } catch ( UpdateException se ) {
+                        logger.log( Level.WARNING, "Error updating status for report '"+report.getSubmissionId()+"'.", se );
                     }
                 }
             }

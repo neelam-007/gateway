@@ -8,6 +8,8 @@ import javax.persistence.Column;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
+import javax.persistence.Basic;
+import javax.persistence.FetchType;
 
 /**
  * 
@@ -37,6 +39,7 @@ public class StandardReportArtifact extends PersistentEntityImp {
         this.contentType = contentType;
     }
 
+    @Basic(fetch=FetchType.LAZY)
     @Column(name="data", nullable=false, length=1024*1024*5)
     @Lob
     public byte[] getReportData() {

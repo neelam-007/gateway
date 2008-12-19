@@ -29,10 +29,13 @@ import org.hibernate.HibernateException;
 import org.hibernate.Criteria;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 /**
  * TODO [steve] re-enable role creation for standard reports (once viewing is role, not ownership, based)
  */
+@Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class StandardReportManagerImpl  extends HibernateEntityManager<StandardReport, EntityHeader> implements StandardReportManager {
 
     //- PUBLIC
@@ -52,9 +55,16 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
     }
 
     @Override
+    public Collection<StandardReport> findByStatus( final String status ) throws FindException {
+        if ( status == null ) throw new IllegalArgumentException("status must not be null");
+        return super.findByPropertyMaybeNull( "status", status );
+    }
+
+    @Override
     public void deleteBySsgCluster(final SsgCluster ssgCluster) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
+                @SuppressWarnings({"unchecked"})
                 @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     final Criteria criteria = session.createCriteria(getImpClass());

@@ -9,6 +9,7 @@ import com.l7tech.identity.User;
 
 import java.util.List;
 import java.util.Collections;
+import java.util.Collection;
 
 /**
  *
@@ -26,5 +27,10 @@ public class MockStandardReportManager extends EntityManagerStub<StandardReport,
 
     @Override
     public void deleteBySsgCluster(SsgCluster ssgCluster) throws DeleteException {
+    }
+
+    @Override
+    public Collection<StandardReport> findByStatus(String status) throws FindException {
+        return Collections.emptyList();
     }
 }
