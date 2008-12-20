@@ -26,6 +26,7 @@ import javax.xml.ws.soap.SOAPFaultException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.io.IOException;
 
 /**
  * 
@@ -240,6 +241,10 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                     }
                                 } else if ( "Not Licensed".equals(sfe.getMessage()) ) {
                                     logger.fine("Gateway cluster is not licensed '"+host+":"+port+"'.");
+                                } else if ( "Could not send Message.".equals(sfe.getMessage()) && ExceptionUtils.causedBy(sfe, IOException.class)) {
+                                    logger.info("Unexpected response from Gateway cluster '"+host+":"+port+"'.");
+                                } else if ( sfe.getMessage() != null && sfe.getMessage().startsWith("Response was of unexpected ") && sfe.getMessage().contains("ContentType") ) {
+                                    logger.info("Unexpected response from Gateway cluster '"+host+":"+port+"'.");
                                 } else{
                                     logger.log( Level.WARNING, "Gateway error when polling gateways", sfe );
                                 }
