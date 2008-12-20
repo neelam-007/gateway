@@ -11,19 +11,20 @@ import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.emstrust.TrustedEms;
 import com.l7tech.identity.User;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlObject;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 import x0Assertion.oasisNamesTcSAML2.AssertionType;
 import x0Assertion.oasisNamesTcSAML2.AttributeStatementType;
 import x0Assertion.oasisNamesTcSAML2.AttributeType;
@@ -88,23 +89,25 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             "emsuserdesc",         // 10
     };
 
+    private static final String ATTR_EM_TRUST = "esmtrust";
     private static final String ATTR_EM_UUID = "EM-UUID";
     private static final String ATTR_EM_USER_UUID = "EM-USER-UUID";
     private static final String ATTR_EM_USER_DESC = "EM-USER-DESC";
 
+    private TrustedEmsManager trustedEmsManager;
     private TrustedEmsUserManager trustedEmsUserManager;
     private AdminLogin adminLogin;
+    private LicenseManager licenseManager;
     private Random random;
     private byte[] secretData;
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
+    public void init( final ServletConfig config ) throws ServletException {
         super.init(config);
-        WebApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(config.getServletContext());
-        if (applicationContext == null)
-            throw new ServletException("Couldn't get WebApplicationContext");
-        this.trustedEmsUserManager = getBean("trustedEmsUserManager", TrustedEmsUserManager.class);
-        this.adminLogin = getBean("adminLogin", AdminLogin.class);
+        this.trustedEmsManager = (TrustedEmsManager) config.getServletContext().getAttribute("trustedEmsManager");
+        this.trustedEmsUserManager = (TrustedEmsUserManager) config.getServletContext().getAttribute("trustedEmsUserManager");
+        this.adminLogin = (AdminLogin) config.getServletContext().getAttribute("adminLogin");
+        this.licenseManager = (LicenseManager) config.getServletContext().getAttribute("licenseManager");        
         this.random = new SecureRandom();
         this.secretData = new byte[32];
         random.nextBytes(secretData);
@@ -155,6 +158,12 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             return;
         }
 
+        // Check license
+        if ( !licenseManager.isFeatureEnabled( GatewayFeatureSets.SERVICE_REMOTE_MANAGEMENT ) ) {
+            sendError( hresp, "Not licensed. Please install a Gateway license that enables this feature." );
+            return;
+        }
+
         ContentTypeHeader ctype = ContentTypeHeader.parseValue(hreq.getContentType());
         Message req = new Message();
         req.initialize(new ByteArrayStashManager(), ctype, hreq.getInputStream());
@@ -175,7 +184,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             cook.setSecure(true);
             hresp.addCookie(cook);
 
-            String intro = "Enter";
+            String message = "Enter details about the Enterprise Service Manager that you wish to use to manage this Gateway.";
             String token = param.get("token");
             if ( token != null) {
                 try {
@@ -199,10 +208,21 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
                                     if ( emsid == null || emsuserid == null || emsuserdesc == null ) {
                                         logger.warning("Ignoring SAML assertion with missing attributes.");
                                     } else {
-                                        intro = "Confirm";
                                         X509Certificate cert = assertion.getIssuerCertificate();
+                                        if ( hreq.getParameter(ATTR_EM_TRUST) == null ) {
+                                            // then it is an account mapping request only, so check the cert is already mapped.
+                                            if ( isTrustedEms( emsid, cert, hresp ) ) {
+                                                message = "Enter SecureSpan Gateway credentials to map your Enterprise Service Manager account to your Gateway account.";
+                                                param.put("emsinfo", "-");
+                                            } else {
+                                                return;
+                                            }
+                                        } else {
+                                            message = "Enter SecureSpan Gateway credentials if you wish to allow the Enterprise Service Manager shown below to manage this Gateway.";
+                                            param.put("emsinfo", formatCertInfo(cert));
+                                        }
+
                                         param.put("emsid", emsid);
-                                        param.put("emsinfo", formatCertInfo(cert));
                                         param.put("emscertpem", CertUtils.encodeAsPEM(cert));
                                         param.put("emsusername", emsuserid);
                                         param.put("emsuserdesc", emsuserdesc);
@@ -222,7 +242,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
                 }
             }
 
-            param.put("message", intro + " details about the Enterprise Service Manager that you wish to use to manage this Gateway.");
+            param.put("message", message );
             param.put("returncookiehash", computeReturnCookieHash(returnCookie));
             sendForm(hresp, param);
             return;
@@ -237,6 +257,27 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "EmsTrustServlet request failed: " + ExceptionUtils.getMessage(e), e);
             sendError(hresp, "Unable to establish trust relationship: " + ExceptionUtils.getMessage(e));
         }
+    }
+
+    private boolean isTrustedEms( final String emsid, final X509Certificate cert, final HttpServletResponse hresp ) throws IOException {
+        boolean isOk = false;
+
+        TrustedEms ems;
+        try {
+            ems = trustedEmsManager.findEmsById(emsid);
+
+            if ( ems != null && ems.getTrustedCert() != null &&
+                 CertUtils.certsAreEqual( ems.getTrustedCert().getCertificate(), cert ) ) {
+                isOk = true;
+            } else {
+                sendError( hresp, "ESM not trusted." );
+            }
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Error looking up ems for id '"+emsid+"'.", fe );
+            sendError( hresp, "Error accessing ESM server information." );
+        }
+
+        return isOk;
     }
 
     private void handleTrustRequest(HttpServletRequest hreq, HttpServletResponse hresponse, FormParams param) throws IOException {
@@ -456,6 +497,12 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
     protected void doGet(HttpServletRequest hreq, HttpServletResponse hresp) throws ServletException, IOException {
         if (!hreq.isSecure()) {
             hresp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        // Check license
+        if ( !licenseManager.isFeatureEnabled( GatewayFeatureSets.SERVICE_REMOTE_MANAGEMENT ) ) {
+            sendError( hresp, "Not licensed. Please install a Gateway license that enables this feature." );
             return;
         }
 

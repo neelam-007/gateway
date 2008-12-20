@@ -17,6 +17,10 @@
         <property name="attributes">
             <map>
                 <entry key="remotingProvider" value-ref="remotingProvider"/>
+                <entry key="licenseManager" value-ref="licenseManager"/>
+                <entry key="adminLogin" value-ref="adminLogin"/>
+                <entry key="trustedEmsManager" value-ref="trustedEmsManager"/>
+                <entry key="trustedEmsUserManager" value-ref="trustedEmsUserManager"/>
             </map>
         </property>
     </bean>

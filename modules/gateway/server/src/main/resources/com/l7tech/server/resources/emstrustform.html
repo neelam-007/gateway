@@ -10,15 +10,16 @@
 </head>
 <body onload="init();">
 
-<div class="title">Establish Trust Relationship - Layer 7 Technologies - SecureSpan Gateway</div>
+<div class="title">Layer 7 Technologies - SecureSpan Gateway - Enterprise Service Manager Account Mapping</div>
 <hr/>
 
-<div class="heading">Establish Trust Relationship with Enterprise Service Manager</div>
+<div class="heading">Establish Enterprise Service Manager Account Mapping</div>
 <form name="emstrustform" class="loginform" method="post" onsubmit="copyCookie(); ">
     <input type="hidden" name="returncookie" value="nojavascript"/>
     <input type="hidden" name="returncookiehash" value="{7}"/>
     <input type="hidden" name="formdisplayed" value="1"/>
     <input type="hidden" name="returnurl" value="{8}" id="returnurl"/>
+    <input type="hidden" name="emsuserdesc" value="{10}" id="emsuserdesc"/>
     <table width="95%" height="60%">
         <tr>
             <td align="center" valign="middle">
@@ -57,29 +58,22 @@
                         <td class="emstrustcontrols"><input type="text" size="80" maxlength="128" name="emsusername" value="{5}"></td>
                         <td class="spacer"></td>
                     </tr>
-                    <tr id="emsuserdescrow">
-                        <td class="spacer"></td>
-                        <td class="label">ESM User:</td>
-                        <td class="emstrustcontrols"><input type="text" size="80" maxlength="128" name="emsuserdesc" value="{10}" readonly="readonly"></td>
-                        <td class="spacer"></td>
-                    </tr>
                     <tr>
                         <td class="spacer"></td>
-                        <td class="label">Gateway User name: </td>
+                        <td class="label">User Name: </td>
                         <td class="emstrustcontrols"><input type="text" size="36" maxlength="128" name="username" value="{6}"></td>
                         <td class="spacer"></td>
-
                     </tr>
                     <tr>
                         <td></td>
-                        <td class="label">Gateway Password: </td>
+                        <td class="label">Password: </td>
                         <td class="emstrustcontrols"><input type="password" size="36" maxlength="128" name="password"></td>
                         <td></td>
                     </tr>
                     <tr>
                         <td colspan="3" class="emssubmit">
                             <input id="cancel" type="button" value="Cancel" onclick="location.href=''{8}''"/>
-                            <input type="submit" value="Establish Trust">
+                            <input type="submit" value="OK">
                         </td>
                         <td></td>
                     </tr>

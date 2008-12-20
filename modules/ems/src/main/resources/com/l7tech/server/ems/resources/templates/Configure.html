@@ -990,7 +990,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                             }
                             document.getElementById('ssgClusterTrustForm_returnurl').value = baseURL + '?clusterguid=' + o.argument.id;
                             document.getElementById('ssgClusterTrustForm_emstoken').value = result.token;
-                            document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/emstrust';
+                            document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/emstrust?esmtrust=1';
                             document.getElementById('ssgClusterTrustDialog_name').innerHTML = o.argument.name;
                             ssgClusterTrustDialog.center();
                             ssgClusterTrustDialog.show();

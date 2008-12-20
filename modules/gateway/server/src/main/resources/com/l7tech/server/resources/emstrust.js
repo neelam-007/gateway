@@ -17,7 +17,11 @@ function copyCookie() {
 function init() {
     if ( document.getElementById('emsinfo').value == '' ) {
         document.getElementById('emsinforow').style.display="none";
-        document.getElementById('emsuserdescrow').style.display="none";
+    } else if ( document.getElementById('emsinfo').value == '-' ) {
+        document.getElementById('emsinforow').style.display="none";
+        document.getElementById('emsidrow').style.display="none";
+        document.getElementById('emspemrow').style.display="none";
+        document.getElementById('emsusernamerow').style.display="none";
     } else {
         document.getElementById('emsidrow').style.display="none";
         document.getElementById('emspemrow').style.display="none";
