@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project relativePaths="true" version="4">
+    <component name="AntConfiguration">
+      <defaultAnt bundledAnt="true" />
+      <buildFile url="file://$PROJECT_DIR$/etc/build/idea_build.xml">
+        <additionalClassPath />
+        <antReference projectDefault="true" />
+        <customJdkName value="" />
+        <maximumHeapSize value="128" />
+        <properties />
+        <executeOn event="afterCompilation" target="idea-postcompile" />
+      </buildFile>
+    </component>
     <component name="CompilerConfiguration">
         <option name="DEFAULT_COMPILER" value="Javac"/>
         <option name="DEPLOY_AFTER_MAKE" value="0"/>
@@ -35,6 +46,7 @@
             <entry name="com.l7tech.*"/>
             <entry name="?*.xsl"/>
             <entry name="?*.jrxml"/>
+            <entry name="?*.jrtx"/>
         </wildcardResourcePatterns>
     </component>
     <component name="JavacSettings">
