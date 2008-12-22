@@ -118,6 +118,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                     List<AbstractTreeNode> nodes = (List<AbstractTreeNode>)transferable.getTransferData(FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR);
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
 
+                    FolderNode updatedFolderNode = null;
                     for(AbstractTreeNode transferNode : nodes) {
                         AbstractTreeNode oldParent = (AbstractTreeNode)transferNode.getParent();
 
@@ -127,12 +128,23 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             Folder movedFolder = child.getFolder();
                             movedFolder.reParent(newParentFolder);
                             try {
-                                Registry.getDefault().getFolderAdmin().saveFolder(movedFolder);
+                                long folderId = Registry.getDefault().getFolderAdmin().saveFolder(movedFolder);
+
+                                //need to update with new folder version from the database
+                                Folder updatedFolder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(folderId);
+                                updatedFolderNode = new FolderNode(new FolderHeader(updatedFolder), updatedFolder.getParentFolder());
                             } catch(ConstraintViolationException e) {
                                 DialogDisplayer.showMessageDialog(tree,
                                                  "Folder '"+movedFolder.getName()+"' already exists.",
                                                  "Folder Already Exists",
                                                  JOptionPane.WARNING_MESSAGE, null);
+                                return false;
+                            } catch (FindException fe) {
+                                //should not happen
+                                DialogDisplayer.showMessageDialog(tree,
+                                                 "Cannot find folder '"+movedFolder.getName()+"' to update version.",
+                                                 "Folder cannot be found",
+                                                 JOptionPane.ERROR_MESSAGE, null);
                                 return false;
                             }
                         }else if(transferNode instanceof EntityWithPolicyNode){
@@ -207,12 +219,26 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
                         int transferNodeIndex = oldParent.getIndex(transferNode);
                         int insertPosition = parentNode.getInsertPosition(transferNode, RootNode.getComparator());
-                        parentNode.insert(transferNode, insertPosition);
 
-                        //order is important. Update the old parent first
-                        model.nodesWereRemoved(oldParent, new int[]{transferNodeIndex}, new Object[]{transferNode});
-                        model.nodesWereInserted(parentNode, new int[]{insertPosition});
-                        model.nodeChanged(transferNode);
+                        //we need to update the tree with the correct folder version if we are modifying the folder node
+                        if (transferNode instanceof FolderNode && updatedFolderNode != null) {
+                            oldParent.remove(transferNodeIndex);    //remove the older version
+                            parentNode.insert(updatedFolderNode, insertPosition);   //add the updated version
+
+                            //order is important. Update the old parent first
+                            model.nodesWereRemoved(oldParent, new int[]{transferNodeIndex}, new Object[]{transferNode});
+                            model.nodesWereInserted(parentNode, new int[]{insertPosition});
+                            tree.setSelectionPath(new TreePath(updatedFolderNode.getPath()));   //set to expand the folder for new locaiton
+                            model.nodeChanged(updatedFolderNode);
+
+                        } else {
+                            parentNode.insert(transferNode, insertPosition);
+
+                            //order is important. Update the old parent first
+                            model.nodesWereRemoved(oldParent, new int[]{transferNodeIndex}, new Object[]{transferNode});
+                            model.nodesWereInserted(parentNode, new int[]{insertPosition});
+                            model.nodeChanged(transferNode);
+                        }
                     }
                 }
             } catch (InvalidParentFolderException e) {
@@ -248,6 +274,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
                 RootNode rootNode = (RootNode) tree.getModel().getRoot();
                 ((DefaultTreeModel) tree.getModel()).nodeStructureChanged(rootNode);
+                //tree.setSelectionPath(new TreePath(.getPath()));
                 while (pathEnum.hasMoreElements()) {
                     Object pathObj = pathEnum.nextElement();
                     TreePath tp = (TreePath) pathObj;
