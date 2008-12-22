@@ -219,7 +219,7 @@ public class PolicyMigration extends EmsPage  {
                             final boolean overwrite = Boolean.valueOf(overwriteDependencies);
 
                             // load mappings for top-level items that have been previously migrated
-                            loadMappings( mappingModel, dir.clusterId, targetClusterId, buildDependencyItems(dir) );
+                            loadMappingsForMigration( mappingModel, dir.clusterId, targetClusterId, buildDependencyItems(dir) );
                             TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel, true )));
                             YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, textPanel, new YuiDialog.OkCancelCallback(){
                                 @Override
@@ -711,58 +711,59 @@ public class PolicyMigration extends EmsPage  {
         return items;
     }
 
+    private void loadMappingsForMigration( final EntityMappingModel mappingModel,
+                                           final String sourceClusterId,
+                                           final String targetClusterId,
+                                           final Collection<DependencyItem> dependencyItems ) throws MigrationFailedException {
+        try {
+            loadMappings( mappingModel, sourceClusterId, targetClusterId, dependencyItems );
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Error while loading mappings for migration.", fe );
+            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(fe)+"'.");
+        } catch ( GatewayException e ) {
+            logger.log( Level.INFO, "Error while loading mappings for migration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
+            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(e)+"'.");
+        } 
+    }
+
     private void loadMappings( final EntityMappingModel mappingModel,
                                final String sourceClusterId,
                                final String targetClusterId,
-                               final Collection<DependencyItem> dependencyItems ) {
+                               final Collection<DependencyItem> dependencyItems )  throws FindException, GatewayException {
         if ( !dependencyItems.isEmpty() ) {
-            try {
-                // load mappings saved in EM db
-                for ( DependencyItem item : dependencyItems ) {
-                    DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
-                    Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-                    if ( !mappingModel.dependencyMap.containsKey(mapKey) ) {
-                        EntityHeader targetHeader = migrationMappingRecordManager.findEntityHeaderForMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
-                        if ( targetHeader != null ) {
-                            mappingModel.dependencyMap.put( mapKey, new DependencyItem( targetHeader, true ) );
-                        }
+            // load mappings saved in EM db
+            for ( DependencyItem item : dependencyItems ) {
+                DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
+                Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
+                if ( !mappingModel.dependencyMap.containsKey(mapKey) ) {
+                    EntityHeader targetHeader = migrationMappingRecordManager.findEntityHeaderForMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
+                    if ( targetHeader != null ) {
+                        mappingModel.dependencyMap.put( mapKey, new DependencyItem( targetHeader, true ) );
                     }
                 }
-
-
-            } catch ( FindException fe ) {
-                logger.log( Level.WARNING, "Error loading dependency mappings.", fe );
             }
 
-            try {
-                // discard the dependencies that no longer exist on the target cluster
-                SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
-                GatewayContext targetContext = gatewayContextFactory.getGatewayContext(getUser(), targetCluster.getSslHostName(), targetCluster.getAdminPort());
-                MigrationApi targetMigrationApi = targetContext.getMigrationApi();
+            // discard the dependencies that no longer exist on the target cluster
+            SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
+            GatewayContext targetContext = gatewayContextFactory.getGatewayContext(getUser(), targetCluster.getSslHostName(), targetCluster.getAdminPort());
+            MigrationApi targetMigrationApi = targetContext.getMigrationApi();
 
-                Collection<EntityHeader> headersToCheck = new HashSet<EntityHeader>();
-                for (DependencyItem dependencyItem : mappingModel.dependencyMap.values()) {
-                    if (dependencyItem == null) continue;
-                    headersToCheck.add(dependencyItem.asEntityHeader());
+            Collection<EntityHeader> headersToCheck = new HashSet<EntityHeader>();
+            for (Map.Entry<Pair<DependencyKey,String>,DependencyItem> entry : mappingModel.dependencyMap.entrySet()) {
+                if ( entry.getValue() == null || !entry.getKey().right.equals(targetClusterId)) continue;
+                headersToCheck.add( entry.getValue().asEntityHeader() );
+            }
+            Collection<EntityHeader> validatedHeaders = targetMigrationApi.checkHeaders(headersToCheck);
+            if ( validatedHeaders == null ) validatedHeaders = Collections.emptyList();
+            Set<Pair<DependencyKey,String>> keysToNull = new HashSet<Pair<DependencyKey, String>>();
+            for( Map.Entry<Pair<DependencyKey,String>,DependencyItem> entry : mappingModel.dependencyMap.entrySet() ) {
+                if ( entry.getValue() == null || !entry.getKey().right.equals(targetClusterId)) continue;
+                if ( !validatedHeaders.contains( entry.getValue().asEntityHeader() )) {
+                    keysToNull.add( entry.getKey() );
                 }
-                Collection<EntityHeader> validatedHeaders = targetMigrationApi.checkHeaders(headersToCheck);
-                if (validatedHeaders != null && validatedHeaders.size() > 0) {
-                    Set<Pair<DependencyKey,String>> keysToRemove = new HashSet<Pair<DependencyKey, String>>();
-                    for(Pair<DependencyKey,String> mapKey : mappingModel.dependencyMap.keySet()) {
-                        DependencyItem dependencyItem = mappingModel.dependencyMap.get(mapKey);
-                        if (dependencyItem == null || ! validatedHeaders.contains(dependencyItem.asEntityHeader())) {
-                            keysToRemove.add(mapKey);
-                        }
-                    }
-                    for(Pair<DependencyKey,String> mapKey : keysToRemove) {
-                        mappingModel.dependencyMap.remove(mapKey);
-                    }
-                } else {
-                    mappingModel.dependencyMap.clear();
-                }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Error validating mappings against the target cluster.", e);
-                mappingModel.dependencyMap.clear();
+            }
+            for( Pair<DependencyKey,String> mapKey : keysToNull ) {
+                mappingModel.dependencyMap.put( mapKey, null );
             }
         }
     }
