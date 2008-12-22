@@ -145,4 +145,9 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
     public Folder getFolder() {
         return folder;
     }
+
+    @Override
+    public boolean canDelete() {
+        return true;
+    }
 }

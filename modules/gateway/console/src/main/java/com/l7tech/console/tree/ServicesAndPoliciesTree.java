@@ -5,6 +5,7 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.servicesAndPolicies.ServicesAndPoliciesTreeTransferHandler;
 import com.l7tech.console.tree.servicesAndPolicies.SortComponents;
+import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
@@ -171,6 +172,9 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
                     new DeleteServiceAction((ServiceNode)node).actionPerformed(null);
                 } else if (node instanceof EntityWithPolicyNode) {
                     new DeletePolicyAction((PolicyEntityNode)node).actionPerformed(null);
+                } else if (node instanceof FolderNode) {
+                    FolderNode folderNode = (FolderNode) node;
+                    new DeleteFolderAction(folderNode.getOid(), node, Registry.getDefault().getFolderAdmin()).actionPerformed(null);
                 }
             } else if (keyCode == KeyEvent.VK_ENTER) {
                 if (node instanceof EntityWithPolicyNode)

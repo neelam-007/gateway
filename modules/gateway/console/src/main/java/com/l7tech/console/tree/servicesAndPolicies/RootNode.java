@@ -448,4 +448,9 @@ public final class RootNode extends FolderNode {
     public static boolean isAliasSet(){
        return !entitiesToAlias.isEmpty();
     }
+
+    @Override
+    public boolean canDelete() {
+        return false;
+    }
 }
