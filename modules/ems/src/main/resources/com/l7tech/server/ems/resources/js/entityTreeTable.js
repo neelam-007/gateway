@@ -628,7 +628,7 @@ if (!l7.EntityTreeTable) {
             this._initAccessStatusCell = function(td, entity) {
                 var icon = document.createElement('img');
                 entity._accessStatusIcon = icon;
-                this.setEntityAccessStatus(entity.id, entity.accessStatus);
+                this.setEntityAccessStatus(entity.id, entity.trustStatus, entity.accessStatus);
                 td.appendChild(icon);
             }
 
@@ -1181,11 +1181,12 @@ if (!l7.EntityTreeTable) {
              * Sets the access status of an entity.
              * @public
              * @param {string} entityId     ID of an entity
+             * @param {boolean} trusted     true if trust has been established
              * @param {boolean} state       true if access account has been configured for an SSG Cluster,
              *                              true if access role has been granted for an SSG Node
              * @return {boolean} true if successfully applied; false if unchanged because of error
              */
-            this.setEntityAccessStatus = function(entityId, state) {
+            this.setEntityAccessStatus = function(entityId, trusted, state) {
                 var entity = this._entitiesById[entityId];
                 var icon = entity._accessStatusIcon;
                 if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
@@ -1194,12 +1195,20 @@ if (!l7.EntityTreeTable) {
                         icon.title = null;
                     } else if (state) {
                         icon.src = this._imgFolder + '/accessAccount.png';
-                        icon.title = this._localizedStrings.ACCESS_ACCOUNT_IS_SET;
+                        if (trusted) {
+                            icon.title = this._localizedStrings.ACCESS_ACCOUNT_IS_SET;
+                        } else {
+                            icon.title = this._localizedStrings.ACCESS_ACCOUNT_CANNOT_CHANGE;
+                        }
                     } else {
                         icon.src = this._imgFolder + '/noAccessAccount.png';
-                        icon.title = this._localizedStrings.ACCESS_ACCOUNT_NOT_SET;
+                        if (trusted) {
+                            icon.title = this._localizedStrings.ACCESS_ACCOUNT_CAN_SET;
+                        } else {
+                            icon.title = this._localizedStrings.ACCESS_ACCOUNT_CANNOT_SET;
+                        }
                     }
-                    if (this._config.onClickAccessDialogButton != undefined) {
+                    if (trusted && this._config.onClickAccessDialogButton != undefined) {
                         icon.className = 'clickableImg';
                         YAHOO.util.Event.addListener(icon, 'click', this._config.onClickAccessDialogButton, entity);
                     }
@@ -1497,7 +1506,9 @@ if (!l7.EntityTreeTable) {
             TRUST_NOT_ESTABLISHED : 'Trust has not been established',
             TRUST_TO_BE_ESTABLISHED : 'Trust has not been established. Click to establish.',
             ACCESS_ACCOUNT_IS_SET : 'Access account is set. Click to change access account.',
-            ACCESS_ACCOUNT_NOT_SET : 'No access account. Click to enter access account.',
+            ACCESS_ACCOUNT_CAN_SET : 'No access account. Click to enter access account.',
+            ACCESS_ACCOUNT_CANNOT_CHANGE : 'Access account is set. Trust must be established before changing access account.',
+            ACCESS_ACCOUNT_CANNOT_SET : 'No access account. Trust must be established before entering access account.',
             ACCESS_GRANTED : 'Access granted',
             ACCESS_NOT_GRANTED : 'Access not granted',
             DASHBOARD_CHECKBOX_TOOLTIP : 'Show/Hide dashboard for this SSG Cluster',
