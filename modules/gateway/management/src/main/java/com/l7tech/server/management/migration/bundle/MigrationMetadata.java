@@ -384,14 +384,6 @@ public class MigrationMetadata {
         getMappingsForTarget(target).addAll(mappings);
     }
 
-    public boolean isUploadedByParent(EntityHeaderRef headerRef) {
-        for(MigrationMapping m : getMappingsForTarget(headerRef)) {
-            if (m.isUploadedByParent())
-                return true;
-        }
-        return false;
-    }
-
     public EntityHeaderRef getUnMapped(EntityHeader header) {
         return unMapped.get(header);
     }

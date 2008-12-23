@@ -46,12 +46,4 @@ public @interface Migration {
      * Specifies if the value of a dependency should be serialized and added to the exported bundle.
      */
     boolean export() default true;
-
-    /**
-     * Specifies if the entity representing the target of the annotated property is uploaded
-     * on the target cluster by the manager of the entity that depends on it.
-     *
-     * @return true if the dependency is uploaded by its parent, false otherwise.
-     */
-    boolean uploadedByParent() default false;
 }

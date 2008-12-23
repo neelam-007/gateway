@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.migration.*;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.gateway.common.service.PublishedService;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -18,24 +19,38 @@ import java.lang.reflect.Method;
 import java.io.IOException;
 
 /**
- * Extracts the dependencies and mappings from policy_xml property of Policy objects.
+ * Extracts the dependencies and mappings from a Policy object belonging to a service,
+ * or from a policy_xml property of Policy objects.
  *
  * The property name to which each dependency is mapped encodes the assertion's ordinal within the policy,
  * in addition to the assertion's method name.
  * 
+ * When applying mappings for Service entities, and if the Service needs to up updated (rather than copied),
+ * the OID and version of the policy from the mapped/target entity must be preserved.
+ *
  * @author jbufu
  */
-public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
+public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
 
-    private static final Logger logger = Logger.getLogger(PolicyXmlPropertyResolver.class.getName());
+    private static final Logger logger = Logger.getLogger(PolicyPropertyResolver.class.getName());
 
     @Override
     public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, final Method property) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
+
+        Policy policy;
+        if (entity instanceof PublishedService) {
+            policy = ((PublishedService)entity).getPolicy();
+        } else if (entity instanceof Policy) {
+            policy = (Policy) entity;
+        } else {
+            throw new PropertyResolverException("Cannot handle entity of type: " + (entity != null ? entity.getClass().getName() : null));
+        }
+
         Assertion assertion;
         try {
-            assertion = ((Policy)entity).getAssertion();
-        } catch (IOException e) {
+            assertion = policy.getAssertion();
+        } catch (Exception e) {
             throw new PropertyResolverException("Error getting root assertion from policy.", e);
         }
 
@@ -50,6 +65,28 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
 
     public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
         logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{EntityHeaderUtils.fromEntity(sourceEntity), propName});
+
+        if (sourceEntity instanceof PublishedService && ! propName.contains(":")) {
+            // set the policy in the targetValue, but keep the existing service's policy's oid/version
+            Policy originalPolicy = ((PublishedService) sourceEntity).getPolicy();
+            long originalPolicyOid = originalPolicy.getOid();
+            int originalPolicyVersion = originalPolicy.getVersion();
+
+            super.applyMapping(sourceEntity, propName, targetValue, originalHeader);
+
+            ((PublishedService) sourceEntity).getPolicy().setOid(originalPolicyOid);
+            ((PublishedService) sourceEntity).getPolicy().setVersion(originalPolicyVersion);
+
+        } else if (sourceEntity instanceof PublishedService) {
+            applyMappingToPolicy(((PublishedService)sourceEntity).getPolicy(), propName, targetValue, originalHeader);
+        } else if (sourceEntity instanceof Policy) {
+            applyMappingToPolicy((Policy)sourceEntity, propName, targetValue, originalHeader);
+        } else {
+            throw new PropertyResolverException("Cannot handle entity of type: " + (sourceEntity != null ? sourceEntity.getClass().getName() : null));
+        }
+    }
+
+    private void applyMappingToPolicy(Policy policy, String propName, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
         String assertionPropName;
         int targetOrdinal;
         try {
@@ -62,8 +99,8 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
 
         Assertion rootAssertion;
         try {
-            rootAssertion = ((Policy)sourceEntity).getAssertion();
-        } catch (IOException e) {
+            rootAssertion = policy.getAssertion();
+        } catch (Exception e) {
             throw new PropertyResolverException("Error getting root assertion from policy.", e);
         }
 
@@ -89,7 +126,7 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
         } catch (Exception e) {
             throw new PropertyResolverException("Error applying mapping for " + propName, e);
         }
-        ((Policy)sourceEntity).setXml(WspWriter.getPolicyXml(rootAssertion));
+        policy.setXml(WspWriter.getPolicyXml(rootAssertion));
     }
 
     private void getHeadersRecursive(EntityHeaderRef source, Assertion assertion, Map<EntityHeader, Set<MigrationMapping>> result, String topPropertyName) throws PropertyResolverException {
@@ -121,29 +158,4 @@ public class PolicyXmlPropertyResolver extends DefaultEntityPropertyResolver {
             }
         }
     }
-
-/*
-    private Assertion getRootAssertion(Object entity, Method property) throws PropertyResolverException {
-        if (entity == null || property == null)
-            throw new PropertyResolverException("Error getting property value for entity: entity and property method cannot be null");
-
-        final Object propertyValue;
-        try {
-            propertyValue = property.invoke(entity);
-        } catch (Exception e) {
-            throw new PropertyResolverException("Error getting property value for entity: " + entity , e);
-        }
-
-        if (! (propertyValue instanceof String))
-            throw new PropertyResolverException("Policy_xml values should be of type String, found: " + propertyValue.getClass());
-
-        Assertion assertion;
-        try {
-            assertion = WspReader.getDefault().parsePermissively((String) propertyValue);
-        } catch (IOException e) {
-            throw new PropertyResolverException("Error parsing policy_xml.", e);
-        }
-        return assertion;
-    }
-*/
 }

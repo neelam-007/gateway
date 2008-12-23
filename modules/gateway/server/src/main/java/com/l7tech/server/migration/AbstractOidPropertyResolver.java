@@ -37,7 +37,6 @@ public abstract class AbstractOidPropertyResolver implements PropertyResolver {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
-        final boolean uploadedByParent = MigrationUtils.getUploadedByParent(property);
         final boolean exported = MigrationUtils.isExported(property);
         final String propName = MigrationUtils.propertyNameFromGetter(property.getName());
         EntityType targetType = getTargetType();
@@ -52,7 +51,7 @@ public abstract class AbstractOidPropertyResolver implements PropertyResolver {
         Map<EntityHeader,Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
         try {
             EntityHeader idpHeader = entityFinder.findHeader(targetType, oid);
-            result.put(idpHeader, Collections.singleton(new MigrationMapping(source, idpHeader, propName, type, uploadedByParent, exported)));
+            result.put(idpHeader, Collections.singleton(new MigrationMapping(source, idpHeader, propName, type, exported)));
         } catch (FindException e) {
             logger.log(Level.FINE, "No entity found for type: {0} oid: {1}.", new Object[]{targetType, oid});
         }

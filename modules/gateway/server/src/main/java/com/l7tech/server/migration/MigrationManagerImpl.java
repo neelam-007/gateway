@@ -356,9 +356,7 @@ public class MigrationManagerImpl implements MigrationManager {
                 continue;
             }
 
-            if (metadata.isUploadedByParent(header)) {
-                result.put(header, new EntityOperation(fromBundle, IGNORE));
-            } else if (existing == null) {
+            if (existing == null) {
                 if (fromBundle instanceof PersistentEntity)
                     ((PersistentEntity)fromBundle).setOid(PersistentEntity.DEFAULT_OID);
                 result.put(header, new EntityOperation(fromBundle, CREATE, !enableServices));

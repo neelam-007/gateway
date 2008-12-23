@@ -204,10 +204,6 @@ public class MigrationUtils {
         return new MigrationMappingType(annotation.mapName(), annotation.mapValue());
     }
 
-    public static boolean getUploadedByParent(Method property) {
-        return property.isAnnotationPresent(Migration.class) && property.getAnnotation(Migration.class).uploadedByParent();
-    }
-
     public static String propertyNameFromGetter(String getterName) {
         return getterName == null ? null : getterName.startsWith("get") && getterName.length() > 3 ? getterName.substring(3, getterName.length()) : getterName;
     }

@@ -29,7 +29,6 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
             throw new IllegalArgumentException("Cannot handle property: " + property);
 
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
-        final boolean uploadedByParent = MigrationUtils.getUploadedByParent(property);
         final boolean exported = MigrationUtils.isExported(property);
         String propName = MigrationUtils.propertyNameFromGetter(property.getName());
 
@@ -47,11 +46,11 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
 
         else if (propertyValue instanceof EntityHeader) {
             addToResult((EntityHeader) propertyValue,
-                new MigrationMapping(source, (EntityHeader) propertyValue, propName, type,uploadedByParent, exported), result);
+                new MigrationMapping(source, (EntityHeader) propertyValue, propName, type, exported), result);
 
         } else if (propertyValue instanceof Entity) {
             addToResult(MigrationUtils.getHeaderFromEntity((Entity) propertyValue),
-                new MigrationMapping(source, MigrationUtils.getHeaderFromEntity((Entity) propertyValue), propName, type, uploadedByParent, exported), result);
+                new MigrationMapping(source, MigrationUtils.getHeaderFromEntity((Entity) propertyValue), propName, type, exported), result);
 
         } else { // array or set
             Collection input = null;
@@ -63,10 +62,10 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
             if (input != null) {
                 for(Object item : input) {
                     if (item instanceof EntityHeader)
-                        addToResult((EntityHeader) item, new MigrationMapping(source, (EntityHeader) item, propName, type, uploadedByParent, exported), result);
+                        addToResult((EntityHeader) item, new MigrationMapping(source, (EntityHeader) item, propName, type, exported), result);
                     else if (item instanceof Entity)
                         addToResult(MigrationUtils.getHeaderFromEntity((Entity) item),
-                            new MigrationMapping(source, MigrationUtils.getHeaderFromEntity((Entity) item), propName, type, uploadedByParent, exported), result);
+                            new MigrationMapping(source, MigrationUtils.getHeaderFromEntity((Entity) item), propName, type, exported), result);
                 }
             } else {
                 // should not happen

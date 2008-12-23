@@ -15,9 +15,6 @@ import javax.xml.bind.annotation.*;
  * </li>
  * <li>mapping type</li>
  * <li>target entity header reference</li>
- * <li>
- *  flag that specifies whether the dependency is uploaded on the target cluster by its parent (true),
- *  or by its own entity manager (false)</li>
  * </ul>
  *
  * @see Migration, MigrationMappingType
@@ -33,17 +30,15 @@ public class MigrationMapping {
 
     private String propName;
     private MigrationMappingType type;
-    private boolean uploadedByParent;
     private boolean export;
 
     protected MigrationMapping() {}
 
-    public MigrationMapping(EntityHeaderRef dependant, EntityHeaderRef sourceDependency, String propName, MigrationMappingType type, boolean uploadByParent, boolean export) {
+    public MigrationMapping(EntityHeaderRef dependant, EntityHeaderRef sourceDependency, String propName, MigrationMappingType type, boolean export) {
         this.dependant = EntityHeaderRef.fromOther(dependant);
         this.sourceDependency= EntityHeaderRef.fromOther(sourceDependency);
         this.propName = propName;
         this.type = type;
-        this.uploadedByParent = uploadByParent;
         this.export = export;
     }
 
@@ -92,15 +87,6 @@ public class MigrationMapping {
 
     public void setType(MigrationMappingType type) {
         this.type = type;
-    }
-
-    @XmlAttribute
-    public boolean isUploadedByParent() {
-        return uploadedByParent;
-    }
-
-    public void setUploadedByParent(boolean uploadedByParent) {
-        this.uploadedByParent = uploadedByParent;
     }
 
     @XmlAttribute

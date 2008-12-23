@@ -1008,7 +1008,7 @@ public class PolicyMigration extends EsmPage {
         // entity mappings
         StringBuilder mappingBuilder = new StringBuilder();
         for ( MigrationMapping mapping : metadata.getMappings() ) {
-            if ( mapping.isMappedDependency() && !mapping.isUploadedByParent() ) {
+            if ( mapping.isMappedDependency() ) {
                 EntityHeaderRef sourceRef = mapping.getSourceDependency();
                 EntityHeaderRef targetRef = mapping.getMappedDependency();
                 EntityHeader sourceHeader = metadata.getOriginalHeader( sourceRef );
@@ -1040,7 +1040,7 @@ public class PolicyMigration extends EsmPage {
         int count = 0;
 
         for ( ExportedItem item : items ) {
-            if ( !item.isMappedValue() && !metadata.isUploadedByParent(item.getHeaderRef()) && item.getHeaderRef().getType() == type ) {
+            if ( !item.isMappedValue() && item.getHeaderRef().getType() == type ) {
                 count++;
             }
         }
