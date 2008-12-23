@@ -35,7 +35,7 @@
             <xsl:apply-templates select="@*"/>
                 <configuration default="false" name="EnterpriseManagerServer" type="Application" factoryName="Application"
                                enabled="false" merge="false">
-                    <option name="MAIN_CLASS_NAME" value="com.l7tech.server.ems.EmsMain"/>
+                    <option name="MAIN_CLASS_NAME" value="com.l7tech.server.ems.EsmMain"/>
                     <option name="VM_PARAMETERS" value="{$idea.ems.vmOptions}"/>
                     <option name="PROGRAM_PARAMETERS" value=""/>
                     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$"/>
