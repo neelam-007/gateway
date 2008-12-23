@@ -200,7 +200,7 @@ public class TrustedEmsManagerWindow extends JDialog {
         final boolean[] incompleteLoad = new boolean[] { false };
 
         try {
-            List<TrustedEsmUser> emsUsers = new ArrayList<TrustedEsmUser>(Registry.getDefault().getClusterStatusAdmin().getTrustedEmsUserMappings(emsOid));
+            List<TrustedEsmUser> emsUsers = new ArrayList<TrustedEsmUser>(Registry.getDefault().getClusterStatusAdmin().getTrustedEsmUserMappings(emsOid));
 
             final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
             usersTableModel.setRows(Functions.grepNotNull(Functions.map(emsUsers, new Functions.Unary<UserRow, TrustedEsmUser>() {
