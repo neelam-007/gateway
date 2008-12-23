@@ -11,7 +11,7 @@ import java.util.Collection;
 /**
  * Identity Management interface for the EMS
  */
-public interface EmsAccountManager {
+public interface EsmAccountManager {
 
     int getUserCount() throws FindException;
 

@@ -11,7 +11,7 @@ import org.apache.wicket.Component;
 /**
  * Mock EMS security manager
  */
-public class MockEmsSecurityManager implements EmsSecurityManager {
+public class MockEsmSecurityManager implements EsmSecurityManager {
     private final LoginInfo loginInfo = new LoginInfo("login", new Date(), null);
 
     @Override

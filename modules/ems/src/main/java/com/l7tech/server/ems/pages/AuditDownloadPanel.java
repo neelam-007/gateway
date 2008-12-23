@@ -17,7 +17,7 @@ import java.util.TimeZone;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.server.ems.EmsSession;
+import com.l7tech.server.ems.EsmSession;
 
 /**
  * Panel for collection of details for audit download.
@@ -81,8 +81,8 @@ public class AuditDownloadPanel extends Panel {
 
     private Date startOfDay( final Date date ) {
         Calendar calendar = Calendar.getInstance();
-        if ( getSession() instanceof EmsSession && ((EmsSession)getSession()).getTimeZoneId() != null ) {
-            calendar.setTimeZone( TimeZone.getTimeZone( ((EmsSession)getSession()).getTimeZoneId() ) );
+        if ( getSession() instanceof EsmSession && ((EsmSession)getSession()).getTimeZoneId() != null ) {
+            calendar.setTimeZone( TimeZone.getTimeZone( ((EsmSession)getSession()).getTimeZoneId() ) );
         }
         calendar.setTime(date);
 

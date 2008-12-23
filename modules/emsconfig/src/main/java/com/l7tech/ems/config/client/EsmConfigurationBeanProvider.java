@@ -14,11 +14,11 @@ import java.util.Collection;
 /**
  * 
  */
-public class EmsConfigurationBeanProvider extends PropertiesConfigurationBeanProvider {
+public class EsmConfigurationBeanProvider extends PropertiesConfigurationBeanProvider {
 
     //- PUBLIC
 
-    public EmsConfigurationBeanProvider() {
+    public EsmConfigurationBeanProvider() {
         super( getConfigurationFile(), "em." );
     }
 
@@ -55,7 +55,7 @@ public class EmsConfigurationBeanProvider extends PropertiesConfigurationBeanPro
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger( EmsConfigurationBeanProvider.class.getName() );
+    private static final Logger logger = Logger.getLogger( EsmConfigurationBeanProvider.class.getName() );
 
     private static final String CONFIG_ADMIN_USER = "admin.user";
     private static final String CONFIG_ADMIN_PASS = "admin.pass";

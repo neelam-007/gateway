@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.EsmSecurityManager;
 import com.l7tech.server.ems.gateway.GatewayRegistrationEvent;
 import com.l7tech.server.ems.user.UserPropertyManager;
 
@@ -24,7 +24,7 @@ public class MappingFilter implements Filter {
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
         ServletContext context = filterConfig.getServletContext();
-        emsSecurityManager = (EmsSecurityManager) context.getAttribute("securityManager");
+        emsSecurityManager = (EsmSecurityManager) context.getAttribute("securityManager");
         ssgClusterManager = (SsgClusterManager) context.getAttribute("ssgClusterManager");
         userPropertyManager = (UserPropertyManager) context.getAttribute("userPropertyManager");
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext());
@@ -46,7 +46,7 @@ public class MappingFilter implements Filter {
             if ( username!=null && !username.isEmpty() &&
                  clusterGuid !=null && !clusterGuid.isEmpty() ) {
                 // attempt to add mapping
-                final EmsSecurityManager.LoginInfo info = emsSecurityManager.getLoginInfo( httpServletRequest.getSession(true) );
+                final EsmSecurityManager.LoginInfo info = emsSecurityManager.getLoginInfo( httpServletRequest.getSession(true) );
                 if ( info != null && info.getUser() != null ) {
                     try {
                         SsgCluster ssgCluster = ssgClusterManager.findByGuid(clusterGuid);
@@ -92,7 +92,7 @@ public class MappingFilter implements Filter {
 
     private static final Logger logger = Logger.getLogger(MappingFilter.class.getName());
 
-    private EmsSecurityManager emsSecurityManager;
+    private EsmSecurityManager emsSecurityManager;
     private SsgClusterManager ssgClusterManager;
     private UserPropertyManager userPropertyManager;
     private ApplicationContext applicationContext;

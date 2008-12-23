@@ -10,11 +10,11 @@ import java.util.TimeZone;
 /**
  * Extended session with EMS specific properties.
  */
-public class EmsSession extends WebSession {
+public class EsmSession extends WebSession {
 
     //- PUBLIC
 
-    public EmsSession(Request request) {
+    public EsmSession(Request request) {
         super(request);
     }
 
@@ -63,8 +63,8 @@ public class EmsSession extends WebSession {
     }
     //- PRIVATE
 
-    private String dateTimeFormatPattern = EmsApplication.DEFAULT_DATETIME_FORMAT;
-    private String dateFormatPattern = EmsApplication.DEFAULT_DATE_FORMAT;
+    private String dateTimeFormatPattern = EsmApplication.DEFAULT_DATETIME_FORMAT;
+    private String dateFormatPattern = EsmApplication.DEFAULT_DATE_FORMAT;
     private String timeZoneId;
     private String preferredPage;
 }

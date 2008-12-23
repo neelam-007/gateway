@@ -16,8 +16,8 @@ import java.util.logging.Logger;
  * Represents a running Enterprise Manager Server instance, including its HTTP listeners, database, Spring
  * context, and everything else.
  */
-public class Ems {
-    private static final Logger logger = Logger.getLogger(Ems.class.getName());
+public class Esm {
+    private static final Logger logger = Logger.getLogger(Esm.class.getName());
 
     private final AtomicReference<AbstractApplicationContext> appContext = new AtomicReference<AbstractApplicationContext>();
 
@@ -30,7 +30,7 @@ public class Ems {
         if (appContext.get() != null)
             throw new IllegalStateException("EMS already started");
         AbstractApplicationContext newAppContext = new ClassPathXmlApplicationContext(new String[] {
-                "com/l7tech/server/ems/resources/emsApplicationContext.xml",
+                "com/l7tech/server/ems/resources/esmApplicationContext.xml",
         });
         if (!appContext.compareAndSet(null, newAppContext))
             throw new IllegalStateException("EMS already started");

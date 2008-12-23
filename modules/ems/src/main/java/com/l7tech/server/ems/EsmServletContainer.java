@@ -65,15 +65,15 @@ import com.l7tech.server.ems.enterprise.MappingFilter;
  *
  * TODO [steve] HTTP Cookies are not secure, needs to be configured here
  */
-public class EmsServletContainer implements ApplicationContextAware, InitializingBean, DisposableBean, PropertyChangeListener {
+public class EsmServletContainer implements ApplicationContextAware, InitializingBean, DisposableBean, PropertyChangeListener {
     public static final String RESOURCE_PREFIX = "com/l7tech/server/ems/resources/";
     public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
 
-    private static final Logger logger = Logger.getLogger(EmsServletContainer.class.getName());
+    private static final Logger logger = Logger.getLogger(EsmServletContainer.class.getName());
 
     private static final AtomicLong nextInstanceId = new AtomicLong(1);
-    private static final Map<Long, Reference<EmsServletContainer>> instancesById =
-            new ConcurrentHashMap<Long, Reference<EmsServletContainer>>();
+    private static final Map<Long, Reference<EsmServletContainer>> instancesById =
+            new ConcurrentHashMap<Long, Reference<EsmServletContainer>>();
 
     private final ServerConfig serverConfig;
     private final DefaultKey defaultKey;
@@ -86,7 +86,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
     private AtomicReference<ListenerConfiguration> runningConfiguration = new AtomicReference<ListenerConfiguration>();  // config in use
     private AtomicReference<ListenerConfiguration> configuration = new AtomicReference<ListenerConfiguration>(); // config desired
 
-    public EmsServletContainer( final ServerConfig serverConfig,
+    public EsmServletContainer( final ServerConfig serverConfig,
                                 final DefaultKey defaultKey,
                                 final Timer timer ) {
         this.serverConfig = serverConfig;
@@ -94,7 +94,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         this.timer = timer;
         this.instanceId = nextInstanceId.getAndIncrement();
         //noinspection ThisEscapedInObjectConstruction
-        instancesById.put(instanceId, new WeakReference<EmsServletContainer>(this));
+        instancesById.put(instanceId, new WeakReference<EsmServletContainer>(this));
 
         File temp;
         File var = new File("var");
@@ -107,7 +107,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         this.temp = temp;
 
         try {
-            Log.setLog( new Slf4jLog( EmsServletContainer.class.getName() + ".SERVLET" ) );
+            Log.setLog( new Slf4jLog( EsmServletContainer.class.getName() + ".SERVLET" ) );
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Error installing Jetty logger.", e );        
         }
@@ -194,7 +194,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources")); //TODO [steve] map root elsewhere and add other mappings for css/images/etc
         root.setDisplayName("Layer 7 Enterprise Service Manager Server");
         root.setAttribute("javax.servlet.context.tempdir", temp);
-        root.addEventListener(new EmsContextLoaderListener());
+        root.addEventListener(new EsmContextLoaderListener());
         root.setClassLoader(Thread.currentThread().getContextClassLoader());
 
         //noinspection unchecked
@@ -204,7 +204,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         initParams.put("org.mortbay.jetty.servlet.Default.dirAllowed", "false");
 
         // Add security handler
-        final Filter securityFilter = new EmsSecurityFilter();
+        final Filter securityFilter = new EsmSecurityFilter();
         FilterHolder fsHolder = new FilterHolder(securityFilter);
         root.addFilter(fsHolder, "/*", Handler.REQUEST);
 
@@ -216,7 +216,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         // Add wicket handler
         final WicketFilter wicketFilter = new WicketFilter();
         FilterHolder fHolder = new FilterHolder(wicketFilter);
-        fHolder.setInitParameter("applicationClassName", EmsApplication.class.getName());
+        fHolder.setInitParameter("applicationClassName", EsmApplication.class.getName());
         fHolder.setName("wicketFilter");
         root.addFilter(fHolder, "/*", Handler.REQUEST);
 
@@ -442,8 +442,8 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
      * @param id the instance ID to search for.  Required.
      * @return  the corresopnding HttpTransportModule instance, or null if not found.
      */
-    public static EmsServletContainer getInstance(long id) {
-        Reference<EmsServletContainer> instance = instancesById.get(id);
+    public static EsmServletContainer getInstance(long id) {
+        Reference<EsmServletContainer> instance = instancesById.get(id);
         return instance == null ? null : instance.get();
     }
 

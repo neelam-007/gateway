@@ -22,14 +22,14 @@ import java.security.PrivilegedActionException;
 /**
  *
  */
-public class EmsSecurityFilter implements Filter {
+public class EsmSecurityFilter implements Filter {
 
     //- PUBLIC
 
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
         ServletContext context = filterConfig.getServletContext();
-        securityManager = (EmsSecurityManager) context.getAttribute("securityManager");
+        securityManager = (EsmSecurityManager) context.getAttribute("securityManager");
     }
 
     @Override
@@ -52,7 +52,7 @@ public class EmsSecurityFilter implements Filter {
                         if ( logger.isLoggable(Level.FINER) )
                             logger.finer("Allowing access to resource '" + httpServletRequest.getRequestURI() + "'.");
                         Subject subject = new Subject();
-                        EmsSecurityManager.LoginInfo info = securityManager.getLoginInfo(httpServletRequest.getSession(true));
+                        EsmSecurityManager.LoginInfo info = securityManager.getLoginInfo(httpServletRequest.getSession(true));
                         if ( info != null ) {
                             subject.getPrincipals().add( info.getUser() );
                         }
@@ -89,8 +89,8 @@ public class EmsSecurityFilter implements Filter {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(EmsSecurityFilter.class.getName());
+    private static final Logger logger = Logger.getLogger(EsmSecurityFilter.class.getName());
 
-    private EmsSecurityManager securityManager;
+    private EsmSecurityManager securityManager;
     
 }

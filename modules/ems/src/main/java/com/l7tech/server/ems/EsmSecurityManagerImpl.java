@@ -47,11 +47,11 @@ import org.springframework.beans.BeansException;
 /**
  * Manages which pages are secure and performs authentication
  */
-public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport implements ApplicationContextAware, EmsSecurityManager {
+public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport implements ApplicationContextAware, EsmSecurityManager {
 
     //- PUBLIC
 
-    public EmsSecurityManagerImpl( final IdentityProviderFactory identityProviderFactory,
+    public EsmSecurityManagerImpl( final IdentityProviderFactory identityProviderFactory,
                                    final RoleManager roleManager,
                                    final LicenseManager licenseManager ) {
         this.identityProviderFactory = identityProviderFactory;
@@ -393,7 +393,7 @@ public class EmsSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger( EmsSecurityManagerImpl.class.getName() );
+    private static final Logger logger = Logger.getLogger( EsmSecurityManagerImpl.class.getName() );
 
     private static final String ATTR_ID = "com.l7tech.loginid";
     private static final String ATTR_DATE = "com.l7tech.logindate";

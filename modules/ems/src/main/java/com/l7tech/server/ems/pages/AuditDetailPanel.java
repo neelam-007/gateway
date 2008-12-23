@@ -17,7 +17,7 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import static com.l7tech.gateway.common.Component.fromId;
-import com.l7tech.server.ems.EmsSession;
+import com.l7tech.server.ems.EsmSession;
 import com.l7tech.util.Pair;
 
 import java.util.List;
@@ -73,7 +73,7 @@ public class AuditDetailPanel extends Panel {
      *
      */
     public Collection<Pair<String,String>> buildLogDetails( final AuditRecord record ) {
-        EmsSession session = (EmsSession) getSession();
+        EsmSession session = (EsmSession) getSession();
 
         Collection<Pair<String,String>> details = new ArrayList<Pair<String,String>>();
 

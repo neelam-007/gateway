@@ -33,7 +33,7 @@ import java.util.*;
     requiredPermissions=@RequiredPermission(entityType=EntityType.LOG_RECORD, operationType= OperationType.READ)
 )
 @NavigationPage(page="Logs",pageIndex=200,section="Tools",sectionIndex=100,sectionPage="Audits",pageUrl="Logs.html")
-public class Logs extends EmsPage {
+public class Logs extends EsmPage {
 
     public Logs() {
         WebMarkupContainer secured = new SecureWebMarkupContainer( "secured", new AttemptedReadAny(EntityType.LOG_RECORD) );

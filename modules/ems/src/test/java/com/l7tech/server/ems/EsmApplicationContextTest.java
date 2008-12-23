@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 public class EsmApplicationContextTest {
 
     private static final String[] CONTEXTS = {
-        "com/l7tech/server/ems/resources/emsApplicationContext.xml" ,
+            "com/l7tech/server/ems/resources/esmApplicationContext.xml",
         "com/l7tech/server/ems/resources/webApplicationContext.xml"
     };
 

@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.NavigationModel;
-import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.EsmSecurityManager;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.util.Functions;
 import org.apache.wicket.AttributeModifier;
@@ -25,7 +25,7 @@ public class NavigationPanel extends Panel {
     /**
      * The model must be the page being rendered.
      */
-    public NavigationPanel( final String id, final IModel model, final EmsSecurityManager securityManager ) {
+    public NavigationPanel( final String id, final IModel model, final EsmSecurityManager securityManager ) {
         super(id, model);
 
         NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages", new Functions.Unary<Boolean,Class<? extends Page>>(){
@@ -36,7 +36,7 @@ public class NavigationPanel extends Panel {
         });
 
 
-        String currentPage = ((EmsPage)model.getObject()).getPageName();
+        String currentPage = ((EsmPage)model.getObject()).getPageName();
         currentPage = currentPage.substring(currentPage.lastIndexOf('.')+1);
         String currentSection = navigationModel.getNavigationSectionForPage(currentPage);
         if ( currentSection == null ) {

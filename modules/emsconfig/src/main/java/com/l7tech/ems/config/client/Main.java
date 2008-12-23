@@ -114,10 +114,10 @@ public class Main {
     }
 
     private static final ConfigurationType[] configurationTypes = {
-        new ConfigurationType( "ems", "configTemplates/EmsConfiguration.xml", true ){
+        new ConfigurationType( "ems", "configTemplates/EsmConfiguration.xml", true ){
             @Override
             public ConfigurationBeanProvider getProvider() {
-                return new EmsConfigurationBeanProvider();
+                return new EsmConfigurationBeanProvider();
             }
         }
     };

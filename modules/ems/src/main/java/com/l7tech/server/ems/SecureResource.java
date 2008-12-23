@@ -27,7 +27,7 @@ public abstract class SecureResource extends WebResource {
     public final IResourceStream getResourceStream() {
         IResourceStream stream;
 
-        EmsSecurityManager securityManager = securityManagerRef.get();
+        EsmSecurityManager securityManager = securityManagerRef.get();
         if ( attemptedOperation == null || (securityManager != null && securityManager.hasPermission( attemptedOperation )) ) {
             stream = getSecureResourceStream();
         } else {
@@ -42,7 +42,7 @@ public abstract class SecureResource extends WebResource {
      *
      * @param securityManager The manager for security checks
      */
-    public static void setSecurityManager( final EmsSecurityManager securityManager ) {
+    public static void setSecurityManager( final EsmSecurityManager securityManager ) {
         securityManagerRef.compareAndSet( null, securityManager );
     }
 
@@ -92,7 +92,7 @@ public abstract class SecureResource extends WebResource {
      * @return true if permission is permitted.
      */
     protected boolean hasPermission( final AttemptedOperation attemptedOperation ) {
-        EmsSecurityManager securityManager = securityManagerRef.get();
+        EsmSecurityManager securityManager = securityManagerRef.get();
         return securityManager != null && securityManager.hasPermission( attemptedOperation );        
     }
 
@@ -100,7 +100,7 @@ public abstract class SecureResource extends WebResource {
         return null;
     }
 
-    protected EmsSecurityManager getSecurityManager() {
+    protected EsmSecurityManager getSecurityManager() {
         return securityManagerRef.get();
     }
 
@@ -126,6 +126,6 @@ public abstract class SecureResource extends WebResource {
 
     //- PRIVATE
 
-    private static AtomicReference<EmsSecurityManager> securityManagerRef = new AtomicReference<EmsSecurityManager>();
+    private static AtomicReference<EsmSecurityManager> securityManagerRef = new AtomicReference<EsmSecurityManager>();
     private final AttemptedOperation attemptedOperation;
 }

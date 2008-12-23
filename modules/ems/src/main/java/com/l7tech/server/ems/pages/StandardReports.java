@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  *
  */
 @NavigationPage(page="StandardReports",section="Reports",pageUrl="StandardReports.html")
-public class StandardReports extends EmsPage  {
+public class StandardReports extends EsmPage {
     private static final Logger logger = Logger.getLogger(StandardReports.class.getName());
     private static final SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
     

@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * @Date: Nov 26, 2008
  */
 @RequiredPermissionSet()
-public class SSGClusterContentSelector extends EmsBaseWebPage {
+public class SSGClusterContentSelector extends EsmBaseWebPage {
     private static final Logger logger = Logger.getLogger(SSGClusterContentSelector.class.getName());
 
     @SpringBean

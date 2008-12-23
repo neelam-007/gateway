@@ -14,8 +14,8 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.feedback.ContainerFeedbackMessageFilter;
 import org.apache.wicket.Page;
 
-import com.l7tech.server.ems.EmsSecurityManager;
-import com.l7tech.server.ems.EmsApplication;
+import com.l7tech.server.ems.EsmSecurityManager;
+import com.l7tech.server.ems.EsmApplication;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.NavigationModel;
 import com.l7tech.server.ems.user.UserPropertyManager;
@@ -39,7 +39,7 @@ import java.util.logging.Level;
  * User settings web page 
  */
 @NavigationPage(page="UserSettings",section="Settings",sectionIndex=200,pageUrl="UserSettings.html")
-public class UserSettings extends EmsPage {
+public class UserSettings extends EsmPage {
 
     //- PUBLIC
 
@@ -85,7 +85,7 @@ public class UserSettings extends EmsPage {
     private static final Logger logger = Logger.getLogger( UserSettings.class.getName() );
 
     @SpringBean
-    private EmsSecurityManager securityManager;
+    private EsmSecurityManager securityManager;
 
     @SpringBean
     private UserPropertyManager userPropertyManager;
@@ -125,16 +125,16 @@ public class UserSettings extends EmsPage {
                 timeFormat = "formal";
                 preferences.put("timeformat", "formal");
             }
-            if (!EmsApplication.isValidTimezoneId(zoneId)) {
+            if (!EsmApplication.isValidTimezoneId(zoneId)) {
                 zoneId = TimeZone.getDefault().getID();
-                preferences.put("timezone", EmsApplication.DEFAULT_SYSTEM_TIME_ZONE);
+                preferences.put("timezone", EsmApplication.DEFAULT_SYSTEM_TIME_ZONE);
             }
             if (preferredPage == null) {
-                preferences.put("homepage", EmsApplication.DEFAULT_HOME_PAGE);
+                preferences.put("homepage", EsmApplication.DEFAULT_HOME_PAGE);
             }
 
-            getSession().setDateFormatPattern( EmsApplication.getDateFormat(dateFormat) );
-            getSession().setDateTimeFormatPattern( EmsApplication.getDateTimeFormat(dateFormat, timeFormat) );
+            getSession().setDateFormatPattern( EsmApplication.getDateFormat(dateFormat) );
+            getSession().setDateTimeFormatPattern( EsmApplication.getDateTimeFormat(dateFormat, timeFormat) );
             getSession().setTimeZoneId( zoneId );
             getSession().setPreferredPage( preferredPage );
 
@@ -207,7 +207,7 @@ public class UserSettings extends EmsPage {
 
         @Override
         public Object getDisplayValue(Object o) {
-            return isDate ? EmsApplication.getDateFormatExample(o.toString()) : EmsApplication.getTimeFormatExample(o.toString());
+            return isDate ? EsmApplication.getDateFormatExample(o.toString()) : EsmApplication.getTimeFormatExample(o.toString());
         }
     }
 
@@ -221,7 +221,7 @@ public class UserSettings extends EmsPage {
 
             List<String> zoneIds = new ArrayList<String>(Arrays.asList(TimeZone.getAvailableIDs()));
             Collections.sort( zoneIds );
-            zoneIds.add(0, EmsApplication.DEFAULT_SYSTEM_TIME_ZONE);
+            zoneIds.add(0, EsmApplication.DEFAULT_SYSTEM_TIME_ZONE);
 
             final NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages", new Functions.Unary<Boolean,Class<? extends Page>>(){
                 @Override
@@ -231,8 +231,8 @@ public class UserSettings extends EmsPage {
             });
 
             add( new DropDownChoice( "timezone", zoneIds ) );
-            add( new DropDownChoice( "dateformat", EmsApplication.getDateFormatkeys(), new DateChoiceRenderer(true) ) );
-            add( new DropDownChoice( "timeformat", EmsApplication.getTimeFormatkeys(), new DateChoiceRenderer(false) ) );
+            add( new DropDownChoice( "dateformat", EsmApplication.getDateFormatkeys(), new DateChoiceRenderer(true) ) );
+            add( new DropDownChoice( "timeformat", EsmApplication.getTimeFormatkeys(), new DateChoiceRenderer(false) ) );
             add( new GroupingDropDownChoice( "homepage", new ArrayList<String>(navigationModel.getNavigationPages()) ){
                 @Override
                 protected String getOptionGroupForChoice(final Object object) {

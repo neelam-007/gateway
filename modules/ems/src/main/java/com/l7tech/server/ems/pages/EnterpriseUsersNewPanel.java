@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
 
-import com.l7tech.server.ems.EmsAccountManager;
+import com.l7tech.server.ems.EsmAccountManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DuplicateObjectException;
@@ -64,7 +64,7 @@ public class EnterpriseUsersNewPanel extends Panel {
     private static final Logger logger = Logger.getLogger( EnterpriseUsersNewPanel.class.getName() );
 
     @SpringBean
-    private EmsAccountManager emsAccountManager;
+    private EsmAccountManager emsAccountManager;
 
     @SpringBean
     private Config config;

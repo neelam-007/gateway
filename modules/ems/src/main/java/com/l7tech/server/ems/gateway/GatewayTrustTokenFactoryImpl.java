@@ -10,7 +10,7 @@ import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.util.Config;
 import org.apache.wicket.RequestCycle;
@@ -34,7 +34,7 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
     //- PUBLIC
 
     public GatewayTrustTokenFactoryImpl( final Config config,
-                                         final EmsSecurityManager emsSecurityManager,
+                                         final EsmSecurityManager emsSecurityManager,
                                          final UserPropertyManager userPropertyManager,
                                          final DefaultKey defaultKey ) {
         this.config = config;
@@ -46,7 +46,7 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
     @Override
     public String getTrustToken() throws GatewayException {
         HttpSession session = ((WebRequest)RequestCycle.get().getRequest()).getHttpServletRequest().getSession(true);
-        EmsSecurityManager.LoginInfo info = emsSecurityManager.getLoginInfo(session);
+        EsmSecurityManager.LoginInfo info = emsSecurityManager.getLoginInfo(session);
         User user = info == null ?  null : info.getUser();
         if ( user == null ) {
             throw new GatewayException("Not authenticated.");            
@@ -117,7 +117,7 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
     private static final Logger logger = Logger.getLogger( GatewayTrustTokenFactoryImpl.class.getName() );
 
     private final Config config;
-    private final EmsSecurityManager emsSecurityManager;
+    private final EsmSecurityManager emsSecurityManager;
     private final UserPropertyManager userPropertyManager;
     private final DefaultKey defaultKey;
 }

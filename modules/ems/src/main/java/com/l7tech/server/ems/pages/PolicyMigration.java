@@ -60,7 +60,7 @@ import java.io.Serializable;
  *
  */
 @NavigationPage(page="PolicyMigration",section="ManagePolicies",pageUrl="PolicyMigration.html")
-public class PolicyMigration extends EmsPage  {
+public class PolicyMigration extends EsmPage {
 
     //- PUBLIC
 

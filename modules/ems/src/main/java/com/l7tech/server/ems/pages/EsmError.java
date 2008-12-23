@@ -14,11 +14,11 @@ import java.io.StringWriter;
  */
 @RequiredPermissionSet()
 @Administrative(licensed=false,authenticated=false)
-public class EmsError extends WebPage {
+public class EsmError extends WebPage {
 
     //- PUBLIC
 
-    public EmsError( final Throwable thrown ) {
+    public EsmError( final Throwable thrown ) {
         String errorText = "";
 
         if ( thrown != null && SyspropUtil.getBoolean(PROP_ENABLE_STACK) ) {
@@ -30,7 +30,7 @@ public class EmsError extends WebPage {
         add( new Label("exception", errorText).setVisible(errorText.length()>0) );
     }
 
-    public EmsError() {
+    public EsmError() {
         this( null );
     }
 

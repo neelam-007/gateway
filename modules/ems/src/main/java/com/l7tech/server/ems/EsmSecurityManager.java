@@ -17,7 +17,7 @@ import org.apache.wicket.Component;
  * Security for web application access
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public interface EmsSecurityManager {
+public interface EsmSecurityManager {
     
     /**
      * Login the user

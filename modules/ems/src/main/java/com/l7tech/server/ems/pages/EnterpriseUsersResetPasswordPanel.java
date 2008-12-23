@@ -15,7 +15,7 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import com.l7tech.server.ems.EmsAccountManager;
+import com.l7tech.server.ems.EsmAccountManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
@@ -58,7 +58,7 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
     private static final Logger logger = Logger.getLogger( EnterpriseUsersResetPasswordPanel.class.getName() );
 
     @SpringBean
-    private EmsAccountManager emsAccountManager;
+    private EsmAccountManager emsAccountManager;
 
     @SpringBean
     private Config config;

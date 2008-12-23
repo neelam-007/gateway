@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.server.ems.EmsApplication;
+import com.l7tech.server.ems.EsmApplication;
 import com.l7tech.server.ems.SetupManager;
 import com.l7tech.util.*;
 import org.apache.wicket.markup.html.basic.Label;
@@ -53,7 +53,7 @@ import java.net.MalformedURLException;
  */
 @Administrative(licensed=false)
 @NavigationPage(page="SystemSettings",pageIndex=100,section="Settings",sectionIndex=200,pageUrl="SystemSettings.html")
-public class SystemSettings extends EmsPage {
+public class SystemSettings extends EsmPage {
 
     private static final int MAX_LICENSE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.licenseFile.maxBytes", 1024 * 500);
     private static final Logger logger = Logger.getLogger(SystemSettings.class.getName());
@@ -161,8 +161,8 @@ public class SystemSettings extends EmsPage {
         // Time when EMS process started
         long timeStarted;
         Application app = getApplication();
-        if (app instanceof EmsApplication) {
-            timeStarted = ((EmsApplication)app).getTimeStarted();
+        if (app instanceof EsmApplication) {
+            timeStarted = ((EsmApplication)app).getTimeStarted();
         } else { // This case is applied for a testing purpose, since PagesTest is running.
             timeStarted = System.currentTimeMillis();
         }

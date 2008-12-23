@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
 
-import com.l7tech.server.ems.EmsAccountManager;
+import com.l7tech.server.ems.EsmAccountManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -59,7 +59,7 @@ public class EnterpriseUsersEditPanel extends Panel {
 
     @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
-    private EmsAccountManager emsAccountManager;
+    private EsmAccountManager emsAccountManager;
 
     private UserModel buildUserModel( final String username ) {
         UserModel model = null;

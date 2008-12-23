@@ -13,7 +13,7 @@ import org.apache.wicket.Response;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.l7tech.server.ems.EmsSession;
+import com.l7tech.server.ems.EsmSession;
 import com.l7tech.server.ems.NavigationModel;
 
 public class PagesTest {
@@ -26,7 +26,7 @@ public class PagesTest {
             @Override
             protected void init() {
                 AbstractApplicationContext applicationContext = new ClassPathXmlApplicationContext(new String[] {
-                        "com/l7tech/server/ems/resources/testEmsApplicationContext.xml",
+                        "com/l7tech/server/ems/resources/testEsmApplicationContext.xml",
                 });
                 addComponentInstantiationListener(new SpringComponentInjector(this, applicationContext));
             }
@@ -38,7 +38,7 @@ public class PagesTest {
 
             @Override
             public Session newSession(Request request, Response response) {
-                return new EmsSession(request);
+                return new EsmSession(request);
             }
         });
 

@@ -13,11 +13,11 @@ import java.io.File;
 /**
  * Process entry point that starts the EMS server.
  */
-public class EmsMain {
-    private static final Logger logger = Logger.getLogger(EmsMain.class.getName());
+public class EsmMain {
+    private static final Logger logger = Logger.getLogger(EsmMain.class.getName());
 
     public static void main(String[] args) {
-        BuildInfo.setProduct( EmsMain.class.getPackage(), "Layer 7 Enterprise Service Manager" );
+        BuildInfo.setProduct( EsmMain.class.getPackage(), "Layer 7 Enterprise Service Manager" );
         System.setProperty("org.apache.cxf.nofastinfoset", "true");
 
         // initialize config location
@@ -55,7 +55,7 @@ public class EmsMain {
             }
         }));
 
-        final Ems ems = new Ems();
+        final Esm ems = new Esm();
         try {
             ems.start();
         } catch (Throwable t) {

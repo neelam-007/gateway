@@ -4,9 +4,9 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.ems.EmsApplication;
-import com.l7tech.server.ems.EmsSecurityManager;
-import com.l7tech.server.ems.EmsSession;
+import com.l7tech.server.ems.EsmApplication;
+import com.l7tech.server.ems.EsmSecurityManager;
+import com.l7tech.server.ems.EsmSession;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.behavior.HeaderContributor;
@@ -36,7 +36,7 @@ import java.util.HashMap;
 public class Login extends WebPage {
 
     @SpringBean
-    private EmsSecurityManager securityManager;
+    private EsmSecurityManager securityManager;
 
     @SpringBean
     private UserPropertyManager userPropertyManager;
@@ -71,7 +71,7 @@ public class Login extends WebPage {
         add(form);
 
         EmptyPanel empty = new EmptyPanel("empty");
-        empty.add( HeaderContributor.forCss( EmsPage.RES_CSS_SKIN ) );
+        empty.add( HeaderContributor.forCss( EsmPage.RES_CSS_SKIN ) );
         add(empty);
     }
 
@@ -109,7 +109,7 @@ public class Login extends WebPage {
                 } else {
                     error( new StringResourceModel("message.invalid", this, null).getString() );
                 }
-            } catch ( EmsSecurityManager.NotLicensedException nle ) {
+            } catch ( EsmSecurityManager.NotLicensedException nle ) {
                 error( new StringResourceModel("message.licenseinvalid", this, null).getString() );
             }
         }
@@ -126,7 +126,7 @@ public class Login extends WebPage {
 
         if ( success ) {
             User user = securityManager.getLoginInfo(request.getSession(true)).getUser();
-            setUserPreferences( user, (EmsSession) getSession() );
+            setUserPreferences( user, (EsmSession) getSession() );
         }
 
         return success;
@@ -135,7 +135,7 @@ public class Login extends WebPage {
     /**
      *
      */
-    private void setUserPreferences( final User user, final EmsSession session ) {
+    private void setUserPreferences( final User user, final EsmSession session ) {
         String dateformat = null;
         String datetimeformat = null;
         String zoneid = null;
@@ -159,8 +159,8 @@ public class Login extends WebPage {
                 propsChanged = true;
             }
 
-            dateformat = EmsApplication.getDateFormat(dateFormat);
-            datetimeformat = EmsApplication.getDateTimeFormat(dateFormat, timeFormat);
+            dateformat = EsmApplication.getDateFormat(dateFormat);
+            datetimeformat = EsmApplication.getDateTimeFormat(dateFormat, timeFormat);
             zoneid = props.get("timezone");
             preferredpage = props.get("homepage");
         } catch ( FindException fe ) {
@@ -168,23 +168,23 @@ public class Login extends WebPage {
         }
 
         if (dateformat == null) {
-            dateformat = EmsApplication.DEFAULT_DATE_FORMAT;
+            dateformat = EsmApplication.DEFAULT_DATE_FORMAT;
             props.put("dateformat", "formal");
             propsChanged = true;
 
         }
         if (datetimeformat == null) {
-            datetimeformat = EmsApplication.DEFAULT_DATETIME_FORMAT;
+            datetimeformat = EsmApplication.DEFAULT_DATETIME_FORMAT;
             props.put("timeformat", "formal");
             propsChanged = true;
         }
-        if (!EmsApplication.isValidTimezoneId(zoneid)) {
+        if (!EsmApplication.isValidTimezoneId(zoneid)) {
             zoneid = TimeZone.getDefault().getID();
-            props.put("timezone", EmsApplication.DEFAULT_SYSTEM_TIME_ZONE);
+            props.put("timezone", EsmApplication.DEFAULT_SYSTEM_TIME_ZONE);
             propsChanged = true;
         }
         if (preferredpage == null) {
-            preferredpage = EmsApplication.DEFAULT_HOME_PAGE;
+            preferredpage = EsmApplication.DEFAULT_HOME_PAGE;
             props.put("homepage", preferredpage);
             propsChanged = true;
         }

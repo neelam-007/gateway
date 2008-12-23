@@ -110,14 +110,14 @@
         <property name="schemaUpdate" value="true"/>
     </bean>
 
-    <bean id="schemaExport" class="com.l7tech.server.ems.EmsDbSchemaExport" init-method="init" depends-on="sessionFactory">
+    <bean id="schemaExport" class="com.l7tech.server.ems.EsmDbSchemaExport" init-method="init" depends-on="sessionFactory">
         <constructor-arg index="0">
            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
                 <property name="targetObject" ref="&amp;sessionFactory"/>
                 <property name="targetMethod" value="getConfiguration"/>
             </bean>
         </constructor-arg>
-        <constructor-arg index="1" value="var/db/ems.sql"/>
+        <constructor-arg index="1" value="var/db/esm.sql"/>
     </bean>
 
     <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor">
@@ -379,7 +379,7 @@
     </bean>
 
     <!-- Account manager -->
-    <bean id="emsAccountManager" class="com.l7tech.server.ems.EmsAccountManagerImpl">
+    <bean id="emsAccountManager" class="com.l7tech.server.ems.EsmAccountManagerImpl">
         <constructor-arg ref="identityProviderFactory"/>
     </bean>
 
@@ -399,13 +399,13 @@
     </bean>
 
     <!-- Security Manager -->
-    <bean id="securityManager" class="com.l7tech.server.ems.EmsSecurityManagerImpl">
+    <bean id="securityManager" class="com.l7tech.server.ems.EsmSecurityManagerImpl">
         <constructor-arg index="0" ref="identityProviderFactory"/>
         <constructor-arg index="1" ref="roleManager"/>
         <constructor-arg index="2" ref="licenseManager"/>
     </bean>
 
-    <bean id="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">
+    <bean id="servletContainer" class="com.l7tech.server.ems.EsmServletContainer">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="defaultKey"/>
         <constructor-arg index="2" ref="managedBackgroundTimer"/>

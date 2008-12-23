@@ -22,11 +22,11 @@ import java.util.List;
 /**
  *
  */
-public class EmsAccountManagerImpl implements EmsAccountManager {
+public class EsmAccountManagerImpl implements EsmAccountManager {
 
     //- PUBLIC
 
-    public EmsAccountManagerImpl( final IdentityProviderFactory identityProviderFactory ) {
+    public EsmAccountManagerImpl( final IdentityProviderFactory identityProviderFactory ) {
         this.identityProviderFactory = identityProviderFactory;            
     }
 

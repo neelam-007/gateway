@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
-import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.EsmSecurityManager;
 import org.apache.wicket.Component;
 import org.apache.wicket.RequestListenerInterface;
 import org.apache.wicket.ResourceReference;
@@ -18,12 +18,12 @@ import org.apache.wicket.model.StringResourceModel;
  * TODO rename to something like EmsNavigationPage
  */
 @RequiredPermissionSet()
-public abstract class EmsPage extends EmsBaseWebPage {
+public abstract class EsmPage extends EsmBaseWebPage {
 
     //- PUBLIC
 
-    public EmsPage() {
-        final EmsSecurityManager.LoginInfo info = getLoginInfo();
+    public EsmPage() {
+        final EsmSecurityManager.LoginInfo info = getLoginInfo();
         final StringResourceModel sinceResourceModel = new StringResourceModel( "page.since", this, null, new Object[]{new Model(){
             @Override
             public Object getObject() {

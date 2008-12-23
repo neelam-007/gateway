@@ -4,7 +4,7 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.EsmSecurityManager;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.standardreports.StandardReportManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
@@ -43,7 +43,7 @@ import java.util.logging.Level;
  */
 @SuppressWarnings({"UnusedDeclaration"})
 @NavigationPage(page="Configure",pageIndex=100,section="ManageGateways",sectionPage="Configure",pageUrl="Configure.html")
-public class Configure extends EmsPage  {
+public class Configure extends EsmPage {
 
     private static final Logger logger = Logger.getLogger(Configure.class.getName());
 
@@ -66,7 +66,7 @@ public class Configure extends EmsPage  {
     private SsgNodeManager ssgNodeManager;
 
     @SpringBean
-    private EmsSecurityManager securityManager;
+    private EsmSecurityManager securityManager;
 
     @SpringBean
     private UserPropertyManager userPropertyManager;

@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.EsmSecurityManager;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.user.UserPropertyManager;
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  * @Date: Nov 26, 2008
  */
 @RequiredPermissionSet()
-public class SSGClusterSelector extends EmsBaseWebPage {
+public class SSGClusterSelector extends EsmBaseWebPage {
     private static final Logger logger = Logger.getLogger(SSGClusterSelector.class.getName());
 
     @SpringBean
@@ -34,7 +34,7 @@ public class SSGClusterSelector extends EmsBaseWebPage {
     private SsgClusterManager ssgClusterManager;
 
     @SpringBean
-    private EmsSecurityManager securityManager;
+    private EsmSecurityManager securityManager;
 
     @SpringBean
     private UserPropertyManager userPropertyManager;

@@ -12,8 +12,8 @@ import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.util.convert.IConverter;
-import com.l7tech.server.ems.EmsSession;
-import com.l7tech.server.ems.EmsApplication;
+import com.l7tech.server.ems.EsmSession;
+import com.l7tech.server.ems.EsmApplication;
 
 import java.text.ParseException;
 import java.text.DateFormat;
@@ -91,7 +91,7 @@ public class YuiDateSelector extends Panel {
             public IConverter getConverter(final Class aClass) {
                 return new IConverter() {
                     public DateFormat getDateFormat() {
-                        EmsSession session = ((EmsSession) RequestCycle.get().getSession());
+                        EsmSession session = ((EsmSession) RequestCycle.get().getSession());
                         DateFormat format = session.buildDateFormat( false );
                         if (YuiDateSelector.this.newTimeZoneUsed != null) {
                             format.setTimeZone(TimeZone.getTimeZone(YuiDateSelector.this.newTimeZoneUsed));
@@ -269,7 +269,7 @@ public class YuiDateSelector extends Panel {
      * @return
      */
     private String buildDateSelectorJavascript(Date minDate, Date maxDate) {
-        EmsSession session = ((EmsSession) RequestCycle.get().getSession());
+        EsmSession session = ((EsmSession) RequestCycle.get().getSession());
         String timeZoneId = newTimeZoneUsed == null? session.getTimeZoneId() : newTimeZoneUsed;
 
         StringBuilder scriptBuilder = new StringBuilder();
@@ -283,7 +283,7 @@ public class YuiDateSelector extends Panel {
 
         // date format (true for long format)
         scriptBuilder.append(", ");
-        scriptBuilder.append( !EmsApplication.DEFAULT_DATE_FORMAT.equals(session.getDateFormatPattern()) );
+        scriptBuilder.append( !EsmApplication.DEFAULT_DATE_FORMAT.equals(session.getDateFormatPattern()) );
 
         // date selected
         scriptBuilder.append(", '");

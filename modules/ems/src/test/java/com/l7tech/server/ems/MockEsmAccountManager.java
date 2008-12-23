@@ -12,7 +12,7 @@ import java.util.Collections;
 /**
  * Mock implementation for EmsAccountManager
  */
-public class MockEmsAccountManager implements EmsAccountManager {
+public class MockEsmAccountManager implements EsmAccountManager {
     public int getUserCount() throws FindException {
         return 0;
     }

@@ -13,7 +13,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.EsmSecurityManager;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.identity.User;
@@ -45,7 +45,7 @@ import java.util.logging.Logger;
     requiredPermissions=@RequiredPermission(entityType=EntityType.AUDIT_RECORD, operationType= OperationType.READ)
 )
 @NavigationPage(page="Audits",pageIndex=100,section="Tools",sectionIndex=100,sectionPage="Audits",pageUrl="Audits.html")
-public class Audits extends EmsPage {
+public class Audits extends EsmPage {
     
     //- PUBLIC    
     
@@ -186,7 +186,7 @@ public class Audits extends EmsPage {
     private AuditRecordManager auditRecordManager;
 
     @SpringBean
-    private EmsSecurityManager securityManager;
+    private EsmSecurityManager securityManager;
 
     private Date startOfDay( final Date date ) {
         Calendar calendar = Calendar.getInstance();

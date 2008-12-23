@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 /**
  * Wicket WebApplication for Enterprise Manager.
  */
-public class EmsApplication extends WebApplication {
+public class EsmApplication extends WebApplication {
 
     //- PUBLIC
 
@@ -53,8 +53,8 @@ public class EmsApplication extends WebApplication {
         RequestCycle cycle = RequestCycle.get();
         if ( cycle != null ) {
             Session session = cycle.getSession();
-            if ( session instanceof EmsSession ) {
-                EmsSession emsSession = (EmsSession) session;
+            if ( session instanceof EsmSession) {
+                EsmSession emsSession = (EsmSession) session;
                 if ( emsSession.getPreferredPage() != null &&
                      !emsSession.getPreferredPage().isEmpty() ) {
                     NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
@@ -81,7 +81,7 @@ public class EmsApplication extends WebApplication {
 
     @Override
     public Session newSession(Request request, Response response) {
-        return new EmsSession( request );
+        return new EsmSession( request );
     }
 
     //- PROTECTED
@@ -102,7 +102,7 @@ public class EmsApplication extends WebApplication {
         IApplicationSettings applicationSettings = getApplicationSettings();
         applicationSettings.setPageExpiredErrorPage(Login.class);
         applicationSettings.setAccessDeniedPage(Login.class);
-        applicationSettings.setInternalErrorPage(EmsError.class);
+        applicationSettings.setInternalErrorPage(EsmError.class);
         applicationSettings.setDefaultMaximumUploadSize(Bytes.kilobytes(100));
 
         // show internal error page rather than default developer page
@@ -207,7 +207,7 @@ public class EmsApplication extends WebApplication {
 
         ((ConverterLocator) this.getConverterLocator()).set( Date.class, new IConverter() {
             public DateFormat getDateFormat() {
-                EmsSession session = ((EmsSession)RequestCycle.get().getSession());
+                EsmSession session = ((EsmSession)RequestCycle.get().getSession());
                 return session.buildDateFormat();
             }
 
@@ -257,7 +257,7 @@ public class EmsApplication extends WebApplication {
                     return super.onRuntimeException(page, e);
                 }
                 
-                return new EmsError( e );
+                return new EsmError( e );
             }
         };
     }
@@ -301,13 +301,13 @@ public class EmsApplication extends WebApplication {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger( EmsApplication.class.getName() );
+    private static final Logger logger = Logger.getLogger( EsmApplication.class.getName() );
 
     private static final Map<String,String> dates;
     private static final Map<String,String> times;
 
     private long timeStarted; // The time when EMS process started.
-    private EmsSecurityManager emsSecurityManager;
+    private EsmSecurityManager emsSecurityManager;
 
     static {
         Map<String,String> dateMap = new LinkedHashMap<String,String>();
@@ -326,17 +326,17 @@ public class EmsApplication extends WebApplication {
      *
      */
     private void mountTemplate( String templateName ) {
-        mountSharedResource( templateName, new ResourceReference(EmsApplication.class, "resources/templates" + templateName).getSharedResourceKey());
+        mountSharedResource( templateName, new ResourceReference(EsmApplication.class, "resources/templates" + templateName).getSharedResourceKey());
     }
 
     /**
      *
      */
-    private EmsSecurityManager getEmsSecurityManager() {
-        EmsSecurityManager emsSecurityManager = this.emsSecurityManager;
+    private EsmSecurityManager getEmsSecurityManager() {
+        EsmSecurityManager emsSecurityManager = this.emsSecurityManager;
         if ( emsSecurityManager == null ) {
             BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
-            emsSecurityManager = (EmsSecurityManager) beanFactory.getBean( "securityManager", EmsSecurityManager.class );
+            emsSecurityManager = (EsmSecurityManager) beanFactory.getBean( "securityManager", EsmSecurityManager.class );
             this.emsSecurityManager = emsSecurityManager;
         }
         return emsSecurityManager;        

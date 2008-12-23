@@ -3,8 +3,8 @@ package com.l7tech.server.ems.pages;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import com.l7tech.server.ems.EmsSession;
-import com.l7tech.server.ems.EmsSecurityManager;
+import com.l7tech.server.ems.EsmSession;
+import com.l7tech.server.ems.EsmSecurityManager;
 import com.l7tech.identity.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -12,17 +12,17 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * Base for all EMS web pages, that provides access to the current user, LoginInfo, and EmsSession.
  */
-public class EmsBaseWebPage extends WebPage {
+public class EsmBaseWebPage extends WebPage {
     @SpringBean
-    protected EmsSecurityManager securityManager;
+    protected EsmSecurityManager securityManager;
 
     @Override
-    public EmsSession getSession() {
-        return (EmsSession) super.getSession();
+    public EsmSession getSession() {
+        return (EsmSession) super.getSession();
     }
 
-    EmsSecurityManager.LoginInfo getLoginInfo() {
-        EmsSecurityManager.LoginInfo info;
+    EsmSecurityManager.LoginInfo getLoginInfo() {
+        EsmSecurityManager.LoginInfo info;
 
         ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
         HttpServletRequest request = servletWebRequest.getHttpServletRequest();
@@ -34,7 +34,7 @@ public class EmsBaseWebPage extends WebPage {
     User getUser() {
         User user = null;
 
-        EmsSecurityManager.LoginInfo info = getLoginInfo();
+        EsmSecurityManager.LoginInfo info = getLoginInfo();
         if ( info != null ) {
             user = info.getUser();
         }

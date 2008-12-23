@@ -11,7 +11,7 @@ import com.l7tech.util.SyspropUtil;
 /**
  * Bean to export the DB DDL.
  */
-public class EmsDbSchemaExport {
+public class EsmDbSchemaExport {
 
     //- PUBLIC
 
@@ -20,7 +20,7 @@ public class EmsDbSchemaExport {
     /**
      *
      */
-    public EmsDbSchemaExport ( final Configuration configuration,
+    public EsmDbSchemaExport( final Configuration configuration,
                                final File file ) {
         this.configuration = configuration;
         this.file = file;
@@ -50,7 +50,7 @@ public class EmsDbSchemaExport {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger( EmsDbSchemaExport.class.getName() );
+    private static final Logger logger = Logger.getLogger( EsmDbSchemaExport.class.getName() );
 
     private final Configuration configuration;
     private final File file;
