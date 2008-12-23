@@ -257,8 +257,7 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
                 applicationContext.publishEvent( new LogonEvent(user, LogonEvent.LOGOFF) );
             }
 
-            session.setAttribute(ATTR_ID, null);
-            session.setAttribute(ATTR_DATE, null);
+            session.invalidate();
         }
 
         return loggedOut;

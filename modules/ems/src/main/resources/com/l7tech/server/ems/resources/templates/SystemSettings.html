@@ -364,6 +364,21 @@
                             </form>
                         </div>
                     </div>
+                    <div class="panel">
+                        <div class="panelTitle tippy"><img id="globalSettingsTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'globalSettings')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('globalSettingsTippy', 'globalSettings')">Global Settings</span></div>
+                        <div id="globalSettings" class="panelContent">
+                            <div wicket:id="globalFeedback" class="center"/>
+                            <form method="POST" action="SystemSettings.html" wicket:id="globalForm">
+                                <table class="spaced">
+                                    <tr>
+                                        <th><wicket:message key="globalForm.timeout">Session Inactivity Timeout</wicket:message>:</th>
+                                        <td><input wicket:id="timeout" name="timeout" class="right" type="text" value="30" size="3"/> <wicket:message key="label.global.session.timeoutunit">minutes</wicket:message></td>
+                                    </tr>
+                                </table>
+                                <input wicket:id="global.submit" type="submit" value="Apply" wicket:message="value:label.apply"/>
+                            </form>
+                        </div>
+                    </div>                    
                     <div wicket:id="dynamic.holder">
                         <div wicket:id="dynamic.holder.content"/>
                     </div>

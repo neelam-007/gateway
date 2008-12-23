@@ -3,6 +3,7 @@ package com.l7tech.server.ems;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Connector;
+import org.mortbay.jetty.SessionManager;
 import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.Context;
@@ -74,7 +75,8 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     private static final Map<Long, Reference<EsmServletContainer>> instancesById =
             new ConcurrentHashMap<Long, Reference<EsmServletContainer>>();
 
-    private static final int MAX_SESSION_COOKIE_AGE = 1800;
+    private static final String SESSION_TIMEOUT_PROP = "em.server.session.timeout";
+    private static final int DEFAULT_SESSION_TIMEOUT = 1800; // session idle timeout in seconds
 
     private final ServerConfig serverConfig;
     private final DefaultKey defaultKey;
@@ -83,6 +85,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     private final File temp;
     private ApplicationContext applicationContext;
     private Server server;
+    private SessionManager sessionManager;
     private Audit audit;
     private AtomicReference<ListenerConfiguration> runningConfiguration = new AtomicReference<ListenerConfiguration>();  // config in use
     private AtomicReference<ListenerConfiguration> configuration = new AtomicReference<ListenerConfiguration>(); // config desired
@@ -116,35 +119,42 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if ( runningConfiguration.get() != null && server.isStarted() ) {
+        if ( evt != null && SESSION_TIMEOUT_PROP.equals(evt.getPropertyName()) ) {
+            if ( sessionManager != null ) {
+                int sessionTimeoutSeconds = (int)(serverConfig.getTimeUnitPropertyCached(SESSION_TIMEOUT_PROP,DEFAULT_SESSION_TIMEOUT,30000)/1000L);
+                logger.config( "Updated session timeout configuration, now " + sessionTimeoutSeconds + " seconds.");
+                sessionManager.setMaxInactiveInterval( sessionTimeoutSeconds );            
+            }
+        } else {
+            if ( runningConfiguration.get() != null && server.isStarted() ) {
+                // schedule change for later so any current HTTP request can complete before the
+                // listener goes offline
+                timer.schedule(new TimerTask(){
+                    @Override
+                    public void run() {
+                        // build a new config and put it on the config stack, will be
+                        // picked up later.
+                        try {
+                            ListenerConfiguration config = buildConfiguration();
+                            ListenerConfiguration currentConfig = configuration.get();
 
-            // schedule change for later so any current HTTP request can complete before the
-            // listener goes offline
-            timer.schedule(new TimerTask(){
-                @Override
-                public void run() {
-                    // build a new config and put it on the config stack, will be
-                    // picked up later.
-                    try {
-                        ListenerConfiguration config = buildConfiguration();
-                        ListenerConfiguration currentConfig = configuration.get();
-
-                        if ( currentConfig != null && !config.equals( currentConfig ) ) {
-                            // the config is updated so use it
-                            if ( configuration.compareAndSet( currentConfig, config ) ) {
-                                logger.info( "Queued updated listener configuration : " + config );    
+                            if ( currentConfig != null && !config.equals( currentConfig ) ) {
+                                // the config is updated so use it
+                                if ( configuration.compareAndSet( currentConfig, config ) ) {
+                                    logger.info( "Queued updated listener configuration : " + config );
+                                } else {
+                                    logger.warning("Failed to queue updated listener configuration : " + config);
+                                }
                             } else {
-                                logger.warning("Failed to queue updated listener configuration : " + config);
+                                logger.fine( "Ignoring edited listener configuration that matches current configuration : " + config  + " - " + currentConfig);
                             }
-                        } else {
-                            logger.fine( "Ignoring edited listener configuration that matches current configuration : " + config  + " - " + currentConfig);
+
+                        } catch (IOException e) {
+                            logger.log( Level.WARNING, "Error building new listener configuration.", e );
                         }
-                        
-                    } catch (IOException e) {
-                        logger.log( Level.WARNING, "Error building new listener configuration.", e );
                     }
-                }
-            }, 500);
+                }, 500);
+            }
         }
     }
 
@@ -192,7 +202,10 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         rebuildConnectors( config );
 
         final Context root = new Context(server, "/", Context.SESSIONS);
-        ((AbstractSessionManager)root.getSessionHandler().getSessionManager()).setSecureCookies(true);
+        AbstractSessionManager sessionManager = ((AbstractSessionManager)root.getSessionHandler().getSessionManager());
+        sessionManager.setSecureCookies(true);
+        sessionManager.setMaxInactiveInterval((int)(serverConfig.getTimeUnitPropertyCached(SESSION_TIMEOUT_PROP,DEFAULT_SESSION_TIMEOUT,30000)/1000L));
+        this.sessionManager = sessionManager;
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources")); //TODO [steve] map root elsewhere and add other mappings for css/images/etc
         root.setDisplayName("Layer 7 Enterprise Service Manager Server");
         root.setAttribute("javax.servlet.context.tempdir", temp);
@@ -205,8 +218,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         initParams.put(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
         initParams.put("org.mortbay.jetty.servlet.Default.dirAllowed", "false");
         initParams.put("org.mortbay.jetty.servlet.SessionCookie", "ESMSESSIONID");
-        initParams.put("org.mortbay.jetty.servlet.SessionURL", null); // disable url sessionid
-        initParams.put("org.mortbay.jetty.servlet.MaxAge", Integer.toString(serverConfig.getIntProperty("em.server.session.maxAge",MAX_SESSION_COOKIE_AGE)));        
+        initParams.put("org.mortbay.jetty.servlet.SessionURL", "none"); // disable url sessionid
 
         // Add security handler
         final Filter securityFilter = new EsmSecurityFilter();

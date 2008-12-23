@@ -1,6 +1,5 @@
 package com.l7tech.server.ems;
 
-import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -10,7 +9,6 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.ems.enterprise.EnterpriseFolder;
@@ -28,21 +26,17 @@ import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.Resource;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 
-import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StreamTokenizer;
-import java.security.AccessController;
 import java.security.PrivateKey;
 import java.security.KeyStoreException;
 import java.security.GeneralSecurityException;
@@ -68,7 +62,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
 
     private final ServerConfig serverConfig;
     private final PlatformTransactionManager transactionManager;
-    private final UpdatableLicenseManager licenseManager;
     private final IdentityProviderFactory identityProviderFactory;
     private final IdentityProviderConfigManager identityProviderConfigManager;
     private final RoleManager roleManager;
@@ -80,7 +73,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
 
     public SetupManagerImpl(final ServerConfig serverConfig,
                             final PlatformTransactionManager transactionManager,
-                            final UpdatableLicenseManager licenseManager,
                             final IdentityProviderFactory identityProviderFactory,
                             final IdentityProviderConfigManager identityProviderConfigManager,
                             final RoleManager roleManager,
@@ -91,7 +83,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
     ) {
         this.serverConfig = serverConfig;
         this.transactionManager = transactionManager;
-        this.licenseManager = licenseManager;
         this.identityProviderFactory = identityProviderFactory;
         this.identityProviderConfigManager = identityProviderConfigManager;
         this.roleManager = roleManager;
@@ -105,38 +96,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         this.keyStoreManager = keyStoreManager;
     }
 
-    /**
-     * Check if this EMS instance has already had initial setup performed.
-     * This returns true if any of the following are true:
-     * <ul>
-     * <li>A valid license is currently installed.</li>
-     * <li>At least one internal user currently exists.</li>
-     * </ul>
-     * @return true if initial setup has been performed per the above.
-     * @throws SetupException if there is a problem checking whether any internal users exist
-     */
     @Override
-    @Transactional(propagation=SUPPORTS, readOnly=true)
-    public boolean isSetupPerformed() throws SetupException  {
-        boolean setup = true;
-        try {
-            InternalUserManager internalUserManager = getInternalUserManager();
-            if ( internalUserManager==null || internalUserManager.findAllHeaders().isEmpty() ) {
-                setup = false;
-            } else {
-                licenseManager.getCurrentLicense(); // gets license only if valid
-            }
-        } catch (FindException e) {
-            throw new SetupException(e);
-        } catch (InvalidLicenseException ile) {
-            logger.warning("License is not valid '"+ ExceptionUtils.getDebugException(ile) +"'.");
-            setup = false;
-        }
-        return setup;
-    }
-
-    @Override
-    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Throwable.class)
     public void deleteLicense() throws DeleteException {
         try {
             ClusterProperty licProp = clusterPropertyManager.findByUniqueName("license");
@@ -198,63 +158,19 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         }
     }
 
-    /**
-     * Perform initial setup of this EMS instance.
-     * This sets a license and creates the initial administrator user in a single transaction.
-     * 
-     * @param licenseXml  XML license file to install.  Required.
-     * @param initialAdminUsername  username for initial administrator user.  Required.
-     * @param initialAdminPassword  password for iniital administrator user.  Required.
-     * @throws SetupException if this EMS instance has already been set up.
-     */
     @Override
-    @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-    public void performInitialSetup(final String licenseXml,
-                                    final String initialAdminUsername,
-                                    final String initialAdminPassword) throws SetupException {
+    public void setSessionTimeout(int sessionTimeout) throws SetupException {
         try {
-            if (isSetupPerformed())
-                throw new SetupException("This EMS instance has already been set up.");
-
-            InternalUserManager internalUserManager = getInternalUserManager();
-            if ( internalUserManager == null ) throw new SetupException("Unable to access user manager.");
-
-            Subject subject = Subject.getSubject(AccessController.getContext());
-            User temp = new UserBean(initialAdminUsername);
-            if ( subject != null ) {
-                subject.getPrincipals().add(temp);
-            }
-
-            // Create user first, will rollback if license is not valid
-            InternalUser user = new InternalUser();
-            user.setName(initialAdminUsername);
-            user.setLogin(initialAdminUsername);
-            user.setCleartextPassword(initialAdminPassword);
-
-            String id = internalUserManager.save(user, Collections.<IdentityHeader>emptySet());
-            user.setOid( Long.parseLong(id) );
-            if ( subject != null ) {
-                subject.getPrincipals().remove(temp);
-                subject.getPrincipals().add(user);
-            }
-
-            licenseManager.installNewLicense(licenseXml);
-
-            Role adminRole = roleManager.findByUniqueName("Administrator");
-            if ( adminRole != null ) {
-                adminRole.addAssignedUser( user );
-                roleManager.update( adminRole );
-            }
-        } catch (InvalidPasswordException e) {
-            throw new SetupException(e);
-        } catch (FindException e) {
-            throw new SetupException(e);
-        } catch (InvalidLicenseException e) {
-            throw new SetupException(e);
-        } catch (UpdateException e) {
-            throw new SetupException(e);
-        } catch (SaveException e) {
-            throw new SetupException(e);
+            final String newValue = Integer.toString(sessionTimeout) + "m";
+           ClusterProperty prop = clusterPropertyManager.findByUniqueName("session.timeout");
+           if ( prop == null ) {
+               clusterPropertyManager.save( new ClusterProperty( "session.timeout", newValue ) );
+           } else {
+               prop.setValue( newValue );
+               clusterPropertyManager.update( prop );
+           }
+        } catch ( ObjectModelException ome ) {
+            throw new SetupException( "Error saving session timeout.", ome );
         }
     }
 

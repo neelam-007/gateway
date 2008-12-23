@@ -14,10 +14,12 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.EsmApplication;
 import com.l7tech.server.ems.SetupManager;
+import com.l7tech.server.ems.SetupException;
 import com.l7tech.util.*;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextArea;
+import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
 import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
@@ -32,11 +34,14 @@ import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.Application;
 import org.apache.wicket.Component;
+import org.apache.wicket.feedback.ContainerFeedbackMessageFilter;
+import org.apache.wicket.validation.validator.NumberValidator;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.xml.sax.SAXException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.cert.X509Certificate;
 import java.security.SignatureException;
 import java.security.GeneralSecurityException;
@@ -84,6 +89,8 @@ public class SystemSettings extends EsmPage {
         initComponentsForSystemInfo(dynamicDialogHolder);
 
         initComponentsForLicense(dynamicDialogHolder);
+
+        initComponentsForGlobalSettings();
 
         if ( isAdminEnabled() ) {
             dynamicDialogHolder.add( new EmptyPanel("dynamic.holder.content") );
@@ -324,6 +331,40 @@ public class SystemSettings extends EsmPage {
         licenseDetailsContainer.add(licenseDeleteForm);
 
         add(new LicenseForm("licenseForm", refreshComponents, dynamicDialogHolder, feedback).setOutputMarkupId(true));
+    }
+
+    private void initComponentsForGlobalSettings() {
+        String timeUnit = config.getProperty("em.server.session.timeout", "30m");
+        final GlobalSettings settingsModel = new GlobalSettings( (int)(TimeUnit.parse(timeUnit, TimeUnit.MINUTES) / (1000L*60L)) );
+        RequiredTextField sessionTimeout = new RequiredTextField("timeout", new PropertyModel( settingsModel, "sessionTimeout" ) );
+        sessionTimeout.add( new NumberValidator.RangeValidator(1,1440) );
+
+        final FeedbackPanel feedback = new FeedbackPanel("globalFeedback");
+
+        Form globalForm = new Form("globalForm");
+        globalForm.add( new YuiAjaxButton("global.submit", globalForm) {
+            @Override
+            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
+                try {
+                    setupManager.setSessionTimeout( settingsModel.getSessionTimeout() );
+                    this.getForm().info( new StringResourceModel("global.message.updated", SystemSettings.this, null).getString() );
+                } catch ( SetupException se ) {
+                    this.getForm().error( new StringResourceModel("global.message.error", SystemSettings.this, null).getString() );
+                    logger.log( Level.WARNING, "Error updating session timeout cluster property.", se );
+                }
+                ajaxRequestTarget.addComponent( feedback );
+            }
+            @Override
+            protected void onError( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
+                ajaxRequestTarget.addComponent( feedback );
+            }
+        }.add( new AttemptedUpdateAny( EntityType.CLUSTER_PROPERTY ) ) );
+
+        globalForm.add( sessionTimeout );
+        feedback.setFilter( new ContainerFeedbackMessageFilter(globalForm) );        
+
+        add( feedback.setOutputMarkupId(true) );
+        add( globalForm );
     }
 
     /**
@@ -659,6 +700,22 @@ public class SystemSettings extends EsmPage {
         @Override
         public void detach() {
             certificate = null;
+        }
+    }
+
+    private static final class GlobalSettings implements Serializable {
+        private int sessionTimeout; // in minutes
+
+        private GlobalSettings( final int sessionTimeout ) {
+            this.sessionTimeout = sessionTimeout;
+        }
+
+        public int getSessionTimeout() {
+            return sessionTimeout;
+        }
+
+        public void setSessionTimeout(int sessionTimeout) {
+            this.sessionTimeout = sessionTimeout;
         }
     }
 

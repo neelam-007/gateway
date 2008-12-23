@@ -78,7 +78,7 @@
                 <value>com.l7tech.gateway.common.audit.SystemAuditRecord</value>
                 <value>com.l7tech.gateway.common.audit.MessageSummaryAuditRecord</value> <!-- Required for export format -->
                 <value>com.l7tech.gateway.common.audit.AuditDetail</value>
-                <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value> <!-- TODO [steve] create subclass of msar and remove mapping key/values? -->
+                <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value>
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingValues</value>
 
                 <!-- Enterprise Organization Entities -->
@@ -167,6 +167,7 @@
                                 <value>keyStoreDefaultSslKey</value>
                                 <value>em.server.listenaddr</value>
                                 <value>em.server.listenport</value>
+                                <value>em.server.session.timeout</value>
                             </list>
                         </entry>
                     </map>
@@ -387,14 +388,13 @@
     <bean id="setupManager" class="com.l7tech.server.ems.SetupManagerImpl" depends-on="internalIdentityProvider">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="transactionManager"/>
-        <constructor-arg index="2" ref="licenseManager"/>
-        <constructor-arg index="3" ref="identityProviderFactory"/>
-        <constructor-arg index="4" ref="identityProviderConfigManager"/>
-        <constructor-arg index="5" ref="roleManager"/>
-        <constructor-arg index="6" ref="enterpriseFolderManager" />
-        <constructor-arg index="7" ref="auditContext"/>
-        <constructor-arg index="8" ref="keystoreFileManager"/>
-        <constructor-arg index="9" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="identityProviderFactory"/>
+        <constructor-arg index="3" ref="identityProviderConfigManager"/>
+        <constructor-arg index="4" ref="roleManager"/>
+        <constructor-arg index="5" ref="enterpriseFolderManager" />
+        <constructor-arg index="6" ref="auditContext"/>
+        <constructor-arg index="7" ref="keystoreFileManager"/>
+        <constructor-arg index="8" ref="clusterPropertyManager"/>
         <property name="keyStoreManager" ref="ssgKeyStoreManager"/>
     </bean>
 

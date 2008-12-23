@@ -9,16 +9,6 @@ import java.security.cert.X509Certificate;
 public class MockSetupManager implements SetupManager {
 
     @Override
-    public boolean isSetupPerformed() throws SetupException {
-        return true;
-    }
-
-    @Override
-    public void performInitialSetup(String licenseXml, String initialAdminUsername, String initialAdminPassword) throws SetupException {
-        throw new SetupException("Mock setup not supported");
-    }
-
-    @Override
     public void deleteLicense() {
     }
 
@@ -38,5 +28,9 @@ public class MockSetupManager implements SetupManager {
 
     @Override
     public void setSslAlias(String alias) throws SetupException {
+    }
+
+    @Override
+    public void setSessionTimeout(int sessionTimeout) throws SetupException {
     }
 }
