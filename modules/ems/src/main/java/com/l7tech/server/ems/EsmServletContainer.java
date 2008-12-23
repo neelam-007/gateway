@@ -9,6 +9,7 @@ import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.jetty.servlet.DefaultServlet;
+import org.mortbay.jetty.servlet.AbstractSessionManager;
 import org.mortbay.resource.Resource;
 import org.mortbay.log.Log;
 import org.mortbay.log.Slf4jLog;
@@ -61,9 +62,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ems.enterprise.MappingFilter;
 
 /**
- * An embedded servlet container that the EMS uses to host itself.
- *
- * TODO [steve] HTTP Cookies are not secure, needs to be configured here
+ * An embedded servlet container that the ESM uses to host itself.
  */
 public class EsmServletContainer implements ApplicationContextAware, InitializingBean, DisposableBean, PropertyChangeListener {
     public static final String RESOURCE_PREFIX = "com/l7tech/server/ems/resources/";
@@ -74,6 +73,8 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     private static final AtomicLong nextInstanceId = new AtomicLong(1);
     private static final Map<Long, Reference<EsmServletContainer>> instancesById =
             new ConcurrentHashMap<Long, Reference<EsmServletContainer>>();
+
+    private static final int MAX_SESSION_COOKIE_AGE = 1800;
 
     private final ServerConfig serverConfig;
     private final DefaultKey defaultKey;
@@ -191,6 +192,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         rebuildConnectors( config );
 
         final Context root = new Context(server, "/", Context.SESSIONS);
+        ((AbstractSessionManager)root.getSessionHandler().getSessionManager()).setSecureCookies(true);
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources")); //TODO [steve] map root elsewhere and add other mappings for css/images/etc
         root.setDisplayName("Layer 7 Enterprise Service Manager Server");
         root.setAttribute("javax.servlet.context.tempdir", temp);
@@ -202,6 +204,9 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         initParams.put("contextConfigLocation", "classpath:com/l7tech/server/ems/resources/webApplicationContext.xml");
         initParams.put(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
         initParams.put("org.mortbay.jetty.servlet.Default.dirAllowed", "false");
+        initParams.put("org.mortbay.jetty.servlet.SessionCookie", "ESMSESSIONID");
+        initParams.put("org.mortbay.jetty.servlet.SessionURL", null); // disable url sessionid
+        initParams.put("org.mortbay.jetty.servlet.MaxAge", Integer.toString(serverConfig.getIntProperty("em.server.session.maxAge",MAX_SESSION_COOKIE_AGE)));        
 
         // Add security handler
         final Filter securityFilter = new EsmSecurityFilter();
