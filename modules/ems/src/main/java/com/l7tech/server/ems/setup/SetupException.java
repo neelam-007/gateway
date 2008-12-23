@@ -1,4 +1,4 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.setup;
 
 /**
  * Exception thrown if initial setup cannot be performed.

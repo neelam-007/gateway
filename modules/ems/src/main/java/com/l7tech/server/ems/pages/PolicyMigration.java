@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.pages;
 
 import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.server.ems.TypedPropertyColumn;
+import com.l7tech.server.ems.util.TypedPropertyColumn;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.migration.MigrationMappingRecordManager;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;

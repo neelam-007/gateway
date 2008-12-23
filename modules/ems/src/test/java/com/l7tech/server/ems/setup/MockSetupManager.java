@@ -1,4 +1,4 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.setup;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;

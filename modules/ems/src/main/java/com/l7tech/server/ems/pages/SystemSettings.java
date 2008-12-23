@@ -5,6 +5,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
@@ -13,8 +14,8 @@ import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.EsmApplication;
-import com.l7tech.server.ems.SetupManager;
-import com.l7tech.server.ems.SetupException;
+import com.l7tech.server.ems.setup.SetupManager;
+import com.l7tech.server.ems.setup.SetupException;
 import com.l7tech.util.*;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -341,7 +342,8 @@ public class SystemSettings extends EsmPage {
 
         final FeedbackPanel feedback = new FeedbackPanel("globalFeedback");
 
-        Form globalForm = new Form("globalForm");
+        AttemptedOperation attemptedOperation =  new AttemptedUpdateAny( EntityType.CLUSTER_PROPERTY ) ;
+        Form globalForm = new SecureForm("globalForm", attemptedOperation);
         globalForm.add( new YuiAjaxButton("global.submit", globalForm) {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
@@ -358,7 +360,7 @@ public class SystemSettings extends EsmPage {
             protected void onError( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 ajaxRequestTarget.addComponent( feedback );
             }
-        }.add( new AttemptedUpdateAny( EntityType.CLUSTER_PROPERTY ) ) );
+        }.add( attemptedOperation ) );
 
         globalForm.add( sessionTimeout );
         feedback.setFilter( new ContainerFeedbackMessageFilter(globalForm) );        

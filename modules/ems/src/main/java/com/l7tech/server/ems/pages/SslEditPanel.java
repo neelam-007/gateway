@@ -35,8 +35,8 @@ import java.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.Serializable;
 
-import com.l7tech.server.ems.SetupManager;
-import com.l7tech.server.ems.SetupException;
+import com.l7tech.server.ems.setup.SetupManager;
+import com.l7tech.server.ems.setup.SetupException;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 

@@ -42,7 +42,7 @@
    <bean id="createDB"
           class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="staticMethod"
-                  value="com.l7tech.server.ems.SetupManagerImpl.testDataSource"/>
+                  value="com.l7tech.server.ems.setup.SetupManagerImpl.testDataSource"/>
         <property name="arguments">
             <list>
                 <ref local="creationDataSource"/>
@@ -385,7 +385,7 @@
     </bean>
 
     <!-- Initial setup manager -->
-    <bean id="setupManager" class="com.l7tech.server.ems.SetupManagerImpl" depends-on="internalIdentityProvider">
+    <bean id="setupManager" class="com.l7tech.server.ems.setup.SetupManagerImpl" depends-on="internalIdentityProvider">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="transactionManager"/>
         <constructor-arg index="2" ref="identityProviderFactory"/>
@@ -405,7 +405,7 @@
         <constructor-arg index="2" ref="licenseManager"/>
     </bean>
 
-    <bean id="servletContainer" class="com.l7tech.server.ems.EsmServletContainer">
+    <bean id="servletContainer" class="com.l7tech.server.ems.listener.EsmServletContainer">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="defaultKey"/>
         <constructor-arg index="2" ref="managedBackgroundTimer"/>

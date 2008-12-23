@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.pages;
 
-import com.l7tech.server.ems.SetupManager;
-import com.l7tech.server.ems.SetupException;
+import com.l7tech.server.ems.setup.SetupManager;
+import com.l7tech.server.ems.setup.SetupException;
 import com.l7tech.util.Config;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.RequiredTextField;

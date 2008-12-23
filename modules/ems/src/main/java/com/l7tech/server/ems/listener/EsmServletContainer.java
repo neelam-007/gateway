@@ -1,4 +1,4 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.listener;
 
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.Handler;
@@ -61,6 +61,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ems.enterprise.MappingFilter;
+import com.l7tech.server.ems.EsmApplication;
 
 /**
  * An embedded servlet container that the ESM uses to host itself.
@@ -185,6 +186,12 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
                 ResourceUtils.closeQuietly( out );    
             }
         }
+
+        applicationContext.publishEvent( new ListenerConfigurationUpdatedEvent(
+                this,
+                configuration.getIpAddress(),
+                configuration.getHttpsPort(),
+                configuration.getAlias()) );
     }
 
     private void initializeServletEngine() throws Exception {
@@ -467,6 +474,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     private static final class ListenerConfiguration {
         private final X509Certificate certificate;
         private final KeyManager[] keyManagers;
+        private final String alias;
         private final String ipAddress;
         private final int httpPort;
         private final int httpsPort;
@@ -477,6 +485,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
                                final int httpsPort ) throws IOException {
             this.certificate = sslKey.getSslInfo().getCertificate();
             this.keyManagers = sslKey.getSslKeyManagers();
+            this.alias = sslKey.getSslInfo().getAlias();
             this.ipAddress = ipaddress;
             this.httpPort = httpPort;
             this.httpsPort = httpsPort;
@@ -488,6 +497,10 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
 
         public KeyManager[] getKeyManagers() {
             return keyManagers;
+        }
+
+        public String getAlias() {
+            return alias;
         }
 
         public String getIpAddress() {

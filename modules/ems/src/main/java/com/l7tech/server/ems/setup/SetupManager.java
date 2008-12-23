@@ -1,4 +1,4 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.setup;
 
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;

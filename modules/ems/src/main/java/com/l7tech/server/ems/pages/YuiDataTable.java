@@ -43,7 +43,7 @@ import java.util.logging.Level;
 
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
-import com.l7tech.server.ems.TypedPropertyColumn;
+import com.l7tech.server.ems.util.TypedPropertyColumn;
 
 /**
  * Wicket component for YUI table

@@ -1,4 +1,4 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.setup;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -13,6 +13,7 @@ import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.ems.enterprise.EnterpriseFolder;
 import com.l7tech.server.ems.enterprise.EnterpriseFolderManager;
+import com.l7tech.server.ems.listener.ListenerConfigurationUpdatedEvent;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.security.keystore.KeystoreFile;
@@ -31,6 +32,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
 
 import javax.security.auth.x500.X500Principal;
 import javax.sql.DataSource;
@@ -57,19 +60,9 @@ import java.util.logging.Logger;
  * Encapsulates behavior for initial setup of a new EMS instance.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class SetupManagerImpl implements InitializingBean, SetupManager {
-    private static final Logger logger = Logger.getLogger(SetupManagerImpl.class.getName());
+public class SetupManagerImpl implements InitializingBean, SetupManager, ApplicationListener {
 
-    private final ServerConfig serverConfig;
-    private final PlatformTransactionManager transactionManager;
-    private final IdentityProviderFactory identityProviderFactory;
-    private final IdentityProviderConfigManager identityProviderConfigManager;
-    private final RoleManager roleManager;
-    private final EnterpriseFolderManager enterpriseFolderManager;
-    private final AuditContext auditContext;
-    private final KeystoreFileManager keystoreFileManager;
-    private final ClusterPropertyManager clusterPropertyManager;
-    private SsgKeyStoreManager keyStoreManager;
+    //- PUBLIC
 
     public SetupManagerImpl(final ServerConfig serverConfig,
                             final PlatformTransactionManager transactionManager,
@@ -123,7 +116,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
     public String saveSsl( final PrivateKey key, final X509Certificate[] certificateChain ) throws SetupException {
         try {
             // save key
-            String alias = findUnusedAlias("ssl");
+            String alias = findUnusedAlias();
             SsgKeyStore sks = findFirstMutableKeystore();
             SsgKeyEntry entry = new SsgKeyEntry( sks.getOid(), alias, certificateChain, key );
             sks.storePrivateKeyEntry( entry, false );
@@ -139,7 +132,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
     public String generateSsl( final String hostname ) throws SetupException {
         try {
             // generate key and save
-            String alias = findUnusedAlias("ssl");
+            String alias = findUnusedAlias();
             SsgKeyStore sks = findFirstMutableKeystore();
             generateKeyPair( hostname, sks, alias );
             return alias;
@@ -215,63 +208,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         } else {
             logger.config( "Using existing database." );
         }
-    }
-
-    private static void runScripts( final Connection connection, final Resource[] scripts ) throws SQLException {
-        for ( Resource scriptResource : scripts ) {
-            StreamTokenizer tokenizer;
-
-            try {
-                logger.config("Running DB create script '"+scriptResource.getDescription()+"'.");
-                tokenizer = new StreamTokenizer( new InputStreamReader(scriptResource.getInputStream(), "UTF-8") );
-                tokenizer.eolIsSignificant(false);
-                tokenizer.commentChar('-');
-                tokenizer.quoteChar('\'');
-                tokenizer.wordChars(16, 31);
-                tokenizer.wordChars(33, 44);
-                tokenizer.wordChars(46,126);
-
-                int token;
-                StringBuilder builder = new StringBuilder();
-                while( (token = tokenizer.nextToken()) != StreamTokenizer.TT_EOF ) {
-                    if ( token == StreamTokenizer.TT_WORD ) {
-                        if ( builder.length() > 0 ) {
-                            builder.append( " " );
-                        }
-                        builder.append( tokenizer.sval );
-                        if ( tokenizer.sval.endsWith(";") ) {
-                            builder.setLength( builder.length()-1 );
-                            String sql = builder.toString();
-                            builder.setLength( 0 );
-
-                            Statement statement = null;
-                            try {
-                                statement = connection.createStatement();
-                                statement.executeUpdate( sql );
-                            } finally {
-                                ResourceUtils.closeQuietly( statement );
-                            }
-                        }
-                    }
-                }
-
-            } catch (IOException ioe) {
-                logger.log( Level.WARNING, "Error processing DB script.", ioe );
-            }
-        }
-    }
-
-    private InternalUserManager getInternalUserManager() throws FindException {
-        InternalUserManager internalUserManager = null;
-
-        for ( IdentityProvider identityProvider : identityProviderFactory.findAllIdentityProviders() ) {
-            if ( IdentityProviderType.INTERNAL.equals( identityProvider.getConfig().type() ) ) {
-                internalUserManager = (InternalUserManager) identityProvider.getUserManager();
-                break;
-            }
-        }
-
-        return internalUserManager;
     }
 
     /**
@@ -388,6 +324,87 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         }
     }
 
+    @Override
+    public void onApplicationEvent( final ApplicationEvent event ) {
+        if ( event instanceof ListenerConfigurationUpdatedEvent) {
+            cleanupAlias( ((ListenerConfigurationUpdatedEvent) event).getAlias() );
+        }
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(SetupManagerImpl.class.getName());
+
+    private static final String BASE_ALIAS = "ssl";
+
+    private final ServerConfig serverConfig;
+    private final PlatformTransactionManager transactionManager;
+    private final IdentityProviderFactory identityProviderFactory;
+    private final IdentityProviderConfigManager identityProviderConfigManager;
+    private final RoleManager roleManager;
+    private final EnterpriseFolderManager enterpriseFolderManager;
+    private final AuditContext auditContext;
+    private final KeystoreFileManager keystoreFileManager;
+    private final ClusterPropertyManager clusterPropertyManager;
+    private SsgKeyStoreManager keyStoreManager;
+
+    private static void runScripts( final Connection connection, final Resource[] scripts ) throws SQLException {
+        for ( Resource scriptResource : scripts ) {
+            StreamTokenizer tokenizer;
+
+            try {
+                logger.config("Running DB create script '"+scriptResource.getDescription()+"'.");
+                tokenizer = new StreamTokenizer( new InputStreamReader(scriptResource.getInputStream(), "UTF-8") );
+                tokenizer.eolIsSignificant(false);
+                tokenizer.commentChar('-');
+                tokenizer.quoteChar('\'');
+                tokenizer.wordChars(16, 31);
+                tokenizer.wordChars(33, 44);
+                tokenizer.wordChars(46,126);
+
+                int token;
+                StringBuilder builder = new StringBuilder();
+                while( (token = tokenizer.nextToken()) != StreamTokenizer.TT_EOF ) {
+                    if ( token == StreamTokenizer.TT_WORD ) {
+                        if ( builder.length() > 0 ) {
+                            builder.append( " " );
+                        }
+                        builder.append( tokenizer.sval );
+                        if ( tokenizer.sval.endsWith(";") ) {
+                            builder.setLength( builder.length()-1 );
+                            String sql = builder.toString();
+                            builder.setLength( 0 );
+
+                            Statement statement = null;
+                            try {
+                                statement = connection.createStatement();
+                                statement.executeUpdate( sql );
+                            } finally {
+                                ResourceUtils.closeQuietly( statement );
+                            }
+                        }
+                    }
+                }
+
+            } catch (IOException ioe) {
+                logger.log( Level.WARNING, "Error processing DB script.", ioe );
+            }
+        }
+    }
+
+    private InternalUserManager getInternalUserManager() throws FindException {
+        InternalUserManager internalUserManager = null;
+
+        for ( IdentityProvider identityProvider : identityProviderFactory.findAllIdentityProviders() ) {
+            if ( IdentityProviderType.INTERNAL.equals( identityProvider.getConfig().type() ) ) {
+                internalUserManager = (InternalUserManager) identityProvider.getUserManager();
+                break;
+            }
+        }
+
+        return internalUserManager;
+    }
+
     private KeystoreFile newKeystore( final String name, final String format ) {
         KeystoreFile keystoreFile = new KeystoreFile();
         keystoreFile.setName( name );
@@ -409,7 +426,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         }
     }
 
-    private SsgKeyEntry configureAsDefaultSslCert(SsgKeyStore sks, String alias) throws IOException {
+    private SsgKeyEntry configureAsDefaultSslCert( final SsgKeyStore sks, final String alias) throws IOException {
         try {
             SsgKeyEntry entry = sks.getCertificateChain(alias);
             String name = serverConfig.getClusterPropertyName(ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY);
@@ -449,16 +466,16 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         return sks;
     }
 
-    private String findUnusedAlias(String baseAlias) throws IOException {
-        String alias = baseAlias;
+    private String findUnusedAlias() throws IOException {
+        String alias = BASE_ALIAS;
         int count = 1;
         while (aliasAlreadyUsed(alias)) {
-            alias = baseAlias + (count++);
+            alias = BASE_ALIAS + (count++);
         }
         return alias;
     }
 
-    private boolean aliasAlreadyUsed(String alias) throws IOException {
+    private boolean aliasAlreadyUsed( final String alias ) throws IOException {
         try {
             keyStoreManager.lookupKeyByKeyAlias(alias, -1);
             return true;
@@ -471,4 +488,52 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         }
     }
 
+    /**
+     * Delete all aliases and keys except for the given value and the currently
+     * configured default. 
+     */
+    private void cleanupAlias( final String alias ) {
+        String configAlias = serverConfig.getProperty("keyStoreDefaultSslKey");
+        if ( configAlias != null ) {
+            int index = configAlias.indexOf(':');
+            if ( index > -1 ) {
+                configAlias = configAlias.substring( index+1 );
+            }
+        }
+
+        try {
+            String currentAlias = BASE_ALIAS;
+            for ( int i=1; i<100; i++ ) {
+                if ( !currentAlias.equalsIgnoreCase(alias) &&
+                     (configAlias == null || !currentAlias.equalsIgnoreCase(configAlias)) ) {
+                    try {
+                        SsgKeyEntry entry = keyStoreManager.lookupKeyByKeyAlias(currentAlias, -1);
+                        long keystoreId = entry.getKeystoreId();
+                        SsgKeyFinder finder = keyStoreManager.findByPrimaryKey( keystoreId );
+                        if ( finder.isMutable() ) {
+                            if ( finder.getKeyStore().deletePrivateKeyEntry( currentAlias ).get() ) {
+                                logger.config("Deleted old private key entry for alias '"+currentAlias+"'.");
+                            } else {
+                                logger.config("Deletion of old private key entry for alias '"+currentAlias+"' failed.");
+                            }
+                        } else {
+                            logger.warning("Cannot delete alias in read-only store '"+currentAlias+"'.");
+                        }
+                    } catch (ObjectNotFoundException e) {
+                        // ok, the alias is not in use check next
+                    }
+                }
+
+                currentAlias = BASE_ALIAS + (i);
+            }
+        } catch (FindException e) {
+            logger.log( Level.WARNING, "Error deleting old private keys.", e );
+        } catch (KeyStoreException e) {
+            logger.log( Level.WARNING, "Error deleting old private keys.", e );
+        } catch (ExecutionException e) {
+            logger.log( Level.WARNING, "Error deleting old private keys.", e );
+        } catch (InterruptedException e) {
+            logger.log( Level.WARNING, "Interrupted when deleting old private keys.", ExceptionUtils.getDebugException(e) );
+        }
+    }
 }
