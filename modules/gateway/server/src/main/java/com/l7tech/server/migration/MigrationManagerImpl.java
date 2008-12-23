@@ -362,7 +362,7 @@ public class MigrationManagerImpl implements MigrationManager {
                 result.put(header, new EntityOperation(fromBundle, CREATE, !enableServices));
             } else if (fromBundle == null) {
                 result.put(header, new EntityOperation(existing, IGNORE));
-            } else if (overwriteExisting) { // both not null
+            } else if (overwriteExisting && header.getType() != EntityType.FOLDER) { // both not null
                 if (fromBundle instanceof PersistentEntity && existing instanceof PersistentEntity) {
                     ((PersistentEntity)fromBundle).setOid(((PersistentEntity)existing).getOid());
                     ((PersistentEntity)fromBundle).setVersion(((PersistentEntity)existing).getVersion());
