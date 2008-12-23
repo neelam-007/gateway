@@ -98,7 +98,7 @@ public class ServicePropertiesDialog extends JDialog {
                                                                  return str != null;
                                                              }
                                                          }));
-        uriField.setDocument(new FilterDocument(127, null));
+        uriField.setDocument(new FilterDocument(128, null));
 
         // set initial data
         nameField.setText(subject.getName());
@@ -225,7 +225,13 @@ public class ServicePropertiesDialog extends JDialog {
         });
 
         uriField.addKeyListener(new KeyListener() {
-            public void keyPressed(KeyEvent e) {}
+            public void keyPressed(KeyEvent e) {
+                //always start with "/" for URI
+                if (!uriField.getText().startsWith("/")) {
+                    String uri = uriField.getText();
+                    uriField.setText("/" + uri);
+                }
+            }
             public void keyReleased(KeyEvent e) {
                 updateURL();
             }

@@ -531,7 +531,7 @@ public class FederatedUserPanel extends UserPanel {
             emailTextField.setMinimumSize(new Dimension(200, 20));
             emailTextField.setPreferredSize(new Dimension(200, 20));
             emailTextField.setEditable(true);
-            emailTextField.setDocument(new MaxLengthDocument(50));
+            emailTextField.setDocument(new MaxLengthDocument(128));
             // Register listeners
             emailTextField.getDocument().addDocumentListener(documentListener);
         }
