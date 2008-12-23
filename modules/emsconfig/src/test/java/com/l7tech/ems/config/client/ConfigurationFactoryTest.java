@@ -25,7 +25,7 @@ public class ConfigurationFactoryTest {
 
     @Test
     public void testLoadEmsConfiguration() throws Exception {
-        OptionSet options = ConfigurationFactory.newConfiguration(ConfigurationFactoryTest.class, "configTemplates/EmsConfiguration.xml");
+        OptionSet options = ConfigurationFactory.newConfiguration(ConfigurationFactoryTest.class, "configTemplates/EsmConfiguration.xml");
         System.out.println( "Loaded option set : " + options.getId() );
         System.out.println( "Loaded option grps: " + options.getOptionGroups().size() );
         System.out.println( "Loaded options    : " + options.getOptions().size() );
@@ -42,7 +42,7 @@ public class ConfigurationFactoryTest {
 
     @Test
     public void testValidEmsConfiguration() throws Exception {
-        validateConfiguration("configTemplates/EmsConfiguration.xml");
+        validateConfiguration("configTemplates/EsmConfiguration.xml");
     }
 
     private void validateConfiguration(final String resource) throws Exception {
