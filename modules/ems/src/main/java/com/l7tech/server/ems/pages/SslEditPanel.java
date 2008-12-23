@@ -103,7 +103,7 @@ public class SslEditPanel extends Panel {
             @Override
             @SuppressWarnings({"UnusedDeclaration", "SuspiciousSystemArraycopy"})
             protected void onSubmit( final AjaxRequestTarget target ) {
-                logger.info("Processing SSL update.");
+                logger.fine("Processing SSL update.");
 
                 String alias = null;
                 if ( "gen".equals( group.getModelObjectAsString() ) ) {
@@ -149,7 +149,7 @@ public class SslEditPanel extends Panel {
                                     feedback.error( "Alias not found '"+aliasValue+"'." );
                                 }
                             } else {
-                                logger.warning("Keystore not present in upload!");
+                                logger.fine("Keystore not present in upload!");
                                 feedback.error( "Error processing keystore, please try again." );
                             }
                         } finally {

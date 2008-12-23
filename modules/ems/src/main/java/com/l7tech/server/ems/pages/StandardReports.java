@@ -6,9 +6,14 @@ import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
+import com.l7tech.server.ems.gateway.GatewayException;
+import com.l7tech.server.ems.gateway.GatewayNotMappedException;
+import com.l7tech.server.ems.gateway.GatewayNoTrustException;
 import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.objectmodel.FindException;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -224,8 +229,21 @@ public class StandardReports extends EsmPage {
                                 }
                             }
                         }
-                    } catch ( Exception e ) {
+                    } catch ( GatewayNotMappedException gnme ) {
+                        // ok, don't show any keys
+                    } catch ( GatewayNoTrustException e ) {
+                        // ok, don't show any keys
+                    } catch ( GatewayException e ) {
+                        // ok, don't show any keys
+                    } catch ( FindException e ) {
                         logger.log( Level.WARNING, "Error getting mapping keys", e );
+                    } catch (ReportApi.ReportException e) {
+                        logger.log( Level.WARNING, "Error getting mapping keys '"+ ExceptionUtils.getMessage(e) +"'.", ExceptionUtils.getDebugException(e) );
+                    } catch ( RuntimeException re ) {
+                        if ( !GatewayContext.isConfigurationException(re) &&
+                             !GatewayContext.isNetworkException(re)) {
+                            logger.log( Level.WARNING, "Error getting mapping keys", re );
+                        }
                     }
                     clusterKeys.add( new MappingKey( clusterGuid, standardValues, customValues ) );
                 }

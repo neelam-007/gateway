@@ -57,7 +57,9 @@ public class JsonPostInteraction extends Panel {
                     ServletInputStream inputStream = webRequest.getHttpServletRequest().getInputStream();
                     String input = new String(IOUtils.slurpStream(inputStream, 10000), "utf-8");
                     provider.setData(input);
-                    logger.log(Level.FINER, "Received JSON data: " + input);
+                    if ( logger.isLoggable(Level.FINEST) ) {
+                        logger.log(Level.FINEST, "Received JSON data: " + input);
+                    }
                 } catch (IOException e) {
                     JSONException jsonException = new JSONException(e.getCause());
                     provider.setData(jsonException);

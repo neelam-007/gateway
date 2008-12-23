@@ -130,7 +130,7 @@ public class StandardReportsManagementPanel extends Panel {
                             dynamicDialogHolder.replace(dialog);
                             ajaxRequestTarget.addComponent(dynamicDialogHolder);
                         } else {
-                            logger.log( Level.INFO, "Report deletion request ignored for unknown report '"+reportIdentifier+"'." );
+                            logger.log( Level.FINE, "Report deletion request ignored for unknown report '"+reportIdentifier+"'." );
                         }
                     } catch ( FindException e ) {
                         logger.log( Level.WARNING, "Error deleting report.", e );

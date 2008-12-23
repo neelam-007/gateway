@@ -174,6 +174,8 @@ public class PolicyMigration extends EsmPage {
                     String failureMessage;
                     if ( GatewayContext.isNetworkException( e ) ) {
                         failureMessage = "Could not connect to cluster.";
+                    } else if ( GatewayContext.isConfigurationException( e ) ) {
+                        failureMessage = "Could not connect to cluster.";
                     } else {
                         failureMessage = "Unexpected error from cluster.";                                
                         logger.log( Level.WARNING, "Error processing selection.", e);
@@ -225,7 +227,7 @@ public class PolicyMigration extends EsmPage {
                                 @Override
                                 public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
                                     if ( button == YuiDialog.Button.OK ) {
-                                        logger.info("Migration confirmed.");
+                                        logger.fine("Migration confirmed.");
                                         try {
                                             String message = performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel, false );
                                             YuiDialog resultDialog = new YuiDialog("dialog", "Migration Result", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(message)), null, "600px");
@@ -243,6 +245,8 @@ public class PolicyMigration extends EsmPage {
                                         } catch ( SOAPFaultException e ) {
                                             String failureMessage;
                                             if ( GatewayContext.isNetworkException( e ) ) {
+                                                failureMessage = "Could not connect to cluster.";
+                                            } else if ( GatewayContext.isConfigurationException( e ) ) {
                                                 failureMessage = "Could not connect to cluster.";
                                             } else {
                                                 failureMessage = "Unexpected error from cluster.";
@@ -276,6 +280,8 @@ public class PolicyMigration extends EsmPage {
                 } catch ( SOAPFaultException e ) {
                     String failureMessage;
                     if ( GatewayContext.isNetworkException( e ) ) {
+                        failureMessage = "Could not connect to cluster.";
+                    } else if ( GatewayContext.isConfigurationException( e ) ) {
                         failureMessage = "Could not connect to cluster.";
                     } else {
                         failureMessage = "Unexpected error from cluster.";
@@ -374,7 +380,7 @@ public class PolicyMigration extends EsmPage {
                 String clusterId = request.getParameter("clusterId");
                 String type = request.getParameter("type");
                 String id = request.getParameter("id");
-                logger.info( "Processing request for cluster " + clusterId + " type " + type + " id " + id );
+                logger.fine( "Processing request for cluster " + clusterId + " type " + type + " id " + id );
                 DependencyItemsRequest dir = new DependencyItemsRequest();
                 dir.clusterId = clusterId;
                 dir.entities = new DependencyItem[]{ new DependencyItem() };
@@ -392,7 +398,7 @@ public class PolicyMigration extends EsmPage {
                 } catch ( MigrationApi.MigrationException me ) {
                     logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(me)+"'." );
                 } catch ( SOAPFaultException sfe ) {
-                    if ( !GatewayContext.isNetworkException(sfe) ) {
+                    if ( !GatewayContext.isNetworkException(sfe) && !GatewayContext.isConfigurationException(sfe) ) {
                         logger.log( Level.WARNING, "Error processing selection.", sfe);
                     }
                 } catch ( GatewayException ge ) {
@@ -693,7 +699,7 @@ public class PolicyMigration extends EsmPage {
         } catch ( MigrationApi.MigrationException me ) {
             logger.log( Level.INFO, "Error while gettings dependency options '"+ExceptionUtils.getMessage(me)+"'.", ExceptionUtils.getDebugException(me) );
         } catch ( SOAPFaultException sfe ) {
-            if ( !GatewayContext.isNetworkException( sfe ) ) {
+            if ( !GatewayContext.isNetworkException( sfe ) && !GatewayContext.isConfigurationException( sfe ) ) {
                 logger.log( Level.WARNING, "Error while gettings dependency options.", sfe );
             }
         }

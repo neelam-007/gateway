@@ -159,7 +159,7 @@ public class Configure extends EsmPage {
                 String newFolderName = addFolderInputName.getModelObjectAsString();
                 String parentFolderGuid = addFolderDialogInputParentId.getModelObjectAsString();
                 try {
-                    logger.info("Adding folder \"" + newFolderName + "\" (parent folder GUID = " + parentFolderGuid + ").");
+                    logger.fine("Adding folder \"" + newFolderName + "\" (parent folder GUID = " + parentFolderGuid + ").");
                     //noinspection UnnecessaryLocalVariable
                     final EnterpriseFolder newFolder = enterpriseFolderManager.create(newFolderName, parentFolderGuid);
                     return newFolder;
@@ -191,7 +191,7 @@ public class Configure extends EsmPage {
                 String renamedFolderGuid = renameFolderDialogInputId.getModelObjectAsString();
                 String newFolderName = renameFolderInputName.getModelObjectAsString();
                 try {
-                    logger.info("Renaming folder (GUID = "+ renamedFolderGuid + ") with a new name, " + newFolderName);
+                    logger.fine("Renaming folder (GUID = "+ renamedFolderGuid + ") with a new name, " + newFolderName);
 
                     enterpriseFolderManager.renameByGuid(newFolderName, renamedFolderGuid);
                     return null;    // No response object expected if successful.
@@ -222,7 +222,7 @@ public class Configure extends EsmPage {
             protected Object getJsonResponseData() {
                 try {
                     String deletedFolderGuid = deleteFolderDialogInputId.getModelObjectAsString();
-                    logger.info("Deleting folder (GUID = "+ deletedFolderGuid + ").");
+                    logger.fine("Deleting folder (GUID = "+ deletedFolderGuid + ").");
 
                     enterpriseFolderManager.deleteByGuid(deletedFolderGuid);
                     return null;    // No response object expected if successful.
@@ -246,7 +246,7 @@ public class Configure extends EsmPage {
                 String hostname = addSSGClusterInputHostName.getModelObjectAsString();
                 int port = Integer.parseInt(addSSGClusterInputPort.getModelObjectAsString());
                 try {
-                    logger.info("Adding SSG Cluster \""+ addSSGClusterInputName.getModelObjectAsString() +
+                    logger.fine("Adding SSG Cluster \""+ addSSGClusterInputName.getModelObjectAsString() +
                         "\" (parent folder GUID = "+ addSSGClusterDialogInputParentId.getModelObjectAsString() + ").");
                     return ssgClusterManager.create(newClusterName, hostname, port, parentFolderGuid);
                 } catch (Exception e) {
@@ -283,7 +283,7 @@ public class Configure extends EsmPage {
                 String renamedSSGClusterGuid = renameSSGClusterDialogInputId.getModelObjectAsString();
                 String newClusterName = renameSSGClusterInputName.getModelObjectAsString();
                 try {
-                    logger.info("Renaming SSG Cluster (GUID = "+ renamedSSGClusterGuid + ") with a new name, " + newClusterName);
+                    logger.fine("Renaming SSG Cluster (GUID = "+ renamedSSGClusterGuid + ") with a new name, " + newClusterName);
 
                     ssgClusterManager.renameByGuid(newClusterName, renamedSSGClusterGuid);
                     return null;    // No response object expected if successful.
@@ -314,7 +314,7 @@ public class Configure extends EsmPage {
             protected Object getJsonResponseData() {
                 try {
                     String guid = deleteSSGClusterDialogInputId.getModelObjectAsString();
-                    logger.info("Deleting SSG Cluster (GUID = "+ guid + ").");
+                    logger.fine("Deleting SSG Cluster (GUID = "+ guid + ").");
 
                     ssgClusterManager.deleteByGuid(guid);
                     return null;    // No response object expected if successful.
@@ -346,7 +346,7 @@ public class Configure extends EsmPage {
                     String guid = reconfirmSSGClusterDeletionDialogInputId.getModelObjectAsString();
                     SsgCluster ssgCluster = ssgClusterManager.findByGuid(guid);
 
-                    logger.info("Deleting SSG Cluster (GUID = "+ guid + ") and other related information such as Standard Reports and Migration Records.");
+                    logger.fine("Deleting SSG Cluster (GUID = "+ guid + ") and other related information such as Standard Reports and Migration Records.");
                     // Delete other related info such as standard reports and migration records.
                     standardReportManager.deleteBySsgCluster(ssgCluster);
                     migrationRecordManager.deleteBySsgCluster(ssgCluster);
@@ -366,7 +366,7 @@ public class Configure extends EsmPage {
             @Override
             protected Object getJsonResponseData() {
                 try {
-                    logger.info("Responding to request for trust token.");
+                    logger.fine("Responding to request for trust token.");
                     final String token = gatewayTrustTokenFactory.getTrustToken();
                     return new JSONSupport() {
                         @Override
@@ -388,7 +388,7 @@ public class Configure extends EsmPage {
             protected Object getJsonResponseData() {
                 String ssgNodeGuid = startSsgNodeInputId.getModelObjectAsString();
                 try {
-                    logger.info("Starting SSG Node (GUID = " + ssgNodeGuid + ").");
+                    logger.fine("Starting SSG Node (GUID = " + ssgNodeGuid + ").");
                     
                     SsgNode node = ssgNodeManager.findByGuid(ssgNodeGuid);
                     SsgCluster cluster = node.getSsgCluster();
@@ -421,7 +421,7 @@ public class Configure extends EsmPage {
             protected Object getJsonResponseData() {
                 String ssgNodeGuid = stopSsgNodeInputId.getModelObjectAsString();
                 try {
-                    logger.info("Stoping SSG Node (GUID = " + ssgNodeGuid + ").");
+                    logger.fine("Stoping SSG Node (GUID = " + ssgNodeGuid + ").");
 
                     SsgNode node = ssgNodeManager.findByGuid(ssgNodeGuid);
                     SsgCluster cluster = node.getSsgCluster();

@@ -66,16 +66,19 @@ public class SSGClusterSelector extends EsmBaseWebPage {
                 } catch (SOAPFaultException e) {
                     if ( GatewayContext.isNetworkException(e) ) {
                         return new JSONException( new Exception("Gateway not available.") );
+                    } else if ( GatewayContext.isConfigurationException(e) ) {
+                        return new JSONException( new Exception(e.getMessage()) );
                     } else {
                         logger.warning(e.toString());
                         return new JSONException(e);
                     }
-                } catch (FindException e) {
-                    logger.warning(e.toString());
-                    return new JSONException(e);
+                } catch (FindException fe) {
+                    logger.log( Level.WARNING, "Error loading enterprise folders.", fe );
+                    return new JSONException(  new Exception("Error loading folders.")  );
                 }
             }
 
+            @Override
             public void setData(Object jsonData) {
                 throw new UnsupportedOperationException("setData not required in JsonInteraction");
             }

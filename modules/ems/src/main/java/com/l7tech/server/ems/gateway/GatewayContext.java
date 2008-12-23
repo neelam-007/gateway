@@ -77,11 +77,25 @@ public class GatewayContext {
         return migrationApi;
     }
 
-    public static boolean isNetworkException( final RuntimeException sfe ) {
-        return ExceptionUtils.causedBy( sfe, ConnectException.class ) ||
-               ExceptionUtils.causedBy( sfe, NoRouteToHostException.class ) ||
-               ExceptionUtils.causedBy( sfe, UnknownHostException.class ) ||
-               ExceptionUtils.causedBy( sfe, SocketTimeoutException.class );
+    public static boolean isNetworkException( final Exception exception ) {
+        return ExceptionUtils.causedBy( exception, ConnectException.class ) ||
+               ExceptionUtils.causedBy( exception, NoRouteToHostException.class ) ||
+               ExceptionUtils.causedBy( exception, UnknownHostException.class ) ||
+               ExceptionUtils.causedBy( exception, SocketTimeoutException.class );
+    }
+
+    public static boolean isConfigurationException( final Exception exception ) {
+        boolean isConfigurationException = false;
+
+        if ( "Access Denied".equals(exception.getMessage()) ) {
+            isConfigurationException = true;
+        } else if ( "Authentication Required".equals(exception.getMessage()) ){
+            isConfigurationException = true;
+        } else if ( "Not Licensed".equals(exception.getMessage()) ) {
+            isConfigurationException = true;
+        }
+
+        return isConfigurationException;
     }
 
     //- PRIVATE

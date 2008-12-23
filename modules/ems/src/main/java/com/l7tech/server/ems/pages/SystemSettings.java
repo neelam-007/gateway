@@ -582,7 +582,7 @@ public class SystemSettings extends EsmPage {
                         @Override
                         public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
                             if ( button == YuiDialog.Button.OK ) {
-                                logger.info("License installation confirmed.");
+                                logger.fine("License installation confirmed.");
                                 if ( licenseSetup( license ) ) {
                                     for ( Component component : components ) {
                                         component.setVisible(true);
@@ -591,7 +591,7 @@ public class SystemSettings extends EsmPage {
                                     target.addComponent(LicenseForm.this);
                                 }
                             } else {
-                                logger.info("License installation cancelled.");
+                                logger.fine("License installation cancelled.");
                                 info( new StringResourceModel("license.message.cancel", SystemSettings.this, null).getString() );
                             }
                             dynamicDialogHolder.replace( new EmptyPanel("dynamic.holder.content") );
@@ -625,7 +625,7 @@ public class SystemSettings extends EsmPage {
                     upload.closeStreams();
                 }
             } else {
-                logger.log( Level.INFO, "License not found in upload." );
+                logger.log( Level.FINE, "License not found in upload." );
             }
         }
     }

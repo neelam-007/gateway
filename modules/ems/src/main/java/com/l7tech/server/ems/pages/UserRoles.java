@@ -168,9 +168,9 @@ public class UserRoles extends EsmPage {
                     this.setEnabled(false);
                     ajaxRequestTarget.addComponent(roleManagementContainer);
                 } catch (FindException e) {
-                    logger.warning("Cannot find the user, " + userId);
+                    logger.log( Level.WARNING, "Error finding user '" + userId + "'.", e);
                 } catch (UpdateException e) {
-                    logger.warning("Cannot update the role, " + roleModel.selectedRole.getName());
+                    logger.log( Level.WARNING, "Error updating role '" + roleModel.selectedRole.getName() + "'.", e);
 
                     Label confirmLabel = new Label(YuiDialog.getContentId(), e.getMessage());
                     YuiDialog dialog = new YuiDialog("dialog.warning.roleUnassignment", "Role Assignment Warning",
@@ -283,7 +283,7 @@ public class UserRoles extends EsmPage {
                 });
                 add(listChoice.setEscapeModelStrings(false));
             } catch (FindException e) {
-                logger.warning("Cannot find roles.");
+                logger.log( Level.WARNING, "Error accessing roles.", e );
             }
         }
     }

@@ -59,7 +59,7 @@ public class ListenerEditPanel extends Panel {
         Form listenerForm = new Form("listenerForm"){
             @Override
             protected void onSubmit() {
-                logger.info("Processing HTTPS listener update.");
+                logger.fine("Processing HTTPS listener update.");
                 try {
                     setupManager.configureListener( addr.getModelObjectAsString(), (Integer)port.getModelObject() );
                 } catch ( SetupException se ) {

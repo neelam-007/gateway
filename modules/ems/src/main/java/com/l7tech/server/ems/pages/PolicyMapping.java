@@ -136,7 +136,7 @@ public class PolicyMapping extends EsmPage {
                         if ( button == YuiDialog.Button.OK ) {
                             final String migrationId = (String) form.get("migrationId").getModelObject();
                             try {
-                                logger.info("Deleting the migration (OID = " + migrationId + ")");
+                                logger.fine("Deleting the migration (OID = " + migrationId + ")");
 
                                 migrationManager.delete(Long.parseLong(migrationId));
                                 migrationSummaryContainer.setVisible(false);
@@ -169,7 +169,7 @@ public class PolicyMapping extends EsmPage {
                 } catch ( FindException fe ) {
                     logger.log( Level.WARNING, "Error loading migration record.", fe );
                 } catch ( NumberFormatException nfe ) {
-                    logger.log( Level.INFO, "Ignoring invalid migration id '"+migrationId+"'." );    
+                    logger.log( Level.FINE, "Ignoring invalid migration id '"+migrationId+"'." );    
                 }
 
                 if ( record != null ) {
@@ -249,8 +249,8 @@ public class PolicyMapping extends EsmPage {
                             visible = true;
                             selectedMigrationModel.setMigrationRecord( migration );                            
                         }
-                    } catch (FindException e) {
-                        logger.warning("Cannot find a policy migration (OID = '" + value + "'.");
+                    } catch ( FindException fe ) {
+                        logger.log( Level.WARNING, "Error finding policy migration record (OID = '" + value + "').", fe );
                         return;
                     }
 

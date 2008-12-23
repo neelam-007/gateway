@@ -215,7 +215,7 @@ public class Audits extends EsmPage {
         return new YuiDataTable("audittable", columns, "time", false,  new AuditDataProvider(type, start, end, "time", false), hidden, "id", true, null ){
             @Override
             protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String auditIdentifier ) {
-                logger.info("Processing selection callback for audit '"+auditIdentifier+"'.");
+                logger.finer("Processing selection callback for audit '"+auditIdentifier+"'.");
                 if ( ajaxRequestTarget != null &&
                     auditIdentifier != null ) {
                     try {
