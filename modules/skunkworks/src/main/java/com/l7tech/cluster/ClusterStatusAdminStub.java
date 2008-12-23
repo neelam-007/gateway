@@ -2,10 +2,8 @@ package com.l7tech.cluster;
 
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import com.l7tech.gateway.common.emstrust.TrustedEms;
-import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
+import com.l7tech.gateway.common.emstrust.TrustedEsm;
+import com.l7tech.gateway.common.emstrust.TrustedEsmUser;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
@@ -31,19 +29,23 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
 
     private CollectionUpdateProducer<ClusterNodeInfo, FindException> clusterNodesUpdateProducer =
             new CollectionUpdateProducer<ClusterNodeInfo, FindException>(5000, 10, null) {
+                @Override
                 protected Collection<ClusterNodeInfo> getCollection() throws FindException {
                     return Arrays.asList(getClusterStatus());
                 }
             };
 
+    @Override
     public String getCurrentClusterTimeZone() {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean isCluster() {
         return false;
     }
     
+    @Override
     public ClusterNodeInfo[] getClusterStatus() {
 
         ClusterNodeInfo[] cluster = new ClusterNodeInfo[8];
@@ -76,10 +78,12 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
         return cluster;
     }
 
+    @Override
     public CollectionUpdate<ClusterNodeInfo> getClusterNodesUpdate(int oldVersionID) throws FindException {
         return clusterNodesUpdateProducer.createUpdate(oldVersionID);
     }
 
+    @Override
     public ServiceUsage[] getServiceUsage() {
         ServiceUsage[] serviceUsage = new ServiceUsage[10];
 
@@ -119,54 +123,67 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
         return serviceUsage;
     }
 
+    @Override
     public void changeNodeName(String nodeid, String newName) throws UpdateException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void removeStaleNode(String nodeid) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public java.util.Date getCurrentClusterSystemTime() {
         return Calendar.getInstance().getTime();
     }
 
+    @Override
     public String getSelfNodeName() {
         return "No name from test stub";
     }
 
+    @Override
     public Collection<ClusterProperty> getAllProperties() throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Map getKnownProperties() {
         throw new UnsupportedOperationException();        
     }
 
+    @Override
     public Collection<ClusterPropertyDescriptor> getAllPropertyDescriptors() {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public ClusterProperty findPropertyByName(String key) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public long saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public License getCurrentLicense() throws InvalidLicenseException {
         return license;
     }
 
+    @Override
     public long getLicenseExpiryWarningPeriod() {
         return 0;
     }
 
+    @Override
     public void installNewLicense(String newLicenseXml) throws InvalidLicenseException {
         try {
             license = new License(newLicenseXml, null, GatewayFeatureSets.getFeatureSetExpander());
@@ -175,50 +192,61 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
         }
     }
 
+    @Override
     public boolean isMetricsEnabled() {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public int getMetricsFineInterval() {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration, final boolean includeEmpty) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     @Transactional(propagation = Propagation.SUPPORTS)
     public Collection<ModuleInfo> getAssertionModuleInfo() {
         return Collections.emptyList();
     }
 
+    @Override
     public String getHardwareCapability(String capability) {
         return null;
     }
 
+    @Override
     @Transactional(propagation = Propagation.REQUIRED)
-    public Collection<TrustedEms> getTrustedEmsInstances() throws FindException {
+    public Collection<TrustedEsm> getTrustedEsmInstances() throws FindException {
         return Collections.emptyList();
     }
 
-    public void deleteTrustedEmsInstance(long trustedEmsOid) {
+    @Override
+    public void deleteTrustedEsmInstance(long trustedEsmOid) {
         throw new UnsupportedOperationException();
     }
 
-    public void deleteTrustedEmsUserMapping(long trustedEmsUserOid) {
+    @Override
+    public void deleteTrustedEsmUserMapping(long trustedEsmUserOid) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     @Transactional(propagation = Propagation.REQUIRED)
-    public Collection<TrustedEmsUser> getTrustedEmsUserMappings(long trustedEmsId) throws FindException {
+    public Collection<TrustedEsmUser> getTrustedEsmUserMappings(long trustedEsmId) throws FindException {
         return Collections.emptyList();
     }
 }

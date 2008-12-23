@@ -19,8 +19,8 @@
                 <entry key="remotingProvider" value-ref="remotingProvider"/>
                 <entry key="licenseManager" value-ref="licenseManager"/>
                 <entry key="adminLogin" value-ref="adminLogin"/>
-                <entry key="trustedEmsManager" value-ref="trustedEmsManager"/>
-                <entry key="trustedEmsUserManager" value-ref="trustedEmsUserManager"/>
+                <entry key="trustedEsmManager" value-ref="trustedEsmManager"/>
+                <entry key="trustedEsmUserManager" value-ref="trustedEsmUserManager"/>
             </map>
         </property>
     </bean>

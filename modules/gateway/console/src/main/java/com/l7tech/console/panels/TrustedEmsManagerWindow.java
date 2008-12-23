@@ -2,8 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gateway.common.emstrust.TrustedEms;
-import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
+import com.l7tech.gateway.common.emstrust.TrustedEsm;
+import com.l7tech.gateway.common.emstrust.TrustedEsmUser;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -44,7 +44,7 @@ public class TrustedEmsManagerWindow extends JDialog {
     private JTable usersTable;
     private JButton deleteMappingButton;
 
-    private SimpleTableModel<TrustedEms> emsTableModel;
+    private SimpleTableModel<TrustedEsm> emsTableModel;
     private SimpleTableModel<UserRow> usersTableModel;
 
     public TrustedEmsManagerWindow(Window owner) {
@@ -58,18 +58,21 @@ public class TrustedEmsManagerWindow extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
 
         closeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
         });
 
         deleteButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doDeleteEms();
             }
         });
 
         deleteMappingButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doDeleteMapping();
             }
@@ -83,7 +86,7 @@ public class TrustedEmsManagerWindow extends JDialog {
         });
 
         emsTableModel = TableUtil.configureTable(emsTable,
-                column("EMS ID", 25, 110, 99999, propertyTransform(TrustedEms.class, "name")),
+                column("EMS ID", 25, 110, 99999, propertyTransform(TrustedEsm.class, "name")),
                 column("Trusted Cert", 25, 110, 99999, new TrustedCertFormatter()),
                 column("Subject DN", 25, 100, 99999, new CertSubjectFormatter()));
 
@@ -96,6 +99,7 @@ public class TrustedEmsManagerWindow extends JDialog {
 
         emsTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         emsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 updateUsersTable();
             }
@@ -103,7 +107,7 @@ public class TrustedEmsManagerWindow extends JDialog {
     }
 
     private void doDeleteMapping() {
-        final TrustedEms ems = getSelectedEms();
+        final TrustedEsm ems = getSelectedEms();
         if (ems == null)
             return;
         final UserRow user = getSelectedUser();
@@ -116,11 +120,12 @@ public class TrustedEmsManagerWindow extends JDialog {
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 new DialogDisplayer.OptionListener() {
+                    @Override
                     public void reportResult(int option) {
                         if (option != JOptionPane.OK_OPTION)
                             return;
                         try {
-                            Registry.getDefault().getClusterStatusAdmin().deleteTrustedEmsUserMapping(user.getTrustedEmsUser().getOid());
+                            Registry.getDefault().getClusterStatusAdmin().deleteTrustedEsmUserMapping(user.getTrustedEmsUser().getOid());
                             loadUsersTable(ems.getOid());
                         } catch (ObjectModelException e) {
                             showError("Unable to delete EMS user mapping", e);
@@ -130,7 +135,7 @@ public class TrustedEmsManagerWindow extends JDialog {
     }
 
     private void doDeleteEms() {
-        final TrustedEms ems = getSelectedEms();
+        final TrustedEsm ems = getSelectedEms();
         if (ems == null)
             return;
 
@@ -140,11 +145,12 @@ public class TrustedEmsManagerWindow extends JDialog {
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 new DialogDisplayer.OptionListener() {
+                    @Override
                     public void reportResult(int option) {
                         if (option != JOptionPane.OK_OPTION)
                             return;
                         try {
-                            Registry.getDefault().getClusterStatusAdmin().deleteTrustedEmsInstance(ems.getOid());
+                            Registry.getDefault().getClusterStatusAdmin().deleteTrustedEsmInstance(ems.getOid());
                             loadEmsTable();
                             updateUsersTable();
                         } catch (ObjectModelException e) {
@@ -159,7 +165,7 @@ public class TrustedEmsManagerWindow extends JDialog {
     }
 
     private void updateUsersTable() {
-        TrustedEms ems = getSelectedEms();
+        TrustedEsm ems = getSelectedEms();
         if (ems == null) {
             usersTableModel.setRows(Collections.<UserRow>emptyList());
         } else {
@@ -167,7 +173,7 @@ public class TrustedEmsManagerWindow extends JDialog {
         }
     }
 
-    private TrustedEms getSelectedEms() {
+    private TrustedEsm getSelectedEms() {
         int row = emsTable.getSelectedRow();
         if (row < 0)
             return null;
@@ -183,7 +189,7 @@ public class TrustedEmsManagerWindow extends JDialog {
 
     private void loadEmsTable() {
         try {
-            List<TrustedEms> emses = new ArrayList<TrustedEms>(Registry.getDefault().getClusterStatusAdmin().getTrustedEmsInstances());
+            List<TrustedEsm> emses = new ArrayList<TrustedEsm>(Registry.getDefault().getClusterStatusAdmin().getTrustedEsmInstances());
             emsTableModel.setRows(emses);
         } catch (FindException e) {
             throw new RuntimeException(e);
@@ -194,11 +200,12 @@ public class TrustedEmsManagerWindow extends JDialog {
         final boolean[] incompleteLoad = new boolean[] { false };
 
         try {
-            List<TrustedEmsUser> emsUsers = new ArrayList<TrustedEmsUser>(Registry.getDefault().getClusterStatusAdmin().getTrustedEmsUserMappings(emsOid));
+            List<TrustedEsmUser> emsUsers = new ArrayList<TrustedEsmUser>(Registry.getDefault().getClusterStatusAdmin().getTrustedEmsUserMappings(emsOid));
 
             final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
-            usersTableModel.setRows(Functions.grepNotNull(Functions.map(emsUsers, new Functions.Unary<UserRow, TrustedEmsUser>() {
-                public UserRow call(TrustedEmsUser trustedEmsUser) {
+            usersTableModel.setRows(Functions.grepNotNull(Functions.map(emsUsers, new Functions.Unary<UserRow, TrustedEsmUser>() {
+                @Override
+                public UserRow call(TrustedEsmUser trustedEmsUser) {
                     try {
                         final long providerOid = trustedEmsUser.getProviderOid();
                         IdentityProviderConfig idprov = identityAdmin.findIdentityProviderConfigByID(providerOid);
@@ -238,36 +245,38 @@ public class TrustedEmsManagerWindow extends JDialog {
             DialogDisplayer.showMessageDialog(this, "Warning: Not all user mappings were loaded successfully.", "Error", JOptionPane.WARNING_MESSAGE, null);
     }
 
-    private static class CertSubjectFormatter implements Functions.Unary<Object, TrustedEms> {
-        public String call(TrustedEms trustedEms) {
+    private static class CertSubjectFormatter implements Functions.Unary<Object, TrustedEsm> {
+        @Override
+        public String call(TrustedEsm trustedEms) {
             return trustedEms.getTrustedCert().getCertificate().getSubjectDN().getName();
         }
     }
 
-    private static class TrustedCertFormatter implements Functions.Unary<Object, TrustedEms> {
-        public String call(TrustedEms trustedEms) {
+    private static class TrustedCertFormatter implements Functions.Unary<Object, TrustedEsm> {
+        @Override
+        public String call(TrustedEsm trustedEms) {
             return trustedEms.getTrustedCert().getName();
         }
     }
 
     public static class UserRow {
-        final TrustedEmsUser trustedEmsUser;
+        final TrustedEsmUser trustedEmsUser;
         final String ssgUserDisplayName;
         final String idProviderDisplayName;
 
-        private UserRow(TrustedEmsUser trustedEmsUser, String ssgUserDisplayName, String identityProviderDisplayName) {
+        private UserRow(TrustedEsmUser trustedEmsUser, String ssgUserDisplayName, String identityProviderDisplayName) {
             if (trustedEmsUser == null) throw new NullPointerException();
             this.trustedEmsUser = trustedEmsUser;
             this.ssgUserDisplayName = ssgUserDisplayName;
             this.idProviderDisplayName = identityProviderDisplayName;
         }
 
-        public TrustedEmsUser getTrustedEmsUser() {
+        public TrustedEsmUser getTrustedEmsUser() {
             return trustedEmsUser;
         }
 
         public String getEmsUserId() {
-            return trustedEmsUser.getEmsUserId();
+            return trustedEmsUser.getEsmUserId();
         }
 
         public String getSsgUserDisplayName() {

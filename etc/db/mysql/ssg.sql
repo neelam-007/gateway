@@ -418,8 +418,8 @@ CREATE TABLE trusted_cert (
   FOREIGN KEY (revocation_policy_oid) REFERENCES revocation_check_policy (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
-DROP TABLE IF EXISTS trusted_ems;
-CREATE TABLE trusted_ems (
+DROP TABLE IF EXISTS trusted_esm;
+CREATE TABLE trusted_esm (
   objectid bigint NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
@@ -428,16 +428,16 @@ CREATE TABLE trusted_ems (
   FOREIGN KEY (trusted_cert_oid) REFERENCES trusted_cert (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
-DROP TABLE IF EXISTS trusted_ems_user;
-CREATE TABLE trusted_ems_user (
+DROP TABLE IF EXISTS trusted_esm_user;
+CREATE TABLE trusted_esm_user (
   objectid bigint NOT NULL,
   version integer NOT NULL,
-  trusted_ems_oid bigint(20) NOT NULL,
+  trusted_esm_oid bigint(20) NOT NULL,
   provider_oid bigint(20) NOT NULL,
   user_id varchar(128) NOT NULL,
-  ems_user_id varchar(128) NOT NULL,
+  esm_user_id varchar(128) NOT NULL,
   PRIMARY KEY(objectid),
-  FOREIGN KEY (trusted_ems_oid) REFERENCES trusted_ems (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (trusted_esm_oid) REFERENCES trusted_esm (objectid) ON DELETE CASCADE,
   FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 

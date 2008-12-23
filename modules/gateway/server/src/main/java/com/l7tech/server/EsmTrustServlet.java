@@ -12,7 +12,7 @@ import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.emstrust.TrustedEms;
+import com.l7tech.gateway.common.emstrust.TrustedEsm;
 import com.l7tech.identity.User;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
@@ -70,23 +70,23 @@ import java.util.logging.Logger;
  * <li>The ESM server's user ID which corresponds to the admin user's ID on this cluster.
  * </ul>
  */
-public class EmsTrustServlet extends AuthenticatableHttpServlet {
-    private static final Logger logger = Logger.getLogger(EmsTrustServlet.class.getName());
-    private static final String FORM_HTML = "/com/l7tech/server/resources/emstrustform.html";
-    private static final String FORM_CSS = "/com/l7tech/server/resources/emstrust.css";
-    private static final String FORM_JS = "/com/l7tech/server/resources/emstrust.js";
+public class EsmTrustServlet extends AuthenticatableHttpServlet {
+    private static final Logger logger = Logger.getLogger(EsmTrustServlet.class.getName());
+    private static final String FORM_HTML = "/com/l7tech/server/resources/esmtrustform.html";
+    private static final String FORM_CSS = "/com/l7tech/server/resources/esmtrust.css";
+    private static final String FORM_JS = "/com/l7tech/server/resources/esmtrust.js";
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
 
     private static final String[] FIELDS = {
             "message",             // 2
-            "emsid",               // 3
-            "emscertpem",          // 4
-            "emsusername",         // 5
+            "esmid",               // 3
+            "esmcertpem",          // 4
+            "esmusername",         // 5
             "username",            // 6
             "returncookiehash",    // 7
             "returnurl",           // 8
-            "emsinfo",             // 9
-            "emsuserdesc",         // 10
+            "esminfo",             // 9
+            "esmuserdesc",         // 10
     };
 
     private static final String ATTR_EM_TRUST = "esmtrust";
@@ -94,8 +94,8 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
     private static final String ATTR_EM_USER_UUID = "EM-USER-UUID";
     private static final String ATTR_EM_USER_DESC = "EM-USER-DESC";
 
-    private TrustedEmsManager trustedEmsManager;
-    private TrustedEmsUserManager trustedEmsUserManager;
+    private TrustedEsmManager trustedEsmManager;
+    private TrustedEsmUserManager trustedEsmUserManager;
     private AdminLogin adminLogin;
     private LicenseManager licenseManager;
     private Random random;
@@ -104,8 +104,8 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
     @Override
     public void init( final ServletConfig config ) throws ServletException {
         super.init(config);
-        this.trustedEmsManager = (TrustedEmsManager) config.getServletContext().getAttribute("trustedEmsManager");
-        this.trustedEmsUserManager = (TrustedEmsUserManager) config.getServletContext().getAttribute("trustedEmsUserManager");
+        this.trustedEsmManager = (TrustedEsmManager) config.getServletContext().getAttribute("trustedEsmManager");
+        this.trustedEsmUserManager = (TrustedEsmUserManager) config.getServletContext().getAttribute("trustedEsmUserManager");
         this.adminLogin = (AdminLogin) config.getServletContext().getAttribute("adminLogin");
         this.licenseManager = (LicenseManager) config.getServletContext().getAttribute("licenseManager");        
         this.random = new SecureRandom();
@@ -173,11 +173,11 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
 
         if (isInitialRequest(param)) {
             // kick out any untrusted params
-            param.remove("emsid");
-            param.remove("emsinfo");
-            param.remove("emscertpem");
-            param.remove("emsusername");
-            param.remove("emsuserdesc");
+            param.remove("esmid");
+            param.remove("esminfo");
+            param.remove("esmcertpem");
+            param.remove("esmusername");
+            param.remove("esmuserdesc");
 
             String returnCookie = createReturnCookie();
             Cookie cook = new Cookie("returncookie", returnCookie);
@@ -201,31 +201,31 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
                                 Calendar notOnOrAfter = assertionType.getConditions().getNotOnOrAfter();
 
                                 if ( now.after(notBefore) && now.before(notOnOrAfter)) {
-                                    String emsid = getAttributeValue( assertionType, ATTR_EM_UUID );
-                                    String emsuserid = getAttributeValue( assertionType, ATTR_EM_USER_UUID );
-                                    String emsuserdesc = getAttributeValue( assertionType, ATTR_EM_USER_DESC );
+                                    String esmid = getAttributeValue( assertionType, ATTR_EM_UUID );
+                                    String esmuserid = getAttributeValue( assertionType, ATTR_EM_USER_UUID );
+                                    String esmuserdesc = getAttributeValue( assertionType, ATTR_EM_USER_DESC );
 
-                                    if ( emsid == null || emsuserid == null || emsuserdesc == null ) {
+                                    if ( esmid == null || esmuserid == null || esmuserdesc == null ) {
                                         logger.warning("Ignoring SAML assertion with missing attributes.");
                                     } else {
                                         X509Certificate cert = assertion.getIssuerCertificate();
                                         if ( hreq.getParameter(ATTR_EM_TRUST) == null ) {
                                             // then it is an account mapping request only, so check the cert is already mapped.
-                                            if ( isTrustedEms( emsid, cert, hresp ) ) {
+                                            if ( isTrustedEsm(esmid, cert, hresp ) ) {
                                                 message = "Enter SecureSpan Gateway credentials to map your Enterprise Service Manager account to your Gateway account.";
-                                                param.put("emsinfo", "-");
+                                                param.put("esminfo", "-");
                                             } else {
                                                 return;
                                             }
                                         } else {
                                             message = "Enter SecureSpan Gateway credentials if you wish to allow the Enterprise Service Manager shown below to manage this Gateway.";
-                                            param.put("emsinfo", formatCertInfo(cert));
+                                            param.put("esminfo", formatCertInfo(cert));
                                         }
 
-                                        param.put("emsid", emsid);
-                                        param.put("emscertpem", CertUtils.encodeAsPEM(cert));
-                                        param.put("emsusername", emsuserid);
-                                        param.put("emsuserdesc", emsuserdesc);
+                                        param.put("esmid", esmid);
+                                        param.put("esmcertpem", CertUtils.encodeAsPEM(cert));
+                                        param.put("esmusername", esmuserid);
+                                        param.put("esmuserdesc", esmuserdesc);
                                     }
                                 } else {
                                     logger.warning("Ignoring SAML assertion that is expired or not yet valid ('"+notBefore+"'/'"+notOnOrAfter+"')");
@@ -254,26 +254,26 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         try {
             handleTrustRequest(hreq, hresp, param);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "EmsTrustServlet request failed: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "EsmTrustServlet request failed: " + ExceptionUtils.getMessage(e), e);
             sendError(hresp, "Unable to establish trust relationship: " + ExceptionUtils.getMessage(e));
         }
     }
 
-    private boolean isTrustedEms( final String emsid, final X509Certificate cert, final HttpServletResponse hresp ) throws IOException {
+    private boolean isTrustedEsm( final String esmid, final X509Certificate cert, final HttpServletResponse hresp ) throws IOException {
         boolean isOk = false;
 
-        TrustedEms ems;
+        TrustedEsm esm;
         try {
-            ems = trustedEmsManager.findEmsById(emsid);
+            esm = trustedEsmManager.findEsmById(esmid);
 
-            if ( ems != null && ems.getTrustedCert() != null &&
-                 CertUtils.certsAreEqual( ems.getTrustedCert().getCertificate(), cert ) ) {
+            if ( esm != null && esm.getTrustedCert() != null &&
+                 CertUtils.certsAreEqual( esm.getTrustedCert().getCertificate(), cert ) ) {
                 isOk = true;
             } else {
                 sendError( hresp, "ESM not trusted." );
             }
         } catch ( FindException fe ) {
-            logger.log( Level.WARNING, "Error looking up ems for id '"+emsid+"'.", fe );
+            logger.log( Level.WARNING, "Error looking up esm for id '"+esmid+"'.", fe );
             sendError( hresp, "Error accessing ESM server information." );
         }
 
@@ -291,7 +291,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             param.put("message", "The specified ESM ID has already been registered with a different ESM certificate.");
             sendForm(hresponse, param);
-        } catch (TrustedEmsUserManager.MappingAlreadyExistsException e) {
+        } catch (TrustedEsmUserManager.MappingAlreadyExistsException e) {
             logger.log(Level.INFO, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             param.put("message", "The specified ESM username on that ESM instance has already been mapped on this Gateway.");
             sendForm(hresponse, param);
@@ -346,13 +346,13 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             }
         }
 
-        String emsId = param.get("emsid");
-        X509Certificate emsCert = decodePemCert(param, "emscertpem");
-        String emsUsername = param.get("emsusername");
+        String esmId = param.get("esmid");
+        X509Certificate esmCert = decodePemCert(param, "esmcertpem");
+        String esmUsername = param.get("esmusername");
         User user = authenticateUser(hreq, param);
 
         try {
-            configureUserMapping(hreq, emsId, emsCert, emsUsername, user);
+            configureUserMapping(hreq, esmId, esmCert, esmUsername, user);
         } catch (PrivilegedActionException e) {
             throw e.getException();
         }
@@ -402,9 +402,9 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
     }
 
     private void configureUserMapping(final HttpServletRequest hreq,
-                                      final String emsId,
-                                      final X509Certificate emsCert,
-                                      final String emsUsername,
+                                      final String esmId,
+                                      final X509Certificate esmCert,
+                                      final String esmUsername,
                                       final User user)
             throws PrivilegedActionException
     {
@@ -416,7 +416,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
                 RemoteUtils.callWithConnectionInfo(null, hreq, new Callable<Object>() {
                     @Override
                     public Object call() throws Exception {
-                        trustedEmsUserManager.configureUserMapping(user, emsId, emsCert, emsUsername);
+                        trustedEsmUserManager.configureUserMapping(user, esmId, esmCert, esmUsername);
                         return null;
                     }
                 });

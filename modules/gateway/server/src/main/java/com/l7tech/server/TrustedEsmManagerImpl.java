@@ -1,10 +1,10 @@
 package com.l7tech.server;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.gateway.common.emstrust.TrustedEms;
+import com.l7tech.gateway.common.emstrust.TrustedEsm;
 import com.l7tech.objectmodel.EntityType;
 import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
-import static com.l7tech.objectmodel.EntityType.TRUSTED_EMS;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_ESM;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import com.l7tech.identity.User;
@@ -26,10 +26,10 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
- * Entity manager for {@link TrustedEms}.
+ * Entity manager for {@link com.l7tech.gateway.common.emstrust.TrustedEsm}.
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
-public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, EntityHeader> implements TrustedEmsManager {
+public class TrustedEsmManagerImpl extends HibernateEntityManager<TrustedEsm, EntityHeader> implements TrustedEsmManager {
     @Resource
     private RoleManager roleManager;
 
@@ -38,17 +38,17 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
 
     @Override
     public Class<? extends Entity> getImpClass() {
-        return TrustedEms.class;
+        return TrustedEsm.class;
     }
 
     @Override
     public Class<? extends Entity> getInterfaceClass() {
-        return TrustedEms.class;
+        return TrustedEsm.class;
     }
 
     @Override
     public String getTableName() {
-        return "trusted_ems";
+        return "trusted_esm";
     }
 
     private void require(User user, OperationType op, EntityType ent) throws ObjectModelException, AccessControlException {
@@ -63,26 +63,26 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
     }
 
     @Override
-    public TrustedEms findEmsById( final String emsId ) throws FindException {
-        return findByUniqueName(emsId);
+    public TrustedEsm findEsmById( final String esmId ) throws FindException {
+        return findByUniqueName(esmId);
     }
 
     @Override
-    public TrustedEms getOrCreateEmsAssociation(User user, String emsId, X509Certificate emsCert) throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException {
+    public TrustedEsm getOrCreateEsmAssociation(User user, String esmId, X509Certificate emsCert) throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException {
         if (user == null)
             throw new IllegalArgumentException("Missing authenticated user");
-        if (emsId == null || emsId.trim().length() < 1)
-            throw new IllegalArgumentException("Missing or malformed EMS ID");
+        if (esmId == null || esmId.trim().length() < 1)
+            throw new IllegalArgumentException("Missing or malformed ESM ID");
         if (emsCert == null)
-            throw new IllegalArgumentException("Missing EMS certificate");
+            throw new IllegalArgumentException("Missing ESM certificate");
 
-        TrustedEms trustedEms = findByUniqueName(emsId);
+        TrustedEsm trustedEms = findByUniqueName(esmId);
         
         if (trustedEms != null) {
             if (!CertUtils.certsAreEqual(trustedEms.getTrustedCert().getCertificate(), emsCert)) {
                 // It is NOT safe to just replace the cert -- this could allow an admin user to instantly
-                // reassign all existing user mappings to a totally different EMS without being completely aware of it.
-                throw new CertificateMismatchException("Specified EMS certificate does not match the previously-known certificate for the specified EMS ID");
+                // reassign all existing user mappings to a totally different ESM without being completely aware of it.
+                throw new CertificateMismatchException("Specified ESM certificate does not match the previously-known certificate for the specified ESM ID");
             }
             return trustedEms;
         }
@@ -93,7 +93,7 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
         if (trustedCert == null) {
             // Need to create a TrustedCert first.
             trustedCert = new TrustedCert();
-            trustedCert.setName("EMS Cert: " + emsId);
+            trustedCert.setName("ESM Cert: " + esmId);
             trustedCert.setCertificate(emsCert);
             trustedCert.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.NONE);
 
@@ -101,11 +101,11 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
             trustedCert.setOid(trustedCertManager.save(trustedCert));
         }
 
-        trustedEms = new TrustedEms();
-        trustedEms.setName(emsId);
+        trustedEms = new TrustedEsm();
+        trustedEms.setName(esmId);
         trustedEms.setTrustedCert(trustedCert);
 
-        require(user, CREATE, TRUSTED_EMS);
+        require(user, CREATE, TRUSTED_ESM);
         trustedEms.setOid(save(trustedEms));
         return trustedEms;
     }

@@ -14,12 +14,12 @@
 <hr/>
 
 <div class="heading">Establish Enterprise Service Manager Account Mapping</div>
-<form name="emstrustform" class="loginform" method="post" onsubmit="copyCookie(); ">
+<form name="esmtrustform" class="loginform" method="post" onsubmit="copyCookie(); ">
     <input type="hidden" name="returncookie" value="nojavascript"/>
     <input type="hidden" name="returncookiehash" value="{7}"/>
     <input type="hidden" name="formdisplayed" value="1"/>
     <input type="hidden" name="returnurl" value="{8}" id="returnurl"/>
-    <input type="hidden" name="emsuserdesc" value="{10}" id="emsuserdesc"/>
+    <input type="hidden" name="esmuserdesc" value="{10}" id="esmuserdesc"/>
     <table width="95%" height="60%">
         <tr>
             <td align="center" valign="middle">
@@ -31,47 +31,47 @@
                     <tr>
                         <td colspan="4" class="message">{2}</td>
                     </tr>
-                    <tr id="emsidrow">
+                    <tr id="esmidrow">
                         <td class="spacer"></td>
                         <td class="label">ESM ID:</td>
-                        <td class="emstrustcontrols"><input type="text" size="80" maxlength="128" name="emsid" value="{3}"></td>
+                        <td class="esmtrustcontrols"><input type="text" size="80" maxlength="128" name="esmid" value="{3}"></td>
                         <td class="spacer"></td>
                     </tr>
-                    <tr id="emsinforow">
+                    <tr id="esminforow">
                         <td class="spacer"></td>
                         <td class="label" align="top">ESM Certificate:</td>
-                        <td class="emstrustcontrols">
-                            <input type="hidden" name="emsinfo" id="emsinfo" value="{9}"/>
-                            <div id="emscertinfodisplay" class="pre">{9}</div>
+                        <td class="esmtrustcontrols">
+                            <input type="hidden" name="esminfo" id="esminfo" value="{9}"/>
+                            <div id="esmcertinfodisplay" class="pre">{9}</div>
                         </td>
                         <td class="spacer"></td>
                     </tr>
-                    <tr id="emspemrow">
+                    <tr id="esmpemrow">
                         <td class="spacer"></td>
                         <td class="label" align="top">ESM Certificate (PEM):</td>
-                        <td class="emstrustcontrols"><textarea type="text" rows="10" cols="65" name="emscertpem">{4}</textarea></td>
+                        <td class="esmtrustcontrols"><textarea type="text" rows="10" cols="65" name="esmcertpem">{4}</textarea></td>
                         <td class="spacer"></td>
                     </tr>
-                    <tr id="emsusernamerow">
+                    <tr id="esmusernamerow">
                         <td class="spacer"></td>
                         <td class="label">ESM User ID:</td>
-                        <td class="emstrustcontrols"><input type="text" size="80" maxlength="128" name="emsusername" value="{5}"></td>
+                        <td class="esmtrustcontrols"><input type="text" size="80" maxlength="128" name="esmusername" value="{5}"></td>
                         <td class="spacer"></td>
                     </tr>
                     <tr>
                         <td class="spacer"></td>
                         <td class="label">User Name: </td>
-                        <td class="emstrustcontrols"><input type="text" size="36" maxlength="128" name="username" value="{6}"></td>
+                        <td class="esmtrustcontrols"><input type="text" size="36" maxlength="128" name="username" value="{6}"></td>
                         <td class="spacer"></td>
                     </tr>
                     <tr>
                         <td></td>
                         <td class="label">Password: </td>
-                        <td class="emstrustcontrols"><input type="password" size="36" maxlength="128" name="password"></td>
+                        <td class="esmtrustcontrols"><input type="password" size="36" maxlength="128" name="password"></td>
                         <td></td>
                     </tr>
                     <tr>
-                        <td colspan="3" class="emssubmit">
+                        <td colspan="3" class="esmsubmit">
                             <input id="cancel" type="button" value="Cancel" onclick="location.href=''{8}''"/>
                             <input type="submit" value="OK">
                         </td>

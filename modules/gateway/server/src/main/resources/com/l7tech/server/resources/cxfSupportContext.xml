@@ -40,8 +40,8 @@
 
     <bean id="emsSecurityInterceptor" class="com.l7tech.server.admin.ws.EsmApiInterceptor">
         <constructor-arg index="0" ref="licenseManager"/>
-        <constructor-arg index="1" ref="trustedEmsManager"/>
-        <constructor-arg index="2" ref="trustedEmsUserManager"/>
+        <constructor-arg index="1" ref="trustedEsmManager"/>
+        <constructor-arg index="2" ref="trustedEsmUserManager"/>
         <constructor-arg index="3" ref="adminSessionManager"/>
     </bean>
 

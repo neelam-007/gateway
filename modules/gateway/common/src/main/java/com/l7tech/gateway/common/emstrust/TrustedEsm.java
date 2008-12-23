@@ -9,8 +9,8 @@ import javax.persistence.*;
  * Represents an Enterprise Manager Server instance that is trusted to manage this Gateway cluster.
  */
 @Entity
-@Table(name="trusted_ems")
-public class TrustedEms extends NamedEntityImp {
+@Table(name="trusted_esm")
+public class TrustedEsm extends NamedEntityImp {
     private TrustedCert trustedCert;
 
     @ManyToOne(optional=false)

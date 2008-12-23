@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.logon.LogonService;
-import com.l7tech.server.TrustedEmsUserManager;
+import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.PasswordEnforcerManager;
@@ -53,7 +53,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private final LogonService logonServ;
 
     @Resource
-    private TrustedEmsUserManager trustedEmsUserManager;
+    private TrustedEsmUserManager trustedEsmUserManager;
 
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
@@ -69,6 +69,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         this.logonServ = logonServ;
     }
 
+    @Override
     public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
         if (this.applicationEventPublisher != null)
             throw new IllegalStateException("applicationEventPublisher is already set");
@@ -81,6 +82,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
      *
      * @return value to be compared with the client side value of Service.VERSION;
      */
+    @Override
     public String echoVersion() {
         return SecureSpanConstants.ADMIN_PROTOCOL_VERSION;
     }
@@ -88,6 +90,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     /**
      * @return Array of entity headers for all existing id provider config
      */
+    @Override
     public EntityHeader[] findAllIdentityProviderConfig() throws FindException {
             Collection<EntityHeader> res = getIdProvCfgMan().findAllHeaders();
         return res.toArray(new EntityHeader[0]);
@@ -96,11 +99,13 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     /**
      * @return An identity provider config object
      */
+    @Override
     public IdentityProviderConfig findIdentityProviderConfigByID(long oid)
       throws FindException {
             return getIdProvCfgMan().findByPrimaryKey(oid);
     }
 
+    @Override
     public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
       throws SaveException, UpdateException {
         try {
@@ -138,7 +143,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             UserManager userManager = retrieveUserManager(ipoid);
             if (userManager == null) throw new DeleteException("Cannot retrieve the UserManager");
             userManager.deleteAll(ipoid);
-            trustedEmsUserManager.deleteMappingsForIdentityProvider(ipoid);
+            trustedEsmUserManager.deleteMappingsForIdentityProvider(ipoid);
         } catch (FindException e) {
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
         }
@@ -184,6 +189,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         }
     }
 
+    @Override
     public void deleteIdentityProviderConfig(long oid) throws DeleteException {
         try {
             IdentityProviderConfigManager manager = getIdProvCfgMan();
@@ -199,7 +205,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             manager.delete(ipc);
 
             roleManager.deleteEntitySpecificRole(ID_PROVIDER_CONFIG, ipc.getOid());
-            trustedEmsUserManager.deleteMappingsForIdentityProvider(ipc.getOid());
+            trustedEsmUserManager.deleteMappingsForIdentityProvider(ipc.getOid());
             logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -207,11 +213,13 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         }
     }
 
+    @Override
     public EntityHeaderSet<IdentityHeader> findAllUsers(long identityProviderConfigId) throws FindException {
             UserManager userManager = retrieveUserManager(identityProviderConfigId);
             return userManager.findAllHeaders();
     }
 
+    @Override
     public EntityHeaderSet<IdentityHeader> searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
       throws FindException {
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
@@ -219,6 +227,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             return provider.search(types, pattern);
     }
 
+    @Override
     public User findUserByID(long identityProviderConfigId, String userId)
                            throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
@@ -231,6 +240,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return userManager.findByPrimaryKey(userId);
     }
 
+    @Override
     public User findUserByLogin(long idProvCfgId, String login) throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(idProvCfgId);
         if (provider == null) {
@@ -242,6 +252,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return userManager.findByLogin(login);
     }
 
+    @Override
     public void deleteUser(long cfgid, String userId)
       throws DeleteException, ObjectNotFoundException {
         try {
@@ -254,7 +265,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             if (user.equals(JaasUtils.getCurrentUser()))
                 throw new DeleteException("The currently logged-in user cannot be deleted");
             userManager.delete(user);
-            trustedEmsUserManager.deleteMappingsForUser(user);
+            trustedEsmUserManager.deleteMappingsForUser(user);
             logger.info("Deleted User: " + user.getLogin());
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -262,6 +273,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         }
     }
 
+    @Override
     public String saveUser(long identityProviderConfigId, User user, Set groupHeaders)
       throws SaveException, UpdateException, ObjectNotFoundException {
         boolean isSave = true;
@@ -312,10 +324,12 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
 
+    @Override
     public EntityHeaderSet<IdentityHeader> findAllGroups(long cfgid) throws FindException {
             return retrieveGroupManager(cfgid).findAllHeaders();
     }
 
+    @Override
     public Group findGroupByID(long cfgid, String groupId) throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
         if (provider == null) {
@@ -327,6 +341,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return groupManager.findByPrimaryKey(groupId);
     }
 
+    @Override
     public Group findGroupByName(long cfgid, String name) throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
         if (provider == null) {
@@ -338,6 +353,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return groupManager.findByName(name);
     }
 
+    @Override
     public void deleteGroup(long cfgid, String groupId)
       throws DeleteException, ObjectNotFoundException {
         try {
@@ -351,6 +367,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         }
     }
 
+    @Override
     public String saveGroup(long identityProviderConfigId, Group group, Set<IdentityHeader> userHeaders)
       throws SaveException, UpdateException, ObjectNotFoundException {
         boolean isSave = true;
@@ -380,6 +397,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         }
     }
 
+    @Override
     public String getUserCert(User user) throws FindException, CertificateEncodingException {
             // get cert from internal CA
             Certificate cert = clientCertManager.getUserCert(user);
@@ -388,6 +406,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return HexUtils.encodeBase64(cert.getEncoded());
     }
 
+    @Override
     public void revokeCert(User user) throws UpdateException, ObjectNotFoundException {
         try {
             // revoke the cert in internal CA
@@ -427,6 +446,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         }
     }
 
+    @Override
     public int revokeCertificates() throws UpdateException {
         logger.info("Revoking all user certificates.");
 
@@ -469,11 +489,13 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return revocationCount;
     }
 
+    @Override
     public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
         // revoke the cert in internal CA
         clientCertManager.recordNewUserCert(user, cert, false);
     }
 
+    @Override
     public void resetLogonFailCount(User user) throws FindException, UpdateException {
         logonServ.resetLogonFailCount(user);
     }
@@ -485,6 +507,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return secureRandom = new SecureRandom();
     }
 
+    @Override
     public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)
       throws InvalidIdProviderCfgException {
         try {
@@ -497,6 +520,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         }
     }
 
+    @Override
     public Set<IdentityHeader> getGroupHeaders(long providerId, String userId) throws FindException {
         return retrieveGroupManager(providerId).getGroupHeaders(userId);
     }
@@ -505,6 +529,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         retrieveGroupManager(providerId).setGroupHeaders(userId, groupHeaders);
     }
 
+    @Override
     public Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws FindException {
         return retrieveGroupManager(providerId).getUserHeaders(groupId);
     }
@@ -513,6 +538,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         retrieveGroupManager(providerId).setUserHeaders(groupId, groupHeaders);
     }
 
+    @Override
     public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
         return ldapTemplateManager.getTemplates();
     }

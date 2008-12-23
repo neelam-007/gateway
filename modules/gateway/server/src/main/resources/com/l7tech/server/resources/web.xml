@@ -258,8 +258,8 @@
     </servlet>
 
     <servlet>
-        <servlet-name>emsTrustServlet</servlet-name>
-        <servlet-class>com.l7tech.server.EmsTrustServlet</servlet-class>
+        <servlet-name>esmTrustServlet</servlet-name>
+        <servlet-class>com.l7tech.server.EsmTrustServlet</servlet-class>
     </servlet>
 
     <servlet>
@@ -391,8 +391,8 @@
     </servlet-mapping>
 
     <servlet-mapping>
-        <servlet-name>emsTrustServlet</servlet-name>
-        <url-pattern>/ssg/emstrust</url-pattern>
+        <servlet-name>esmTrustServlet</servlet-name>
+        <url-pattern>/ssg/esmtrust</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>

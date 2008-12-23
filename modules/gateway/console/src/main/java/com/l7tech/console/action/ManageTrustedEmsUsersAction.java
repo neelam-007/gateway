@@ -12,21 +12,25 @@ import com.l7tech.objectmodel.EntityType;
  */
 public class ManageTrustedEmsUsersAction extends SecureAction {
     public ManageTrustedEmsUsersAction() {
-        super(new AttemptedReadAll(EntityType.TRUSTED_EMS), "service:EnterpriseManageable");
+        super(new AttemptedReadAll(EntityType.TRUSTED_ESM), "service:EnterpriseManageable");
     }
 
+    @Override
     public String getName() {
-        return "Manage EMS User Mappings";
+        return "Manage ESM User Mappings";
     }
 
+    @Override
     public String getDescription() {
-        return "View and edit Enterprise Manager registrations and user mappings";
+        return "View and edit Enterprise Service Manager registrations and user mappings";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/cert16.gif";
     }
 
+    @Override
     protected void performAction() {
         TrustedEmsManagerWindow dlg = new TrustedEmsManagerWindow(TopComponents.getInstance().getTopParent());
         dlg.pack();

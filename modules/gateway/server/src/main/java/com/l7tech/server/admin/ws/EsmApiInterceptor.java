@@ -15,10 +15,10 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
-import com.l7tech.gateway.common.emstrust.TrustedEms;
-import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
-import com.l7tech.server.TrustedEmsManager;
-import com.l7tech.server.TrustedEmsUserManager;
+import com.l7tech.gateway.common.emstrust.TrustedEsm;
+import com.l7tech.gateway.common.emstrust.TrustedEsmUser;
+import com.l7tech.server.TrustedEsmManager;
+import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -41,8 +41,8 @@ public class EsmApiInterceptor extends AbstractPhaseInterceptor<Message> {
     //- PUBLIC
 
     public EsmApiInterceptor( final LicenseManager licenseManager,
-                              final TrustedEmsManager trustedEmsManager,
-                              final TrustedEmsUserManager trustedEmsUserManager,
+                              final TrustedEsmManager trustedEmsManager,
+                              final TrustedEsmUserManager trustedEmsUserManager,
                               final AdminSessionManager adminSessionManager ){
         super(Phase.READ);
         this.licenseManager = licenseManager;
@@ -99,8 +99,8 @@ public class EsmApiInterceptor extends AbstractPhaseInterceptor<Message> {
     private static final Logger logger = Logger.getLogger(EsmApiInterceptor.class.getName());
 
     private final LicenseManager licenseManager;
-    private final TrustedEmsManager trustedEmsManager;
-    private final TrustedEmsUserManager trustedEmsUserManager;
+    private final TrustedEsmManager trustedEmsManager;
+    private final TrustedEsmUserManager trustedEmsUserManager;
     private final AdminSessionManager adminSessionManager;
 
     private void enforceLicensed() {
@@ -140,7 +140,7 @@ public class EsmApiInterceptor extends AbstractPhaseInterceptor<Message> {
 
         try {
             // Find ESM registration info and check it
-            TrustedEms esm = trustedEmsManager.findEmsById( esmId );
+            TrustedEsm esm = trustedEmsManager.findEsmById( esmId );
             if ( esm == null ) {
                 throw new SoapFault("Authentication Required", SoapFault.FAULT_CODE_CLIENT);
             }
@@ -151,7 +151,7 @@ public class EsmApiInterceptor extends AbstractPhaseInterceptor<Message> {
             }
 
             if ( esmUserId != null ) {
-                TrustedEmsUser emsUser = trustedEmsUserManager.findByEmsIdAndUserUUID( esm.getOid(), esmUserId );
+                TrustedEsmUser emsUser = trustedEmsUserManager.findByEsmIdAndUserUUID( esm.getOid(), esmUserId );
                 if ( emsUser == null ) {
                     throw new SoapFault("Access Denied", SoapFault.FAULT_CODE_CLIENT);
                 }

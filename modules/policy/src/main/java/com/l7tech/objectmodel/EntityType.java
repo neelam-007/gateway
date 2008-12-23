@@ -60,8 +60,8 @@ public enum EntityType implements Comparable<EntityType> {
 
     SERVICE_TEMPLATE("Service Template", true),
 
-    TRUSTED_EMS("Trusted EMS", true),
-    TRUSTED_EMS_USER("Trusted EMS User", true),
+    TRUSTED_ESM("Trusted ESM", true),
+    TRUSTED_ESM_USER("Trusted ESM User", true),
 
     ESM_ENTERPRISE_FOLDER("Folder", false),
     ESM_SSG_CLUSTER("Cluster", false),

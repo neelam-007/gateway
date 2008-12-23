@@ -992,7 +992,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                             }
                             document.getElementById('ssgClusterTrustForm_returnurl').value = baseURL + '?clusterguid=' + o.argument.id;
                             document.getElementById('ssgClusterTrustForm_emstoken').value = result.token;
-                            document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/emstrust?esmtrust=1';
+                            document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/esmtrust?esmtrust=1';
                             document.getElementById('ssgClusterTrustDialog_name').innerHTML = o.argument.name;
                             ssgClusterTrustDialog.center();
                             ssgClusterTrustDialog.show();
@@ -1033,7 +1033,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                             var entity = o.argument;
                             document.getElementById('mapAccessAccountForm_emstoken').value = result.token;
                             document.getElementById('mapAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
-                            document.getElementById('mapAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/emstrust';
+                            document.getElementById('mapAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
                             document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
                             mapAccessAccountDialog.center();
                             mapAccessAccountDialog.show();
@@ -1069,7 +1069,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                             var entity = o.argument;
                             document.getElementById('changeAccessAccountForm_emstoken').value = result.token;
                             document.getElementById('changeAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
-                            document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/emstrust';
+                            document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
                             document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
                             changeAccessAccountDialog.center();
                             changeAccessAccountDialog.show();

@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.emstrust.TrustedEms;
+import com.l7tech.gateway.common.emstrust.TrustedEsm;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
@@ -12,25 +12,25 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
- * Entity manager for {@link TrustedEms}.
+ * Entity manager for {@link com.l7tech.gateway.common.emstrust.TrustedEsm}.
  */
-public interface TrustedEmsManager extends EntityManager<TrustedEms, EntityHeader> {
+public interface TrustedEsmManager extends EntityManager<TrustedEsm, EntityHeader> {
 
     /**
      * Find TrustedEms by ID.
      *
-     * @param emsId The unique EMS identifier.
-     * @return The TrustedEms or null if not found.
+     * @param esmId The unique ESM identifier.
+     * @return The TrustedEsm or null if not found.
      * @throws FindException if an error occurs during lookup
      */
-    TrustedEms findEmsById(String emsId) throws FindException;
+    TrustedEsm findEsmById(String esmId) throws FindException;
 
     /**
-     * Look up or add a TrustedEms entry allowing the specified EMS instance to manage this Gateway cluster
-     * when authenticated by the specified EMS certificate.
+     * Look up or add a TrustedEsm entry allowing the specified ESM instance to manage this Gateway cluster
+     * when authenticated by the specified ESM certificate.
      * <p/>
-     * Before this EMS association can be used to send admin requests, at least one user mapping must be
-     * configured from a user on this EMS to a local admin user on this Gateway cluster.
+     * Before this ESM association can be used to send admin requests, at least one user mapping must be
+     * configured from a user on this ESM to a local admin user on this Gateway cluster.
      * <p/>
      * Caller is responsible for ensuring that User has already been authenticated.
      * <p/>
@@ -39,19 +39,19 @@ public interface TrustedEmsManager extends EntityManager<TrustedEms, EntityHeade
      * permissions required depend on what needs to be done, but the following are always sufficient:
      * <ul>
      * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.security.cert.TrustedCert}
-     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.gateway.common.emstrust.TrustedEms}
+     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.gateway.common.emstrust.TrustedEsm}
      * </ul>
      *
      * @param requestingUser the admin user on whose behalf this association is being created.  Used
      *                       for RBAC enforcement.  Required.
-     * @param emsId        a hopefully-globally-unique identifier for the EMS instance that owns emsCert.  Required.
+     * @param esmId        a hopefully-globally-unique identifier for the ESM instance that owns esmCert.  Required.
      *                     This identifier is opaque to the Gateway.
-     * @param emsCert      The certificate this EMS instance will use when vouching for emsUsername in admin requests.  Required.
-     * @return the found, added or updated TrustedEms instance.  Never null.
+     * @param esmCert      The certificate this ESM instance will use when vouching for esmUsername in admin requests.  Required.
+     * @return the found, added or updated TrustedEsm instance.  Never null.
      * @throws java.security.AccessControlException if the specified user lacks sufficient permission to create or update this association
      * @throws com.l7tech.objectmodel.ObjectModelException  if there is a problem accessing or updating the database
-     * @throws CertificateException if emsCert cannot be encoded
-     * @throws CertificateMismatchException if an association already exists for the specified emsId but with a certificate other than emsCert
+     * @throws CertificateException if esmCert cannot be encoded
+     * @throws CertificateMismatchException if an association already exists for the specified esmId but with a certificate other than esmCert
      */
-    TrustedEms getOrCreateEmsAssociation(User requestingUser, String emsId, X509Certificate emsCert) throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException;
+    TrustedEsm getOrCreateEsmAssociation(User requestingUser, String esmId, X509Certificate esmCert) throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException;
 }

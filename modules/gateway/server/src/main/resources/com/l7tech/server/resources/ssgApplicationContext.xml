@@ -1128,10 +1128,10 @@
         <constructor-arg ref="identityProviderFactory"/>
     </bean>
 
-    <bean id="trustedEmsManager" class="com.l7tech.server.TrustedEmsManagerImpl" parent="hibernateBean">
+    <bean id="trustedEsmManager" class="com.l7tech.server.TrustedEsmManagerImpl" parent="hibernateBean">
     </bean>
 
-    <bean id="trustedEmsUserManager" class="com.l7tech.server.TrustedEmsUserManagerImpl" parent="hibernateBean">
+    <bean id="trustedEsmUserManager" class="com.l7tech.server.TrustedEsmUserManagerImpl" parent="hibernateBean">
     </bean>
 
     <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
@@ -1233,8 +1233,8 @@
       <constructor-arg ref="entityFinder"/>
       <constructor-arg>
           <list>
-              <ref bean="trustedEmsManager"/>
-              <ref bean="trustedEmsUserManager"/>
+              <ref bean="trustedEsmManager"/>
+              <ref bean="trustedEsmUserManager"/>
               <ref bean="auditRecordManager"/>
               <ref bean="clusterPropertyManager"/>
               <ref bean="schemaEntryManager"/>

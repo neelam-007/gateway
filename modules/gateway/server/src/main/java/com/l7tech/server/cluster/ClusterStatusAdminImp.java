@@ -4,12 +4,10 @@ import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.cluster.*;
-import com.l7tech.gateway.common.emstrust.TrustedEms;
-import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
+import com.l7tech.gateway.common.emstrust.TrustedEsm;
+import com.l7tech.gateway.common.emstrust.TrustedEsmUser;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
@@ -49,8 +47,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
                                  ServiceMetricsManager metricsManager,
                                  ServerConfig serverConfig,
                                  AssertionRegistry assertionRegistry,
-                                 TrustedEmsManager trustedEmsManager,
-                                 TrustedEmsUserManager trustedEmsUserManager)
+                                 TrustedEsmManager trustedEsmManager,
+                                 TrustedEsmUserManager trustedEsmUserManager)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
@@ -59,8 +57,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         this.serviceMetricsManager = metricsManager;
         this.serverConfig = serverConfig;
         this.assertionRegistry = (ServerAssertionRegistry)assertionRegistry;
-        this.trustedEmsManager = trustedEmsManager;
-        this.trustedEmsUserManager = trustedEmsUserManager;
+        this.trustedEsmManager = trustedEsmManager;
+        this.trustedEsmUserManager = trustedEsmUserManager;
 
         if (clusterInfoManager == null)
             throw new IllegalArgumentException("Cluster Info manager is required");
@@ -85,6 +83,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         }
     }
 
+    @Override
     public boolean isCluster() {
         try {
             return getClusterStatus().length > 1;
@@ -96,6 +95,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     /**
      * get status for all nodes recorded as part of the cluster.
      */
+    @Override
     public ClusterNodeInfo[] getClusterStatus() throws FindException {
         Collection res = clusterInfoManager.retrieveClusterStatus();
         Object[] resarray = res.toArray();
@@ -106,6 +106,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return output;
     }
 
+    @Override
     public CollectionUpdate<ClusterNodeInfo> getClusterNodesUpdate(int oldVersionID) throws FindException {
         return clusterNodesUpdateProducer.createUpdate(oldVersionID);
     }
@@ -113,6 +114,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     /**
      * get service usage as currently recorded in database.
      */
+    @Override
     public ServiceUsage[] getServiceUsage() throws FindException {
         Collection res = serviceUsageManager.getAll();
         Object[] resarray = res.toArray();
@@ -130,6 +132,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      * @param nodeid  the mac of the node for which we want to change the name
      * @param newName the new name of the node (must not be null)
      */
+    @Override
     public void changeNodeName(String nodeid, String newName) throws UpdateException {
         clusterInfoManager.renameNode(nodeid, newName);
     }
@@ -143,6 +146,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      *
      * @param nodeid the mac of the stale node to remove
      */
+    @Override
     public void removeStaleNode(String nodeid) throws DeleteException {
         logger.info("removing stale node: " + nodeid);
         clusterInfoManager.deleteNode(nodeid);
@@ -160,10 +164,12 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      *
      * @return long  The current system time in milli seconds
      */
+    @Override
     public java.util.Date getCurrentClusterSystemTime() {
         return Calendar.getInstance().getTime();
     }
 
+    @Override
     public String getCurrentClusterTimeZone() {
         return TimeZone.getDefault().getID();
     }
@@ -173,14 +179,17 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
      *
      * @return String  The node name
      */
+    @Override
     public String getSelfNodeName() {
         return clusterInfoManager.getSelfNodeInf().getName();
     }
 
+    @Override
     public Collection<ClusterProperty> getAllProperties() throws FindException {
         return clusterPropertyManager.findAll();
     }
 
+    @Override
     public Map<String, String[]> getKnownProperties() {
         Map<String,String> namesToDesc =  serverConfig.getClusterPropertyNames();
         Map<String,String> namesToDefs =  serverConfig.getClusterPropertyDefaults();
@@ -193,6 +202,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return Collections.unmodifiableMap(known);
     }
 
+    @Override
     public Collection<ClusterPropertyDescriptor> getAllPropertyDescriptors() {
         Map<String,String> namesToDesc =  serverConfig.getClusterPropertyNames();
         Map<String,String> namesToDefs =  serverConfig.getClusterPropertyDefaults();
@@ -215,10 +225,12 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return Collections.unmodifiableCollection(properties);
     }
 
+    @Override
     public ClusterProperty findPropertyByName(String key) throws FindException {
         return clusterPropertyManager.findByUniqueName(key);
     }
 
+    @Override
     public long saveProperty(ClusterProperty clusterProperty) throws SaveException, UpdateException, DeleteException {
         if (!("license".equals(clusterProperty.getName())))
             checkLicense();
@@ -231,14 +243,17 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         }
     }
 
+    @Override
     public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException {
         clusterPropertyManager.delete(clusterProperty);
     }
 
+    @Override
     public License getCurrentLicense() throws InvalidLicenseException {
         return licenseManager.getCurrentLicense();
     }
 
+    @Override
     public long getLicenseExpiryWarningPeriod() {
         long expiryWarnPeriod = 0;
         String propertyName = "license.expiryWarnAge";
@@ -253,6 +268,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return expiryWarnPeriod;
     }
 
+    @Override
     public void installNewLicense(String newLicenseXml) throws InvalidLicenseException, UpdateException {
         licenseManager.installNewLicense(newLicenseXml);
 
@@ -260,27 +276,33 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         assertionRegistry.runNeededScan();
     }
 
+    @Override
     public boolean isMetricsEnabled() {
         return serviceMetricsManager.isEnabled();
     }
 
+    @Override
     public int getMetricsFineInterval() {
         return serviceMetricsManager.getFineInterval();
     }
 
+    @Override
     public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, final boolean includeEmpty) throws FindException {
         return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, maxPeriodStart, includeEmpty);
     }
 
+    @Override
     public Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId, final long[] serviceOids, final Integer resolution, final long duration, final boolean includeEmpty) throws FindException {
         final long minPeriodStart = System.currentTimeMillis() - duration;
         return serviceMetricsManager.summarizeByPeriod(nodeId, serviceOids, resolution, minPeriodStart, null, includeEmpty);
     }
 
+    @Override
     public MetricsSummaryBin summarizeLatest(final String nodeId, final long[] serviceOids, final int resolution, final int duration, final boolean includeEmpty) throws FindException {
         return serviceMetricsManager.summarizeLatest(nodeId, serviceOids, resolution, duration, includeEmpty);
     }
 
+    @Override
     @Transactional(propagation = Propagation.SUPPORTS)
     public Collection<ModuleInfo> getAssertionModuleInfo() {
         Collection<ModuleInfo> ret = new ArrayList<ModuleInfo>();
@@ -294,29 +316,35 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return ret;
     }
 
+    @Override
     public String getHardwareCapability(String capability) {
         if (!ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability)) return null;
         return TarariLoader.getGlobalContext() != null ? ClusterStatusAdmin.CAPABILITY_HWXPATH_TARARI : null;
     }
 
-    public Collection<TrustedEms> getTrustedEmsInstances() throws FindException {
-        return trustedEmsManager.findAll();
+    @Override
+    public Collection<TrustedEsm> getTrustedEsmInstances() throws FindException {
+        return trustedEsmManager.findAll();
     }
 
-    public void deleteTrustedEmsInstance(long trustedEmsOid) throws DeleteException, FindException {
-        trustedEmsManager.delete(trustedEmsOid);
+    @Override
+    public void deleteTrustedEsmInstance(long trustedEsmOid) throws DeleteException, FindException {
+        trustedEsmManager.delete(trustedEsmOid);
     }
 
-    public void deleteTrustedEmsUserMapping(long trustedEmsUserOid) throws DeleteException, FindException {
-        trustedEmsUserManager.delete(trustedEmsUserOid);
+    @Override
+    public void deleteTrustedEsmUserMapping(long trustedEsmUserOid) throws DeleteException, FindException {
+        trustedEsmUserManager.delete(trustedEsmUserOid);
     }
 
-    public Collection<TrustedEmsUser> getTrustedEmsUserMappings(long trustedEmsId) throws FindException {
-        return trustedEmsUserManager.findByEmsId(trustedEmsId);
+    @Override
+    public Collection<TrustedEsmUser> getTrustedEsmUserMappings(long trustedEsmId) throws FindException {
+        return trustedEsmUserManager.findByEsmId(trustedEsmId);
     }
 
     private CollectionUpdateProducer<ClusterNodeInfo, FindException> clusterNodesUpdateProducer =
             new CollectionUpdateProducer<ClusterNodeInfo, FindException>(5 * 60 * 1000, 100, null) {
+                @Override
                 protected Collection<ClusterNodeInfo> getCollection() throws FindException {
                     return clusterInfoManager.retrieveClusterStatus();
                 }
@@ -329,8 +357,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     private final ServiceMetricsManager serviceMetricsManager;
     private final ServerConfig serverConfig;
     private final ServerAssertionRegistry assertionRegistry;
-    private final TrustedEmsManager trustedEmsManager;
-    private final TrustedEmsUserManager trustedEmsUserManager;
+    private final TrustedEsmManager trustedEsmManager;
+    private final TrustedEsmUserManager trustedEsmUserManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
