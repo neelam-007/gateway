@@ -61,7 +61,7 @@ public class ListenerEditPanel extends Panel {
             protected void onSubmit() {
                 logger.fine("Processing HTTPS listener update.");
                 try {
-                    setupManager.configureListener( addr.getModelObjectAsString(), (Integer)port.getModelObject() );
+                    setupManager.configureListener( (String)addr.getConvertedInput(), (Integer)port.getConvertedInput() );
                 } catch ( SetupException se ) {
                     logger.log( Level.WARNING, "Error configuring listener.", se );                
                 }

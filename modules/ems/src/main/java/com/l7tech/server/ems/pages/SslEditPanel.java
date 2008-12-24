@@ -106,7 +106,7 @@ public class SslEditPanel extends Panel {
                 logger.fine("Processing SSL update.");
 
                 String alias = null;
-                if ( "gen".equals( group.getModelObjectAsString() ) ) {
+                if ( "gen".equals( group.getConvertedInput() ) ) {
                     String hostValue = sslFormModel.getHostname();
                     if ( hostValue != null && !hostValue.isEmpty() ) {
                         try {

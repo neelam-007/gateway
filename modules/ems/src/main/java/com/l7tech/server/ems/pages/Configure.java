@@ -110,6 +110,7 @@ public class Configure extends EsmPage {
                 }
             }
 
+            @Override
             public void setData(Object jsonData) {
                 throw new UnsupportedOperationException("setData not required in JsonInteraction");
             }
@@ -156,8 +157,8 @@ public class Configure extends EsmPage {
         Form addFolderForm = new JsonDataResponseForm("addFolderForm", new AttemptedCreate( EntityType.ESM_ENTERPRISE_FOLDER )){
             @Override
             protected Object getJsonResponseData() {
-                String newFolderName = addFolderInputName.getModelObjectAsString();
-                String parentFolderGuid = addFolderDialogInputParentId.getModelObjectAsString();
+                String newFolderName = (String)addFolderInputName.getConvertedInput();
+                String parentFolderGuid = (String)addFolderDialogInputParentId.getConvertedInput();
                 try {
                     logger.fine("Adding folder \"" + newFolderName + "\" (parent folder GUID = " + parentFolderGuid + ").");
                     //noinspection UnnecessaryLocalVariable
@@ -188,8 +189,8 @@ public class Configure extends EsmPage {
         Form renameFolderForm = new JsonDataResponseForm("renameFolderForm", new AttemptedUpdateAny( EntityType.ESM_ENTERPRISE_FOLDER )){
             @Override
             protected Object getJsonResponseData() {
-                String renamedFolderGuid = renameFolderDialogInputId.getModelObjectAsString();
-                String newFolderName = renameFolderInputName.getModelObjectAsString();
+                String renamedFolderGuid = (String)renameFolderDialogInputId.getConvertedInput();
+                String newFolderName = (String)renameFolderInputName.getConvertedInput();
                 try {
                     logger.fine("Renaming folder (GUID = "+ renamedFolderGuid + ") with a new name, " + newFolderName);
 
@@ -221,7 +222,7 @@ public class Configure extends EsmPage {
             @Override
             protected Object getJsonResponseData() {
                 try {
-                    String deletedFolderGuid = deleteFolderDialogInputId.getModelObjectAsString();
+                    String deletedFolderGuid = (String)deleteFolderDialogInputId.getConvertedInput();
                     logger.fine("Deleting folder (GUID = "+ deletedFolderGuid + ").");
 
                     enterpriseFolderManager.deleteByGuid(deletedFolderGuid);
@@ -241,13 +242,13 @@ public class Configure extends EsmPage {
         Form addSSGClusterForm = new JsonDataResponseForm("addSSGClusterForm", new AttemptedCreate( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {
-                String newClusterName = addSSGClusterInputName.getModelObjectAsString();
-                String parentFolderGuid = addSSGClusterDialogInputParentId.getModelObjectAsString();
-                String hostname = addSSGClusterInputHostName.getModelObjectAsString();
-                int port = Integer.parseInt(addSSGClusterInputPort.getModelObjectAsString());
+                String newClusterName = (String)addSSGClusterInputName.getConvertedInput();
+                String parentFolderGuid = (String)addSSGClusterDialogInputParentId.getConvertedInput();
+                String hostname = (String)addSSGClusterInputHostName.getConvertedInput();
+                int port = Integer.parseInt((String)addSSGClusterInputPort.getConvertedInput());
                 try {
-                    logger.fine("Adding SSG Cluster \""+ addSSGClusterInputName.getModelObjectAsString() +
-                        "\" (parent folder GUID = "+ addSSGClusterDialogInputParentId.getModelObjectAsString() + ").");
+                    logger.fine("Adding SSG Cluster \""+ newClusterName +
+                        "\" (parent folder GUID = "+ parentFolderGuid + ").");
                     return ssgClusterManager.create(newClusterName, hostname, port, parentFolderGuid);
                 } catch (Exception e) {
                     logger.warning(e.toString());
@@ -280,8 +281,8 @@ public class Configure extends EsmPage {
         Form renameSSGClusterForm = new JsonDataResponseForm("renameSSGClusterForm", new AttemptedUpdateAny( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {
-                String renamedSSGClusterGuid = renameSSGClusterDialogInputId.getModelObjectAsString();
-                String newClusterName = renameSSGClusterInputName.getModelObjectAsString();
+                String renamedSSGClusterGuid = (String)renameSSGClusterDialogInputId.getConvertedInput();
+                String newClusterName = (String)renameSSGClusterInputName.getConvertedInput();
                 try {
                     logger.fine("Renaming SSG Cluster (GUID = "+ renamedSSGClusterGuid + ") with a new name, " + newClusterName);
 
@@ -313,7 +314,7 @@ public class Configure extends EsmPage {
             @Override
             protected Object getJsonResponseData() {
                 try {
-                    String guid = deleteSSGClusterDialogInputId.getModelObjectAsString();
+                    String guid = (String)deleteSSGClusterDialogInputId.getConvertedInput();
                     logger.fine("Deleting SSG Cluster (GUID = "+ guid + ").");
 
                     ssgClusterManager.deleteByGuid(guid);
@@ -322,10 +323,12 @@ public class Configure extends EsmPage {
                     logger.warning(e.toString());
                     if (ExceptionUtils.causedBy(e, ConstraintViolationException.class)) {
                         return new JSON.Convertible() {
+                            @Override
                             public void toJSON(JSON.Output output) {
                                 output.add("reconfirm", true);
                             }
 
+                            @Override
                             public void fromJSON(Map map) {
                                 throw new UnsupportedOperationException("Mapping from JSON not supported.");
                             }
@@ -343,7 +346,7 @@ public class Configure extends EsmPage {
             @Override
             protected Object getJsonResponseData() {
                 try {
-                    String guid = reconfirmSSGClusterDeletionDialogInputId.getModelObjectAsString();
+                    String guid = (String)reconfirmSSGClusterDeletionDialogInputId.getConvertedInput();
                     SsgCluster ssgCluster = ssgClusterManager.findByGuid(guid);
 
                     logger.fine("Deleting SSG Cluster (GUID = "+ guid + ") and other related information such as Standard Reports and Migration Records.");
@@ -386,7 +389,7 @@ public class Configure extends EsmPage {
         Form startSsgNodeForm = new JsonDataResponseForm("startSsgNodeForm") {
             @Override
             protected Object getJsonResponseData() {
-                String ssgNodeGuid = startSsgNodeInputId.getModelObjectAsString();
+                String ssgNodeGuid = (String)startSsgNodeInputId.getConvertedInput();
                 try {
                     logger.fine("Starting SSG Node (GUID = " + ssgNodeGuid + ").");
                     
@@ -419,7 +422,7 @@ public class Configure extends EsmPage {
         Form stopSsgNodeForm = new JsonDataResponseForm("stopSsgNodeForm") {
             @Override
             protected Object getJsonResponseData() {
-                String ssgNodeGuid = stopSsgNodeInputId.getModelObjectAsString();
+                String ssgNodeGuid = (String)stopSsgNodeInputId.getConvertedInput();
                 try {
                     logger.fine("Stoping SSG Node (GUID = " + ssgNodeGuid + ").");
 
