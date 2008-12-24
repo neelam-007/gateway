@@ -43,15 +43,6 @@ public class PagesTest {
         });
 
         tester.getApplication().getMarkupSettings().setStripWicketTags(true);
-        tester.getApplication().getResourceSettings().setResourceStreamLocator(
-            new ResourceStreamLocator() {
-                @Override
-                public IResourceStream locate(final Class clazz, final String path) {
-                    // logger.info("Processing locate call for path '"+path+"'.");
-                    return super.locate(clazz, path.replace("pages", "resources/templates"));
-                }
-            }
-        );
     }
 
     @Test
