@@ -43,7 +43,7 @@
                     </constraints>
                     <properties>
                       <labelFor value="4ac43"/>
-                      <text value="Trusted &amp;Enterprise Manager Servers:"/>
+                      <text value="Trusted &amp;Enterprise Service Managers:"/>
                     </properties>
                   </component>
                   <scrollpane id="4ac43">
