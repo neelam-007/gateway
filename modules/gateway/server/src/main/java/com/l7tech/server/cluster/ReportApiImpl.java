@@ -29,6 +29,8 @@ import org.hibernate.jdbc.Work;
 
 /**
  * Gateway implementation for Report API.
+ *
+ * TODO [steve] access control, who can generate reports?
  */
 public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
 
@@ -180,7 +182,7 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
             "SELECT mapping4_key FROM message_context_mapping_keys WHERE mapping4_type='CUSTOM_MAPPING' UNION\n" +
             "SELECT mapping5_key FROM message_context_mapping_keys WHERE mapping5_type='CUSTOM_MAPPING'";
 
-    //TODO implement gateway report storage / retrieval
+    //TODO [steve] implement gateway report storage / retrieval
     private Map<String,ReportData> reports = Collections.synchronizedMap(new HashMap<String,ReportData>());
     private final PlatformTransactionManager transactionManager;
     private final Timer reportTimer;

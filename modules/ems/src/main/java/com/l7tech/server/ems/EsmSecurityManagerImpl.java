@@ -316,7 +316,6 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     @Override
     @SuppressWarnings({"unchecked"})
     public boolean canAccess(  final HttpSession session, final HttpServletRequest request ) {
-        // TODO Clean this up (use secured and unsecured sections?)
         return session.getAttribute(ATTR_ID) != null ||
                 request.getRequestURI().equals("/favicon.ico") || // We don't have a "/favicon.ico" but browsers like to ask for this
                 request.getRequestURI().equals("/Login.html") ||
@@ -327,13 +326,7 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
                 request.getRequestURI().startsWith("/yui") ||
                 request.getRequestURI().startsWith("/resources/org.apache.wicket.markup.html.WicketEventReference/wicket-event.js") ||
                 request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.WicketAjaxReference/wicket-ajax.js") ||
-                request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/wicket-ajax-debug.js") ||                
-                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/button/assets/skins/sam/button.css") ||
-                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/yahoo-dom-event/yahoo-dom-event.js") ||
-                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/element/element-beta-min.js") ||
-                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/button/button-min.js") ||
-                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/css/l7-yui-skin.css") ||
-                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/assets/skins/sam/sprite.png");
+                request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/wicket-ajax-debug.js");
     }
 
     /**

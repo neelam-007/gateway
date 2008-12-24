@@ -213,7 +213,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         sessionManager.setSecureCookies(true);
         sessionManager.setMaxInactiveInterval((int)(serverConfig.getTimeUnitPropertyCached(SESSION_TIMEOUT_PROP,DEFAULT_SESSION_TIMEOUT,30000)/1000L));
         this.sessionManager = sessionManager;
-        root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources")); //TODO [steve] map root elsewhere and add other mappings for css/images/etc
+        root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources/web"));
         root.setDisplayName("Layer 7 Enterprise Service Manager Server");
         root.setAttribute("javax.servlet.context.tempdir", temp);
         root.addEventListener(new EsmContextLoaderListener());

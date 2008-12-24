@@ -7,16 +7,19 @@ import com.l7tech.objectmodel.UpdateException;
 
 import java.util.Map;
 import java.util.Collections;
+import java.util.HashMap;
 
 /**
  *
  */
 public class MockUserPropertyManager implements UserPropertyManager {
 
+    @Override
     public Map<String, String> getUserProperties(User user) throws FindException {
-        return Collections.singletonMap("dateformat", "formal");
+        return new HashMap<String,String>();
     }
 
+    @Override
     public void saveUserProperties(User user, Map<String, String> properties) throws UpdateException {
     }
 }

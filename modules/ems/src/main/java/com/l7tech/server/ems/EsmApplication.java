@@ -1,6 +1,6 @@
 package com.l7tech.server.ems;
 
-import com.l7tech.server.ems.pages.*;
+import com.l7tech.server.ems.ui.pages.*;
 import com.l7tech.server.ems.standardreports.ReportResource;
 import com.l7tech.util.SyspropUtil;
 import org.apache.wicket.*;
@@ -18,8 +18,6 @@ import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
 import org.apache.wicket.util.convert.ConverterLocator;
 import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.lang.Bytes;
-import org.apache.wicket.util.resource.IResourceStream;
-import org.apache.wicket.util.resource.locator.ResourceStreamLocator;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -57,7 +55,7 @@ public class EsmApplication extends WebApplication {
                 EsmSession emsSession = (EsmSession) session;
                 if ( emsSession.getPreferredPage() != null &&
                      !emsSession.getPreferredPage().isEmpty() ) {
-                    NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
+                    NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.ui.pages");
                     Class userHomePage = navigationModel.getPageClassForPage( emsSession.getPreferredPage() );
                     if ( userHomePage != null ) {
                         homePage = userHomePage;    
@@ -110,16 +108,13 @@ public class EsmApplication extends WebApplication {
         exceptionSettings.setUnexpectedExceptionDisplay(IExceptionSettings.SHOW_EXCEPTION_PAGE);
 
         IResourceSettings resourceSettings = getResourceSettings();
-        resourceSettings.setResourceStreamLocator(new ResourceLocator());
         resourceSettings.setPackageResourceGuard(new PackageResourceGuard(){
             @Override
             protected boolean acceptAbsolutePath( final String resourcePath ) {
                 boolean accept = false;
                 if ( resourcePath.startsWith("org/apache/wicket") ||
-                     (resourcePath.startsWith("com/l7tech/server/ems/resources/css") ||
-                      resourcePath.startsWith("com/l7tech/server/ems/resources/js") ||
-                      resourcePath.startsWith("com/l7tech/server/ems/resources/templates") ||
-                      resourcePath.startsWith("com/l7tech/server/ems/resources/yui"))) {
+                     (resourcePath.startsWith("com/l7tech/server/ems/resources/web") ||
+                      resourcePath.startsWith("com/l7tech/server/ems/ui/pages"))) {
                     accept = super.acceptAbsolutePath(resourcePath);
                 } else {
                     logger.info("Rejecting access to resource '"+resourcePath+"'.");
@@ -229,7 +224,7 @@ public class EsmApplication extends WebApplication {
         } );
 
         // mount navigation pages
-        NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
+        NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.ui.pages");
         for ( String page : navigationModel.getNavigationPages() ) {
             mountPage( "/" + navigationModel.getPageUrlForPage(page), navigationModel.getPageClassForPage(page) );
         }
@@ -289,10 +284,7 @@ public class EsmApplication extends WebApplication {
     }
 
     public static boolean isValidTimezoneId(String id) {
-        if (id == null || (! Arrays.asList(TimeZone.getAvailableIDs()).contains(id)))
-            return false;
-        else
-            return true;
+        return id != null && Arrays.asList(TimeZone.getAvailableIDs()).contains(id);
     }
 
     public long getTimeStarted() {
@@ -326,7 +318,7 @@ public class EsmApplication extends WebApplication {
      *
      */
     private void mountTemplate( String templateName ) {
-        mountSharedResource( templateName, new ResourceReference(EsmApplication.class, "resources/templates" + templateName).getSharedResourceKey());
+        mountSharedResource( templateName, new ResourceReference(EsmApplication.class, "ui/pages" + templateName).getSharedResourceKey());
     }
 
     /**
@@ -340,16 +332,5 @@ public class EsmApplication extends WebApplication {
             this.emsSecurityManager = emsSecurityManager;
         }
         return emsSecurityManager;        
-    }
-
-    /**
-     * ResourceStreamLocator that understands our resource structure
-     */
-    private static class ResourceLocator extends ResourceStreamLocator {
-        @Override
-        public IResourceStream locate(final Class clazz, final String path) {
-            //logger.info("Processing locate call for path '"+path+"'.");
-            return super.locate(clazz, path.replace("pages", "resources/templates"));
-        }
     }
 }
