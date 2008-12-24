@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.emstrust.TrustedEsmUser;
+import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 
@@ -10,7 +10,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 
 /**
- * Entity manager for {@link com.l7tech.gateway.common.emstrust.TrustedEsmUser}.
+ * Entity manager for {@link com.l7tech.gateway.common.esmtrust.TrustedEsmUser}.
  */
 public interface TrustedEsmUserManager extends EntityManager<TrustedEsmUser, EntityHeader> {
     /** Exception thrown if an attempt is made to configure a user mapping which already exists. */
@@ -41,13 +41,13 @@ public interface TrustedEsmUserManager extends EntityManager<TrustedEsmUser, Ent
      * to read or change one of the entities that need to be changed to complete this operation.  The following
      * permissions are required to add a mapping for an already-associated ESM instance:
      * <ul>
-     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.gateway.common.emstrust.TrustedEsmUser}
+     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.gateway.common.esmtrust.TrustedEsmUser}
      * </ul>
      * If there is not yet a trust association for this ESM instance, the user will in addition require
      * the following permissions:
      * <ul>
      * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.security.cert.TrustedCert}
-     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.gateway.common.emstrust.TrustedEsm}
+     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.gateway.common.esmtrust.TrustedEsm}
      * </ul>
      * <p/>
      *

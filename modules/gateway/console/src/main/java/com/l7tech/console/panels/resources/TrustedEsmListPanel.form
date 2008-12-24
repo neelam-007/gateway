@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.TrustedEmsManagerWindow">
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.TrustedEsmManagerWindow">
   <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="6" left="6" bottom="6" right="6"/>
     <constraints>
@@ -55,7 +55,7 @@
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <component id="dc0cf" class="javax.swing.JTable" binding="emsTable" default-binding="true">
+                      <component id="dc0cf" class="javax.swing.JTable" binding="esmTable" default-binding="true">
                         <constraints/>
                         <properties/>
                       </component>

@@ -1,37 +1,35 @@
 package com.l7tech.server.admin.ws;
 
-import org.apache.cxf.message.Message;
-import org.apache.cxf.phase.AbstractPhaseInterceptor;
-import org.apache.cxf.phase.Phase;
-import org.apache.cxf.interceptor.Fault;
-import org.apache.cxf.binding.soap.SoapFault;
-
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.security.cert.X509Certificate;
-import java.io.IOException;
-
-import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
-import com.l7tech.gateway.common.emstrust.TrustedEsm;
-import com.l7tech.gateway.common.emstrust.TrustedEsmUser;
-import com.l7tech.server.TrustedEsmManager;
-import com.l7tech.server.TrustedEsmUserManager;
-import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.util.JaasUtils;
-import com.l7tech.server.transport.http.HttpTransportModule;
-import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.esmtrust.TrustedEsm;
+import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.TrustedEsmManager;
+import com.l7tech.server.TrustedEsmUserManager;
+import com.l7tech.server.admin.AdminSessionManager;
+import com.l7tech.server.transport.http.HttpTransportModule;
+import com.l7tech.server.util.JaasUtils;
+import org.apache.cxf.binding.soap.SoapFault;
+import org.apache.cxf.interceptor.Fault;
+import org.apache.cxf.message.Message;
+import org.apache.cxf.phase.AbstractPhaseInterceptor;
+import org.apache.cxf.phase.Phase;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.Cookie;
 import javax.security.auth.Subject;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * CXF Interceptor that enforces ESM/Gateway trust.

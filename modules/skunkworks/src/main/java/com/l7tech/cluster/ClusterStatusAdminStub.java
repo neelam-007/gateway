@@ -2,8 +2,8 @@ package com.l7tech.cluster;
 
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.emstrust.TrustedEsm;
-import com.l7tech.gateway.common.emstrust.TrustedEsmUser;
+import com.l7tech.gateway.common.esmtrust.TrustedEsm;
+import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;

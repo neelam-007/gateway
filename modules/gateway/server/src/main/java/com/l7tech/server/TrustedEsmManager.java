@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.emstrust.TrustedEsm;
+import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
@@ -12,7 +12,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
- * Entity manager for {@link com.l7tech.gateway.common.emstrust.TrustedEsm}.
+ * Entity manager for {@link com.l7tech.gateway.common.esmtrust.TrustedEsm}.
  */
 public interface TrustedEsmManager extends EntityManager<TrustedEsm, EntityHeader> {
 
@@ -39,7 +39,7 @@ public interface TrustedEsmManager extends EntityManager<TrustedEsm, EntityHeade
      * permissions required depend on what needs to be done, but the following are always sufficient:
      * <ul>
      * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.security.cert.TrustedCert}
-     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.gateway.common.emstrust.TrustedEsm}
+     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.gateway.common.esmtrust.TrustedEsm}
      * </ul>
      *
      * @param requestingUser the admin user on whose behalf this association is being created.  Used

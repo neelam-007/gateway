@@ -170,8 +170,8 @@
                 <value>com.l7tech.server.sla.CounterIDRecord</value>
 
                 <!-- EMS Support -->
-                <value>com.l7tech.gateway.common.emstrust.TrustedEsm</value>
-                <value>com.l7tech.gateway.common.emstrust.TrustedEsmUser</value>
+                <value>com.l7tech.gateway.common.esmtrust.TrustedEsm</value>
+                <value>com.l7tech.gateway.common.esmtrust.TrustedEsmUser</value>
             </list>
         </property>
         <property name="dataSource" ref="switchedDataSource"/>

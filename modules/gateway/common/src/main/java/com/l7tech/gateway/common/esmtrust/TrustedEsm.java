@@ -1,4 +1,4 @@
-package com.l7tech.gateway.common.emstrust;
+package com.l7tech.gateway.common.esmtrust;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.security.cert.TrustedCert;

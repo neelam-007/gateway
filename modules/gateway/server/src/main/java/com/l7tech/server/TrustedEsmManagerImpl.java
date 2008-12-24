@@ -1,7 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.gateway.common.emstrust.TrustedEsm;
+import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.objectmodel.EntityType;
 import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
 import static com.l7tech.objectmodel.EntityType.TRUSTED_ESM;
@@ -26,7 +26,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
- * Entity manager for {@link com.l7tech.gateway.common.emstrust.TrustedEsm}.
+ * Entity manager for {@link com.l7tech.gateway.common.esmtrust.TrustedEsm}.
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class TrustedEsmManagerImpl extends HibernateEntityManager<TrustedEsm, EntityHeader> implements TrustedEsmManager {

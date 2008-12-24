@@ -149,7 +149,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageCertificatesAction manageCertificatesAction = null;
     private ManagePrivateKeysAction managePrivateKeysAction = null;
     private ManageSsgConnectorsAction manageSsgConnectorsAction = null;
-    private ManageTrustedEmsUsersAction manageTrustedEmsUsersAction = null;
+    private ManageTrustedEsmUsersAction manageTrustedEsmUsersAction = null;
     private RevokeCertificatesAction revokeCertificatesAction = null;
     private ManageGlobalSchemasAction manageGlobalSchemasAction = null;
     private ManageClusterPropertiesAction manageClusterPropertiesAction = null;
@@ -676,7 +676,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageLogSinksAction());
             menu.add(getManageEmailListenersAction());
             menu.add(getConfigureFtpAuditArchiverAction());
-            menu.add(getManageTrustedEmsUsersAction());
+            menu.add(getManageTrustedEsmUsersAction());
 
 
             int mnemonic = menu.getText().toCharArray()[0];
@@ -1614,13 +1614,13 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageSsgConnectorsAction;
     }
 
-    private Action getManageTrustedEmsUsersAction() {
-        if (manageTrustedEmsUsersAction != null)
-            return manageTrustedEmsUsersAction;
+    private Action getManageTrustedEsmUsersAction() {
+        if (manageTrustedEsmUsersAction != null)
+            return manageTrustedEsmUsersAction;
 
-        SecureAction action = new ManageTrustedEmsUsersAction();
+        SecureAction action = new ManageTrustedEsmUsersAction();
         disableUntilLogin(action);
-        return manageTrustedEmsUsersAction = (ManageTrustedEmsUsersAction) action;
+        return manageTrustedEsmUsersAction = (ManageTrustedEsmUsersAction) action;
     }
 
     private void disableUntilLogin(SecureAction action) {
@@ -1917,7 +1917,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageLogSinksAction());
             menu.add(getManageEmailListenersAction());
             menu.add(getConfigureFtpAuditArchiverAction());
-            menu.add(getManageTrustedEmsUsersAction());
+            menu.add(getManageTrustedEsmUsersAction());
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/Properties16.gif");
 

@@ -1,7 +1,7 @@
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.emstrust.TrustedEsm;
-import com.l7tech.gateway.common.emstrust.TrustedEsmUser;
+import com.l7tech.gateway.common.esmtrust.TrustedEsm;
+import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -18,7 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Entity manager for {@link com.l7tech.gateway.common.emstrust.TrustedEsmUser}.
+ * Entity manager for {@link com.l7tech.gateway.common.esmtrust.TrustedEsmUser}.
  *
  * TODO ensure user mappings get delete when the corresponding user is deleted.
  */

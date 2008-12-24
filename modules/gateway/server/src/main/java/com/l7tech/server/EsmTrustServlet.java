@@ -12,7 +12,7 @@ import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.emstrust.TrustedEsm;
+import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.identity.User;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;

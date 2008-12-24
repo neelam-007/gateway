@@ -1,11 +1,11 @@
-package com.l7tech.gateway.common.emstrust;
+package com.l7tech.gateway.common.esmtrust;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.*;
 
 /**
- * Represents a mapping of an EMS user ID (on some Trusted EMS) to a local user ID on this Gateway cluster.
+ * Represents a mapping of an ESM user ID (on some Trusted ESM) to a local user ID on this Gateway cluster.
  */
 @Entity
 @Table(name="trusted_esm_user")
