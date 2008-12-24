@@ -468,7 +468,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
          * @param actions the actions need verifying.
          */
         private Action[] verifyActionsInPolicyInclude(Action[] actions) {
-            List<Action> actionList = Arrays.asList(actions);
+            List<Action> actionList = new ArrayList<Action>(Arrays.asList(actions));
+
             // Check if each actions is an editing-assertion actions.
             for (Action action: actions) {
                 if (action instanceof SecureAction) {
@@ -479,7 +480,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         sa instanceof AssertionMoveDownAction ||
                         sa instanceof AssertionMoveUpAction ||
                         sa instanceof DisableAssertionAction ||
-                        sa instanceof EnableAssertionAction) {
+                        sa instanceof EnableAssertionAction ||
+                        sa instanceof AddIdentityAssertionAction) {
                         actionList.remove(sa);
                     }
                 }
