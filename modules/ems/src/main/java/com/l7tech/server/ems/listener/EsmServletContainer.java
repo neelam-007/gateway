@@ -4,6 +4,8 @@ import org.mortbay.jetty.Server;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.SessionManager;
+import org.mortbay.jetty.HttpGenerator;
+import org.mortbay.jetty.handler.ErrorHandler;
 import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.Context;
@@ -14,6 +16,7 @@ import org.mortbay.jetty.servlet.AbstractSessionManager;
 import org.mortbay.resource.Resource;
 import org.mortbay.log.Log;
 import org.mortbay.log.Slf4jLog;
+import org.mortbay.util.StringUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -22,6 +25,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.apache.wicket.protocol.http.WicketFilter;
 
 import javax.servlet.Filter;
+import javax.servlet.http.HttpServletRequest;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.KeyManager;
@@ -45,10 +49,14 @@ import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.io.Writer;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.net.MalformedURLException;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.audit.Audit;
@@ -64,6 +72,7 @@ import com.l7tech.server.ems.enterprise.MappingFilter;
 import com.l7tech.server.ems.ui.EsmApplication;
 import com.l7tech.server.ems.ui.EsmSecurityFilter;
 import com.l7tech.server.ems.ui.EsmSessionServlet;
+import com.l7tech.common.io.IOUtils;
 
 /**
  * An embedded servlet container that the ESM uses to host itself.
@@ -79,7 +88,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
             new ConcurrentHashMap<Long, Reference<EsmServletContainer>>();
 
     private static final String SESSION_TIMEOUT_PROP = "em.server.session.timeout";
-    private static final int DEFAULT_SESSION_TIMEOUT = 1800; // session idle timeout in seconds
+    private static final int DEFAULT_SESSION_TIMEOUT = 1800000; // session idle timeout in ms
 
     private final ServerConfig serverConfig;
     private final DefaultKey defaultKey;
@@ -102,16 +111,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         this.instanceId = nextInstanceId.getAndIncrement();
         //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<EsmServletContainer>(this));
-
-        File temp;
-        File var = new File("var");
-        if ( !var.exists() ) {
-            temp = new File("/tmp");
-        } else {
-            temp = new File( "var/tmp" );
-            temp.mkdir();
-        }
-        this.temp = temp;
+        this.temp = getTempFilesDirectory();
 
         try {
             Log.setLog( new Slf4jLog( EsmServletContainer.class.getName() + ".SERVLET" ) );
@@ -248,21 +248,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
 
         File webRoot = serverConfig.getLocalDirectoryProperty("em.server.webDirectory", false);
         if ( webRoot.exists() ) {
-            final Resource _resourceBase = Resource.newResource( webRoot.toURI().toURL(), false );
-            DefaultServlet resourceServlet = new DefaultServlet(){
-                @Override
-                public Resource getResource( final String pathInContext )
-                {
-                    if (_resourceBase==null) return null;
-                    Resource r=null;
-                    try {
-                        r = _resourceBase.addPath(pathInContext);
-                    } catch (IOException e) {
-                        logger.log( Level.INFO, "Missing resource.", e );
-                    }                    
-                    return r;
-                }
-            };
+            DefaultServlet resourceServlet = buildResourceServlet(webRoot);
             ServletHolder resourceHolder = new ServletHolder(resourceServlet);
             root.addServlet(resourceHolder, "/help/*");
         } else {
@@ -279,6 +265,8 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         ServletHolder esmSessionServletHolder = new ServletHolder(esmSessionServlet);
         esmSessionServletHolder.setName("sessionServlet");
         root.getServletHandler().addServlet(esmSessionServletHolder);
+
+        root.setErrorHandler( buildErrorHandler() );
 
         server.start();
         runningConfiguration.set( config );
@@ -450,6 +438,110 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
         this.audit = new Auditor(this, applicationContext, logger);
+    }
+
+    private File getTempFilesDirectory() {
+        File temp;
+
+        File var = new File("var");
+        if ( !var.exists() ) {
+            temp = new File("/tmp");
+        } else {
+            temp = new File( "var/tmp" );
+            temp.mkdir();
+        }
+
+        return temp;
+    }
+
+    private DefaultServlet buildResourceServlet( final File webRoot ) throws MalformedURLException {
+        final Resource _resourceBase = Resource.newResource( webRoot.toURI().toURL(), false );
+        return new DefaultServlet(){
+            @Override
+            public Resource getResource( final String pathInContext )
+            {
+                if (_resourceBase==null) return null;
+                Resource r=null;
+                try {
+                    r = _resourceBase.addPath(pathInContext);
+                } catch (IOException e) {
+                    logger.log( Level.INFO, "Missing resource.", e );
+                }
+                return r;
+            }
+        };
+    }
+
+    private ErrorHandler buildErrorHandler() {
+        ErrorHandler errorHandler = new ErrorHandler(){
+            @Override
+            protected void handleErrorPage( final HttpServletRequest request,
+                                            final Writer writer,
+                                            final int code,
+                                            final String errorMessage) throws IOException {
+                if ( code != 404 ) {
+                    EsmServletContainer.this.writeErrorPage( request, writer, code, errorMessage, isShowStacks() );
+                } else {
+                    byte[] pageBytes = IOUtils.slurpStream( EsmSessionServlet.class.getResourceAsStream("../ui/pages/EsmNotFound.html") );
+                    writer.write( new String(pageBytes, "UTF-8") );
+                }
+            }
+        };
+        errorHandler.setShowStacks( SyspropUtil.getBoolean("com.l7tech.ems.development") );
+
+        return errorHandler;
+    }
+
+    /**
+     * Write basic error page. 
+     */
+    private void writeErrorPage( final HttpServletRequest request,
+                                 final Writer writer,
+                                 final int code,
+                                 final String errorMessage,
+                                 final boolean showStacks ) throws IOException  {
+        String message;
+        if ( errorMessage == null ) {
+            message = HttpGenerator.getReason(code);
+        } else {
+            message = StringUtil.replace(errorMessage, "&", "&amp;");
+            message = StringUtil.replace(message, "<", "&lt;");
+            message = StringUtil.replace(message, ">", "&gt;");
+        }
+
+        writer.write("<html>\n<head>\n");
+        writer.write("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"/>\n");
+        writer.write("<title>Error ");
+        writer.write(Integer.toString(code));
+        writer.write(' ');
+        if ( message != null ) {
+            writer.write(message);
+        }
+        writer.write("</title>\n");
+        writer.write("</head>\n<body>");
+        writer.write("<h2>HTTP ERROR: ");
+        writer.write(Integer.toString(code));
+        writer.write("</h2><pre>");
+        writer.write(message);
+        writer.write("</pre>");
+        if ( showStacks ) {
+            Throwable th = (Throwable)request.getAttribute("javax.servlet.error.exception");
+            while(th!=null)
+            {
+                writer.write("<h3>Caused by:</h3><pre>");
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                th.printStackTrace(pw);
+                pw.flush();
+                writer.write(sw.getBuffer().toString());
+                writer.write("</pre>\n");
+
+                th =th.getCause();
+            }
+        }
+        writer.write("\n</body>\n</html>\n");
+        for (int i= 0; i < 20; i++)
+            writer.write("<br/>                                                \n");
     }
 
     /**
