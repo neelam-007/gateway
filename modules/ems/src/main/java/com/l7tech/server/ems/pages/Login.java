@@ -19,14 +19,12 @@ import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
-import com.l7tech.objectmodel.UpdateException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.HashMap;
 
 /**
  * Login page
@@ -141,22 +139,18 @@ public class Login extends WebPage {
         String zoneid = null;
         String preferredpage = null;
 
-        boolean propsChanged = false;
-        Map<String, String> props = new HashMap<String, String>();
         try {
-            props = userPropertyManager.getUserProperties( user );
+            Map<String, String> props = userPropertyManager.getUserProperties( user );
             String dateFormat = props.get("dateformat");
             String timeFormat = props.get("timeformat");
 
             if (dateFormat == null) {
                 dateFormat = "formal";
                 props.put("dateformat", "formal");
-                propsChanged = true;
             }
             if (timeFormat == null) {
                 timeFormat = "formal";
                 props.put("timeformat", "formal");
-                propsChanged = true;
             }
 
             dateformat = EsmApplication.getDateFormat(dateFormat);
@@ -169,37 +163,21 @@ public class Login extends WebPage {
 
         if (dateformat == null) {
             dateformat = EsmApplication.DEFAULT_DATE_FORMAT;
-            props.put("dateformat", "formal");
-            propsChanged = true;
 
         }
         if (datetimeformat == null) {
             datetimeformat = EsmApplication.DEFAULT_DATETIME_FORMAT;
-            props.put("timeformat", "formal");
-            propsChanged = true;
         }
         if (!EsmApplication.isValidTimezoneId(zoneid)) {
             zoneid = TimeZone.getDefault().getID();
-            props.put("timezone", EsmApplication.DEFAULT_SYSTEM_TIME_ZONE);
-            propsChanged = true;
         }
         if (preferredpage == null) {
             preferredpage = EsmApplication.DEFAULT_HOME_PAGE;
-            props.put("homepage", preferredpage);
-            propsChanged = true;
         }
 
         session.setDateFormatPattern( dateformat );
         session.setDateTimeFormatPattern( datetimeformat );
         session.setTimeZoneId(zoneid);
         session.setPreferredPage(preferredpage);
-
-        if (propsChanged) {
-            try {
-                userPropertyManager.saveUserProperties(user, props);
-            } catch (UpdateException e) {
-                // use the previous props
-            }
-        }
     }
 }

@@ -14,6 +14,13 @@ import java.security.cert.X509Certificate;
 public interface SetupManager {
 
     /**
+     * Get the ID for the ESM instance.
+     *
+     * @return The ID (which is a GUID).
+     */
+    String getEsmId();
+
+    /**
      * Delete the current license.
      *
      * @throws DeleteException if an error occurs.

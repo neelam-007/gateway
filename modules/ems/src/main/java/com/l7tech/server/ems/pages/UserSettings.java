@@ -68,7 +68,7 @@ public class UserSettings extends EsmPage {
         } );
 
         final FeedbackPanel accountFeedback = new FeedbackPanel("account.feedback");
-        Form accountForm = new PreferencesForm("preferencesForm", preferences );
+        Form accountForm = new PreferencesForm("preferencesForm", populateDefaults(preferences) );
         accountFeedback.setFilter( new ContainerFeedbackMessageFilter(accountForm) );
         add( accountFeedback.setOutputMarkupId(true) );
         add( accountForm );
@@ -108,10 +108,28 @@ public class UserSettings extends EsmPage {
         return changed;
     }
 
+    private Map<String,String> populateDefaults( Map<String,String> preferences ) {
+        if ( !preferences.containsKey("dateformat") ) {
+            preferences.put("dateformat", "formal");
+        }
+        if ( !preferences.containsKey("timeformat") ) {
+            preferences.put("timeformat", "formal");
+        }
+        if ( !preferences.containsKey("timezone") ) {
+            preferences.put("timezone", EsmApplication.DEFAULT_SYSTEM_TIME_ZONE);
+        }
+        if ( !preferences.containsKey("homepage") ) {
+            preferences.put("homepage", EsmApplication.DEFAULT_HOME_PAGE);
+        }
+        
+        return preferences;
+    }
+
     private boolean storePreferences( final Map<String,String> preferences ) {
         boolean updated = false;
 
         try {
+            populateDefaults( preferences );
             String dateFormat = preferences.get("dateformat");
             String timeFormat = preferences.get("timeformat");
             String zoneId = preferences.get("timezone");
@@ -311,6 +329,7 @@ public class UserSettings extends EsmPage {
             return "DifferentPasswordInputValidator.message";
         }
 
+        @SuppressWarnings({"unchecked"})
         @Override
         protected Map variablesMap() {
             Map<String, Object> map = super.variablesMap();

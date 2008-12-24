@@ -2,11 +2,18 @@ package com.l7tech.server.ems.setup;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.UUID;
 
 /**
  * Mock SetupManager for tests
  */
 public class MockSetupManager implements SetupManager {
+    private static final String uuid = UUID.fromString(MockSetupManager.class.getName()).toString();
+
+    @Override
+    public String getEsmId() {
+        return uuid;
+    }
 
     @Override
     public void deleteLicense() {

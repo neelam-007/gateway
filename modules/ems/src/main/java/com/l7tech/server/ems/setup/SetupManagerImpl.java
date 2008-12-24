@@ -85,6 +85,11 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
         this.clusterPropertyManager = clusterPropertyManager;
     }
 
+    @Override
+    public String getEsmId() {
+        return  serverConfig.getProperty( "em.server.id" );
+    }
+
     public void setKeyStoreManager( final SsgKeyStoreManager keyStoreManager ) {
         this.keyStoreManager = keyStoreManager;
     }
@@ -217,107 +222,106 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
     public void afterPropertiesSet() {
         final String[] uuidHolder = new String[1];
 
-        TransactionTemplate template = new TransactionTemplate(transactionManager);
-        template.execute( new TransactionCallbackWithoutResult(){
-            @Override
-            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
-                try {
-                    if ( clusterPropertyManager.findByUniqueName("esm.id") == null ) {
-                        uuidHolder[0] = UUID.randomUUID().toString();
-                        clusterPropertyManager.save( new ClusterProperty( "esm.id", uuidHolder[0] ) );
-                    }
+        final boolean wasSystem = auditContext.isSystem();
+        try {
+            auditContext.setSystem(true);
 
-                    if ( identityProviderConfigManager.findAll().isEmpty() &&
-                         roleManager.findAll().isEmpty() ) {
-                        logger.info("Generating initial database configuration.");
-
-                        logger.info("Creating configuration for internal identity provider.");
-                        IdentityProviderConfig config = new IdentityProviderConfig();
-                        config.setOid(-2);
-                        config.setTypeVal(1);
-                        config.setAdminEnabled(true);
-                        config.setName("Internal Identity Provider");
-                        config.setDescription("Internal Identity Provider");
-                        auditContext.setSystem(true);
-                        long id = identityProviderConfigManager.save(config);
-                        logger.info("Created configuration for internal identity provider with identifier '" + id + "'.");
-
-                        logger.info("Creating configuration for administration role.");
-                        Role role = new Role();
-                        role.setName("Administrator");
-                        role.setTag(Role.Tag.ADMIN);
-                        role.setDescription("Users assigned to the {0} role have full access to the gateway.");
-                        role.getPermissions().add(new Permission(role, OperationType.CREATE, EntityType.ANY));
-                        role.getPermissions().add(new Permission(role, OperationType.READ, EntityType.ANY));
-                        role.getPermissions().add(new Permission(role, OperationType.UPDATE, EntityType.ANY));
-                        role.getPermissions().add(new Permission(role, OperationType.DELETE, EntityType.ANY));
-                        auditContext.setSystem(true);
-                        id = roleManager.save(role);
-                        logger.info("Created configuration for administration role with identifier '" + id + "'.");
-                    }
-                } catch ( Exception e ) {
-                    transactionStatus.setRollbackOnly();
-                    throw new RuntimeException( "Error during initial setup.", e );
-                }
-            }
-        });
-
-        // separate transaction since we want the provider / role to be persisted before we run this.
-        template.execute( new TransactionCallbackWithoutResult(){
-            @Override
-            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
-                try {
-                    InternalUserManager internalUserManager = getInternalUserManager();
-                    if ( internalUserManager != null ) {
-                        String initialAdminUsername = serverConfig.getProperty("em.admin.user");
-                        String initialAdminPassword = serverConfig.getProperty("em.admin.pass");
-
-                        boolean create = false;
-                        if ( initialAdminUsername != null && initialAdminUsername.trim().length() > 0 &&
-                             initialAdminPassword != null && initialAdminPassword.trim().length() > 0) {
-                            create = internalUserManager.findByLogin(initialAdminUsername) == null;
+            TransactionTemplate template = new TransactionTemplate(transactionManager);
+            template.execute( new TransactionCallbackWithoutResult(){
+                @Override
+                protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                    try {
+                        if ( clusterPropertyManager.findByUniqueName("esm.id") == null ) {
+                            uuidHolder[0] = UUID.randomUUID().toString().replaceAll("-","");
+                            clusterPropertyManager.save( new ClusterProperty( "esm.id", uuidHolder[0] ) );
                         }
 
-                        if ( create ) {
-                            logger.info("Creating administative user with account '" + initialAdminUsername + "'.");
-                            InternalUser user = new InternalUser();
-                            user.setName(initialAdminUsername);
-                            user.setLogin(initialAdminUsername);
-                            user.setHashedPassword(initialAdminPassword);
+                        if ( identityProviderConfigManager.findAll().isEmpty() &&
+                             roleManager.findAll().isEmpty() ) {
+                            logger.info("Generating initial database configuration.");
 
-                            String id = internalUserManager.save(user, Collections.<IdentityHeader>emptySet());
-                            user.setOid( Long.parseLong(id) );
+                            logger.info("Creating configuration for internal identity provider.");
+                            IdentityProviderConfig config = new IdentityProviderConfig();
+                            config.setOid(-2);
+                            config.setTypeVal(1);
+                            config.setAdminEnabled(true);
+                            config.setName("Internal Identity Provider");
+                            config.setDescription("Internal Identity Provider");
+                            long id = identityProviderConfigManager.save(config);
+                            logger.info("Created configuration for internal identity provider with identifier '" + id + "'.");
 
-                            Role adminRole = roleManager.findByTag(Role.Tag.ADMIN);
-                            if ( adminRole != null ) {
-                                adminRole.addAssignedUser( user );
-                                roleManager.update( adminRole );
+                            logger.info("Creating configuration for administration role.");
+                            Role role = new Role();
+                            role.setName("Administrator");
+                            role.setTag(Role.Tag.ADMIN);
+                            role.setDescription("Users assigned to the {0} role have full access to the gateway.");
+                            role.getPermissions().add(new Permission(role, OperationType.CREATE, EntityType.ANY));
+                            role.getPermissions().add(new Permission(role, OperationType.READ, EntityType.ANY));
+                            role.getPermissions().add(new Permission(role, OperationType.UPDATE, EntityType.ANY));
+                            role.getPermissions().add(new Permission(role, OperationType.DELETE, EntityType.ANY));
+                            id = roleManager.save(role);
+                            logger.info("Created configuration for administration role with identifier '" + id + "'.");
+                        }
+                    } catch ( Exception e ) {
+                        transactionStatus.setRollbackOnly();
+                        throw new RuntimeException( "Error during initial setup.", e );
+                    }
+                }
+            });
+
+            // separate transaction since we want the provider / role to be persisted before we run this.
+            template.execute( new TransactionCallbackWithoutResult(){
+                @Override
+                protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                    try {
+                        InternalUserManager internalUserManager = getInternalUserManager();
+                        if ( internalUserManager != null ) {
+                            String initialAdminUsername = serverConfig.getProperty("em.admin.user");
+                            String initialAdminPassword = serverConfig.getProperty("em.admin.pass");
+
+                            boolean create = false;
+                            if ( initialAdminUsername != null && initialAdminUsername.trim().length() > 0 &&
+                                 initialAdminPassword != null && initialAdminPassword.trim().length() > 0) {
+                                create = internalUserManager.findByLogin(initialAdminUsername) == null;
                             }
-                        }
-                    } else {
-                        logger.warning("User manager not found during initialization.");
-                    }
 
-                    if ( keystoreFileManager.findAll().isEmpty() ) {
-                        final boolean wasSystem = auditContext.isSystem();
-                        auditContext.setSystem(true);
-                        try {
+                            if ( create ) {
+                                logger.info("Creating administative user with account '" + initialAdminUsername + "'.");
+                                InternalUser user = new InternalUser();
+                                user.setName(initialAdminUsername);
+                                user.setLogin(initialAdminUsername);
+                                user.setHashedPassword(initialAdminPassword);
+
+                                String id = internalUserManager.save(user, Collections.<IdentityHeader>emptySet());
+                                user.setOid( Long.parseLong(id) );
+
+                                Role adminRole = roleManager.findByTag(Role.Tag.ADMIN);
+                                if ( adminRole != null ) {
+                                    adminRole.addAssignedUser( user );
+                                    roleManager.update( adminRole );
+                                }
+                            }
+                        } else {
+                            logger.warning("User manager not found during initialization.");
+                        }
+
+                        if ( keystoreFileManager.findAll().isEmpty() ) {
                             keystoreFileManager.save( newKeystore("Software DB", "sdb.pkcs12") );
-                        } finally {
-                            auditContext.setSystem(wasSystem);
                         }
-                    }
 
-                    if ( enterpriseFolderManager.findAll().isEmpty() ) {
-                        logger.info("Creating root folder with name \"" + EnterpriseFolder.DEFAULT_ROOT_FOLDER_NAME + "\".");
-                        enterpriseFolderManager.create(EnterpriseFolder.DEFAULT_ROOT_FOLDER_NAME, (EnterpriseFolder)null);
+                        if ( enterpriseFolderManager.findAll().isEmpty() ) {
+                            logger.info("Creating root folder with name \"" + EnterpriseFolder.DEFAULT_ROOT_FOLDER_NAME + "\".");
+                            enterpriseFolderManager.create(EnterpriseFolder.DEFAULT_ROOT_FOLDER_NAME, (EnterpriseFolder)null);
+                        }
+                    } catch ( Exception e ) {
+                        transactionStatus.setRollbackOnly();
+                        throw new RuntimeException( "Error during initial setup.", e );
                     }
-                } catch ( Exception e ) {
-                    transactionStatus.setRollbackOnly();
-                    throw new RuntimeException( "Error during initial setup.", e );
                 }
-            }
-        });
+            });
+        } finally {
+            auditContext.setSystem( wasSystem );
+        }
 
         if ( uuidHolder[0] != null ) {
             serverConfig.putProperty( "em.server.id", uuidHolder[0] ); // work around for application events not yet available

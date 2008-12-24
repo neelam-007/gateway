@@ -13,7 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Represents a running Enterprise Manager Server instance, including its HTTP listeners, database, Spring
+ * Represents a running Enterprise Service Manager Server instance, including its HTTP listeners, database, Spring
  * context, and everything else.
  */
 public class Esm {
@@ -33,9 +33,9 @@ public class Esm {
                 "com/l7tech/server/ems/resources/esmApplicationContext.xml",
         });
         if (!appContext.compareAndSet(null, newAppContext))
-            throw new IllegalStateException("EMS already started");
+            throw new IllegalStateException("ESM already started");
 
-        newAppContext.publishEvent(new Started(this, Component.ENTERPRISE_MANAGER, "127.0.0.1")); //TODO [steve] EMS IP
+        newAppContext.publishEvent(new Started(this, Component.ENTERPRISE_MANAGER, null));
     }
 
     /**
@@ -45,7 +45,7 @@ public class Esm {
         try {
             final AbstractApplicationContext ac = appContext.getAndSet(null);
             if (ac != null) {
-                ac.publishEvent(new Stopped(this, Component.ENTERPRISE_MANAGER, "127.0.0.1")); //TODO [steve] EMS IP                
+                ac.publishEvent(new Stopped(this, Component.ENTERPRISE_MANAGER, null));              
                 ac.destroy();
             }
         } catch (Throwable t) {

@@ -286,15 +286,13 @@
         <constructor-arg ref="auditContext"/>
     </bean>
 
-    <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener">
-        <!-- TODO node id for ems -->
-        <constructor-arg value="EMS"/>
+    <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener" depends-on="serverConfig">
+        <constructor-arg ref="esmId"/>
         <constructor-arg ref="auditContext"/>
     </bean>
 
-    <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener">
-        <!-- TODO node id for ems -->
-        <constructor-arg value="EMS"/>
+    <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener" depends-on="serverConfig">
+        <constructor-arg ref="esmId"/>
         <constructor-arg ref="auditContext"/>
     </bean>
 
@@ -396,6 +394,11 @@
         <constructor-arg index="7" ref="keystoreFileManager"/>
         <constructor-arg index="8" ref="clusterPropertyManager"/>
         <property name="keyStoreManager" ref="ssgKeyStoreManager"/>
+    </bean>
+
+    <bean id="esmId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref="setupManager"/>
+        <property name="targetMethod" value="getEsmId"/>
     </bean>
 
     <!-- Security Manager -->
