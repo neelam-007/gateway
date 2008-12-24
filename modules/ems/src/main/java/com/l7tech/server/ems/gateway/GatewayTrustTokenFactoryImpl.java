@@ -10,7 +10,7 @@ import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ems.EsmSecurityManager;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.util.Config;
 import org.apache.wicket.RequestCycle;

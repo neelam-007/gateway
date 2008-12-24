@@ -7,13 +7,12 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.behavior.HeaderContributor;
-import org.apache.wicket.ResourceReference;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.util.convert.IConverter;
-import com.l7tech.server.ems.EsmSession;
-import com.l7tech.server.ems.EsmApplication;
+import com.l7tech.server.ems.ui.EsmSession;
+import com.l7tech.server.ems.ui.EsmApplication;
 
 import java.text.ParseException;
 import java.text.DateFormat;

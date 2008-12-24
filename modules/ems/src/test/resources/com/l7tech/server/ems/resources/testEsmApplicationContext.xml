@@ -13,7 +13,7 @@
     <bean id="licenseManager" class="com.l7tech.server.TestLicenseManager"/>
 
     <!-- Security Manager -->
-    <bean name="securityManager" class="com.l7tech.server.ems.MockEsmSecurityManager"/>
+    <bean name="securityManager" class="com.l7tech.server.ems.ui.MockEsmSecurityManager"/>
 
     <!-- Setup Manager -->
     <bean name="setupManager" class="com.l7tech.server.ems.setup.MockSetupManager"/>
@@ -22,10 +22,10 @@
     <bean name="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerStub"/>
 
     <!-- Account Manager Mock -->
-    <bean name="emsAccountManager" class="com.l7tech.server.ems.MockEsmAccountManager"/>
+    <bean name="emsAccountManager" class="com.l7tech.server.ems.user.MockEsmAccountManager"/>
 
     <!-- User Properties Manager Mock -->
-    <bean name="userPropertyManager" class="com.l7tech.server.ems.MockUserPropertyManager"/>
+    <bean name="userPropertyManager" class="com.l7tech.server.ems.user.MockUserPropertyManager"/>
     
     <!-- License Manager -->
     <bean id="clusterPropertyManager" class="com.l7tech.server.MockClusterPropertyManager"/>

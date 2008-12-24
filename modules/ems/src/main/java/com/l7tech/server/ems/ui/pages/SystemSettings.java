@@ -12,8 +12,8 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.server.ems.EsmApplication;
+import com.l7tech.server.ems.ui.NavigationPage;
+import com.l7tech.server.ems.ui.EsmApplication;
 import com.l7tech.server.ems.setup.SetupManager;
 import com.l7tech.server.ems.setup.SetupException;
 import com.l7tech.util.*;
@@ -59,7 +59,7 @@ import java.net.MalformedURLException;
  */
 @Administrative(licensed=false)
 @NavigationPage(page="SystemSettings",pageIndex=100,section="Settings",sectionIndex=200,pageUrl="SystemSettings.html")
-public class SystemSettings extends EsmPage {
+public class SystemSettings extends EsmStandardWebPage {
 
     private static final int MAX_LICENSE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.licenseFile.maxBytes", 1024 * 500);
     private static final Logger logger = Logger.getLogger(SystemSettings.class.getName());

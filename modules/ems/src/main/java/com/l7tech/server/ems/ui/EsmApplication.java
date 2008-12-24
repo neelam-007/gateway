@@ -1,8 +1,11 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.ui;
 
 import com.l7tech.server.ems.ui.pages.*;
 import com.l7tech.server.ems.standardreports.ReportResource;
+import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
 import org.apache.wicket.*;
 import org.apache.wicket.authorization.Action;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
@@ -12,6 +15,7 @@ import org.apache.wicket.protocol.http.PageExpiredException;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebRequestCycle;
+import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.request.target.coding.HybridUrlCodingStrategy;
 import org.apache.wicket.settings.*;
 import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
@@ -21,8 +25,7 @@ import org.apache.wicket.util.lang.Bytes;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import javax.servlet.http.HttpServletRequest;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.*;
@@ -78,8 +81,17 @@ public class EsmApplication extends WebApplication {
     }
 
     @Override
-    public Session newSession(Request request, Response response) {
-        return new EsmSession( request );
+    public Session newSession( final Request request, final Response response ) {
+        EsmSession session = new EsmSession( request );
+
+        ServletWebRequest servletWebRequest = (ServletWebRequest) request;
+        HttpServletRequest servletRequest = servletWebRequest.getHttpServletRequest();
+        EsmSecurityManager.LoginInfo info = getEsmSecurityManager().getLoginInfo( servletRequest.getSession(true) );
+        if ( info != null ) {
+            setUserPreferences( info.getUser(), session );
+        }
+
+        return session;
     }
 
     //- PROTECTED
@@ -98,8 +110,8 @@ public class EsmApplication extends WebApplication {
         addComponentInstantiationListener(new SpringComponentInjector(this));
 
         IApplicationSettings applicationSettings = getApplicationSettings();
-        applicationSettings.setPageExpiredErrorPage(Login.class);
-        applicationSettings.setAccessDeniedPage(Login.class);
+        applicationSettings.setPageExpiredErrorPage(HomeRedirectPage.class);
+        applicationSettings.setAccessDeniedPage(HomeRedirectPage.class);
         applicationSettings.setInternalErrorPage(EsmError.class);
         applicationSettings.setDefaultMaximumUploadSize(Bytes.kilobytes(100));
 
@@ -113,8 +125,7 @@ public class EsmApplication extends WebApplication {
             protected boolean acceptAbsolutePath( final String resourcePath ) {
                 boolean accept = false;
                 if ( resourcePath.startsWith("org/apache/wicket") ||
-                     (resourcePath.startsWith("com/l7tech/server/ems/resources/web") ||
-                      resourcePath.startsWith("com/l7tech/server/ems/ui/pages"))) {
+                     resourcePath.startsWith("com/l7tech/server/ems/ui/pages") ) {
                     accept = super.acceptAbsolutePath(resourcePath);
                 } else {
                     logger.info("Rejecting access to resource '"+resourcePath+"'.");
@@ -139,47 +150,19 @@ public class EsmApplication extends WebApplication {
             }
         } );
         securitySettings.setAuthorizationStrategy( new IAuthorizationStrategy() {
-            private Method method;
-
-            @SuppressWarnings({"ConstantConditions"})
-            private boolean isAuto( final Component component ) {
-                boolean isAuto = false;
-
-                Method method = this.method;
-                if ( method == null ) {
-                    try {
-                        method = Component.class.getDeclaredMethod("isAuto");
-                        method.setAccessible(true);
-                        this.method = method;
-                    } catch (NoSuchMethodException e) {
-                        // fails closed
-                    }
-                }
-
-                try {
-                    isAuto = (Boolean) method.invoke(component);
-                } catch (InvocationTargetException e) {
-                    // fails closed
-                } catch (IllegalAccessException e) {
-                    // fails closed
-                }
-
-                return isAuto;
-            }
-
             @Override
             public boolean isInstantiationAuthorized(Class aClass) {
                 final boolean isPage = Page.class.isAssignableFrom(aClass);
 
-                if ( isPage && !getEmsSecurityManager().isAuthorized( aClass ) ) {
-                    throw new RestartResponseAtInterceptPageException( Login.class );
+                if ( isPage && !getEsmSecurityManager().isAuthorized( aClass ) ) {
+                    throw new RedirectToUrlException( "/" );
                 }
 
-                if ( isPage && !getEmsSecurityManager().isLicensed( aClass ) ) {
+                if ( isPage && !getEsmSecurityManager().isLicensed( aClass ) ) {
                     throw new RestartResponseAtInterceptPageException( SystemSettings.class );
                 }
 
-                boolean permitted = !isPage ||  getEmsSecurityManager().isAuthenticated( aClass );
+                boolean permitted = !isPage ||  getEsmSecurityManager().isAuthenticated( aClass );
 
                 if (logger.isLoggable(Level.FINER))
                     logger.finer("Instantiation authorized check for component '" +aClass + "' is " + permitted + ".");
@@ -189,9 +172,9 @@ public class EsmApplication extends WebApplication {
 
             @Override
             public boolean isActionAuthorized(Component component, Action action) {
-                boolean permitted = isAuto(component) ||
-                        getEmsSecurityManager().isAuthenticated( component ) &&
-                        (component instanceof Page || getEmsSecurityManager().isLicensed( component ));
+                boolean permitted =
+                        getEsmSecurityManager().isAuthenticated( component ) &&
+                        (component instanceof Page || getEsmSecurityManager().isLicensed( component ));
 
                 if (logger.isLoggable(Level.FINER))
                     logger.finer("Action authorized check for component  '" + component.getId() + "', '" + action.getName() + "' is " + permitted);
@@ -231,7 +214,6 @@ public class EsmApplication extends WebApplication {
 
         // mount other pages / templates
         mountTemplate("/Help.html");
-        mountPage("/Login.html", Login.class);
         mountPage("/SSGClusterSelector.html", SSGClusterSelector.class);
         mountPage("/SSGClusterContentSelector.html", SSGClusterContentSelector.class);
         mountPage("/SSGClusterServiceContentSelector.html", SSGClusterServiceContentSelector.class);
@@ -299,7 +281,8 @@ public class EsmApplication extends WebApplication {
     private static final Map<String,String> times;
 
     private long timeStarted; // The time when EMS process started.
-    private EsmSecurityManager emsSecurityManager;
+    private EsmSecurityManager esmSecurityManager;
+    private UserPropertyManager userPropertyManager;
 
     static {
         Map<String,String> dateMap = new LinkedHashMap<String,String>();
@@ -318,19 +301,83 @@ public class EsmApplication extends WebApplication {
      *
      */
     private void mountTemplate( String templateName ) {
-        mountSharedResource( templateName, new ResourceReference(EsmApplication.class, "ui/pages" + templateName).getSharedResourceKey());
+        mountSharedResource( templateName, new ResourceReference(EsmApplication.class, "pages" + templateName).getSharedResourceKey());
     }
 
     /**
      *
      */
-    private EsmSecurityManager getEmsSecurityManager() {
-        EsmSecurityManager emsSecurityManager = this.emsSecurityManager;
-        if ( emsSecurityManager == null ) {
-            BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
-            emsSecurityManager = (EsmSecurityManager) beanFactory.getBean( "securityManager", EsmSecurityManager.class );
-            this.emsSecurityManager = emsSecurityManager;
+    private void setUserPreferences( final User user, final EsmSession session ) {
+        String dateformat = null;
+        String datetimeformat = null;
+        String zoneid = null;
+        String preferredpage = null;
+
+        try {
+            Map<String, String> props = getUserPropertyManager().getUserProperties( user );
+            String dateFormat = props.get("dateformat");
+            String timeFormat = props.get("timeformat");
+
+            if (dateFormat == null) {
+                dateFormat = "formal";
+                props.put("dateformat", "formal");
+            }
+            if (timeFormat == null) {
+                timeFormat = "formal";
+                props.put("timeformat", "formal");
+            }
+
+            dateformat = EsmApplication.getDateFormat(dateFormat);
+            datetimeformat = EsmApplication.getDateTimeFormat(dateFormat, timeFormat);
+            zoneid = props.get("timezone");
+            preferredpage = props.get("homepage");
+        } catch ( FindException fe ) {
+            // use default format
         }
-        return emsSecurityManager;        
+
+        if (dateformat == null) {
+            dateformat = EsmApplication.DEFAULT_DATE_FORMAT;
+
+        }
+        if (datetimeformat == null) {
+            datetimeformat = EsmApplication.DEFAULT_DATETIME_FORMAT;
+        }
+        if (!EsmApplication.isValidTimezoneId(zoneid)) {
+            zoneid = TimeZone.getDefault().getID();
+        }
+        if (preferredpage == null) {
+            preferredpage = EsmApplication.DEFAULT_HOME_PAGE;
+        }
+
+        session.setDateFormatPattern( dateformat );
+        session.setDateTimeFormatPattern( datetimeformat );
+        session.setTimeZoneId(zoneid);
+        session.setPreferredPage(preferredpage);
+    }
+
+    /**
+     *
+     */
+    private EsmSecurityManager getEsmSecurityManager() {
+        EsmSecurityManager esmSecurityManager = this.esmSecurityManager;
+        if ( esmSecurityManager == null ) {
+            BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
+            esmSecurityManager = (EsmSecurityManager) beanFactory.getBean( "securityManager", EsmSecurityManager.class );
+            this.esmSecurityManager = esmSecurityManager;
+        }
+        return esmSecurityManager;
+    }
+
+    /**
+     *
+     */
+    private UserPropertyManager getUserPropertyManager() {
+        UserPropertyManager userPropertyManager = this.userPropertyManager;
+        if ( userPropertyManager == null ) {
+            BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
+            userPropertyManager = (UserPropertyManager) beanFactory.getBean( "userPropertyManager", UserPropertyManager.class );
+            this.userPropertyManager = userPropertyManager;
+        }
+        return userPropertyManager;
     }
 }

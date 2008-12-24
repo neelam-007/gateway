@@ -15,7 +15,7 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import com.l7tech.server.ems.EsmAccountManager;
+import com.l7tech.server.ems.user.EsmAccountManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;

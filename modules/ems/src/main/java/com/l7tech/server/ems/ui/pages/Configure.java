@@ -3,8 +3,8 @@ package com.l7tech.server.ems.ui.pages;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.server.ems.EsmSecurityManager;
+import com.l7tech.server.ems.ui.NavigationPage;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.standardreports.StandardReportManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
@@ -43,7 +43,7 @@ import java.util.logging.Level;
  */
 @SuppressWarnings({"UnusedDeclaration"})
 @NavigationPage(page="Configure",pageIndex=100,section="ManageGateways",sectionPage="Configure",pageUrl="Configure.html")
-public class Configure extends EsmPage {
+public class Configure extends EsmStandardWebPage {
 
     private static final Logger logger = Logger.getLogger(Configure.class.getName());
 

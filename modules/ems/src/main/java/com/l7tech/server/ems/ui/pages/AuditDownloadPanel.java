@@ -17,7 +17,7 @@ import java.util.TimeZone;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.server.ems.EsmSession;
+import com.l7tech.server.ems.ui.EsmSession;
 
 /**
  * Panel for collection of details for audit download.

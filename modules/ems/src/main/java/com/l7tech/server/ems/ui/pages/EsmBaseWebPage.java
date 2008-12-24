@@ -3,8 +3,8 @@ package com.l7tech.server.ems.ui.pages;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import com.l7tech.server.ems.EsmSession;
-import com.l7tech.server.ems.EsmSecurityManager;
+import com.l7tech.server.ems.ui.EsmSession;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.identity.User;
 
 import javax.servlet.http.HttpServletRequest;

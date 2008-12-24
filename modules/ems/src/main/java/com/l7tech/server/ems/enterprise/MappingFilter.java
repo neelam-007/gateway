@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.server.ems.EsmSecurityManager;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.gateway.GatewayRegistrationEvent;
 import com.l7tech.server.ems.user.UserPropertyManager;
 

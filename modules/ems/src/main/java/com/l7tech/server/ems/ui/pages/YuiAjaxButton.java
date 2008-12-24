@@ -7,7 +7,7 @@ import org.apache.wicket.ajax.markup.html.form.AjaxButton;
 import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.markup.html.form.Form;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
-import com.l7tech.server.ems.SecureComponent;
+import com.l7tech.server.ems.ui.SecureComponent;
 
 /**
  * Extension of AjaxButton that has YUI look and feel.

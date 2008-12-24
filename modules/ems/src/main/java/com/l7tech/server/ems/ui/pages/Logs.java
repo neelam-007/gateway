@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.LogResource;
-import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.ui.LogResource;
+import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAny;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.gateway.common.security.rbac.RequiredPermission;
@@ -33,7 +33,7 @@ import java.util.*;
     requiredPermissions=@RequiredPermission(entityType=EntityType.LOG_RECORD, operationType= OperationType.READ)
 )
 @NavigationPage(page="Logs",pageIndex=200,section="Tools",sectionIndex=100,sectionPage="Audits",pageUrl="Logs.html")
-public class Logs extends EsmPage {
+public class Logs extends EsmStandardWebPage {
 
     public Logs() {
         WebMarkupContainer secured = new SecureWebMarkupContainer( "secured", new AttemptedReadAny(EntityType.LOG_RECORD) );

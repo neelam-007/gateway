@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.NavigationModel;
-import com.l7tech.server.ems.EsmSecurityManager;
+import com.l7tech.server.ems.ui.NavigationModel;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.util.Functions;
 import org.apache.wicket.AttributeModifier;
@@ -36,7 +36,7 @@ public class NavigationPanel extends Panel {
         });
 
 
-        String currentPage = ((EsmPage)model.getObject()).getPageName();
+        String currentPage = ((EsmStandardWebPage)model.getObject()).getPageName();
         currentPage = currentPage.substring(currentPage.lastIndexOf('.')+1);
         String currentSection = navigationModel.getNavigationSectionForPage(currentPage);
         if ( currentSection == null ) {

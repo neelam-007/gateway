@@ -2,7 +2,7 @@ package com.l7tech.server.ems.ui.pages;
 
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.model.IModel;
-import com.l7tech.server.ems.SecureComponent;
+import com.l7tech.server.ems.ui.SecureComponent;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 
 /**

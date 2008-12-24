@@ -1,12 +1,10 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.user;
 
-import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 
 import java.util.Map;
-import java.util.Collections;
 import java.util.HashMap;
 
 /**

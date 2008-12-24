@@ -378,7 +378,7 @@
     </bean>
 
     <!-- Account manager -->
-    <bean id="emsAccountManager" class="com.l7tech.server.ems.EsmAccountManagerImpl">
+    <bean id="emsAccountManager" class="com.l7tech.server.ems.user.EsmAccountManagerImpl">
         <constructor-arg ref="identityProviderFactory"/>
     </bean>
 
@@ -402,7 +402,7 @@
     </bean>
 
     <!-- Security Manager -->
-    <bean id="securityManager" class="com.l7tech.server.ems.EsmSecurityManagerImpl">
+    <bean id="securityManager" class="com.l7tech.server.ems.ui.EsmSecurityManagerImpl">
         <constructor-arg index="0" ref="identityProviderFactory"/>
         <constructor-arg index="1" ref="roleManager"/>
         <constructor-arg index="2" ref="licenseManager"/>
@@ -419,7 +419,7 @@
     <bean id="setAuditResourceAuditDownloadManager"
           class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="staticMethod"
-                  value="com.l7tech.server.ems.AuditResource.setAuditDownloadManager"/>
+                  value="com.l7tech.server.ems.ui.AuditResource.setAuditDownloadManager"/>
         <property name="arguments">
             <list>
                 <ref local="auditDownloadManager"/>
@@ -441,7 +441,7 @@
     <bean id="setResourceSecurityManager"
           class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="staticMethod"
-                  value="com.l7tech.server.ems.SecureResource.setSecurityManager"/>
+                  value="com.l7tech.server.ems.ui.SecureResource.setSecurityManager"/>
         <property name="arguments">
             <list>
                 <ref local="securityManager"/>

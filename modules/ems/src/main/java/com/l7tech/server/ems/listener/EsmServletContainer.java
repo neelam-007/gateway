@@ -61,7 +61,9 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ems.enterprise.MappingFilter;
-import com.l7tech.server.ems.EsmApplication;
+import com.l7tech.server.ems.ui.EsmApplication;
+import com.l7tech.server.ems.ui.EsmSecurityFilter;
+import com.l7tech.server.ems.ui.EsmSessionServlet;
 
 /**
  * An embedded servlet container that the ESM uses to host itself.
@@ -267,11 +269,16 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
             logger.config("Ignoring invalid static content directory '"+webRoot.getAbsolutePath()+"'.");
         }
 
-
-        //Set DefaultServlet to handle all static resource requests
+        // Set DefaultServlet to handle all static resource requests
         DefaultServlet defaultServlet = new DefaultServlet();
         ServletHolder defaultHolder = new ServletHolder(defaultServlet);
         root.addServlet(defaultHolder, "/");
+
+        // Add session servlet (no mapping, will be invoked by name)
+        EsmSessionServlet esmSessionServlet = new EsmSessionServlet();
+        ServletHolder esmSessionServletHolder = new ServletHolder(esmSessionServlet);
+        esmSessionServletHolder.setName("sessionServlet");
+        root.getServletHandler().addServlet(esmSessionServletHolder);
 
         server.start();
         runningConfiguration.set( config );

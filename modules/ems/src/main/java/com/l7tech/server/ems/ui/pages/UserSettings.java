@@ -14,10 +14,10 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.feedback.ContainerFeedbackMessageFilter;
 import org.apache.wicket.Page;
 
-import com.l7tech.server.ems.EsmSecurityManager;
-import com.l7tech.server.ems.EsmApplication;
-import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.server.ems.NavigationModel;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
+import com.l7tech.server.ems.ui.EsmApplication;
+import com.l7tech.server.ems.ui.NavigationPage;
+import com.l7tech.server.ems.ui.NavigationModel;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -39,7 +39,7 @@ import java.util.logging.Level;
  * User settings web page 
  */
 @NavigationPage(page="UserSettings",section="Settings",sectionIndex=200,pageUrl="UserSettings.html")
-public class UserSettings extends EsmPage {
+public class UserSettings extends EsmStandardWebPage {
 
     //- PUBLIC
 

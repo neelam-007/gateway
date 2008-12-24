@@ -22,7 +22,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import com.l7tech.server.ems.standardreports.StandardReportManager;
 import com.l7tech.server.ems.standardreports.StandardReport;
-import com.l7tech.server.ems.EsmSecurityManager;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.identity.User;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;

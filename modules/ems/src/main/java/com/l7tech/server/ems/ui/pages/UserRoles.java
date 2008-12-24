@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.server.ems.EsmAccountManager;
+import com.l7tech.server.ems.ui.NavigationPage;
+import com.l7tech.server.ems.user.EsmAccountManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
@@ -41,7 +41,7 @@ import java.io.Serializable;
     }
 )
 @NavigationPage(page="UserRoles",pageIndex=300,section="Settings",sectionIndex=200,pageUrl="UserRoles.html")
-public class UserRoles extends EsmPage {
+public class UserRoles extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(UserRoles.class.getName());
 
     @SpringBean

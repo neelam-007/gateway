@@ -3,8 +3,6 @@ package com.l7tech.server.ems.ui.pages;
 import org.junit.Before;
 import org.junit.Test;
 import org.apache.wicket.util.tester.WicketTester;
-import org.apache.wicket.util.resource.locator.ResourceStreamLocator;
-import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
 import org.apache.wicket.Session;
@@ -13,8 +11,8 @@ import org.apache.wicket.Response;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.l7tech.server.ems.EsmSession;
-import com.l7tech.server.ems.NavigationModel;
+import com.l7tech.server.ems.ui.EsmSession;
+import com.l7tech.server.ems.ui.NavigationModel;
 
 public class PagesTest {
 
@@ -33,7 +31,7 @@ public class PagesTest {
 
             @Override
             public Class getHomePage() {
-                return Login.class;
+                return SystemSettings.class;
             }
 
             @Override
@@ -72,13 +70,6 @@ public class PagesTest {
     public void testEnterpriseUserPage() {
         tester.startPage(EnterpriseUsers.class);
         tester.assertRenderedPage(EnterpriseUsers.class);
-    }
-
-    @Test
-    public void testLoginPage() {
-        tester.startPage(Login.class);
-        tester.assertRenderedPage(Login.class);
-        tester.assertVisible("loginForm");
     }
 
     @Test

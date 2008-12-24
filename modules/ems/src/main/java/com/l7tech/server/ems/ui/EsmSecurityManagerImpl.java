@@ -1,4 +1,4 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.ui;
 
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -14,7 +14,6 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.TextUtils;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.LicenseManager;
@@ -318,15 +317,10 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     public boolean canAccess(  final HttpSession session, final HttpServletRequest request ) {
         return session.getAttribute(ATTR_ID) != null ||
                 request.getRequestURI().equals("/favicon.ico") || // We don't have a "/favicon.ico" but browsers like to ask for this
-                request.getRequestURI().equals("/Login.html") ||
-                (request.getRequestURI().equals("/") && TextUtils.toString(request.getQueryString()).contains("wicket:interface")) ||
                 request.getRequestURI().startsWith("/css") ||
                 request.getRequestURI().startsWith("/images") ||
                 request.getRequestURI().startsWith("/js") ||
-                request.getRequestURI().startsWith("/yui") ||
-                request.getRequestURI().startsWith("/resources/org.apache.wicket.markup.html.WicketEventReference/wicket-event.js") ||
-                request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.WicketAjaxReference/wicket-ajax.js") ||
-                request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/wicket-ajax-debug.js");
+                request.getRequestURI().startsWith("/yui");
     }
 
     /**

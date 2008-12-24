@@ -5,8 +5,8 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.server.ems.EsmAccountManager;
-import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.user.EsmAccountManager;
+import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.gateway.common.security.rbac.RequiredPermission;
@@ -39,7 +39,7 @@ import java.util.logging.Logger;
         @RequiredPermission(entityType=EntityType.USER, operationType=OperationType.DELETE)
     }
 )@NavigationPage(page="EnterpriseUsers",pageIndex=200,section="Settings",sectionIndex=200,pageUrl="EnterpriseUsers.html")
-public class EnterpriseUsers extends EsmPage {
+public class EnterpriseUsers extends EsmStandardWebPage {
 
     //- PUBLIC
 

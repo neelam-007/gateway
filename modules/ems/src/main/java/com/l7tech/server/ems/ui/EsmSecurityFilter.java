@@ -1,8 +1,7 @@
-package com.l7tech.server.ems.listener;
+package com.l7tech.server.ems.ui;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.server.ems.EsmSecurityManager;
 
 import javax.servlet.Filter;
 import javax.servlet.ServletContext;
@@ -19,6 +18,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  *
@@ -30,6 +31,7 @@ public class EsmSecurityFilter implements Filter {
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
         ServletContext context = filterConfig.getServletContext();
+        servletContext = context;
         securityManager = (EsmSecurityManager) context.getAttribute("securityManager");
     }
 
@@ -49,7 +51,12 @@ public class EsmSecurityFilter implements Filter {
             @Override
             public void run() {
                 try {
-                    if ( securityManager.canAccess( httpServletRequest.getSession(true), httpServletRequest ) ) {
+                    if ( "POST".equals(httpServletRequest.getMethod()) && httpServletRequest.getRequestURI().equals("/logout")) {
+                        securityManager.logout( httpServletRequest.getSession(true) );
+                        httpServletResponse.sendRedirect( getRedirectUrl( httpServletRequest, "/" ) );
+                    } else if ( "POST".equals(httpServletRequest.getMethod()) && httpServletRequest.getRequestURI().equals("/login")) {
+                        servletContext.getNamedDispatcher("sessionServlet").forward( servletRequest, servletResponse );
+                    } else if ( securityManager.canAccess( httpServletRequest.getSession(true), httpServletRequest ) ) {
                         if ( logger.isLoggable(Level.FINER) )
                             logger.finer("Allowing access to resource '" + httpServletRequest.getRequestURI() + "'.");
                         Subject subject = new Subject();
@@ -66,10 +73,16 @@ public class EsmSecurityFilter implements Filter {
                         });
                     } else {
                         logger.info("Forbid access to resource : '" + httpServletRequest.getRequestURI() + "'." );
-                        httpServletResponse.sendRedirect("/Login.html");
+                        if ( "GET".equals(httpServletRequest.getMethod()) && httpServletRequest.getRequestURI().equals("/")) {
+                            servletContext.getNamedDispatcher("sessionServlet").forward( servletRequest, servletResponse );
+                        } else {
+                            httpServletResponse.sendRedirect( getRedirectUrl( httpServletRequest, "/" ) );
+                        }
                     }
                 } catch(IOException ioe) {
                     ioeHolder[0] = ioe;
+                } catch(ServletException se) {
+                    seHolder[0] = se;
                 } catch (PrivilegedActionException pae) {
                     Throwable exception = pae.getCause();
                     if (exception instanceof IOException) {
@@ -92,6 +105,12 @@ public class EsmSecurityFilter implements Filter {
 
     private static final Logger logger = Logger.getLogger(EsmSecurityFilter.class.getName());
 
+    private ServletContext servletContext;
     private EsmSecurityManager securityManager;
     
+    private String getRedirectUrl( final HttpServletRequest httpServletRequest,
+                                   final String path ) throws MalformedURLException {
+        return new URL(new URL(httpServletRequest.getRequestURL().toString()), path).toString();
+    }
+
 }

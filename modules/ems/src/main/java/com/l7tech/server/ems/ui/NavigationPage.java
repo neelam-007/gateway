@@ -1,4 +1,4 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.ui;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

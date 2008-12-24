@@ -17,7 +17,7 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import static com.l7tech.gateway.common.Component.fromId;
-import com.l7tech.server.ems.EsmSession;
+import com.l7tech.server.ems.ui.EsmSession;
 import com.l7tech.util.Pair;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.user;
 
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;

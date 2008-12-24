@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.util.TypedPropertyColumn;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.migration.MigrationMappingRecordManager;
@@ -60,7 +60,7 @@ import java.io.Serializable;
  *
  */
 @NavigationPage(page="PolicyMigration",section="ManagePolicies",pageUrl="PolicyMigration.html")
-public class PolicyMigration extends EsmPage {
+public class PolicyMigration extends EsmStandardWebPage {
 
     //- PUBLIC
 

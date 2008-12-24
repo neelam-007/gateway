@@ -8,7 +8,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.internal.HtmlHeaderContainer;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.protocol.http.WebRequest;
-import com.l7tech.server.ems.SecureComponent;
+import com.l7tech.server.ems.ui.SecureComponent;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 
 /**

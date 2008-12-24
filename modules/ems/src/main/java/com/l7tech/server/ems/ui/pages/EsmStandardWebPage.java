@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.ui.pages;
 
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
-import com.l7tech.server.ems.EsmSecurityManager;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
 import org.apache.wicket.Component;
 import org.apache.wicket.RequestListenerInterface;
 import org.apache.wicket.authorization.UnauthorizedActionException;
@@ -13,14 +13,13 @@ import org.apache.wicket.model.StringResourceModel;
 
 /**
  * Base page for EMS pages that include the standard top-level navigation tabs and controls.
- * TODO rename to something like EmsNavigationPage
  */
 @RequiredPermissionSet()
-public abstract class EsmPage extends EsmBaseWebPage {
+public abstract class EsmStandardWebPage extends EsmBaseWebPage {
 
     //- PUBLIC
 
-    public EsmPage() {
+    public EsmStandardWebPage() {
         final EsmSecurityManager.LoginInfo info = getLoginInfo();
         final StringResourceModel sinceResourceModel = new StringResourceModel( "page.since", this, null, new Object[]{new Model(){
             @Override

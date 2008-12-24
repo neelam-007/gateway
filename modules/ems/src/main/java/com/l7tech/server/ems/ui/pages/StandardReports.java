@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.enterprise.JSONException;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  *
  */
 @NavigationPage(page="StandardReports",section="Reports",pageUrl="StandardReports.html")
-public class StandardReports extends EsmPage {
+public class StandardReports extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(StandardReports.class.getName());
     private static final SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
     

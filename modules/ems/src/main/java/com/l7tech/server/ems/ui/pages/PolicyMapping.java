@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.migration.MigrationRecord;
 import com.l7tech.util.TimeUnit;
@@ -37,7 +37,7 @@ import java.io.Serializable;
  *
  */
 @NavigationPage(page="PolicyMapping",pageIndex=300,section="ManagePolicies",pageUrl="PolicyMapping.html")
-public class PolicyMapping extends EsmPage {
+public class PolicyMapping extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(PolicyMapping.class.getName());
 
     @SpringBean

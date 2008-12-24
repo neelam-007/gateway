@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 
-import com.l7tech.server.ems.SecureResource;
+import com.l7tech.server.ems.ui.SecureResource;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;

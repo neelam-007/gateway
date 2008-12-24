@@ -1,4 +1,4 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.ui;
 
 import com.l7tech.identity.User;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;

@@ -1,4 +1,4 @@
-package com.l7tech.server.ems;
+package com.l7tech.server.ems.ui;
 
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.Request;
