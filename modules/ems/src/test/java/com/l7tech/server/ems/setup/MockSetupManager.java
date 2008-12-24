@@ -8,7 +8,7 @@ import java.util.UUID;
  * Mock SetupManager for tests
  */
 public class MockSetupManager implements SetupManager {
-    private static final String uuid = UUID.fromString(MockSetupManager.class.getName()).toString();
+    private static final String uuid = UUID.nameUUIDFromBytes(MockSetupManager.class.getName().getBytes()).toString();
 
     @Override
     public String getEsmId() {
