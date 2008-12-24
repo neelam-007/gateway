@@ -262,7 +262,10 @@ public class AssociatedLogsTable extends JTable {
             // configure text display buttonComponent
             JTextArea textArea = new JTextArea();
             textArea.setEditable(false);
+            textArea.setWrapStyleWord(true);
+            textArea.setLineWrap(true);
             textArea.setText(detail);
+            textArea.setCaretPosition(0);
             JScrollPane sp = new JScrollPane(textArea);
             panel.add(sp, BorderLayout.CENTER);
 
@@ -273,7 +276,7 @@ public class AssociatedLogsTable extends JTable {
                     dispose();
                 }
             });
-            pack();
+            setSize(450, 175);
             Utilities.centerOnScreen(this);
         }
     }
