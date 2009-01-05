@@ -176,4 +176,14 @@ public class GetIpDialog extends JDialog {
         validateIPFormat = false;
         mainLabel.setText("URL");
     }
+
+    /**
+     * Sets the dialog's text field.  It will validate input text value.
+     *
+     * @param text  Text to be set into the text field.
+     */
+    public void setTextField(String text) {
+        ipRangeTextField.setText(text);
+        checkValid();
+    }
 }

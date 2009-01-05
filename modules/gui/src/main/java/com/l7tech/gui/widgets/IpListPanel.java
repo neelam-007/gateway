@@ -34,6 +34,7 @@ public class IpListPanel extends JPanel {
     private JRadioButton rbLookupInDns;
     private JComboBox cbStrategy;
     private JRadioButton useDifferentURLsRadioButton;
+    private JButton editButton;
 
     public IpListPanel() {
         init();
@@ -81,6 +82,49 @@ public class IpListPanel extends JPanel {
             }
         });
 
+        editButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Container rootPane = SwingUtilities.getWindowAncestor(IpListPanel.this);
+                final GetIpDialog dlg;
+                if (rootPane instanceof Frame)
+                    dlg = new GetIpDialog((Frame)rootPane);
+                else if (rootPane instanceof Dialog)
+                    dlg = new GetIpDialog((Dialog)rootPane);
+                else
+                    dlg = new GetIpDialog((Frame)null);
+
+                //update 'Edit' title
+                if (!rbSpecify.isSelected()) {
+                    dlg.noValidateFormat();
+                    dlg.setTitle("Edit URL");
+                } else {
+                    dlg.setTitle("Edit IP Address");
+                }
+
+                //populate with the selected value
+                Object selectedVal = ipList.getSelectedValue();
+                final int selectedIndex = ipList.getSelectedIndex();
+                if (selectedVal != null) {
+                    dlg.setTextField((String) selectedVal);
+                }
+
+                dlg.pack();
+                Utilities.centerOnScreen(dlg);
+
+                DialogDisplayer.display(dlg, rootPane, new Runnable() {
+                    public void run() {
+                        String addr = dlg.getAddress();
+                        if (addr != null) {
+                            java.util.List addrList = getAddressesList();
+                            addrList.remove(selectedIndex);
+                            addrList.add(selectedIndex, addr);
+                            setAddresses((String[])addrList.toArray(new String[0]));
+                        }
+                    }
+                });
+            }
+        });
+
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
 
@@ -120,6 +164,7 @@ public class IpListPanel extends JPanel {
         Utilities.enableGrayOnDisabled(ipList);
         Utilities.enableGrayOnDisabled(addButton);
         Utilities.enableGrayOnDisabled(removeButton);
+        Utilities.enableGrayOnDisabled(editButton);
         Utilities.enableGrayOnDisabled(cbStrategy);
         updateEnableState();
     }
@@ -151,6 +196,7 @@ public class IpListPanel extends JPanel {
         addButton.setEnabled(ips);
         cbStrategy.setEnabled(ips);
         removeButton.setEnabled(ips && ipList.getSelectedValue() != null);
+        editButton.setEnabled(ips && ipList.getSelectedValue() != null);
         if (stateCallback != null) {
             if (rbSpecify.isSelected()) stateCallback.stateChanged(CUSTOM_IPS);
             else if (useDifferentURLsRadioButton.isSelected()) stateCallback.stateChanged(CUSTOM_URLS);
