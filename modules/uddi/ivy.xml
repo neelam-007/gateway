@@ -23,6 +23,9 @@
         <dependency org="javax.xml.soap" name="saaj-api" rev="1.3" force="true" conf="core"/>
         <dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3.2" force="true" conf="core"/>
 
+        <!-- Required if CXF not present -->
+        <dependency org="com.sun.xml.ws" name="jaxws-rt" rev="2.1.4" force="true" conf="optional"/>
+
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
     </dependencies>
 </ivy-module>
