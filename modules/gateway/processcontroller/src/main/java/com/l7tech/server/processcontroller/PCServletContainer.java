@@ -140,11 +140,6 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         initParams.put("contextConfigLocation", "classpath:com/l7tech/server/processcontroller/resources/processControllerWebApplicationContext.xml");
         initParams.put(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
 
-        // Add CXF global lock filter (see bug 6300)
-        final Filter cxfFilter = new CxfFilter();
-        FilterHolder fsHolder = new FilterHolder(cxfFilter);
-        root.addFilter(fsHolder, "/services/*", Handler.REQUEST);
-
         final CXFServlet cxfServlet = new CXFServlet();
         final ServletHolder cxfHolder = new ServletHolder(cxfServlet);
         root.addServlet(cxfHolder, "/services/*");
