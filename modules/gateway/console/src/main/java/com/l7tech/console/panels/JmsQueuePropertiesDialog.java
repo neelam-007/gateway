@@ -99,7 +99,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     private JmsConnection connection = null;
     private JmsEndpoint endpoint = null;
-    private boolean isCanceled;
+    private boolean isOk;
     private boolean outboundOnly = false;
     private FormAuthorizationPreparer securityFormAuthorizationPreparer;
     private Logger logger = Logger.getLogger(JmsQueuePropertiesDialog.class.getName());
@@ -178,12 +178,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     /**
-     * Check how the dialog was closed.  Return value is only guaranteed to be valid after show() has returned.
+     * Check how the dialog was closed.
      *
      * @return false iff. the dialog completed successfully via the "Save" button; otherwise true.
      */
     public boolean isCanceled() {
-        return isCanceled;
+        return !isOk;
     }
 
     /**
@@ -1092,7 +1092,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
             connection = Registry.getDefault().getJmsManager().findConnectionByPrimaryKey(newConnection.getOid());
             endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(newEndpoint.getOid());
-            isCanceled = false;
+            isOk = true;
             dispose();
         } catch (Exception e) {
             PermissionDeniedException pde = ExceptionUtils.getCauseIfCausedBy(e, PermissionDeniedException.class);
@@ -1109,7 +1109,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void onCancel() {
-        isCanceled = true;
         dispose();
     }
 
