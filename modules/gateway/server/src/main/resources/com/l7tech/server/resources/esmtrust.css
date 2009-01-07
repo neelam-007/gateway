@@ -4,12 +4,13 @@ body {
 }
 
 .title {
+    height: 34px;
     color: #6a737b;
     text-indent: 40px;
     font-weight: bold;
     font-size: 24px;
-    background-image: url('com/l7tech/internal/license/gui/resources/layer7_logo_small_32x32.png');
-    background-position: 4px 4px;
+    background-image: url('layer7_logo_small_32x32.png');
+    background-position: 1px 1px;
     background-repeat: no-repeat;
     background-color: white;
 }

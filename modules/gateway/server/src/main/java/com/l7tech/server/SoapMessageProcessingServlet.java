@@ -170,17 +170,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             logger.fine("no content-encoding specified");
         }
 
-        if ("/".equals(hrequest.getRequestURI())) {
-            try {
-                if (!serviceCache.hasCatchAllService()) {
-                    hresponse.sendRedirect("/index.html");
-                    return;
-                }
-            } catch (Throwable e) { // should not happen unless there is a bug
-                logger.log(Level.SEVERE, "Unexpected problem checking for catch all service resolution", e);
-            }
-        }
-
         try {
             licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
             HttpTransportModule.requireEndpoint(hrequest, SsgConnector.Endpoint.MESSAGE_INPUT);

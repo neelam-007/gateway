@@ -22,6 +22,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlObject;
@@ -41,6 +42,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -76,6 +78,15 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
     private static final String FORM_CSS = "/com/l7tech/server/resources/esmtrust.css";
     private static final String FORM_JS = "/com/l7tech/server/resources/esmtrust.js";
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
+
+    private static final Map<String,String[]> RESOURCES = Collections.unmodifiableMap( new HashMap<String,String[]>(){
+        {
+            put( "/ssg/esmtrust/favicon.ico", new String[]{"/com/l7tech/server/resources/favicon.ico", "image/png"} );
+            put( "/ssg/esmtrust/layer7_logo_small_32x32.png", new String[]{"/com/l7tech/server/resources/layer7_logo_small_32x32.png", "image/png"} );
+            put( "/ssg/esmtrust/esmtrust.css", new String[]{ FORM_CSS, "text/css"} );
+            put( "/ssg/esmtrust/esmtrust.js", new String[]{ FORM_JS, "text/javascript"} );
+         }
+    } );
 
     private static final String[] FIELDS = {
             "message",             // 2
@@ -506,6 +517,10 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
             return;
         }
 
+        if ( handleResourceRequest( hreq, hresp ) ) {
+            return;
+        }
+
         // Send back a form to be resubmitted
         hresp.setStatus(200);
         String returnCookie = createReturnCookie();
@@ -523,12 +538,10 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
         PrintStream ps = new PrintStream(os);
         try {
             String template = loadStringResource(FORM_HTML);
-            String css = loadStringResource(FORM_CSS);
-            String js = loadStringResource(FORM_JS);
 
             List<String> vals = new ArrayList<String>();
-            vals.add(0, css);
-            vals.add(1, js);
+            vals.add(0, "");
+            vals.add(1, "");
             for (String fields : FIELDS)
                 vals.add(escapeMarkup(stripchars(params.get(fields))).toString());
 
@@ -675,4 +688,41 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
 			return buffer;
 		}
 	}
+
+    /**
+     * Handle request for static resource file.
+     *
+     * @param hreq The HttpServletRequest
+     * @param hresp The HttpServletResponse
+     * @return true if the request has been handled (so no further action should be taken)
+     * @throws java.io.IOException  if there's a problem reading the jar or sending the info
+     * @throws javax.servlet.ServletException  if there is some other error
+     */
+    private boolean handleResourceRequest( final HttpServletRequest hreq,
+                                           final HttpServletResponse hresp ) throws IOException, ServletException {
+        boolean handled = false;
+
+        String filePath = hreq.getRequestURI();
+        String contextPath = hreq.getContextPath();
+
+        if ( filePath != null && contextPath != null ) {
+            String resourceName = filePath.substring(contextPath.length());
+
+            if ( RESOURCES.containsKey( resourceName ) ) {
+                String[] RESOURCE_PATH_AND_TYPE = RESOURCES.get( resourceName );
+                InputStream resourceIn = EsmTrustServlet.class.getResourceAsStream( RESOURCE_PATH_AND_TYPE[0] );
+                if ( resourceIn != null ) {
+                    try {
+                        handled = true;
+                        hresp.setContentType( RESOURCE_PATH_AND_TYPE[1] );
+                        IOUtils.copyStream( resourceIn, hresp.getOutputStream() );
+                    } finally {
+                        ResourceUtils.closeQuietly( resourceIn );
+                    }
+                }
+            }
+        }
+
+        return handled;
+    }
 }

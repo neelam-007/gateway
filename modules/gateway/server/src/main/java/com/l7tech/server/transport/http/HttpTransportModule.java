@@ -170,17 +170,21 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         context.setManager(new ManagerBase() {
             AtomicInteger rejects = new AtomicInteger(0);
 
+            @Override
             public int getRejectedSessions() {
                 return rejects.get();
             }
 
+            @Override
             public void setRejectedSessions(int i) {
                 rejects.set(i);
             }
 
+            @Override
             public void load() throws ClassNotFoundException, IOException {
             }
 
+            @Override
             public void unload() throws IOException {
             }
         });
@@ -199,12 +203,14 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         host.addChild(context);
     }
 
+    @Override
     public boolean isLicensed() {
         // XXX At the moment, the only way to install a license is using HTTP.
         // Thus the HTTP subsystem must start even if it is nominally not enabled by the license.
         return true;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (executor == null) return; // not yet started
 
@@ -243,7 +249,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         ssgFileContext.setDocBase(ssgFile.getAbsolutePath());
         VirtualDirContext ssgContext = new VirtualDirContext("ssg", ssgFileContext);
 
-        // Set up our virtual WEB-INF subdirectory and virtual favicon and index.html
+        // Set up our virtual WEB-INF subdirectory
         List<VirtualDirEntry> webinfEntries = new ArrayList<VirtualDirEntry>();
         webinfEntries.add(createDirEntryFromClassPathResource("web.xml"));
         File extraDir = new File(inf, "extra");
@@ -251,11 +257,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             addDirEntriesFromDirectory(webinfEntries, extraDir);
 
         VirtualDirContext webInfContext = new VirtualDirContext("WEB-INF", webinfEntries.toArray(new VirtualDirEntry[webinfEntries.size()]));
-        VirtualDirEntry favicon = createDirEntryFromClassPathResource("favicon.ico");
-        VirtualDirEntry indexhtml = createDirEntryFromClassPathResource("index.html");
 
         // Splice it all together
-        return new VirtualDirContext("VirtualInf", webInfContext, favicon, indexhtml, ssgContext);
+        return new VirtualDirContext("VirtualInf", webInfContext, ssgContext);
     }
 
     /**
@@ -343,6 +347,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      *
      * @throws LifecycleException if there is a problem shutting down the server
      */
+    @Override
     protected void doStop() throws LifecycleException {
         if (!running.get())
             return;
@@ -362,6 +367,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      *
      * @throws LifecycleException if there is a problem shutting down the server
      */
+    @Override
     protected void doClose() throws LifecycleException {
         try {
             stop();
@@ -449,6 +455,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         return toAdd;
     }
 
+    @Override
     protected void addConnector(SsgConnector connector) throws ListenerException {
         if ( connector.getOid() == SsgConnector.DEFAULT_OID )
             throw new ListenerException("Connector must be persistent.");
@@ -588,6 +595,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         return connectorErrors.remove(oid);
     }
 
+    @Override
     protected void removeConnector(long oid) {
         synchronized (connectorCrudLuck) {
             Pair<SsgConnector, Connector> entry = activeConnectors.remove(oid);
@@ -605,12 +613,14 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private final Set<String> schemes = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_HTTP, SsgConnector.SCHEME_HTTPS)));
+    @Override
     protected Set<String> getSupportedSchemes() {
         //noinspection ReturnOfCollectionOrArrayField
         return schemes;
     }
 
 
+    @Override
     public void init() {
         try {
             initializeServletEngine();
@@ -619,6 +629,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
+    @Override
     protected void doStart() throws LifecycleException {
         if (isStarted())
             return;
@@ -630,6 +641,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (TransportModule.isEventIgnorable(applicationEvent)) {
             return;
@@ -648,6 +660,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     /** @return the Gateway's global ApplicationContext.  Will be present before any servlet contexts are created. */
+    @Override
     public ApplicationContext getApplicationContext() {
         return super.getApplicationContext();
     }

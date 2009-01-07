@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
@@ -19,6 +20,7 @@ import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ClassUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.AuthenticationException;
@@ -55,11 +57,17 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
+import java.security.AccessControlException;
 
 /**
  * Authentication filter for the Manager applet servlet (and serving the manager applet jarfiles).
@@ -76,6 +84,13 @@ public class ManagerAppletFilter implements Filter {
     public static final String DEFAULT_CODEBASE_PREFIX = "/ssg/webadmin/applet/";
     public static final String USERNAME = "username";
     public static final String INVALID_PASSWORD_MESSAGE = "invalidPasswordMessage";
+
+    private static final Map<String,String[]> RESOURCES = Collections.unmodifiableMap( new HashMap<String,String[]>(){
+        {
+            put( "/ssg/webadmin/favicon.ico", new String[]{"/com/l7tech/server/resources/favicon.ico", "image/png"} );
+            put( "/ssg/webadmin/layer7_logo_small_32x32.png", new String[]{"/com/l7tech/server/resources/layer7_logo_small_32x32.png", "image/png"} );
+         }
+    } );
 
     private enum AuthResult { OK, CHALLENGED, FAIL }
 
@@ -102,6 +117,7 @@ public class ManagerAppletFilter implements Filter {
         }
     }
 
+    @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         this.filterConfig = filterConfig;
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext());
@@ -139,6 +155,7 @@ public class ManagerAppletFilter implements Filter {
         this.codebasePrefix = codebasePrefix;
     }
 
+    @Override
     public void doFilter(final ServletRequest req, final ServletResponse resp, final FilterChain filterChain) throws IOException, ServletException {
         if (!(req instanceof HttpServletRequest))
             throw new ServletException("Request not HTTP request");
@@ -163,6 +180,12 @@ public class ManagerAppletFilter implements Filter {
                 return;
             }
             
+            // Note that the user is NOT authenticated for resource request
+            if (handleResourceRequest(hreq, hresp)) {
+                passed = true;
+                return;
+            }
+
             Message request = new Message();
             request.initialize(fakeDoc);
             request.attachHttpRequestKnob(new HttpServletRequestKnob(hreq));
@@ -219,6 +242,7 @@ public class ManagerAppletFilter implements Filter {
             final IOException[] ioeHolder = new IOException[1];
             final ServletException[] seHolder = new ServletException[1];
             RemoteUtils.runWithConnectionInfo(hreq.getRemoteAddr(), hreq, new Runnable(){
+                @Override
                 public void run() {
                     try {
                         filterChain.doFilter(req, resp);
@@ -260,6 +284,7 @@ public class ManagerAppletFilter implements Filter {
         return user.getName() == null ? user.getLogin() : user.getName();
     }
 
+    @Override
     public void destroy() {
         // No action required at this time
     }
@@ -399,6 +424,18 @@ public class ManagerAppletFilter implements Filter {
                 hreq.setAttribute(INVALID_CERT, "YES");
             }
             return AuthResult.FAIL;
+        } catch (AccessControlException ace) {
+            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, ExceptionUtils.getMessage(ace));
+            // Fall through and either challenge or send error message
+            logger.log(Level.FINE, "Error authenticating administrator, " + ExceptionUtils.getMessage(ace), ace);
+
+            // For the case - incorrect username and password
+            if (username != null || password != null) {
+                hreq.setAttribute(RELOGIN, "YES");
+            } else {
+                hreq.setAttribute(INVALID_CERT, "YES");
+            }
+            return AuthResult.FAIL;
         } catch (InvalidPasswordException ipe) {
             //attempt to change password but was invalid (not compliant to standards), need to re-enter new password
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, ExceptionUtils.getMessage(ipe));
@@ -500,6 +537,47 @@ public class ManagerAppletFilter implements Filter {
         return name;
     }
 
+    /**
+     * Handle request for static resource file.
+     *
+     * <p>The user is possibly NOT authenticated for this method.</p>
+     *
+     * @param hreq The HttpServletRequest
+     * @param hresp The HttpServletResponse
+     * @return true if the request has been handled (so no further action should be taken)
+     * @throws java.io.IOException  if there's a problem reading the jar or sending the info
+     * @throws javax.servlet.ServletException  if there is some other error
+     */
+    private boolean handleResourceRequest(final HttpServletRequest hreq,
+                                          final HttpServletResponse hresp) throws IOException, ServletException {
+        boolean handled = false;
+
+        String filePath = hreq.getRequestURI();
+        String contextPath = hreq.getContextPath();
+
+        if ( filePath != null && contextPath != null ) {
+            String resourceName = filePath.substring(contextPath.length());
+
+            if ( "/ssg/webadmin".equals( resourceName ) ) {
+                handled = true;
+                hresp.sendRedirect( new URL( new URL( hreq.getRequestURL().toString() ), "webadmin/" ).toExternalForm() );
+            } else if ( RESOURCES.containsKey( resourceName ) ) {
+                String[] RESOURCE_PATH_AND_TYPE = RESOURCES.get( resourceName );
+                InputStream resourceIn = ManagerAppletFilter.class.getResourceAsStream( RESOURCE_PATH_AND_TYPE[0] );
+                if ( resourceIn != null ) {
+                    try {
+                        handled = true;
+                        hresp.setContentType( RESOURCE_PATH_AND_TYPE[1] );
+                        IOUtils.copyStream( resourceIn, hresp.getOutputStream() );
+                    } finally {
+                        ResourceUtils.closeQuietly( resourceIn );
+                    }
+                }
+            }
+        }
+
+        return handled;
+    }
 
     /**
      * Handle request for JAR files.

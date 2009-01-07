@@ -1332,8 +1332,6 @@
             <string lastmodified="1970" value="node.db.config.main.pass = ${deploy.db.password}"/>
             <string lastmodified="1970" value="node.cluster.pass = ${deploy.cluster.password}"/>
         </concat>
-        <echo level="info">Copying web files</echo>
-        <copy file="${src.root}/web/index.html" todir="${deploy.dir}/web/ssg" preservelastmodified="true"/>
 
         <echo level="info">Finished copying gateway configuration files</echo>
     </target>
@@ -1349,7 +1347,6 @@
 
         <echo level="info">Copying gateway files</echo>
         <echo level="info">Copying web files</echo>
-        <copy file="${src.root}/web/index.html" todir="${deploy.dir}/web/ssg" preservelastmodified="true"/>
         <copy file="${build.dir}/layer7-gateway-console-applet.jar" todir="${deploy.dir}/web/ssg/webadmin/applet/" preservelastmodified="true"/>
         <delete>
             <fileset dir="${deploy.dir}/web/ssg/webadmin/applet/lib" includes="layer7-*"/>
