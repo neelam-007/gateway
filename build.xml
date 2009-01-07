@@ -3060,27 +3060,22 @@
 
     <!--
       Generate the JAX-WS classes for UDDI v3.0.2.
-      NOTE: Due to JDK bug we have to generate src with 1.6 but compile with 1.5
-            http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6553734
     -->
     <target name="generate-uddi-jar">
-        <property name="build.guddi.jar" value="build/guddi-1.0.0.jar"/>
+        <property name="build.guddi.jar" value="build/layer7-uddi-lib-1.0.1.jar"/>
         <mkdir dir="build/uddiclasses"/>
         <mkdir dir="build/uddisources"/>
 
-        <!-- Comment out this block and compile with a 1.5 JDK -->
         <echo level="info">Generating classes from WSDL/Schemas</echo>
         <wsimport wsdl="uddi_v3_service_i.wsdl"/>
         <wsimport wsdl="uddi_v3_service_p.wsdl"/>
         <wsimport wsdl="uddi_v3_service_s.wsdl"/>
 
-        <echo level="info">Compiling for 1.5</echo>
+        <echo level="info">Compiling for 1.6</echo>
         <delete dir="build/uddiclasses"/>
         <mkdir dir="build/uddiclasses"/>
         <javac srcdir="build/uddisources" destdir="build/uddiclasses" debug="on" optimize="off"
-               deprecation="on" verbose="no" target="1.5" source="1.5">
-            <!-- Classpath not needed when we can build with 1.6 -->
-            <classpath refid="project.classpath"/>
+               deprecation="on" verbose="no" target="1.6" source="1.6">
         </javac>
 
         <echo level="info">Building JAR</echo>
@@ -3093,6 +3088,6 @@
             </zipfileset>
         </jar>
 
-        <echo level="info">Output JAR ${build.guddi.jar} should be copied to lib/gateway/uddi/generic for use in build.</echo>
+        <echo level="info">Output JAR ${build.guddi.jar} should be copied to lib/repository/com.l7tech.lib/ for use in build.</echo>
     </target>
 </project>

@@ -2,9 +2,9 @@
 <ivy-module version="1.0">
 	<info organisation="com.l7tech.lib"
 		module="layer7-uddi-lib"
-		revision="1.0"
+		revision="1.0.1"
 		status="release"
-		publication="20080707125041"
+		publication="20090106201041"
 		default="true"
 	/>
 	<configurations>
