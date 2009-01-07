@@ -23,10 +23,7 @@ import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.EventListener;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -118,6 +115,7 @@ public class SearchWsdlDialog extends JDialog {
                     }
                 }
                 ((AbstractDocument)serviceNameSearchPattern.getDocument()).setDocumentFilter(new DocumentSizeFilter(validMaxLen));
+                caseSensitiveCheckBox.setEnabled(!EQUALS.equals(filterName));   //disable check box when EQUALS is selected
             }
         });
 

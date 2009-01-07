@@ -179,7 +179,7 @@ class GenericUDDIClient implements UDDIClient {
                 findService.setMaxRows(maxRows);
             if (offset>0)
                 findService.setListHead(offset);
-            findService.setFindQualifiers(buildFindQualifiers(caseSensitive));
+            findService.setFindQualifiers(buildFindQualifiers(servicePattern, caseSensitive));
             if (names != null)
                 findService.getName().addAll(Arrays.asList(names));
 
@@ -312,7 +312,7 @@ class GenericUDDIClient implements UDDIClient {
                 findService.setMaxRows(maxRows);
             if (offset>0)
                 findService.setListHead(offset);
-            findService.setFindQualifiers(buildFindQualifiers(caseSensitive));
+            findService.setFindQualifiers(buildFindQualifiers(servicePattern, caseSensitive));
             if (names != null)
                 findService.getName().addAll(Arrays.asList(names));
 
@@ -427,7 +427,7 @@ class GenericUDDIClient implements UDDIClient {
                 findBusiness.setMaxRows(maxRows);
             if (offset>0)
                 findBusiness.setListHead(offset);
-            findBusiness.setFindQualifiers(buildFindQualifiers(caseSensitive));
+            findBusiness.setFindQualifiers(buildFindQualifiers(organizationPattern, caseSensitive));
             if (names != null)
                 findBusiness.getName().addAll(Arrays.asList(names));
             BusinessList uddiBusinessListRes = inquiryPort.findBusiness(findBusiness);
@@ -480,7 +480,7 @@ class GenericUDDIClient implements UDDIClient {
             FindQualifiers findQualifiers = null;
             if (policyPattern != null && policyPattern.trim().length() > 0) {
                 // if approximate match is used for the URL then CentraSite will perform a prefix match ...
-                findQualifiers = buildFindQualifiers(false);
+                findQualifiers = buildFindQualifiers(policyPattern, false);
                 name = buildName(policyPattern);
             }
 
@@ -965,6 +965,7 @@ class GenericUDDIClient implements UDDIClient {
     private static final String OVERVIEW_URL_TYPE_WSDL = "wsdlInterface";
     private static final String FINDQUALIFIER_APPROXIMATE = "approximateMatch";
     private static final String FINDQUALIFIER_CASEINSENSITIVE = "caseInsensitiveMatch";
+    private static final String FINDQUALIFIER_EXACTMATCH = "exactMatch";
 
     // From http://www.uddi.org/pubs/uddi_v3.htm#_Toc85908004
     private static final int MAX_LENGTH_KEY = 255;
@@ -1172,13 +1173,25 @@ class GenericUDDIClient implements UDDIClient {
         }
     }
 
-    private FindQualifiers buildFindQualifiers(boolean caseSensitive) {
+    private FindQualifiers buildFindQualifiers(String searchStr, boolean caseSensitive) {
+        logger.log(Level.FINE, "Search string : " + searchStr + " isCaseSensitive : " + caseSensitive);
         FindQualifiers findQualifiers = new FindQualifiers();
         List<String> qualifiers = findQualifiers.getFindQualifier();
-        qualifiers.add(FINDQUALIFIER_APPROXIMATE);
 
-        if ( !caseSensitive )
-            qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
+        //determine if contains wild cards
+        if (searchStr.contains("%")) {
+            qualifiers.add(FINDQUALIFIER_APPROXIMATE);
+
+            //determine if case sensitive is set
+            if (!caseSensitive) {
+                qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
+            }
+        } else {
+            //no wild cards, assume using exact match
+            //NOTE: for Systinet, it will automatically append a wild card to the end of the string when exactMatch
+            //is used, so it'll behave similar to "Starts With".
+            qualifiers.add(FINDQUALIFIER_EXACTMATCH);
+        }
 
         return findQualifiers;
     }
