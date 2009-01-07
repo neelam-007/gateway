@@ -39,6 +39,7 @@ import com.l7tech.proxy.ssl.SslPeerLazyDelegateSocketFactory;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.ServerConfig;
@@ -281,6 +282,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     thrown = e;
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null, e);
                     return AssertionStatus.SERVER_AUTH_FAILED;
+                } catch (BadSecurityContextException e) {
+                    thrown = e;
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
                 } catch (InvalidDocumentFormatException e) {
                     thrown = e;
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);

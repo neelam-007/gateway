@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.security.xml.processor.ProcessorException;
+import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.security.GeneralSecurityException;
@@ -41,6 +42,7 @@ public interface TokenService {
                                                   throws InvalidDocumentFormatException,
                                                          TokenServiceImpl.TokenServiceException,
                                                          ProcessorException,
+                                                         BadSecurityContextException,
                                                          GeneralSecurityException,
                                                          AuthenticationException;
 

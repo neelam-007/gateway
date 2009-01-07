@@ -27,6 +27,7 @@ import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
+import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.MessageProcessed;
@@ -699,6 +700,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_RETRIEVE_XML, null, e);
                     context.setAuditLevel(Level.WARNING);
                     assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
+                    return false;
+                } catch (BadSecurityContextException e) {
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    context.setAuditLevel(Level.SEVERE);
+                    SoapFaultLevel cfault = new SoapFaultLevel();
+                    cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+                    cfault.setFaultTemplate( SoapFaultUtils.badContextTokenFault(context.getService().getSoapVersion(), getIncomingURL(context)) );
+                    context.setFaultlevel(cfault);
+                    assertionStatusHolder[0] = AssertionStatus.FAILED;
                     return false;
                 } catch (IOException ioe) {
                     ioExceptionHolder[0] = ioe;

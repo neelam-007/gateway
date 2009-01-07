@@ -4,6 +4,10 @@ import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
+import com.l7tech.security.xml.processor.BadSecurityContextException;
+import com.l7tech.security.xml.processor.ProcessorException;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
@@ -120,6 +124,11 @@ public class TokenServiceServlet extends HttpServlet {
                 sendExceptionFault(context, e, res);
                 return;
             } catch (ProcessorException e) {
+                String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
+                logger.log(Level.SEVERE, msg, e);
+                sendExceptionFault(context, e, res);
+                return;
+            } catch (BadSecurityContextException e) {
                 String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);
                 sendExceptionFault(context, e, res);

@@ -114,7 +114,7 @@ public class WssProcessorImpl implements WssProcessor {
                                              X509Certificate senderCertificate,
                                              SecurityContextFinder securityContextFinder,
                                              SecurityTokenResolver securityTokenResolver)
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, SAXException, IOException
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException
     {
         final WssProcessorImpl context = new WssProcessorImpl(message);
         context.setSenderCertificate(senderCertificate);
@@ -185,6 +185,7 @@ public class WssProcessorImpl implements WssProcessor {
      * @throws InvalidDocumentFormatException if there is a problem with the document format that can't be ignored
      * @throws GeneralSecurityException if there is a problem with a key or certificate
      * @throws com.l7tech.security.xml.processor.ProcessorException in case of some other problem
+     * @throws BadSecurityContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
      * @throws SAXException if the first part's content type is not text/xml; or,
      *                      if the XML in the first part's InputStream is not well formed
      * @throws IOException if there is a problem reading XML from the first part's InputStream; or,
@@ -194,7 +195,7 @@ public class WssProcessorImpl implements WssProcessor {
      *                                    this must be caught before ProcessorException.
      */
     public ProcessorResult processMessage()
-            throws InvalidDocumentFormatException, ProcessorException, GeneralSecurityException, IOException, SAXException
+            throws InvalidDocumentFormatException, ProcessorException, GeneralSecurityException, IOException, BadSecurityContextException, SAXException
     {
         if (message == null)
             throw new IllegalStateException("this WssProcessorImpl instance was not bound to a message upon creation");
@@ -292,13 +293,13 @@ public class WssProcessorImpl implements WssProcessor {
                                                          "did not provide a SecurityContextFinder");
                         final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
                         if (secContext == null) {
-                            logger.log(Level.INFO, "No security context found for identifier {0}, ignoring.", identifier);
-                        } else {
-                            SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(
-                                                                secContext, securityChildToProcess, identifier);
-                            securityTokens.add(secConTok);
-                            logger.finest("SecurityContextToken (SecureConversation) added");
+                            throw new BadSecurityContextException(identifier);
                         }
+                        SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
+                                                                                          securityChildToProcess,
+                                                                                          identifier);
+                        securityTokens.add(secConTok);
+                        logger.finest("SecurityContextToken (SecureConversation) added");
                     }
                 } else {
                     logger.fine("Encountered SecurityContextToken element but not of expected namespace (" +

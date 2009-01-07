@@ -306,6 +306,8 @@ public class AdminWebServiceFilter implements Filter {
                 reqSec.setProcessorResult(wssOutput);
             } catch (GeneralSecurityException e) {
                 throw new ProcessorException(e);
+            } catch (BadSecurityContextException e) {
+                throw new ProcessorException(e);
             }
         }
     }

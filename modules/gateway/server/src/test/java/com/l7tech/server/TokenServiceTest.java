@@ -19,6 +19,7 @@ import com.l7tech.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorException;
+import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.util.HexUtils;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.xml.soap.SoapUtil;
@@ -95,7 +96,7 @@ public class TokenServiceTest extends TestCase {
                                                       (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
                                                       testTokenResolver)
         {
-            public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context, CredentialsAuthenticator authenticator, boolean useThumbprintForSamlSignature, boolean useThumbprintForSamlSubject) throws InvalidDocumentFormatException, TokenServiceException, ProcessorException, GeneralSecurityException, AuthenticationException {
+            public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context, CredentialsAuthenticator authenticator, boolean useThumbprintForSamlSignature, boolean useThumbprintForSamlSubject) throws InvalidDocumentFormatException, TokenServiceException, ProcessorException, BadSecurityContextException, GeneralSecurityException, AuthenticationException {
                 setApplicationContext(TokenServiceTest.applicationContext);
                 return super.respondToSecurityTokenRequest(context, authenticator, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
             }

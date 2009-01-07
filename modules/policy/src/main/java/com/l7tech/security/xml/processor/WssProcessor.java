@@ -36,6 +36,7 @@ public interface WssProcessor {
      * @throws InvalidDocumentFormatException if there is a problem with the document format that can't be ignored
      * @throws GeneralSecurityException if there is a problem with a key or certificate
      * @throws com.l7tech.security.xml.processor.ProcessorException in case of some other problem
+     * @throws BadSecurityContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
      * @throws SAXException if the first part's content type is not text/xml; or,
      *                      if the XML in the first part's InputStream is not well formed
      * @throws IOException if there is a problem reading XML from the first part's InputStream; or,
@@ -48,5 +49,5 @@ public interface WssProcessor {
                                       X509Certificate senderCertificate,
                                       SecurityContextFinder securityContextFinder,
                                       SecurityTokenResolver securityTokenResolver)
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, SAXException, IOException;
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException;
 }

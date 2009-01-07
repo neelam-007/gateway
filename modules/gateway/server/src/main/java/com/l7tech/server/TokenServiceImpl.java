@@ -143,6 +143,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                                                          throws InvalidDocumentFormatException,
                                                                 TokenServiceImpl.TokenServiceException,
                                                                 ProcessorException,
+                                                                BadSecurityContextException,
                                                                 GeneralSecurityException,
                                                                 AuthenticationException {
         AssertionStatus status = AssertionStatus.UNDEFINED;
