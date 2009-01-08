@@ -4,8 +4,6 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.wsp.WspWriter;
-//import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.migration.*;
@@ -16,7 +14,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.lang.reflect.Method;
-import java.io.IOException;
 
 /**
  * Extracts the dependencies and mappings from a Policy object belonging to a service,
@@ -35,7 +32,7 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
     private static final Logger logger = Logger.getLogger(PolicyPropertyResolver.class.getName());
 
     @Override
-    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, final Method property) throws PropertyResolverException {
+    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(EntityHeader source, Object entity, final Method property) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         Policy policy;
@@ -55,7 +52,7 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         }
 
         String propName = MigrationUtils.propertyNameFromGetter(property.getName());
-        Map<EntityHeader, Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
+        Map<EntityHeader, Set<MigrationDependency>> result = new HashMap<EntityHeader, Set<MigrationDependency>>();
         getHeadersRecursive(source, assertion, result, propName);
 
         logger.log(Level.FINE, "Found {0} headers for property {1}.", new Object[] { result.size(), property });
@@ -129,7 +126,7 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         policy.setXml(WspWriter.getPolicyXml(rootAssertion));
     }
 
-    private void getHeadersRecursive(EntityHeaderRef source, Assertion assertion, Map<EntityHeader, Set<MigrationMapping>> result, String topPropertyName) throws PropertyResolverException {
+    private void getHeadersRecursive(EntityHeader source, Assertion assertion, Map<EntityHeader, Set<MigrationDependency>> result, String topPropertyName) throws PropertyResolverException {
 
         logger.log(Level.FINE, "Getting headers for assertion: " + assertion);
 
@@ -138,12 +135,12 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
             if (MigrationUtils.isDependency(method)) {
                 // todo: figure out how to get a hold of resolvers specified through Migration.targetType()
                 PropertyResolver resolver = MigrationUtils.getResolver(method);
-                Map<EntityHeader, Set<MigrationMapping>> deps = resolver.getDependencies(source, assertion, method);
+                Map<EntityHeader, Set<MigrationDependency>> deps = resolver.getDependencies(source, assertion, method);
                 for (EntityHeader depHeader : deps.keySet()) {
-                    for (MigrationMapping mapping : deps.get(depHeader)) {
+                    for (MigrationDependency dep : deps.get(depHeader)) {
                         // use assertion's ordinal to identify where in the policy xml each dependency can be mapped
-                        mapping.setPropName(topPropertyName + ":" + Integer.toString(assertion.getOrdinal()) + ":" + mapping.getPropName());
-                        addToResult(depHeader, mapping, result);
+                        dep.setPropName(topPropertyName + ":" + Integer.toString(assertion.getOrdinal()) + ":" + dep.getPropName());
+                        addToResult(depHeader, dep, result);
                     }
                 }
                 logger.log(Level.FINE, "Extracted {0} headers for assertion {1}.", new Object[]{deps.size(), assertion});

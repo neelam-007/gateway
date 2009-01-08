@@ -1,7 +1,6 @@
 package com.l7tech.objectmodel.migration;
 
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.EntityType;
 
 import java.util.Set;
@@ -21,13 +20,13 @@ import java.lang.reflect.Method;
 public class UserGroupResolver extends DefaultEntityPropertyResolver {
 
     @Override
-    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, Method property) throws PropertyResolverException {
-        Map<EntityHeader, Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
-        Map<EntityHeader, Set<MigrationMapping>> dependencies = super.getDependencies(source, entity, property);
+    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(EntityHeader source, Object entity, Method property) throws PropertyResolverException {
+        Map<EntityHeader, Set<MigrationDependency>> result = new HashMap<EntityHeader, Set<MigrationDependency>>();
+        Map<EntityHeader, Set<MigrationDependency>> dependencies = super.getDependencies(source, entity, property);
         for(EntityHeader header : dependencies.keySet()) {
             if (header.getType() == EntityType.USER || header.getType() == EntityType.GROUP) {
-                for (MigrationMapping mapping : dependencies.get(header)) {
-                    mapping.setType(new MigrationMappingType(MigrationMappingSelection.REQUIRED, MigrationMappingSelection.REQUIRED));
+                for (MigrationDependency dep : dependencies.get(header)) {
+                    dep.setMappingType(new MigrationMappingType(MigrationMappingSelection.REQUIRED, MigrationMappingSelection.REQUIRED));
                 }
                 result.put(header, dependencies.get(header));
             }

@@ -12,8 +12,8 @@ import java.util.logging.Logger;
 import java.lang.reflect.Method;
 
 /**
- * Handles the both the PublishedService -> ServiceDocument pseudo-dependency: null mapping is returned to reflect this,
- * but the dependency header (of the service documents) are discovered through this resolver.
+ * Handles the PublishedService -> ServiceDocument pseudo-dependency: null mapping is returned to reflect this,
+ * but the dependency header (of the service documents) is discovered through this resolver.
  *
  * @author jbufu
  */
@@ -26,7 +26,7 @@ public class ServiceDocumentResolver implements PropertyResolver {
         this.documentManager = documentManager;
     }
 
-    public final Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, Method property) throws PropertyResolverException {
+    public final Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, Method property) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         final Long serviceOid;
@@ -36,11 +36,11 @@ public class ServiceDocumentResolver implements PropertyResolver {
             throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 
-        Map<EntityHeader,Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
+        Map<EntityHeader,Set<MigrationDependency>> result = new HashMap<EntityHeader, Set<MigrationDependency>>();
         try {
             for (ServiceDocument doc : documentManager.findByServiceId(serviceOid)) {
                     EntityHeader docHeader = EntityHeaderUtils.fromEntity(doc);
-                    result.put(docHeader, Collections.<MigrationMapping>singleton(null)); 
+                    result.put(docHeader, Collections.<MigrationDependency>singleton(null));
                 }
         } catch (FindException e) {
             logger.log(Level.FINE, "No service documents found for service: {0}.", serviceOid);

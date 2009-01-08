@@ -43,5 +43,5 @@ public interface MigrationMappingRecordManager extends EntityManager<MigrationMa
      * @return the mapping OID
      * @throws SaveException If an error occurs when persisting
      */
-    long persistMapping( String sourceClusterId, EntityHeader sourceEntityHeader, String destinationClusterId, EntityHeader destinationEntityHeader ) throws SaveException;
+    long persistMapping( String sourceClusterId, EntityHeader sourceEntityHeader, String destinationClusterId, EntityHeader destinationEntityHeader, boolean sameEntity ) throws SaveException;
 }

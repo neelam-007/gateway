@@ -1,11 +1,9 @@
 package com.l7tech.server.management.migration.bundle;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.migration.MigrationMapping;
+import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.management.api.node.MigrationApi;
 
 import javax.xml.bind.annotation.*;
@@ -24,145 +22,183 @@ import java.util.logging.Level;
  *
  * Not thread-safe. 
  *
- * @see com.l7tech.objectmodel.migration.MigrationMapping
+ * @see com.l7tech.objectmodel.migration.MigrationDependency
  * @author jbufu
  */
 @XmlRootElement
-@XmlType(propOrder={"headers", "mappings", "originalHeaders", "unMapped"})
+@XmlType(propOrder={"headers", "dependencies", "mappings", "copies"})
 public class MigrationMetadata {
 
     private static final Logger logger = Logger.getLogger(MigrationMetadata.class.getName());
 
     /**
-     * Headers for all the items in the Migration Bundle. Used only by/during JAXB marshalling / unmarshalling operations.
+     * Headers for all the items in the Migration Bundle.
      */
     private Set<EntityHeader> headers = new HashSet<EntityHeader>();
-    private Set<EntityHeader> originalHeaders = new HashSet<EntityHeader>(); // needed to apply properties through UsesEntities
 
-    /**
-     * Headers for all the items in the Migration Bundle. Used by migration business logic.
-     */
-    private Map<EntityHeaderRef, EntityHeader> headersMap = null;
-    private Map<EntityHeaderRef, EntityHeader> originalHeadersMap = null;
+    private Set<MigrationDependency> dependencies = new HashSet<MigrationDependency>();
+    private Map<EntityHeader, Set<MigrationDependency>> dependenciesBySource;
+    private Map<EntityHeader, Set<MigrationDependency>> dependenciesByTarget;
 
-    private Set<MigrationMapping> mappings = new HashSet<MigrationMapping>();
-    // easy access to dependencies / dependents
-    private Map<EntityHeaderRef, Set<MigrationMapping>> mappingsBySource;
-    private Map<EntityHeaderRef, Set<MigrationMapping>> mappingsByTarget;
+    private Map<EntityHeader, EntityHeader> mappings = new HashMap<EntityHeader, EntityHeader>();
+    private Map<EntityHeader, EntityHeader> copies = new HashMap<EntityHeader, EntityHeader>();
 
-    private Map<EntityHeader, EntityHeaderRef> unMapped = new HashMap<EntityHeader, EntityHeaderRef>();
-
-    // --- header operations ---
-
-    @XmlElementWrapper(name="headers")
     @XmlElementRef
-    public Collection<EntityHeader> getHeaders() {
-        if (headersMap != null)
-            // immutable, throws unsupported operation on modification attempts
-            return headersMap.values();
-        else
-            // should be used by JAXB unmarshalling only
-            return headers;
+    public Set<EntityHeader> getHeaders() {
+        return headers;
     }
 
-    public void setHeaders(Collection<EntityHeader> headers) {
-        // state reset: switching to "map cache uninitialized"
-        this.headersMap = null;
-        this.headers = new HashSet<EntityHeader>(headers);
-    }
-
-    @XmlElementWrapper(name="originalHeaders")
-    @XmlElementRef
-    public Collection<EntityHeader> getOriginalHeaders() {
-        if (originalHeadersMap != null)
-            // immutable, throws unsupported operation on modification attempts
-            return originalHeadersMap.values();
-        else
-            // should be used by JAXB unmarshalling only
-            return originalHeaders;
-    }
-
-    public void setOriginalHeaders(Collection<EntityHeader> headers) {
-        // state reset: switching to "map cache uninitialized"
-        this.originalHeadersMap = null;
-        this.originalHeaders = new HashSet<EntityHeader>(headers);
-    }
-
-    private void initHeadersCache() {
-        // state change: JAXB init over; switching to the internal map representation
-        HashMap<EntityHeaderRef, EntityHeader> headersMap = new HashMap<EntityHeaderRef, EntityHeader>();
-        for(EntityHeader header : headers) {
-            headersMap.put(EntityHeaderRef.fromOther(header), header);
-        }
-        this.headersMap = headersMap;
-        this.headers = null;
-
-        HashMap<EntityHeaderRef, EntityHeader> originalHeadersMap = new HashMap<EntityHeaderRef, EntityHeader>();
-        for(EntityHeader header : originalHeaders) {
-            originalHeadersMap.put(EntityHeaderRef.fromOther(header), header);
-        }
-        this.originalHeadersMap = originalHeadersMap;
-        this.originalHeaders = null;
-
-        logger.log(Level.FINEST, "Headers cache initialized.");
-    }
-
-    private Map<EntityHeaderRef, EntityHeader> getHeadersMap() {
-        if (headersMap == null) initHeadersCache();
-        return headersMap;
-    }
-
-    private Map<EntityHeaderRef, EntityHeader> getOriginalHeadersMap() {
-        if (originalHeadersMap == null) initHeadersCache();
-        return originalHeadersMap;
+    public void setHeaders(Set<EntityHeader> headers) {
+        this.headers = headers;
     }
 
     public void addHeader(EntityHeader header) {
-        getHeadersMap().put(EntityHeaderRef.fromOther(header), header);
+        headers.add(header);
     }
 
-    public boolean hasHeader(EntityHeaderRef headerRef) {
-        return getHeadersMap().containsKey(EntityHeaderRef.fromOther(headerRef));
+    public void removeHeader(EntityHeader header) {
+        headers.remove(header);
     }
 
-    public EntityHeader getHeader(EntityHeaderRef headerRef) {
-        return getHeadersMap().get(EntityHeaderRef.fromOther(headerRef));
+    public boolean hasHeader(EntityHeader header) {
+        return headers.contains(header);
     }
 
-    public EntityHeader getHeaderMappedOrOriginal(EntityHeaderRef headerRef) {
-        EntityHeader header = getHeader(headerRef);
-        return header != null ? header : getOriginalHeader(headerRef);
+    @XmlElementWrapper(name="dependencies")
+    @XmlElementRef
+    public Set<MigrationDependency> getDependencies() {
+        return dependencies;
     }
 
-    public EntityHeader getOriginalHeader(EntityHeaderRef headerRef) {
-        return getOriginalHeadersMap().get(EntityHeaderRef.fromOther(headerRef));
+    public void setDependencies(Set<MigrationDependency> dependencies) {
+        this.dependencies = dependencies;
     }
 
-    public void removeHeader(EntityHeaderRef headerRef) {
-        EntityHeaderRef ref = EntityHeaderRef.fromOther(headerRef);
-        getOriginalHeadersMap().put(ref, getHeadersMap().remove(ref));
+    public void addDependency(MigrationDependency dependency) {
+        logger.log(Level.FINEST, "Adding dependency: {0}", dependency);
+        if (dependency == null) return;
+        dependencies.add(dependency);
+        getDependencies(dependency.getDependant()).add(dependency);
+        getDependants(dependency.getDependency()).add(dependency);
     }
 
-    public boolean isMappingRequired(EntityHeaderRef headerRef) throws MigrationApi.MigrationException {
-        for (MigrationMapping mapping : getMappingsForTarget(EntityHeaderRef.fromOther(headerRef))) {
-            if ( mapping.getType().getNameMapping() == MigrationMappingSelection.REQUIRED ||
-                 mapping.getType().getValueMapping() == MigrationMappingSelection.REQUIRED)
+    @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
+    public Map<EntityHeader, EntityHeader> getMappings() {
+        return mappings;
+    }
+
+    public void setMappings(Map<EntityHeader, EntityHeader> mappings) {
+        this.mappings = mappings;
+    }
+
+    public Collection<EntityHeader> getMappedHeaders() {
+        return mappings.values();
+    }
+
+    public EntityHeader getMapping(EntityHeader header) {
+        return mappings.get(header);
+    }
+
+    public boolean isMapped(EntityHeader header) {
+        return mappings.containsKey(header);
+    }
+
+    public void addMappingOrCopy(EntityHeader source, EntityHeader target, boolean isCopy) {
+        if (isCopy) {
+            copies.put(source, target);
+            mappings.remove(source);
+        } else {
+            mappings.put(source, target);
+            copies.remove(source);
+        }
+    }
+
+    public EntityHeader getCopiedOrMapped(EntityHeader header) {
+        if (wasCopied(header))
+            return getCopied(header);
+        else if (isMapped(header))
+            return getMapping(header);
+        else
+            return null;
+    }
+
+    @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
+    public Map<EntityHeader, EntityHeader> getCopies() {
+        return copies;
+    }
+
+    public void setCopies(Map<EntityHeader, EntityHeader> copies) {
+        this.copies = copies;
+    }
+
+    public Collection<EntityHeader> getCopiedHeaders() {
+        return copies.values();
+    }
+
+    public EntityHeader getCopied(EntityHeader header) {
+        return copies.get(header);
+    }
+
+    public boolean wasCopied(EntityHeader header) {
+        return copies.containsKey(header);
+    }
+
+    private void initDependenciesCache()  {
+        dependenciesBySource = new HashMap<EntityHeader, Set<MigrationDependency>>();
+        dependenciesByTarget = new HashMap<EntityHeader, Set<MigrationDependency>>();
+        for (MigrationDependency dependency : this.dependencies) {
+            addDependencies(dependency.getDependant(), Collections.singleton(dependency));
+            addDependants(dependency.getDependency(), Collections.singleton(dependency));
+        }
+        logger.log(Level.FINEST, "Dependencies cache initialized.");
+    }
+
+    private void addDependencies(EntityHeader source, Set<MigrationDependency> deps) {
+        getDependencies(source).addAll(deps);
+    }
+
+    private void addDependants(EntityHeader target, Set<MigrationDependency> deps) {
+        getDependants(target).addAll(deps);
+    }
+
+    public Set<MigrationDependency> getDependencies(EntityHeader source)  {
+        if (dependenciesBySource == null) initDependenciesCache();
+
+        if ( ! dependenciesBySource.containsKey(source))
+            dependenciesBySource.put(source, new HashSet<MigrationDependency>());
+
+        return dependenciesBySource.get(source);
+    }
+
+    public Set<MigrationDependency> getDependants(EntityHeader target) {
+        if (dependenciesByTarget == null) initDependenciesCache();
+
+        if ( ! dependenciesByTarget.containsKey(target))
+            dependenciesByTarget.put(target, new HashSet<MigrationDependency>());
+
+        return dependenciesByTarget.get(target);
+    }
+
+    public boolean isMappingRequired(EntityHeader header) throws MigrationApi.MigrationException {
+        for (MigrationDependency dependency : getDependants(header)) {
+            if ( dependency.getMappingType().getNameMapping() == MigrationMappingSelection.REQUIRED ||
+                 dependency.getMappingType().getValueMapping() == MigrationMappingSelection.REQUIRED)
                 return true;
         }
         return false;
     }
 
-    public boolean includeInExport(EntityHeaderRef headerRef) throws MigrationApi.MigrationException {
-        if (isMappingRequired(headerRef)) {
+    public boolean includeInExport(EntityHeader header) throws MigrationApi.MigrationException {
+        if (isMappingRequired(header)) {
             return false;
         } else {
-            Set<MigrationMapping> deps = getMappingsForTarget(EntityHeaderRef.fromOther(headerRef));
+            Set<MigrationDependency> deps = getDependants(header);
 
             if (deps == null || deps.size() == 0) // top-level item
                 return true;
 
-            for (MigrationMapping mapping : deps) {
-                if (mapping.isExport())
+            for (MigrationDependency dependency : deps) {
+                if (dependency.isExport())
                     return true;
             }
 
@@ -170,230 +206,12 @@ public class MigrationMetadata {
         }
     }
 
-    // --- mapping / dependencies operations ---
-
-    private void initMappingsCache()  {
-        mappingsBySource = new HashMap<EntityHeaderRef, Set<MigrationMapping>>();
-        mappingsByTarget = new HashMap<EntityHeaderRef, Set<MigrationMapping>>();
-        for (MigrationMapping mapping : this.mappings) {
-            addMappingsForSource(mapping.getDependant(), Collections.singleton(mapping));
-            addMappingsForTarget(mapping.getDependency(), Collections.singleton(mapping));
-        }
-        logger.log(Level.FINEST, "Mappings cache initialized.");
-    }
-
-    @XmlElementWrapper(name="mappings")
-    @XmlElementRef
-    public Set<MigrationMapping> getMappings() {
-        return mappings;
-    }
-
-    public void setMappings(Set<MigrationMapping> mappings) throws MigrationApi.MigrationException {
-        // state reset: switching to "map cache uninitialized"
-        this.mappingsBySource = null;
-        this.mappingsByTarget = null;
-        this.mappings = mappings;
-    }
-
     public Set<EntityHeader> getMappableDependencies() {
         Set<EntityHeader> result = new HashSet<EntityHeader>();
-        for(MigrationMapping m : mappings) {
-            if (m.getType().getNameMapping() != NONE || m.getType().getValueMapping() != NONE)
-                result.add(getHeader(m.getDependency()));
+        for(MigrationDependency dep : dependencies) {
+            if (dep.getMappingType().getNameMapping() != NONE || dep.getMappingType().getValueMapping() != NONE)
+                result.add(dep.getDependency());
         }
         return result;
-    }
-
-    public void addMappings(Set<MigrationMapping> mappings) throws MigrationApi.MigrationException {
-        for (MigrationMapping mapping : mappings) {
-            addMapping(mapping);
-        }
-    }
-
-    public void addMapping(MigrationMapping mapping) throws MigrationApi.MigrationException {
-        logger.log(Level.FINEST, "Adding mapping: {0}", mapping);
-        if (mapping == null) return;
-
-/*
-        MigrationMapping conflicting = hasConflictingMapping(mapping);
-        if (conflicting != null) {
-            if (mapping.getType().getValueMapping() != MigrationMappingSelection.OPTIONAL) {
-                throw new MigrationApi.MigrationException("New mapping: " + mapping + " conflicts with: " + conflicting);
-            } else {
-                logger.log(Level.WARNING, "New mapping would create a conflict; switching value-mapping from OPTIONAL to REQUIRED for: " + mapping);
-                mapping.getType().setValueMapping(MigrationMappingSelection.REQUIRED);
-            }
-        }
-*/
-
-        mappings.add(mapping);
-        addMappingsForSource(mapping.getDependant(), Collections.singleton(mapping));
-        addMappingsForTarget(mapping.getDependency(), Collections.singleton(mapping));
-    }
-
-    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    public void mapNames(Set<Pair<EntityHeaderRef,EntityHeader>> mappings) throws MigrationApi.MigrationException {
-        Set<Pair<EntityHeaderRef,EntityHeader>> toApply = new HashSet<Pair<EntityHeaderRef, EntityHeader>>(mappings);
-        Set<Pair<EntityHeaderRef,EntityHeader>> toRemove = new HashSet<Pair<EntityHeaderRef, EntityHeader>>();
-        Collection<String> errors = new HashSet<String>();
-        do {
-            toRemove.clear();
-            errors.clear();
-            for(Pair<EntityHeaderRef,EntityHeader> pair : toApply) {
-                // do not map folders, they get special handling in the manager
-                if (pair.getKey().getType() == EntityType.FOLDER) {
-                    toRemove.add(pair);
-                    continue;
-                }
-                try {
-                    mapName(pair.getKey(), pair.getValue());
-                    toRemove.add(pair);
-                } catch (Exception e) {
-                    errors.add("Error applying mapping for " + pair.getKey() + " : " + ExceptionUtils.getMessage(e));
-                }
-            }
-            toApply.removeAll(toRemove);
-        } while (! toApply.isEmpty() && !toRemove.isEmpty());
-
-        if (! toApply.isEmpty())
-            throw new MigrationApi.MigrationException("Unable to apply mappings.", errors);
-    }
-
-    public void mapName(EntityHeaderRef dependency, EntityHeader newDependency) throws MigrationApi.MigrationException {
-        mapName(dependency, newDependency, true);
-    }
-
-    public void mapName(EntityHeaderRef dependency, EntityHeader newDependency, boolean enforceMappingType) throws MigrationApi.MigrationException {
-
-        logger.log(Level.FINE, "Name-mapping: {0} -> {1}.", new Object[]{dependency, newDependency});
-
-        EntityHeader originalDepHeader = getHeader(dependency);
-        if (dependency == null || newDependency == null || ! hasHeader(dependency) || originalDepHeader.equals(newDependency)) {
-            logger.log(Level.FINE, "Ignoring name-mapping: {0} -> {1}.", new Object[]{dependency, newDependency});
-            if (hasHeader(dependency)) getOriginalHeadersMap().put(dependency, originalDepHeader);
-            return;
-        }
-
-        // keep track of the swap
-        unMapped.put(newDependency, dependency);
-
-        removeDependency(dependency);
-
-        // add new header to the bundle
-        addHeader(newDependency);
-
-        // update incoming dependencies
-        Set<MigrationMapping> mappingsForDependency = getMappingsForTarget(dependency);
-        for (MigrationMapping mapping : mappingsForDependency) {
-            // todo: one-to-many mappings: decide how/when to apply this mapping (vs a presious / individual selection)
-            mapping.mapDependency(newDependency, enforceMappingType);
-        }
-        mappingsByTarget.remove(EntityHeaderRef.fromOther(dependency)); // nobody will depend on the old one
-        addMappingsForTarget(newDependency, mappingsForDependency);
-    }
-
-    private void removeDependency(EntityHeaderRef dependency) {
-
-        // remove this dependency
-        removeHeader(dependency);
-        //removeMappings(dependency);
-        boolean changed = true;
-
-        // remove headers of all other dependencies with no top-level dependants
-        while (changed) {
-            changed = false;
-            Set<EntityHeader> toRemove = new HashSet<EntityHeader>();
-            for(EntityHeader header : getHeaders()) {
-                Set<MigrationMapping> inMappings = getMappingsForTarget(header);
-                if (inMappings.isEmpty()) // this header is a top-level entry, don't remove
-                    continue;
-                boolean hasTopLevelDependant = false;
-                for (MigrationMapping mapping : inMappings) {
-                    if (hasHeader(mapping.getDependant())) {
-                        hasTopLevelDependant = true;
-                        break;
-                    }
-                }
-                if (! hasTopLevelDependant) {
-                    toRemove.add(header);
-                    changed = true;
-                }
-            }
-            for(EntityHeader header : toRemove) {
-                removeHeader(header);
-            }
-        }
-
-        // entries mappingsBy[Source|Target] needed for update operations
-    }
-
-    /**
-     * Checks if the mapping provided as a parameter would introduce a mapping conflict, i.e.
-     * if the dependency in the mapping is already required to be mapped in an incompatible way.
-     *
-     * Any combinations of name-mappings is allowed; if name-mapping is NONE for a dependency,
-     * it cannot appear as value-mapped as NONE in one entity, and as OPTIONAL or REQUIRED in another entity.
-     *
-     * @return the first conflicting mapping found, or null if no conflicting mappings are found.
-     */
-    private MigrationMapping hasConflictingMapping(MigrationMapping newMapping) throws MigrationApi.MigrationException {
-
-        if (newMapping == null || newMapping.getType().getNameMapping() != NONE)
-            return null;
-
-        Set<MigrationMapping> mappings = getMappingsForTarget(newMapping.getDependency());
-        if (mappings == null) return null;
-
-        EnumSet<MigrationMappingSelection> conflicting =
-            newMapping.getType().getValueMapping() != NONE ?
-                EnumSet.of(NONE) : EnumSet.of(MigrationMappingSelection.OPTIONAL, MigrationMappingSelection.REQUIRED);
-
-        for(MigrationMapping m : mappings) {
-            if (m.getType().getNameMapping() != NONE)
-                continue;
-            if (conflicting.contains(m.getType().getValueMapping()))
-                return m;
-        }
-
-        return null;
-    }
-
-    public Set<MigrationMapping> getMappingsForSource(EntityHeaderRef source)  {
-        if (mappingsBySource == null) initMappingsCache();
-
-        if ( ! mappingsBySource.containsKey(EntityHeaderRef.fromOther(source)))
-            mappingsBySource.put(EntityHeaderRef.fromOther(source), new HashSet<MigrationMapping>());
-
-        return mappingsBySource.get(EntityHeaderRef.fromOther(source));
-    }
-
-    public Set<MigrationMapping> getMappingsForTarget(EntityHeaderRef target) {
-        if (mappingsByTarget == null) initMappingsCache();
-
-        if ( ! mappingsByTarget.containsKey(EntityHeaderRef.fromOther(target)))
-            mappingsByTarget.put(EntityHeaderRef.fromOther(target), new HashSet<MigrationMapping>());
-
-        return mappingsByTarget.get(EntityHeaderRef.fromOther(target));
-    }
-
-    private void addMappingsForSource(EntityHeaderRef source, Set<MigrationMapping> mappings) {
-        getMappingsForSource(source).addAll(mappings);
-    }
-
-    private void addMappingsForTarget(EntityHeaderRef target, Set<MigrationMapping> mappings) {
-        getMappingsForTarget(target).addAll(mappings);
-    }
-
-    public EntityHeaderRef getUnMapped(EntityHeader header) {
-        return unMapped.get(header);
-    }
-
-    @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
-    public Map<EntityHeader, EntityHeaderRef> getUnMapped() {
-        return unMapped;
-    }
-
-    public void setUnMapped(Map<EntityHeader, EntityHeaderRef> unMapped) {
-        this.unMapped = unMapped;
     }
 }

@@ -1,7 +1,7 @@
 package com.l7tech.server.management.migration.bundle;
 
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeaderRef;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.xml.bind.annotation.*;
 
@@ -12,26 +12,26 @@ import javax.xml.bind.annotation.*;
  * @author jbufu
  */
 @XmlRootElement
-//@XmlType(propOrder={"header", "value"})
+@XmlType(propOrder={"header", "value"})
 public class ExportedItem {
 
-    private EntityHeaderRef headerRef;
+    private EntityHeader header;
     private Entity value;
     private Entity mappedValue;
 
     protected ExportedItem() {}
 
-    public ExportedItem(EntityHeaderRef headerRef, Entity value) {
-        this.headerRef = EntityHeaderRef.fromOther(headerRef);
+    public ExportedItem(EntityHeader header, Entity value) {
+        this.header = header;
         this.value = value;
     }
 
-    public EntityHeaderRef getHeaderRef() {
-        return headerRef;
+    public EntityHeader getHeader() {
+        return header;
     }
 
-    public void setHeaderRef(EntityHeaderRef headerRef) {
-        this.headerRef = EntityHeaderRef.fromOther(headerRef);
+    public void setHeader(EntityHeader header) {
+        this.header = header;
     }
 
     @XmlAnyElement(lax=true)

@@ -94,6 +94,15 @@ public class MigrationMappingRecord extends PersistentEntityImp {
         this.target = target;
     }
 
+    @Column(name="same_entity", updatable=false, nullable=false)
+    public boolean isSameEntity() {
+        return sameEntity;
+    }
+
+    public void setSameEntity(boolean sameEntity) {
+        this.sameEntity = sameEntity;
+    }
+
     //- PRIVATE
 
     private long timestamp;
@@ -101,4 +110,5 @@ public class MigrationMappingRecord extends PersistentEntityImp {
     private MigrationMappedEntity source;
     private SsgCluster targetCluster;
     private MigrationMappedEntity target;
+    private boolean sameEntity;
 }

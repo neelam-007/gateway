@@ -23,7 +23,7 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
 
     private static final Logger logger = Logger.getLogger(DefaultEntityPropertyResolver.class.getName());
 
-    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(final EntityHeaderRef source, Object entity, final Method property) throws PropertyResolverException {
+    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, final Method property) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
         if (!MigrationUtils.isDefaultDependency(property))
             throw new IllegalArgumentException("Cannot handle property: " + property);
@@ -39,18 +39,18 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
             throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 
-        Map<EntityHeader, Set<MigrationMapping>> result = new HashMap<EntityHeader, Set<MigrationMapping>>();
+        Map<EntityHeader, Set<MigrationDependency>> result = new HashMap<EntityHeader, Set<MigrationDependency>>();
 
         if (propertyValue == null)
             return result;
 
         else if (propertyValue instanceof EntityHeader) {
             addToResult((EntityHeader) propertyValue,
-                new MigrationMapping(source, (EntityHeader) propertyValue, propName, type, exported), result);
+                new MigrationDependency(source, (EntityHeader) propertyValue, propName, type, exported), result);
 
         } else if (propertyValue instanceof Entity) {
             addToResult(MigrationUtils.getHeaderFromEntity((Entity) propertyValue),
-                new MigrationMapping(source, MigrationUtils.getHeaderFromEntity((Entity) propertyValue), propName, type, exported), result);
+                new MigrationDependency(source, MigrationUtils.getHeaderFromEntity((Entity) propertyValue), propName, type, exported), result);
 
         } else { // array or set
             Collection input = null;
@@ -62,10 +62,10 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
             if (input != null) {
                 for(Object item : input) {
                     if (item instanceof EntityHeader)
-                        addToResult((EntityHeader) item, new MigrationMapping(source, (EntityHeader) item, propName, type, exported), result);
+                        addToResult((EntityHeader) item, new MigrationDependency(source, (EntityHeader) item, propName, type, exported), result);
                     else if (item instanceof Entity)
                         addToResult(MigrationUtils.getHeaderFromEntity((Entity) item),
-                            new MigrationMapping(source, MigrationUtils.getHeaderFromEntity((Entity) item), propName, type, exported), result);
+                            new MigrationDependency(source, MigrationUtils.getHeaderFromEntity((Entity) item), propName, type, exported), result);
                 }
             } else {
                 // should not happen
@@ -78,14 +78,14 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
         return result;
     }
 
-    public void addToResult(EntityHeader header, MigrationMapping mapping, Map<EntityHeader,Set<MigrationMapping>> result) {
-        Set<MigrationMapping> mappingsForHeader = result.get(header);
+    public void addToResult(EntityHeader header, MigrationDependency dep, Map<EntityHeader,Set<MigrationDependency>> result) {
+        Set<MigrationDependency> mappingsForHeader = result.get(header);
         if (mappingsForHeader == null) {
-            mappingsForHeader = new HashSet<MigrationMapping>();
+            mappingsForHeader = new HashSet<MigrationDependency>();
             result.put(header, mappingsForHeader);
         }
-        logger.log(Level.FINEST, "Found dependency mapping: {0}", mapping);
-        mappingsForHeader.add(mapping);
+        logger.log(Level.FINEST, "Found migration dependency: {0}", dep);
+        mappingsForHeader.add(dep);
     }
 
     public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {

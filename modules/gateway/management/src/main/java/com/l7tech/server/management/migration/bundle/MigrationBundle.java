@@ -1,14 +1,16 @@
 package com.l7tech.server.management.migration.bundle;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.migration.MigrationMapping;
+import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.objectmodel.migration.MigrationMappingType;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.server.management.api.node.MigrationApi;
+import com.l7tech.util.Pair;
 
 import javax.xml.bind.annotation.*;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.*;
 
 /**
@@ -30,19 +32,18 @@ import java.util.*;
  * </ul>
  *
  * @see com.l7tech.server.management.migration.bundle.MigrationMetadata
- * @see com.l7tech.objectmodel.migration.MigrationMapping
+ * @see com.l7tech.objectmodel.migration.MigrationDependency
  * @see com.l7tech.server.management.migration.bundle.ExportedItem
  * @author jbufu
  */
 @XmlRootElement
 @XmlType(propOrder={"metadata", "exportedItems"})
-@XmlSeeAlso({PublishedService.class, ServiceDocument.class})
+@XmlSeeAlso({PublishedService.class, ServiceDocument.class, ExportedItem.class})
 public class MigrationBundle {
 
     private MigrationMetadata metadata;
     
-    private Set<ExportedItem> exportedItems = new HashSet<ExportedItem>();
-    private Map<EntityHeaderRef,ExportedItem> exportedItemsMap = null;
+    private Map<EntityHeader,ExportedItem> exportedItems = new HashMap<EntityHeader, ExportedItem>();
 
     protected MigrationBundle() {}
 
@@ -58,70 +59,41 @@ public class MigrationBundle {
         this.metadata = metadata;
     }
 
-
-    @XmlElementWrapper(name="values")
-    @XmlElementRef
-    public Collection<ExportedItem> getExportedItems() {
-        if (exportedItemsMap != null)
-            // immutable, throws unsupported operation on modification attempts
-            return exportedItemsMap.values();
-        else
-            // should be used by JAXB unmarshalling only
-            return exportedItems;
+    @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
+    public Map<EntityHeader, ExportedItem> getExportedItems() {
+        return exportedItems;
     }
 
-    public void setExportedItems(Collection<ExportedItem> exportedItems) {
-        // state reset
-        this.exportedItemsMap = null;
-        this.exportedItems = new HashSet<ExportedItem>(exportedItems);
+    public void setExportedItems(Map<EntityHeader, ExportedItem> exportedItems) {
+        this.exportedItems = exportedItems;
     }
 
-    private void initItemsCache() {
-        // state change: JAXB init over; switching to the internal map representation
-        HashMap<EntityHeaderRef,ExportedItem> itemsMap = new HashMap<EntityHeaderRef, ExportedItem>();
-        for(ExportedItem item : exportedItems) {
-            itemsMap.put(item.getHeaderRef(), item);
-        }
-        this.exportedItemsMap = itemsMap;
-        this.exportedItems = null;
+
+    public boolean hasItem(EntityHeader header) {
+        return exportedItems.containsKey(header);
     }
 
-    private Map<EntityHeaderRef, ExportedItem> getItemsMap() {
-        if (exportedItemsMap == null) initItemsCache();
-        return exportedItemsMap;
-    }
-
-    public boolean hasItem(EntityHeaderRef headerRef) {
-        return getItemsMap().containsKey(EntityHeaderRef.fromOther(headerRef));
-    }
-
-    public ExportedItem getExportedItem(EntityHeaderRef headerRef) {
-        return getItemsMap().get(EntityHeaderRef.fromOther(headerRef));
+    public ExportedItem getExportedItem(EntityHeader header) {
+        return exportedItems.get(header);
     }
 
     public void addExportedItem(ExportedItem item) {
-        getItemsMap().put(EntityHeaderRef.fromOther(item.getHeaderRef()), item);
-    }
-
-    private void addExporteditems(Set<ExportedItem> exportedItems) {
-        for (ExportedItem item : exportedItems) {
-            addExportedItem(item);
-        }
+        exportedItems.put(item.getHeader(), item);
     }
 
     // --- mapping operations ---
 
-    public void mapValue(EntityHeaderRef dependency, Entity newValue) throws MigrationApi.MigrationException {
+    public void mapValue(EntityHeader dependency, Entity newValue) throws MigrationApi.MigrationException {
 
-        Set<MigrationMapping> mappingsForDependency = metadata.getMappingsForTarget(dependency);
+        Set<MigrationDependency> dependants = metadata.getDependants(dependency);
 
-        if (dependency == null || newValue == null || mappingsForDependency == null)
+        if (dependency == null || newValue == null || dependants == null)
             return;
 
         // check for conflicting mapping types for this value-mapped dependency
-        for (MigrationMapping mapping : mappingsForDependency) {
-            if (mapping.getType() == MigrationMappingType.BOTH_NONE)
-                throw new MigrationApi.MigrationException("Cannot map value for dependency; mapping set to NONE for: " + mapping);
+        for (MigrationDependency dep : dependants) {
+            if (dep.getMappingType() == MigrationMappingType.BOTH_NONE)
+                throw new MigrationApi.MigrationException("Cannot map value for dependency; mapping set to NONE for: " + dep);
         }
 
         // update mapping
@@ -133,11 +105,11 @@ public class MigrationBundle {
         item.setMappedValue(newValue);
     }
 
-    public Set<MigrationMapping> getUnresolvedMappings() throws MigrationApi.MigrationException {
-        Set<MigrationMapping> result = new HashSet<MigrationMapping>();
-        for(MigrationMapping m : metadata.getMappings()) {
-            MigrationMappingType type = m.getType();
-            EntityHeaderRef targetHeaderRef = m.getDependency();
+    public Set<MigrationDependency> getUnresolvedMappings() throws MigrationApi.MigrationException {
+        Set<MigrationDependency> result = new HashSet<MigrationDependency>();
+        for(MigrationDependency m : metadata.getDependencies()) {
+            MigrationMappingType type = m.getMappingType();
+            EntityHeader targetHeaderRef = m.getDependency();
             ExportedItem targetItem = getExportedItem(targetHeaderRef);
             boolean hasSourceValue = targetItem != null && targetItem.getSourceValue() != null;
             boolean hasMappedValue = targetItem != null && targetItem.getMappedValue() != null;
@@ -148,11 +120,11 @@ public class MigrationBundle {
                         throw new MigrationApi.MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
                     break;
                 case OPTIONAL:
-                    if ( ! hasSourceValue && ! m.isMappedDependency())
+                    if ( ! hasSourceValue && ! metadata.isMapped(m.getDependant()))
                         result.add(m);
                     break;
                 case REQUIRED:
-                    if (! m.isMappedDependency())
+                    if (! metadata.isMapped(m.getDependant()))
                         result.add(m);
                     break;
                 default:
@@ -161,7 +133,7 @@ public class MigrationBundle {
 
             switch (type.getValueMapping()) {
                 case NONE: // requirement only if there's no name-mapping
-                    if ( ! hasSourceValue && type.getNameMapping() != MigrationMappingSelection.NONE && ! m.isMappedDependency())
+                    if ( ! hasSourceValue && type.getNameMapping() != MigrationMappingSelection.NONE && ! metadata.isMapped(m.getDependant()))
                         throw new MigrationApi.MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
                     break;
                 case OPTIONAL:
@@ -178,5 +150,17 @@ public class MigrationBundle {
         }
 
         return result;
+    }
+
+    public Map<EntityHeader, Entity> getExportedEntities() {
+        Map<EntityHeader, Entity> result = new HashMap<EntityHeader, Entity>();
+        for (Map.Entry<EntityHeader, ExportedItem> itemEntry : getExportedItems().entrySet()) {
+            result.put(itemEntry.getKey(), itemEntry.getValue().getValue());
+        }
+        return result;
+    }
+
+    public Entity getExportedEntity(EntityHeader header) {
+        return hasItem(header) ? getExportedItem(header).getValue() : null;
     }
 }

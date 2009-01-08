@@ -2,7 +2,6 @@ package com.l7tech.objectmodel.migration;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeaderRef;
 
 import java.util.Set;
 import java.util.Map;
@@ -21,7 +20,7 @@ public interface PropertyResolver {
      * @param property the method for which the property value is retrieved
      * @return a map with migration mappings as values, keyed on the (target) dependency header.
      */
-    public Map<EntityHeader, Set<MigrationMapping>> getDependencies(EntityHeaderRef source, Object entity, final Method property) throws PropertyResolverException;
+    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(EntityHeader source, Object entity, final Method property) throws PropertyResolverException;
 
     /**
      * Applies a mapped value to a property of an entity.

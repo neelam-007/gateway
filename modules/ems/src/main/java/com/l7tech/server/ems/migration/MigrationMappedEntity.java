@@ -2,6 +2,8 @@ package com.l7tech.server.ems.migration;
 
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Column;
@@ -83,6 +85,28 @@ public class MigrationMappedEntity {
     public void setEntityDescription(String entityDescription) {
         this.entityDescription = entityDescription;
     }
+
+    @SuppressWarnings({"deprecation"})
+    public static EntityHeader asEntityHeader( final MigrationMappedEntity entity ) {
+        EntityHeader header;
+        if ( entity.getEntityProviderId() != null ) {
+            IdentityHeader identityHeader = new IdentityHeader();
+            identityHeader.setProviderOid( entity.getEntityProviderId() );
+            header = identityHeader;
+        } else {
+            header = new EntityHeader();
+        }
+
+        header.setType( entity.getEntityType() );
+        header.setStrId( entity.getEntityId() );
+        header.setName( entity.getEntityName() );
+        header.setDescription( entity.getEntityDescription() );
+        header.setVersion( entity.getEntityVersion() );
+
+        return header;
+    }
+
+
 
     //- PRIVATE
 

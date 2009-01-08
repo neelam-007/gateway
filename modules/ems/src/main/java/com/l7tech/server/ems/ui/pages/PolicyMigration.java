@@ -4,6 +4,8 @@ import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.util.TypedPropertyColumn;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.migration.MigrationMappingRecordManager;
+import com.l7tech.server.ems.migration.MigrationMappingRecord;
+import com.l7tech.server.ems.migration.MigrationMappedEntity;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.JSONConstants;
@@ -18,11 +20,10 @@ import com.l7tech.server.management.migration.bundle.ExportedItem;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.migration.MigrationMapping;
+import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.wicket.markup.html.form.Form;
@@ -493,9 +494,9 @@ public class PolicyMigration extends EsmStandardWebPage {
         for ( DependencyItem item : items ) {
             DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
             Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(sourceKey, targetClusterId);
-            DependencyItem mappedItem = mappingModel.dependencyMap.get( mappingKey );
-            if ( mappedItem != null ) {
-                item.destName = mappedItem.name;
+            Pair<DependencyItem, Boolean> mappedItem = mappingModel.dependencyMap.get( mappingKey );
+            if ( mappedItem != null && mappedItem.left != null) {
+                item.destName = mappedItem.left.name;
                 dependencySummaryModel.incrementTotalDependencies();
             } else {
                 item.destName = "-";
@@ -610,7 +611,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     @Override
                     protected void onEvent( final AjaxRequestTarget ajaxRequestTarget ) {
                         logger.fine("Selection callback for : " + dependencyItem);
-                        mappingModel.dependencyMap.put( mappingKey, dependencyItem );
+                        mappingModel.dependencyMap.put( mappingKey, new Pair<DependencyItem, Boolean>(dependencyItem,false) );
                         updateDependencies( dependenciesContainer, optionRefreshComponents, candidateModel, searchModel, mappingModel, dependencySummaryModel );
 
                         for ( String id : SELECTION_REFRESH_COMPONENTS ) {
@@ -623,8 +624,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                     }
                 } );
 
-                DependencyItem currentItem = mappingModel.dependencyMap.get( mappingKey );
-                if ( currentItem!=null && currentItem.equals( dependencyItem ) ) {
+                Pair<DependencyItem, Boolean> currentItem = mappingModel.dependencyMap.get( mappingKey );
+                if ( currentItem!=null && currentItem.left != null && currentItem.left.equals( dependencyItem ) ) {
                     radioComponent.add( new AttributeModifier("checked", true, new Model("checked")) );
                 }
 
@@ -742,9 +743,10 @@ public class PolicyMigration extends EsmStandardWebPage {
                 DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
                 Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
                 if ( !mappingModel.dependencyMap.containsKey(mapKey) ) {
-                    EntityHeader targetHeader = migrationMappingRecordManager.findEntityHeaderForMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
-                    if ( targetHeader != null ) {
-                        mappingModel.dependencyMap.put( mapKey, new DependencyItem( targetHeader, true ) );
+                    MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
+                    if ( mapping != null && mapping.getTarget() != null ) {
+                        mappingModel.dependencyMap.put( mapKey, new Pair<DependencyItem, Boolean>(
+                            new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), true), mapping.isSameEntity() ));
                     }
                 }
             }
@@ -755,21 +757,21 @@ public class PolicyMigration extends EsmStandardWebPage {
             MigrationApi targetMigrationApi = targetContext.getMigrationApi();
 
             Collection<EntityHeader> headersToCheck = new HashSet<EntityHeader>();
-            for (Map.Entry<Pair<DependencyKey,String>,DependencyItem> entry : mappingModel.dependencyMap.entrySet()) {
-                if ( entry.getValue() == null || !entry.getKey().right.equals(targetClusterId)) continue;
-                headersToCheck.add( entry.getValue().asEntityHeader() );
+            for (Map.Entry<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> entry : mappingModel.dependencyMap.entrySet()) {
+                if ( entry.getValue() == null || entry.getValue().left == null || !entry.getKey().right.equals(targetClusterId)) continue;
+                headersToCheck.add( entry.getValue().left.asEntityHeader() );
             }
             Collection<EntityHeader> validatedHeaders = targetMigrationApi.checkHeaders(headersToCheck);
             if ( validatedHeaders == null ) validatedHeaders = Collections.emptyList();
             Set<Pair<DependencyKey,String>> keysToNull = new HashSet<Pair<DependencyKey, String>>();
-            for( Map.Entry<Pair<DependencyKey,String>,DependencyItem> entry : mappingModel.dependencyMap.entrySet() ) {
-                if ( entry.getValue() == null || !entry.getKey().right.equals(targetClusterId)) continue;
-                if ( !validatedHeaders.contains( entry.getValue().asEntityHeader() )) {
+            for( Map.Entry<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> entry : mappingModel.dependencyMap.entrySet() ) {
+                if ( entry.getValue() == null || entry.getValue().left == null || !entry.getKey().right.equals(targetClusterId)) continue;
+                if ( !validatedHeaders.contains( entry.getValue().left.asEntityHeader() )) {
                     keysToNull.add( entry.getKey() );
                 }
             }
             for( Pair<DependencyKey,String> mapKey : keysToNull ) {
-                mappingModel.dependencyMap.put( mapKey, null );
+                mappingModel.dependencyMap.remove( mapKey );
             }
         }
     }
@@ -848,20 +850,17 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                     MigrationBundle export = sourceMigrationApi.exportBundle( requestedItems.asEntityHeaders() );
                     MigrationMetadata metadata = export.getMetadata();
-                    Set<Pair<EntityHeaderRef,EntityHeader>> mappings = new HashSet<Pair<EntityHeaderRef, EntityHeader>>();
-                    for ( Map.Entry<Pair<DependencyKey,String>,DependencyItem> mapping : mappingModel.dependencyMap.entrySet() ) {
+                    for ( Map.Entry<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> mapping : mappingModel.dependencyMap.entrySet() ) {
                         if ( mapping.getValue() != null && mapping.getKey().left.clusterId.equals(sourceClusterId) && mapping.getKey().right.equals(targetClusterId) ) {
-                            mappings.add(new Pair<EntityHeaderRef,EntityHeader>(
-                                new EntityHeaderRef( mapping.getKey().left.type, mapping.getKey().left.id ),
-                                mapping.getValue().asEntityHeader() ));
+                            metadata.addMappingOrCopy(mapping.getKey().left.asEntityHeader(), mapping.getValue().left.asEntityHeader(), mapping.getValue().right);
                             migrationMappingRecordManager.persistMapping(
                                     sourceCluster.getGuid(),
                                     mapping.getKey().left.asEntityHeader(),
                                     targetCluster.getGuid(),
-                                    mapping.getValue().asEntityHeader() );
+                                    mapping.getValue().left.asEntityHeader(),
+                                    mapping.getValue().right);
                         }
                     }
-                    metadata.mapNames(mappings);
 
                     Collection<GatewayApi.EntityInfo> folders = targetGatewayApi.getEntityInfo( Collections.singleton(EntityType.FOLDER) );
                     EntityHeader targetFolderHeader = null;
@@ -879,8 +878,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                                 EntityHeader source = item.getSourceHeader();
                                 EntityHeader target = item.getTargetHeader();
 
-                                if ( source != null && target != null ) {
-                                    migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), source, targetCluster.getGuid(), target );
+                                if ( source != null && target != null && item.getOperation() == MigratedItem.ImportOperation.CREATE) {
+                                    migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), source, targetCluster.getGuid(), target, true );
                                 }
                             }
                         }
@@ -992,19 +991,20 @@ public class PolicyMigration extends EsmStandardWebPage {
         builder.append( overwrite );
         builder.append( "\n" );
         builder.append( "Services migrated: " );
-        builder.append( count(export.getExportedItems(),metadata,EntityType.SERVICE) );
+        builder.append( count(export.getExportedItems().values(), metadata,EntityType.SERVICE) );
         builder.append( "\n" );
         builder.append( "Policies migrated: " );
-        builder.append( count(export.getExportedItems(),metadata,EntityType.POLICY) );
+        builder.append( count(export.getExportedItems().values(), metadata,EntityType.POLICY) );
         builder.append( "\n\n" );
 
         // entity details
         builder.append( "Migrated Data\n" );
         if ( migratedItems != null ) {
             for ( MigratedItem item : migratedItems ) {
+                if (item.getOperation() == MigratedItem.ImportOperation.IGNORE) continue;
                 EntityHeader ih = dryRun ? item.getSourceHeader() : item.getTargetHeader();
                 builder.append(ih.getType().getName()).append(", ").append(ih.getName())
-                    .append("(#").append(ih.getStrId()).append("): ").append(item.getStatus()).append("\n");
+                    .append("(#").append(ih.getStrId()).append("): ").append(item.getOperation()).append(dryRun ? "\n" : "D\n");
             }
         } else {
             builder.append("None.\n");
@@ -1013,14 +1013,12 @@ public class PolicyMigration extends EsmStandardWebPage {
 
         // entity mappings
         StringBuilder mappingBuilder = new StringBuilder();
-        for ( MigrationMapping mapping : metadata.getMappings() ) {
-            if ( mapping.isMappedDependency() ) {
-                EntityHeaderRef sourceRef = mapping.getSourceDependency();
-                EntityHeaderRef targetRef = mapping.getMappedDependency();
-                EntityHeader sourceHeader = metadata.getOriginalHeader( sourceRef );
-                EntityHeader targetHeader = metadata.getHeader( targetRef );
+        for ( MigrationDependency dep : metadata.getDependencies() ) {
+            if ( metadata.isMapped(dep.getDependant()) ) {
+                EntityHeader sourceHeader = dep.getDependency();
+                EntityHeader targetHeader = metadata.getMapping(dep.getDependant());
                 if (targetHeader == null) continue;
-                mappingBuilder.append( fromEntityType(sourceRef.getType()) );
+                mappingBuilder.append( fromEntityType(sourceHeader.getType()) );
                 mappingBuilder.append( ", " );
                 mappingBuilder.append( sourceHeader.getName() );
                 mappingBuilder.append( " (#" );
@@ -1046,7 +1044,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         int count = 0;
 
         for ( ExportedItem item : items ) {
-            if ( !item.isMappedValue() && item.getHeaderRef().getType() == type ) {
+            if ( !item.isMappedValue() && item.getHeader().getType() == type ) {
                 count++;
             }
         }
@@ -1264,8 +1262,8 @@ public class PolicyMigration extends EsmStandardWebPage {
      * selected, not just mappings for currently selected source entities)
      */
     public final static class EntityMappingModel implements Serializable {
-        private final Map<Pair<DependencyKey,String>,DependencyItem> dependencyMap =
-            new HashMap<Pair<DependencyKey,String>,DependencyItem>();
+        private final Map<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> dependencyMap =
+            new HashMap<Pair<DependencyKey, String>, Pair<DependencyItem, Boolean>>();
     }
 
     /**

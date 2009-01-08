@@ -58,7 +58,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
 
         MigrationMappingRecord record = findByMapping( sourceClusterId, sourceEntityHeader, targetClusterId );
         if ( record != null ) {
-            entityHeader = asEntityHeader( record.getTarget() );            
+            entityHeader = MigrationMappedEntity.asEntityHeader(record.getTarget());
         }
 
         return entityHeader;
@@ -68,7 +68,8 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
     public long persistMapping( final String sourceClusterGuid,
                                 final EntityHeader sourceEntityHeader,
                                 final String targetClusterGuid,
-                                final EntityHeader targetEntityHeader ) throws SaveException {
+                                final EntityHeader targetEntityHeader,
+                                final boolean sameEntity ) throws SaveException {
         MigrationMappingRecord mapping = new MigrationMappingRecord();
         try {
             mapping.setSourceCluster( ssgClusterManager.findByGuid( sourceClusterGuid ) );
@@ -107,6 +108,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
 
                 mapping.setSource( sourceEntity );
                 mapping.setTarget( targetEntity );
+                mapping.setSameEntity(sameEntity);
 
                 oid = super.save( mapping );
             } else {
@@ -144,26 +146,6 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
     //- PRIVATE
 
     private final SsgClusterManager ssgClusterManager;
-
-    @SuppressWarnings({"deprecation"})
-    private EntityHeader asEntityHeader( final MigrationMappedEntity entity ) {
-        EntityHeader header;
-        if ( entity.getEntityProviderId() != null ) {
-            IdentityHeader identityHeader = new IdentityHeader();
-            identityHeader.setProviderOid( entity.getEntityProviderId() );
-            header = identityHeader;
-        } else {
-            header = new EntityHeader();
-        }
-
-        header.setType( entity.getEntityType() );
-        header.setStrId( entity.getEntityId() );
-        header.setName( entity.getEntityName() );
-        header.setDescription( entity.getEntityDescription() );
-        header.setVersion( entity.getEntityVersion() );
-
-        return header;
-    }
 
     private MigrationMappingRecord findByMapping( final SsgCluster sourceCluster,
                                                   final EntityHeaderRef sourceEntityHeader,

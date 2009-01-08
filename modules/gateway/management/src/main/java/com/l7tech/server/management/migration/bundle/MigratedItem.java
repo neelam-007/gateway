@@ -13,14 +13,15 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class MigratedItem {
     private EntityHeader sourceHeader;
     private EntityHeader targetHeader;
-    private String status;
+    public static enum ImportOperation { CREATE, UPDATE, IGNORE }
+    private ImportOperation operation;
 
     public MigratedItem() {}
 
-    public MigratedItem(EntityHeader sourceHeader, EntityHeader targetHeader, String status) {
+    public MigratedItem(EntityHeader sourceHeader, EntityHeader targetHeader, ImportOperation operation) {
         this.sourceHeader = sourceHeader;
         this.targetHeader = targetHeader;
-        this.status = status;
+        this.operation = operation;
     }
 
     public EntityHeader getTargetHeader() {
@@ -39,11 +40,11 @@ public class MigratedItem {
         this.sourceHeader = sourceHeader;
     }
 
-    public String getStatus() {
-        return status;
+    public ImportOperation getOperation() {
+        return operation;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setOperation(ImportOperation operation) {
+        this.operation = operation;
     }
 }
