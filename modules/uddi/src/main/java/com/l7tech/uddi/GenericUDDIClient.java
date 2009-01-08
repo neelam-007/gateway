@@ -1174,23 +1174,22 @@ class GenericUDDIClient implements UDDIClient {
     }
 
     private FindQualifiers buildFindQualifiers(String searchStr, boolean caseSensitive) {
-        logger.log(Level.FINE, "Search string : " + searchStr + " isCaseSensitive : " + caseSensitive);
+        logger.log(Level.FINE, "- Search string : " + searchStr + " isCaseSensitive : " + caseSensitive + " containsWildCards : " + containWildCards(searchStr));
         FindQualifiers findQualifiers = new FindQualifiers();
         List<String> qualifiers = findQualifiers.getFindQualifier();
 
         //determine if contains wild cards
-        if (searchStr.contains("%")) {
+        if (containWildCards(searchStr)) {
             qualifiers.add(FINDQUALIFIER_APPROXIMATE);
-
-            //determine if case sensitive is set
             if (!caseSensitive) {
                 qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
             }
         } else {
-            //no wild cards, assume using exact match
-            //NOTE: for Systinet, it will automatically append a wild card to the end of the string when exactMatch
-            //is used, so it'll behave similar to "Starts With".
-            qualifiers.add(FINDQUALIFIER_EXACTMATCH);
+            if (!caseSensitive) {
+                qualifiers.add(FINDQUALIFIER_CASEINSENSITIVE);
+            } else {
+                return null;
+            }
         }
 
         return findQualifiers;
@@ -1265,6 +1264,22 @@ class GenericUDDIClient implements UDDIClient {
 
         }
 
+        return result;
+    }
+
+    /**
+     * @param searchPattern Search pattern string
+     * @return  TRUE if search pattern contains wild cards, otherwise FALSE.
+     */
+    private boolean containWildCards(String searchPattern) {
+        logger.log(Level.FINE, "String before :" + searchPattern);
+        boolean result = false;
+
+        //remove any known escape characters
+        String temp = searchPattern.replace("\\%", "").replace("\\_", "");
+
+        logger.log(Level.FINE, "String after : " + temp);
+        if (temp.contains("%") || temp.contains("_")) result = true;
         return result;
     }
 }

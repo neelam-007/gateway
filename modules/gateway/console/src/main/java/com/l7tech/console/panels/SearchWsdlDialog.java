@@ -115,7 +115,6 @@ public class SearchWsdlDialog extends JDialog {
                     }
                 }
                 ((AbstractDocument)serviceNameSearchPattern.getDocument()).setDocumentFilter(new DocumentSizeFilter(validMaxLen));
-                caseSensitiveCheckBox.setEnabled(!EQUALS.equals(filterName));   //disable check box when EQUALS is selected
             }
         });
 
@@ -181,10 +180,11 @@ public class SearchWsdlDialog extends JDialog {
                 final String searchString;
 
                 if(serviceNameSearchPattern.getText().length() > 0) {
+                    String escapedStr = escapeString(serviceNameSearchPattern.getText());
                     if(((String)serviceNameFilterOptionComboBox.getSelectedItem()).equals(CONTAINS)) {
-                        searchString = "%" + serviceNameSearchPattern.getText() + "%";
+                        searchString = "%" + escapedStr + "%";
                     } else {
-                        searchString =  serviceNameSearchPattern.getText();
+                        searchString = escapedStr;
                     }
                 } else {
                     searchString = "%";
@@ -336,5 +336,32 @@ public class SearchWsdlDialog extends JDialog {
      */
     public void removeWsdlListener(WsdlListener listener) {
         listenerList.remove(WsdlListener.class, listener);
+    }
+
+    /**
+     * @param string    The string that will be escaped.
+     * @return  The new escaped string which will only escape the following characters:
+     *
+     *<ul>
+     * <li>% --> \%</li>
+     * <li>_ --> \_</li>
+     * <li>\ --> \\</li> 
+     * </ul>
+     */
+    public String escapeString(String string) {
+        StringBuffer result = new StringBuffer("");
+        for (int i=0; i < string.length(); i++) {
+            char character = string.charAt(i);
+            if (character == '%') {
+                result.append("\\%");
+            } else if (character == '_') {
+                result.append("\\_");
+            } else if (character == '\\') {
+                result.append("\\\\");
+            } else {
+                result.append(character);
+            }
+        }
+        return result.toString();
     }
 }
