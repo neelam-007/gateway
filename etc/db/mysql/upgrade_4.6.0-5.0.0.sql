@@ -206,6 +206,7 @@ CREATE TABLE trusted_esm_user (
   provider_oid bigint(20) NOT NULL,
   user_id varchar(128) NOT NULL,
   esm_user_id varchar(128) NOT NULL,
+  esm_user_display_name varchar(128) default NULL,
   PRIMARY KEY(objectid),
   FOREIGN KEY (trusted_esm_oid) REFERENCES trusted_esm (objectid) ON DELETE CASCADE,
   FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE

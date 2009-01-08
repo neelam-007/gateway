@@ -91,6 +91,7 @@ public class TrustedEsmManagerWindow extends JDialog {
                 column("Subject DN", 25, 100, 99999, new CertSubjectFormatter()));
 
         usersTableModel = TableUtil.configureTable(usersTable,
+                column("ESM User Name", 25, 100, 99999, propertyTransform(UserRow.class, "esmUserDisplayName")),
                 column("ESM User ID", 25, 100, 99999, propertyTransform(UserRow.class, "esmUserId")),
                 column("Local User", 25, 100, 99999, propertyTransform(UserRow.class, "ssgUserDisplayName")),
                 column("Identity Provider", 25, 100, 99999, propertyTransform(UserRow.class, "idProviderDisplayName")));
@@ -263,12 +264,15 @@ public class TrustedEsmManagerWindow extends JDialog {
         final TrustedEsmUser trustedEsmUser;
         final String ssgUserDisplayName;
         final String idProviderDisplayName;
+        final String esmUserDisplayName;
 
         private UserRow(TrustedEsmUser trustedEsmUser, String ssgUserDisplayName, String identityProviderDisplayName) {
             if (trustedEsmUser == null) throw new NullPointerException();
             this.trustedEsmUser = trustedEsmUser;
             this.ssgUserDisplayName = ssgUserDisplayName;
             this.idProviderDisplayName = identityProviderDisplayName;
+            String desc = trustedEsmUser.getEsmUserDisplayName();
+            this.esmUserDisplayName = desc == null ? "" : desc;
         }
 
         public TrustedEsmUser getTrustedEsmUser() {
@@ -285,6 +289,10 @@ public class TrustedEsmManagerWindow extends JDialog {
 
         public String getIdProviderDisplayName() {
             return idProviderDisplayName;
+        }
+
+        public String getEsmUserDisplayName() {
+            return esmUserDisplayName;
         }
     }
 }

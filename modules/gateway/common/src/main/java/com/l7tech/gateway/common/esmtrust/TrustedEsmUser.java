@@ -14,6 +14,7 @@ public class TrustedEsmUser extends PersistentEntityImp {
     private long providerOid;
     private String ssgUserId;
     private String esmUserId;
+    private String esmUserDisplayName;
 
     @Override
     @Version
@@ -57,6 +58,15 @@ public class TrustedEsmUser extends PersistentEntityImp {
 
     public void setEsmUserId(String esmUserId) {
         this.esmUserId = esmUserId;
+    }
+
+    @Column(name="esm_user_display_name", length=128)
+    public String getEsmUserDisplayName() {
+        return esmUserDisplayName;
+    }
+
+    public void setEsmUserDisplayName(String esmUserDisplayName) {
+        this.esmUserDisplayName = esmUserDisplayName;
     }
 
     @Transient

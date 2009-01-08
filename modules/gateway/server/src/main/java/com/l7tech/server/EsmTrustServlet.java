@@ -360,10 +360,11 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
         String esmId = param.get("esmid");
         X509Certificate esmCert = decodePemCert(param, "esmcertpem");
         String esmUsername = param.get("esmusername");
+        String esmDesc = param.get("esmuserdesc");
         User user = authenticateUser(hreq, param);
 
         try {
-            configureUserMapping(hreq, esmId, esmCert, esmUsername, user);
+            configureUserMapping(hreq, esmId, esmCert, esmUsername, esmDesc, user);
         } catch (PrivilegedActionException e) {
             throw e.getException();
         }
@@ -416,6 +417,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
                                       final String esmId,
                                       final X509Certificate esmCert,
                                       final String esmUsername,
+                                      final String esmUserDisplayName,
                                       final User user)
             throws PrivilegedActionException
     {
@@ -427,7 +429,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
                 RemoteUtils.callWithConnectionInfo(null, hreq, new Callable<Object>() {
                     @Override
                     public Object call() throws Exception {
-                        trustedEsmUserManager.configureUserMapping(user, esmId, esmCert, esmUsername);
+                        trustedEsmUserManager.configureUserMapping(user, esmId, esmCert, esmUsername, esmUserDisplayName);
                         return null;
                     }
                 });

@@ -55,7 +55,7 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
     }
 
     @Override
-    public TrustedEsmUser configureUserMapping(User user, String esmId, X509Certificate esmCert, String esmUsername)
+    public TrustedEsmUser configureUserMapping(User user, String esmId, X509Certificate esmCert, String esmUsername, String esmUserDisplayName)
             throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException, MappingAlreadyExistsException
     {
         if (user == null)
@@ -78,6 +78,9 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
             trustedEsmUser.setSsgUserId(user.getId());
             trustedEsmUser.setProviderOid(user.getProviderId());
 
+            if (esmUserDisplayName != null && trustedEsmUser.getEsmUserDisplayName() == null)
+                trustedEsmUser.setEsmUserDisplayName(esmUserDisplayName);
+
             update(trustedEsmUser);
         } else {
             trustedEsmUser = new TrustedEsmUser();
@@ -85,6 +88,7 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
             trustedEsmUser.setSsgUserId(user.getId());
             trustedEsmUser.setProviderOid(user.getProviderId());
             trustedEsmUser.setEsmUserId(esmUsername);
+            trustedEsmUser.setEsmUserDisplayName(esmUserDisplayName);
 
             long oid = save(trustedEsmUser);
             trustedEsmUser.setOid(oid);

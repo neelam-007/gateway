@@ -56,6 +56,7 @@ public interface TrustedEsmUserManager extends EntityManager<TrustedEsmUser, Ent
      *                     This identifier is opaque to the Gateway.
      * @param esmCert      The certificate this ESM instance will use when vouching for esmUsername in admin requests.  Required.
      * @param esmUsername  The identifier this ESM instance will use when referring to this User in admin requests.  Required.
+     * @param esmUserDisplayName Friendly name to display in UI for this mapping, or null.  Used for cosmetic purposes only.  Optional.
      * @return the newly-created TrustedEsmUser instance.  Never null.
      * @throws java.security.AccessControlException if the specified user lacks sufficient permission to create or update this mapping
      * @throws com.l7tech.objectmodel.ObjectModelException  if there is a problem accessing or updating the database
@@ -64,7 +65,7 @@ public interface TrustedEsmUserManager extends EntityManager<TrustedEsmUser, Ent
      *                                      certificate from esmCert.
      * @throws MappingAlreadyExistsException If a mapping already exists for the specified ESM username on the specified ESM instance.
      */
-    TrustedEsmUser configureUserMapping(User user, String esmId, X509Certificate esmCert, String esmUsername)
+    TrustedEsmUser configureUserMapping(User user, String esmId, X509Certificate esmCert, String esmUsername, String esmUserDisplayName)
             throws ObjectModelException, AccessControlException, CertificateException, CertificateMismatchException, MappingAlreadyExistsException;
 
     /**
