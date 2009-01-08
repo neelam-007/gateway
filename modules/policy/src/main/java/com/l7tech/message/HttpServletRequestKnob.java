@@ -98,6 +98,13 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             this.queryParams = Collections.unmodifiableMap(newmap);
         }
 
+        // Check for PUT or POST; otherwise there can't be body params
+        if ( !"POST".equals(request.getMethod()) &&
+             !"PUT".equals(request.getMethod()) ) {
+            nobody();
+            return;
+        }
+
         // If it's not an HTTP form post, don't go looking for trouble
         ContentTypeHeader ctype = ContentTypeHeader.parseValue(request.getHeader("Content-Type"));
         if (!ctype.matches(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED)) {
@@ -106,10 +113,10 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             return;
         }
 
-        // Check for PUT or POST; otherwise there can't be body params
+        // Check size
         int len = request.getContentLength();
         if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Length = {0} bytes)", Integer.valueOf(len)));
-        if (len == -1 || !("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod()))) {
+        if (len == -1) {
             nobody();
             return;
         }
