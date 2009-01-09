@@ -195,7 +195,7 @@ CREATE TABLE trusted_esm (
   name varchar(128) NOT NULL,
   trusted_cert_oid bigint(20) NOT NULL,
   primary key(objectid),
-  FOREIGN KEY (trusted_cert_oid) REFERENCES trusted_cert (objectid) ON DELETE CASCADE
+  FOREIGN KEY (trusted_cert_oid) REFERENCES trusted_cert (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS trusted_esm_user;
