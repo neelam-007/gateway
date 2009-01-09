@@ -18,6 +18,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Vector;
 
 /**
  * TransferHandler for the Services and Policies tree.
@@ -222,6 +223,21 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
                         //we need to update the tree with the correct folder version if we are modifying the folder node
                         if (transferNode instanceof FolderNode && updatedFolderNode != null) {
+
+                            //move all children of the changed node to the updated node
+                            Enumeration theChildren = transferNode.children();
+                            Vector<AbstractTreeNode> collectedChildren = new Vector<AbstractTreeNode>();
+
+                            //collect the children
+                            while (theChildren.hasMoreElements()) {
+                                collectedChildren.add((AbstractTreeNode) theChildren.nextElement());
+                            }
+
+                            //add them to the updated folder node
+                            for (AbstractTreeNode node : collectedChildren) {
+                                updatedFolderNode.insert(node, updatedFolderNode.getInsertPosition(node, RootNode.getComparator()));
+                            }
+
                             oldParent.remove(transferNodeIndex);    //remove the older version
                             parentNode.insert(updatedFolderNode, insertPosition);   //add the updated version
 
