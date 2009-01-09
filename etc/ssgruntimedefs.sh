@@ -11,8 +11,6 @@ SSG_JAVA_OPTS="$SSG_JAVA_OPTS $default_java_opts";
 unset default_java_opts
 
 export SSG_JAVA_OPTS
-export ALL_PARTITIONS
-export PARTITION_COUNT
 
 if ! echo $LD_LIBRARY_PATH | /bin/egrep -s "(^|:)$SSG_HOME/lib($|:)" >/dev/null ; then
 	LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SSG_HOME/lib
