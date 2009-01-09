@@ -459,7 +459,7 @@ public class LogPanel extends JPanel {
     }
 
     private void enableOrDisableComponents() {
-        Utilities.setEnabled(controlPanel.mainPanel, connected);
+        Utilities.setEnabled( getControlPane(), connected);
         if (connected) {
             controlPanel.hoursTextField.setEnabled(controlPanel.durationButton.isSelected());
             controlPanel.minutesTextField.setEnabled(controlPanel.durationButton.isSelected());
@@ -707,11 +707,9 @@ public class LogPanel extends JPanel {
         if (selectionSplitPane != null) {
             if (expanded) {
                 getControlPane().setMinimumSize(new Dimension(0, 20));
-                selectionSplitPane.setResizeWeight(1.0);
                 selectionSplitPane.setDividerLocation((int) getControlPane().getPreferredSize().getHeight());
             } else {
                 getControlPane().setMinimumSize(new Dimension(0, 0));
-                selectionSplitPane.setResizeWeight(0);
                 // We set to preferred size first to ensure this is the "last position"
                 // if this is not done the "expand" button doesn't work
                 selectionSplitPane.setDividerLocation((int) getControlPane().getPreferredSize().getHeight());
