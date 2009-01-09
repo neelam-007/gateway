@@ -201,7 +201,6 @@ public class MigrationManagerImpl implements MigrationManager {
         Entity entity;// = metadata.isMapped(header) ? mappedEntities.get(metadata.getMapping(header)) : bundle.getExportedEntity(header);
 
         if (op != IGNORE) {
-            checkServiceResolution(header, bundle.getExportedEntity(header), bundle);
             // upload dependencies first
             for (MigrationDependency dep : metadata.getDependencies(header)) {
                 upload(dep.getDependency(), bundle, entitiesFromTarget, result, overwriteExisting, enableServices, dryRun, true);
@@ -235,6 +234,7 @@ public class MigrationManagerImpl implements MigrationManager {
                 if (!enableServices && entity instanceof PublishedService)
                     ((PublishedService) entity).setDisabled(true);
                 checkServiceResolution(header, entity, bundle);
+                // todo: check entity identity conflict
                 if (!dryRun) {
                     Long oid = (Long) entityCrud.save(entity);
                     if (entity instanceof PersistentEntity)
@@ -251,8 +251,6 @@ public class MigrationManagerImpl implements MigrationManager {
         try {
             // apply dependency value to dependants
             for (MigrationDependency dep : metadata.getDependants(header)) {
-                if (header.getType() == EntityType.FOLDER && op != CREATE)
-                    continue;
                 EntityHeader dependant = dep.getDependant();
                 Entity dependantEntity = metadata.isMapped(dependant) ? entitiesFromTarget.get(metadata.getMapping(dependant)) : bundle.getExportedEntity(dependant);
 
@@ -273,7 +271,7 @@ public class MigrationManagerImpl implements MigrationManager {
         Collection<String> errors = new HashSet<String>();
         MigrationMetadata metadata = bundle.getMetadata();
         if (flatten) {
-            // replace all folder dependencies withe the (unique) targetFolder
+            // replace all folder dependencies with the (unique) targetFolder
             Set<EntityHeader> headersToRemove = new HashSet<EntityHeader>();
             for (MigrationDependency dep : metadata.getDependencies()) {
                 if (dep.getDependency().getType() == EntityType.FOLDER) {
