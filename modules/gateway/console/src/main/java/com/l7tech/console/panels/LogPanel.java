@@ -13,21 +13,19 @@ import com.l7tech.gui.widgets.ContextMenuTextArea;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.AuditLogTableSorterModel;
 import com.l7tech.console.util.*;
 import com.l7tech.console.util.jcalendar.TimeRangePicker;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
-import com.l7tech.gateway.common.logging.LogMessage;
+import com.l7tech.console.util.AuditLogMessage;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.objectmodel.FindException;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
-import org.apache.commons.collections.map.LRUMap;
-import org.apache.commons.collections.OrderedMapIterator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -49,6 +47,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.lang.ref.SoftReference;
 
 /**
  * A panel for displaying either logs or audit events.
@@ -105,7 +104,6 @@ public class LogPanel extends JPanel {
     private boolean signAudits = isSignAudits(true);
     private String nodeId;
     private JPanel bottomPane;
-    private JButton searchButton;
     private JLabel filterLabel;
     private JScrollPane msgTablePane;
     private JPanel statusPane;
@@ -137,14 +135,8 @@ public class LogPanel extends JPanel {
     private JSplitPane selectionSplitPane;
     private boolean connected = false;
 
-    private final HashMap<Integer, String> cachedAuditMessages = new HashMap<Integer, String>();
-
-
-    private static int LRU_AUDIT_CACHE_MAX_SIZE = 256;
-    /**
-     * used to limit the number of AuditRecord objects maintained on the client
-     */
-    private LRUMap lruRecordCache = new LRUMap(LRU_AUDIT_CACHE_MAX_SIZE);
+    private final Map<Integer, String> cachedAuditMessages = new HashMap<Integer, String>();
+    private final Map<Long, SoftReference<AuditLogMessage>> cachedLogMessages = Collections.synchronizedMap( new HashMap<Long, SoftReference<AuditLogMessage>>() );
 
     //
     // Data model for the audit events control panel.
@@ -221,11 +213,6 @@ public class LogPanel extends JPanel {
      */
     private String requestId;
 
-    /**
-     * The current log request we are viewing.  Used in the case of saving audits.
-     */
-    private LogRequest currentLogRequest;
-
     public enum LogLevelOption {
         ALL("All", Level.ALL), INFO("Info", Level.INFO), WARNING("Warning", Level.WARNING), SEVERE("Severe", Level.SEVERE);
 
@@ -241,6 +228,7 @@ public class LogPanel extends JPanel {
             return level;
         }
 
+        @Override
         public String toString() {
             return name;
         }
@@ -283,6 +271,7 @@ public class LogPanel extends JPanel {
         getControlPane().setMinimumSize(new Dimension(0, 0));
         getControlPane().setMaximumSize(getControlPane().getPreferredSize());
         getControlPane().addComponentListener(new ComponentAdapter() {
+            @Override
             public void componentResized(ComponentEvent e) {
                 if (getControlPane().getSize().getHeight() < (getControlPane().getPreferredSize().getHeight() - 50)) {
                     setControlsExpanded(false);
@@ -291,6 +280,7 @@ public class LogPanel extends JPanel {
                 }
             }
 
+            @Override
             public void componentShown(ComponentEvent e) {
                 componentResized(e);
             }
@@ -319,9 +309,10 @@ public class LogPanel extends JPanel {
 
         setControlsExpanded(true);
         getMsgTable().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 if ((System.currentTimeMillis() - autoRepeatTime) > 250) {
-                    maybeRetrieveLog();
+                    updateMsgDetails();
                 }
                 autoRepeatTime = System.currentTimeMillis(); //hackery to get around the linux auto-repeat problem
             }
@@ -331,12 +322,14 @@ public class LogPanel extends JPanel {
     /**
      * Load the last split location and use it to set the current split location, if applicable.
      */
+    @Override
     public void addNotify() {
         super.addNotify();
         if (logSplitPane == null) {
             return;
         }
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 try {
                     double lastSplitLocation = Double.parseDouble(preferences.getString(SPLIT_PROPERTY_NAME));
@@ -350,6 +343,7 @@ public class LogPanel extends JPanel {
 
     private void init() {
         final ActionListener l = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableComponents();
             }
@@ -366,6 +360,7 @@ public class LogPanel extends JPanel {
         controlPanel.minutesTextField.setDocument(new NumberField(2));
 
         controlPanel.autoRefreshCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 durationAutoRefresh = controlPanel.autoRefreshCheckBox.isSelected();
                 updateLogAutoRefresh();
@@ -390,18 +385,21 @@ public class LogPanel extends JPanel {
 
         if(!isAuditType){
             controlPanel.levelComboBox.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent evt){
                     updateMsgFilterLevel((LogLevelOption)controlPanel.levelComboBox.getSelectedItem());
                 }
             });
 
             controlPanel.threadIdTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable(){
+                @Override
                 public void run(){
                     updateMsgFilterThreadId(controlPanel.threadIdTextField.getText());
                 }
             }));
 
             controlPanel.messageTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable(){
+                @Override
                 public void run(){
                     updateMsgFilterMessage(controlPanel.messageTextField.getText());
                 }
@@ -411,6 +409,7 @@ public class LogPanel extends JPanel {
         if (isAuditType) {
             InputValidator inputValidator = new InputValidator(this, "LogPanel Control Panel");
             inputValidator.constrainTextField(controlPanel.nodeTextField, new InputValidator.ComponentValidationRule(controlPanel.nodeTextField) {
+                @Override
                 public String getValidationError() {
                     String nodeName = controlPanel.nodeTextField.getText();
                     if(nodeName == null || nodeName.length() <= 0) return null;
@@ -440,6 +439,7 @@ public class LogPanel extends JPanel {
         }
 
         getSearchButton().addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 setDataFromControlPanel();
                 savePreferences();
@@ -452,9 +452,6 @@ public class LogPanel extends JPanel {
                 getRequestXmlTextArea().setText("");
                 getResponseXmlTextArea().setText("");
                 displayedLogMessage = null;
-
-                //clear the LRU Cache
-                lruRecordCache.clear();
             }
         });
 
@@ -675,6 +672,7 @@ public class LogPanel extends JPanel {
 
     private void clearLogCache() {
         getFilteredLogTableSorter().clearLogCache();
+        cachedLogMessages.clear();
     }
 
     /**
@@ -764,37 +762,210 @@ public class LogPanel extends JPanel {
         refreshLogs(timeRangeStart, timeRangeEnd);
     }
 
-    private void maybeRetrieveLog() {
-        int row = getMsgTable().getSelectedRow();
-        if (row == -1) return;
-        final TableModel model = getMsgTable().getModel();
-        if (model instanceof AuditLogTableSorterModel) {
-            LogMessage lm = ((AuditLogTableSorterModel) model).getLogMessageAtRow(row);
-            if (lm.getSSGLogRecord() == null) {//then we need to retrieve it from the SSG
+    private AuditLogMessage getCachedLogMessage( final LogMessage logMessage ) {
+        AuditLogMessage auditLogMessage = logMessage instanceof AuditLogMessage ? (AuditLogMessage) logMessage : null;
+
+        if ( auditLogMessage == null ) {
+            SoftReference<AuditLogMessage> messageRef = this.cachedLogMessages.get( logMessage.getMsgNumber() );
+            if ( messageRef != null ) {
+                auditLogMessage = messageRef.get();
+            }
+        }
+
+        return auditLogMessage;
+    }
+
+    private AuditLogMessage cacheLogMessage( final LogMessage logMessage, final AuditLogMessage auditLogMessage ) {
+        this.cachedLogMessages.put( logMessage.getMsgNumber(), new SoftReference<AuditLogMessage>( auditLogMessage ) );
+        return auditLogMessage;
+    }
+
+    private void doUpdateMsgDetails( final LogMessage logMessage ) {
+        AuditLogMessage auditLogMessage = getCachedLogMessage( logMessage );
+        if ( auditLogMessage != null ) {
+            updateMsgDetails( auditLogMessage );
+        } else {
+            //then we need to retrieve it from the SSG if possible
+            if ( logMessage instanceof AuditHeaderLogMessage ) {
                 getMsgProgressBar().setVisible(true);
-                final AuditRecordWorker auditRecordWorker = new AuditRecordWorker(Registry.getDefault().getAuditAdmin(), lm) {
+                final AuditRecordWorker auditRecordWorker = new AuditRecordWorker(Registry.getDefault().getAuditAdmin(), (AuditHeaderLogMessage)logMessage) {
+                    @Override
                     public void finished() {
-                        if (this.get() != null) {
-                            updateMsgDetails();
-                            if (lruRecordCache.isFull()) {
-                                OrderedMapIterator iterator = lruRecordCache.orderedMapIterator();
-                                Long oidToRemove = (Long) iterator.next();
-                                //get the OID of the SSGLogRecord that is about to be removed from the LRU Cache
-                                getFilteredLogTableSorter().removeLogRecordFromCache(oidToRemove);
-                            }
-                            LogMessage lm = getUpdatedLogMessage();
-                            lruRecordCache.put(lm.getMsgNumber(), lm.getSSGLogRecord());
+                        final AuditLogMessage fullLogMessage = (AuditLogMessage) this.get();
+                        if ( fullLogMessage != null ) {
+                            doUpdateMsgDetails( cacheLogMessage( logMessage, fullLogMessage ) );
                         }
                         getMsgProgressBar().setVisible(false);
                     }
                 };
                 auditRecordWorker.start();
-
-            } else {
-                //force a get() on the LRU cache so that it updates
-                lruRecordCache.get(lm.getMsgNumber());
-                updateMsgDetails();
             }
+        }
+    }
+
+    private void updateMsgDetails( final LogMessage lm ) {
+        String msg = "";
+
+        msg += nonull("Node       : ", lm.getNodeName());
+        msg += nonull("Time       : ", lm.getTime());
+        msg += nonull("Severity   : ", lm.getSeverity());
+        msg += nonule("Request Id : ", lm.getReqId());
+        msg += nonull("Class      : ", lm.getMsgClass());
+        msg += nonull("Method     : ", lm.getMsgMethod());
+        msg += nonull("Message    : ", lm.getMsgDetails());
+
+        if ( lm instanceof AuditLogMessage ) {
+            AuditRecord arec = ((AuditLogMessage) lm).getAuditRecord();
+            msg += "\n";
+
+            boolean reqXmlVisible = false;
+            boolean respXmlVisible = false;
+            String reqXmlDisplayed = "";
+            String respXmlDisplayed = "";
+            if (arec instanceof AdminAuditRecord) {
+                AdminAuditRecord aarec = (AdminAuditRecord) arec;
+                msg += "Event Type : Manager Action" + "\n";
+                msg += "Admin user : " + aarec.getUserName() + "\n";
+                msg += "Admin IP   : " + arec.getIpAddress() + "\n";
+                msg += "Action     : " + fixAction(aarec.getAction()) + "\n";
+                if (AdminAuditRecord.ACTION_LOGIN != aarec.getAction() &&
+                        AdminAuditRecord.ACTION_OTHER != aarec.getAction()) {
+                    msg += "Entity name: " + arec.getName() + "\n";
+                    msg += "Entity id  : " + aarec.getEntityOid() + "\n";
+                    msg += "Entity type: " + fixType(aarec.getEntityClassname()) + "\n";
+                }
+            } else if (arec instanceof MessageSummaryAuditRecord) {
+                MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord) arec;
+                msg += "Event Type : Message Summary" + "\n";
+                msg += "Client IP  : " + arec.getIpAddress() + "\n";
+                msg += "Service    : " + sum.getName() + "\n";
+                msg += "Operation  : " + sum.getOperationName() + "\n";
+                msg += "Rqst Length: " + fixNegative(sum.getRequestContentLength(), "<Not Saved>") + "\n";
+                msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<Not Saved>") + "\n";
+                msg += "Resp Status: " + sum.getResponseHttpStatus() + "\n";
+                msg += "Resp Time  : " + sum.getRoutingLatency() + "ms\n";
+                msg += "User ID    : " + fixUserId(sum.getUserId()) + "\n";
+                msg += "User Name  : " + sum.getUserName() + "\n";
+                if (sum.getAuthenticationType() != null) {
+                    msg += "Auth Method: " + sum.getAuthenticationType().getName() + "\n";
+                }
+
+                MessageContextMapping[] mappings = sum.obtainMessageContextMappings();
+                if (mappings != null && mappings.length > 0) {
+                    StringBuilder sb = new StringBuilder("\nMessage Context Mappings\n");
+                    boolean foundCustomMapping = false;
+                    for (MessageContextMapping mapping : mappings) {
+                        if (mapping.getMappingType().equals(MessageContextMapping.MappingType.CUSTOM_MAPPING)) {
+                            sb.append("Mapping Key  : ").append(mapping.getKey()).append("\n");
+                            sb.append("Mapping Value: ").append(mapping.getValue()).append("\n");
+                            foundCustomMapping = true;
+                        }
+                    }
+
+                    if (foundCustomMapping) {
+                        msg += sb.toString();
+                    }
+                }
+
+                if (sum.getRequestXml() != null) {
+                    reqXmlVisible = true;
+                    reqXmlDisplayed = sum.getRequestXml();
+                }
+
+                if (sum.getResponseXml() != null) {
+                    respXmlVisible = true;
+                    respXmlDisplayed = sum.getResponseXml();
+                }
+            } else if (arec instanceof SystemAuditRecord) {
+                SystemAuditRecord sys = (SystemAuditRecord) arec;
+                com.l7tech.gateway.common.Component component = fromId(sys.getComponentId());
+                boolean isClient = component != null && component.isClientComponent();
+                msg += "Event Type : System Message" + "\n";
+                if (isClient) {
+                    msg += "Client IP  : " + arec.getIpAddress() + "\n";
+                } else {
+                    msg += "Node IP    : " + arec.getIpAddress() + "\n";
+                }
+                msg += "Action     : " + sys.getAction() + "\n";
+                msg += "Component  : " + fixComponent(sys.getComponentId()) + "\n";
+                if (isClient) {
+                    msg += "User ID    : " + fixUserId(arec.getUserId()) + "\n";
+                    msg += "User Name  : " + arec.getUserName() + "\n";
+                }
+                msg += "Entity name: " + arec.getName() + "\n";
+            } else {
+                msg += "Event Type : Unknown" + "\n";
+                msg += "Entity name: " + arec.getName() + "\n";
+                msg += "IP Address : " + arec.getIpAddress() + "\n";
+            }
+
+            unformattedRequestXml.setLength(0);
+            unformattedRequestXml.append(reqXmlDisplayed);
+            if (reqXmlVisible && reqXmlDisplayed != null && reqXmlDisplayed.length() > 0 &&
+                    getRequestReformatCheckbox().isSelected()) {
+                reqXmlDisplayed = reformat(reqXmlDisplayed);
+            }
+
+            unformattedResponseXml.setLength(0);
+            unformattedResponseXml.append(respXmlDisplayed);
+            if (respXmlVisible && respXmlDisplayed != null && respXmlDisplayed.length() > 0 &&
+                    getResponseReformatCheckbox().isSelected()) {
+                respXmlDisplayed = reformat(respXmlDisplayed);
+            }
+
+            JTextArea requestXmlTextArea = getRequestXmlTextArea();
+            requestXmlTextArea.setText(reqXmlDisplayed);
+            requestXmlTextArea.getCaret().setDot(0);
+            requestXmlTextArea.setEnabled(reqXmlVisible);
+            getRequestReformatCheckbox().setEnabled(reqXmlVisible);
+            getRequestXmlScrollPane().setEnabled(reqXmlVisible);
+            getMsgDetailsPane().setEnabledAt(2, reqXmlVisible);
+
+            JTextArea responseXmlTextArea = getResponseXmlTextArea();
+            responseXmlTextArea.setText(respXmlDisplayed);
+            responseXmlTextArea.getCaret().setDot(0);
+            responseXmlTextArea.setEnabled(respXmlVisible);
+            getResponseReformatCheckbox().setEnabled(respXmlVisible);
+            getResponseXmlScrollPane().setEnabled(respXmlVisible);
+            getMsgDetailsPane().setEnabledAt(3, respXmlVisible);
+
+            // clear the associated log table
+            getAssociatedLogsTable().getTableSorter().clear();
+
+            // populate the associated logs
+            Iterator associatedLogsItr = arec.getDetails().iterator();
+
+            List<AssociatedLog> associatedLogs = new ArrayList<AssociatedLog>();
+            while (associatedLogsItr.hasNext()) {
+                AuditDetail ad = (AuditDetail) associatedLogsItr.next();
+
+                int id = ad.getMessageId();
+                // TODO get the CellRenderer to display the user messages differently when id < 0 (add field to AssociatedLog class?)
+                String associatedLogMessage = getMessageById(id);
+                AuditDetailMessage message = Messages.getAuditDetailMessageById(id);
+                String associatedLogLevel = message == null ? null : message.getLevelName();
+
+                StringBuffer result = new StringBuffer();
+                if (associatedLogMessage != null) {
+                    MessageFormat mf = new MessageFormat(associatedLogMessage);
+                    mf.format(ad.getParams(), result, new FieldPosition(0));
+                }
+                AssociatedLog al = new AssociatedLog(ad.getTime(), associatedLogLevel, result.toString(), ad.getException(), ad.getMessageId(), ad.getOrdinal());
+                associatedLogs.add(al);
+            }
+            getAssociatedLogsTable().getTableSorter().setData(associatedLogs);
+        }
+
+        updateMsgDetailText( msg );
+    }
+
+    private void updateMsgDetailText( final String msg ) {
+        // update the msg details field only if the content has changed.
+        if (!msg.equals(getMsgDetails().getText())) {
+            getMsgDetails().setText(msg);
+            if (msg.length() > 0)
+                // Scroll to top
+                getMsgDetails().getCaret().setDot(1);
         }
     }
 
@@ -804,171 +975,13 @@ public class LogPanel extends JPanel {
         if (row == -1) return;
 
         final TableModel model = getMsgTable().getModel();
-        String msg = "";
         if (model instanceof AuditLogTableSorterModel) {
-            LogMessage lm = ((AuditLogTableSorterModel) model).getLogMessageAtRow(row);
-            if (lm == displayedLogMessage) return;
-            displayedLogMessage = lm;
-            SSGLogRecord rec = lm.getSSGLogRecord();
-
-            msg += nonull("Node       : ", lm.getNodeName());
-            msg += nonull("Time       : ", lm.getTime());
-            msg += nonull("Severity   : ", lm.getSeverity());
-            msg += nonule("Request Id : ", lm.getReqId());
-            msg += nonull("Class      : ", lm.getMsgClass());
-            msg += nonull("Method     : ", lm.getMsgMethod());
-            msg += nonull("Message    : ", lm.getMsgDetails());
-
-            if (rec instanceof AuditRecord) {
-                AuditRecord arec = (AuditRecord) rec;
-                msg += "\n";
-
-                boolean reqXmlVisible = false;
-                boolean respXmlVisible = false;
-                String reqXmlDisplayed = "";
-                String respXmlDisplayed = "";
-                if (arec instanceof AdminAuditRecord) {
-                    AdminAuditRecord aarec = (AdminAuditRecord) arec;
-                    msg += "Event Type : Manager Action" + "\n";
-                    msg += "Admin user : " + aarec.getUserName() + "\n";
-                    msg += "Admin IP   : " + arec.getIpAddress() + "\n";
-                    msg += "Action     : " + fixAction(aarec.getAction()) + "\n";
-                    if (AdminAuditRecord.ACTION_LOGIN != aarec.getAction() &&
-                            AdminAuditRecord.ACTION_OTHER != aarec.getAction()) {
-                        msg += "Entity name: " + arec.getName() + "\n";
-                        msg += "Entity id  : " + aarec.getEntityOid() + "\n";
-                        msg += "Entity type: " + fixType(aarec.getEntityClassname()) + "\n";
-                    }
-                } else if (arec instanceof MessageSummaryAuditRecord) {
-                    MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord) arec;
-                    msg += "Event Type : Message Summary" + "\n";
-                    msg += "Client IP  : " + arec.getIpAddress() + "\n";
-                    msg += "Service    : " + sum.getName() + "\n";
-                    msg += "Operation  : " + sum.getOperationName() + "\n";
-                    msg += "Rqst Length: " + fixNegative(sum.getRequestContentLength(), "<Not Saved>") + "\n";
-                    msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<Not Saved>") + "\n";
-                    msg += "Resp Status: " + sum.getResponseHttpStatus() + "\n";
-                    msg += "Resp Time  : " + sum.getRoutingLatency() + "ms\n";
-                    msg += "User ID    : " + fixUserId(sum.getUserId()) + "\n";
-                    msg += "User Name  : " + sum.getUserName() + "\n";
-                    if (sum.getAuthenticationType() != null) {
-                        msg += "Auth Method: " + sum.getAuthenticationType().getName() + "\n";
-                    }
-
-                    MessageContextMapping[] mappings = sum.obtainMessageContextMappings();
-                    if (mappings != null && mappings.length > 0) {
-                        StringBuilder sb = new StringBuilder("\nMessage Context Mappings\n");
-                        boolean foundCustomMapping = false;
-                        for (MessageContextMapping mapping : mappings) {
-                            if (mapping.getMappingType().equals(MessageContextMapping.MappingType.CUSTOM_MAPPING)) {
-                                sb.append("Mapping Key  : ").append(mapping.getKey()).append("\n");
-                                sb.append("Mapping Value: ").append(mapping.getValue()).append("\n");
-                                foundCustomMapping = true;
-                            }
-                        }
-
-                        if (foundCustomMapping) {
-                            msg += sb.toString();
-                        }
-                    }
-
-                    if (sum.getRequestXml() != null) {
-                        reqXmlVisible = true;
-                        reqXmlDisplayed = sum.getRequestXml();
-                    }
-
-                    if (sum.getResponseXml() != null) {
-                        respXmlVisible = true;
-                        respXmlDisplayed = sum.getResponseXml();
-                    }
-                } else if (arec instanceof SystemAuditRecord) {
-                    SystemAuditRecord sys = (SystemAuditRecord) arec;
-                    com.l7tech.gateway.common.Component component = fromId(sys.getComponentId());
-                    boolean isClient = component != null && component.isClientComponent();
-                    msg += "Event Type : System Message" + "\n";
-                    if (isClient) {
-                        msg += "Client IP  : " + arec.getIpAddress() + "\n";
-                    } else {
-                        msg += "Node IP    : " + arec.getIpAddress() + "\n";
-                    }
-                    msg += "Action     : " + sys.getAction() + "\n";
-                    msg += "Component  : " + fixComponent(sys.getComponentId()) + "\n";
-                    if (isClient) {
-                        msg += "User ID    : " + fixUserId(arec.getUserId()) + "\n";
-                        msg += "User Name  : " + arec.getUserName() + "\n";
-                    }
-                    msg += "Entity name: " + arec.getName() + "\n";
-                } else {
-                    msg += "Event Type : Unknown" + "\n";
-                    msg += "Entity name: " + arec.getName() + "\n";
-                    msg += "IP Address : " + arec.getIpAddress() + "\n";
-                }
-
-                unformattedRequestXml.setLength(0);
-                unformattedRequestXml.append(reqXmlDisplayed);
-                if (reqXmlVisible && reqXmlDisplayed != null && reqXmlDisplayed.length() > 0 &&
-                        getRequestReformatCheckbox().isSelected()) {
-                    reqXmlDisplayed = reformat(reqXmlDisplayed);
-                }
-
-                unformattedResponseXml.setLength(0);
-                unformattedResponseXml.append(respXmlDisplayed);
-                if (respXmlVisible && respXmlDisplayed != null && respXmlDisplayed.length() > 0 &&
-                        getResponseReformatCheckbox().isSelected()) {
-                    respXmlDisplayed = reformat(respXmlDisplayed);
-                }
-
-                JTextArea requestXmlTextArea = getRequestXmlTextArea();
-                requestXmlTextArea.setText(reqXmlDisplayed);
-                requestXmlTextArea.getCaret().setDot(0);
-                requestXmlTextArea.setEnabled(reqXmlVisible);
-                getRequestReformatCheckbox().setEnabled(reqXmlVisible);
-                getRequestXmlScrollPane().setEnabled(reqXmlVisible);
-                getMsgDetailsPane().setEnabledAt(2, reqXmlVisible);
-
-                JTextArea responseXmlTextArea = getResponseXmlTextArea();
-                responseXmlTextArea.setText(respXmlDisplayed);
-                responseXmlTextArea.getCaret().setDot(0);
-                responseXmlTextArea.setEnabled(respXmlVisible);
-                getResponseReformatCheckbox().setEnabled(respXmlVisible);
-                getResponseXmlScrollPane().setEnabled(respXmlVisible);
-                getMsgDetailsPane().setEnabledAt(3, respXmlVisible);
-
-                // clear the associated log table
-                getAssociatedLogsTable().getTableSorter().clear();
-
-                // populate the associated logs
-                Iterator associatedLogsItr = arec.getDetails().iterator();
-
-                List<AssociatedLog> associatedLogs = new ArrayList<AssociatedLog>();
-                while (associatedLogsItr.hasNext()) {
-                    AuditDetail ad = (AuditDetail) associatedLogsItr.next();
-
-
-                    int id = ad.getMessageId();
-                    // TODO get the CellRenderer to display the user messages differently when id < 0 (add field to AssociatedLog class?)
-                    String associatedLogMessage = getMessageById(id);
-                    AuditDetailMessage message = Messages.getAuditDetailMessageById(id);
-                    String associatedLogLevel = message == null ? null : message.getLevelName();
-
-                    StringBuffer result = new StringBuffer();
-                    if (associatedLogMessage != null) {
-                        MessageFormat mf = new MessageFormat(associatedLogMessage);
-                        mf.format(ad.getParams(), result, new FieldPosition(0));
-                    }
-                    AssociatedLog al = new AssociatedLog(ad.getTime(), associatedLogLevel, result.toString(), ad.getException(), ad.getMessageId(), ad.getOrdinal());
-                    associatedLogs.add(al);
-                }
-                getAssociatedLogsTable().getTableSorter().setData(associatedLogs);
-            }
-        }
-
-        // update the msg details field only if the content has changed.
-        if (!msg.equals(getMsgDetails().getText())) {
-            getMsgDetails().setText(msg);
-            if (msg.length() > 0)
-                // Scroll to top
-                getMsgDetails().getCaret().setDot(1);
+            LogMessage logHeader = ((AuditLogTableSorterModel) model).getLogMessageAtRow(row);
+            if (logHeader == displayedLogMessage) return;
+            displayedLogMessage = logHeader;
+            doUpdateMsgDetails( logHeader );
+        } else {
+            updateMsgDetailText( "" );
         }
     }
 
@@ -1281,6 +1294,7 @@ public class LogPanel extends JPanel {
 
             // Add a component listener to keep the change of the split location.
             msgTablePane.addComponentListener(new ComponentAdapter() {
+                @Override
                 public void componentResized(ComponentEvent e) {
                     if (logSplitPane == null) {
                         return;
@@ -1385,6 +1399,7 @@ public class LogPanel extends JPanel {
             requestReformatCheckbox = new JCheckBox("Reformat Request XML");
             requestReformatCheckbox.setSelected(true); //turn this on by default
             requestReformatCheckbox.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     doReformat(getRequestXmlTextArea(), requestReformatCheckbox.isSelected(), unformattedRequestXml);
                 }
@@ -1416,6 +1431,7 @@ public class LogPanel extends JPanel {
             responseReformatCheckbox = new JCheckBox("Reformat Response XML");
             responseReformatCheckbox.setSelected(true); //turn this on by default
             responseReformatCheckbox.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     doReformat(getResponseXmlTextArea(), responseReformatCheckbox.isSelected(), unformattedResponseXml);
                 }
@@ -1570,6 +1586,7 @@ public class LogPanel extends JPanel {
 
         // Tooltip for details
         findTableModelColumn(columnModel, LOG_MSG_DETAILS_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 if (comp instanceof JLabel) {
@@ -1628,6 +1645,7 @@ public class LogPanel extends JPanel {
             String[][] rows = new String[][]{};
 
             logTableModel = new DefaultTableModel(rows, COLUMN_NAMES) {
+                @Override
                 public boolean isCellEditable(int row, int col) {
                     // the table cells are not editable
                     return false;
@@ -1706,7 +1724,6 @@ public class LogPanel extends JPanel {
                     requestId(requestId).build();
 
             //save the log request
-            currentLogRequest = new LogRequest(logRequest);
             ((AuditLogTableSorterModel) getMsgTable().getModel()).refreshLogs(this, logRequest, isAutoRefreshEffective());
         }
 
@@ -1715,7 +1732,7 @@ public class LogPanel extends JPanel {
     /**
      * Performs the log retrieval.
      */
-    public void refreshLogs(Date first, Date last) {
+    public void refreshLogs( final Date first, final Date last ) {
         getLogsRefreshTimer().stop();
 
         if (isAuditType) {
@@ -1730,7 +1747,6 @@ public class LogPanel extends JPanel {
                     nodeName(node).auditType(auditType).logLevel(logLevelOption.getLevel()).message(message).serviceName(serviceName).requestId(requestId).build();
 
             //save the log request
-            currentLogRequest = new LogRequest(logRequest);
             AuditLogTableSorterModel altsm = (AuditLogTableSorterModel) getMsgTable().getModel();
             altsm.clearLogCache();
             altsm.refreshLogs(this, logRequest, false);
@@ -1741,13 +1757,11 @@ public class LogPanel extends JPanel {
      * Displays the given log messages. Old display is cleared first.
      *
      * @param logs log messages to load; as a map of gateway node ID and
-     *             corresponding collection of {@link LogMessage}s
+     *             corresponding collection of {@link com.l7tech.console.util.AuditLogMessage}s
      */
-    public void setLogs(Map<Long, LogMessage> logs) {
+    public void setLogs(Map<Long, ? extends LogMessage> logs) {
         onDisconnect();
         getFilteredLogTableSorter().setLogs(this, logs);
-        getLastUpdateTimeLabel().setVisible(false);    // It's not applicable in static view.
-        getSearchButton().setEnabled(false); //also not applicable in static view
         setDynamicData(false);
     }
 
@@ -1758,6 +1772,11 @@ public class LogPanel extends JPanel {
      */
     public void setDynamicData(final boolean dynamic) {
         if (dynamic) durationAutoRefresh = false;
+
+        // update control visibility / enable for static views
+        getLastUpdateTimeLabel().setVisible( dynamic );
+        controlPanel.autoRefreshCheckBox.setVisible( dynamic );
+
         if (selectionSplitPane != null) {
             // No time range controls for static data.
             selectionSplitPane.setTopComponent(dynamic ? getControlPane() : null);
@@ -1827,7 +1846,6 @@ public class LogPanel extends JPanel {
         }
 
         updateMsgTotal();
-//        setControlsExpanded(true);
     }
 
     /*
@@ -1887,6 +1905,7 @@ public class LogPanel extends JPanel {
         if (logsRefreshTimer == null) {
             //Create a refresh logs timer.
             logsRefreshTimer = new javax.swing.Timer(logsRefreshInterval, new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent evt) {
                     refreshLogs();
                 }
@@ -1940,6 +1959,7 @@ public class LogPanel extends JPanel {
 
     // This customized renderer can render objects of the type TextandIcon
     TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
+        @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
             // Inherit the colors and font from the header component
@@ -1992,6 +2012,7 @@ public class LogPanel extends JPanel {
         final LogPanel logPane = this;
 
         MouseAdapter listMouseListener = new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
 
                 int viewColumn = tableView.columnAtPoint(e.getPoint());
@@ -2016,43 +2037,21 @@ public class LogPanel extends JPanel {
     /**
      * Export the currently displayed log/audit data.
      */
-
-    private Map<Long, AuditRecord> recordMap = new HashMap<Long, AuditRecord>();
     public void exportView(final File file) throws IOException {
-        if (isAuditType) {
-            //must download all the audits first
-            getMsgProgressBar().setVisible(true);
-            AuditRecordWorker auditRecordWorker = new AuditRecordWorker(Registry.getDefault().getAuditAdmin(), currentLogRequest, Registry.getDefault().getClusterStatusAdmin(), recordMap) {
-                public void finished() {
-                    if (this.get() != null) {
-                        try {
-                            reallyExportView(file);//catching exception here is nasty
-                        } catch (IOException e) {
-                           logger.log(Level.SEVERE, "Error exporting audits.", e); 
-                        }
-                    }
-                    getMsgProgressBar().setVisible(false);
-                }
-            };
-            auditRecordWorker.start();
-        } else {
-            reallyExportView(file);
-        }
-    }
-
-    private void reallyExportView(File file) throws IOException {
         // process
         JTable table = getMsgTable();
         int rows = table.getRowCount();
         List<WriteableLogMessage> data = new ArrayList<WriteableLogMessage>(rows);
         AuditLogTableSorterModel logTableSorterModel = getFilteredLogTableSorter();
         for (int i = 0; i < rows; i++) {
-            LogMessage rowMessage = logTableSorterModel.getLogMessageAtRow(i);
-            if (rowMessage.getSSGLogRecord() == null) {
-                //we need to retrieve it, & set it
-                rowMessage.setLog(recordMap.get(rowMessage.getHeader().getOid()));
+            LogMessage logMessage = logTableSorterModel.getLogMessageAtRow(i);
+            if ( logMessage instanceof AuditLogMessage) {
+                data.add(new WriteableLogMessage((AuditLogMessage)logMessage));
+            } else if ( logMessage instanceof LogRecordLogMessage) {
+                data.add(new WriteableLogMessage((LogRecordLogMessage)logMessage));
+            } else {
+                data.add(new LazyWriteableLogMessage(logMessage));
             }
-            data.add(new WriteableLogMessage(rowMessage));
         }
         Collections.sort(data);
 
@@ -2077,6 +2076,7 @@ public class LogPanel extends JPanel {
     private void importError(final String dialogMessage) {
         logger.info(dialogMessage);
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 DialogDisplayer.showMessageDialog(null, dialogMessage, null);
             }
@@ -2150,7 +2150,9 @@ public class LogPanel extends JPanel {
                 }
                 Map<Long, LogMessage> loadedLogs = new HashMap<Long, LogMessage>();
                 for (WriteableLogMessage message : data) {
-                    LogMessage lm = new LogMessage(message.ssgLogRecord);
+                    LogMessage lm = message.ssgLogRecord instanceof AuditRecord ?
+                            new AuditLogMessage((AuditRecord)message.ssgLogRecord) :
+                            new LogRecordLogMessage(message.ssgLogRecord);
                     lm.setNodeName(message.nodeName);
                     loadedLogs.put(lm.getMsgNumber(), lm);
                 }
@@ -2170,17 +2172,55 @@ public class LogPanel extends JPanel {
         return true;
     }
 
+    private static AuditLogMessage getLogMessage( final LogMessage logMessage ) throws FindException {
+        AuditRecord record = Registry.getDefault().getAuditAdmin().findByPrimaryKey( logMessage.getMsgNumber() );
+        if ( record == null )
+            throw new FindException("Missing audit record for id '"+logMessage.getMsgNumber()+"'.");
+        return new AuditLogMessage( record );
+    }
+
     public static class WriteableLogMessage implements Comparable, Serializable {
         private String nodeName;
         private SSGLogRecord ssgLogRecord;
 
-        public WriteableLogMessage(LogMessage lm) {
+        public WriteableLogMessage( AuditLogMessage lm ) {
+            nodeName = lm.getNodeName();
+            ssgLogRecord = lm.getAuditRecord();
+        }
+
+        public WriteableLogMessage( LogRecordLogMessage lm ) {
             nodeName = lm.getNodeName();
             ssgLogRecord = lm.getSSGLogRecord();
         }
 
+        protected WriteableLogMessage() {
+        }
+
+        @Override
         public int compareTo(Object o) {
             return new Long(ssgLogRecord.getMillis()).compareTo(((WriteableLogMessage) o).ssgLogRecord.getMillis());
+        }
+    }
+
+    public static class LazyWriteableLogMessage extends WriteableLogMessage {
+        private LogMessage logMessage;
+
+        public LazyWriteableLogMessage(LogMessage logMessage) {
+            super();
+            this.logMessage = logMessage;
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            return new Long(logMessage.getTimestamp()).compareTo(((LazyWriteableLogMessage) o).logMessage.getTimestamp());
+        }
+
+        private Object writeReplace() throws ObjectStreamException {
+            try {
+                return new WriteableLogMessage( getLogMessage( logMessage ) );
+            } catch ( FindException fe ) {
+                throw (ObjectStreamException) new InvalidObjectException( ExceptionUtils.getMessage(fe) ).initCause( fe );
+            }
         }
     }
 

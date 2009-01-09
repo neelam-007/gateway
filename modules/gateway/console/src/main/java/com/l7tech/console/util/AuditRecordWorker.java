@@ -4,7 +4,6 @@ import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
-import com.l7tech.gateway.common.logging.LogMessage;
 import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
@@ -26,7 +25,8 @@ import java.util.ArrayList;
  */
 public class AuditRecordWorker extends SwingWorker {
     private AuditAdmin auditAdminService = null;
-    private LogMessage logMessage = null;
+    private AuditHeaderLogMessage auditHeaderLogMessage = null;
+    private AuditLogMessage logMessage = null;
     private AuditSearchCriteria asc = null;
     private Map<Long, AuditRecord> auditRecords;
 
@@ -34,10 +34,10 @@ public class AuditRecordWorker extends SwingWorker {
 
     //use this constructor if we only want to retrieve 1 log record
     //used when a record row is selected in the table
-    public AuditRecordWorker(AuditAdmin auditAdminService, LogMessage logMessage) {
-        if (auditAdminService == null || logMessage == null) throw new IllegalArgumentException();
+    public AuditRecordWorker( AuditAdmin auditAdminService, AuditHeaderLogMessage auditHeaderLogMessage ) {
+        if (auditAdminService == null || auditHeaderLogMessage == null) throw new IllegalArgumentException();
         this.auditAdminService = auditAdminService;
-        this.logMessage = logMessage;
+        this.auditHeaderLogMessage = auditHeaderLogMessage;
     }
 
     //use this constructor if we want multiple audit records, used for audit export
@@ -57,10 +57,6 @@ public class AuditRecordWorker extends SwingWorker {
             logger.log(Level.WARNING, "Unable to find cluster status from server", e);
         }
 
-//        if (clusterNodes == null) {
-//            return null;
-//        }
-
         for (ClusterNodeInfo nodeInfo : clusterNodes) {
             GatewayStatus nodeStatus = new GatewayStatus(nodeInfo);
             String clusterNodeId = nodeStatus.getNodeId();
@@ -79,6 +75,7 @@ public class AuditRecordWorker extends SwingWorker {
                 requestId(lr.getRequestId()).build();
     }
 
+    @Override
     public Object construct() {
         if (asc == null) {//then we only want a single record
             return findByOid();
@@ -105,25 +102,21 @@ public class AuditRecordWorker extends SwingWorker {
     }
 
     private Object findByOid() {
-        AuditRecord auditRecord = null;
+        AuditRecord auditRecord;
+        this.logMessage = null;
 
         try {
             //retrieve the full AuditRecord associated with this AuditRecordHeader
-            auditRecord = auditAdminService.findByPrimaryKey(logMessage.getHeader().getOid());
+            auditRecord = auditAdminService.findByPrimaryKey(auditHeaderLogMessage.getMsgNumber());
+            if (auditRecord != null) this.logMessage = new AuditLogMessage(auditRecord);
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Unable to retrieve audit record from server", e);
         }
 
-        //add the AuditRecord to the LogMessage
-        if (auditRecord != null) {
-            logMessage.setLog(auditRecord);
-            return logMessage;
-        }
-
-        return null;
+        return logMessage;
     }
 
-    public LogMessage getUpdatedLogMessage(){
+    public AuditLogMessage getUpdatedLogMessage(){
         return logMessage;
     }
 }

@@ -177,10 +177,6 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         return result;
     }
 
-    public long getOid() {
-        return getSequenceNumber();
-    }
-
     public static abstract class LogEntity implements Entity {}
 
     private static final long serialVersionUID = -2234601153074484000L;

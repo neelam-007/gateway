@@ -78,6 +78,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         // saveMenuItem listener
         getSaveMenuItem().
           addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   saveAsEventHandler();
               }
@@ -86,6 +87,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         // exitMenuItem listener
         getExitMenuItem().
           addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   exitMenuEventHandler();
               }
@@ -94,6 +96,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         // HelpTopics listener
         getHelpTopicsMenuItem().
           addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   TopComponents.getInstance().showHelpTopics();
               }
@@ -104,6 +107,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         if(!startConnected) getLogPane().onDisconnect();
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 exitMenuEventHandler();
             }
@@ -121,6 +125,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         return nodeName;
     }
 
+    @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
         if(visible) {
@@ -144,6 +149,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     /**
      * Intialization when the connection to the server is established.
      */
+    @Override
     public void onLogon(LogonEvent e) {
         getLogPane().onConnect();
     }
@@ -151,10 +157,12 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     /**
      * Clean up the resources when the connection to the server went down.
      */
+    @Override
     public void onLogoff(LogonEvent e) {
         getLogPane().onDisconnect();
     }
 
+    @Override
     public void dispose() {
         getLogPane().getLogsRefreshTimer().stop();
         super.dispose();
@@ -187,6 +195,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
      */
     private void saveAsEventHandler() {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser fc) {
                 doSave(fc);
             }
@@ -197,9 +206,11 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         fc.setDialogTitle("Save log data as ...");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
         FileFilter fileFilter = new FileFilter() {
+            @Override
             public boolean accept(File f) {
                 return  f.isDirectory() || f.getName().toLowerCase().endsWith(".ssgl");
             }
+            @Override
             public String getDescription() {
                 return "(*.ssgl) SecureSpan Gateway Log data file.";
             }
@@ -210,6 +221,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         fc.addChoosableFileFilter(fileFilter);
         fc.setMultiSelectionEnabled(false);
         fc.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if(JFileChooser.FILE_FILTER_CHANGED_PROPERTY.equals(e.getActionCommand())) {
                     fc.setSelectedFile(new File(suggestedName));

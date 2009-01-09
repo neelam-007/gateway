@@ -1,6 +1,6 @@
 package com.l7tech.console.table;
 
-import com.l7tech.gateway.common.logging.LogMessage;
+import com.l7tech.console.util.LogMessage;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.console.panels.LogPanel;
 
@@ -19,7 +19,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
 
     public static final int MAX_MESSAGE_BLOCK_SIZE = 1024;
     public static final int MAX_NUMBER_OF_LOG_MESSAGES = 131072;//2^17
-    protected Map<Long, LogMessage> rawLogCache = new HashMap<Long, LogMessage>(); 
+    protected Map<Long, LogMessage> rawLogCache = new HashMap<Long, LogMessage>();
     protected List<LogMessage> filteredLogCache = new ArrayList<LogMessage>();
     protected Map<String, GatewayStatus> currentNodeList;
     private LogPanel.LogLevelOption filterLevel = LogPanel.LogLevelOption.WARNING;
@@ -47,12 +47,12 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
     /**
      * Check if the message should be filtered out or not.
      *
-     * @param logMsg  The message to be examined.
+     * @param logMessage  The message to be examined.
      * @return  true if the message is filtered out, false otherwise.
      */
-    private boolean isFilteredMsg(LogMessage logMsg) {
+    private boolean isFilteredMsg(LogMessage logMessage) {
 
-        String logSeverity = logMsg.getSeverity();
+        String logSeverity = logMessage.getSeverity();
 
         if ((((logSeverity.equals("FINEST")) ||
               (logSeverity.equals("FINER")) ||
@@ -61,8 +61,8 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
              (logSeverity.equals("WARNING") && (filterLevel.getLevel().intValue() <= Level.WARNING.intValue())) ||
              (logSeverity.equals("SEVERE")  && (filterLevel.getLevel().intValue() <= Level.SEVERE.intValue()))) {
 
-            String message = logMsg.getMsgDetails();
-            String threadId = Integer.toString(logMsg.getSSGLogRecord().getThreadID());
+            String message = logMessage.getMsgDetails();
+            String threadId = Integer.toString(logMessage.getThreadID());
 
             return matches(filterThreadId, threadId) &&
                    matches(filterMessage, message);
@@ -138,9 +138,9 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
 
         Collection<LogMessage> rawLogCacheCollection = rawLogCache.values();
 
-        for (LogMessage msg : rawLogCacheCollection) {
-            if (isFilteredMsg(msg) && !filteredLogCache.contains(msg)) {
-                filteredLogCache.add(msg);
+        for (LogMessage logMessage : rawLogCacheCollection) {
+            if (isFilteredMsg(logMessage) && !filteredLogCache.contains(logMessage)) {
+                filteredLogCache.add(logMessage);
             }
         }
     }

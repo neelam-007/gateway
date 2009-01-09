@@ -9,6 +9,7 @@ package com.l7tech.console;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.gui.util.*;
 import com.l7tech.console.action.DeleteAuditEventsAction;
 import com.l7tech.console.action.DownloadAuditEventsAction;
@@ -18,8 +19,11 @@ import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.SsmPreferences;
-import com.l7tech.gateway.common.logging.LogMessage;
+import com.l7tech.console.util.AuditLogMessage;
+import com.l7tech.console.util.LogMessage;
+import com.l7tech.console.util.AuditHeaderLogMessage;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.MenuEvent;
@@ -88,6 +92,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         // saveMenuItem listener
         getSaveMenuItem().
                 addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   saveMenuEventHandler();
               }
@@ -96,6 +101,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         // exitMenuItem listener
         getExitMenuItem().
           addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   exitMenuEventHandler();
               }
@@ -104,9 +110,12 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         // view menu
         getViewMenu().
            addMenuListener(new MenuListener(){
+              @Override
               public void menuCanceled(MenuEvent e) {}
+              @Override
               public void menuDeselected(MenuEvent e) {}
 
+              @Override
               public void menuSelected(MenuEvent e) {
                   getViewControlsMenuItem().setSelected(getLogPane().getControlsExpanded());
                   getViewDetailsMenuItem().setSelected(getLogPane().getDetailsExpanded());
@@ -116,6 +125,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         // view controls
         getViewControlsMenuItem().
           addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   viewControlsMenuEventHandler(getViewControlsMenuItem().isSelected());
               }
@@ -124,6 +134,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         // view details
         getViewDetailsMenuItem().
           addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   viewDetailsMenuEventHandler(getViewDetailsMenuItem().isSelected());
               }
@@ -132,6 +143,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         // view refresh
         getViewRefreshMenuItem().
           addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   viewRefreshMenuEventHandler();
               }
@@ -140,6 +152,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         // HelpTopics listener
         getHelpTopicsMenuItem().
           addActionListener(new ActionListener() {
+              @Override
               public void actionPerformed(ActionEvent e) {
                   TopComponents.getInstance().showHelpTopics();
               }
@@ -154,6 +167,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         }
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 exitMenuEventHandler();
             }
@@ -193,6 +207,33 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
      * @param auditRecords  audit records to display
      */
     public void displayAudits(Collection<AuditRecord> auditRecords) {
+        displayAudits( auditRecords, new Functions.Unary<LogMessage,AuditRecord>(){
+            @Override
+            public LogMessage call(final AuditRecord auditRecord) {
+                return new AuditLogMessage( auditRecord );
+            }
+        } );
+    }
+
+    /**
+     * Displays the given audit records. Old display is cleared first.
+     *
+     * @param auditRecordHeaders  audit records to display
+     */
+    public void displayAuditHeaders(Collection<AuditRecordHeader> auditRecordHeaders) {
+        displayAudits( auditRecordHeaders, new Functions.Unary<LogMessage,AuditRecordHeader>(){
+            @Override
+            public LogMessage call(final AuditRecordHeader auditRecordHeader) {
+                return new AuditHeaderLogMessage( auditRecordHeader );
+            }
+        } );
+    }
+
+    /**
+     * Displays the given audit info. Old display is cleared first.
+     */
+    private <T> void displayAudits( final Collection<T> auditDataCollection,
+                                    final Functions.Unary<LogMessage, T> logMessageBuilder ) {
         // Constructs mapping from gateway node ID to name.
         final Map<String, String> nodeIdNames = new HashMap<String, String>();
         final Registry registry = Registry.getDefault();
@@ -209,19 +250,15 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         // else Leave the map empty.
 
         // Converts flat collection to Map.
-//        final List<LogMessage> logs = new ArrayList<LogMessage>();
         final Map<Long, LogMessage> logs = new HashMap<Long, LogMessage>();
-        for (AuditRecord auditRecord : auditRecords) {
-            final String nodeId = auditRecord.getNodeId();
-
-
-            final LogMessage logMessage = new LogMessage(auditRecord);
+        for ( T auditData : auditDataCollection ) {
+            final LogMessage logMessage = logMessageBuilder.call( auditData );
+            final String nodeId = logMessage.getNodeId();
             // Needs to set gateway node name manually:
             String nodeName = nodeIdNames.get(nodeId);
             if (nodeName != null) {     // Node has been removed from cluster. To be consistent w/the full blown audit viewer do not show
                 logMessage.setNodeName(nodeName);
             }
-//            logs.add(logMessage);
             logs.put(logMessage.getMsgNumber(), logMessage);
         }
         getLogPane().setLogs(logs);
@@ -286,6 +323,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
             final DeleteAuditEventsAction deleteAuditEventsAction = new DeleteAuditEventsAction();
 
             deleteAuditEventsAction.setChainAction(new AbstractAction() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     getLogPane().refreshView();
                 }
@@ -466,6 +504,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         return logPane;
     }
 
+    @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
         if(visible) {
@@ -481,6 +520,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
     /**
      * Intialization when the connection to the server is established.
      */
+    @Override
     public void onLogon(LogonEvent e) {
         getFileMenu().getItem(0).setEnabled(true);
         getFileMenu().getItem(1).setEnabled(true);
@@ -491,6 +531,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
     /**
      * Clean up the resources when the connection to the server went down.
      */
+    @Override
     public void onLogoff(LogonEvent e) {
         getFileMenu().getItem(0).setEnabled(false);
         getFileMenu().getItem(1).setEnabled(false);
@@ -498,6 +539,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         getLogPane().onDisconnect();
     }
 
+    @Override
     public void dispose() {
         if (logPane != null) {
             logPane.getLogsRefreshTimer().stop();
@@ -522,6 +564,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
      */
     private void saveMenuEventHandler() {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser fc) {
                 int numRecords = logPane.getMsgTable().getRowCount();
                 if (numRecords > 1000) {
@@ -538,9 +581,11 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         fc.setDialogTitle("Save audit data as ...");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
         FileFilter fileFilter = new FileFilter() {
+            @Override
             public boolean accept(File f) {
                 return  f.isDirectory() || f.getName().toLowerCase().endsWith(".ssga");
             }
+            @Override
             public String getDescription() {
                 return "(*.ssga) SecureSpan Gateway Audit data file.";
             }
@@ -551,6 +596,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         fc.addChoosableFileFilter(fileFilter);
         fc.setMultiSelectionEnabled(false);
         fc.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if(JFileChooser.FILE_FILTER_CHANGED_PROPERTY.equals(e.getActionCommand())) {
                     fc.setSelectedFile(new File(suggestedName));
@@ -589,6 +635,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         }
     }
 
+    @Override
     public void showSheet(JInternalFrame sheet) {
         DialogDisplayer.showSheet(this, sheet);
     }

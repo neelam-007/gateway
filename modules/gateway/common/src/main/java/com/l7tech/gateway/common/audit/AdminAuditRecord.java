@@ -6,12 +6,6 @@
 
 package com.l7tech.gateway.common.audit;
 
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-
-import javax.persistence.Entity;
-import javax.persistence.Column;
-import javax.persistence.Table;
 import java.util.logging.Level;
 import java.io.OutputStream;
 import java.io.IOException;
@@ -25,9 +19,6 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
-@Entity
-@Table(name="audit_admin")
-@OnDelete(action= OnDeleteAction.CASCADE)
 public class AdminAuditRecord extends AuditRecord {
     public static final char ACTION_CREATED = 'C';
     public static final char ACTION_UPDATED = 'U';
@@ -78,7 +69,6 @@ public class AdminAuditRecord extends AuditRecord {
      * Gets the classname of the entity that this record concerns
      * @return the classname of the entity that this record concerns
      */
-    @Column(name="entity_class", length=255)
     public String getEntityClassname() {
         return entityClassname;
     }
@@ -87,7 +77,6 @@ public class AdminAuditRecord extends AuditRecord {
      * Gets the OID of the entity that this record concerns
      * @return the OID of the entity that this record concerns
      */
-    @Column(name="entity_id")
     public long getEntityOid() {
         return entityOid;
     }
@@ -96,7 +85,6 @@ public class AdminAuditRecord extends AuditRecord {
      * Gets a character indicating the type of event that generated this record.
      * @return a character indicating the type of event that generated this record.
      */
-    @Column(name="action")
     public char getAction() {
         return action;
     }
@@ -123,6 +111,7 @@ public class AdminAuditRecord extends AuditRecord {
     /** a character indicating the type of event that generated this record. */
     protected char action;
 
+    @Override
     public void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException {
         // entity_class:entity_id:action
 

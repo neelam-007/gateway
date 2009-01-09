@@ -105,6 +105,7 @@
         <property name="mappingResources">
             <list>
                 <value>com/l7tech/server/resources/SSG.hbm.xml</value>
+                <value>com/l7tech/server/resources/audit.hbm.xml</value>
             </list>
         </property>
         <property name="annotatedClasses">
@@ -144,13 +145,6 @@
                 <value>com.l7tech.gateway.common.security.rbac.EntityFolderAncestryPredicate</value>
 
                 <!-- Audit Entities -->
-                <value>com.l7tech.gateway.common.audit.AuditRecord</value>
-                <value>com.l7tech.gateway.common.audit.AdminAuditRecord</value>
-                <value>com.l7tech.gateway.common.audit.MessageSummaryAuditRecord</value>
-                <value>com.l7tech.gateway.common.audit.SystemAuditRecord</value>
-                <value>com.l7tech.gateway.common.audit.AuditDetail</value>
-                <value>com.l7tech.gateway.common.audit.MessageSummaryAuditDetail</value>
-
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value>
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingValues</value>
 

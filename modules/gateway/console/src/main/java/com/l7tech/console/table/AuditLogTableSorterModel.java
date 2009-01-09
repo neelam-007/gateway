@@ -7,32 +7,25 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.gateway.common.audit.AuditAdmin;
-import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.logging.LogMessage;
+import com.l7tech.console.util.LogMessage;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
-import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.util.HexUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.crypto.Cipher;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.security.cert.X509Certificate;
 import java.security.PublicKey;
-import java.security.NoSuchAlgorithmException;
-import java.security.MessageDigest;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 /*
@@ -91,16 +84,15 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     private ClusterStatusAdmin clusterStatusAdmin = null;
     private AuditAdmin auditAdmin = null;
     private int logType;
-    private boolean canceled;
     private boolean displayingFromFile;
     private boolean truncated;
-    private AtomicBoolean cancelled = new AtomicBoolean(false);
+    private AtomicReference<ClusterLogWorker> workerReference = new AtomicReference<ClusterLogWorker>();
 
-//    /**
-//     * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
-//     *
-//     * @param model  A table model.
-//     */
+    /**
+     * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
+     *
+     * @param model  A table model.
+     */
     public AuditLogTableSorterModel(DefaultTableModel model, int logType) {
         this.logType = logType;
         this.displayingFromFile = false;
@@ -108,6 +100,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         setModel(model);
     }
 
+    @Override
     public boolean isCellEditable(int row, int col) {
         // the table cells are not editable
         return false;
@@ -150,63 +143,12 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
    /**
      * Add the new logs to the cache. The position depends on the input parameter specified.
      *
-//     * @param nodeId  The Id of the node which is the source of the new logs.
      * @param newLogs  The new logs.
      */
-    private void addLogs(Map<Long, LogMessage> newLogs) {
+    private void addLogs(Map<Long, ? extends LogMessage> newLogs) {
 
         // add new logs to the cache
         if (newLogs.size() > 0) {
-//            Collection<LogMessage> gatewayLogs;
-//            Collection<LogMessage> cachedLogs;
-//            if ((cachedLogs = rawLogCache.get(nodeId)) != null) {
-//                gatewayLogs = cachedLogs;
-//            } else {
-//                // create a empty cache for the new node
-//                gatewayLogs = new TreeSet<LogMessage>();
-//            }
-//
-//            if (gatewayLogs.size() < MAX_NUMBER_OF_LOG_MESSAGES) {
-//                truncated = false;
-//            }
-//
-//            // try to remove first to make room
-//            Iterator setIter = gatewayLogs.iterator();
-//            int additionalLogCount = newLogs.size() - (MAX_MESSAGE_BLOCK_SIZE/10); // allow for 10% duplicates
-//            for(int i=0; setIter.hasNext(); i++) {
-//                // remove the last element
-//                setIter.next();
-//                if(i+additionalLogCount>=MAX_NUMBER_OF_LOG_MESSAGES) {
-//                    setIter.remove();
-//                }
-//            }
-//
-//            // add logs
-//            gatewayLogs.addAll(newLogs);
-//
-//            // remove after to ensure correct size
-//            final int sizeBefore = gatewayLogs.size();
-//            setIter = gatewayLogs.iterator();
-//            for(int i=0; setIter.hasNext(); i++) {
-//                // remove the last element
-//                setIter.next();
-//                if(i>=MAX_NUMBER_OF_LOG_MESSAGES) {
-//                    setIter.remove();
-//                }
-//            }
-//            if (gatewayLogs.size() < sizeBefore) {
-//                truncated = true;
-//            }
-//
-//            // update the logsCache
-//            rawLogCache.put(nodeId, gatewayLogs);
-            //rawLogCache.addAll(newLogs);
-
-//            for(LogMessage lm : newLogs){
-//                if(!rawLogCache.contains(lm)){
-//                    rawLogCache.add(lm);
-//                }
-//            }
             rawLogCache.putAll(newLogs);
 
             filteredLogCache.clear();
@@ -221,9 +163,9 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
       */
      private void removeLogs(String nodeId) {
         Collection<LogMessage> rawLogCacheCollection = rawLogCache.values();
-        for(LogMessage logMsg : rawLogCacheCollection){
-            if(logMsg.getNodeId().equals(nodeId)){
-                rawLogCache.remove(logMsg.getMsgNumber());
+        for(LogMessage logMessage : rawLogCacheCollection){
+            if(logMessage.getNodeId().equals(nodeId)){
+                rawLogCache.remove(logMessage.getMsgNumber());
             }
         }
     }
@@ -264,7 +206,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         Integer[] sorted = new Integer[filteredLogCache.size()];
 
         for (int i = 0; i < sorted.length; i++) {
-            sorted[i] = new Integer(i);
+            sorted[i] = i;
         }
 
         Arrays.sort(sorted, new AuditLogTableSorterModel.ColumnSorter(columnToSort, ascending));
@@ -281,13 +223,14 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
      * @param col  The column index.
      * @return Object  The value at the specified table coordinate.
      */
+    @Override
     public Object getValueAt(int row, int col) {
         LogMessage msg = getLogMessageAtRow(row);
         switch (col) {
             case LogPanel.LOG_SIGNATURE_COLUMN_INDEX:
                 return getUISignatureState(msg);
             case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
-                return new Long(msg.getMsgNumber());
+                return msg.getMsgNumber();
             case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
                 return msg.getNodeName();
             case LogPanel.LOG_TIMESTAMP_COLUMN_INDEX:
@@ -307,19 +250,23 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             case LogPanel.LOG_SERVICE_COLUMN_INDEX:
                 return msg.getServiceName();
             case LogPanel.LOG_THREAD_COLUMN_INDEX:
-                return Integer.toString(msg.getSSGLogRecord().getThreadID());
+                return Integer.toString(msg.getThreadID());
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
     }
 
     public LogMessage getLogMessageAtRow(int row) {
-        return filteredLogCache.get(((Integer) sortedData[row]).intValue());
+        return filteredLogCache.get((Integer)sortedData[row]);
     }
 
     private DigitalSignatureUIState getUISignatureState(LogMessage msg) {
-        if(msg.getHeader() != null) return compareSignatureDigests(msg.getHeader());
-        return checkDigitalSignature(msg.getSSGLogRecord());
+        try {
+            return compareSignatureDigests( msg.getSignature(), msg.getSignatureDigest() );
+        } catch ( IOException e ) {
+            logger.log(Level.WARNING, "could not serialize audit record", e);
+            return DigitalSignatureUIState.INVALID;
+        }
     }
 
     /**
@@ -340,7 +287,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             this.column = column;
         }
 
-        /**                                                                                    CDW
+        /**
          * Compare the order of the two objects. A negative integer, zero, or a positive integer
          * as the the specified String is greater than, equal to, or less than this String,
          * ignoring case considerations.
@@ -349,18 +296,19 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
          * @param b  The other one of the two objects to be compared.
          * @return   -1 if a > b, 0 if a = b, and 1 if a < b.
          */
+        @Override
         public int compare(Integer a, Integer b) {
 
             String elementA = "";
             String elementB = "";
 
-            LogMessage logMsgA = filteredLogCache.get(a.intValue());
-            LogMessage logMsgB = filteredLogCache.get(b.intValue());
+            LogMessage logMsgA = filteredLogCache.get(a);
+            LogMessage logMsgB = filteredLogCache.get(b);
 
             switch (column) {
                 case LogPanel.LOG_SIGNATURE_COLUMN_INDEX:
-                    final DigitalSignatureUIState stateA = getUISignatureState(logMsgA);/*checkDigitalSignature(logMsgA.getSSGLogRecord());*/
-                    final DigitalSignatureUIState stateB = getUISignatureState(logMsgB);/*checkDigitalSignature(logMsgB.getSSGLogRecord());*/
+                    final DigitalSignatureUIState stateA = getUISignatureState(logMsgA);
+                    final DigitalSignatureUIState stateB = getUISignatureState(logMsgB);
                     return (ascending ? 1 : -1) * stateA.compareTo(stateB);
                 case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
                     elementA = Long.toString(logMsgA.getMsgNumber());
@@ -399,12 +347,12 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                     elementB = logMsgB.getNodeId();
                     break;
                 case LogPanel.LOG_SERVICE_COLUMN_INDEX:
-                    elementA = getServiceName(logMsgA);
-                    elementB = getServiceName(logMsgB);
+                    elementA = logMsgA.getServiceName();
+                    elementB = logMsgB.getServiceName();
                     break;
                 case LogPanel.LOG_THREAD_COLUMN_INDEX:
-                    elementA = Integer.toString(logMsgA.getSSGLogRecord().getThreadID());
-                    elementB = Integer.toString(logMsgB.getSSGLogRecord().getThreadID());
+                    elementA = Integer.toString(logMsgA.getThreadID());
+                    elementB = Integer.toString(logMsgB.getThreadID());
                     break;
                 default:
                     logger.warning("Bad Statistics Table Column: " + column);
@@ -445,18 +393,16 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         currentNodeList = new HashMap<String, GatewayStatus>();
 
         clearLogCache();
-        canceled = false;
-        cancelled.set(false);
     }
 
     /**
      *  Reset variables when the connection with the cluster went down.
      */
     public void onDisconnect() {
+        clearLogCache();
+
         clusterStatusAdmin = null;
         auditAdmin = null;
-        canceled = true;
-        cancelled.set(true);
     }
 
     public int getDelay() {
@@ -470,31 +416,24 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     }
 
     /**
-     * Return the flag indicating whether the job has been cancelled or not.
-     *
-     * @return  true if the job is cancelled, false otherwise.
-     */
-    public boolean isCanceled() {
-        //return canceled;
-        return cancelled.get();
-    }
-
-    public void removeLogRecordFromCache(Long oid){
-        LogMessage lm = rawLogCache.get(oid);
-        lm.setLog(null);
-    }
-
-    /**
      * Clear all caches.
      */
     public void clearLogCache() {
-        rawLogCache = new HashMap<Long, LogMessage>();
+        cancelWorker();
+        rawLogCache = new HashMap<Long,LogMessage>();
         filteredLogCache = new ArrayList<LogMessage>();
         currentNodeList = new HashMap<String, GatewayStatus>();
         sortedData = new Object[0];
         realModel.setRowCount(sortedData.length);
         realModel.fireTableDataChanged();
         truncated = false;
+    }
+
+    private void cancelWorker() {
+        final ClusterLogWorker worker = workerReference.getAndSet(null);
+        if ( worker != null ) {
+            worker.cancel();
+        }
     }
 
     /*
@@ -505,23 +444,6 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             if (newNodeList.get(nodeId) == null) {
                 // the node has been removed from the cluster, delete the logs of this node from the cache
                 removeLogs(nodeId);
-            }
-        }
-    }
-
-    /*
-     * Remove any logs that are outside the selected date range
-     */
-    private void purgeOutOfRange(Collection logMessageCollection, Date start, Date end) {
-        if(logMessageCollection!=null && (start!=null || end!=null)) {
-            for (Iterator iterator = logMessageCollection.iterator(); iterator.hasNext();) {
-                LogMessage logMessage = (LogMessage) iterator.next();
-                if(start!=null && logMessage.getSSGLogRecord().getMillis() < start.getTime()) {
-                    iterator.remove();
-                }
-                else if(end!=null && logMessage.getSSGLogRecord().getMillis() >= end.getTime()) {
-                    iterator.remove();
-                }
             }
         }
     }
@@ -540,9 +462,9 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             //TODO there is likely a faster way to do this
             long highest = -1;
             Collection<LogMessage> rawLogCacheCollection = rawLogCache.values();
-            for (LogMessage lm : rawLogCacheCollection) {
-                if (lm.getMsgNumber() > highest) {
-                    highest = lm.getMsgNumber();
+            for (LogMessage logMessage : rawLogCacheCollection) {
+                if (logMessage.getMsgNumber() > highest) {
+                    highest = logMessage.getMsgNumber();
                 }
             }
             logRequest.setStartMsgNumber(highest);
@@ -556,7 +478,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
      * @param logPane   The object reference to the LogPanel.
      * @param logs the data list.
      */
-    public void setLogs(final LogPanel logPane, final Map<Long, LogMessage> logs) {
+    public void setLogs(final LogPanel logPane, final Map<Long, ? extends LogMessage> logs) {
         logger.info("Importing "+/*count*/logs.size()+" log/audit records.");
 
         // import
@@ -573,17 +495,14 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         logPane.updateMsgTotal();
     }
 
-//    /**
-//     * Retreive logs from the cluster.
-//     *
-//     * @param logPane   The object reference to the LogPanel.
-//     * @param restartTimer  Specifying whether the refresh timer should be restarted.
-//     * @param start The start date for log records.
-//     * @param end The end date for log records.
-//     * @param requests  The list of requests for retrieving logs. One request per node.
-//     * @param nodeId the node to filter requests by (may be null)
-//     * @param count Number of records retrieved in the current refresh cycle.
-//     */
+    /**
+     * Retreive logs from the cluster.
+     *
+     * @param logPane   The object reference to the LogPanel.
+     * @param logRequest Request parameters.
+     * @param restartTimer  Specifying whether the refresh timer should be restarted.
+     * @param count Number of records retrieved in the current refresh cycle.
+     */
     private void doRefreshLogs(final LogPanel logPane, LogRequest logRequest, final boolean restartTimer, final int count) {
 
         if(displayingFromFile) {
@@ -598,16 +517,10 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                     auditAdmin,
                     logType,
                     //currentNodeList,
-                    logRequest,
-                    cancelled) {
+                    logRequest) {
+                @Override
                 public void finished() {
-
-                    if (isCanceled()) {
-                        logger.info("Log retrieval is canceled.");
-                        logPane.getLogsRefreshTimer().stop();
-                        logPane.getMsgProgressBar().setVisible(false);
-                        logPane.getSearchButton().setEnabled(true);
-                    } else {
+                    if ( !isCancelled() ) {
                         // Note: the get() operation is a blocking operation.
                         if (this.get() != null) {
                             Map<Long, LogMessage> newLogs = getNewLogs();
@@ -653,6 +566,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                                 logPane.getMsgProgressBar().setVisible(true);
                                 SwingUtilities.invokeLater(
                                         new Runnable() {
+                                            @Override
                                             public void run() {
                                                 doRefreshLogs(logPane, unfilledRequest, restartTimer, total);
                                             }
@@ -660,7 +574,6 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
 
                             } else {
                                 logPane.getMsgProgressBar().setVisible(false);
-                                logPane.getSearchButton().setEnabled(true);
                                 if (restartTimer) {
                                     logPane.getLogsRefreshTimer().start();
                                 }
@@ -668,7 +581,6 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
 
                         } else {
                             logPane.getMsgProgressBar().setVisible(false);
-                            logPane.getSearchButton().setEnabled(true);
                             if (restartTimer) {
                                 logPane.getLogsRefreshTimer().start();
                             }
@@ -677,78 +589,16 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                 }
             };
 
+            workerReference.set( infoWorker );
             infoWorker.start();
         }
         catch(IllegalArgumentException iae) {
             //can happen on disconnect when auto refresh is on.
             logPane.getMsgProgressBar().setVisible(false);
-            logPane.getSearchButton().setEnabled(true);
         }
     }
 
-    /**
-     * Checks the validity of the given record's digital signature.
-     *
-     * @param record    a log record
-     * @return validity of signature
-     */
-    private DigitalSignatureUIState checkDigitalSignature(SSGLogRecord record) {
-        if (record instanceof AuditRecord) {
-            final AuditRecord auditRecord = (AuditRecord) record;
-
-            String signatureToVerify = auditRecord.getSignature();
-            if (signatureToVerify == null || signatureToVerify.length() < 1) {
-                return DigitalSignatureUIState.NONE;
-            }
-
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            MessageDigest digest;
-            try {
-                digest = MessageDigest.getInstance("SHA-512");
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("should not happen", e);
-            }
-            byte[] digestvalue = null;
-            try {
-                auditRecord.serializeSignableProperties(baos);
-                digestvalue = digest.digest(baos.toByteArray());
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "could not serialize audit record", e);
-            } finally {
-                try {
-                    baos.close();
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "error closing stream", e);
-                }
-            }
-
-            // get the cert of the ssg we're connected to
-            X509Certificate cert = TopComponents.getInstance().getSsgCert()[0];
-            if (cert == null) return DigitalSignatureUIState.INVALID;
-            PublicKey pub = cert.getPublicKey();
-            if (pub == null) return DigitalSignatureUIState.INVALID;
-            try {
-                byte[] decodedSig = HexUtils.decodeBase64(signatureToVerify);
-                Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                rsaCipher.init(Cipher.DECRYPT_MODE, pub);
-                byte[] decrypteddata = rsaCipher.doFinal(decodedSig);
-                if (Arrays.equals(decrypteddata, digestvalue)) {
-                    return DigitalSignatureUIState.VALID;
-                }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "cannot verify signature", e);
-            }
-            return DigitalSignatureUIState.INVALID;
-        } else {
-            // No digital signature for other record types.
-            return DigitalSignatureUIState.NONE;
-        }
-    }
-
-    private DigitalSignatureUIState compareSignatureDigests(AuditRecordHeader auditHeader) {
-        String signatureToVerify = auditHeader.getSignature();
-        byte[] digestValue = auditHeader.getSignatureDigest();
-
+    private DigitalSignatureUIState compareSignatureDigests( String signatureToVerify, byte[] digestValue ) {
         if (signatureToVerify == null || signatureToVerify.length() < 1 || digestValue == null) {
             return DigitalSignatureUIState.NONE;
         }
@@ -770,12 +620,5 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             logger.log(Level.WARNING, "cannot verify signature", e);
         }
         return DigitalSignatureUIState.INVALID;
-    }
-
-
-    protected String getServiceName(LogMessage msg) {
-        return msg.getSSGLogRecord() instanceof MessageSummaryAuditRecord
-                ? ((MessageSummaryAuditRecord) msg.getSSGLogRecord()).getName()
-                : "";
     }
 }

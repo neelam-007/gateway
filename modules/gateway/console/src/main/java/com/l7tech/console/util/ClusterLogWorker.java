@@ -10,9 +10,7 @@ import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.console.table.AuditLogTableSorterModel;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
-import com.l7tech.gateway.common.logging.LogMessage;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
-import com.l7tech.gateway.common.admin.TimeoutRuntimeException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 
@@ -32,15 +30,16 @@ import java.util.logging.Logger;
 
 public class ClusterLogWorker extends SwingWorker {
 
-    private ClusterStatusAdmin clusterStatusService = null;
-    private AuditAdmin logService = null;
-    private int logType;
+    static Logger logger = Logger.getLogger(ClusterLogWorker.class.getName());
+
+    private final ClusterStatusAdmin clusterStatusService;
+    private final AuditAdmin logService;
+    private final int logType;
     private Map<String, GatewayStatus> newNodeList;
     private LogRequest logRequest;
-    private Map<Long, LogMessage> retrievedLogs;
+    private final Map<Long, LogMessage> retrievedLogs;
     private java.util.Date currentClusterSystemTime = null;
-    static Logger logger = Logger.getLogger(ClusterLogWorker.class.getName());
-    private AtomicBoolean cancelled;
+    private final AtomicBoolean cancelled;
 
     /**
      * Create a new cluster log worker.
@@ -51,11 +50,10 @@ public class ClusterLogWorker extends SwingWorker {
      * @param logType    the type (log or audit)
      * @param logRequest  A request for retrieving logs.
      */
-    public ClusterLogWorker(ClusterStatusAdmin clusterStatusService,
-                            AuditAdmin logService,
-                            int logType,
-                            LogRequest logRequest,
-                            AtomicBoolean cancelled) {
+    public ClusterLogWorker( final ClusterStatusAdmin clusterStatusService,
+                             final AuditAdmin logService,
+                             final int logType,
+                             final LogRequest logRequest ) {
 
         if (logService == null || clusterStatusService == null) {
             throw new IllegalArgumentException();
@@ -65,7 +63,7 @@ public class ClusterLogWorker extends SwingWorker {
         this.logService = logService;
         this.logType = logType;
         this.logRequest = logRequest;
-        this.cancelled = cancelled;
+        this.cancelled = new AtomicBoolean(false);
 
         retrievedLogs = new HashMap<Long, LogMessage>();
     }
@@ -111,6 +109,7 @@ public class ClusterLogWorker extends SwingWorker {
      *
      * @return Object  An object with the value constructed by this function.
      */
+    @Override
     public Object construct() {
 
         Map<String, String> nodeNameIdMap = new HashMap<String, String>();
@@ -126,7 +125,7 @@ public class ClusterLogWorker extends SwingWorker {
                 logger.log(Level.WARNING, "Unable to find cluster status from server", e);
             }
 
-            if (clusterNodes == null) {
+            if ( isCancelled() || clusterNodes == null ) {
                 return null;
             }
 
@@ -147,7 +146,7 @@ public class ClusterLogWorker extends SwingWorker {
                 Map<Long, LogMessage> newLogs = new HashMap<Long, LogMessage>();
 
                 try {
-                    LogMessage logMsg;
+                    LogMessage logMessage;
 //                    System.out.println("Calling getSystemLog with start#='"+logRequest.getStartMsgNumber()+"', end#='"+logRequest.getEndMsgNumber()+"', startDate='"+logRequest.getStartMsgDate()+"', endDate='"+logRequest.getEndMsgDate()+"'.");
                     switch (logType) {
                         case GenericLogAdmin.TYPE_AUDIT:
@@ -155,28 +154,27 @@ public class ClusterLogWorker extends SwingWorker {
                                     nodeId(nodeNameIdMap.get(logRequest.getNodeName())).
                                     maxRecords(AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE).build();
 
-                            logger.info("Start time to grab data:: " + new Date(System.currentTimeMillis()));
+                            logger.finer("Start time to grab data:: " + new Date(System.currentTimeMillis()));
                             rawHeaders = logService.findHeaders(asc).toArray(new AuditRecordHeader[0]);
-                            logger.info("End time of grab data:: " + new Date(System.currentTimeMillis()));
-                            if (rawHeaders.length > 0) {
+                            logger.finer("End time of grab data:: " + new Date(System.currentTimeMillis()));
+                            if (!isCancelled() && rawHeaders.length > 0) {
                                 long lowest = -1;
                                 long oldest = -1;
                                 GatewayStatus nodeStatus;
                                 for (int j = 0; j < (rawHeaders.length) && (newLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
                                     AuditRecordHeader header = rawHeaders[j];
-                                    logMsg = new LogMessage(header);
+                                    logMessage = new AuditHeaderLogMessage(header);
                                     nodeStatus = newNodeList.get(header.getNodeId());
                                     if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster
                                         if (j == 0) {
-                                            lowest = logMsg.getMsgNumber();
-                                            oldest = logMsg.getHeader().getTimestamp();
-                                        } else if (lowest > logMsg.getMsgNumber()) {
-                                            lowest = logMsg.getMsgNumber();
-                                            oldest = logMsg.getHeader().getTimestamp();
+                                            lowest = logMessage.getMsgNumber();
+                                            oldest = logMessage.getTimestamp();
+                                        } else if (lowest > logMessage.getMsgNumber()) {
+                                            lowest = logMessage.getMsgNumber();
+                                            oldest = logMessage.getTimestamp();
                                         }
-                                        logMsg.setNodeName(nodeStatus.getName());
-                                        newLogs.put(logMsg.getMsgNumber(), logMsg);
-
+                                        logMessage.setNodeName(nodeStatus.getName());
+                                        newLogs.put(logMessage.getMsgNumber(), logMessage);
                                     }
                                 }
                                 logRequest.setEndMsgNumber(lowest);
@@ -195,29 +193,28 @@ public class ClusterLogWorker extends SwingWorker {
                                     logRequest.getEndMsgDate(),
                                     AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE);
 
-                            if (rawLogs.length > 0) {
+                            if (!isCancelled() && rawLogs.length > 0) {
                                 long lowest = -1;
                                 long oldest = -1;
                                 GatewayStatus nodeStatus;
                                 for (int j = 0; j < (rawLogs.length) && (newLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
-                                    logMsg = new LogMessage(rawLogs[j]);
-                                    nodeStatus = newNodeList.get(logMsg.getSSGLogRecord().getNodeId());
+                                    logMessage = new LogRecordLogMessage(rawLogs[j]);
+                                    nodeStatus = newNodeList.get(logMessage.getNodeId());
                                     if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster
                                         if (j == 0) {
-                                            lowest = logMsg.getMsgNumber();
-                                            oldest = logMsg.getSSGLogRecord().getMillis();
-                                        } else if (lowest > logMsg.getMsgNumber()) {
-                                            lowest = logMsg.getMsgNumber();
-                                            oldest = logMsg.getSSGLogRecord().getMillis();
+                                            lowest = logMessage.getMsgNumber();
+                                            oldest = logMessage.getTimestamp();
+                                        } else if (lowest > logMessage.getMsgNumber()) {
+                                            lowest = logMessage.getMsgNumber();
+                                            oldest = logMessage.getTimestamp();
                                         }
-                                        logMsg.setNodeName(nodeStatus.getName());
-                                        newLogs.put(logMsg.getMsgNumber(), logMsg);
+                                        logMessage.setNodeName(nodeStatus.getName());
+                                        newLogs.put(logMessage.getMsgNumber(), logMessage);
                                     }
                                 }
                                 logRequest.setStartMsgNumber(lowest);
                                 logRequest.setEndMsgDate(new Date(oldest + 1)); // end date is exclusive
                             } else {
-                                System.out.println("setting log request to null");
                                 //we are done
                                 logRequest = null;
                             }
@@ -229,22 +226,23 @@ public class ClusterLogWorker extends SwingWorker {
 
                 if (newLogs.size() > 0) {
                     retrievedLogs.putAll(newLogs);
-                    logRequest.addRetrievedLogCount(newLogs.size());
+                    if ( logRequest != null )
+                        logRequest.addRetrievedLogCount(newLogs.size());
                 }
 
                 if (this.logType == GenericLogAdmin.TYPE_LOG) {
                     logRequest = null;
                 }
             }
-            currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
+            currentClusterSystemTime = isCancelled() ? null : clusterStatusService.getCurrentClusterSystemTime();
 
-            if (currentClusterSystemTime == null) {
+            if ( currentClusterSystemTime == null ) {
                 return null;
             } else {
                 return newNodeList;
             }
-        } catch (RuntimeException re) {
-            if (cancelled.get()) { // eat any exceptions if we've been cancelled
+        } catch ( RuntimeException re ) {
+            if ( isCancelled() ) { // eat any exceptions if we've been cancelled
                 logger.log(Level.INFO, "Ignoring error for cancelled operation ''{0}''.", ExceptionUtils.getMessage(re));
                 logRequest = null;
                 return null;
@@ -254,5 +252,12 @@ public class ClusterLogWorker extends SwingWorker {
         }
     }
 
+    public boolean isCancelled() {
+        return cancelled.get();
+    }
+
+    public void cancel() {
+        cancelled.set( true );
+    }
 }
 

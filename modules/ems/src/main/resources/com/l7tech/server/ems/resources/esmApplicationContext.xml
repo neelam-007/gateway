@@ -63,6 +63,11 @@
 
     <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="dataSource"/>
+        <property name="mappingResources">
+            <list>
+                <value>com/l7tech/server/resources/audit.hbm.xml</value>
+            </list>
+        </property>
         <property name="annotatedClasses">
             <list>
                 <!-- RBAC Entities -->
@@ -74,10 +79,6 @@
                 <value>com.l7tech.gateway.common.security.rbac.ObjectIdentityPredicate</value>
 
                 <!-- Audit Entities -->
-                <value>com.l7tech.gateway.common.audit.AdminAuditRecord</value>
-                <value>com.l7tech.gateway.common.audit.SystemAuditRecord</value>
-                <value>com.l7tech.gateway.common.audit.MessageSummaryAuditRecord</value> <!-- Required for export format -->
-                <value>com.l7tech.gateway.common.audit.AuditDetail</value>
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value>
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingValues</value>
 

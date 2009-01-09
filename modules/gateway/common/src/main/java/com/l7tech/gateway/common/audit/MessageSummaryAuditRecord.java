@@ -15,15 +15,10 @@ import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.security.token.SecurityTokenType;
 
-import javax.persistence.*;
 import java.util.logging.Level;
 import java.util.List;
 import java.io.OutputStream;
 import java.io.IOException;
-
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 /**
  * An {@link AuditRecord} that describes the processing of a single message.
@@ -36,9 +31,6 @@ import org.hibernate.annotations.OnDeleteAction;
  * @author alex
  * @version $Revision$
  */
-@Entity
-@Table(name="audit_message")
-@OnDelete(action= OnDeleteAction.CASCADE)
 public class MessageSummaryAuditRecord extends AuditRecord {
     public static final String ATTR_SERVICE_OID = "serviceOid";
 
@@ -108,7 +100,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * Gets the {@link AssertionStatus} resulting from applying the service policy to this request
      * @return the {@link AssertionStatus} resulting from applying the service policy to this request
      */
-    @Column(name="status", nullable=false)
     public int getStatus() {
         return status;
     }
@@ -117,13 +108,11 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * Gets the OID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_OID} if it could not be resolved.
      * @return the OID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_OID} if it could not be resolved.
      */
-    @Column(name="service_oid")
     public long getServiceOid() {
         return serviceOid;
     }
 
     @Override
-    @Column(name="request_id", nullable=false, length=40)
     public String getStrRequestId() {
         return super.getStrRequestId();
     }
@@ -137,9 +126,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * Gets the text of the request received from the client.
      * @return the text of the request received from the client.
      */
-    @Column(name="request_zipxml", length=Integer.MAX_VALUE)
-    @Type(type="com.l7tech.server.util.CompressedStringType")
-    @Basic(fetch=FetchType.LAZY)
     public String getRequestXml() {
         return requestXml;
     }
@@ -148,9 +134,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * Gets the text of the response sent to the client.
      * @return the text of the response sent to the client.
      */
-    @Column(name="response_zipxml", length=Integer.MAX_VALUE)
-    @Type(type="com.l7tech.server.util.CompressedStringType")
-    @Basic(fetch=FetchType.LAZY)
     public String getResponseXml() {
         return responseXml;
     }
@@ -159,7 +142,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * Returns true if the request was authenticated, false otherwise
      * @return true if the request was authenticated, false otherwise
      */
-    @Column(name="authenticated")
     public boolean isAuthenticated() {
         return authenticated;
     }
@@ -168,8 +150,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * Gets the authentication type for this request (if authenticated)
      * @return the SecurityTokenType or null
      */
-    @Column(name="authenticationType")
-    @Type(type="com.l7tech.server.util.SecurityTokenUserType")
     public SecurityTokenType getAuthenticationType() {
         return authenticationType;
     }
@@ -178,7 +158,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * Gets the length of the request received from the client, in bytes.
      * @return the length of the request, in bytes.
      */
-    @Column(name="request_length", nullable=false)
     public int getRequestContentLength() {
         return requestContentLength;
     }
@@ -187,7 +166,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * Gets the length of the response sent to the client, in bytes.
      * @return the length of the response, in bytes.
      */
-    @Column(name="response_length")
     public int getResponseContentLength() {
         return responseContentLength;
     }
@@ -195,7 +173,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     /**
      * @return the HTTP status code of the back-end response
      */
-    @Column(name="response_status")
     public int getResponseHttpStatus() {
         return responseHttpStatus;
     }
@@ -203,13 +180,11 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     /**
      * @return the time (in milliseconds) spent routing the request to the protected service
      */
-    @Column(name="routing_latency")
     public int getRoutingLatency() {
         return routingLatency;
     }
 
     /** @return the name of the operation the request was for if it's a SOAP service, or likely null otherwise */
-    @Column(name="operation_name", length=255)
     public String getOperationName() {
         if (operationName == null) {
             if (operationNameHaver != null)
@@ -218,7 +193,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return operationName;
     }
 
-    @Column(name="mapping_values_oid")
     public Long getMappingValuesOid() {
         if ( mappingValuesOid == null ) {
             if (mappingValueOidHaver != null) {
@@ -291,8 +265,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.routingLatency = routingLatency;
     }
 
-    @ManyToOne
-    @JoinColumn(name="mapping_values_oid", insertable=false, updatable=false)
     public MessageContextMappingValues getMappingValuesEntity() {
         return mappingValuesEntity;
     }
@@ -358,6 +330,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     private MessageContextMappingValues mappingValuesEntity;
 
+    @Override
     public void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException {
         // status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
         // response_zipxml:response_status:routing_latency

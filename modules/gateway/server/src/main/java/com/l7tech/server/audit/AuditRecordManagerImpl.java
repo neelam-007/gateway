@@ -9,6 +9,7 @@ package com.l7tech.server.audit;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.HibernateEntityManager;
@@ -18,6 +19,7 @@ import com.l7tech.server.event.system.AuditPurgeEvent;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
+import org.hibernate.ScrollableResults;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.criterion.Criterion;
@@ -67,6 +69,27 @@ public class AuditRecordManagerImpl
     @Override
     @Transactional(readOnly=true)
     public Collection<AuditRecord> find( final AuditSearchCriteria criteria ) throws FindException {
+        return find( criteria, new Functions.Unary<AuditRecord,AuditRecord>(){
+            @Override
+            public AuditRecord call(final AuditRecord auditRecord) {
+                return auditRecord;
+            }
+        } );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Collection<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException {
+        List<AuditRecordHeader> auditRecordHeaders = find(criteria, new Functions.Unary<AuditRecordHeader,AuditRecord>(){
+            @Override
+            public AuditRecordHeader call(final AuditRecord auditRecord) {
+                return newHeader(auditRecord);
+            }
+        });
+        return Collections.unmodifiableList( auditRecordHeaders );
+    }
+
+    private <T> List<T> find( final AuditSearchCriteria criteria, final Functions.Unary<T,AuditRecord> transform ) throws FindException {
         if (criteria == null) throw new IllegalArgumentException("Criteria must not be null");
         Session session = null;
         try {
@@ -89,23 +112,19 @@ public class AuditRecordManagerImpl
             query.addOrder(Order.desc(PROP_TIME));
 
             //noinspection unchecked
-            return query.list();
+            List<T> result = new ArrayList<T>(maxRecords);
+            ScrollableResults results = query.scroll();
+            while( results.next() ) {
+                AuditRecord record = (AuditRecord) results.get(0);
+                result.add( transform.call(record) );
+                session.evict(record);
+            }
+            return result;
         } catch ( HibernateException e ) {
             throw new FindException("Couldn't find Audit Records", e);
         } finally {
             releaseSession(session);
         }
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Collection<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException {
-        Collection<AuditRecord> auditRecords = find(criteria);
-        List<AuditRecordHeader> auditRecordHeaders = new ArrayList<AuditRecordHeader>();
-        for (AuditRecord auditRecord : auditRecords) {
-            auditRecordHeaders.add(newHeader(auditRecord));
-        }
-        return Collections.unmodifiableList(auditRecordHeaders);
     }
 
     @Override

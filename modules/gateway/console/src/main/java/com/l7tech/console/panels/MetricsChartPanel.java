@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
+import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.GatewayAuditWindow;
 import com.l7tech.console.panels.dashboard.ServiceMetricsPanel;
@@ -1059,7 +1060,7 @@ public class MetricsChartPanel extends ChartPanel {
                     nodeId(nodeSelected == null ? null : nodeSelected.getId()).
                     serviceName(serviceSelected == null ? null : serviceSelected.getName()).build();
             try {
-                final Collection<AuditRecord> records = auditAdmin.find(criteria);
+                final Collection<AuditRecordHeader> records = auditAdmin.findHeaders(criteria);
 
                 if (_gatewayAuditWindow == null) {
                     _gatewayAuditWindow = new GatewayAuditWindow(false);
@@ -1072,7 +1073,7 @@ public class MetricsChartPanel extends ChartPanel {
                 _gatewayAuditWindow.setTitle(GATEWAY_AUDIT_WINDOW_TITLE + " (" +
                         timeRangeAsString(startDate, endDate, _timeZone) + ")");
 
-                _gatewayAuditWindow.displayAudits(records);
+                _gatewayAuditWindow.displayAuditHeaders(records);
             } catch (FindException e) {
                 _logger.warning("Failed to query for audit events: " + e.getMessage());
                 errDialogMsg = e.getMessage();
