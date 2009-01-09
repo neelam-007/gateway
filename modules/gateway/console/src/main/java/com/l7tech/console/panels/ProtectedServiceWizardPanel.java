@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.ContextMenuTextField;
@@ -35,6 +36,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         initComponents();
     }
 
+    @Override
     public String getDescription() {
         return "Specify how the SecureSpan Gateway gains access to the Web service. " +
                "Include access credentials, if required.";
@@ -97,6 +99,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
                                                             "provide credentials to access this Web service");
             getAnonymousButtonGroup().add(credentialsNeededRadioButton);
             credentialsNeededRadioButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     showOrHideCredentialsPanel();
                     checkValid();
@@ -113,6 +116,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
             getAnonymousButtonGroup().add(anonymousRadioButton);
             anonymousRadioButton.setSelected(true);
             anonymousRadioButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     showOrHideCredentialsPanel();
                     checkValid();
@@ -142,10 +146,12 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         return (getIdentityTextField().getText().length() > 0);
     }
 
+    @Override
     public boolean canAdvance() {
         return isDataValid();
     }
 
+    @Override
     public boolean canFinish() {
         return isDataValid();
     }
@@ -159,6 +165,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
      * @exception IllegalArgumentException if the the data provided
      * by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         PublishServiceWizard.ServiceAndAssertion
           collect = (PublishServiceWizard.ServiceAndAssertion)settings;
@@ -222,6 +229,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
      * @exception IllegalArgumentException if the the data provided
      * by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (!(settings instanceof PublishServiceWizard.ServiceAndAssertion)) {
             throw new IllegalArgumentException();
@@ -231,6 +239,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
               sa = (PublishServiceWizard.ServiceAndAssertion)settings;
             PublishedService publishedService = sa.getService();
 
+            service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(sa.getServiceDocuments()) );
             service.setWsdlUrl(publishedService.getWsdlUrl());
             service.setWsdlXml(publishedService.getWsdlXml());
             String text = getServiceUrlTextField().getText();
@@ -245,6 +254,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
 
     /** @return the wizard step label    */
+    @Override
     public String getStepLabel() {
         return "Credential Transportation";
     }
@@ -365,8 +375,11 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         if (identityTextField == null) {
             identityTextField = new JTextField();
             identityTextField.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
                 public void insertUpdate(DocumentEvent e) { checkValid(); }
+                @Override
                 public void removeUpdate(DocumentEvent e) { checkValid(); }
+                @Override
                 public void changedUpdate(DocumentEvent e) { checkValid(); }
             });
         }
@@ -427,6 +440,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         if (buttonChangeUrl == null) {
             buttonChangeUrl = new JButton("Change");
             buttonChangeUrl.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     buttonChangeUrl.setPreferredSize(buttonChangeUrl.getSize());
                     if (getServiceUrlTextField().isEditable()) {
