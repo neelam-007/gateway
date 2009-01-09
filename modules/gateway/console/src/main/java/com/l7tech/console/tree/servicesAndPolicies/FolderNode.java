@@ -49,8 +49,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
             new EditFolderAction(folder, folderHeader, this, folderAdmin),
             new CreateFolderAction(folder, this, folderAdmin),
             new DeleteFolderAction(folderHeader.getOid(), this, folderAdmin),
-            new PasteAsAliasAction(this),
-            new RefreshTreeNodeAction(this)
+            new PasteAsAliasAction(this)
         };
     }
 
