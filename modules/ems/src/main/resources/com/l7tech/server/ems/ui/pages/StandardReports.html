@@ -383,7 +383,7 @@
             updateGenerateButton();
         }
 
-        function onChangeEntityType() {
+        function onChangeEntitySelectionType() {
             refreshSsgClusterContentSelector();
 
             // Clears out all entity selections because they would now be the wrong type.
@@ -399,7 +399,7 @@
 
             // Updates the add button.
             var entityTypeText;
-            var entityType = getEntityType();
+            var entityType = getEntitySelectionType();
             if (entityType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
                 entityTypeText = localizedStrings.PUBLISHED_SERVICE_S;
             } else if (entityType == l7.EntityTreeTable.ENTITY.OPERATION) {
@@ -519,14 +519,14 @@
          * Returns the entity selection type.
          * @return {string} an l7.EntityTreeTable.ENTITY value
          */
-        function getEntityType() {
+        function getEntitySelectionType() {
             var result;
             if (publishedServiceRadioButton.checked) {
                 result = l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE;
             } else if (operationRadioButton.checked) {
                 result = l7.EntityTreeTable.ENTITY.OPERATION;
             } else {
-                YAHOO.log('Unexpected entity type selection.', 'error', 'StandardReports.html getEntityType');
+                YAHOO.log('Unexpected entity type selection.', 'error', 'StandardReports.html getEntitySelectionType');
             }
             return result;
         }
@@ -535,16 +535,16 @@
          * Sets the entity selection type.
          * @param {string} type     an l7.EntityTreeTable.ENTITY value
          */
-        function setEntityType(type) {
+        function setEntitySelectionType(type) {
             if (type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
                 publishedServiceRadioButton.checked = true;
             } else if (type == l7.EntityTreeTable.ENTITY.OPERATION) {
                 operationRadioButton.checked = true;
             } else {
-                YAHOO.log('Unexpected entity type: ' + type, 'error', 'StandardReports.html setEntityType');
+                YAHOO.log('Unexpected entity type: ' + type, 'error', 'StandardReports.html setEntitySelectionType');
             }
 
-            onChangeEntityType();
+            onChangeEntitySelectionType();
         }
 
         /**
@@ -794,7 +794,7 @@
          */
         function setFieldsFromSettings(settings) {
             setReportType(settings.reportType);
-            setEntityType(settings.entityType);
+            setEntitySelectionType(settings.entityType);
             addSelectedEntities(settings.entities);
             setTimePeriod(settings.timePeriod.timeZone,
                           settings.timePeriod.type,
@@ -817,7 +817,7 @@
         function getSettingsFromFields() {
             var settings = {};
             settings.reportType = reportTypeDropDown.value;
-            settings.entityType = getEntityType();
+            settings.entityType = getEntitySelectionType();
             settings.entities = [];
             for (var i = 0; i < entitySelectionTableBody.rows.length; ++i) {
                 var tr = entitySelectionTableBody.rows[i];
@@ -913,7 +913,7 @@
 
         function refreshSsgClusterContentSelector() {
             var ssgCluster = ssgClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
-            var entityType = getEntityType();
+            var entityType = getEntitySelectionType();
             var entitiesWithTristateCheckbox = [l7.EntityTreeTable.ENTITY.SERVICE_FOLDER, entityType];
             if (entityType == l7.EntityTreeTable.ENTITY.OPERATION) {
                 entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE);
@@ -1120,7 +1120,7 @@
         function onClickAddEntity() {
             var ssgCluster = ssgClusterContentSelectorWindow.getSsgCluster();
             var entities = ssgClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected();
-            var entityType = getEntityType();
+            var entityType = getEntitySelectionType();
 
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
@@ -1632,9 +1632,9 @@
                                         <div class="panel noMargin">
                                             <div class="panelToolbar">
                                                 Select by:
-                                                <input id="publishedServiceRadioButton" type="radio" name="selectionType" value="publishedService" onclick="onChangeEntityType();" checked/>
+                                                <input id="publishedServiceRadioButton" type="radio" name="selectionType" value="publishedService" onclick="onChangeEntitySelectionType();" checked/>
                                                 <label for="publishedServiceRadioButton">Published Service</label>
-                                                <input id="operationRadioButton" type="radio" name="selectionType" value="operation" onclick="onChangeEntityType();"/>
+                                                <input id="operationRadioButton" type="radio" name="selectionType" value="operation" onclick="onChangeEntitySelectionType();"/>
                                                 <label for="operationRadioButton">Operation</label>
                                             </div>
                                                 <table class="explorer" width="100%">
