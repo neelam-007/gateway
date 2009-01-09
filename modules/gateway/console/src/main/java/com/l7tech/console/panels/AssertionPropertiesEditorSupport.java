@@ -23,6 +23,9 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
         super( owner, title, modal );
     }
 
+    protected AssertionPropertiesEditorSupport() {        
+    }
+
     public Object getParameter( final String name ) {
         Object value = null;
 

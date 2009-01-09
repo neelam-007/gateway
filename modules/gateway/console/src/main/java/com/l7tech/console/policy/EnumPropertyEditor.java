@@ -5,29 +5,29 @@ package com.l7tech.console.policy;
 
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorSupport;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /** @author alex */
-public class EnumPropertyEditor<E extends Enum> extends PropertyEditorSupport implements PropertyEditor {
-    private Class<E> enumClass;
+public class EnumPropertyEditor extends PropertyEditorSupport implements PropertyEditor {
+    private Class<? extends Enum> enumClass;
 
-    public EnumPropertyEditor(Class<E> enumClass) {
+    public EnumPropertyEditor(Class<? extends Enum> enumClass) {
         this.enumClass = enumClass;
     }
 
     @Override
     public String[] getTags() {
         List<String> tags = new ArrayList<String>();
-        for (E e : enumClass.getEnumConstants()) {
+        for (Enum e : enumClass.getEnumConstants()) {
             tags.add(e.name());
         }
-        return tags.toArray(new String[0]);
+        return tags.toArray(new String[tags.size()]);
     }
 
     @Override
     public String getAsText() {
-        return ((E)getValue()).name();
+        return ((Enum)getValue()).name();
     }
 
     @Override
