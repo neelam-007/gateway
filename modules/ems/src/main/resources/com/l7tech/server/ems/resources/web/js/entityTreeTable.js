@@ -902,7 +902,7 @@ if (!l7.EntityTreeTable) {
              * @param {string} id   entity ID
              * @return {object} the entity object literal; undefined if not found
              */
-            this.getEntityById = function() {
+            this.getEntityById = function(entityId) {
                 return this._entitiesById[entityId];
             }
 

@@ -538,6 +538,67 @@ if (!l7.Util) {
 };
 
 // -----------------------------------------------------------------------------
+// Connection
+// -----------------------------------------------------------------------------
+if (!l7.Connection) {
+    (function(){
+        l7.Connection = {};
+
+        /**
+         * Sends a synchronous request via the XMLHttpRequest object.
+         * The instantiated XMLHttpRequest object is returned for caller to
+         * check its status and parse its responseText.
+         *
+         * @static
+         * @param {string} method       HTTP method; 'GET' or 'POST'
+         * @param {string} uri          resource path (include any parameters if method is 'GET')
+         * @param {string} postData     POST body, if method is 'POST'
+         * @param {boolean} isJSON      used for setting the content type; true for 'application/json', false for 'application/x-www-form-urlencoded'
+         * @return {object} the XMLHttpRequest object; null if fail to instantiate XMLHttpRequest object
+         */
+        l7.Connection.syncRequest = function(method, uri, postData, isJSON) {
+            var MSXML_PROGIDS = [
+                'Microsoft.XMLHTTP',
+                'MSXML2.XMLHTTP.3.0',
+                'MSXML2.XMLHTTP'
+            ];
+
+            var xhr;
+            try {
+                // For non-IE browsers.
+                xhr = new XMLHttpRequest();
+            } catch (e) {
+                for (var i = 0; i < MSXML_PROGIDS.length; ++i) {
+                    try {
+                        // For IE.
+                        xhr = new ActiveXObject(MSXML_PROGIDS[i]);
+                        break;
+                    } catch (e2) {
+                    }
+                }
+            }
+
+            if (!xhr) {
+                return null;
+            }
+
+            xhr.open(method, uri, false);
+
+            if (method.toUpperCase() === 'POST') {
+                if (isJSON) {
+                    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+                } else {
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+                }
+            }
+
+            xhr.send(postData || '');
+            return xhr;
+        }
+    })();
+}
+
+// -----------------------------------------------------------------------------
 // Widget
 // -----------------------------------------------------------------------------
 if (!l7.Widget) {
@@ -561,6 +622,22 @@ if (!l7.Widget) {
             result.type = 'radio';
             result.name = name;
             return result;
+        }
+
+        /**
+         * Make a selection in a drop down list.
+         * @param {HTMLSelectElement} dropDown  the drop down list
+         * @param {string} value                the value to select
+         * @return {boolean} true if value exists; false if not
+         */
+        l7.Widget.selectDropDownByValue = function(dropDown, value) {
+            for (var i = 0; i < dropDown.options.length; ++i) {
+                if (dropDown.options[i].value == value) {
+                    dropDown.selectedIndex = i;
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**
@@ -671,7 +748,7 @@ if (!l7.Widget) {
             textBox.readOnly = true;
             textBox.getCalendar = function() { return calendar; }
         }
-})();
+    })();
 }
 
 // -----------------------------------------------------------------------------

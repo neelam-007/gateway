@@ -9,29 +9,29 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>Standard Reports [Enterprise Service Manager]</title>
-    <link rel="stylesheet" type="text/css" href="../css/l7.css" />
+    <link rel="stylesheet" type="text/css" href="/css/l7.css" />
 
     <wicket:head>
-    <!-- Required YUI modules: button, connection, event, json, logger -->
-    <link rel="stylesheet" type="text/css" href="../yui/assets/skins/sam/skin.css">
-    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
-    <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
-    <script type="text/javascript" src="../yui/button/button-min.js"></script>
-    <script type="text/javascript" src="../yui/calendar/calendar-min.js"></script>
-    <script type="text/javascript" src="../yui/connection/connection-min.js"></script>
-    <script type="text/javascript" src="../yui/container/container-min.js"></script>
-    <script type="text/javascript" src="../yui/json/json-min.js"></script>
-    <script type="text/javascript" src="../yui/logger/logger-min.js"></script>
+    <!-- Required YUI modules: button, calendar, connection, container, event, json, logger -->
+    <link rel="stylesheet" type="text/css" href="/yui/assets/skins/sam/skin.css">
+    <script type="text/javascript" src="/yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="/yui/element/element-beta-min.js"></script>
+    <script type="text/javascript" src="/yui/button/button-min.js"></script>
+    <script type="text/javascript" src="/yui/calendar/calendar-min.js"></script>
+    <script type="text/javascript" src="/yui/connection/connection-min.js"></script>
+    <script type="text/javascript" src="/yui/container/container-min.js"></script>
+    <script type="text/javascript" src="/yui/json/json-min.js"></script>
+    <script type="text/javascript" src="/yui/logger/logger-min.js"></script>
 
-    <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css" /> <!-- modifies YUI sam skin; must come after YUI CSS files -->
+    <link rel="stylesheet" type="text/css" href="/css/l7-yui-skin.css" /> <!-- modifies YUI sam skin; must come after YUI CSS files -->
     <style type="text/css">
         .note {
             font-size: 90%;
             margin-left: 8px;
         }
     </style>
-    <script type="text/javascript" src="../js/l7.js"></script>
-    <script type="text/javascript" src="../js/entityTreeTable.js"></script>
+    <script type="text/javascript" src="/js/l7.js"></script>
+    <script type="text/javascript" src="/js/entityTreeTable.js"></script>
     <script type="text/javascript">
         /** Localized strings for local HTML markups, e.g., error dialogs. */
         var localizedStrings = {
@@ -42,14 +42,24 @@
             OPERATION_S : 'Operation(s)',
             ADD_ENTITY_BUTTON_LABEL : 'Add Checked {0}',
             REMOVE : 'Remove',
+            LOADING_SAVED_SETTINGS : "Loading settings &ldquo;{0}&rdquo;...",
+            SETTINGS_SAVED_TITLE : "Settings Saved",
+            SETTINGS_SAVED : "Settings is saved successfully.",
             OK : 'OK',
             CANCEL : 'Cancel',
+            WARNING: 'Warning',
             ERROR : 'Error',
             CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server: ',
-            CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Failed to download list of saved settings: ',
+            CANNOT_SAVE_SETTINGS : 'Failed to save settings: ',
+            CANNOT_DELETE_SETTINGS : 'Failed to delete settings &ldquo;{0}&rdquo;: ',
+            CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST : 'Failed to download list of saved settings: ',
+            CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Failed to download saved settings &ldquo;{0}&rdquo;: ',
             CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Failed to download list of message context keys for the selected SSG Clusers: ',
             SSG_CLUSTER_NOT_APPLICABLE : 'None of the selected entities belong to this SSG Cluster. Please delete or reselect.',
-            TOO_MANY_UNIQUE_MESSAGE_CONTEXT_KEYS: 'Cannot use more than 5 unique message context keys per SSG cluster',
+            TOO_MANY_UNIQUE_MESSAGE_CONTEXT_KEYS : 'Cannot use more than 5 unique message context keys per SSG cluster',
+            INVALID_GROUPINGS_REMOVED : "Some groupings in this settings have been removed because they no longer applies: ",
+            SSG_CLUSTER_NOT_EXIST : 'SSG Cluster &ldquo;{0}&rdquo; does not exist.',
+            MESSAGE_CONTEXT_KEY_NOT_EXIST : 'Message context key &ldquo;{0}&rdquo; does not exist in SSG Cluster &ldquo;{1}&rdquo;.',
             STANDARD_MESSAGE_CONTEXT_MAPPING : 'Standard Mapping',
             CUSTOM_MESSAGE_CONTEXT_MAPPING : 'Custom Mapping',
             RELATIVE_TIME_PERIOD_HINT : 'Must be positive integer',
@@ -72,7 +82,7 @@
 
         var loadSettingsButton;
         var saveSettingsButton;
-        var manageSettingsButton;
+        var deleteSettingsButton;
         var saveDefaultButton;
         var addEntityButton;
         var addGroupingButton;
@@ -99,7 +109,7 @@
         var groupingHint;
         var reportNameTextBox;
 
-        var savedSettingsDropDown;
+        var settingsListDropDown;
         var reportTypeDropDown;
         var relativeTimePeriodUnitDropDown;
         var absoluteTimePeriodFromHourDropDown;
@@ -115,38 +125,47 @@
         var messageWhenNoGrouping;
         var groupingTableBody;
 
-        /**
-         * List of saved settings available to choose from.
-         * @type array
-         */
-        var savedSettings;
+        var saveSettingsDialog;
+        var deleteSettingsDialog;
 
         /**
-         * Current date values
-         */
-        var absoluteTimePeriodFromDate;
-        var absoluteTimePeriodToDate;
-
-        /**
-         * Array of SSG Cluster entity object literals that have entities selected.
+         * Array of SSG Cluster IDs that have entities selected.
          * May be empty but never null.
          * @type array
          */
-        var ssgClustersWithSelectedEntities = [];
+        var ssgClusterIdsWithSelectedEntities = [];
 
         /**
-         * Set of SSG Cluster IDs in ssgClustersWithSelectedEntities.
-         * May be empty but never null.
-         * For fast lookup by testing ssgClusterIdsWithSelectedEntities[id] != undefined.
-         * @type object
-         */
-        var ssgClusterIdsWithSelectedEntities = {};
-
-        /**
-         * List of message context object literals.
+         * List of message context object literals that are available in the
+         * SSG Clusters with selected entities currently.
          * @type array
          */
         var availableMessageContext;
+
+        /**
+         * Serialize a date time value for sending to the server.
+         * @param {Date} d      a JavaScript Date object specifying the year, month and date
+         * @param {integer} h   the hour value (0-23)
+         */
+        function serializeDateTime(d, h) {
+            var DATE_FORMAT = 'yyyy/MM/dd';
+            return l7.Util.formatDate(d, DATE_FORMAT) + ' ' + l7.Util.formatInteger(h, 2) + ':00';
+        }
+
+        /**
+         * Deserialize a date time string received from the server.
+         * @param {string} s    date time string to parse
+         * @return {Date} a JavaScript Date object; null if error parsing
+         */
+        function deserializeDateTime(s) {
+            var RE = new RegExp('^ *([0-9]+)\/([0-9]+)\/([0-9]+) +([0-9]+):([0-9]+)');
+            var tc = s.match(RE);
+            if (tc == null) return null;
+            var millis = Date.parse(tc[1] + '/' + tc[2] + '/' + tc[3] + ' ' + tc[4] + ':' + tc[5]);
+            var result = new Date();
+            result.setTime(millis);
+            return result;
+        }
 
         /**
          * Verifies if relative time period input is valid.
@@ -213,7 +232,7 @@
         function validateGrouping(tr) {
             // Tests if SSG Cluster is still amongst the selected entities.
             var ssgClusterId = tr._ssgClusterDropDown.value;
-            var valid = l7.Util.findArrayElementsByProperty(ssgClustersWithSelectedEntities, 'id', ssgClusterId).length != 0;
+            var valid = l7.Util.arrayContains(ssgClusterIdsWithSelectedEntities, ssgClusterId);
             tr._ssgClusterWarningImg.title = valid ? null : localizedStrings.SSG_CLUSTER_NOT_APPLICABLE;
             tr._ssgClusterWarningImg.style.display = valid ? 'none' : '';
             return valid;
@@ -305,24 +324,21 @@
         }
 
         /**
-         * Updates ssgClustersWithSelectedEntities and ssgClusterIdsWithSelectedEntities.
+         * Updates ssgClusterIdsWithSelectedEntities.
          * Should be called upon change in selected entities.
          */
         function updateSsgClustersWithSelectedEntities() {
-            ssgClustersWithSelectedEntities = [];
-            ssgClusterIdsWithSelectedEntities = {};
+            ssgClusterIdsWithSelectedEntities.length = 0;
             for (var i = 0; i < entitySelectionTableBody.rows.length; ++i) {
-                var ssgCluster = entitySelectionTableBody.rows[i]._ssgCluster;
-                if (!l7.Util.arrayContains(ssgClustersWithSelectedEntities, ssgCluster)) {
-                    ssgClustersWithSelectedEntities.push(ssgCluster);
-                    ssgClusterIdsWithSelectedEntities[ssgCluster.id] = ssgCluster.id;
+                var ssgClusterId = entitySelectionTableBody.rows[i]._ssgClusterId;
+                if (!l7.Util.arrayContains(ssgClusterIdsWithSelectedEntities, ssgClusterId)) {
+                    ssgClusterIdsWithSelectedEntities.push(ssgClusterId);
                 }
             }
-
         }
 
         function updateAddGroupingButton() {
-            addGroupingButton.set('disabled', ssgClustersWithSelectedEntities.length == 0);
+            addGroupingButton.set('disabled', ssgClusterIdsWithSelectedEntities.length == 0);
         }
 
         /**
@@ -334,7 +350,7 @@
             for (var i = 0; i < dropDown.options.length; ++i) {
                 var option = dropDown.options[i];
                 var ssgClusterId = option.value;
-                option.disabled = ssgClusterIdsWithSelectedEntities[ssgClusterId] == undefined;
+                option.disabled = !l7.Util.arrayContains(ssgClusterIdsWithSelectedEntities, ssgClusterId);
             }
         }
 
@@ -441,7 +457,7 @@
             updateGenerateButton();
         }
 
-        function onChangeTimePeriodTimeZone() {
+        function onChangeTimePeriodTimeZone() { // TODO This is not necessary if all items in the drop down list are valid.
             updateSaveSettingsButton();
             updateSaveDefaultButton();
             updateGenerateButton();
@@ -470,7 +486,7 @@
                l7.Util.addClass(timeIntervalTextBox, 'invalid');
                 timeIntervalHint.innerHTML = '(' + localizedStrings.TIME_INTERVAL_HINT + ')';
             }
-            
+
             timeIntervalTextBox.disabled = !hasTimeIntervalRadioButton.checked;
             timeIntervalUnitDropDown.disabled = !hasTimeIntervalRadioButton.checked;
             updateSaveSettingsButton();
@@ -491,6 +507,140 @@
             updateGenerateButton();
         }
 
+        /**
+         * @param {string} type     a ReportType value
+         */
+        function setReportType(type) {
+            l7.Widget.selectDropDownByValue(reportTypeDropDown, type);
+            onChangeReportType();
+        }
+
+        /**
+         * Returns the entity selection type.
+         * @return {string} an l7.EntityTreeTable.ENTITY value
+         */
+        function getEntityType() {
+            var result;
+            if (publishedServiceRadioButton.checked) {
+                result = l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE;
+            } else if (operationRadioButton.checked) {
+                result = l7.EntityTreeTable.ENTITY.OPERATION;
+            } else {
+                YAHOO.log('Unexpected entity type selection.', 'error', 'StandardReports.html getEntityType');
+            }
+            return result;
+        }
+
+        /**
+         * Sets the entity selection type.
+         * @param {string} type     an l7.EntityTreeTable.ENTITY value
+         */
+        function setEntityType(type) {
+            if (type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                publishedServiceRadioButton.checked = true;
+            } else if (type == l7.EntityTreeTable.ENTITY.OPERATION) {
+                operationRadioButton.checked = true;
+            } else {
+                YAHOO.log('Unexpected entity type: ' + type, 'error', 'StandardReports.html setEntityType');
+            }
+
+            onChangeEntityType();
+        }
+
+        /**
+         * Tests if an SSG Cluster exists in the SSG Cluster selector.
+         * @param {string} id
+         * @return {boolean}
+         */
+        function isExistSSGCluster(id) {
+            var entity = ssgClusterSelectorWindow.getEntityTreeTable().getEntityById(id);
+            return entity && entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER;
+        }
+
+        /**
+         * Adds an selected entity.
+         * @param {string} ssgClusterId
+         * @param {string} ssgClusterName
+         * @param {array} ssgClusterAncestors
+         * @param {string} publishedServiceId
+         * @param {string} publishedServiceName
+         * @param {string} operation                applies only if the selected entity is an operation
+         */
+        function addEntity(ssgClusterId, ssgClusterName, ssgClusterAncestors, publishedServiceId, publishedServiceName, operation) {
+            // Skips this if already added.
+            var alreadyAdded = false;
+            var trs = entitySelectionTableBody.rows;
+            for (var j = 0; j < trs.length; ++j) {
+                var tr = trs[j];
+                if (tr._ssgClusterId == ssgClusterId &&
+                    tr._publishedServiceId == publishedServiceId &&
+                    tr._operation == operation) {
+                    alreadyAdded = true;
+                    break;
+                }
+            }
+            if (alreadyAdded) {
+                return;
+            }
+
+            tr = entitySelectionTableBody.insertRow(-1);
+            tr._ssgClusterId = ssgClusterId;   // Stash away for later retrieval.
+            var td;
+
+            // Delete button column.
+            var img = document.createElement('img');
+            img.src = '../images/delete.png';
+            img.className = 'clickable';
+            img.title = localizedStrings.REMOVE;
+            YAHOO.util.Event.addListener(img, 'click', onClickDeleteEntity, tr);
+            td = tr.insertCell(-1);
+            td.appendChild(img);
+
+            // SSG Cluster column.
+            td = tr.insertCell(-1);
+            if (ssgClusterAncestors != undefined) {
+                td.innerHTML = ssgClusterAncestors.join(' / ') + ' / ' + ssgClusterName;
+            } else {
+                td.innerHTML = ssgClusterName;
+            }
+
+            // Published Service column.
+            td = tr.insertCell(-1);
+            td.innerHTML = publishedServiceName;
+            tr._publishedServiceId = publishedServiceId;        // Stash away for later retrieval.
+            tr._publishedServiceName = publishedServiceName;    // Stash away for later retrieval.
+
+            // Operation column.
+            td = tr.insertCell(-1);
+            if (operation) {
+                td.innerHTML = operation;
+                tr._operation = operation;  // Stash away for later retrieval.
+            } else {
+                td.className = 'notApplicable';
+            }
+        }
+
+        /**
+         * Adds a number of selected entities.
+         * @param {array} entities      array of entity object literals
+         */
+        function addSelectedEntities(entities) {
+            for (var i = 0; i < entities.length; ++i) {
+                var entity = entities[i];
+                addEntity(entity.clusterId,
+                          entity.clusterName,
+                          entity.clusterAncestors,
+                          entity.publishedServiceId,
+                          entity.publishedServiceName,
+                          entity.operation);
+            }
+
+            onChangeSelectedEntities();
+        }
+
+        /**
+         * @return {string} a TimePeriodType value
+         */
         function getTimePeriodType() {
             var result;
             if (relativeTimePeriodRadioButton.checked) {
@@ -501,29 +651,170 @@
             return result;
         }
 
-        function setTimePeriodType(type) {
+        /**
+         * Sets the time period selection.
+         * @param {string} timeZone         a java.util.TimeZone long name time zone ID
+         * @param {string} type             a TimePeriodType value
+         * @param {string} relativeValue    applies if type == TimePeriodType.RELATIVE
+         * @param {string} relativeUnit     applies if type == TimePeriodType.RELATIVE
+         * @param {string} absoluteFrom     applies if type == TimePeriodType.ABSOLUTE
+         * @param {string} absoluteTo       applies if type == TimePeriodType.ABSOLUTE
+         */
+        function setTimePeriod(timeZone, type, relativeValue, relativeUnit, absoluteFrom, absoluteTo) {
+            l7.Widget.selectDropDownByValue(timePeriodTimeZoneDropDown, timeZone);
+
             if (type == TimePeriodType.RELATIVE) {
                 relativeTimePeriodRadioButton.checked = true;
+                relativeTimePeriodTextBox.value = relativeValue;
+                l7.Widget.selectDropDownByValue(relativeTimePeriodUnitDropDown, relativeUnit);
             } else if (type == TimePeriodType.ABSOLUTE) {
                 absoluteTimePeriodRadioButton.checked = true;
+                var from = deserializeDateTime(absoluteFrom);
+                absoluteTimePeriodFromDateTextBox.getCalendar().select(from);
+                l7.Widget.selectDropDownByValue(absoluteTimePeriodFromHourDropDown, from.getHours());
+                var to = deserializeDateTime(absoluteTo);
+                absoluteTimePeriodToDateTextBox.getCalendar().select(to);
+                l7.Widget.selectDropDownByValue(absoluteTimePeriodToHourDropDown, to.getHours());
+            } else {
+                YAHOO.log('Unexpected time period type: ' + type, 'error', 'StandardReports.html setTimePeriod');
             }
+
+            onChangeTimePeriodTimeZone();
+            onChangeTimePeriodType();
         }
 
         /**
-         * Populates the input fields given a settings.
+         * Sets the time interval.
+         * @param {boolean} hasTimeInterval
+         * @param {string} value                applies if hasTimeInterval == true
+         * @param {string} unit                 applies if hasTimeInterval == true
+         */
+        function setTimeInterval(hasTimeInterval, value, unit) {
+            if (hasTimeInterval) {
+                hasTimeIntervalRadioButton.checked = true;
+                timeIntervalTextBox.value = value;
+                l7.Widget.selectDropDownByValue(timeIntervalUnitDropDown, unit);
+            } else {
+                noTimeIntervalRadioButton.checked = true;
+            }
+
+            onChangeTimeInterval();
+        }
+
+        /**
+         * Determines if a message context key exists in an SSG Cluster.
+         * @param {string} ssgClusterId     SSG Cluster ID
+         * @param {string} key              the message context key
+         * @return {boolean}
+         */
+        function isExistMessageContextKey(ssgClusterId, key) {
+            for (var i = 0; i < availableMessageContext.length; ++i) {
+                var messageContext = availableMessageContext[i];
+                if (messageContext.id == ssgClusterId) {
+                    for (var j = 0; j < messageContext.standard.length; ++j) {
+                        if (key == messageContext.standard[j]) {
+                            return true;
+                        }
+                    }
+                    for (j = 0; j < messageContext.custom.length; ++j) {
+                        if (key == messageContext.custom[j]) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Adds a grouping programmatically; intended for use when loading a saved settings.
+         * @param {string} ssgClusterId
+         * @param {string} messageContextKey
+         * @param {string} constraint
+         * @return {null|string} null if successful; a localized message if error
+         */
+        function addGrouping(ssgClusterId, ssgClusterName, ssgClusterAncestors, messageContextKey, constraint) {
+            var ssgClusterPath = ssgClusterAncestors.join(' / ') + ' / ' + ssgClusterName;
+            if (!isExistSSGCluster(ssgClusterId)) {
+                return l7.Util.formatMessage(localizedStrings.SSG_CLUSTER_NOT_EXIST, ssgClusterPath);
+            }
+            if (!isExistMessageContextKey(ssgClusterId, messageContextKey)) {
+                return l7.Util.formatMessage(localizedStrings.MESSAGE_CONTEXT_KEY_NOT_EXIST, messageContextKey, ssgClusterPath);
+            }
+            var tr = onClickAddGrouping();
+            l7.Widget.selectDropDownByValue(tr._ssgClusterDropDown, ssgClusterId);
+            populateGroupingMessageContextDropDown(tr._messageContextDropDown, ssgClusterId);
+            l7.Widget.selectDropDownByValue(tr._messageContextDropDown, messageContextKey);
+            tr._constraintTextBox.value = constraint;
+            return null;
+        }
+
+        /**
+         * Adds a number of groupings.
+         * @param {array} groupings
+         */
+        function addGroupings(groupings) {
+            var errMsgs = [];
+            for (var i = 0; i < groupings.length; ++i) {
+                var grouping = groupings[i];
+                var errMsg = addGrouping(grouping.clusterId,
+                                         grouping.clusterName,
+                                         grouping.clusterAncestors,
+                                         grouping.messageContextKey,
+                                         grouping.constraint);
+                if (errMsg != null) {
+                    errMsgs.push(errMsg);
+                }
+            }
+
+            if (errMsgs.length > 0) {
+                var bodyHtml = '<div style="max-width: 600px;">' + l7.Util.escapeAsText(localizedStrings.INVALID_GROUPINGS_REMOVED) + '<ul style="margin-left: 1.5em;">';
+                for (var j = 0; j < errMsgs.length; ++j) {
+                    bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeAsText(errMsgs[j]) + '</li>';
+                }
+                bodyHtml += '</ul></div>';
+                l7.Dialog.showErrorDialog(localizedStrings.WARNING, bodyHtml, localizedStrings.OK);
+            }
+
+            onChangeGroupings();
+        }
+
+        /**
+         * Sets the output report name.
+         * @param {string} name
+         */
+        function setReportName(name) {
+            reportNameTextBox.value = name;
+            onChangeReportName();
+        }
+
+        /**
+         * Populates the input fields given a settings object.
          * @param {object} settings     object literal for a settings; see http://sarek/mediawiki/index.php?title=Standard_Reports_Design#Generate_Report_.28browser_.26rarr.3B_server.29 for object structure
          */
         function setFieldsFromSettings(settings) {
-            setReportType(settings.type);
-            // TODO
+            setReportType(settings.reportType);
+            setEntityType(settings.entityType);
+            addSelectedEntities(settings.entities);
+            setTimePeriod(settings.timePeriod.timeZone,
+                          settings.timePeriod.type,
+                          settings.timePeriod.numberOfTimeUnits,
+                          settings.timePeriod.unitOfTime,
+                          settings.timePeriod.start,
+                          settings.timePeriod.end);
+            setTimeInterval(settings.timeInterval,
+                            settings.timeInterval ? settings.timeInterval.value : null,
+                            settings.timeInterval ? settings.timeInterval.unit : null);
+            addGroupings(settings.groupings);
+            summaryChartCheckBox.checked = settings.summaryChart;
+            setReportName(settings.reportName);
         }
 
         /**
-         * Returns a settings from the input fields.
+         * Returns a settings object from the input fields.
          * @return {object} object literal for a settings; see http://sarek/mediawiki/index.php?title=Standard_Reports_Design#Generate_Report_.28browser_.26rarr.3B_server.29 for object structure
          */
         function getSettingsFromFields() {
-            // TODO Encapsulate into a Settings class?
             var settings = {};
             settings.reportType = reportTypeDropDown.value;
             settings.entityType = getEntityType();
@@ -531,9 +822,9 @@
             for (var i = 0; i < entitySelectionTableBody.rows.length; ++i) {
                 var tr = entitySelectionTableBody.rows[i];
                 var entity = {};
-                entity.clusterId = tr._ssgCluster.id;
-                entity.publishedServiceId = tr._publishedService.id;
-                entity.publishedServiceName = tr._publishedService.name;
+                entity.clusterId = tr._ssgClusterId;
+                entity.publishedServiceId = tr._publishedServiceId;
+                entity.publishedServiceName = tr._publishedServiceName;
                 if (settings.entityType == 'operation') {
                     entity.operation = tr._operation;
                 } else {
@@ -551,11 +842,11 @@
                 var fromDate = new Date();
                 fromDate.setTime(Date.parse(absoluteTimePeriodFromDate));
                 var fromHour = absoluteTimePeriodFromHourDropDown.value;
-                settings.timePeriod.start = l7.Util.formatDate(fromDate, 'yyyy/MM/dd') + ' ' + l7.Util.formatInteger(fromHour, 2) + ':00';
+                settings.timePeriod.start = serializeDateTime(fromDate, fromHour);
                 var toDate = new Date();
                 toDate.setTime(Date.parse(absoluteTimePeriodToDate));
                 var toHour = absoluteTimePeriodToHourDropDown.value;
-                settings.timePeriod.end = l7.Util.formatDate(toDate, 'yyyy/MM/dd') + ' ' + l7.Util.formatInteger(toHour, 2) + ':00';
+                settings.timePeriod.end = serializeDateTime(toDate, toHour);
             }
             if (noTimeIntervalRadioButton.checked) {
                 settings.timeInterval = null;
@@ -579,59 +870,41 @@
             return settings;
         }
 
-        function loadSavedSettingsDropDown() {
+        /**
+         * Populates the saved settings drop down list by downloading from server.
+         * Note: This is asynchronous.
+         */
+        function populateSettingsListDropDown() {
+            while (settingsListDropDown.length > 0) {
+                settingsListDropDown.remove(0);
+            }
             var callback = {
                 success : function(o) {
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS) + '</p>',
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
-                        savedSettings = result;
-                        while (savedSettingsDropDown.length > 0) {
-                            savedSettingsDropDown.remove(0);
-                        }
                         for (var i = 0; i < result.length; ++i) {
                             var option = document.createElement('option');
-                            option.value = savedSettings[i].id
-                            option.innerHTML = savedSettings[i].name;
-                            savedSettingsDropDown.appendChild(option); // Note: HTMLSelectElement.add(option, null) doesn't work in IE7.
+                            option.value = result[i].id
+                            option.innerHTML = result[i].name;
+                            settingsListDropDown.appendChild(option); // Note: HTMLSelectElement.add(option, null) doesn't work in IE7.
                         }
-                        loadSettingsButton.set('disabled', savedSettingsDropDown.length == 0);
+                        loadSettingsButton.set('disabled', settingsListDropDown.length == 0);
+                        deleteSettingsButton.set('disabled', settingsListDropDown.length == 0);
                     }
                 },
                 failure : function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS + o.statusText, localizedStrings.OK);
+                    loadSettingsButton.set('disabled', settingsListDropDown.length == 0);
+                    deleteSettingsButton.set('disabled', settingsListDropDown.length == 0);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST + o.statusText + ' (' + o.status + ')', localizedStrings.OK);
                 }
             };
-            var url = 'dataSource/standardReport/savedSettings.json';
-            YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
-        }
-
-        /**
-         * @param {string} type     a ReportType value
-         */
-        function setReportType(type) {
-            for (var i = 0; i < reportTypeDropDown.options.length; ++i) {
-                if (reportTypeDropDown.options[i].value == type) {
-                    reportTypeDropDown.selectedIndex = i;
-                }
-            }
-            onChangeReportType();
-        }
-
-        function getEntityType() {
-            var result;
-            if (publishedServiceRadioButton.checked) {
-                result = l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE;
-            } else if (operationRadioButton.checked) {
-                result = l7.EntityTreeTable.ENTITY.OPERATION;
-            } else {
-                YAHOO.log('Unexpected entity type selection.', 'error', 'StandardReports.html showSsgClusterContent')
-            }
-            return result;
+            var getSettingsListUrl = document.forms['getSettingsListForm'].action;
+            YAHOO.util.Connect.asyncRequest('GET', getSettingsListUrl, callback, null);
         }
 
         function refreshSsgClusterSelector() {
@@ -660,34 +933,36 @@
 
         /**
          * Downloads the list of message context applicable to the SSG Clusters with selected entities.
+         * Note: This is synchronous.
          */
         function loadAvailableMessageContext() {
-            var callback = {
-                success : function(o) {
-                    var result = l7.Dialog.parseJSON(
-                            o.responseText,
-                            localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST) + '</p>',
-                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                            localizedStrings.OK);
-                    if (!l7.Util.isException(result)) {
-                        availableMessageContext = result;
-                    }
-                },
-                failure : function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST + o.statusText, localizedStrings.OK);
-                }
-            };
             var postData = '';
-            for (var i = 0; i < ssgClustersWithSelectedEntities.length; ++i) {
+            for (var i = 0; i < ssgClusterIdsWithSelectedEntities.length; ++i) {
                 if (i != 0) postData += '&';
-                postData += 'clusterGuid=' + encodeURIComponent(ssgClustersWithSelectedEntities[i].id);
+                postData += 'clusterGuid=' + encodeURIComponent(ssgClusterIdsWithSelectedEntities[i]);
             }
-            var url = jsonMappingUrl;
-            YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
+            var xhr = l7.Connection.syncRequest('POST', jsonMappingUrl, postData, false);
+            if (xhr.status == 200) {
+                var result = l7.Dialog.parseJSON(
+                        xhr.responseText,
+                        localizedStrings.ERROR,
+                        '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST) + '</p>',
+                        localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                        localizedStrings.OK);
+                if (!l7.Util.isException(result) && result instanceof Array) {
+                    availableMessageContext = result;
+                }
+            } else {
+                l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST + xhr.statusText + ' (' + xhr.status + ')', localizedStrings.OK);
+            }
         }
 
         /**
+         * Populates/Repopulates a drop down list for selecting an SSG Cluster for grouping.
+         * All SSG Clusters found in the SSG Cluster Selector will be listed but only those
+         * with selected entities will be enabled.
+         * If populating a previously empty drop down list, the first enabled SSG Cluster
+         * OPTION will be selected. Otherwise, the previous selection will be restored.
          * @param {HTMLSelectElement} dropDown      the drop down list to populate
          */
         function populateGroupingSsgClusterDropDown(dropDown) {
@@ -704,26 +979,30 @@
 
             // Populates the drop down list with each available SSG Cluster.
             var entities = ssgClusterSelectorWindow.getEntityTreeTable().getEntities();
-            if ( entities ) {
+            if (entities) {
                 for (var i = 0; i < entities.length; ++i) {
                     var entity = entities[i];
                     if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
                         var option = document.createElement('option');
                         option.value = entity.id;
-                        if ( entity.ancestors ) {
+                        if (entity.ancestors) {
                             option.innerHTML = entity.ancestors.join(' / ') + ' / ' +  entity.name;
                         } else {
                             option.innerHTML = entity.name;
                         }
-                        option.disabled = ssgClusterIdsWithSelectedEntities[option.value] == undefined;
+                        option.disabled = !l7.Util.arrayContains(ssgClusterIdsWithSelectedEntities, option.value);
                         dropDown.appendChild(option);
-                        if (option.value == prevValue) {
-                            dropDown.selectedIndex = option.index; // Restores previously selected SSG Cluster.
-                        }
-                        // The disabled attribute does not work properly in IE7. We have to
-                        // manually set default selection to the first enabled OPTION.
-                        if (prevValue == null) {
-                            if (ssgClusterIdsWithSelectedEntities[dropDown.value] == undefined) {
+                        if (prevValue) {
+                            // Restores previously selected SSG Cluster.
+                            if (option.value == prevValue) {
+                                dropDown.selectedIndex = option.index;
+                            }
+                        } else {
+                            // No SSG Cluster selected previously.
+                            // Because the disabled attribute does not work in IE7. We have to
+                            // manually set default selection to the first enabled OPTION.
+                            if ((dropDown.selectedIndex == -1 || dropDown.options[dropDown.selectedIndex].disabled)
+                                && !option.disabled) {
                                 dropDown.selectedIndex = option.index;
                             }
                         }
@@ -733,6 +1012,7 @@
         }
 
         /**
+         * Populates/Repopulates a drop down list for selecting an message context key for grouping.
          * @param {HTMLSelectElement} dropDown      the drop down list to populate
          * @param {string} ssgClusterId
          */
@@ -770,20 +1050,66 @@
             }
         }
 
-        function onClickLoadSettings() {
-            setFieldsFromSettings(savedSettings[savedSettingsDropDown.selectedIndex]);
+        function loadOutputTableBody() {
             // TODO
-            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
+        }
+
+        /**
+         * Note: This uses an asynchronous call.
+         */
+        function onClickLoadSettings() {
+            var settingsName = settingsListDropDown.options[settingsListDropDown.selectedIndex].text;
+            var settingsId = settingsListDropDown.value;
+            var callback = {
+                success : function(o) {
+                    l7.Dialog.hideWaitDialog();
+                    var result = l7.Dialog.parseJSON(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName),
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (!l7.Util.isException(result)) {
+                        if (result.warning) {
+                            var bodyHtml = '<div style="max-width: 600px;">' + result.warning;
+                            if (result.warningItems && result.warningItems instanceof Array && result.warningItems.length > 0) {
+                                bodyHtml += '<ul style="margin-left: 1.5em;">'
+                                for (var i = 0; i < result.warningItems.length; ++i) {
+                                    var warningItem = result.warningItems[i];
+                                    bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeAsText(warningItem) + '</li>';
+                                }
+                                bodyHtml += '</ul>';
+                            }
+                            bodyHtml += '</div>';
+                            l7.Dialog.showErrorDialog(localizedStrings.WARNING, bodyHtml, localizedStrings.OK);
+                        }
+                        setFieldsFromSettings(result);
+                        document.getElementById('saveSettingsDialog_name').value = settingsName;
+                    }
+                },
+                failure : function(o) {
+                    l7.Dialog.hideWaitDialog();
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName) + o.statusText + ' (' + o.status + ')', localizedStrings.OK);
+                }
+            };
+            var getSettingsUrl = document.forms['getSettingsForm'].action;
+            var postData = 'id=' + encodeURIComponent(settingsId);
+            l7.Dialog.showWaitDialog(l7.Util.formatMessage(localizedStrings.LOADING_SAVED_SETTINGS, settingsName));
+            YAHOO.util.Connect.asyncRequest('POST', getSettingsUrl, callback, postData);
         }
 
         function onClickSaveSettings() {
-            // TODO
-            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
+            validateSaveSettingsDialog();
+            saveSettingsDialog.center();
+            saveSettingsDialog.show();
         }
 
-        function onClickManageSettings() {
-            // TODO
-            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
+        function onClickDeleteSettings() {
+            var selected = settingsListDropDown.options[settingsListDropDown.selectedIndex];
+            document.getElementById('deleteSettingsDialog_id').value = selected.value;
+            document.getElementById('deleteSettingsDialog_name').innerHTML = l7.Util.escapeAsText(selected.text);
+            deleteSettingsDialog.center();
+            deleteSettingsDialog.show();
         }
 
         function onClickSaveDefault() {
@@ -812,59 +1138,8 @@
                     operation = entity.name;
                 }
 
-                // Skips this if already added.
-                var alreadyAdded = false;
-                var trs = entitySelectionTableBody.rows;
-                for (var j = 0; j < trs.length; ++j) {
-                    var tr = trs[j];
-                    if (tr._ssgCluster.id == ssgCluster.id &&
-                        tr._publishedService.id == publishedService.id &&
-                        tr._operation == operation) {
-                        alreadyAdded = true;
-                        break;
-                    }
-                }
-                if (alreadyAdded) {
-                    continue;
-                }
-
-                tr = entitySelectionTableBody.insertRow(-1);
-                tr._ssgCluster = ssgCluster;    // Stash away for later retrieval.
-                tr._entity = entity;
-                var td;
-
-                // Delete button column.
-                var img = document.createElement('img');
-                img.src = '../images/delete.png';
-                img.className = 'clickable';
-                img.title = localizedStrings.REMOVE;
-                YAHOO.util.Event.addListener(img, 'click', onClickDeleteEntity, tr);
-                td = tr.insertCell(-1);
-                td.appendChild(img);
-
-                // SSG Cluster column.
-                td = tr.insertCell(-1);
-                if (ssgCluster.ancestors != undefined) {
-                    td.innerHTML = ssgCluster.ancestors.join(' / ') + ' / ' + ssgCluster.name;
-                } else {
-                    td.innerHTML = ssgCluster.name;
-                }
-
-                // Published Service column.
-                td = tr.insertCell(-1);
-                td.innerHTML = publishedService.name;
-                tr._publishedService = publishedService;    // Stash away for later retrieval.
-
-                // Operation column.
-                td = tr.insertCell(-1);
-                if (operation) {
-                    td.innerHTML = operation;
-                    tr._operation = operation;              // Stash away for later retrieval.
-                } else {
-                    td.className = 'notApplicable';
-                }
+                addEntity(ssgCluster.id, ssgCluster.name, ssgCluster.ancestors, publishedService.id, publishedService.name, operation);
             }
-
             onChangeSelectedEntities();
         }
 
@@ -873,6 +1148,9 @@
             onChangeSelectedEntities();
         }
 
+        /**
+         * @return {HTMLTableRowElement} the newly created TR element
+         */
         function onClickAddGrouping() {
             var tr = groupingTableBody.insertRow(-1);
             var td;
@@ -945,6 +1223,8 @@
             tr._constraintTextBox = constraintTextBox;
 
             onChangeGroupings();
+
+            return tr;
         }
 
         function onClickDeleteGrouping(event, tr) {
@@ -972,13 +1252,12 @@
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_SUBMIT_GENERATE_REPORT + o.statusText, localizedStrings.OK);
                 }
             };
-            var url = generateReportUrl;
             var settings = getSettingsFromFields();
             var postData = YAHOO.lang.JSON.stringify(settings);
             l7.Dialog.showWaitDialog(localizedStrings.SUBMITTING_GENERATE_REPORT + '...');
             YAHOO.util.Connect.setDefaultPostHeader(false);
             YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');
-            YAHOO.util.Connect.asyncRequest('POST', url, callback, postData);
+            YAHOO.util.Connect.asyncRequest('POST', generateReportUrl, callback, postData);
             YAHOO.util.Connect.setDefaultPostHeader(true);
         }
 
@@ -992,6 +1271,50 @@
             l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
         }
 
+        /**
+         * Verifies if all inputs in the save settings dialog are valid.
+         * @return {boolean} true if valid
+         */
+        function validateSaveSettingsDialog() {
+            var name = document.getElementById('saveSettingsDialog_name').value;
+            var valid = name.length > 0;
+            var okButton = saveSettingsDialog.getButtons()[0];
+            okButton.set('disabled', !valid);
+            return valid;
+        }
+
+        /**
+         * Note: This uses an asynchronous call.
+         * @param {string} name     settings name to save as
+         */
+        function saveSettings(name) {
+            var callback = {
+                success : function(o) {
+                    var result = l7.Dialog.parseJSON(
+                            o.responseText,
+                            localizedStrings.ERROR,
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_SAVE_SETTINGS) + '</p>',
+                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                            localizedStrings.OK);
+                    if (!l7.Util.isException(result)) {
+                        // No return object expected.
+                        l7.Dialog.showInfoDialog(localizedStrings.SETTINGS_SAVED_TITLE, localizedStrings.SETTINGS_SAVED, localizedStrings.OK);
+                        populateSettingsListDropDown();    // Refreshes to show added settings.
+                    }
+                },
+                failure : function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_SAVE_SETTINGS + o.statusText, localizedStrings.OK);
+                }
+            };
+            var settings = getSettingsFromFields();
+            settings.name = name;   // Add settings name to request payload object.
+            var postData = YAHOO.lang.JSON.stringify(settings);
+            YAHOO.util.Connect.setDefaultPostHeader(false);
+            YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');
+            YAHOO.util.Connect.asyncRequest('POST', saveSettingsUrl, callback, postData);
+            YAHOO.util.Connect.setDefaultPostHeader(true);  // Revert to default for next caller.
+        }
+
         function initButtons() {
             loadSettingsButton = new YAHOO.widget.Button('loadSettingsButton', {
                 onclick : {fn : onClickLoadSettings},
@@ -1001,8 +1324,8 @@
                 onclick : {fn : onClickSaveSettings},
                 type : 'push'
             });
-            manageSettingsButton = new YAHOO.widget.Button('manageSettingsButton', {
-                onclick : {fn : onClickManageSettings},
+            deleteSettingsButton = new YAHOO.widget.Button('deleteSettingsButton', {
+                onclick : {fn : onClickDeleteSettings},
                 type : 'push'
             });
             saveDefaultButton = new YAHOO.widget.Button('saveDefaultButton', {
@@ -1032,8 +1355,86 @@
             });
         }
 
+        function initSaveSettingsDialog() {
+            saveSettingsDialog = new YAHOO.widget.Dialog('saveSettingsDialog', {
+                buttons     : [
+                    {
+                        text      : localizedStrings.OK,
+                        handler   : function() {
+                            this.hide();
+                            var settingsName = document.getElementById('saveSettingsDialog_name').value;
+                            saveSettings(settingsName);
+                        },
+                        isDefault : true
+                    },
+                    {
+                        text      : localizedStrings.CANCEL,
+                        handler   : function() {
+                            this.hide();
+                        }
+                    }
+                ],
+                close       : true,
+                draggable   : true,
+                icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                modal       : true,
+                postmethod  : 'manual', // Because of JSON data instead of FORM data format.
+                visible     : false
+            });
+            saveSettingsDialog.manualSubmitEvent.subscribe(function() {
+                if (validateSaveSettingsDialog()) {
+                    var settingsName = document.getElementById('saveSettingsDialog_name').value;
+                    saveSettings(settingsName);
+                } // else treat as cancel
+            }); // To handle ENTER key press.
+            saveSettingsDialog.render();
+        }
+
+        function initDeleteSettingsDialog() {
+            deleteSettingsDialog = new YAHOO.widget.Dialog('deleteSettingsDialog', {
+                buttons     : [
+                    {
+                        text      : localizedStrings.OK,
+                        handler   : function() {
+                            this.submit();
+                        },
+                        isDefault : true
+                    },
+                    {
+                        text      : localizedStrings.CANCEL,
+                        handler   : function() {
+                            this.hide();
+                        }
+                    }
+                ],
+                close       : true,
+                draggable   : true,
+                icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                modal       : true,
+                postmethod  : 'async',
+                visible     : false
+            });
+            deleteSettingsDialog.render();
+            deleteSettingsDialog.callback.success = function(o) {
+                var result = l7.Dialog.parseJSON(
+                        o.responseText,
+                        localizedStrings.ERROR,
+                        '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_SETTINGS) + '</p>',
+                        localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                        localizedStrings.OK);
+                if (!l7.Util.isException(result)) {
+                    // No return object expected.
+                    populateSettingsListDropDown();    // Refreshes to show deleted settings.
+                }
+            }
+            deleteSettingsDialog.callback.failure = function(o) {
+                l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SETTINGS + o.statusText, localizedStrings.OK);
+            }
+        }
+
         function initDialogs() {
-            // No custom dialog yet.
+            initSaveSettingsDialog();
+            initDeleteSettingsDialog();
         }
 
         function initSsgClusterSelector(iframe) {
@@ -1063,7 +1464,7 @@
             timeIntervalUnitDropDown   = document.getElementById('timeIntervalUnitDropDown');
             timeIntervalHint           = document.getElementById('timeIntervalHint');
 
-            savedSettingsDropDown           = document.getElementById('savedSettingsDropDown');
+            settingsListDropDown            = document.getElementById('settingsListDropDown');
             reportTypeDropDown              = document.getElementById('reportTypeDropDown');
             publishedServiceRadioButton     = document.getElementById('publishedServiceRadioButton');
             operationRadioButton            = document.getElementById('operationRadioButton');
@@ -1081,7 +1482,7 @@
             l7.Widget.initHourlyDropDown(absoluteTimePeriodToHourDropDown);
             initButtons();
             initDialogs();
-            // loadSavedSettingsDropDown(); TODO uncomment this when saved settings is implemented
+            populateSettingsListDropDown();
 
             onChangeTimePeriodType();
             onChangeTimeInterval();
@@ -1191,19 +1592,18 @@
                 <div class="panel">
                     <div class="panelTitle tippy"><img id="newReportTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'newReportDiv')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('newReportTippy', 'newReportDiv')">Generate New Report</span></div>
                     <div id="newReportDiv">
-                        <!-- TODO remove "display: none" when saved settings is implemented  -->
-                        <div class="panelToolbar" style="display: none;">
+                        <div class="panelToolbar">
                             <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
                                 <tr>
-                                    <td class="middle"><button id="loadSettingsButton" title="Load a previously saved settings">Load Settings:</button></td>
+                                    <td class="middle"><button id="loadSettingsButton" title="Load selected settings">Load Settings:</button></td>
                                     <td class="middle">
-                                        <select id="savedSettingsDropDown">
-                                            <option></option>  <!-- Workaround for IE7 bug: Weird overlap without this. --> 
+                                        <select id="settingsListDropDown">
+                                            <option></option> <!-- Workaround for IE7 bug: Weird overlap without this. -->
                                         </select>
                                     </td>
-                                    <td class="middle"><img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of saved settings" alt="Refresh" onclick="loadSavedSettingsDropDown();" /></td>
-                                    <td class="middle"><button id="saveSettingsButton" title="Save as a named setttings">Save Settings ...</button></td>
-                                    <td class="middle"><button id="manageSettingsButton" title="Save as a named setttings">Manage Settings ...</button></td>
+                                    <td class="middle"><img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of saved settings" alt="Refresh" onclick="populateSettingsListDropDown();" /></td>
+                                    <td class="middle"><button id="deleteSettingsButton" title="Delete selected setttings">Delete</button></td>
+                                    <td class="middle"><button id="saveSettingsButton" title="Save as a named setttings">Save Settings As ...</button></td>
                                 </tr>
                             </table>
                         </div>
@@ -1401,7 +1801,7 @@
                                 </tr>
                                 <tr>
                                     <th>Report Name:</th>
-                                    <td><input id="reportNameTextBox" type="text" size="64" maxlength="128" onkeyup="onChangeReportName();"/></td>
+                                    <td><input id="reportNameTextBox" type="text" maxlength="128" style="width: 97%;" onkeyup="onChangeReportName();"/></td>
                                 </tr>
                             </table>
                             </form>                    
@@ -1441,6 +1841,41 @@
                 <div wicket:id="jsonMappings"/>
                 <div wicket:id="postReportParameters">
                     
+                </div>
+
+                <div style="display: none;">
+                    <form name="getSettingsListForm" action="TODO_ToBeGeneratedByWicket" method="POST">
+                    </form>
+                </div>
+
+                <div style="display: none;">
+                    <form name="getSettingsForm" action="TODO_ToBeGeneratedByWicket" method="POST">
+                        <input id="getSettingsForm_id" type="hidden"/>
+                    </form>
+                </div>
+
+                <div id="saveSettingsDialog">
+                    <div class="hd">Save Settings As</div>
+                    <div class="bd">
+                        <form> <!-- No action because this is used merely to focus input and handle ENTER key press. -->
+                            <table class="spaced">
+                                <tr>
+                                    <th>Settings Name:</th>
+                                    <td><input type="text" id="saveSettingsDialog_name" name="name" size="40" maxlength="128" onkeyup="validateSaveSettingsDialog();" /></td>
+                                </tr>
+                            </table>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="deleteSettingsDialog">
+                    <div class="hd">Delete Settings</div>
+                    <div class="bd">
+                        <form action="action/standardReport/deleteSettings" method="POST">
+                            <input id="deleteSettingsDialog_id" type="hidden" name="id" />
+                            Delete the setting &ldquo;<span id="deleteSettingsDialog_name"></span>&rdquo;?
+                        </form>
+                    </div>
                 </div>
                 </wicket:extend>
 
