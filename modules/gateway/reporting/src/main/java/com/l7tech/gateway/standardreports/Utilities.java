@@ -2154,6 +2154,9 @@ END AS MAPPING_VALUE_2
         if(serviceName.equals("")) throw new IllegalArgumentException("serviceName must not be the emtpy string");
         
         String serviceNameDisplay = TextUtils.truncStringMiddleExact(serviceName, 20);
+
+        if(serviceRoutingURI == null || serviceRoutingURI.equals("")) return "<font size=\"1\">"+serviceNameDisplay +"</font>";
+
         String displayRoutingURI = TextUtils.truncStringMiddleExact(serviceRoutingURI, 20);
 
         return "<font size=\"1\">"+serviceNameDisplay +"<br>" + "[" + displayRoutingURI+"]"+"</font>";
