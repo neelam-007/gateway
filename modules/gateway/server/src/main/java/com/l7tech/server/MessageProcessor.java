@@ -66,7 +66,9 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.TimerTask;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -92,6 +94,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private SoapFaultManager soapFaultManager;
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicLong signedAttachmentMaxSize = new AtomicLong();
+    private final AtomicBoolean xmlServiceSecurityProcessingEnabled = new AtomicBoolean(true);
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -152,6 +155,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         MimeBody.setFirstPartXmlMaxBytes(maxBytes);
 
         signedAttachmentMaxSize.set(serverConfig.getLongPropertyCached(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1));
+        xmlServiceSecurityProcessingEnabled.set(serverConfig.getBooleanProperty("wssForXmlService", true));
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
@@ -192,7 +196,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         try {
             final AssertionStatus[] securityProcessingAssertionStatus = { null };
             final IOException[] securityProcessingIOException = { null };
-            ServiceCache.ResolutionListener securityProcessingResolutionListener =
+            final ServiceCache.ResolutionListener securityProcessingResolutionListener =
                     new SecurityProcessingResolutionListener(context, wssOutput, securityProcessingAssertionStatus, securityProcessingIOException);
 
             // Policy Verification Step
@@ -295,6 +299,24 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 return AssertionStatus.BAD_REQUEST;
             }
 
+            // Ensure security process is run for SOAP services (and XML if enabled)
+            if ( request.getSecurityKnob().getProcessorResult() == null &&
+                 (service.isSoap() || xmlServiceSecurityProcessingEnabled.get())) {
+                Set<PolicyMetadata> metadatas = Collections.singleton(serverPolicy.getPolicyMetadata());
+                if (!securityProcessingResolutionListener.notifyPreParseServices( request, metadatas ) ) {
+                    if ( securityProcessingIOException[0] != null ) {
+                        throw securityProcessingIOException[0];
+                    } else {
+                        status = securityProcessingAssertionStatus[0];
+                        return securityProcessingAssertionStatus[0];
+                    }
+                }
+
+                // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
+                XmlKnob xk = (XmlKnob) request.getKnob(XmlKnob.class);
+                if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
+            }
+
             // Run the policy
             auditor.logAndAudit(MessageProcessingMessages.RUNNING_POLICY);
             stats = serviceCache.getServiceStatistics(service.getOid());
@@ -390,20 +412,18 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             return status;
 
-        //TODO why do these audits pass params to a message that does not accept them?
-        //     should this be EXCEPTION_SEVERE_WITH_MORE_INFO?
         } catch (PublishedService.ServiceException se) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{se.getMessage()}, se);
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(se)}, se);
             context.setPolicyResult(AssertionStatus.SERVER_ERROR);
             status = AssertionStatus.SERVER_ERROR;
             return AssertionStatus.SERVER_ERROR;
         } catch (ServiceResolutionException sre) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{sre.getMessage()}, sre);
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(sre)}, sre);
             context.setPolicyResult(AssertionStatus.SERVER_ERROR);
             status = AssertionStatus.SERVER_ERROR;
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{e.getMessage()}, e);
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(e)}, e);
             context.setPolicyResult(AssertionStatus.SERVER_ERROR);
             status = AssertionStatus.SERVER_ERROR;
             return AssertionStatus.SERVER_ERROR;
@@ -569,6 +589,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private Auditor auditor;
     final Logger logger = Logger.getLogger(getClass().getName());
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         this.auditor = new Auditor(this, getApplicationContext(), logger);
     }
@@ -617,6 +638,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             this.ioExceptionHolder = ioException;
         }
 
+        @Override
         public boolean notifyPreParseServices(Message message, Set<PolicyMetadata> policyMetadataSet) {
             boolean isSoap = false;
             boolean hasSecurity = false;
@@ -647,7 +669,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 ioExceptionHolder[0] = ioe;
                 return false;
             }
-
 
             if (isSoap && hasSecurity) {
                 WssProcessorImpl trogdor = new WssProcessorImpl(); // no need for locator

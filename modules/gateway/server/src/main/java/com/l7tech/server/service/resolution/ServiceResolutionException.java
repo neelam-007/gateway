@@ -11,9 +11,6 @@ package com.l7tech.server.service.resolution;
  * @version $Revision$
  */
 public class ServiceResolutionException extends Exception {
-    public ServiceResolutionException() {
-        super();
-    }
 
     public ServiceResolutionException( String message ) {
         super( message );

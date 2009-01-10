@@ -364,7 +364,22 @@ public class ServiceCache
         }
     }
 
+    /**
+     * Listener interface that can be implemented by clients of the service
+     * cache if pre-processing is required before use of the body of a message.
+     *
+     * <p>Note that if the message body is not required during service resolution
+     * then this listener may not be called.</p>
+     */
     public static interface ResolutionListener {
+
+        /**
+         * Notification that the contents of the given message are about to be used.
+         *
+         * @param message The message being used for resolution.
+         * @param serviceSet The metadata for all candidate services.
+         * @return true if service resolution should be continued
+         */
         boolean notifyPreParseServices(Message message, Set<PolicyMetadata> serviceSet);
     }
 
@@ -457,17 +472,15 @@ public class ServiceCache
             return null;
         } else if (serviceSet.size() == 1) {
             Set<PolicyMetadata> metadatas = getPolicyMetadata(serviceSet);
+            PublishedService service = serviceSet.iterator().next();
+
+            if (!service.isSoap() || service.isLaxResolution()) {
+                return service;
+            }
+
             if (rl != null && !notified) {
                 if (!rl.notifyPreParseServices(req, metadatas))
                     return null;
-            }
-
-            PublishedService service = serviceSet.iterator().next();
-            XmlKnob xk = (XmlKnob) req.getKnob(XmlKnob.class);
-
-            if (!service.isSoap() || service.isLaxResolution()) {
-                if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
-                return service;
             }
 
             // If this service is set to strict mode, validate that the message is soap, and that it matches an
@@ -477,6 +490,7 @@ public class ServiceCache
                 return null;
             } else {
                 // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
+                XmlKnob xk = (XmlKnob) req.getKnob(XmlKnob.class);
                 if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
                 Result services = soapOperationResolver.resolve(req, serviceSet);
                 if (services.getMatches().isEmpty()) {
