@@ -35,6 +35,7 @@
         <property name="routingUri" column="routing_uri" type="string"/>
         <property name="httpMethods" column="http_methods" type="http_methods_type"/>
         <property name="laxResolution" column="lax_resolution" type="boolean"/>
+        <property name="wssProcessingEnabled" column="wss_processing" type="boolean"/>
 
         <many-to-one class="com.l7tech.policy.Policy"
                      name="policy" lazy="false" column="policy_oid" unique="true" cascade="persist,merge,save-update,delete"/>

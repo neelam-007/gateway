@@ -70,6 +70,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         setDisabled(objToCopy.isDisabled());
         setHttpMethods(objToCopy.getHttpMethodsReadOnly());
         setLaxResolution(objToCopy.isLaxResolution());
+        setWssProcessingEnabled(objToCopy.isWssProcessingEnabled());
         setPolicy(objToCopy.getPolicy()==null ? null : new Policy(objToCopy.getPolicy()));
         setRoutingUri(objToCopy.getRoutingUri());
         setSoap(objToCopy.isSoap());
@@ -470,6 +471,14 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         this.laxResolution = laxResolution;
     }
 
+    public boolean isWssProcessingEnabled() {
+        return wssProcessingEnabled;
+    }
+
+    public void setWssProcessingEnabled(boolean wssProcessingEnabled) {
+        this.wssProcessingEnabled = wssProcessingEnabled;
+    }
+
     @Override
     @Migration(mapName = NONE, mapValue = NONE)
     public Folder getFolder() {
@@ -527,6 +536,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     private String routingUri;
     private Set<HttpMethod> httpMethods = EnumSet.copyOf(METHODS_SOAP);
     private boolean laxResolution;
+    private boolean wssProcessingEnabled = true;
     private Folder folder;
 
     private transient WsdlStrategy wsdlStrategy;

@@ -73,6 +73,7 @@ public class PublishNonSoapServiceWizard extends Wizard {
             service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
             service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false));
             service.setSoap(false);
+            service.setWssProcessingEnabled(false);
             // xml application are not like soap. by default, not just post is allowed
             service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));
             service.setName(panel1.getPublishedServiceName());

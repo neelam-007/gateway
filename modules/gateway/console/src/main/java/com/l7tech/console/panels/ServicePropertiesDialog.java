@@ -78,6 +78,7 @@ public class ServicePropertiesDialog extends JDialog {
     private JEditorPane routingURL;
     private JCheckBox laxResolutionCheckbox;
     private JTextField oidField;
+    private JCheckBox enableWSSSecurityProcessingCheckBox;
     private String ssgURL;
     private final boolean canUpdate;
 
@@ -103,6 +104,7 @@ public class ServicePropertiesDialog extends JDialog {
         // set initial data
         nameField.setText(subject.getName());
         oidField.setText(subject.getId());        
+        enableWSSSecurityProcessingCheckBox.setSelected(subject.isWssProcessingEnabled());
         if (subject.isDisabled()) {
             disableRadio.setSelected(true);
         } else {
@@ -340,6 +342,7 @@ public class ServicePropertiesDialog extends JDialog {
         enableIfHasUpdatePermission(disableRadio);
         enableIfHasUpdatePermission(enableRadio);
         enableIfHasUpdatePermission(laxResolutionCheckbox);
+        enableIfHasUpdatePermission(enableWSSSecurityProcessingCheckBox);
     }
 
     private void applyReadOnlySettings(boolean isReadOnly) {
@@ -451,6 +454,7 @@ public class ServicePropertiesDialog extends JDialog {
         }
         subject.setHttpMethods(methods);
         subject.setLaxResolution(laxResolutionCheckbox.isSelected());
+        subject.setWssProcessingEnabled(enableWSSSecurityProcessingCheckBox.isSelected());
 
         if (newWSDLUrl != null) {
             try {

@@ -380,7 +380,34 @@ public class ServiceCache
          * @param serviceSet The metadata for all candidate services.
          * @return true if service resolution should be continued
          */
-        boolean notifyPreParseServices(Message message, Set<PolicyMetadata> serviceSet);
+        boolean notifyPreParseServices(Message message, Set<ServiceMetadata> serviceSet);
+    }
+
+    public static final class ServiceMetadata {
+        private final PolicyMetadata policyMetadata;
+        private final boolean wssProcessingRequired;
+
+        public ServiceMetadata( final PolicyMetadata policyMetadata,
+                                final boolean wssProcessingRequired ) {
+            this.policyMetadata = policyMetadata;
+            this.wssProcessingRequired = wssProcessingRequired;
+        }
+
+        public boolean isMultipart() {
+            return policyMetadata.isMultipart();
+        }
+
+        public boolean isTarariWanted() {
+            return policyMetadata.isTarariWanted();
+        }
+
+        public boolean isWssInPolicy() {
+            return policyMetadata.isWssInPolicy();
+        }
+
+        public boolean isWssProcessingRequired() {
+            return wssProcessingRequired;
+        }
     }
 
     /**
@@ -434,7 +461,7 @@ public class ServiceCache
         for (ServiceResolver resolver : activeResolvers) {
             if (rl != null && resolver.usesMessageContent() && !notified) {
                 notified = true;
-                if (!rl.notifyPreParseServices(req, getPolicyMetadata(serviceSet)))
+                if (!rl.notifyPreParseServices(req, getServiceMetadata(serviceSet)))
                     return null;
             }
 
@@ -471,7 +498,7 @@ public class ServiceCache
             auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_MATCH);
             return null;
         } else if (serviceSet.size() == 1) {
-            Set<PolicyMetadata> metadatas = getPolicyMetadata(serviceSet);
+            Set<ServiceMetadata> metadatas = getServiceMetadata(serviceSet);
             PublishedService service = serviceSet.iterator().next();
 
             if (!service.isSoap() || service.isLaxResolution()) {
@@ -507,18 +534,18 @@ public class ServiceCache
         }
     }
 
-    private Set<PolicyMetadata> getPolicyMetadata( final Collection<PublishedService> services ) {
-        Set<PolicyMetadata> metadata;
+    private Set<ServiceMetadata> getServiceMetadata( final Collection<PublishedService> services ) {
+        Set<ServiceMetadata> metadata;
 
         if ( services.isEmpty() ) {
             metadata = Collections.emptySet();
         } else if ( services.size() == 1 ) {
-            metadata = Collections.singleton( getPolicyMetadata( services.iterator().next().getPolicy() ) );
+            metadata = Collections.singleton( getServiceMetadata( services.iterator().next() ) );
         } else {
-            metadata = new LinkedHashSet<PolicyMetadata>();
+            metadata = new LinkedHashSet<ServiceMetadata>();
 
             for ( PublishedService service : services ) {
-                metadata.add( getPolicyMetadata( service.getPolicy() ) );
+                metadata.add( getServiceMetadata( service ) );
             }
         }
         return metadata;
@@ -527,15 +554,17 @@ public class ServiceCache
     /**
      * User should hold lock.
      */
-    private PolicyMetadata getPolicyMetadata( final Policy policy ) {
-        PolicyMetadata metadata = null;
+    private ServiceMetadata getServiceMetadata( final PublishedService service ) {
+        PolicyMetadata policyMetadata = null;
+
+        Policy policy = service.getPolicy();
         if ( policy != null ) {
-            metadata = policyCache.getPolicyMetadata(policy);
+            policyMetadata = policyCache.getPolicyMetadata(policy);
         }
 
-        if ( metadata == null ) {
+        if ( policyMetadata == null ) {
             // use defaults
-            metadata = new PolicyMetadata() {
+            policyMetadata = new PolicyMetadata() {
                 @Override
                 public boolean isTarariWanted() { return false; }
                 @Override
@@ -545,7 +574,7 @@ public class ServiceCache
             };
         }
 
-        return metadata;
+        return new ServiceMetadata( policyMetadata, service.isWssProcessingEnabled() );
     }
 
     private static enum CachedServiceNotificationType {

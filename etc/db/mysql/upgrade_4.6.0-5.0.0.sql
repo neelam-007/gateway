@@ -313,6 +313,9 @@ CREATE TABLE rbac_predicate_entityfolder (
 -- Add version column to the Folders table
 ALTER TABLE folder ADD COLUMN version int(11) NOT NULL AFTER objectid; 
 
+-- Add flag for enable/disable wss processing to published service
+ALTER TABLE published_service ADD COLUMN wss_processing TINYINT(1) NOT NULL DEFAULT 1 AFTER lax_resolution;
+
 --
 -- Reenable FK at very end of script
 --

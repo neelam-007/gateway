@@ -68,7 +68,6 @@ import java.util.Set;
 import java.util.TimerTask;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -94,7 +93,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private SoapFaultManager soapFaultManager;
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicLong signedAttachmentMaxSize = new AtomicLong();
-    private final AtomicBoolean xmlServiceSecurityProcessingEnabled = new AtomicBoolean(true);
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -155,7 +153,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         MimeBody.setFirstPartXmlMaxBytes(maxBytes);
 
         signedAttachmentMaxSize.set(serverConfig.getLongPropertyCached(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1));
-        xmlServiceSecurityProcessingEnabled.set(serverConfig.getBooleanProperty("wssForXmlService", true));
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
@@ -299,10 +296,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 return AssertionStatus.BAD_REQUEST;
             }
 
-            // Ensure security process is run for SOAP services (and XML if enabled)
+            // Ensure security processing is run if enabled
             if ( request.getSecurityKnob().getProcessorResult() == null &&
-                 (service.isSoap() || xmlServiceSecurityProcessingEnabled.get())) {
-                Set<PolicyMetadata> metadatas = Collections.singleton(serverPolicy.getPolicyMetadata());
+                 (service.isWssProcessingEnabled())) {
+                PolicyMetadata policyMetadata = serverPolicy.getPolicyMetadata();
+                Set<ServiceCache.ServiceMetadata> metadatas = Collections.singleton( new ServiceCache.ServiceMetadata(policyMetadata, true) );
                 if (!securityProcessingResolutionListener.notifyPreParseServices( request, metadatas ) ) {
                     if ( securityProcessingIOException[0] != null ) {
                         throw securityProcessingIOException[0];
@@ -639,16 +637,20 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
 
         @Override
-        public boolean notifyPreParseServices(Message message, Set<PolicyMetadata> policyMetadataSet) {
+        public boolean notifyPreParseServices(Message message, Set<ServiceCache.ServiceMetadata> serviceMetadataSet) {
             boolean isSoap = false;
             boolean hasSecurity = false;
             boolean preferDom = true;
+            boolean performSecurityProcessing = false;
 
             // If any service does not use WSS then don't prefer DOM
-            for (PolicyMetadata policyMetadata : policyMetadataSet) {
-                if (!policyMetadata.isWssInPolicy()) {
+            for (ServiceCache.ServiceMetadata serviceMetadata : serviceMetadataSet) {
+                if (!serviceMetadata.isWssInPolicy()) {
                     preferDom = false;
-                    break;
+                }
+
+                if (serviceMetadata.isWssProcessingRequired()) {
+                    performSecurityProcessing = true;
                 }
             }
 
@@ -670,7 +672,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 return false;
             }
 
-            if (isSoap && hasSecurity) {
+            if (performSecurityProcessing && isSoap && hasSecurity) {
                 WssProcessorImpl trogdor = new WssProcessorImpl(); // no need for locator
                 trogdor.setSignedAttachmentSizeLimit(signedAttachmentMaxSize.get());
                 trogdor.setRejectOnMustUnderstand(serverConfig.getBooleanProperty(ServerConfig.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true));
