@@ -5,6 +5,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.security.types.CertificateValidationResult;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
@@ -22,10 +23,7 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -118,35 +116,29 @@ public class OCSPClient {
     }
 
     /**
-     * Should a revocation check be performed for the given certificate.
+     * Should a revocation check be performed for the given certificate?
      *
-     * <p>This is only applicable for certs that are @{link #isPermittedByIssuer permitted by issuer}.</p>
+     * <p>This is only applicable for certs that are {@link #isPermittedByIssuer permitted by issuer}.</p>
      *
      * @param certificate The certificate to check.
      * @return true if a revocation check should be performed.
      * @throws OCSPClientException if the certificate is invalid
      */
     public boolean shouldCheckRevocation(final X509Certificate certificate) throws OCSPClientException {
-        boolean checkRevocation = true;
-
-        try {
-            // If nocheck is set on the cert then we don't need to check revocation
-            List<String> extendedUsages = certificate.getExtendedKeyUsage();
-            if ( extendedUsages!=null && extendedUsages.contains(OID_EXT_KEY_USE_OCSP_NOCHECK) ) {
-                checkRevocation = false;
-            }
-        } catch (GeneralSecurityException gse) {
-            throw new OCSPClientException("Error examining OCSP nocheck certificate extension.", gse);
+        // If nocheck is set on the cert then we don't need to check revocation
+        final Set<String> extensions = certificate.getNonCriticalExtensionOIDs();
+        if (extensions != null && extensions.contains(OID_EXT_KEY_USE_OCSP_NOCHECK)) {
+            logger.log(Level.FINE, "OCSP signing certificate {0} has the id-pkix-ocsp-nocheck extension", certificate.getSubjectDN().getName());
+            return false;
         }
 
-        return checkRevocation;
+        return true;
     }
 
     /**
      * Interface implemented to authorize certificates that sign OCSP responses.
      */
     public static interface OCSPCertificateAuthorizer {
-
         /**
          * Locate an authorized signer from the certificates listed in the OCSP response.
          *
@@ -243,7 +235,7 @@ public class OCSPClient {
     private OCSPStatus doRevocationCheck(final X509Certificate certificate,
                                          final boolean nonce,
                                          final boolean signed) throws OCSPClientException {
-        OCSPStatus status = null;
+        final OCSPStatus status;
 
         try {
             CertificateID certId = new CertificateID(CertificateID.HASH_SHA1, issuerCertificate, certificate.getSerialNumber());
@@ -262,14 +254,14 @@ public class OCSPClient {
     private static OCSPReq generateOCSPRequest(final CertificateID id,
                                                final boolean nonce) throws OCSPException {
         // create generator
-        OCSPReqGenerator generator = new OCSPReqGenerator();
+        final OCSPReqGenerator generator = new OCSPReqGenerator();
 
         // Add the ID for the certificate we are looking for
         generator.addRequest(id);
 
         // Extension holders
-        Vector oids = new Vector();
-        Vector values = new Vector();
+        final Vector<DERObjectIdentifier> oids = new Vector<DERObjectIdentifier>();
+        final Vector<X509Extension> values = new Vector<X509Extension>();
 
         // Only support basic responses
         oids.add(OCSPObjectIdentifiers.id_pkix_ocsp_response);
@@ -298,7 +290,7 @@ public class OCSPClient {
                                    final OCSPReq request,
                                    final CertificateID certId,
                                    final boolean signed) throws OCSPClientException {
-        OCSPStatus status = new OCSPStatus(0, CertificateValidationResult.REVOKED);
+        final OCSPStatus status;
         RerunnableHttpRequest httpRequest;
 
         try {
@@ -306,12 +298,12 @@ public class OCSPClient {
             final byte[] array = request.getEncoded();
 
             // build request
-            URL requestUrl = new URL((String) ocspResponderUrl);
+            URL requestUrl = new URL(ocspResponderUrl);
             GenericHttpRequestParams params = new GenericHttpRequestParams(requestUrl);
             params.setContentType(ContentTypeHeader.parseValue(CONTENT_TYPE_OCSP_REQUEST));
             params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_ACCEPT, CONTENT_TYPE_OCSP_RESPONSE));
             params.setFollowRedirects(false);
-            params.setContentLength(Long.valueOf(array.length));
+            params.setContentLength((long) array.length);
             httpRequest = (RerunnableHttpRequest) httpClient.createRequest(HttpMethod.POST, params);
             httpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory(){
                 public InputStream getInputStream() {
@@ -354,10 +346,10 @@ public class OCSPClient {
                                       final CertificateID certId,
                                       final boolean signed) throws OCSPClientException
     {
-        OCSPStatus status = null;
+        final OCSPStatus status;
 
         // process response
-        int responseStatus = ocspResponse.getStatus();
+        final int responseStatus = ocspResponse.getStatus();
 
         if (logger.isLoggable(Level.FINER)) {
             logger.log(Level.FINER, "OCSP response status is ''{0}''.", responseStatus);
@@ -402,7 +394,7 @@ public class OCSPClient {
 
             if (!(responseObject instanceof BasicOCSPResp)) {
                 throw new OCSPClientException("Invalid OCSP response type: " +
-                        responseObject == null ?  "NULL" : responseObject.getClass().getName());
+                        (responseObject == null ?  "NULL" : responseObject.getClass().getName()));
             }
 
             basicOcspResp = (BasicOCSPResp) responseObject;
@@ -458,8 +450,8 @@ public class OCSPClient {
      */
     private void validateSignature(final BasicOCSPResp basicOcspResp,
                                    final boolean requireSignature) throws OCSPClientException {
-        String sigAlg = basicOcspResp.getSignatureAlgName();
-        X509Certificate signer = null;
+        final String sigAlg = basicOcspResp.getSignatureAlgName();
+        final X509Certificate signer;
         X509Certificate[] signerCerts;
 
         try {
