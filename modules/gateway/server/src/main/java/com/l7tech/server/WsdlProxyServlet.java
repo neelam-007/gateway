@@ -515,11 +515,21 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
+    private boolean proxyRequired( PublishedService service )  {
+        boolean required = false;
+
+        if ( service.getWsdlUrl() != null && service.getWsdlUrl().startsWith("file:") ) {
+            required = true;    
+        }
+
+        return required;
+    }
+
     private void outputServiceDescription(final HttpServletRequest req,
                                           final HttpServletResponse res,
                                           final PublishedService svc,
                                           final AuthenticationResult[] results) throws IOException {
-        final boolean enableImportProxy = svc.isInternal() || serverConfig.getBooleanProperty(PROPERTY_WSDL_IMPORT_PROXY, false);
+        final boolean enableImportProxy = svc.isInternal() || proxyRequired(svc) || serverConfig.getBooleanProperty(PROPERTY_WSDL_IMPORT_PROXY, false);
         final Collection<ServiceDocument> documents;
         Document wsdlDoc = null;
         try {

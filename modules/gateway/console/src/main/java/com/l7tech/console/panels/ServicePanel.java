@@ -196,7 +196,7 @@ public class ServicePanel extends WizardStepPanel {
         boolean processed = false;
         notifyListeners();
 
-        final String wsdlUrl = wsdlLocationPanel.getWsdlUrl();
+        final String wsdlUrl = wsdlLocationPanel.getWsdlUrl(true);
         try {
             wsdl = wsdlLocationPanel.getWsdl();
             if (wsdl != null) {
@@ -221,7 +221,7 @@ public class ServicePanel extends WizardStepPanel {
                 }
 
                 service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
-                service.setWsdlUrl(wsdlUrl.startsWith("http") ? wsdlUrl : null);
+                service.setWsdlUrl(wsdlUrl);
                 service.setWsdlXml(resolvedDoc);
                 processed = true;
                 notifyListeners();

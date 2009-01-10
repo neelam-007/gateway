@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.console.event.WsdlListener;
@@ -163,8 +164,22 @@ public class WsdlLocationPanel extends JPanel {
      * @return the URL / path.
      */
     public String getWsdlUrl() {
+        return getWsdlUrl(false);
+    }
+
+    /**
+     * Get the WSDL URL.
+     *
+     * @param forceUrl True to force return of URL (never a path)
+     * @return the URL / path.
+     */
+    public String getWsdlUrl(boolean forceUrl) {
         String wsdlUrl = wsdlUrlTextField.getText().trim();
-        return isUrlOk(wsdlUrl, null)? wsdlUrl : addDefaultDirectoryIntoPath(wsdlUrl);
+        String result = isUrlOk(wsdlUrl, null) ? wsdlUrl : addDefaultDirectoryIntoPath(wsdlUrl);
+        if ( forceUrl ) {
+            result = ensureUrl( result );
+        }
+        return result;
     }
 
     /**
@@ -259,6 +274,7 @@ public class WsdlLocationPanel extends JPanel {
         // buttons
         if (!allowUddi) wsdlUrlBrowseButton.setVisible(false);
         wsdlUrlBrowseButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 selectUddi();
             }
@@ -266,6 +282,7 @@ public class WsdlLocationPanel extends JPanel {
 
         if (!allowFile) wsdlFileButton.setVisible(false);
         wsdlFileButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 selectFile();
             }
@@ -280,6 +297,7 @@ public class WsdlLocationPanel extends JPanel {
             SearchWsdlDialog swd = ownerd!=null ? new SearchWsdlDialog(ownerd) : new SearchWsdlDialog(ownerf);
             swd.addWsdlListener(new WsdlListener() {
 
+                @Override
                 public void wsdlSelected(WsdlEvent event) {
                     String wsdlURL = event.getWsdlInfo().getWsdlUrl();
 
@@ -300,6 +318,7 @@ public class WsdlLocationPanel extends JPanel {
 
     private void selectFile() {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser fc) {
                 doSelectFile(fc);
             }
@@ -334,8 +353,11 @@ public class WsdlLocationPanel extends JPanel {
 
     private DocumentListener createWsdlUrlDocumentListener() {
         return new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) { urlChanged(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { urlChanged(); }
+            @Override
             public void changedUpdate(DocumentEvent e) { urlChanged(); }
         };
     }
@@ -362,6 +384,25 @@ public class WsdlLocationPanel extends JPanel {
         }
 
         return urlOk;
+    }
+
+    private String ensureUrl( final String urlOrPath ) {
+        String result = urlOrPath;
+        try {
+            URL url = new URL(urlOrPath);
+            String urlProto = url.getProtocol();
+            if (urlProto == null) {
+                result = new File( urlOrPath ).toURI().toURL().toString();
+            }
+        } catch (MalformedURLException e) {
+            //invalid url
+            try {
+                result = new File( urlOrPath ).toURI().toURL().toString();
+            } catch (MalformedURLException e2) {
+                // fallback to path
+            }
+        }
+        return result;
     }
 
     /**
@@ -419,6 +460,7 @@ public class WsdlLocationPanel extends JPanel {
 
                         try {
                             SwingUtilities.invokeAndWait(new Runnable(){
+                                @Override
                                 public void run() {
                                     // hide cancel dialog
                                     dlg.setVisible(false);
@@ -496,6 +538,7 @@ public class WsdlLocationPanel extends JPanel {
                     }
                 } catch (WsdlUtils.WSDLFactoryNotTrustedException wfnte) {
                     SwingUtilities.invokeLater(new Runnable(){
+                        @Override
                         public void run() {
                             if(dlg.isVisible()) {
                                 dlg.setVisible(false);
@@ -505,6 +548,7 @@ public class WsdlLocationPanel extends JPanel {
                     });
                 } catch (final WSDLException e1) {
                     SwingUtilities.invokeLater(new Runnable(){
+                        @Override
                         public void run() {
                             if(dlg.isVisible()) {
                                 dlg.setVisible(false);
@@ -524,6 +568,7 @@ public class WsdlLocationPanel extends JPanel {
                     });
                 } catch (final MalformedURLException e1) {
                     SwingUtilities.invokeLater(new Runnable(){
+                        @Override
                         public void run() {
                             if(dlg.isVisible()) {
                                 logger.log(Level.INFO, "Could not parse URL.", e1);
@@ -537,6 +582,7 @@ public class WsdlLocationPanel extends JPanel {
                     });
                 } catch (final URISyntaxException e1) {
                     SwingUtilities.invokeLater(new Runnable(){
+                        @Override
                         public void run() {
                             if(dlg.isVisible()) {
                                 logger.log(Level.INFO, "Could not parse URL.", e1);
@@ -550,6 +596,7 @@ public class WsdlLocationPanel extends JPanel {
                     });
                 } catch (final FileNotFoundException e1) {
                     SwingUtilities.invokeLater(new Runnable(){
+                        @Override
                         public void run() {
                             if(dlg.isVisible()) {
                                 logger.log(Level.INFO, "IO Error.", e1);
@@ -564,6 +611,7 @@ public class WsdlLocationPanel extends JPanel {
                     });
                 } catch (final IOException e1) {
                     SwingUtilities.invokeLater(new Runnable(){
+                        @Override
                         public void run() {
                             if(dlg.isVisible()) {
                                 logger.log(Level.INFO, "IO Error.", e1);
@@ -586,6 +634,7 @@ public class WsdlLocationPanel extends JPanel {
                     });
                 } catch (final SAXException e1) {
                     SwingUtilities.invokeLater(new Runnable(){
+                        @Override
                         public void run() {
                             if(dlg.isVisible()) {
                                 logger.log(Level.INFO, "XML parsing error.", e1);
@@ -628,6 +677,17 @@ public class WsdlLocationPanel extends JPanel {
             throw new IOException("Service not available.");
 
         return manager.resolveWsdlTarget(wsdlUrl);
+    }
+
+    private static String localFetchWsdlUrl( final String wsdlUrl ) throws IOException {
+        ByteOrderMarkInputStream bomis = null;
+        try {
+            bomis = new ByteOrderMarkInputStream(new URL(wsdlUrl).openStream());
+            byte [] data = IOUtils.slurpStream(bomis);
+            return new String( data, bomis.getEncoding()==null ? "UTF-8" : bomis.getEncoding() );
+        } finally {
+            ResourceUtils.closeQuietly(bomis);
+        }
     }
 
     /**
@@ -692,7 +752,7 @@ public class WsdlLocationPanel extends JPanel {
 
 
     /**
-     * WSDLLocator that accesses HTTP URI's via the gateway.
+     * GatewayResourceResolver that accesses HTTP URI's via the gateway.
      */
     private static class GatewayResourceResolver implements DocumentReferenceProcessor.ResourceResolver {
         private final Logger logger;
@@ -705,7 +765,8 @@ public class WsdlLocationPanel extends JPanel {
             this.baseResource = baseResource;
         }
 
-        public String resolve( final String importLocation) throws IOException {
+        @Override
+        public String resolve( final String importLocation ) throws IOException {
             String resource = null;
 
             logger.log(Level.INFO, "Processing import from location '" + importLocation + "'.");
@@ -716,6 +777,8 @@ public class WsdlLocationPanel extends JPanel {
             } else {
                 if ( importLocation.startsWith("http") ) {
                     resource = ResourceTrackingWSDLLocator.processResource(importLocation, gatewayFetchWsdlUrl(importLocation), false, true);
+                } else if ( importLocation.startsWith("file") && baseUri.startsWith("file")) {
+                    resource = ResourceTrackingWSDLLocator.processResource(importLocation, localFetchWsdlUrl(importLocation), false, true);
                 }
             }
 
