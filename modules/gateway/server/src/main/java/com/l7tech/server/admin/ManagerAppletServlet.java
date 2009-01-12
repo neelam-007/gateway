@@ -82,6 +82,9 @@ public class ManagerAppletServlet extends HttpServlet {
         getContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
 
         hresp.setContentType("text/html");
+        hresp.setHeader("Expires", "Mon, 26 Jul 1997 05:00:00 GMT");
+        hresp.setHeader("Cache-Control", "no-cache, must-revalidate");
+        hresp.setHeader("Pragma", "no-cache");
         hresp.setStatus(200);
         OutputStream os = hresp.getOutputStream();
         PrintStream ps = new PrintStream(os);
