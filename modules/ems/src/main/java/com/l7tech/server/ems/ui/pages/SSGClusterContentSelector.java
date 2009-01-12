@@ -105,7 +105,7 @@ public class SSGClusterContentSelector extends EsmBaseWebPage {
             // Add operation contents if the entity has operations
             if (info.getOperations() != null && info.getOperations().length > 0) {
                 for (String operation: info.getOperations()) {
-                    contentList.add(new SsgClusterContent(UUID.randomUUID().toString(), null, info.getId(), EntityType.SERVICE_OPERATION, operation, null));
+                    contentList.add(new SsgClusterContent(UUID.randomUUID().toString(), info.getId(), operation));
                 }
             }
         }

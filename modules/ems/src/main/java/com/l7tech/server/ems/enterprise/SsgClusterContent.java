@@ -18,6 +18,7 @@ public class SsgClusterContent extends JSONSupport {
     private EntityType entityType;
     private String name;
     private Integer version;
+    private boolean isOperation;
 
     public SsgClusterContent(String id, String relatedId, String parentId, EntityType entityType, String name, Integer version) {
         this.id = id;
@@ -28,20 +29,30 @@ public class SsgClusterContent extends JSONSupport {
         this.version = version;
     }
 
+    // Constructor for operations.
+    public SsgClusterContent(String id, String parentId, String name) {
+        this.id = id;
+        this.parentId = parentId;
+        this.name = ROOT.equals(name) && (parentId==null||parentId.isEmpty()) ? "/" : name;
+        isOperation = true;
+    }
+
     @Override
     protected void writeJson() {
         add(JSONConstants.ID, id);
         add(JSONConstants.RELATED_ID, relatedId);
         add(JSONConstants.PARENT_ID, parentId);
-        add(JSONConstants.TYPE, findType(entityType));
+        add(JSONConstants.TYPE, findType(entityType, isOperation));
         add(JSONConstants.NAME, name);
         if (version != null) add(JSONConstants.VERSION, version.toString());
     }
 
-    private String findType(EntityType type) {
-        if (EntityType.SERVICE_OPERATION.equals(type)) {
+    private String findType(EntityType type, boolean isOperation) {
+        if (isOperation) {
             return JSONConstants.Entity.OPERATION;
-        } else if (EntityType.FOLDER.equals(type)) {
+        }
+
+        if (EntityType.FOLDER.equals(type)) {
             return JSONConstants.Entity.SERVICE_FOLDER;
         } else if (EntityType.SERVICE.equals(type)) {
             return JSONConstants.Entity.PUBLISHED_SERVICE;

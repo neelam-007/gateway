@@ -19,7 +19,6 @@ public enum EntityType implements Comparable<EntityType> {
     SERVICE("Published Service", true),
     SERVICE_ALIAS("Published Service Alias", true),
     SERVICE_DOCUMENT("Service Document", true),
-    SERVICE_OPERATION("Service Operation", true),
     JMS_CONNECTION("JMS Connection", true),
     JMS_ENDPOINT("JMS Endpoint", true),
     TRUSTED_CERT("Trusted Certificate", true),
