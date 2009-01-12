@@ -15,7 +15,7 @@ class TimeVariableUtils {
     static final String LOCALDOT = BuiltinVariables.TIMESUFFIX_ZONE_LOCAL + ".";
     private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
-    static Object getTimeValue(String prefix, String name, LazyLong lazyTime) {
+    static Object getTimeValue( final String prefix, final String name, final LazyLong lazyTime) {
         String suffix = name.substring(prefix.length());
         if (suffix.startsWith(".")) suffix = suffix.substring(1);
         String format, zone;
@@ -48,6 +48,9 @@ class TimeVariableUtils {
             }
         } else {
             SimpleDateFormat sdf = new SimpleDateFormat(format);
+            if ( BuiltinVariables.TIMESUFFIX_ZONE_UTC.equalsIgnoreCase(zone) ) {
+                sdf.setTimeZone( UTC );                
+            }
             return sdf.format(date);
         }
     }
