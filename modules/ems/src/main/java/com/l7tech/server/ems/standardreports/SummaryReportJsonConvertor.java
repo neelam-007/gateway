@@ -19,6 +19,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
     @Override
     public Collection<ReportSubmissionClusterBean> getReportSubmissions(Map params, String reportRanBy) throws ReportException {
         validateParams(params);
+        updateParamsByConvertingEntityAliasToRealEntity(params);
 
         Map<String, Map<String, ReportApi.ReportSubmission.ReportParam>> clusterToReportParams = getReportParams(params, reportRanBy);
 
@@ -190,6 +191,114 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
         for(String s: requiredParams){
             if(!params.containsKey(s)) throw new IllegalArgumentException("Required param '"+s+"' is missing");
         }
+    }
+
+    /**
+     * Convert all aliases setting to real entities setting in the params map.
+     *
+     * @param params The map of entities.
+     */
+    private void updateParamsByConvertingEntityAliasToRealEntity(Map params) {
+        // Create a map to track the uniqueness of entities.  Key = entityOid, Value = a list of operations' names
+        Map<String, List<String>> uniquenessCheckingMap = new HashMap<String, List<String>>();
+
+        List<Object> entitiesMap = new ArrayList<Object>(Arrays.asList((Object[])params.get(JSONConstants.REPORT_ENTITIES)));
+
+        for (Iterator<Object> itr = entitiesMap.iterator(); itr.hasNext(); ) {
+            Map entityInfoMap = (Map) itr.next();
+            String operation = (String) entityInfoMap.get(JSONConstants.ReportEntities.OPERATION);
+            String entityOid = (String) entityInfoMap.get(JSONConstants.ReportEntities.PUBLISHED_SERVICE_ID);
+            String realEntityOid = (String) entityInfoMap.get(JSONConstants.ReportEntities.RELATED_ID);
+            String entityName = (String) entityInfoMap.get(JSONConstants.ReportEntities.PUBLISHED_SERVICE_NAME);
+
+            // Case 1: EntityType = Published service or published service alias
+            if (operation == null) {
+                // Case 1.1: Associated with a published service
+                if (realEntityOid == null) {
+                    if (uniquenessCheckingMap.containsKey(entityOid)) {
+                        itr.remove();
+                    } else {
+                        uniquenessCheckingMap.put(entityOid, new ArrayList<String>());
+                    }
+                }
+                // Case 1.2: Associated with a published service alias
+                else {
+                    if (uniquenessCheckingMap.containsKey(realEntityOid)) {
+                        // Remove the alias
+                        itr.remove();
+                    } else {
+                        // Convert alias to real entity
+                        entityInfoMap.put(JSONConstants.ReportEntities.PUBLISHED_SERVICE_ID, realEntityOid);
+                        entityInfoMap.put(JSONConstants.ReportEntities.PUBLISHED_SERVICE_NAME, removeAliasSuffix(entityName, " alias"));
+
+                        uniquenessCheckingMap.put(realEntityOid, new ArrayList<String>());
+                    }
+                }
+            }
+            // Case 2: EntityType = Operation
+            else {
+                // Case 2.1: Associated with a published service
+                if (realEntityOid == null) {
+                    if (uniquenessCheckingMap.containsKey(entityOid)) {
+                        List<String> operationsList = uniquenessCheckingMap.get(entityOid);
+                        if (operationsList.contains(operation)) {
+                            itr.remove();
+                        } else {
+                            operationsList.add(operation);
+                        }
+                    } else {
+                        List<String> operationsList = new ArrayList<String>();
+                        operationsList.add(operation);
+                        uniquenessCheckingMap.put(entityOid, operationsList);
+                    }
+                }
+                // Case 2.2: Associated with a published service alias
+                else {
+                    if (uniquenessCheckingMap.containsKey(realEntityOid)) {
+                        List<String> operationsList = uniquenessCheckingMap.get(realEntityOid);
+                        // Remove the alias
+                        if (operationsList.contains(operation)) {
+                            itr.remove();
+                        }
+                        // Convert alias to real entity
+                        else {
+                            entityInfoMap.put(JSONConstants.ReportEntities.PUBLISHED_SERVICE_ID, realEntityOid);
+                            entityInfoMap.put(JSONConstants.ReportEntities.PUBLISHED_SERVICE_NAME, removeAliasSuffix(entityName, " alias"));
+
+                            operationsList.add(operation);
+                        }
+                    } else {
+                        // Convert alias to real entity
+                        entityInfoMap.put(JSONConstants.ReportEntities.PUBLISHED_SERVICE_ID, realEntityOid);
+                        entityInfoMap.put(JSONConstants.ReportEntities.PUBLISHED_SERVICE_NAME, removeAliasSuffix(entityName, " alias"));
+
+                        List<String> operationsList = new ArrayList<String>();
+                        operationsList.add(operation);
+                        uniquenessCheckingMap.put(realEntityOid, operationsList);
+                    }
+                }
+            }
+        }
+
+        // Update the value associated with the key "entities" in params.
+        params.put(JSONConstants.REPORT_ENTITIES, entitiesMap.toArray());
+    }
+
+    /**
+     * Remove a suffix such as " alias" from an entity name.
+     * @param entityName The name of the entity with the suffix.
+     * @param suffix The suffix to remove
+     * @return a string without the suffix.
+     */
+    private String removeAliasSuffix(String entityName, String suffix) {
+        if (entityName == null || (! entityName.toLowerCase().endsWith(suffix))) {
+            return entityName;
+        }
+
+        int length = entityName.length();
+        int suffixLen = suffix.length();
+
+        return entityName.substring(0, length - suffixLen);
     }
 
     /**
@@ -397,7 +506,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             validateSubMap(timePeriodMap, JSONConstants.TimePeriodAbsoluteKeys.ALL_KEYS);
 
             String startTime = (String) timePeriodMap.get(JSONConstants.TimePeriodAbsoluteKeys.START);
-            Long startTimeMilli = null;
+            Long startTimeMilli;
             try{
                 startTimeMilli = Utilities.getAbsoluteMilliSeconds(startTime, timeZone);
             }catch (ParseException ex){
@@ -411,7 +520,7 @@ public class SummaryReportJsonConvertor implements JsonReportParameterConvertor 
             addParamToAllClusters(clusterToReportParams,ReportApi.ReportParameters.ABSOLUTE_START_TIME,  absoluteStartTimeParam);
 
             String endTime = (String) timePeriodMap.get(JSONConstants.TimePeriodAbsoluteKeys.END);
-            Long endTimeMilli = null;
+            Long endTimeMilli;
             try{
                 endTimeMilli = Utilities.getAbsoluteMilliSeconds(endTime, timeZone);
             }catch (ParseException ex){

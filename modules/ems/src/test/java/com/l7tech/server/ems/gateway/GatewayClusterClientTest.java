@@ -88,10 +88,10 @@ public class GatewayClusterClientTest {
     }
 
     public GatewayClusterClientTest() throws Exception {
-        blahfolder = new GatewayApi.EntityInfo(EntityType.FOLDER, UUID.randomUUID().toString(), "blahfolder", null, 1);
+        blahfolder = new GatewayApi.EntityInfo(EntityType.FOLDER, UUID.randomUUID().toString(), null, "blahfolder", null, 1);
         blahfolderInfo = Collections.unmodifiableList(Arrays.asList(blahfolder));
 
-        foofolder = new GatewayApi.EntityInfo(EntityType.FOLDER, UUID.randomUUID().toString(), "foofolder", null, 1);
+        foofolder = new GatewayApi.EntityInfo(EntityType.FOLDER, UUID.randomUUID().toString(), null, "foofolder", null, 1);
         foofolderInfo = Collections.unmodifiableList(Arrays.asList(foofolder));
 
         fooCluster = new SsgCluster("foo", "test-foo.nowhere.example.com", 8443, null);

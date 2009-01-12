@@ -111,6 +111,7 @@ public final class JSONConstants {
 
     // Properties for all entities.
     public static final String ID        = "id";
+    public static final String RELATED_ID= "relatedId";
     public static final String PARENT_ID = "parentId";
     public static final String TYPE      = "type";
     public static final String NAME      = "name";
@@ -191,8 +192,9 @@ public final class JSONConstants {
         public static final String CLUSTER_ID = "clusterId";
         public static final String PUBLISHED_SERVICE_ID = "publishedServiceId";
         public static final String PUBLISHED_SERVICE_NAME = "publishedServiceName";
+        public static final String RELATED_ID = "relatedId";
         public static final String OPERATION = "operation";
-        public static final String [] ALL_KEYS = new String[]{ CLUSTER_ID, PUBLISHED_SERVICE_ID, PUBLISHED_SERVICE_NAME, OPERATION};
+        public static final String [] ALL_KEYS = new String[]{ CLUSTER_ID, PUBLISHED_SERVICE_ID, PUBLISHED_SERVICE_NAME, RELATED_ID, OPERATION};
     }
 
     public static final class ReportMappings{

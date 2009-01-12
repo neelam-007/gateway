@@ -564,9 +564,10 @@
          * @param {array} ssgClusterAncestors
          * @param {string} publishedServiceId
          * @param {string} publishedServiceName
+         * @param {string} relatedId                applies only if the selected entity is a published service alias or an operation associated with a published service alias.
          * @param {string} operation                applies only if the selected entity is an operation
          */
-        function addEntity(ssgClusterId, ssgClusterName, ssgClusterAncestors, publishedServiceId, publishedServiceName, operation) {
+        function addEntity(ssgClusterId, ssgClusterName, ssgClusterAncestors, publishedServiceId, publishedServiceName, relatedId, operation) {
             // Skips this if already added.
             var alreadyAdded = false;
             var trs = entitySelectionTableBody.rows;
@@ -607,8 +608,12 @@
             // Published Service column.
             td = tr.insertCell(-1);
             td.innerHTML = publishedServiceName;
+            if (relatedId != undefined) { // refer that the entity is a published service alias.
+                    td.style.fontStyle = 'italic';
+                }
             tr._publishedServiceId = publishedServiceId;        // Stash away for later retrieval.
             tr._publishedServiceName = publishedServiceName;    // Stash away for later retrieval.
+            tr._relatedId = relatedId;                          // Stash away for later retrieval.
 
             // Operation column.
             td = tr.insertCell(-1);
@@ -825,6 +830,7 @@
                 entity.clusterId = tr._ssgClusterId;
                 entity.publishedServiceId = tr._publishedServiceId;
                 entity.publishedServiceName = tr._publishedServiceName;
+                entity.relatedId = tr._relatedId;
                 if (settings.entityType == 'operation') {
                     entity.operation = tr._operation;
                 } else {
@@ -913,10 +919,13 @@
 
         function refreshSsgClusterContentSelector() {
             var ssgCluster = ssgClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
-            var entityType = getEntitySelectionType();
-            var entitiesWithTristateCheckbox = [l7.EntityTreeTable.ENTITY.SERVICE_FOLDER, entityType];
-            if (entityType == l7.EntityTreeTable.ENTITY.OPERATION) {
+            var selectedEntityType = getEntitySelectionType();
+            var entitiesWithTristateCheckbox = [l7.EntityTreeTable.ENTITY.SERVICE_FOLDER, selectedEntityType];
+            if (selectedEntityType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS);
+            } else if (selectedEntityType == l7.EntityTreeTable.ENTITY.OPERATION) {
                 entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE);
+                entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS);
             }
             ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, entitiesWithTristateCheckbox, null);
         }
@@ -1120,25 +1129,34 @@
         function onClickAddEntity() {
             var ssgCluster = ssgClusterContentSelectorWindow.getSsgCluster();
             var entities = ssgClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected();
-            var entityType = getEntitySelectionType();
+            var selectedEntityType = getEntitySelectionType();
 
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
 
-                if (entity.type != entityType) {
+                if (selectedEntityType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                    if (entity.type != l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE &&
+                        entity.type != l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS) {
+                        continue;
+                    }
+                } else if (selectedEntityType == l7.EntityTreeTable.ENTITY.OPERATION) {
+                    if (entity.type != l7.EntityTreeTable.ENTITY.OPERATION) {
+                        continue;
+                    }
+                } else {
                     continue;
                 }
 
                 var publishedService;
                 var operation;
-                if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE || entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS) {
                     publishedService = entity;
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.OPERATION) {
                     publishedService = ssgClusterContentSelectorWindow.getEntityTreeTable().getParentEntity(entity);
                     operation = entity.name;
                 }
 
-                addEntity(ssgCluster.id, ssgCluster.name, ssgCluster.ancestors, publishedService.id, publishedService.name, operation);
+                addEntity(ssgCluster.id, ssgCluster.name, ssgCluster.ancestors, publishedService.id, publishedService.name, publishedService.relatedId, operation);
             }
             onChangeSelectedEntities();
         }

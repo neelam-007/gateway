@@ -11,7 +11,8 @@ public class SSGClusterServiceContentSelector extends SSGClusterContentSelector 
     public SSGClusterServiceContentSelector() {
         setEntityTypes(new EntityType[] {
             EntityType.FOLDER,
-            EntityType.SERVICE
+            EntityType.SERVICE,
+            EntityType.SERVICE_ALIAS
         });
     }
 }

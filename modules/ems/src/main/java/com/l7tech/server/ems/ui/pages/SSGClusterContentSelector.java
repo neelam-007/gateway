@@ -26,7 +26,9 @@ public class SSGClusterContentSelector extends EsmBaseWebPage {
     private EntityType[] entityTypes = new EntityType[] {
         EntityType.FOLDER,
         EntityType.SERVICE,
-        EntityType.POLICY
+        EntityType.SERVICE_ALIAS,
+        EntityType.POLICY,
+        EntityType.POLICY_ALIAS
     };
 
     protected boolean keepRootFolder = true;
@@ -98,12 +100,12 @@ public class SSGClusterContentSelector extends EsmBaseWebPage {
         List<SsgClusterContent> contentList = new ArrayList<SsgClusterContent>();
         for (GatewayApi.EntityInfo info: sortedEntitiesInfo) {
             // Add this entity content
-            contentList.add(new SsgClusterContent(info.getId(), info.getParentId(), info.getEntityType(), info.getName(), info.getVersion()));
+            contentList.add(new SsgClusterContent(info.getId(), info.getRelatedId(), info.getParentId(), info.getEntityType(), info.getName(), info.getVersion()));
 
             // Add operation contents if the entity has operations
             if (info.getOperations() != null && info.getOperations().length > 0) {
                 for (String operation: info.getOperations()) {
-                    contentList.add(new SsgClusterContent(UUID.randomUUID().toString(), info.getId(), null, operation, null));
+                    contentList.add(new SsgClusterContent(UUID.randomUUID().toString(), null, info.getId(), EntityType.SERVICE_OPERATION, operation, null));
                 }
             }
         }
@@ -144,22 +146,32 @@ public class SSGClusterContentSelector extends EsmBaseWebPage {
             count++;                   // increment the counter
         }
 
-        // Step 2: find all published services and policy fragments and directly insert them into the "sort" list.
-        // Also, find all children folders of the parent without insertion and store them into a temp list, folderList.
-        // The temp list will be used in Step 3.
+        // Step 2: find all published services, service alias, policy fragments, and policy alias.  Insert them into the "sort" list.
+        // Also, find all children folders of the parent without insertion and store them into a temp list, folderList. The temp list will be used in Step 3.
         List<GatewayApi.EntityInfo> folderList = new ArrayList<GatewayApi.EntityInfo>();
-        for (EntityType type: entityTypes) {               // run insertions by each entity type, so the order of inserted entity infos is the same as the order of the entity types in the type list.
-            for (Iterator<GatewayApi.EntityInfo> itr = raw.iterator(); itr.hasNext();) {
-                GatewayApi.EntityInfo info = itr.next();
-                if (info.getEntityType().equals(type) && parent.getId().equals(info.getParentId())) {
-                    if (type.equals(EntityType.FOLDER)) {  // add a folder into the temp folder list if the type is Folder.
-                        folderList.add(info);
-                    } else {                               // insert a published service or policy fragment into the sort list if the type is not Folder
-                        sort.add(index++, info);
-                        count++;
-                    }
+        for (Iterator<GatewayApi.EntityInfo> itr = raw.iterator(); itr.hasNext();) {
+            GatewayApi.EntityInfo info = itr.next();
+            if (parent.getId().equals(info.getParentId())) {
+                // add a folder into the temp folder list if the type is Folder.
+                if (info.getEntityType().equals(EntityType.FOLDER)) {
+                    folderList.add(info);
                     itr.remove();
                 }
+                // insert a published service or service alias into the sort list if the type is not Folder
+                else if (info.getEntityType().equals(EntityType.SERVICE) || info.getEntityType().equals(EntityType.SERVICE_ALIAS)) {
+                    sort.add(index++, info);
+                    count++;
+                    itr.remove();
+                }
+            }
+        }
+        for (Iterator<GatewayApi.EntityInfo> itr = raw.iterator(); itr.hasNext();) {
+            GatewayApi.EntityInfo info = itr.next();
+            // insert a policy fragment or policy alias into the sort list if the type is not Folder
+            if (parent.getId().equals(info.getParentId()) && (info.getEntityType().equals(EntityType.POLICY) || info.getEntityType().equals(EntityType.POLICY_ALIAS))) {
+                sort.add(index++, info);
+                count++;
+                itr.remove();
             }
         }
 
