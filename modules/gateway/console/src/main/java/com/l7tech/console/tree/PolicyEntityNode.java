@@ -50,7 +50,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         }
 
         PolicyHeader newEh = new PolicyHeader(updatedPolicy);
-        newEh.setAlias(eh.isAlias());
+        newEh.setAliasOid(eh.getAliasOid());
         newEh.setFolderOid(eh.getFolderOid());
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", eh, newEh);

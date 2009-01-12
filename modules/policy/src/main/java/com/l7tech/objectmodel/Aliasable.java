@@ -1,8 +1,5 @@
 package com.l7tech.objectmodel;
 
-import java.util.List;
-import java.util.Set;
-
 /**
  * Created by IntelliJ IDEA.
  * User: darmstrong
@@ -17,5 +14,5 @@ public interface Aliasable{
 
     public boolean isAlias();
 
-    public void setAlias(boolean isAlias);
+    public void setAliasOid(Long aliasOid);
 }

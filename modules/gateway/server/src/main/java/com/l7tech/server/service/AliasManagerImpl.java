@@ -98,7 +98,7 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
                 Set<AT> aliases = entityIdToAllItsAliases.get(serviceId);
                 for(AT pa: aliases){
                     HT newHT = getNewEntityHeader(ht);
-                    newHT.setAlias(true);
+                    newHT.setAliasOid(pa.getOidAsLong());
                     newHT.setFolderOid(pa.getFolder().getOid());
                     returnHeaders.add(newHT);
                 }

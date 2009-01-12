@@ -30,7 +30,7 @@ public class EntityHeaderMarshallingTest extends TestCase {
     }
 
     public void testSomething() throws Exception {
-        JAXB.marshal(new EntityHeaderWithDependencies(new PolicyHeader(-1,true,"a policy", "desc", "abc-123", -1L, false, 2), Collections.singleton(new EntityHeaderRef(EntityType.FOLDER, "-1234"))), System.out);
+        JAXB.marshal(new EntityHeaderWithDependencies(new PolicyHeader(-1,true,"a policy", "desc", "abc-123", -1L, null, 2), Collections.singleton(new EntityHeaderRef(EntityType.FOLDER, "-1234"))), System.out);
     }
 
     public void testIdentityHeader() throws Exception {

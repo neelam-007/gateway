@@ -93,6 +93,7 @@ public class PasteAsAliasAction extends SecureAction {
             }
 
             final OrganizationHeader header;
+            Long aliasOid;
             if (e instanceof PublishedService) {
                 PublishedService ps = (PublishedService) e;
                 //check if an alias already exists here
@@ -110,7 +111,7 @@ public class PasteAsAliasAction extends SecureAction {
                 try {
                     header = new ServiceHeader(ps);
                     PublishedServiceAlias psa = new PublishedServiceAlias(ps, parentFolder);
-                    Registry.getDefault().getServiceManager().saveAlias(psa);
+                    aliasOid = Registry.getDefault().getServiceManager().saveAlias(psa);
                 } catch (Exception e1) {
                     throw new RuntimeException("Unable to save alias", e1);
                 } 
@@ -131,7 +132,7 @@ public class PasteAsAliasAction extends SecureAction {
                 try {
                     header = new PolicyHeader(policy);
                     PolicyAlias pa = new PolicyAlias(policy, parentFolder);
-                    Registry.getDefault().getPolicyAdmin().saveAlias(pa);
+                    aliasOid = Registry.getDefault().getPolicyAdmin().saveAlias(pa);
                 } catch (SaveException e1) {
                     throw new RuntimeException("Unable to save alias", e1);
                 }
@@ -139,7 +140,7 @@ public class PasteAsAliasAction extends SecureAction {
                 throw new IllegalStateException("Referent was neither a Policy nor a Service");
             }
 
-            header.setAlias(true);
+            header.setAliasOid(aliasOid);
             header.setFolderOid(parentFolderOid);
             EntityWithPolicyNode childNode = (EntityWithPolicyNode) TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
 

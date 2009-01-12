@@ -20,7 +20,7 @@ public class ServiceHeader extends OrganizationHeader {
               svc.getName(),
               svc.getName(),
               svc.getFolder() == null ? null : svc.getFolder().getOid(),
-              false,
+              null,
               svc.getVersion() );
     }
 
@@ -32,7 +32,7 @@ public class ServiceHeader extends OrganizationHeader {
              serviceHeader.getName(),
              serviceHeader.getDescription(),
              serviceHeader.getFolderOid(),
-             serviceHeader.isAlias(),
+             serviceHeader.getAliasOid(),
              serviceHeader.getVersion());
     }
     
@@ -43,14 +43,14 @@ public class ServiceHeader extends OrganizationHeader {
                          final String name,
                          final String description,
                          final Long folderOid,
-                         final boolean alias,
+                         final Long aliasOid,
                          final int version) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description, version);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
         this.displayName = displayName;
         this.folderOid = folderOid;
-        this.alias = alias;
+        this.aliasOid = aliasOid;
     }
 
     public boolean isSoap() {

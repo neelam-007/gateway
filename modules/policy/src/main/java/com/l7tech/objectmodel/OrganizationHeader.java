@@ -28,15 +28,19 @@ public abstract class OrganizationHeader extends GuidEntityHeader implements Ali
 
     @Override
     public boolean isAlias() {
-        return alias;
+        return aliasOid != null;
+    }
+
+    public Long getAliasOid() {
+        return aliasOid;
     }
 
     @Override
-    public void setAlias(boolean isAlias) {
-        this.alias = isAlias;
+    public void setAliasOid(Long aliasOid) {
+        this.aliasOid = aliasOid;
     }
 
     //PRIVATE
     protected Long folderOid;
-    protected boolean alias;
+    protected Long aliasOid;
 }

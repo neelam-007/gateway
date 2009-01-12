@@ -21,7 +21,7 @@ public class PolicyHeader extends OrganizationHeader {
              policy.getInternalTag(),
              policy.getGuid(),
              policy.getFolder() == null ? null : policy.getFolder().getOid(),
-             false,
+             null,
              policy.getVersion());
     }
 
@@ -38,7 +38,7 @@ public class PolicyHeader extends OrganizationHeader {
              policyHeader.getDescription(),
              policyHeader.getGuid(),
              policyHeader.getFolderOid(),
-             policyHeader.isAlias(),
+             policyHeader.getAliasOid(),
              policyHeader.getVersion());
     }
 
@@ -48,7 +48,7 @@ public class PolicyHeader extends OrganizationHeader {
                         final String description,
                         final String policyGuid,
                         final Long folderOid,
-                        final boolean alias,
+                        final Long aliasOid,
                         final int version )
     {
         super(oid, EntityType.POLICY, name, description, version);
@@ -56,7 +56,7 @@ public class PolicyHeader extends OrganizationHeader {
         this.guid = policyGuid;
         this.isSoap = isSoap;
         this.folderOid = folderOid;
-        this.alias = alias;
+        this.aliasOid = aliasOid;
     }
 
     public boolean isSoap() {

@@ -70,7 +70,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         this.svc = svc;
 
         ServiceHeader newEh = new ServiceHeader(svc);
-        newEh.setAlias(serviceHeader.isAlias());
+        newEh.setAliasOid(serviceHeader.getAliasOid());
         newEh.setFolderOid(serviceHeader.getFolderOid());
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", serviceHeader, newEh);

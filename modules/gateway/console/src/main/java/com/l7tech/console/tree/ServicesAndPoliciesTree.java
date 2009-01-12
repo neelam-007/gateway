@@ -363,8 +363,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
 
     private RootNode getRootNode(){
         DefaultTreeModel model = (DefaultTreeModel) getModel();
-        RootNode rootNode = (RootNode) model.getRoot();
-        return rootNode;
+        return (RootNode) model.getRoot();
     }
 
     public void updateAllAliases(Long entityOid){
@@ -381,7 +380,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
             OrganizationHeader oH = (OrganizationHeader) userObj;
             long folderOid = oH.getFolderOid();
 
-            OrganizationHeader newHeader = null;
+            OrganizationHeader newHeader;
             if(atn instanceof ServiceNode){
                 ServiceHeader origServiceHeader = (ServiceHeader) origUserObject;
                 newHeader = new ServiceHeader(origServiceHeader);
@@ -394,7 +393,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
                 throw new RuntimeException(msg);
             }
             newHeader.setFolderOid(folderOid);
-            newHeader.setAlias(true);
+            newHeader.setAliasOid(oH.getAliasOid());
 
             atn.setUserObject(newHeader);
             if(atn instanceof EntityWithPolicyNode){
