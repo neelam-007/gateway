@@ -253,6 +253,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             //order is important. Update the old parent first
                             model.nodesWereRemoved(oldParent, new int[]{transferNodeIndex}, new Object[]{transferNode});
                             model.nodesWereInserted(parentNode, new int[]{insertPosition});
+                            tree.setSelectionPath(new TreePath(transferNode.getPath()));
                             model.nodeChanged(transferNode);
                         }
                     }
