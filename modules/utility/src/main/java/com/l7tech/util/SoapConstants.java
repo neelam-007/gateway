@@ -111,6 +111,8 @@ public class SoapConstants {
     public static final String USERNAME_TOK_EL_NAME = "UsernameToken";
     public static final String UNTOK_USERNAME_EL_NAME = "Username";
     public static final String UNTOK_PASSWORD_EL_NAME = "Password";
+    public static final String UNTOK_CREATED_EL_NAME = "Created";
+    public static final String UNTOK_NONCE_EL_NAME = "Nonce";
     public static final String MESSAGEID_EL_NAME = "MessageID";
     public static final String RELATESTO_EL_NAME = "RelatesTo";
     public static final String WSSC_ID_EL_NAME = "Identifier";

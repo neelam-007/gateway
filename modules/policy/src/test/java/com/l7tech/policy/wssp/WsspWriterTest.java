@@ -1,21 +1,23 @@
 package com.l7tech.policy.wssp;
 
-import com.l7tech.xml.DOMResultXMLStreamWriter;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.l7tech.xml.DOMResultXMLStreamWriter;
 import org.apache.ws.policy.Policy;
 import org.apache.ws.policy.util.PolicyFactory;
 import org.apache.ws.policy.util.StAXPolicyWriter;
+import org.junit.*;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.dom.DOMResult;
-import java.io.ByteArrayOutputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -24,28 +26,37 @@ import java.lang.reflect.Proxy;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class WsspWriterTest extends TestCase {
+public class WsspWriterTest {
+    private static final AssertionRegistry assertionRegistry = new AssertionRegistry();
 
-    public static Test suite() {
-        return new TestSuite(WsspWriterTest.class);
+    @BeforeClass
+    public static void initWspReader() {
+        WspConstants.setTypeMappingFinder(assertionRegistry);
+        for (Assertion assertion : AllAssertions.SERIALIZABLE_EVERYTHING)
+            assertionRegistry.registerAssertion(assertion.getClass());
     }
 
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testWriteA11() throws Exception {
         test(L7_POLICY_A11);
     }
 
+    @Test
     public void testWriteA12() throws Exception {
         test(L7_POLICY_A12);
     }
 
+    @Test
     public void testWriteT1() throws Exception {
         test(L7_POLICY_T1);
     }
 
+    @Test
+    public void testWriteExample_2113() throws Exception {
+        test(L7_POLICY_EXAMPLE_2113);
+    }
+
+    @Test
     public void testDOMWrite() throws Exception {
         Policy wssp = new WsspWriter().convertFromLayer7(WspReader.getDefault().parsePermissively( XmlUtil.stringToDocument(L7_POLICY_T1).getDocumentElement()));
         StAXPolicyWriter pw = (StAXPolicyWriter) PolicyFactory.getPolicyWriter(PolicyFactory.StAX_POLICY_WRITER);
@@ -60,13 +71,22 @@ public class WsspWriterTest extends TestCase {
         System.out.println(XmlUtil.nodeToFormattedString(document));
     }
 
+    @Test
+    public void testDecorateWsdl() throws Exception {
+        final Document doc = XmlUtil.stringToDocument(PING_WSDL);
+        WsspWriter.decorate(doc, parseL7(L7_POLICY_T1));
+        System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(XmlUtil.nodeToString(doc))));
+    }
+
     private void test(String l7policyXmlStr) throws Exception {
-        Assertion ass = WspReader.getDefault().parsePermissively(XmlUtil.stringToDocument(l7policyXmlStr).getDocumentElement());
+        Assertion ass = parseL7(l7policyXmlStr);
         Policy p = new WsspWriter().convertFromLayer7(ass);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PolicyFactory.getPolicyWriter(PolicyFactory.StAX_POLICY_WRITER).writePolicy(p, baos);
-        String policyDocStr = new String(baos.toByteArray(), "UTF-8");
+        String policyDocStr = WsspWriter.policyToXml(p);
         System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(policyDocStr)));
+    }
+
+    private Assertion parseL7(String l7policyXmlStr) throws InvalidPolicyStreamException, SAXException {
+        return WspReader.getDefault().parsePermissively(XmlUtil.stringToDocument(l7policyXmlStr).getDocumentElement());
     }
 
     static final String L7_POLICY_T1 =
@@ -209,6 +229,50 @@ public class WsspWriterTest extends TestCase {
             "        <L7p:ResponseWssConfidentiality>\n" +
             "            <L7p:XEncAlgorithm stringValue=\"http://www.w3.org/2001/04/xmlenc#tripledes-cbc\"/>\n" +
             "        </L7p:ResponseWssConfidentiality>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    static final String PING_WSDL =
+            "<wsdl:definitions xmlns:tns=\"http://example.com/ws/2008/09/securitypolicy\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:wsoap12=\"http://schemas.xmlsoap.org/wsdl/soap12/\" xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://example.com/ws/2008/09/securitypolicy\">\n" +
+            "  <wsdl:types>\n" +
+            "    <xs:schema targetNamespace=\"http://example.com/ws/2008/09/securitypolicy\" blockDefault=\"#all\" elementFormDefault=\"qualified\">\n" +
+            "      <xs:element name=\"EchoRequest\" type=\"xs:string\"/>\n" +
+            "      <xs:element name=\"EchoResponse\" type=\"xs:string\"/>\n" +
+            "    </xs:schema>\n" +
+            "  </wsdl:types>\n" +
+            "  <wsdl:message name=\"EchoInMessage\">\n" +
+            "    <wsdl:part name=\"Body\" element=\"tns:EchoRequest\"/>\n" +
+            "  </wsdl:message>\n" +
+            "  <wsdl:message name=\"EchoOutMessage\">\n" +
+            "    <wsdl:part name=\"Body\" element=\"tns:EchoResponse\"/>\n" +
+            "  </wsdl:message>\n" +
+            "  <wsdl:portType name=\"Test\">\n" +
+            "    <wsdl:operation name=\"Echo\">\n" +
+            "      <wsdl:input message=\"tns:EchoInMessage\"/>\n" +
+            "      <wsdl:output message=\"tns:EchoOutMessage\"/>\n" +
+            "    </wsdl:operation>\n" +
+            "  </wsdl:portType>\n" +
+            "  <wsdl:binding name=\"NoSecurityBinding\" type=\"tns:Test\">\n" +
+            "    <wsoap12:binding style=\"document\" transport=\"http://schemas.xmlsoap.org/soap/http\"/>\n" +
+            "    <wsdl:operation name=\"Echo\">\n" +
+            "      <wsdl:input>\n" +
+            "        <wsoap12:body use=\"literal\"/>\n" +
+            "      </wsdl:input>\n" +
+            "      <wsdl:output>\n" +
+            "        <wsoap12:body use=\"literal\"/>\n" +
+            "      </wsdl:output>\n" +
+            "    </wsdl:operation>\n" +
+            "  </wsdl:binding>\n" +
+            "</wsdl:definitions>";
+    
+    private static final String L7_POLICY_EXAMPLE_2113 =
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:WssDigest>\n" +
+            "            <L7p:RequireNonce booleanValue=\"true\"/>\n" +
+            "            <L7p:RequireTimestamp booleanValue=\"true\"/>\n" +
+            "            <L7p:RequiredPassword stringValue=\"ecilA\"/>\n" +
+            "        </L7p:WssDigest>\n" +
             "    </wsp:All>\n" +
             "</wsp:Policy>";
 }

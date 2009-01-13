@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -48,6 +49,7 @@ public class AllAssertions {
         new HttpBasic(),
         new HttpDigest(),
         new WssBasic(),
+        new WssDigest(),
         new EncryptedUsernameTokenAssertion(),
         new AllAssertion(LIST_OF_FALSE),
         new ExactlyOneAssertion(LIST_OF_FALSE),
@@ -83,6 +85,7 @@ public class AllAssertions {
         new HttpDigest(),
         new HttpNegotiate(),
         new WssBasic(),
+        new WssDigest(),
         new AllAssertion(LIST_OF_FALSE),
         new ExactlyOneAssertion(LIST_OF_FALSE),
         new OneOrMoreAssertion(LIST_OF_FALSE),
@@ -141,6 +144,7 @@ public class AllAssertions {
         new HttpDigest(),
         new HttpNegotiate(),
         new WssBasic(),
+        new WssDigest(),
         new AllAssertion(LIST_OF_FALSE),    // Empty composites are not valid
         new ExactlyOneAssertion(LIST_OF_FALSE), // Empty composites are not valid
         new OneOrMoreAssertion(LIST_OF_FALSE), // Empty composites are not valid

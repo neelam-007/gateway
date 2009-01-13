@@ -22,4 +22,32 @@ public interface UsernameToken extends XmlSecurityToken, HasUsernameAndPassword 
      *         This will use the default security namespace and prefix.
      */
     Element asElement();
+
+    /**
+     * Get the nonce for this token, if any.
+     *
+     * @return the Nonce from this token as a Base64-encoded byte array, or null.
+     */
+    String getNonce();
+
+    /**
+     * Get the creation date for this token, if any.
+     *
+     * @return the created date as a String in ISO 8601 format, or null.
+     */
+    String getCreated();
+
+    /**
+     * Check if this username token contains a digested password.
+     *
+     * @return true if {@link #getPasswordDigest()} would return non-null.
+     */
+    boolean isDigest();
+
+    /**
+     * Get the password digest found in this username token, if any.
+     *
+     * @return the Base64-encoded digested password, or null.
+     */
+    String getPasswordDigest();
 }

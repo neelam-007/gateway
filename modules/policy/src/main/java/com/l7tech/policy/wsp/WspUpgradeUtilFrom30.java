@@ -5,12 +5,11 @@
 
 package com.l7tech.policy.wsp;
 
-import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.security.saml.SamlConstants;
 import org.w3c.dom.Element;
 
 /**
@@ -37,14 +36,6 @@ class WspUpgradeUtilFrom30 {
                     final SamlAuthenticationStatement as = new SamlAuthenticationStatement();
                     as.setAuthenticationMethods(SamlConstants.ALL_AUTHENTICATIONS);
                     saml.setAuthenticationStatement(as);
-                }
-            };
-
-    /** WssDigest was never implemented and never will be.  Just map it to FalseAssertion for backward compat. */
-    public static TypeMapping wssDigestCompatibilityMapping =
-            new CompatibilityAssertionMapping(new FalseAssertion(), "WssDigest") {
-                protected void configureAssertion(Assertion assertion, Element source, WspVisitor visitor) {
-                    // FalseAssertion has nothing to configure
                 }
             };
 }

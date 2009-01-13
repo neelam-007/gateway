@@ -1584,10 +1584,11 @@ public class Wsdl implements Serializable {
         QName qname = ee.getElementType();
         if (!("Policy".equals(qname.getLocalPart())))
             return null;
-        if (!("http://schemas.xmlsoap.org/ws/2004/09/policy".equals(qname.getNamespaceURI())))
-            return null;
+        return isRecognizedWsspNs(qname.getNamespaceURI()) ? (UnknownExtensibilityElement) ee : null;
+    }
 
-        return (UnknownExtensibilityElement)ee;
+    private boolean isRecognizedWsspNs(String nsuri) {
+        return "http://www.w3.org/ns/ws-policy".equals(nsuri) || "http://schemas.xmlsoap.org/ws/2004/09/policy".equals(nsuri);
     }
 
     /** @return a UEE if this is a wsp:PolicyReference element, or null if it isn't. */
@@ -1598,10 +1599,7 @@ public class Wsdl implements Serializable {
         QName qname = ee.getElementType();
         if (!("PolicyReference".equals(qname.getLocalPart())))
             return null;
-        if (!("http://schemas.xmlsoap.org/ws/2004/09/policy".equals(qname.getNamespaceURI())))
-            return null;
-
-        return (UnknownExtensibilityElement)ee;
+        return isRecognizedWsspNs(qname.getNamespaceURI()) ? (UnknownExtensibilityElement)ee : null;
     }
 
     /**

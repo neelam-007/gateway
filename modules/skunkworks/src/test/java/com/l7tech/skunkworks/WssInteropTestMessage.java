@@ -8,34 +8,30 @@ package com.l7tech.skunkworks;
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
-import com.l7tech.message.Message;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.message.Message;
 import com.l7tech.security.keys.AesKey;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.EncryptedElement;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.UsernameTokenImpl;
+import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
-import com.l7tech.security.xml.XencUtil;
-import com.l7tech.security.xml.KeyInfoElement;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.security.xml.DsigUtil;
-//import com.l7tech.common.TestDocuments;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.soap.SoapUtil;
 import junit.framework.TestCase;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -77,7 +73,7 @@ public class WssInteropTestMessage extends TestCase {
         }
     }
 
-    public MsgInfo makeTestMessage(String utUsername, String utPassword) throws Exception {
+    public MsgInfo makeTestMessage(String utUsername, String utPassword, boolean encryptPingHeader, boolean encryptPayload) throws Exception {
 
         // Take the sample request from WSS interop and turn it into one that uses certifictes that are known.
 
@@ -87,7 +83,7 @@ public class WssInteropTestMessage extends TestCase {
         //   replace the signature with a new version, and then re-encrypt all the encrypted bits with the new key.
 
         // Start with the WSS example request
-        Document d = null;// TestDocuments.getTestDocument(TestDocuments.WSS2005JUL_REQUEST_ORIG);
+        Document d = TestDocuments.getTestDocument(TestDocuments.WSS2005JUL_REQUEST_ORIG);
         Element env = d.getDocumentElement();
         String oldStr = XmlUtil.nodeToFormattedString(env);
         Element header = DomUtils.findFirstChildElementByName(env, (String)null, "Header");
@@ -113,7 +109,7 @@ public class WssInteropTestMessage extends TestCase {
         Element ekkinf = DomUtils.findFirstChildElementByName(encryptedKeyEl, (String)null, "KeyInfo");
         Element ekstr = DomUtils.findFirstChildElementByName(ekkinf, (String)null, "SecurityTokenReference");
         Element ekkid = DomUtils.findFirstChildElementByName(ekstr, (String)null, "KeyIdentifier");
-        ekkid.setTextContent(recipCertPrint); // XXX This is a 1.5-ism, not in the 1.4 DOM
+        ekkid.setTextContent(recipCertPrint);
         ekkid.setAttribute("ValueType", SoapUtil.VALUETYPE_X509_THUMB_SHA1);
         KeyInfoElement.assertKeyInfoMatchesCertificate(ekkinf, recipCert);
 
@@ -170,14 +166,15 @@ public class WssInteropTestMessage extends TestCase {
         Element sigval = (Element)sigvals.item(0);
         final String signatureValue = DomUtils.getTextValue(sigval);
 
-
-        // Encrypt the new Ping header
-        Element wrappedNewPing = XmlUtil.stringToDocument("<a>" + newPingHdrXml + "</a>").getDocumentElement();
-        Element newEncPingHdrEl = XencUtil.encryptElement(wrappedNewPing, encKey);
-        newEncPingHdrEl = (Element)d.importNode(newEncPingHdrEl, true);
-        encPingHdr.replaceChild(newEncPingHdrEl, DomUtils.findFirstChildElement(encPingHdr));
-        encPingHdr = (Element)d.importNode(encPingHdr, true);
-        header.replaceChild(encPingHdr, newPingHdrEl);
+        if (encryptPingHeader) {
+            // Encrypt the new Ping header
+            Element wrappedNewPing = XmlUtil.stringToDocument("<a>" + newPingHdrXml + "</a>").getDocumentElement();
+            Element newEncPingHdrEl = XencUtil.encryptElement(wrappedNewPing, encKey);
+            newEncPingHdrEl = (Element)d.importNode(newEncPingHdrEl, true);
+            encPingHdr.replaceChild(newEncPingHdrEl, DomUtils.findFirstChildElement(encPingHdr));
+            encPingHdr = (Element)d.importNode(encPingHdr, true);
+            header.replaceChild(encPingHdr, newPingHdrEl);
+        }
 
         // Encrypt the new UsernameToken
         Element wrappedUtok = XmlUtil.stringToDocument("<a>" + XmlUtil.nodeToString(newUtok) + "</a>").getDocumentElement();
@@ -187,11 +184,13 @@ public class WssInteropTestMessage extends TestCase {
         newUtokEnc = (Element)d.importNode(newUtokEnc, true);
         secHeader.replaceChild(newUtokEnc, newUtok);
 
-        // Encrypt the new paylod
-        Element newPayloadEnc = XencUtil.encryptElement(body, encKey);
-        newPayloadEnc.setAttribute("Id", "EncBody"); // change this -- possible error in example document (EncPing instead of EncBody)
-        newPayloadEnc.setAttribute("Type", oldPayloadEl.getAttribute("Type"));
-        newPayloadEnc = (Element)d.importNode(newPayloadEnc, true);
+        if (encryptPayload) {
+            // Encrypt the new paylod
+            Element newPayloadEnc = XencUtil.encryptElement(body, encKey);
+            newPayloadEnc.setAttribute("Id", "EncBody"); // change this -- possible error in example document (EncPing instead of EncBody)
+            newPayloadEnc.setAttribute("Type", oldPayloadEl.getAttribute("Type"));
+            newPayloadEnc = (Element)d.importNode(newPayloadEnc, true);
+        }
 
         final String newStr = XmlUtil.nodeToFormattedString(env);
         log.info("Final message (reformatted): " + newStr);
@@ -233,11 +232,11 @@ public class WssInteropTestMessage extends TestCase {
         String url = "http://locutus.l7tech.com:8080/xml/ping";
         String username = "alice";
         String password = "password";
-        MsgInfo msgInfo = makeTestMessage(username, password);
+        MsgInfo msgInfo = makeTestMessage(username, password, false, false);
     }
 
     private void doSendTestMessage(String url, String username, String password) throws Exception {
-        final MsgInfo msgInfo = makeTestMessage(username, password);
+        final MsgInfo msgInfo = makeTestMessage(username, password, false, false);
         Document d = msgInfo.doc;
         assertNotNull(d);
         assertTrue(SoapUtil.isSoapMessage(d));
@@ -286,7 +285,7 @@ public class WssInteropTestMessage extends TestCase {
         // TODO maintain a list of signature confirmations
         // TODO maintain a list of signature confirmations
         // TODO maintain a list of signature confirmations
-        final String foundSigConf = wssResults.getSignatureConfirmationValues().iterator().next().getConfirmationValue();
+        final String foundSigConf = wssResults.getSignatureConfirmationValues().get(0).getConfirmationValue();
         if (expectedSigConf.equals(foundSigConf))
             log.info("Expected signature confirmation was found: " + expectedSigConf);
         else

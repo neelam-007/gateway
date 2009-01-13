@@ -475,7 +475,10 @@ public class AssertionMessages extends Messages {
     public static final M OVERSIZEDTEXT_OVERSIZED_TEXT      = m(7231, Level.WARNING, "Request includes an oversized text node or attribute value");
     public static final M XML_NESTING_DEPTH_EXCEEDED        = m(7232, Level.WARNING, "Request XML nesting depth exceeds the policy limit");
     public static final M OVERSIZEDTEXT_EXTRA_PAYLOAD       = m(7233, Level.WARNING, "Request message SOAP Body has too many children");
-    public static final M REQUEST_NOT_SOAP                  = m(7234, Level.WARNING, "Request message does not have a valid SOAP Envelope"); 
+    public static final M REQUEST_NOT_SOAP                  = m(7234, Level.WARNING, "Request message does not have a valid SOAP Envelope");
+    public static final M REQUEST_BAD_XML                   = m(7235, Level.WARNING, "Request message is not well-formed XML");
+    public static final M RESPONSE_BAD_XML                  = m(7236, Level.WARNING, "Response message is not well-formed XML");
+    public static final M MESSAGE_BAD_XML                   = m(7237, Level.WARNING, "Message is not well-formed XML");
 
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");

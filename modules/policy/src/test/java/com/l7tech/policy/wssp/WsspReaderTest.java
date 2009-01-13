@@ -43,9 +43,13 @@ public class WsspReaderTest extends TestCase {
     }
 
     static void displayWispyPolicy(Policy blat, PrintStream out) throws IOException, SAXException {
+        if (blat == null) {
+            out.println("<NullPolicy/>");
+            return;
+        }
         PolicyWriter writer = PolicyFactory.getPolicyWriter(PolicyFactory.StAX_POLICY_WRITER);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        writer.writePolicy((Policy)blat, baos);
+        writer.writePolicy(blat, baos);
         Document d = XmlUtil.parse(new ByteArrayInputStream(baos.toByteArray()));
         XmlUtil.nodeToFormattedOutputStream(d, out);
     }

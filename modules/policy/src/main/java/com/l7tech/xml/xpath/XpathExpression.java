@@ -67,7 +67,7 @@ public class XpathExpression extends CompilableXpath implements Serializable {
      * @return the namespace map, never <b>null</b>, note that the
      *         this is the reference, not safe copy
      */
-    public Map getNamespaces() {
+    public Map<String, String> getNamespaces() {
         return namespaces;
     }
 

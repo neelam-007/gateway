@@ -60,7 +60,7 @@ public abstract class XpathBasedAssertion extends Assertion implements Assertion
     }
 
     /** Shortcut to get namespace map.  Name doesn't use get, to hide it from policy serializer. */
-    public Map namespaceMap() {
+    public Map<String, String> namespaceMap() {
         if (getXpathExpression() != null)
             return getXpathExpression().getNamespaces();
         return null;

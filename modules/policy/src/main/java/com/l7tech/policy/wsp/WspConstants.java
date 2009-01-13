@@ -352,7 +352,6 @@ public class WspConstants {
         WspUpgradeUtilFrom21.xmlResponseSecurityCompatibilityMapping,
         WspUpgradeUtilFrom30.httpClientCertCompatibilityMapping,
         WspUpgradeUtilFrom30.samlSecurityCompatibilityMapping,
-        WspUpgradeUtilFrom30.wssDigestCompatibilityMapping,
         StealthReplacedByFaultLevel.faultDropCompatibilityMapping
     };
 }

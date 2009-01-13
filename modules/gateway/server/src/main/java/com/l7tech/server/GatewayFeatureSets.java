@@ -6,6 +6,7 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.License;
+import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.transport.PreemptiveCompression;
 import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
@@ -23,19 +24,19 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.WssDigest;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
-import com.l7tech.policy.AllAssertions;
 
 import javax.servlet.http.HttpServlet;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * Master list of Feature Sets for the SSG, hard-baked into the code so it will be obfuscated.
@@ -193,9 +194,13 @@ public class GatewayFeatureSets {
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
             srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
-            ass(WsspAssertion.class),
+            ass(WssDigest.class),
             mass("assertion:CacheLookup"),
             mass("assertion:CacheStorage"));
+
+        GatewayFeatureSet wssp =
+        fsr("set:wssp", "WS-SecurityPolicy assertion",
+            ass(WsspAssertion.class));
 
         GatewayFeatureSet uiPublishServiceWizard = ui(UI_PUBLISH_SERVICE_WIZARD, "Enable the SSM Publish SOAP Service Wizard");
         GatewayFeatureSet uiPublishXmlWizard = ui(UI_PUBLISH_XML_WIZARD, "Enable the SSM Publish XML Service Wizard");
@@ -538,19 +543,20 @@ public class GatewayFeatureSets {
             fs(ssb),
             fs(modularAssertions),
             fs(uiFw),
-            fs(ems),
-            fs(experimental));
+            fs(wssp),
+            fs(ems));
 
         fsp("set:Profile:PolicyIntegrationPoint", "SecureSpan Policy Integration Point",
             "Same as SecureSpan Gateway.",
             fs(profileGateway));
 
-        PROFILE_ALL =
+        GatewayFeatureSet profileUs =
         fsp("set:Profile:US", "SecureSpan Gateway US",
             "Adds US features.",
             fs(profileGateway),
             fs(usAssertions));
 
+        GatewayFeatureSet profileFederal =
         fsp("set:Profile:Federal", "SecureSpan Federal",
             "Exactly the same features as SecureSpan Gateway, but XML VPN Client software is not bundled.",
             fs(core),
@@ -566,8 +572,16 @@ public class GatewayFeatureSets {
             fs(customFw),
             fs(ssb),
             fs(modularAssertions),
-            fs(uiFw),
-            fs(experimental));
+            fs(wssp),
+            fs(uiFw));
+
+        PROFILE_ALL =
+        fsp("set:Profile:Development", "Development Mode",
+                "Everything everywhere, including experimental features.",
+                fs(profileGateway),
+                fs(profileFederal),
+                fs(profileUs),
+                fs(experimental));
 
         // For now, if a license names no features explicitly, we will enable all features.
         // TODO we should enable only those features that existed in 3.5.
