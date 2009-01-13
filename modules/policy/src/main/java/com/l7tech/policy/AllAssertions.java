@@ -49,7 +49,7 @@ public class AllAssertions {
         new HttpBasic(),
         new HttpDigest(),
         new WssBasic(),
-        new WssDigest(),
+        //new WssDigest(),  // TODO uncomment when there is a client implementation of this
         new EncryptedUsernameTokenAssertion(),
         new AllAssertion(LIST_OF_FALSE),
         new ExactlyOneAssertion(LIST_OF_FALSE),
