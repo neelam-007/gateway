@@ -344,6 +344,7 @@ public class GatewayFeatureSets {
             "HTTP and hardcoded responses.",
             fs(httpFront),
             fs(httpBack),
+            fs(keyStore),
             mass("assertion:HardcodedResponse"),
             mass("assertion:EchoRouting"));
 
