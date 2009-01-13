@@ -211,16 +211,20 @@ public class RuntimeDocUtilities {
      * to display as the category value in a chart:- <br>
      * e.g. group 1 instead of IpAddress=...Customer=..., or service 1
      *                            instead of Warehouse [routing uri].....
+     * @param isUsingKeys are keys 1-5 or auth user being used? Used in conjunction with isContextMapping to tell
+     * the report if context mapping is being used ONLY to get at operation level data.
      * @return a Document which can be used as parameter to transform a template jrxml file
      */
-    public static Document getPerfStatAnyRuntimeDoc(boolean isContextMapping,
+    public static Document getPerfStatAnyRuntimeDoc(boolean isContextMapping, boolean isUsingKeys,
                                                     LinkedHashMap<String, String> groupToMappingValue) {
         Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
         Node rootNode = doc.getFirstChild();
         //Create variables element
         Element isCtxMapElement = doc.createElement(IS_CONTEXT_MAPPING);
         rootNode.appendChild(isCtxMapElement);
-        if (isContextMapping) {
+        //the style sheet uses just this element to know whether to show the normal chart or the group chart
+        //see the jrxml files which have two charts defined.
+        if (isContextMapping && isUsingKeys) {
             isCtxMapElement.setTextContent("1");
         } else {
             isCtxMapElement.setTextContent("0");

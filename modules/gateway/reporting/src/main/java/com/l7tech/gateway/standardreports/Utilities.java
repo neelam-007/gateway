@@ -2239,7 +2239,7 @@ END AS MAPPING_VALUE_2
      * display the mapping values to the user in report output. As a result a prefix can be added for display purposes.
      *
      * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
-     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constraint was added for a
      * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
      * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
      * hash map.
@@ -2263,22 +2263,23 @@ END AS MAPPING_VALUE_2
             throw new NullPointerException("authUser must have a non null and non empty value. " +
                     "It can be the placeholder value");//as it always exists in select
 
-        if(authUser.equals(SQL_PLACE_HOLDER) && keysToFilters.isEmpty()
-                && (keyValues == null || keyValues.length == 0)){
-            throw new IllegalArgumentException("authUser must be supplied (non null, emtpy and not a placeholder or" +
-                    " valid keys and values must be supplied");
+        if(keyValues == null){
+            throw new NullPointerException("keyValues cannot be null");
         }
+
+        if(keyValues.length != NUM_MAPPING_KEYS) throw new IllegalArgumentException("Length of keyValues must equal :" + NUM_MAPPING_KEYS);
+        
+        if((authUser.equals(SQL_PLACE_HOLDER) && keysToFilters.isEmpty())
+                || (authUser.equals(SQL_PLACE_HOLDER) && keysToFilters.size() == 1
+                && keysToFilters.keySet().iterator().next().equals(MessageContextMapping.MappingType.AUTH_USER.toString())) ){
+            throw new IllegalArgumentException("authUser must be supplied (non null, emtpy and not a placeholder) or" +
+                    " some ReportApi.FilterPairs should be supplied in keysToFilters");
+        }
+        
         if(includePreFix){
             if(prefix == null || prefix.equals("")) throw new IllegalArgumentException("If includePreFix is true, prefix " +
                     "cannot be null or the empty string");
         }
-
-        if(keyValues == null){
-            keyValues = new String[]{};
-        }
-
-        if(keyValues.length != NUM_MAPPING_KEYS) throw new IllegalArgumentException("Length of keyValues must equal :" + NUM_MAPPING_KEYS);
-
 
         StringBuilder sb = new StringBuilder();
         boolean firstComma = false;
@@ -2307,13 +2308,8 @@ END AS MAPPING_VALUE_2
             index++;
         }
 
-        if(sb.toString().equals("")){
-            //todo [Donal] there is a bug open for this. Update the logic here
-            return "Detail Report";
-        }else{
-            if(includePreFix) sb.insert(0, prefix);
-            return sb.toString();
-        }
+        if(includePreFix) sb.insert(0, prefix);
+        return sb.toString();
     }
 
     /**

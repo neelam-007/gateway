@@ -429,6 +429,10 @@ public interface ReportApi {
         public static final String SERVICE_ID_TO_OPERATIONS_MAP = "SERVICE_ID_TO_OPERATIONS_MAP";
         public static final String SERVICE_ID_TO_NAME_MAP = "SERVICE_ID_TO_NAME_MAP";
         public static final String KEYS_TO_LIST_FILTER_PAIRS = "KEYS_TO_LIST_FILTER_PAIRS";
+        /**
+         * IS_CONTEXT_MAPPING tells the report that the new service_metric_details table is required. Used in
+         * combination with IS_USING_KEYS.
+         */
         public static final String IS_CONTEXT_MAPPING = "IS_CONTEXT_MAPPING";
         public static final String IS_DETAIL = "IS_DETAIL";
         public static final String PRINT_CHART = "PRINT_CHART";
@@ -446,6 +450,12 @@ public interface ReportApi {
         public static final String REPORT_SCRIPTLET = "REPORT_SCRIPTLET";
         public static final String DISPLAY_STRING_TO_MAPPING_GROUP = "DISPLAY_STRING_TO_MAPPING_GROUP";
 
+        /**
+         * IS_USING_KEYS tells the performance statistics reports that keys other than operation are being used
+         * in the report. This is used in combination with IS_CONTEXT_MAPPING
+         */
+        public static final String IS_USING_KEYS = "IS_USING_KEYS";
+
         //interval only ssg params
         public static final String SUB_INTERVAL_SUB_REPORT = "SUB_INTERVAL_SUB_REPORT";
         public static final String SUB_REPORT = "SUB_REPORT";
@@ -453,7 +463,7 @@ public interface ReportApi {
         //usage interva only ssg param
         public static final String SUB_REPORT_HELPER = "SUB_REPORT_HELPER";
         
-        //used for passing data around in ReportGenerator - //todo [Donal] find another way of doing this
+        //used for passing data around in ReportGenerator - //todo find another way of doing this
         public static final String MAPPING_GROUP_TO_DISPLAY_STRING = "MAPPING_GROUP_TO_DISPLAY_STRING";
         public static final String DISTINCT_MAPPING_SETS = "DISTINCT_MAPPING_SETS";
 

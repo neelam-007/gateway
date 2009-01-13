@@ -125,6 +125,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport">
 		<parameterDescription><![CDATA[Subreport, for the 3rd level report. Not used directly by this report, but passes to its subreport]]></parameterDescription>
 	</parameter>
+	<parameter name="IS_USING_KEYS" isForPrompting="false" class="java.lang.Boolean"/>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
 	<field name="SERVICE_ID" class="java.lang.Long"/>
@@ -253,7 +254,12 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
 			<groupHeader>
 			<band height="228"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[new Boolean(!$P{IS_CONTEXT_MAPPING}.booleanValue() && $P{PRINT_CHART}.booleanValue())]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean(
+(!$P{IS_CONTEXT_MAPPING}.booleanValue() && $P{PRINT_CHART}.booleanValue())
+||
+($P{IS_CONTEXT_MAPPING}.booleanValue() && !$P{IS_USING_KEYS}.booleanValue() 
+&& $P{PRINT_CHART}.booleanValue())
+)]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
@@ -305,7 +311,11 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 						</dataset>
 						<categorySeries>
 							<seriesExpression><![CDATA["Throughput"]]></seriesExpression>
-							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue())?
+							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue() 
+||
+($P{IS_CONTEXT_MAPPING}.booleanValue() && !$P{IS_USING_KEYS}.booleanValue())
+)
+?
 Utilities.getServiceFromDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{THROUGHPUT_SUM}]]></valueExpression>
@@ -314,7 +324,11 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 						</categorySeries>
 						<categorySeries>
 							<seriesExpression><![CDATA["Policy Violations"]]></seriesExpression>
-							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue())?
+							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue() 
+||
+($P{IS_CONTEXT_MAPPING}.booleanValue() && !$P{IS_USING_KEYS}.booleanValue())
+)
+?
 Utilities.getServiceFromDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{POLICY_VIOLATIONS_SUM}]]></valueExpression>
@@ -323,7 +337,11 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 						</categorySeries>
 						<categorySeries>
 							<seriesExpression><![CDATA["Routing Failures"]]></seriesExpression>
-							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue())?
+							<categoryExpression><![CDATA[(!$P{IS_CONTEXT_MAPPING}.booleanValue() 
+||
+($P{IS_CONTEXT_MAPPING}.booleanValue() && !$P{IS_USING_KEYS}.booleanValue())
+)
+?
 Utilities.getServiceFromDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{ROUTING_FAILURES_SUM}]]></valueExpression>
@@ -363,7 +381,8 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
 			<groupHeader>
 			<band height="218"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[new Boolean($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{PRINT_CHART}.booleanValue())]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{PRINT_CHART}.booleanValue()
+&& $P{IS_USING_KEYS}.booleanValue())]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameTableTop"
 						mode="Opaque"
@@ -416,30 +435,33 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 						</dataset>
 						<categorySeries>
 							<seriesExpression><![CDATA["Throughput"]]></seriesExpression>
-							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue())?
+							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"
+]]></categoryExpression>
 							<valueExpression><![CDATA[$V{THROUGHPUT_SUM_MAPPING}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
 						</categorySeries>
 						<categorySeries>
 							<seriesExpression><![CDATA["Policy Violations"]]></seriesExpression>
-							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue())?
+							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"
+]]></categoryExpression>
 							<valueExpression><![CDATA[$V{POLICY_VIOLATIONS_MAPPING}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
 						</categorySeries>
 						<categorySeries>
 							<seriesExpression><![CDATA["Routing Failures"]]></seriesExpression>
-							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue())?
+							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"
+]]></categoryExpression>
 							<valueExpression><![CDATA[$V{ROUTING_FAILURES_MAPPING}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -478,7 +500,7 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 +$F{MAPPING_VALUE_5}+$F{AUTHENTICATED_USER}]]></groupExpression>
 			<groupHeader>
 			<band height="18"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())]]></printWhenExpression>
 				<frame>					<reportElement
 						style="MappingTitleFrame"
 						mode="Opaque"
@@ -508,7 +530,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 			</groupHeader>
 			<groupFooter>
 			<band height="36"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[$P{IS_CONTEXT_MAPPING}]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameTableBottom"
 						mode="Opaque"
@@ -1071,10 +1093,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
 			<groupExpression><![CDATA[$F{SERVICE_OPERATION_VALUE}]]></groupExpression>
 			<groupHeader>
 			<band height="18"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[new Boolean(
-!Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
-&& $P{IS_CONTEXT_MAPPING}.booleanValue()
-)]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean(!Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameDetailTableRow"
 						mode="Opaque"
@@ -1102,10 +1121,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
 			</groupHeader>
 			<groupFooter>
 			<band height="18"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[new Boolean(
-!Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
-&& $P{IS_CONTEXT_MAPPING}.booleanValue()
-)]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean(!Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameTotalTableRow"
 						mode="Opaque"
@@ -1619,7 +1635,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
+				<textFieldExpression   class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 Utilities.getMappingReportInfoDisplayString
 ($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
 :"None")]]></textFieldExpression>
@@ -1679,10 +1695,10 @@ Utilities.getMappingReportInfoDisplayString
 					<subreportParameter  name="INTERVAL_UNIT_OF_TIME">
 						<subreportParameterExpression><![CDATA[$P{INTERVAL_TIME_UNIT}]]></subreportParameterExpression>
 					</subreportParameter>
-                    <subreportParameter  name="INTERVAL_NUM_OF_TIME_UNITS">
-                        <subreportParameterExpression><![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS}]]></subreportParameterExpression>
-                    </subreportParameter>
-                    <subreportParameter  name="REPORT_CONNECTION">
+					<subreportParameter  name="INTERVAL_NUM_OF_TIME_UNITS">
+						<subreportParameterExpression><![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter  name="REPORT_CONNECTION">
 						<subreportParameterExpression><![CDATA[$P{REPORT_CONNECTION}]]></subreportParameterExpression>
 					</subreportParameter>
 					<subreportParameter  name="KEYS_TO_LIST_FILTER_PAIRS">
@@ -2312,10 +2328,10 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
-    Utilities.getMappingReportInfoDisplayString
-    ($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
-    :"None")]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
+Utilities.getMappingReportInfoDisplayString
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
+:"None")]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement

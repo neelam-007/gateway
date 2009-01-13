@@ -79,21 +79,21 @@ public class ReportTransformTests {
         return new String(resbytes);
     }
 
-    @Test
-    public void testUsageTransformation_HardCodedTranslationDoc() throws Exception{
-        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportTransform.xsl");
-        //String xslStr = getResAsStringClasspath("UsageReportTransform.xsl");
-        //String xmlFileName = "/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/Usage_Summary_XSLT_Template.jrxml";
-        String xmlFileName = getResAsStringClasspath("Usage_Summary_XSLT_Template.jrxml");
-        String runtimeXmlStr =  getResAsString("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeUsageXsltXml.xml");
-        Document runtimeDoc = XmlUtil.stringToDocument(runtimeXmlStr);
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("RuntimeDoc", runtimeDoc);
-        //Document doc = transform(xslStr, xmlStr, params);
-        Document doc = transform(xslStr, xmlFileName, params);
-//        String s= XmlUtil.nodeToString(doc);
-//        System.out.println(s);
-    }
+//    @Test
+//    public void testUsageTransformation_HardCodedTranslationDoc() throws Exception{
+//        String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportTransform.xsl");
+//        //String xslStr = getResAsStringClasspath("UsageReportTransform.xsl");
+//        //String xmlFileName = "/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/Usage_Summary_XSLT_Template.jrxml";
+//        String xmlFileName = getResAsStringClasspath("Usage_Summary_XSLT_Template.jrxml");
+//        String runtimeXmlStr =  getResAsString("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeUsageXsltXml.xml");
+//        Document runtimeDoc = XmlUtil.stringToDocument(runtimeXmlStr);
+//        Map<String, Object> params = new HashMap<String, Object>();
+//        params.put("RuntimeDoc", runtimeDoc);
+//        //Document doc = transform(xslStr, xmlStr, params);
+//        Document doc = transform(xslStr, xmlFileName, params);
+////        String s= XmlUtil.nodeToString(doc);
+////        System.out.println(s);
+//    }
 
     @Test
     public void testUsageTransformation_Dynamic() throws Exception {
@@ -109,10 +109,9 @@ public class ReportTransformTests {
 
         LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
         List<String> valueList = new ArrayList<String>();
+        valueList.add(";");
         valueList.add("127.0.0.1");
         valueList.add("GOLD");
-        distinctMappingSets.add(valueList);
-        distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
         Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
@@ -161,9 +160,8 @@ public class ReportTransformTests {
 
         LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
         List<String> valueList = new ArrayList<String>();
+        valueList.add(";");
         valueList.add("127.0.0.1");
-        distinctMappingSets.add(valueList);
-        distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
         Document transformDoc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
@@ -478,7 +476,7 @@ public class ReportTransformTests {
         linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.3, CUSTOMER: GOLD");
         linkedHashMap.put("Group 4", "IP_ADDRESS: 127.0.0.4, CUSTOMER: GOLD");
 
-        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(true, linkedHashMap);
+        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(true, true, linkedHashMap);
         Assert.assertTrue(transformDoc != null);
 
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PerfStatIntervalMastereRuntimeDoc.xml");
@@ -525,7 +523,7 @@ public class ReportTransformTests {
         linkedHashMap.put("Service 3", "Warehouse [w3]");
         linkedHashMap.put("Service 4", "Warehouse [w4]");
 
-        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(false, linkedHashMap);
+        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(false, false, linkedHashMap);
         Assert.assertTrue(transformDoc != null);
 
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PerfStatIntervalRuntimeDoc.xml");

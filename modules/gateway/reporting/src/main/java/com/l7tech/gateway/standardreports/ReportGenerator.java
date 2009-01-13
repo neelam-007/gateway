@@ -280,21 +280,36 @@ public class ReportGenerator {
 
         LinkedHashMap<String, List<ReportApi.FilterPair>>
                 keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>)
-                reportParams.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);        
+                reportParams.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
+
+        boolean isUsage = (reportType == ReportApi.ReportType.USAGE_SUMMARY
+                || reportType == ReportApi.ReportType.USAGE_INTERVAL);
+
+        boolean isUsingKeys = !keysToFilterPairs.isEmpty();
+
+        if(reportType == ReportApi.ReportType.PERFORMANCE_SUMMARY || reportType == ReportApi.ReportType.PERFORMANCE_INTERVAL){
+            //Only required for performance statistics reports. Usage reports must always have a key other than operation
+            //added.
+            reportParams.put(ReportApi.ReportParameters.IS_USING_KEYS, isUsingKeys);
+        }
+
         String sql;
-        if( isContextMapping ) {
-            boolean isUsage = (reportType == ReportApi.ReportType.USAGE_SUMMARY
-                    || reportType == ReportApi.ReportType.USAGE_INTERVAL);
+        //this is a context mapping query using keys 1-5 and auth user
+        if( isContextMapping && isUsingKeys) {
             sql = Utilities.getUsageDistinctMappingQuery(
                     startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
-        }else{
+        }//this is a context mapping query when we just need operation, dealt with like it's not context mapping
+        else if(isContextMapping){
+            sql = Utilities.getPerformanceStatisticsMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
+        }//this is a report on the original service_metrics table
+        else{
             sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
         }
 
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
 
-        if( isContextMapping ){
+        if( isContextMapping && isUsingKeys){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
             reportParams.put(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS, distinctMappingSets);
             LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
@@ -366,6 +381,7 @@ public class ReportGenerator {
                 template.getType() == ReportApi.ReportType.PERFORMANCE_INTERVAL){
             runtimeDocument = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(
                     Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING).toString()),
+                    Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_USING_KEYS).toString()),
                     (LinkedHashMap<String,String>)reportParameters.get(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING) );
             return runtimeDocument;
         }

@@ -91,6 +91,8 @@ public class ReportApp
     private static final String SERVICE_ID_TO_NAME_MAP = "SERVICE_ID_TO_NAME_MAP";
 
     private static final String SPECIFIC_TIME_ZONE = "SPECIFIC_TIME_ZONE";
+    private static final String IS_USING_KEYS = "IS_USING_KEYS";
+
     public ReportApp() {
     }
 
@@ -165,12 +167,16 @@ public class ReportApp
 
         int resolution = Utilities.getSummaryResolutionFromTimePeriod(30, startTimeInPast, endTimeInPast);
 
-        boolean isContextMapping = Boolean.valueOf(parameters.get(IS_CONTEXT_MAPPING).toString()); 
+        boolean isContextMapping = Boolean.valueOf(parameters.get(IS_CONTEXT_MAPPING).toString());
 
-        String sql = null;
-        if(isContextMapping){
-            Boolean isUsage = Boolean.valueOf(prop.getProperty("IS_USAGE"));
+        boolean isUsingKeys = !keysToFilterPairs.isEmpty();
+
+        String sql;
+        Boolean isUsage = Boolean.valueOf(prop.getProperty("IS_USAGE"));
+        if(isContextMapping && isUsingKeys){
             sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
+        }else if(isContextMapping){
+            sql = Utilities.getPerformanceStatisticsMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
         }else{
             sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
         }
@@ -178,18 +184,16 @@ public class ReportApp
         
         if(!type.equals("Usage") && !type.equals("Usage_Interval")){
             if(type.equals("Performance_Interval")){
-                runPerfStatIntervalReport(isContextMapping, prop, parameters, sql, keysToFilterPairs);
+                runPerfStatIntervalReport(isContextMapping, isUsingKeys, prop, parameters, sql, keysToFilterPairs);
             }else{
-                runPerfStatSummaryReport(isContextMapping, prop, parameters, sql, keysToFilterPairs);
+                runPerfStatSummaryReport(isContextMapping, isUsingKeys, prop, parameters, sql, keysToFilterPairs);
             }
         }else{
-
             if(type.equals("Usage")){
                 runUsageReport(prop, parameters, scriplet, sql, keysToFilterPairs);
             }else if(type.equals("Usage_Interval")){
                 runUsageIntervalReport(prop, parameters, scriplet, sql, keysToFilterPairs);
             }
-            
         }
 
         System.err.println("Filling time : " + (System.currentTimeMillis() - start));
@@ -481,14 +485,14 @@ public class ReportApp
 
     }
 
-    private void runPerfStatSummaryReport(boolean isContextMapping, Properties prop, Map parameters,
+    private void runPerfStatSummaryReport(boolean isContextMapping, boolean isUsingKeys, Properties prop, Map parameters,
                                            String sql, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception{
         Connection connection = getConnection(prop);
 
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
 
-        if(isContextMapping){
+        if(isContextMapping && isUsingKeys){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
             LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
@@ -515,10 +519,14 @@ public class ReportApp
             }
         }
 
+        //Set the parameter IS_USING_KEYS to let chart know if operation is being used alone, to make some display changes
+
+        parameters.put(IS_USING_KEYS, isUsingKeys );
+
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
 
-        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
+        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(isContextMapping, isUsingKeys, groupToDisplayString);
 
         String xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SummaryTransform.xsl");
         String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH+"/PS_Summary_Template.jrxml");
@@ -567,7 +575,7 @@ public class ReportApp
     }
 
 
-    private void runPerfStatIntervalReport(boolean isContextMapping, Properties prop, Map parameters,
+    private void runPerfStatIntervalReport(boolean isContextMapping, boolean isUsingKeys, Properties prop, Map parameters,
                                            String sql, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception{
 
         //Compile both subreports and add to parameters
@@ -587,7 +595,7 @@ public class ReportApp
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
         
-        if(isContextMapping){
+        if(isContextMapping && isUsingKeys){
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
             LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
             //We need to look up the mappingValues from both the group value and also the display string value
@@ -614,8 +622,10 @@ public class ReportApp
             }
         }
 
+        parameters.put(IS_USING_KEYS, isUsingKeys );
+        
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
-        transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(isContextMapping, groupToDisplayString);
+        transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(isContextMapping, isUsingKeys, groupToDisplayString);
 
         File f = new File(SKUNKWORK_RELATIVE_PATH+"/PS_IntervalTransformDoc.xml");
         f.createNewFile();
