@@ -170,7 +170,7 @@ public class DomUtils {
     }
 
     /**
-     * Finds one and only one child {@link Element} of a parent {@link Element}
+     * Finds zero or one child {@link Element}s of a parent {@link Element}
      * with the specified name that is in the specified namespace.
      *
      * The parent must belong to a DOM produced by a namespace-aware parser,
@@ -762,8 +762,8 @@ public class DomUtils {
      * @param element the element whose in-scope namespace declrations will be extracted.  Must not be null.
      * @return The map of namespace declarations in scope for this elements immediate children.
      */
-    public static Map getNamespaceMap(Element element) {
-        Map nsmap = new HashMap();
+    public static Map<String, String> getNamespaceMap(Element element) {
+        Map<String, String> nsmap = new HashMap<String, String>();
 
         while (element != null) {
             addToNamespaceMap(element, nsmap);
