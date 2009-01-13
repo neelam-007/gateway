@@ -5,17 +5,23 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.AssertionTranslator;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -25,6 +31,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.CausedIOException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -40,6 +47,8 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,12 +67,14 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     private WebApplicationContext applicationContext;
 
+    protected PolicyManager policyManager;
     protected ServiceManager serviceManager;
     protected ClientCertManager clientCertManager;
     protected WspReader wspReader;
     protected IdentityProviderFactory identityProviderFactory;
     private LicenseManager licenseManager;
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
@@ -72,24 +83,26 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             throw new ServletException("Configuration error; could not get application context");
         }
 
-        clientCertManager = (ClientCertManager)getBean("clientCertManager");
-        identityProviderFactory = (IdentityProviderFactory)getBean("identityProviderFactory");
-        licenseManager = (LicenseManager)getBean("licenseManager");
-        serviceManager = (ServiceManager)getBean("serviceManager");
-        wspReader = (WspReader)getBean("wspReader");
+        clientCertManager = getBean("clientCertManager", ClientCertManager.class);
+        identityProviderFactory = getBean("identityProviderFactory", IdentityProviderFactory.class);
+        licenseManager = getBean("licenseManager",LicenseManager.class);
+        serviceManager = getBean("serviceManager", ServiceManager.class);
+        policyManager = getBean("policyManager", PolicyManager.class);
+        wspReader = getBean("wspReader", WspReader.class);
     }
 
     protected Object getBean(String name) throws ServletException {
         return getBean(name, null);
     }
 
+    @SuppressWarnings({"unchecked"})
     protected <T> T getBean(String name, Class<T> clazz) throws ServletException {
-        Object bean = applicationContext.getBean(name);
+        T bean = (T)applicationContext.getBean(name, clazz);
         if (bean == null)
             throw new ServletException("Configuration error; could not get " + name);
         if (clazz != null && !clazz.isAssignableFrom(bean.getClass()))
             throw new ServletException("Configuration error; bean \'" + name + "\' was unexpected type " + bean.getClass());
-        return (T) bean;
+        return bean;
     }
 
     /**
@@ -106,6 +119,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      */
     protected abstract SsgConnector.Endpoint getRequiredEndpoint();
 
+    @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             requireEndpoint(req);
@@ -408,6 +422,45 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         return name;
     }
 
+
+    /**
+     * Put includes inline
+     */
+    private Assertion inlineIncludes(final Assertion assertion) throws PolicyAssertionException {
+        final Assertion rootWithIncludes;
+
+        if ( Assertion.contains(assertion, Include.class) ) {
+            Set<String> guids = new HashSet<String>();
+            final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyManager, guids, false);
+            try {
+                rootWithIncludes = Assertion.translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translator);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            rootWithIncludes = assertion;
+        }
+
+        return rootWithIncludes;
+    }
+
+    /**
+     * Parse the given policy XML, inlining any includes.
+     *
+     * @param policyXml The XML to process.
+     * @return The expanded policy with includes inlined
+     * @throws IOException if an exception occurs
+     */
+    protected Assertion parsePolicy( final String policyXml ) throws IOException {
+        Assertion rootassertion;
+        try {
+            rootassertion = inlineIncludes( wspReader.parsePermissively( policyXml ) );
+        } catch (PolicyAssertionException e) {
+            throw new CausedIOException("Policy error", e);
+        }
+        return rootassertion;
+    }
+
     /**
      * Decides whether a policy should be downloadable without providing credentials. This will return true if the
      * service described by this policy could be consumed anonymouly.
@@ -415,7 +468,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected boolean policyAllowAnonymous(Policy policy) throws IOException {
         // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
         // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
-        Assertion rootassertion = wspReader.parsePermissively(policy.getXml());
+        Assertion rootassertion = parsePolicy(policy.getXml());
 
         Iterator it = rootassertion.preorderIterator();
         boolean allIdentitiesAreFederated = true;

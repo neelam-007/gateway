@@ -292,11 +292,13 @@ public abstract class Assertion implements Cloneable, Serializable {
             stack.push(list.iterator());
         }
 
+        @Override
         public boolean hasNext() {
             return (!stack.empty() &&
               ((Iterator)stack.peek()).hasNext());
         }
 
+        @Override
         public Object next() {
             final Iterator iterator;
 
@@ -334,6 +336,7 @@ public abstract class Assertion implements Cloneable, Serializable {
          * @throws IllegalStateException as described by interface
          * @see Iterator#remove()
          */
+        @Override
         public void remove()
           throws UnsupportedOperationException, IllegalStateException {
             if (lastReturned == null) {
@@ -390,6 +393,35 @@ public abstract class Assertion implements Cloneable, Serializable {
      */
     void simplify() {
         // Leaf assertions have nothing to do here
+    }
+
+    /**
+     * Run the given translator on the given assertion and all children.
+     *
+     * @param assertion The assertion to translate
+     * @param translator The assertion translator to run.
+     * @return The translated assertion
+     * @throws PolicyAssertionException if an error occurs.
+     */
+    public static Assertion translate( final Assertion assertion,
+                                       final AssertionTranslator translator) throws PolicyAssertionException {
+        Assertion translated = translator.translate( assertion );
+
+        if ( translated instanceof CompositeAssertion) {
+            CompositeAssertion ca = (CompositeAssertion) translated;
+
+            for ( int c=0; c<ca.getChildren().size(); c++ ) {
+                Assertion childAssertion = (Assertion) ca.getChildren().get(c);
+                Assertion transAssertion = translate(childAssertion, translator);
+                if ( childAssertion != transAssertion ) {
+                    ca.replaceChild( childAssertion, transAssertion );
+                }
+            }
+        }
+
+        translator.translationFinished(assertion);
+
+        return translated;
     }
 
     /**

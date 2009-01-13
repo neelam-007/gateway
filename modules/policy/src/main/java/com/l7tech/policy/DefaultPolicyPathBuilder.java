@@ -57,7 +57,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             Set<String> guids = includedPolicyGuids==null ? new HashSet<String>() : includedPolicyGuids;
             final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyFinder, guids, false);
             try {
-                rootWithIncludes = translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translator);
+                rootWithIncludes = Assertion.translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translator);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -99,6 +99,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * @param assertion The assertion to process for Include fragments
      * @return  Returns a list of PolicyAssertionException, if any.  Will never return NULL.
      */
+    @Override
     public List<PolicyAssertionException> preProcessIncludeFragments(Assertion assertion) {
 
         //list of PolicyAssertionExceptions collected so far
@@ -286,29 +287,6 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     }
 
     /**
-     * Run the given translator on the given assertion and all children.
-     */
-    private Assertion translate(final Assertion assertion, final AssertionTranslator translator) throws PolicyAssertionException {
-        Assertion translated = translator.translate( assertion );
-
-        if ( translated instanceof CompositeAssertion) {
-            CompositeAssertion ca = (CompositeAssertion) translated;
-
-            for ( int c=0; c<ca.getChildren().size(); c++ ) {
-                Assertion childAssertion = (Assertion) ca.getChildren().get(c);
-                Assertion transAssertion = translate(childAssertion, translator);
-                if ( childAssertion != transAssertion ) {
-                    ca.replaceChild( childAssertion, transAssertion );
-                }
-            }
-        }
-
-        translator.translationFinished(assertion);
-
-        return translated;
-    }
-
-    /**
      * default assertion path result holder
      */
     static class DefaultPolicyPathResult implements PolicyPathResult {
@@ -323,6 +301,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
          *
          * @return the number of assertiuon paths
          */
+        @Override
         public int getPathCount() {
             return assertionPaths.size();
         }
@@ -333,6 +312,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
          * @return the set of assertion paths
          * @see AssertionPath
          */
+        @Override
         public Set<AssertionPath> paths() {
             return assertionPaths;
         }

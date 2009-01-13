@@ -96,6 +96,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         this.serverConfig = serverConfig;
     }
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
@@ -108,14 +109,17 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         nsResolver = new UrnResolver(appcontext);
     }
 
+    @Override
     protected String getFeature() {
         return GatewayFeatureSets.SERVICE_WSDLPROXY;
     }
 
+    @Override
     protected SsgConnector.Endpoint getRequiredEndpoint() {
         return SsgConnector.Endpoint.WSDLPROXY;
     }
 
+    @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         PublishedService ps;
         try {
@@ -414,6 +418,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         if ( !documents.isEmpty() ) {
             DocumentReferenceProcessor documentReferenceProcessor = new DocumentReferenceProcessor();
             documentReferenceProcessor.processDocumentReferences( wsdlDoc, new DocumentReferenceProcessor.ReferenceCustomizer() {
+                @Override
                 public String customize(Document document, Node node, String documentUrl, String referenceUrl) {
                     String uri = null;
 
@@ -483,7 +488,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         try{
             if (System.getProperty(PROPERTY_WSSP_ATTACH)==null ||
                 Boolean.getBoolean(PROPERTY_WSSP_ATTACH)) {
-                Assertion rootassertion = wspReader.parsePermissively(svc.getPolicy().getXml());
+                Assertion rootassertion = parsePolicy(svc.getPolicy().getXml());
                 // Set the parameter considerDisable to be true, since WsspAssertion is a key to determine if a security
                 // policy content will be added into the wsdl.  If the WsspAssertion is disabled, even thought rootassertion
                 // contains WsspAssertion, the program won't go further to add the security policy content in the wsdl.
@@ -584,7 +589,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
 
             try {
-                Assertion rootAssertion = wspReader.parsePermissively(svc.getPolicy().getXml());
+                Assertion rootAssertion = parsePolicy(svc.getPolicy().getXml());
                 Assertion effectivePolicy = clientPolicyFilterManager.applyAllFilters(user, rootAssertion);
                 SslAssertion sslAssertion = (SslAssertion) getFirstChild(effectivePolicy, SslAssertion.class);
                 if (!secureRequest && sslAssertion != null && sslAssertion.getOption()==SslAssertion.REQUIRED) {
@@ -656,14 +661,17 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
     private ListResults listAllServices() throws FindException {
         final Collection<PublishedService> allServices = Functions.grep(serviceManager.findAll(), new Functions.Unary<Boolean, PublishedService>() {
+            @Override
             public Boolean call(PublishedService publishedService) {
                 return !publishedService.isDisabled();
             }
         });
         return new ListResults() {
+            @Override
             public Collection<PublishedService> allowed() {
                 return allServices;
             }
+            @Override
             public boolean anyServices() {
                 return allServices.size() >= 1;
             }
@@ -697,9 +705,11 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
 
         return new ListResults() {
+            @Override
             public Collection<PublishedService> allowed() {
                 return output;
             }
+            @Override
             public boolean anyServices() {
                 return allServices.size() >= 1;
             }
@@ -709,7 +719,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private boolean userCanSeeThisService(User requestor, PublishedService svc) throws IOException {
         // start at the top
         Assertion rootassertion;
-        rootassertion = wspReader.parsePermissively(svc.getPolicy().getXml());
+        rootassertion = parsePolicy(svc.getPolicy().getXml());
         return checkForIdPotential(rootassertion, requestor);
     }
 
