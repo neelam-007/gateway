@@ -188,6 +188,12 @@
                             </list>
                         </entry>
                         <entry key="adminSessionManager"><list><value>principalSessionCacheMaxTime</value></list></entry>
+                        <entry key="logRecordRingBuffer">
+                            <list>
+                                <value>logBuffer.paramSize</value>
+                                <value>logBuffer.messageSize</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -601,6 +607,7 @@
     <bean id="logRecordRingBuffer" class="com.l7tech.server.log.LogRecordRingBuffer" init-method="init">
         <property name="loggerName" value="com.l7tech"/>
         <property name="bufferSize" value="500"/> <!-- NOTE that the max retrieval block size is 600, this should be less than that -->
+        <property name="config" ref="serverConfig"/>        
     </bean>
 
     <!-- server side log manager -->

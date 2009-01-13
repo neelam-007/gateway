@@ -1,13 +1,17 @@
 package com.l7tech.server.log;
 
+import com.l7tech.util.Config;
+
 import java.util.logging.LogRecord;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.text.MessageFormat;
 
 /**
  * Component that maintains a buffer of logging events.
@@ -17,7 +21,7 @@ import java.beans.PropertyChangeEvent;
  * @author $Author$
  * @version $Revision$
  */
-public class LogRecordRingBuffer {
+public class LogRecordRingBuffer implements PropertyChangeListener {
 
     //- PUBLIC
 
@@ -29,6 +33,8 @@ public class LogRecordRingBuffer {
         nextRecordIndex = 0;
         bufferSize = 100;
         loggerName = "";
+        messageSizeLimit = new AtomicInteger(4096);
+        paramSizeLimit = new AtomicInteger(4096);
     }
 
     /**
@@ -53,6 +59,7 @@ public class LogRecordRingBuffer {
         LogManager logManager = LogManager.getLogManager();
 
         PropertyChangeListener pcl = new PropertyChangeListener() {
+            @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 // add handler
                 LogManager logManager = LogManager.getLogManager();
@@ -106,6 +113,27 @@ public class LogRecordRingBuffer {
     }
 
     /**
+     * Get the configuration in use.
+     *
+     * @return The configuration property.
+     */
+    public Config getConfig() {
+        return config;
+    }
+
+    /**
+     * Set the configuration to use.
+     *
+     * @param config The configuration to use
+     * @throws IllegalStateException if initialized.
+     */
+    public void setConfig( final Config config ) {
+        if ( this.config != null ) throw new IllegalStateException("Cannot set config after initialization.");
+        this.config = config;
+        readConfig();
+    }
+
+    /**
      * Get all currently buffered log records.
      *
      * @return the currently buffered log records (oldest first).
@@ -147,6 +175,11 @@ public class LogRecordRingBuffer {
         return newRecords;
     }
 
+    @Override
+    public void propertyChange( final PropertyChangeEvent propertyChangeEvent ) {
+        readConfig();
+    }
+
     //- PACKAGE
 
     /**
@@ -160,17 +193,7 @@ public class LogRecordRingBuffer {
         if ( records != null && records.length > 0 &&
              record != null && ! doNotLog.contains(record.getLoggerName())) {
 
-            // (pseudo)serialize record parameters; gets rid of potentially huge size params
-            Object[] params = record.getParameters();
-            if (params != null) {
-                for (int i = 0; i < params.length; i++) {
-                    if (params[i] != null) {
-                        params[i] = params[i].toString();
-                    }
-                }
-            }
-
-            records[nextRecordIndex] = record;
+            records[nextRecordIndex] = process(record);
             nextRecordIndex++;
             if (nextRecordIndex >= records.length) {
                 nextRecordIndex = 0;
@@ -185,10 +208,80 @@ public class LogRecordRingBuffer {
     private int bufferSize;
     private boolean bufferFull;
     private int nextRecordIndex;
+    private Config config;
     private LogRecord[] records;
+    private final AtomicInteger messageSizeLimit;
+    private final AtomicInteger paramSizeLimit;
 
     private static Set<String> doNotLog = new HashSet<String>();
     static {
         doNotLog.add(SinkManagerImpl.TRAFFIC_LOGGER_NAME);
+    }
+
+    private void readConfig() {
+        Config config = this.config;
+        if ( config != null ) {
+            messageSizeLimit.set( range( config.getIntProperty("logBuffer.messageSize", 4096), 128, Integer.MAX_VALUE ) );
+            paramSizeLimit.set( range( config.getIntProperty("logBuffer.paramSize", 4096), 128, Integer.MAX_VALUE ) );
+        }
+    }
+
+    private int range( final int value, final int min, final int max  ) {
+        int ranged = value;
+
+        if ( value < min ) {
+            ranged = min;
+        } else if ( value > max ) {
+            ranged = max;
+        }
+
+        return ranged;
+    }
+
+    private LogRecord process( final LogRecord logRecord ) {
+        final int messageSizeLimit = this.messageSizeLimit.get();
+        final int paramSizeLimit = this.paramSizeLimit.get();
+
+        final Object[] params = logRecord.getParameters();
+        LogRecord processedLogRecord;
+        String logMessage = logRecord.getMessage();
+        if ( logMessage.length() > messageSizeLimit ) {
+            String message = logMessage;
+            if( message != null && params!=null && params.length>0) {
+                try {
+                    logMessage = MessageFormat.format(message, params);
+                }
+                catch(IllegalArgumentException iae) {
+                    // then display the unformatted message
+                }
+            }
+
+            logMessage = logMessage.substring( 0, messageSizeLimit );
+            processedLogRecord = new LogRecord( logRecord.getLevel(), logMessage );
+        } else {
+            processedLogRecord = new LogRecord( logRecord.getLevel(), logMessage );
+
+            // (pseudo)serialize record parameters; gets rid of potentially huge size params
+            if ( params != null ) {
+                Object[] truncParams = new Object[ params.length ];
+                for (int i = 0; i < params.length; i++) {
+                    if (params[i] != null) {
+                        String paramValue = params[i].toString();
+                        if ( paramValue.length() > paramSizeLimit ) {
+                            paramValue = paramValue.substring( 0, paramSizeLimit );
+                        }
+                        truncParams[i] = paramValue;
+                    }
+                }
+                processedLogRecord.setParameters( truncParams );
+            }
+        }
+
+        processedLogRecord.setLoggerName( logRecord.getLoggerName() );
+        processedLogRecord.setMillis( logRecord.getMillis() );
+        processedLogRecord.setSequenceNumber( logRecord.getSequenceNumber() );
+        processedLogRecord.setThreadID( logRecord.getThreadID() );
+        
+        return processedLogRecord;
     }
 }
