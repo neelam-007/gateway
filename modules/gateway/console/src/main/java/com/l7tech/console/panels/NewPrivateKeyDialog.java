@@ -181,7 +181,7 @@ public class NewPrivateKeyDialog extends JDialog {
         Collection<KeySize> sizes = new ArrayList<KeySize>(Arrays.asList(
                 RSA512,
                 RSA768,
-                RSA1024,
+                RSA1024,                                                                
                 RSA1280,
                 RSA2048
         ));
@@ -198,7 +198,7 @@ public class NewPrivateKeyDialog extends JDialog {
         String alias = aliasField.getText();
         if (alias == null)
             return null;
-        alias = alias.trim().toLowerCase().replaceAll("[^a-zA-Z0-9]", "");
+        alias = alias.trim().toLowerCase().replaceAll("[^a-zA-Z0-9\\.\\-\\_]", "");
         return "CN=" + alias;
     }
 
