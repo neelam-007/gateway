@@ -97,8 +97,9 @@ public final class Message {
         rootFacet = null; // null it first just in case MimeFacet c'tor throws
         invalidateCachedKnobs();
         rootFacet = new MimeFacet(this, sm, outerContentType, body);
-        if (reqKnob != null) attachHttpRequestKnob(reqKnob);
-        if (respKnob != null) attachHttpResponseKnob(respKnob);
+        if (reqKnob != null) rootFacet = new HttpRequestFacet(this, rootFacet, reqKnob);
+        if (respKnob != null) rootFacet = new HttpResponseFacet(this, rootFacet, respKnob);
+        invalidateCachedKnobs();
     }
 
     /**
