@@ -1,11 +1,14 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.security.auth.Subject;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.ObjectStreamException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.logging.Level;
@@ -40,23 +43,27 @@ public class SecureHttpFilter implements Filter {
     /**
      *
      */
+    @Override
     public void init( final FilterConfig filterConfig ) throws ServletException {
     }
 
     /**
      *
      */
+    @Override
     public void destroy() {
     }
 
     /**
      *
      */
+    @Override
     public void doFilter(final ServletRequest servletRequest,
                          final ServletResponse servletResponse,
                          final FilterChain filterChain) throws IOException, ServletException {
 
         final HttpServletRequest hsr = (HttpServletRequest) servletRequest;
+        final HttpServletResponse hresp = (HttpServletResponse) servletResponse;
 
         if (logger.isLoggable(Level.FINEST)) {
             logger.log(Level.FINEST, "Remoting access for URI '" + hsr.getRequestURI() + "'.");
@@ -77,10 +84,12 @@ public class SecureHttpFilter implements Filter {
         // Pass on down the chain with the auth'd user and remote host set(if any)
         try {
             Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
+                @Override
                 public Object run() throws Exception {
                     final IOException[] ioeHolder = new IOException[1];
                     final ServletException[] seHolder = new ServletException[1];
                     RemoteUtils.runWithConnectionInfo(servletRequest.getRemoteAddr(), hsr, new Runnable(){
+                        @Override
                         public void run() {
                             try {
                                 filterChain.doFilter(servletRequest, servletResponse);
@@ -101,7 +110,12 @@ public class SecureHttpFilter implements Filter {
             });
         } catch (PrivilegedActionException pae) {
             Exception e = pae.getException();
-            if (e instanceof IOException) {
+            if (e instanceof ObjectStreamException) {
+                logger.log( Level.WARNING, "Error processing remote call '"+ ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                if ( !hresp.isCommitted() ) {
+                    hresp.sendError(500);
+                }
+            } else if (e instanceof IOException) {
                 throw (IOException) e;
             } else if (e instanceof ServletException) {
                 throw (ServletException) e;
