@@ -146,14 +146,14 @@ public class KerberosClient {
     public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName, boolean isOutboundRouting)
         throws KerberosException
     {
-        KerberosServiceTicket ticket = null;
+        KerberosServiceTicket ticket;
         LoginContext loginContext = null;
         KerberosTicketRepository.Key ticketCacheKey = null;
         Subject cacheSubject = null;
 
         try {
             // check against the ticket cache when doing outbound routing
-            ticketCacheKey = ticketCache.generateKey(servicePrincipalName, "useKeytab");
+            ticketCacheKey = ticketCache.generateKey(servicePrincipalName, KerberosTicketRepository.KeyType.KEYTAB, "useKeytab", null);
             cacheSubject = ticketCache.getSubject(ticketCacheKey);
 
             final Subject krbSubject;
@@ -179,9 +179,8 @@ public class KerberosClient {
                 krbSubject = kerberosSubject;
             }
 
-            // disable inspection until we can use 1.6 api
-            //noinspection unchecked
-            ticket = (KerberosServiceTicket) Subject.doAs(krbSubject, new PrivilegedExceptionAction(){
+            ticket = Subject.doAs(krbSubject, new PrivilegedExceptionAction<KerberosServiceTicket>(){
+                @Override
                 public KerberosServiceTicket run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
                     GSSManager manager = GSSManager.getInstance();
@@ -270,6 +269,7 @@ public class KerberosClient {
             // disable inspection until we can use 1.6 api
             //noinspection unchecked
             ticket = (KerberosServiceTicket) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
+                @Override
                 public KerberosServiceTicket run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
                     GSSManager manager = GSSManager.getInstance();
@@ -287,11 +287,10 @@ public class KerberosClient {
                         KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
                         KrbApReq apReq = new KrbApReq(apReqBytes, toEncryptionKey(keys));
                         validateServerPrincipal(kerberosSubject.getPrincipals(), new KerberosPrincipal(apReq.getCreds().getServer().getName()) );
-                        EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
+                        EncryptionKey key = apReq.getCreds().getSessionKey();
                         EncryptionKey subKey = apReq.getSubKey();
 
                         Checksum checksum = apReq.getChecksum();
-                        EncryptionKey key = sessionKey;
 
                         byte[] checksumBytes = checksum.getBytes();
                         int flags = readInt(checksumBytes, 20);
@@ -309,7 +308,7 @@ public class KerberosClient {
                             if (logger.isLoggable(Level.FINER)) {
                                 logger.log(Level.FINER,
                                         "Encryption type is ''{0}'', size is {1}.",
-                                        new Object[]{Integer.valueOf(etype), Integer.valueOf(key.getBytes().length*8)});
+                                        new Object[]{etype, key.getBytes().length*8});
                             }
                             if (etype == EncryptedData.ETYPE_ARCFOUR_HMAC ||
                                 etype == EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96 ||
@@ -346,7 +345,7 @@ public class KerberosClient {
                                               delegatedCred.getClientAddresses());
                         }
 
-                        byte[] keyBytes = (subKey==null ? sessionKey : subKey).getBytes();
+                        byte[] keyBytes = (subKey==null ? key : subKey).getBytes();
 
                         return new KerberosServiceTicket(apReq.getCreds().getClient().getName(),
                                                          gssPrincipal,
@@ -411,6 +410,7 @@ public class KerberosClient {
             // disable inspection until we can use 1.6 api
             //noinspection unchecked
             name = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
+                @Override
                 public String run() throws Exception {
                     String name = null;
                     for( Principal principal : kerberosSubject.getPrincipals() ) {
@@ -488,6 +488,7 @@ public class KerberosClient {
                 // disable inspection until we can use 1.6 api
                 //noinspection unchecked
                 aPrincipal = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
+                    @Override
                     public String run() throws Exception {
                         String name = null;
 
@@ -699,6 +700,7 @@ public class KerberosClient {
      */
     private static CallbackHandler getServerCallbackHandler(final String servicePrincipalName) {
         return new CallbackHandler() {
+            @Override
             public void handle(Callback[] callbacks) {
                 for( Callback callback : callbacks ) {
                     if( callback instanceof NameCallback ) {
@@ -715,14 +717,14 @@ public class KerberosClient {
     private static int readShort(byte[] data, int offset) {
         if(data.length < (offset+2)) throw new IllegalArgumentException("Not enough data to read short!");
 
-        return (data[offset+0]&0xFF)
+        return (data[offset  ]&0xFF)
             | ((data[offset+1]&0xFF) <<  8);
     }
 
     private static int readInt(byte[] data, int offset) {
         if(data.length < (offset+4)) throw new IllegalArgumentException("Not enough data to read int!");
 
-        return (data[offset+0]&0xFF)
+        return (data[offset  ]&0xFF)
             | ((data[offset+1]&0xFF) <<  8)
             | ((data[offset+2]&0xFF) << 16)
             | ((data[offset+3]&0xFF) << 24);

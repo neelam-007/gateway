@@ -1,18 +1,22 @@
 package com.l7tech.kerberos;
 
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
+
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,6 +31,11 @@ public class KerberosTicketRepository {
     private static final Logger logger = Logger.getLogger(KerberosTicketRepository.class.getName());
 
     /**
+     * Amount of time prior to a ticket's expiry
+     */
+    private static final long EXPIRES_BUFFER = 1000L * 30L; // 30 seconds -- a bit arbitrary
+
+    /**
      * Singleton instance for the KerberosTicketRepository class.
      */
     private static KerberosTicketRepository instance;
@@ -39,12 +48,13 @@ public class KerberosTicketRepository {
     /**
      * Hashmap used to store the cached credentials.
      */
-    private HashMap<String, CachedCredential> _map;
+    private final Map<Key, CachedCredential> _map;
 
     /**
      * Maintenance thread for removing old tickets.
      */
     private ExecutorService maintenanceThread = Executors.newFixedThreadPool(1, new ThreadFactory() {
+        @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(r, "KerberosTicketRepository-Maint-" + threadCount.incrementAndGet());
             t.setDaemon(true);
@@ -64,7 +74,7 @@ public class KerberosTicketRepository {
      */
     private KerberosTicketRepository() {
         super();
-        _map = new HashMap<String, CachedCredential>();
+        _map = new ConcurrentHashMap<Key, CachedCredential>();
     }
 
     /**
@@ -88,9 +98,7 @@ public class KerberosTicketRepository {
      * @return the subject for the cached principal and associated credentials
      */
     public Subject getSubject(Key key) {
-
-        String keyVal = key.toHashkey();
-        CachedCredential cred = getElement(keyVal);
+        CachedCredential cred = getElement(key);
         if (cred != null) {
 
             // need to check that
@@ -102,7 +110,7 @@ public class KerberosTicketRepository {
 
             } else {
                 // toss cached credentials
-                _map.remove(keyVal);
+                _map.remove(key);
                 cred.discard();
             }
         }
@@ -119,18 +127,11 @@ public class KerberosTicketRepository {
      * @param svcTicket the service ticket created based on the creds
      */
     public void add(Key key, KerberosTicket tgTicket, LoginContext loginCtx, KerberosServiceTicket svcTicket) {
-
-        String keyVal = key.toHashkey();
-
-        if (_map.containsKey(keyVal)) {
-            // just replace the old credentials with the new
-            CachedCredential oldCred = _map.get(keyVal);
-            _map.remove(keyVal);
+        // create a new cache value
+        CachedCredential oldCred = _map.put( key, new CachedCredential(tgTicket, loginCtx, svcTicket.getServicePrincipalName(), kerberosTicketLifetime) );
+        if ( oldCred != null ) {
             oldCred.discard();
         }
-
-        // create a new cache value
-        _map.put( keyVal, new CachedCredential(tgTicket, loginCtx, svcTicket.getServicePrincipalName()) );
 
         // perform cleanup when necessary
         if (canRunCleanup())
@@ -174,8 +175,7 @@ public class KerberosTicketRepository {
      * @return the cached service ticket if found in the repository, null otherwise
      */
     public boolean contains(Key key) {
-
-        return _map.containsKey(key.toHashkey());
+        return _map.containsKey(key);
     }
 
     /**
@@ -184,22 +184,28 @@ public class KerberosTicketRepository {
      * @param key the key referencing the cached creds to remove
      */
     public void remove(Key key) {
-        
         // mark expired so it will be removed on next access
-        if (contains(key))
-            _map.get(key.toHashkey()).expires = 0;
+        CachedCredential cred = _map.get(key);
+        if ( cred != null ) {
+            cred.expires = 0;
+        }
     }
 
     /**
      * Generates a hashKey for the ticket cache.
      *
      * @param service the service part
+     * @param type the type of the credential in use
      * @param name the name part
+     * @param cred the credential
      * @return a TicketRepository key
      */
-    public Key generateKey(String service, String name) {
+    public Key generateKey( final String service,
+                            final KeyType type,
+                            final String name,
+                            final String cred) {
 
-        return new Key(service, name);
+        return new Key(service, type, name, cred);
     }
 
     public Long getKerberosTicketLifetime() {
@@ -217,44 +223,26 @@ public class KerberosTicketRepository {
      * @param k the key for the cache element
      * @return the CachedCredential instance specified, null if not found.
      */
-    private CachedCredential getElement(String k) {
-
-        CachedCredential cred = null;
+    private CachedCredential getElement(Key k) {
+        CachedCredential cred;
         if ((cred = _map.get(k)) != null) {
             cred.lastAccessTime = System.currentTimeMillis();
         }
         return cred;
     }
 
-
-    /**
-     * Amount of time prior to a ticket's expiry
-     */
-    private static final long EXPIRES_BUFFER = 1000L * 30L; // 30 seconds -- a bit arbitrary
-
-    /**
-     * Check that the expireTime parameter is still sufficiently in the future for a
-     * ticket to be used.  Currently, the time must be > 1 minute.
-     *
-     * @param expireTime the expire time to check
-     * @return true if the expire time is greater than 1 minute from now, false otherwise.
-     */
-    private boolean checkExpiry(long expireTime) {
-
-        return (expireTime > System.currentTimeMillis() + EXPIRES_BUFFER);
-    }
-
     /**
      * Imposed limit on the cache such that it doesn't fill up the ssg memory
      */
-    private static int CACHE_SIZE_LIMIT = 250;
+    private static final int CACHE_SIZE_LIMIT = 250;
+
     /**
      * Threshold to be reached that kicks off the cleanup task
      */
-    private static float CACHE_THREASHOLD = 0.80f;
+    private static final float CACHE_THREASHOLD = 0.80f;
 
     private final Object cleanupMutex = new Object();
-    private Date lastCleanupRun = new Date();
+    private volatile Date lastCleanupRun = new Date();
 
     /**
      * Runs a cleanup thread to cleanup cache entries.  Only runs if the cache has exceeded it's threashold
@@ -268,26 +256,28 @@ public class KerberosTicketRepository {
                 // assign task for execution
                 maintenanceThread.execute(new Runnable() {
                     static final long THREASHOLD = 300000L; // 5 mins
+                    @Override
                     public void run() {
-
-                        long checkTime = System.currentTimeMillis() - THREASHOLD;
-
-                        // traverse map
-                        Iterator<String> it = _map.keySet().iterator();
-                        CachedCredential cred = null;
-                        String key = null;
                         int counter = 0;
+                        synchronized(_map) {
+                            long checkTime = System.currentTimeMillis() - THREASHOLD;
 
-                        for (;it.hasNext();) {
-                            key = it.next();
-                            cred = _map.get(key);
-                            if ( cred.isExpired() ||
-                                 _map.size() > CACHE_SIZE_LIMIT && cred.getLastAccessTime() < checkTime )
-                                // the 2nd check is ensure the repository doesn't consume all the gateway resources
-                            {
-                                _map.remove(key);
-                                cred.discard();
-                                counter++;
+                            // traverse map
+                            Iterator<Key> it = _map.keySet().iterator();
+                            CachedCredential cred;
+                            Key key;
+
+                            for (;it.hasNext();) {
+                                key = it.next();
+                                cred = _map.get(key);
+                                if ( cred.isExpired() ||
+                                     _map.size() > CACHE_SIZE_LIMIT && cred.getLastAccessTime() < checkTime )
+                                    // the 2nd check is ensure the repository doesn't consume all the gateway resources
+                                {
+                                    _map.remove(key);
+                                    cred.discard();
+                                    counter++;
+                                }
                             }
                         }
                         logger.log(Level.FINE, "Cache cleanupTask completed, removing: {0}", new String[] { Integer.toString(counter) });
@@ -315,15 +305,18 @@ public class KerberosTicketRepository {
      * consisting of a TGT (auth ticket) and a kerberos service ticket for the endpoint
      * service.
      */
-    private class CachedCredential {
+    private static class CachedCredential {
 
-        String principal;
-        volatile KerberosTicket tgTicket;
-        volatile LoginContext loginContext;
-        long lastAccessTime;
-        long expires;
+        private final String principal;
+        private volatile KerberosTicket tgTicket;
+        private volatile LoginContext loginContext;
+        private volatile long lastAccessTime;
+        private volatile long expires;
 
-        private CachedCredential(KerberosTicket tgTicket, LoginContext loginCtx, String principal) {
+        private CachedCredential( final KerberosTicket tgTicket,
+                                  final LoginContext loginCtx,
+                                  final String principal,
+                                  final Long kerberosTicketLifetime) {
             this.tgTicket = tgTicket;
             this.loginContext = loginCtx;
             this.lastAccessTime = System.currentTimeMillis();
@@ -339,6 +332,17 @@ public class KerberosTicketRepository {
             return (tgTicket != null && checkExpiry(expires) && checkExpiry(tgTicket.getEndTime().getTime()));
         }
 
+        /**
+         * Check that the expireTime parameter is still sufficiently in the future for a
+         * ticket to be used.  Currently, the time must be > 1 minute.
+         *
+         * @param expireTime the expire time to check
+         * @return true if the expire time is greater than 1 minute from now, false otherwise.
+         */
+        private boolean checkExpiry( final long expireTime ) {
+            return (expireTime > System.currentTimeMillis() + EXPIRES_BUFFER);
+        }        
+
         boolean isExpired() {
             return (System.currentTimeMillis() > expires);
         }
@@ -350,7 +354,11 @@ public class KerberosTicketRepository {
                 if (loginContext != null)
                     loginContext.logout();
                 loginContext = null;
-            } catch (LoginException lex) {}
+            } catch (LoginException lex) {
+                if ( logger.isLoggable( Level.FINER ) ) {
+                    logger.log( Level.FINER, "Error closing login context '"+ ExceptionUtils.getMessage(lex)+"'.", ExceptionUtils.getDebugException(lex));
+                }
+            }
         }
 
         long getLastAccessTime() {
@@ -358,31 +366,51 @@ public class KerberosTicketRepository {
         }
     }
 
+    /**
+     *
+     */
+    public static enum KeyType { KEYTAB, DELEGATED, CREDENTIAL }
 
     /**
      * Represents a Key object for the credentials cache.
      */
-    public class Key {
-
-        /**
-         * The string template for the hash keys
-         */
-        private static final String KEY_TEMPLATE = "{0}++{1}";
-
+    public static final class Key {
         private final String serviceName;
+        private final KeyType type;
         private final String clientName;
-        private String hashKey;
+        private final byte[] credhash;
 
-        Key(String service, String name) {
+        Key( final String service, final KeyType type, final String name, final String cred) {
             this.serviceName = service;
+            this.type = type;
             this.clientName = name;
+            this.credhash = cred==null ?  new byte[0] : HexUtils.getMd5Digest( cred.getBytes() );
         }
 
-        public String toHashkey() {
-            if (hashKey == null)
-                hashKey = MessageFormat.format(KEY_TEMPLATE, serviceName, clientName);
+        @SuppressWarnings({"RedundantIfStatement"})
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
 
-            return hashKey;
+            Key key = (Key) o;
+
+            if (!clientName.equals(key.clientName)) return false;
+            if (!Arrays.equals(credhash, key.credhash)) return false;
+            if (!serviceName.equals(key.serviceName)) return false;
+            if (type != key.type) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            result = serviceName.hashCode();
+            result = 31 * result + type.hashCode();
+            result = 31 * result + clientName.hashCode();
+            result = 31 * result + Arrays.hashCode(credhash);
+            return result;
         }
     }
 }

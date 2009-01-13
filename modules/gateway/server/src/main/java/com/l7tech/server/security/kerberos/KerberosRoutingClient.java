@@ -40,7 +40,7 @@ public class KerberosRoutingClient extends KerberosClient {
      * @throws KerberosException on error
      */
     public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName, final KerberosServiceTicket kerberosServiceTicket) throws KerberosException {
-        KerberosServiceTicket ticket = null;
+        KerberosServiceTicket ticket;
         try {
             if (!KerberosConfig.hasKeytab()) {
                 throw new KerberosConfigException("No Keytab (Kerberos not configured)");
@@ -48,7 +48,7 @@ public class KerberosRoutingClient extends KerberosClient {
 
             // check for a cached service ticket
             final KerberosTicketRepository.Key ticketCacheKey =
-                    ticketCache.generateKey(servicePrincipalName, kerberosServiceTicket.getClientPrincipalName());
+                    ticketCache.generateKey(servicePrincipalName, KerberosTicketRepository.KeyType.DELEGATED, kerberosServiceTicket.getClientPrincipalName(), null);
 
             final KerberosTicket creds = kerberosServiceTicket.getDelegatedKerberosTicket();
             if (creds == null) {
@@ -65,8 +65,9 @@ public class KerberosRoutingClient extends KerberosClient {
                         Collections.EMPTY_SET,
                         Collections.singleton(creds));
 
-                ticket = (KerberosServiceTicket) Subject.doAs(delegationSubject, new PrivilegedExceptionAction() {
-                    public Object run() throws Exception {
+                ticket = Subject.doAs(delegationSubject, new PrivilegedExceptionAction<KerberosServiceTicket>() {
+                    @Override
+                    public KerberosServiceTicket run() throws Exception {
                         GSSContext context = null;
                         GSSCredential credential = null;
                         try {
@@ -137,7 +138,7 @@ public class KerberosRoutingClient extends KerberosClient {
     public KerberosServiceTicket getKerberosServiceTicket(final URL host, final String accountName, final String accountPasswd)
         throws KerberosException
     {
-        KerberosServiceTicket ticket = null;
+        KerberosServiceTicket ticket;
         LoginContext loginContext = null;
         KerberosTicketRepository.Key ticketCacheKey = null;
         Subject cacheSubject = null;
@@ -153,7 +154,7 @@ public class KerberosRoutingClient extends KerberosClient {
             final String gssServiceName = getGSSServiceName(host);
 
             // check for a cached service ticket
-            ticketCacheKey = ticketCache.generateKey(gssServiceName, accountName);
+            ticketCacheKey = ticketCache.generateKey(gssServiceName,  KerberosTicketRepository.KeyType.CREDENTIAL, accountName, accountPasswd);
 
             // check cache for TGT (ticket-granting-ticket)
             cacheSubject = ticketCache.getSubject(ticketCacheKey);
@@ -168,8 +169,9 @@ public class KerberosRoutingClient extends KerberosClient {
             }
 
             // acquire service ticket
-            ticket = (KerberosServiceTicket) Subject.doAs(krbSubject, new PrivilegedExceptionAction() {
-                public Object run() throws Exception {
+            ticket = Subject.doAs(krbSubject, new PrivilegedExceptionAction<KerberosServiceTicket>() {
+                @Override
+                public KerberosServiceTicket run() throws Exception {
                     GSSContext context = null;
                     GSSCredential credential = null;
                     try {
@@ -238,6 +240,7 @@ public class KerberosRoutingClient extends KerberosClient {
     {
         LoginContext loginCtx = new LoginContext(LOGIN_CONTEXT_OUT_CONFIG_ACCT, kerberosSubject, new CallbackHandler() {
 
+            @Override
             public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
 
                 for( Callback cb : callbacks ) {
