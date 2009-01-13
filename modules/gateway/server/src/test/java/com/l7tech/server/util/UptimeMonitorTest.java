@@ -6,7 +6,6 @@
 
 package com.l7tech.server.util;
 
-import com.l7tech.server.util.UptimeMonitor;
 import com.l7tech.util.UptimeMetrics;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -92,6 +91,9 @@ public class UptimeMonitorTest extends TestCase {
     }
 
     public void testUptime() throws Exception {
+        if (System.getProperty("os.name").contains("Windows"))
+            return;
+
         assertTrue(UptimeMonitor.isUptimeMetricsAvailable());
         log.info("Current uptime: " + UptimeMonitor.getLastUptime());
         Thread.sleep(500);
