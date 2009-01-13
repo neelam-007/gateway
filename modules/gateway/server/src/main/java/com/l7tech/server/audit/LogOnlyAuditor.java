@@ -11,6 +11,12 @@ import java.util.logging.Logger;
  */
 public class LogOnlyAuditor extends Auditor {
 
+    /**
+     * Create an Auditor that will send detail messages to the log file but will never send any audit
+     * detail events.
+     *
+     * @param logger the Logger to use as a sink for detail messages.  Required.
+     */
     public LogOnlyAuditor(Logger logger) {
         super(logger);
     }
