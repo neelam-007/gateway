@@ -5,13 +5,18 @@ package com.l7tech.util;
 
 import org.apache.commons.codec.binary.Base64;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Random;
 
 /**
  * Utility methods for hex encoding and dealing with streams and byte buffers.
@@ -23,6 +28,7 @@ import java.security.NoSuchAlgorithmException;
  */
 public class HexUtils {
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+    private static final Random random = new SecureRandom();
 
     public static byte[] getMd5Digest(byte[] stuffToDigest) {
         return getMd5().digest(stuffToDigest);
@@ -320,4 +326,15 @@ public class HexUtils {
         }            
     }
 
+    /**
+     * Generate some random bytes.
+     *
+     * @param count the number of bytes to generate.
+     * @return an array of the specified number of random bytes.  Never null.
+     */
+    public static byte[] randomBytes(int count) {
+        byte[] bytes = new byte[count];
+        random.nextBytes(bytes);
+        return bytes;
+    }
 }
