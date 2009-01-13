@@ -80,7 +80,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         this.staleTimeout = this.serverConfig.getLongProperty(PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT, 120);
         lock = getNewLock();
 
-        timer = new Timer();
+        timer = new Timer(true);
     }
 
     private Lock getNewLock() {
@@ -88,6 +88,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         return new ClusterLock(clusterPropertyManager, transactionManager, PARAM_AUDIT_ARCHIVER_IN_PROGRESS, staleTimeout);
     }
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         this.auditor = new Auditor(this, getApplicationContext(), logger);
         reloadConfig();
@@ -100,13 +101,16 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
             return;
         }
 
-        logger.info("(Re)Scheduling Audit Archiver timer for " + timerPeriod / 1000 + " seconds.");
-
         if (timerTask != null)
             timerTask.cancel();
 
-        timerTask = new AuditArchiverTimerTask();
-        timer.schedule(timerTask, 0, timerPeriod);
+        if ( timerPeriod > 0 ) {
+            logger.info("(Re)Scheduling Audit Archiver timer for " + timerPeriod / 1000 + " seconds.");
+            timerTask = new AuditArchiverTimerTask();
+            timer.schedule(timerTask, 0, timerPeriod);
+        } else {
+            logger.info("Audit Archiver timer disabled.");
+        }
     }
 
     private void reloadConfig() {
@@ -125,6 +129,9 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         }
 
         long newPeriod = serverConfig.getLongProperty(PARAM_AUDIT_ARCHIVER_TIMER_PERIOD, 10) * 1000;
+        if ( newPeriod < 0 ) {
+            newPeriod = 0;
+        }
         if (timer != null && newPeriod != timerPeriod) {
             timerPeriod = newPeriod;
             reschedule();
@@ -151,6 +158,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         // allow the above to be executed by subsequent timer invocations
         // even if one archive() run takes longer than the timer period
         Thread archiver = new Thread(new Runnable() {
+            @Override
             public void run() {
                 boolean gotLock = false;
                 try {
@@ -158,7 +166,11 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
                     gotLock = lock.tryLock();
                     if (gotLock) {
                         if (logger.isLoggable(Level.FINE)) logger.fine("Got lock: " + lock);
-                        archive();
+                        if ( archiveReceiver.isEnabled() ) {
+                            archive();
+                        } else {
+                            auditor.logAndAudit( SystemMessages.AUDIT_ARCHIVER_ERROR, "Receiver not enabled." );
+                        }
                     } else {
                         logger.warning("NOT starting Audit Archiver job; could not get cluster lock for: " + lock);
                     }
@@ -311,6 +323,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         getApplicationContext().publishEvent(new AuditArchiverEvent(this));
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
 
@@ -320,6 +333,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         return applicationContext;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         reloadConfig();
     }
@@ -331,6 +345,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
     }
 
     private class AuditArchiverTimerTask extends TimerTask {
+        @Override
         public void run() {
             trigger();
         }

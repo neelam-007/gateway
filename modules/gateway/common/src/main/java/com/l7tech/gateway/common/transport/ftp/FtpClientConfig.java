@@ -11,54 +11,58 @@ import java.io.Serializable;
  * @author jbufu
  * @since SecureSpan 4.6
  */
-public interface FtpClientConfig  extends Serializable {
+public interface FtpClientConfig extends Serializable {
 
     // FTP constants
-    public static final int DEFAULT_TIMEOUT = 10000; // milliseconcds
-    public static final int DEFAULT_FTP_PORT = 21;
-    public static final int DEFAULT_FTPS_PORT = 990;
-    public static final String DEFAULT_ANON_USER = "ftp";
+    static final int DEFAULT_TIMEOUT = 10000; // milliseconcds
+    static final int DEFAULT_FTP_PORT = 21;
+    static final int DEFAULT_FTPS_PORT = 990;
+    static final String DEFAULT_ANON_USER = "ftp";
 
     // connection type
-    public FtpClientConfig setSecurity(FtpSecurity security);
-    public FtpSecurity getSecurity();
+    FtpClientConfig setSecurity(FtpSecurity security);
+    FtpSecurity getSecurity();
 
     // common FTP/FTPS parameters
-    public FtpClientConfig setHost(String host);
-    public String getHost();
+    FtpClientConfig setHost(String host);
+    String getHost();
 
-    public FtpClientConfig setPort(int port);
-    public int getPort();
+    FtpClientConfig setPort(int port);
+    int getPort();
 
-    public FtpClientConfig setTimeout(int timeout);
-    public int getTimeout();
+    FtpClientConfig setTimeout(int timeout);
+    int getTimeout();
 
-    public FtpClientConfig setUser(String user);
-    public String getUser();
+    FtpClientConfig setUser(String user);
+    String getUser();
 
-    public FtpClientConfig setPass(String pass);
-    public String getPass();
+    FtpClientConfig setPass(String pass);
+    String getPass();
 
-    public FtpClientConfig setDirectory(String directory);
-    public String getDirectory();
+    FtpClientConfig setDirectory(String directory);
+    String getDirectory();
 
-    public FtpClientConfig setDebugStream(PrintStream debugStream);
-    public PrintStream getDebugStream();
+    FtpClientConfig setDebugStream(PrintStream debugStream);
+    PrintStream getDebugStream();
 
     // FTPS parameters
-    public FtpClientConfig setVerifyServerCert(boolean verify);
-    public boolean isVerifyServerCert();
+    FtpClientConfig setVerifyServerCert(boolean verify);
+    boolean isVerifyServerCert();
 
     // authentication
-    public FtpClientConfig setUseClientCert(boolean useCert);
-    public boolean isUseClientCert();
+    FtpClientConfig setUseClientCert(boolean useCert);
+    boolean isUseClientCert();
     
-    public FtpClientConfig setCredentialsSource(FtpCredentialsSource credSource);
-    public FtpCredentialsSource getCredentialsSource();
+    FtpClientConfig setCredentialsSource(FtpCredentialsSource credSource);
+    FtpCredentialsSource getCredentialsSource();
 
-    public FtpClientConfig setClientCertId(long id);
-    public long getClientCertId();
+    FtpClientConfig setClientCertId(long id);
+    long getClientCertId();
 
-    public FtpClientConfig setClientCertAlias(String alias);
-    public String getClientCertAlias();
+    FtpClientConfig setClientCertAlias(String alias);
+    String getClientCertAlias();
+
+    // status
+    FtpClientConfig setEnabled(boolean enabled);
+    boolean isEnabled();
 }

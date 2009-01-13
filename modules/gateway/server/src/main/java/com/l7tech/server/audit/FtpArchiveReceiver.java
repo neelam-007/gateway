@@ -94,6 +94,19 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
         reloadConfig();
     }
 
+    @Override
+    public boolean isEnabled() {
+        boolean enabled = false;
+
+        FtpClientConfig config = ftpConfig;
+        if ( config != null ) {
+            enabled = config.isEnabled();            
+        }
+
+        return enabled;
+    }
+
+    @Override
     public AuditExporter.ExportedInfo archiveRecords(long startOid, long endOid) {
         if (ftpConfig == null) {
             logger.warning("FTP audit archive receiver not configured.");
@@ -171,6 +184,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
     }
 
 
+    @Override
     public boolean flush() {
         if (lock.tryLock()) {
             try {
@@ -240,6 +254,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
             DigestZipOutputStream original = zipOut;
             long previouslyTransferred = original.getZippedByteCount();
 
+            @Override
             public void run() {
                 if (logger.isLoggable(Level.FINE)) logger.fine("FTPArchiveReceiver transfer watching " + original);
                 while(true) {
@@ -278,6 +293,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
         t.start();
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         reloadConfig();
     }

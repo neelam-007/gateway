@@ -6,6 +6,13 @@ package com.l7tech.server.audit;
 public interface ArchiveReceiver {
 
     /**
+     * Is this receiver available for use?
+     *
+     * @return true if enabled.
+     */
+    boolean isEnabled();
+
+    /**
      * Archives the provided audit record range. The records must be archived in order,
      * so that partially successfull transfers are not retried..
      *

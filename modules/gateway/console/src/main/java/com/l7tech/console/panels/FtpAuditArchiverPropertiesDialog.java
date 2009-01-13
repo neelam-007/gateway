@@ -47,6 +47,7 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
     private JTextField _userNameTextField;              // blank not allowed
     private JPasswordField _passwordField;              // blank allowed
     private JTextField _timeoutTextField;               // blank allowed
+    private JCheckBox enabledCheckBox;
     private JButton _testButton;
     private JButton _okButton;
     private JButton _cancelButton;
@@ -250,6 +251,7 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
         _timeoutTextField.setText(Integer.toString(ftpConfig.getTimeout() / 1000));
         _userNameTextField.setText(ftpConfig.getUser());
         _passwordField.setText(ftpConfig.getPass());
+        enabledCheckBox.setSelected(ftpConfig.isEnabled());
 
         _verifyServerCertCheckBox.setSelected(ftpConfig.isVerifyServerCert());
         _directoryTextField.setText(ftpConfig.getDirectory());
@@ -277,6 +279,8 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
 
         if (_timeoutTextField.getText().length() != 0)
             ftpConfig.setTimeout(Integer.parseInt(_timeoutTextField.getText()) * 1000);
+
+        ftpConfig.setEnabled(enabledCheckBox.isSelected());
 
         ftpConfig.setUser(_userNameTextField.getText());
         ftpConfig.setPass(new String(_passwordField.getPassword()));
