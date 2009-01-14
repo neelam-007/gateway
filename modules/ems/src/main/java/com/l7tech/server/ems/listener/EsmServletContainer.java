@@ -57,6 +57,7 @@ import java.security.cert.X509Certificate;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import java.net.MalformedURLException;
+import java.net.BindException;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.audit.Audit;
@@ -64,6 +65,7 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.ServerConfig;
@@ -202,13 +204,12 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
             public void run() {
                 doRebuildConnectorsIfRequired();
             }
-        }, 15000, 10000 );
+        }, 5000, 15000 );
 
         server = new Server();
 
         final ListenerConfiguration config = buildConfiguration();
         configuration.set( config );
-        rebuildConnectors( config );
 
         final Context root = new Context(server, "/", Context.SESSIONS);
         AbstractSessionManager sessionManager = ((AbstractSessionManager)root.getSessionHandler().getSessionManager());
@@ -269,7 +270,6 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         root.setErrorHandler( buildErrorHandler() );
 
         server.start();
-        runningConfiguration.set( config );
     }
 
     private void shutdownServletEngine() throws Exception {
@@ -305,7 +305,11 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
             }
 
         } catch (IOException e) {
-            logger.log( Level.WARNING, "Error installing listener configuration '"+desiredConfig+"'.", e );
+            if ( ExceptionUtils.causedBy( e, BindException.class ) ) {
+                logger.log( Level.WARNING, "Error installing listener configuration '"+desiredConfig+"', due to '"+ExceptionUtils.getMessage(e)+"'." );
+            } else {
+                logger.log( Level.WARNING, "Error installing listener configuration '"+desiredConfig+"'.", e );
+            }
 
             if ( actualConfg != null ) {
                 logger.log( Level.INFO, "Reverting to previously used listener configuration '"+actualConfg+"'." );
