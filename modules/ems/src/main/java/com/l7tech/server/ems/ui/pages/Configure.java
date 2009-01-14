@@ -261,9 +261,9 @@ public class Configure extends EsmStandardWebPage {
                         } catch (FindException e1) {
                             return new JSONException(e1);
                         }
-                    } else if (ExceptionUtils.causedBy(e, DuplicateHostnameAndPortException.class)) {
-                        String errorMsg = "A cluster with the hostname (" + hostname + ") and the port ("
-                            + port + ") already exists in the enterprise tree.";
+                    } else if (ExceptionUtils.causedBy(e, DuplicateHostnameException.class)) {
+                        String errorMsg = "A cluster with the hostname (" + hostname + ") already exists in the enterprise tree." +
+                            "<br/>Please specify a different hostname.";
                         return new JSONException(new DuplicateObjectException(errorMsg, e));
                     } else {
                         return new JSONException(e);

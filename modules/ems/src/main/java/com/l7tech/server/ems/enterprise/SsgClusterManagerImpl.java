@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
+import java.net.InetAddress;
 
 /**
  * Entity manager for {@link SsgCluster}.
@@ -66,7 +67,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     @Override
     public SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException {
         verifyLegalClusterName(name);
-        verifyHostnameAndPort(sslHostName, adminPort);
+        verifyHostnameUniqueness(sslHostName);
         final SsgCluster result = new SsgCluster(name, sslHostName, adminPort, parentFolder);
         long id = save(result);
         addManageClusterRole( id, result );
@@ -191,19 +192,41 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     /**
-     * Verify if both of the hostname and the port are used by a SSG cluster.
-     * @param hostname
-     * @param port
+     * Verify if the hostname of a SSG Cluster is unique in the enterprise tree.
+     * @param hostname The host name of the SSG Cluster
      * @throws FindException
-     * @throws DuplicateHostnameAndPortException: throw if there exists one cluster with such hostname and port.
+     * @throws DuplicateHostnameException : throw if there exists one cluster with such hostname and port.
      */
-    private void verifyHostnameAndPort(String hostname, int port) throws FindException, DuplicateHostnameAndPortException {
+    private void verifyHostnameUniqueness(String hostname) throws FindException, DuplicateHostnameException {
         for (SsgCluster cluster: findAll()) {
-            if (cluster.getSslHostName().equals(hostname) && cluster.getAdminPort() == port) {
-                throw new DuplicateHostnameAndPortException(
-                    "Find an existing SSG Cluster with the same hostname (" + hostname + ") and port number (" + port + ").");
+            if (isSameHost(cluster.getSslHostName(), hostname)) {
+                throw new DuplicateHostnameException("Find an existing SSG Cluster with the same hostname (" + hostname + ").");
             }
         }
+    }
+
+    /**
+     * Check if two hosts are same or not.
+     *
+     * @param hostname1 The hostname of the first host.  It could be an IP address.
+     * @param hostname2 The hostname of the second host.  It could be an IP address.
+     * @return true if both are the same host.
+     */
+    private boolean isSameHost(String hostname1, String hostname2) {
+        String hostaddress1 = hostname1;
+        String hostaddress2 = hostname2;
+
+        try {
+            InetAddress address = InetAddress.getByName(hostname1);
+            hostaddress1 = address.getHostAddress();
+
+            address = InetAddress.getByName(hostname2);
+            hostaddress2 = address.getHostAddress();
+        } catch (Exception e) {
+        }
+
+        return (hostaddress1 != null && hostaddress1.equals(hostaddress2))
+            || (hostaddress2 != null && hostaddress2.equals(hostaddress1));
     }
 
     /**
