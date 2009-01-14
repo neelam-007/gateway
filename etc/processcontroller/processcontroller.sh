@@ -16,6 +16,7 @@ fi
 PC_USER=""
 PC_PIDFILE=""
 PC_PIDTEMP=""
+PC_JAR="Controller.jar"
 if [ ! -z "${1}" ] && [ ! -z "${2}" ] ; then
   PC_USER="${1}"
   PC_PIDFILE="${2}"
@@ -30,15 +31,17 @@ function fail() {
 }
 
 cd "${SSPC_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSPC_HOME}"
+[ -r "${PC_JAR}" ] || fail 2 "Missing or unreadable file: ${PC_JAR}"
+[ -x "${JAVA_HOME}/bin/java" ] || fail 2 "Invalid JAVA_HOME: ${JAVA_HOME}"
 
 # Run the config bootstrapper if it looks like this is the first time we've run
 if [ ! -f "${SSPC_HOME}/etc/host.properties" ] ; then
 
   if [ -z "${PC_USER}" ] ; then
-    "${JAVA_HOME}/bin/java" -classpath "$SSPC_HOME/Controller.jar" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig
+    "${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig
   else
-    export JAVA_HOME SSPC_HOME
-    runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -classpath "$SSPC_HOME/Controller.jar" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig'
+    export JAVA_HOME SSPC_HOME PC_JAR
+    runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig'
   fi
 
   if [ ${?} -ne 0 ]; then
@@ -48,10 +51,10 @@ fi
 
 #
 if [ -z "${PC_USER}" ] ; then
-  "${JAVA_HOME}/bin/java" -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar Controller.jar &>/dev/null <&- &
+  "${JAVA_HOME}/bin/java" -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar ${PC_JAR} &>/dev/null <&- &
 else 
-  export JAVA_HOME SSPC_HOME PC_PIDTEMP
-  runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar Controller.jar &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"'
+  export JAVA_HOME SSPC_HOME PC_JAR PC_PIDTEMP
+  runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar ${PC_JAR} &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"'
 fi
 
 if [ ${?} -eq 0 ] ; then
