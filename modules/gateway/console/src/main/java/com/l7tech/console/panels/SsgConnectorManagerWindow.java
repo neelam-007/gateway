@@ -278,11 +278,11 @@ public class SsgConnectorManagerWindow extends JDialog {
         String warningMessage = null;
 
         boolean disabledNodeToNode =
-                originalConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION) &&
-                (editedConnector==null || !editedConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION));
+                (originalConnector.isEnabled() && originalConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION)) &&
+                (editedConnector==null || !editedConnector.isEnabled() || !editedConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION));
         boolean disabledProcessController =
-                originalConnector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API) &&
-                (editedConnector==null || !editedConnector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API));
+                (originalConnector.isEnabled() && originalConnector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API)) &&
+                (editedConnector==null || !editedConnector.isEnabled() || !editedConnector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API));
 
         if ( disabledNodeToNode || disabledProcessController ) {
             warningMessage = "This will disable the following Gateway features:\n";
