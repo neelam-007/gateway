@@ -306,7 +306,8 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
 
         } catch (IOException e) {
             if ( ExceptionUtils.causedBy( e, BindException.class ) ) {
-                logger.log( Level.WARNING, "Error installing listener configuration '"+desiredConfig+"', due to '"+ExceptionUtils.getMessage(e)+"'." );
+                BindException be = ExceptionUtils.getCauseIfCausedBy( e, BindException.class );
+                logger.log( Level.WARNING, "Error installing listener configuration '"+desiredConfig+"', due to '"+ExceptionUtils.getMessage(be)+"'." );
             } else {
                 logger.log( Level.WARNING, "Error installing listener configuration '"+desiredConfig+"'.", e );
             }
