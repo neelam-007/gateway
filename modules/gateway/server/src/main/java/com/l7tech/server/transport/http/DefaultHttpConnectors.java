@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 public class DefaultHttpConnectors {
     protected static final Logger logger = Logger.getLogger(DefaultHttpConnectors.class.getName());
     static final String defaultEndpoints = "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS";
-    static final String defaultStrongCiphers = "TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_DSS_WITH_AES_256_CBC_SHA";
+    static final String defaultStrongCiphers = "TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA";
 
     /**
      * Create connectors from server.xml if possible, or by creating some hardcoded defaults.
