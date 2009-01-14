@@ -218,10 +218,10 @@ public class ConfigInterviewer {
         System.out.println();
 
         if (currentContext.getParent() == null) {
-            System.out.println("  S: Save changes and exit");
+            System.out.println("  S) Save changes and exit");
         }
 
-        System.out.println("  X: Quit, discarding changes");
+        System.out.println("  X) Quit, discarding changes");
 
         System.out.println();
         System.out.print("Select: ");
@@ -269,7 +269,7 @@ public class ConfigInterviewer {
                 final ConfigurableBeanFactory factory = (ConfigurableBeanFactory)config;
                 final ConfigurationBean bean = factory.make();
                 configurables.add(new Pair<String, DynamicConfigurationBean>(
-                            String.format("%3d: %s", ++i, "New " + config.getConfigName()),
+                            String.format("%3d) %s", ++i, "New " + config.getConfigName()),
                             new DynamicConfigurationBean("_new." + bean.getId(), "New " + bean.getConfigName(), null) {
                                 @Override
                                 public ConfigResult onConfiguration(Object value, ConfigurationContext context) {
@@ -282,12 +282,12 @@ public class ConfigInterviewer {
                 EditableConfigurationBean configurableBean = (EditableConfigurationBean)config;
                 String desc = config.getShortValueDescription();
                 configurables.add(new Pair<String, DynamicConfigurationBean>(
-                        String.format("%3d: %s: %s", ++i, config.getConfigName(), desc == null ? "<not configured>" : desc),
+                        String.format("%3d) %s: %s", ++i, config.getConfigName(), desc == null ? "<not configured>" : desc),
                         configurableBean));
             } else if (config.isDeletable()) {
                 // TODO what if a bean is both editable and deletable?
                 configurables.add(new Pair<String, DynamicConfigurationBean>(
-                        String.format("%3d: %s %s", ++i, "Delete " + config.getConfigName(), config.getShortValueDescription()),
+                        String.format("%3d) %s %s", ++i, "Delete " + config.getConfigName(), config.getShortValueDescription()),
                         new ConfirmDeletion(config)));
             }
         }
