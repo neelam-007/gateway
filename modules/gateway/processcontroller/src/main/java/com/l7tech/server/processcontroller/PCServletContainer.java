@@ -2,15 +2,15 @@ package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.cxf.transport.servlet.CXFServlet;
 import org.mortbay.jetty.Server;
-import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.DefaultServlet;
 import org.mortbay.jetty.servlet.ServletHolder;
-import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.resource.Resource;
+import org.mortbay.log.Log;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -22,7 +22,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.servlet.Filter;
 import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -33,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * An embedded servlet container that the PC uses to host itself.
@@ -62,6 +62,12 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         this.httpPort = configService.getSslPort();
         this.httpIPAddress = configService.getSslIPAddress();
         this.configService = configService;
+
+        try {
+            Log.setLog( new JulLogger(PCServletContainer.class.getName() + ".SERVLET") );
+        } catch ( Exception e ) {
+            logger.log( Level.WARNING, "Error installing Jetty logger.", e );
+        }
     }
 
     private void initializeServletEngine() throws Exception {
@@ -201,5 +207,52 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
     public static PCServletContainer getInstance(long id) {
         Reference<PCServletContainer> instance = instancesById.get(id);
         return instance == null ? null : instance.get();
+    }
+
+    private static final class JulLogger implements org.mortbay.log.Logger {
+        private final Logger logger;
+
+        public JulLogger( final String name ) {
+            logger = Logger.getLogger( name );
+        }
+
+        @Override
+        public void debug(String msg, Object arg0, Object arg1) {
+            logger.log( Level.FINE, msg, new Object[]{arg0, arg1} );
+        }
+
+        @Override
+        public void debug(String msg, Throwable th) {
+            logger.log( Level.FINE, msg, ExceptionUtils.getDebugException(th) );
+        }
+
+        @Override
+        public org.mortbay.log.Logger getLogger(String name) {
+            return new JulLogger(name);
+        }
+
+        @Override
+        public void info(String msg, Object arg0, Object arg1) {
+            logger.log( Level.INFO, msg, new Object[]{arg0, arg1} );
+        }
+
+        @Override
+        public boolean isDebugEnabled() {
+            return false;
+        }
+
+        @Override
+        public void setDebugEnabled(boolean enabled) {
+        }
+
+        @Override
+        public void warn(String msg, Object arg0, Object arg1) {
+            logger.log( Level.WARNING, msg, new Object[]{arg0, arg1} );
+        }
+
+        @Override
+        public void warn(String msg, Throwable th) {
+            logger.log( Level.WARNING, msg, th );
+        }
     }
 }

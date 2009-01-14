@@ -5,12 +5,15 @@ package com.l7tech.server.processcontroller;
 
 import com.l7tech.server.util.UncaughtExceptionLogger;
 import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.beans.factory.BeanCreationException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.BindException;
 
 /** @author alex */
 public final class ProcessControllerDaemon {
@@ -31,7 +34,7 @@ public final class ProcessControllerDaemon {
                     public void run() {
                         shutdown = true;
                         synchronized (this) {
-                            processController.stopNodes();
+                            if (processController!=null) processController.stopNodes();
                             notifyAll();
                             // Kick the loop to enact the changes immediately
                         }
@@ -49,7 +52,16 @@ public final class ProcessControllerDaemon {
 
     private synchronized void runUntilShutdown() throws IOException {
         init();
-        start();
+        try {
+            start();
+        } catch ( BeanCreationException bce ) {
+            if ( ExceptionUtils.causedBy( bce, BindException.class ) ) {
+                logger.severe("Process controller unable to bind listener, please ensure server ip address and port are valid and available and restart.");
+                System.exit(2);
+            } else {
+                throw bce;
+            }
+        }
 
         do {
             synchronized (this) {
