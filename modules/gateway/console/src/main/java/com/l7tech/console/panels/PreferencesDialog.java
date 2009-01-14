@@ -475,6 +475,7 @@ public class PreferencesDialog extends JDialog {
             if(sMaxSize != null && !sMaxSize.equals("")){
                 try{
                     serverUrlHistory.setMaxSize((new Integer(sMaxSize)));
+                    preferences.store();
                 }catch(NumberFormatException nfe){
                     ;//Swallow - incorrectly set property
                     //don't need to set, it's has an internal default value

@@ -245,7 +245,27 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
 
 
         private LinkedList<Object> values() {
-            SortedSet<Object> sortedKeys = new TreeSet<Object>();
+            SortedSet<Object> sortedKeys = new TreeSet<Object>(new Comparator<Object>() {
+                public int compare(Object o1, Object o2) {
+                    //service.url
+                    //service.url.1
+
+                    if(o1.toString().equals(o2.toString())) return 0;
+
+                    int index1 = o1.toString().lastIndexOf(".");
+                    //lowest index always has no index e.g. service.url
+                    if(index1 < propertyName.length()) return -1;
+
+                    int index2 = o2.toString().lastIndexOf(".");
+                    if(index2 < propertyName.length()) return 1;
+
+                    //get their indexes to compare
+                    Integer i1 = new Integer(o1.toString().substring(index1+1));
+                    Integer i2 = new Integer(o2.toString().substring(index2+1));
+
+                    return i1.compareTo(i2);
+                }
+            });
 
             Enumeration enumeration = props.keys();
             while (enumeration.hasMoreElements()) {
