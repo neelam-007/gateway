@@ -120,6 +120,7 @@ public final class JSONConstants {
     public static final String ANCESTORS     = "ancestors";
     public static final String SSL_HOST_NAME = "sslHostName";
     public static final String ADMIN_PORT    = "adminPort";
+    public static final String ADMIN_APPLET_PORT = "adminAppletPort";
     public static final String DB_HOSTS      = "dbHosts";
 
     // Additional properties for SSG Node entities.

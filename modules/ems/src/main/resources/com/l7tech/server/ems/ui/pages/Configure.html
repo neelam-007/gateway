@@ -458,7 +458,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
 
             function onClickLaunchSSM(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
-                var url = 'https://' + entity.sslHostName + ':9443/ssg/webadmin';
+                var url = 'https://' + entity.sslHostName + ':' + entity.adminAppletPort + '/ssg/webadmin';
                 window.open(url, '_blank');
             }
 

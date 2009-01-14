@@ -181,6 +181,12 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                     GatewayApi api = context.getApi();
                                     GatewayApi.ClusterInfo info = api.getClusterInfo();
                                     if ( info != null ) {
+                                        int appletPortFromEsm = cluster.getAdminAppletPort();
+                                        int appletPortFromSsg = info.getAdminAppletPort();
+                                        if (appletPortFromEsm != appletPortFromSsg) {
+                                            cluster.setAdminAppletPort(appletPortFromSsg);
+                                            ssgClusterManager.update(cluster);
+                                        }
                                         if ( !cluster.getTrustStatus() ) {
                                             logger.info("Trust established for gateway cluster '"+host+":"+port+"'.");
                                             cluster.setTrustStatus( true );

@@ -67,6 +67,7 @@ public class GatewayApiImpl implements GatewayApi {
             info.setClusterHostname( config.getProperty("clusterHost", "") );
             info.setClusterHttpPort( config.getIntProperty("clusterhttpport", 8080) );
             info.setClusterHttpsPort( config.getIntProperty("clusterhttpsport", 8443) );
+            info.setAdminAppletPort(config.getIntProperty("clusterNodeAdminAppletPort", 9443));
 
             return info;
         } catch  ( RuntimeException re ) {

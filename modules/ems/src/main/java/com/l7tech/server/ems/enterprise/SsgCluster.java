@@ -34,6 +34,8 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
     /** Port number of the administrative interface. */
     private int adminPort;
 
+    private int adminAppletPort;
+
     private String onlineStatus;
 
     private boolean trustStatus;
@@ -63,6 +65,15 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
 
     public void setAdminPort(int adminPort) {
         this.adminPort = adminPort;
+    }
+
+    @Column(name="admin_applet_port")
+    public int getAdminAppletPort() {
+        return adminAppletPort;
+    }
+
+    public void setAdminAppletPort(int adminAppletPort) {
+        this.adminAppletPort = adminAppletPort;
     }
 
     @Column(name="guid", length=36, unique=true, nullable=false)
@@ -180,13 +191,13 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         return true;
     }
 
-    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (guid != null ? guid.hashCode() : 0);
         result = 31 * result + (sslHostName != null ? sslHostName.hashCode() : 0);
         result = 31 * result + (ipAddress != null ? ipAddress.hashCode() : 0);
         result = 31 * result + adminPort;
+        result = 31 * result + adminAppletPort;
         result = 31 * result + (trustStatus ? 1 : 0);
         result = 31 * result + (dbHosts != null ? dbHosts.hashCode() : 0);
         result = 31 * result + (parentFolder != null ? parentFolder.hashCode() : 0);
@@ -208,6 +219,7 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         output.add(JSONConstants.TRUST_STATUS, trustStatus);
         output.add(JSONConstants.SSL_HOST_NAME, sslHostName);
         output.add(JSONConstants.ADMIN_PORT, Integer.toString(adminPort));
+        output.add(JSONConstants.ADMIN_APPLET_PORT, Integer.toString(adminAppletPort));
         output.add(JSONConstants.ONLINE_STATUS, onlineStatus);
 // TODO       output.add(JSONConstants.DB_HOSTS, ...);
 // TODO       output.add(JSONConstants.IP_ADDRESS, ...);

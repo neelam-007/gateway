@@ -54,6 +54,7 @@ public interface GatewayApi {
         private String clusterHostname;
         private int clusterHttpPort;
         private int clusterHttpsPort;
+        private int adminAppletPort;
 
         @XmlAttribute(name="clusterHostname")
         public String getClusterHostname() {
@@ -80,6 +81,15 @@ public interface GatewayApi {
 
         public void setClusterHttpsPort(int clusterHttpsPort) {
             this.clusterHttpsPort = clusterHttpsPort;
+        }
+
+        @XmlAttribute(name="adminAppletPort")
+        public int getAdminAppletPort() {
+            return adminAppletPort;
+        }
+
+        public void setAdminAppletPort(int adminAppletPort) {
+            this.adminAppletPort = adminAppletPort;
         }
 
         @SuppressWarnings({"RedundantIfStatement"})
