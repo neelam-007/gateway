@@ -26,7 +26,6 @@ import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -90,9 +89,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private ClusterPropertyCache clusterPropertyCache;
     private LicenseManager licenseManager;
     private StashManagerFactory stashManagerFactory;
-    private ServiceCache serviceCache;
     private Auditor auditor;
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
@@ -106,7 +105,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         clusterPropertyCache = (ClusterPropertyCache)applicationContext.getBean("clusterPropertyCache");
         licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
         stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
-        serviceCache = (ServiceCache)applicationContext.getBean("serviceCache");
         auditor = new Auditor(this, applicationContext, logger);
     }
 
@@ -118,13 +116,28 @@ public class SoapMessageProcessingServlet extends HttpServlet {
      * @throws ServletException
      * @throws IOException
      */
+    @Override
     public void doPost(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
         this.service(hrequest, hresponse);
     }
 
+    @Override
     protected void service(HttpServletRequest hrequest, HttpServletResponse hresponse)
             throws ServletException, IOException
     {
+        try {
+            licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
+            HttpTransportModule.requireEndpoint(hrequest, SsgConnector.Endpoint.MESSAGE_INPUT);
+        } catch (LicenseException e) {
+            logger.log(Level.WARNING, "Published service message input is not licensed '"+ExceptionUtils.getMessage(e)+"'.");
+            hresponse.sendError(503);
+            return;
+        } catch (TransportModule.ListenerException e) {
+            logger.log(Level.WARNING, "Published service message input is not enabled on this port, " + hrequest.getServerPort());
+            hresponse.sendError(500);
+            return;
+        }
+
         GZIPInputStream gis = null;
         String maybegzipencoding = hrequest.getHeader("content-encoding");
         boolean gzipEncodedTransaction = false;
@@ -168,21 +181,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
         } else {
             logger.fine("no content-encoding specified");
-        }
-
-        try {
-            licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
-            HttpTransportModule.requireEndpoint(hrequest, SsgConnector.Endpoint.MESSAGE_INPUT);
-        } catch (LicenseException e) {
-            // New exception to conceal original stack trace from LicenseManager
-            throw new ServletException(new LicenseException(e.getMessage()));
-        } catch (TransportModule.ListenerException e) {
-            logger.log(Level.WARNING, "Published service message input is not enabled on this port, " + hrequest.getServerPort());
-            hresponse.setStatus(500);
-            hresponse.setContentType(null);
-            hresponse.setContentLength(0);
-            hresponse.getOutputStream().close();
-            return;
         }
 
         // Initialize processing context
@@ -547,6 +545,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             this.mk = mk;
         }
 
+        @Override
         public InputStream getInputStream() throws IOException {
             try {
                 return mk.getEntireMessageBodyAsInputStream();
