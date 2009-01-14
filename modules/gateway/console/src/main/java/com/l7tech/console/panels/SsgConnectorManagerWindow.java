@@ -61,6 +61,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         getRootPane().setDefaultButton(closeButton);
 
         closeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
@@ -74,6 +75,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         mainScrollPane.getViewport().setBackground(Color.white);
 
         connectorTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 reportConflicts();
                 enableOrDisableButtons();
@@ -81,24 +83,28 @@ public class SsgConnectorManagerWindow extends JDialog {
         });
 
         closeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 dispose();
             }
         });
 
         propertiesButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 doProperties();
             }
         });
 
         createButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doCreate();
             }
         });
 
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doRemove();
             }
@@ -122,8 +128,14 @@ public class SsgConnectorManagerWindow extends JDialog {
         if (connector == null)
             return;
 
+        String featureWarning = getFeatureWarningText( connector, null );
+        if ( featureWarning != null ) {
+            featureWarning = "\n\n" + featureWarning;
+        } else {
+            featureWarning = "";
+        }
         int result = JOptionPane.showConfirmDialog(this,
-                                                   "Are you sure you want to remove the listen port \"" + connector.getName() + "\"?",
+                                                   "Are you sure you want to remove the listen port \"" + connector.getName() + "\"?" + featureWarning,
                                                    "Confirm Removal",
                                                    JOptionPane.YES_NO_CANCEL_OPTION,
                                                    JOptionPane.QUESTION_MESSAGE);
@@ -175,9 +187,11 @@ public class SsgConnectorManagerWindow extends JDialog {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (dlg.isConfirmed()) {
                     Runnable reedit = new Runnable() {
+                        @Override
                         public void run() {
                             loadConnectors();
                             editAndSave(connector, originalConnector);
@@ -207,6 +221,7 @@ public class SsgConnectorManagerWindow extends JDialog {
                     } catch (TransportAdmin.CurrentAdminConnectionException e) {
                         showErrorMessage("Save Failed", "Unable to modify the listen port for the current admin connection.", null,
                             new Runnable() {
+                                @Override
                                 public void run() {
                                     loadConnectors();
                                 }
@@ -240,27 +255,13 @@ public class SsgConnectorManagerWindow extends JDialog {
     /**
      *
      */
-    private boolean warnAboutFeatures(SsgConnector originalConnector, SsgConnector editedConnector) {
+    private boolean warnAboutFeatures( final SsgConnector originalConnector, final SsgConnector editedConnector ) {
         boolean reedit = false;
 
         if (originalConnector != null && editedConnector != null) {
-            boolean disabledNodeToNode =
-                    originalConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION) &&
-                    !editedConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION);
-            boolean disabledProcessController =
-                    originalConnector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API) &&
-                    !editedConnector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API);
-
-            if ( disabledNodeToNode || disabledProcessController ) {
+            String warningMessage = getFeatureWarningText( originalConnector, editedConnector );
+            if ( warningMessage != null ) {
                 String title = "Confirm Disabled Features";
-                String warningMessage = "You have disabled the following Gateway features:\n";
-
-                if ( disabledNodeToNode ) {
-                    warningMessage += "\nInter-Node Communication - required for some administrative functionality (such as log viewing).";
-                }
-                if ( disabledProcessController ) {
-                    warningMessage += "\nNode Control - required for full management of the Gateway.";
-                }
 
                 warningMessage += "\n\nSelect OK to Save or Cancel to edit.";
 
@@ -271,6 +272,30 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
 
         return reedit;
+    }
+
+    private String getFeatureWarningText( final SsgConnector originalConnector, final SsgConnector editedConnector ) {
+        String warningMessage = null;
+
+        boolean disabledNodeToNode =
+                originalConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION) &&
+                (editedConnector==null || !editedConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION));
+        boolean disabledProcessController =
+                originalConnector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API) &&
+                (editedConnector==null || !editedConnector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API));
+
+        if ( disabledNodeToNode || disabledProcessController ) {
+            warningMessage = "This will disable the following Gateway features:\n";
+
+            if ( disabledNodeToNode ) {
+                warningMessage += "\nInter-Node Communication - required for some administrative functionality (such as log viewing).";
+            }
+            if ( disabledProcessController ) {
+                warningMessage += "\nNode Control - required for full management of the Gateway.";
+            }
+        }
+
+        return warningMessage;
     }
 
     private static String explainConflict(Pair<PortRange, String> conflict) {
@@ -458,6 +483,7 @@ public class SsgConnectorManagerWindow extends JDialog {
                     private Color defSelFg;
                     private Color conflictColor = new Color(128, 0, 0);
 
+                    @Override
                     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                         if (defFg == null) {
                             TableCellRenderer def1 = new DefaultTableCellRenderer();
@@ -486,30 +512,35 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         public final Col[] columns = new Col[] {
                 new Col("Enabled", 60, 90, 90) {
+                    @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getEnabled();
                     }
                 },
 
                 new Col("Name", 60, 90, 999999) {
+                    @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getName();
                     }
                 },
 
                 new Col("Protocol", 3, 100, 150) {
+                    @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getProtocol();
                     }
                 },
 
                 new Col("Interface", 3, 88, 88) {
+                    @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getInterface();
                     }
                 },
 
                 new Col("Port", 3, 85, 85) {
+                    @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getPort();
                     }
@@ -533,6 +564,7 @@ public class SsgConnectorManagerWindow extends JDialog {
             return columns[column].maxWidth;
         }
 
+        @Override
         public String getColumnName(int column) {
             return columns[column].name;
         }
@@ -548,14 +580,17 @@ public class SsgConnectorManagerWindow extends JDialog {
             fireTableDataChanged();
         }
 
+        @Override
         public int getRowCount() {
             return rows.size();
         }
 
+        @Override
         public int getColumnCount() {
             return columns.length;
         }
 
+        @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             return columns[columnIndex].getValueForRow(rows.get(rowIndex));
         }
