@@ -3,10 +3,11 @@
  */
 package com.l7tech.security.xml;
 
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.NamespaceFactory;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.NamespaceFactory;
+import com.l7tech.util.SoapConstants;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -77,6 +78,28 @@ public abstract class KeyInfoDetails {
     }
 
     /**
+     * Create a free-floating KeyInfo element within the specific DOM but do not add it as a child of
+     * any existing nodes within the DOM.
+     *
+     * @param domFactory  document to use to create the new element.  Required.
+     * @param nsf     the NamespaceFactory to use when choosing namespaces.  Must not be null.
+     * @param dsigPrefix a namespace prefix for the DIGSIG_URI that caller guarantees will be in-scope
+     *                   when the created element is finally inserted into the document.  Caller must
+     *                   manually add a namespace declaration for this prefix if one turns out to be required
+     *                   when the element is added to the document.
+     *                   <p/>
+     *                   This prefix may be null, in which case the created KeyInfo element will assume that
+     *                   DIGSIG_URI will be the default namespace at the eventual insertion point and will
+     *                   create the element with no namespace prefix.
+     * @return a newly-created free-floating KeyInfo Element.  Never null.
+     */
+    public Element createKeyInfoElement(Document domFactory, NamespaceFactory nsf, String dsigPrefix) {
+        String elname = dsigPrefix == null ? "KeyInfo" : (dsigPrefix + ":" + "KeyInfo");
+        Element keyInfo = domFactory.createElementNS(SoapConstants.DIGSIG_URI, elname);
+        return populateExistingKeyInfoElement(nsf, keyInfo);
+    }
+
+    /**
      * Prepare to create a new KeyInfo element using KeyInfo/[SecurityTokenReference/]X509Data/X509IssuerSerial.
      *
      * @param certificate the certificate from which to extract the Issuer DN and Serial number.
@@ -123,4 +146,6 @@ public abstract class KeyInfoDetails {
     protected static Element createStr(NamespaceFactory nsf, Element keyInfo) {
         return DomUtils.createAndAppendElementNS(keyInfo, SoapConstants.SECURITYTOKENREFERENCE_EL_NAME, nsf.getWsseNs(), "wsse");
     }
+
+    public abstract boolean isX509ValueReference();
 }

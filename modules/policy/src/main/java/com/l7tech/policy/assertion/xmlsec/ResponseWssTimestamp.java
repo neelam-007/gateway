@@ -41,6 +41,7 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
     private TimeUnit timeUnit = TimeUnit.MINUTES;
 
     private String keyReference = KeyReference.BST.getName();
+    private boolean protectTokens = false;
     
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 
@@ -110,5 +111,13 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
 
     public void setKeyReference(String keyReference) {
         this.keyReference = keyReference;
+    }
+
+    public boolean isProtectTokens() {
+        return protectTokens;
+    }
+
+    public void setProtectTokens(boolean protectTokens) {
+        this.protectTokens = protectTokens;
     }
 }

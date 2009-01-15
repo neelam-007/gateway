@@ -17,6 +17,8 @@ import com.l7tech.policy.assertion.annotation.ProcessesResponse;
 @ProcessesResponse
 public class ResponseWssIntegrity extends XmlSecurityAssertionBase implements ResponseWssConfig, PrivateKeyable {
     private String keyReference = KeyReference.BST.getName();
+    private boolean protectTokens = false;
+
     public ResponseWssIntegrity() {
         setXpathExpression(XpathExpression.soapBodyXpathValue());
     }
@@ -59,5 +61,13 @@ public class ResponseWssIntegrity extends XmlSecurityAssertionBase implements Re
 
     public void setKeyAlias(String keyid) {
         this.keyId = keyid;
+    }
+
+    public boolean isProtectTokens() {
+        return protectTokens;
+    }
+
+    public void setProtectTokens(boolean protectTokens) {
+        this.protectTokens = protectTokens;
     }
 }

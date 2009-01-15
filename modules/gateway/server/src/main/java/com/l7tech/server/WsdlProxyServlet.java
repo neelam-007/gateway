@@ -30,6 +30,7 @@ import com.l7tech.server.transport.TransportModule;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.SoapConstants;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -261,7 +262,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     Set sactionparams = sactionResolver.getDistinctParameters(publishedService);
                     if (!sactionparams.contains(sactionparam)) iterator.remove();
                 } catch (ServiceResolutionException sre) { // ignore this service
-                    logger.log(Level.WARNING, "Could not process service with oid '"+publishedService.getOid()+"'.", sre);                    
+                    logger.log(Level.WARNING, "Could not process service with oid '"+publishedService.getOid()+"'.", sre);
                 }
             }
             if (services.size() == 1) {
@@ -455,7 +456,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
         int index = name.lastIndexOf('/');
         if ( index >= 0 ) {
-            name = name.substring( index+1 );            
+            name = name.substring( index+1 );
         }
 
         return name;
@@ -485,38 +486,44 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     private void addSecurityPolicy(Document wsdl, PublishedService svc) {
-        try{
-            if (System.getProperty(PROPERTY_WSSP_ATTACH)==null ||
-                Boolean.getBoolean(PROPERTY_WSSP_ATTACH)) {
-                Assertion rootassertion = parsePolicy(svc.getPolicy().getXml());
-                // Set the parameter considerDisable to be true, since WsspAssertion is a key to determine if a security
-                // policy content will be added into the wsdl.  If the WsspAssertion is disabled, even thought rootassertion
-                // contains WsspAssertion, the program won't go further to add the security policy content in the wsdl.
-                if (Assertion.contains(rootassertion, WsspAssertion.class, true)) {
-                    // remove any existing policy
-                    XmlUtil.stripNamespace(wsdl.getDocumentElement(), SoapConstants.WSP_NAMESPACE2);
-                    Assertion effectivePolicy = wsspFilterManager.applyAllFilters(null, rootassertion);
-                    if (effectivePolicy != null) {
-                            if (logger.isLoggable(Level.FINEST)) {
-                                logger.log(Level.FINEST, "Effective policy for user: \n" + WspWriter.getPolicyXml(effectivePolicy));
-                            }
+        if (!SyspropUtil.getBoolean(PROPERTY_WSSP_ATTACH, true)) {
+            logger.fine("WS-SecurityPolicy decoration not enabled.");
+            return;
+        }
 
-                            WsspWriter.decorate(wsdl, effectivePolicy);
+        try{
+            Assertion rootassertion = wspReader.parsePermissively(svc.getPolicy().getXml());
+
+            // Set the parameter considerDisable to be true, since WsspAssertion is a key to determine if a security
+            // policy content will be added into the wsdl.  If the WsspAssertion is disabled, even thought rootassertion
+            // contains WsspAssertion, the program won't go further to add the security policy content in the wsdl.
+            WsspAssertion wsspAssertion = Assertion.find(rootassertion, WsspAssertion.class, true);
+            if (wsspAssertion == null) {
+                logger.fine("No WSSP Assertion in policy, not adding policy to WSDL.");
+                return;
+            }
+
+            // remove any existing policy
+            XmlUtil.stripNamespace(wsdl.getDocumentElement(), SoapConstants.WSP_NAMESPACE2);
+
+            Assertion effectivePolicy = wsspFilterManager.applyAllFilters(null, rootassertion);
+            if (effectivePolicy != null) {
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST, "Effective policy for user: \n" + WspWriter.getPolicyXml(effectivePolicy));
                     }
-                    else {
-                        logger.info("No policy to add!");
-                    }
-                }
-                else {
-                    logger.fine("No WSSP Assertion in policy, not adding policy to WSDL.");
-                }
+
+                    WsspWriter.decorate(wsdl,
+                            effectivePolicy,
+                            wsspAssertion.getBasePolicyXml(),
+                            wsspAssertion.getInputPolicyXml(),
+                            wsspAssertion.getOutputPolicyXml());
             }
             else {
-                logger.fine("WS-SecurityPolicy decoration not enabled.");
+                logger.info("No policy to add!");
             }
         }
         catch(Exception e) {
-            logger.log(Level.WARNING, "Could not add policy to WSDL.", e);
+            logger.log(Level.WARNING, "Could not add policy to WSDL: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -524,7 +531,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         boolean required = false;
 
         if ( service.getWsdlUrl() != null && service.getWsdlUrl().startsWith("file:") ) {
-            required = true;    
+            required = true;
         }
 
         return required;
@@ -641,7 +648,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         InputSource input = new InputSource();
         input.setSystemId( uri );
         input.setCharacterStream( new StringReader(content) );
-        return XmlUtil.parse( input, false );        
+        return XmlUtil.parse( input, false );
     }
 
     private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection<PublishedService> services) throws IOException {

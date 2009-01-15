@@ -17,6 +17,7 @@ public class ResponseWssSecurityToken extends Assertion implements ResponseWssCo
     public static final SecurityTokenType[] SUPPORTED_TOKEN_TYPES = new SecurityTokenType[] { SecurityTokenType.WSS_USERNAME };
 
     private String keyReference = KeyReference.BST.getName();
+    private boolean protectTokens;
     private SecurityTokenType tokenType = SecurityTokenType.WSS_USERNAME;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private boolean includePassword;
@@ -53,10 +54,19 @@ public class ResponseWssSecurityToken extends Assertion implements ResponseWssCo
         this.includePassword = includePassword;
     }
 
+    public boolean isProtectTokens() {
+        return protectTokens;
+    }
+
+    public void setProtectTokens(boolean protectTokens) {
+        this.protectTokens = protectTokens;
+    }
+
     public void copyFrom(ResponseWssSecurityToken other) {
         this.keyReference = other.keyReference;
         this.tokenType = other.tokenType;
         this.recipientContext = other.recipientContext;
         this.includePassword = other.includePassword;
+        this.protectTokens = other.protectTokens;
     }
 }

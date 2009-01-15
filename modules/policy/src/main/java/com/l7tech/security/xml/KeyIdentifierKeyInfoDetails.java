@@ -46,4 +46,8 @@ public class KeyIdentifierKeyInfoDetails extends KeyInfoDetails {
         return keyInfo;
     }
 
+    public boolean isX509ValueReference() {
+        return SoapConstants.VALUETYPE_SKI.equals(valueType) ||
+               SoapConstants.VALUETYPE_X509_THUMB_SHA1.equals(valueType);
+    }
 }

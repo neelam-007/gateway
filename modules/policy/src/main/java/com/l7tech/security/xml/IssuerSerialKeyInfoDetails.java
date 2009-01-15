@@ -45,4 +45,8 @@ public class IssuerSerialKeyInfoDetails extends KeyInfoDetails {
         serialElement.setTextContent(cert.getSerialNumber().toString());
         return keyInfo;
     }
+
+    public boolean isX509ValueReference() {
+        return true;
+    }
 }

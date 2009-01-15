@@ -1,0 +1,114 @@
+<!-- Reformatted for clarity.  To enable the signature to verify, delete this comment and all whitespace-only text nodes including newlines. -->
+<soapenv:Envelope soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/">
+    <soapenv:Header>
+        <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+                       soapenv:mustUnderstand="1">
+            <wsu:Timestamp wsu:Id="Timestamp_HJ8rYD1psy2XXuof"
+                           xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+                <wsu:Created>2008-10-25T00:24:27Z</wsu:Created>
+                <wsu:Expires>2008-10-25T00:29:27Z</wsu:Expires>
+            </wsu:Timestamp>
+            <ns1:EncryptedKey Id="HZewH8OR0xcL29SR" xmlns:ns1="http://www.w3.org/2001/04/xmlenc#">
+                <ns1:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p">
+                    <ns2:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"
+                                      xmlns:ns2="http://www.w3.org/2000/09/xmldsig#"/>
+                </ns1:EncryptionMethod>
+                <ns3:KeyInfo xmlns:ns3="http://www.w3.org/2000/09/xmldsig#">
+                    <wsse:SecurityTokenReference
+                            xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+                            xmlns:wsse11="http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd"
+                            xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+                            wsse11:TokenType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"
+                            wsu:Id="str_d2k291cd1rk3Mw0c">
+                        <wsse:KeyIdentifier
+                                EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary"
+                                ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509SubjectKeyIdentifier">
+                            Xeg55vRyK3ZhAEhEf+YT0z986L0=
+                        </wsse:KeyIdentifier>
+                    </wsse:SecurityTokenReference>
+                </ns3:KeyInfo>
+                <ns1:CipherData>
+                    <ns1:CipherValue>
+                        iiAdQMtCvZ9EZkKGVayM9PgVhV8qR/xkfNwzEFJIXodLv4DF9nhYv8qX0ud6LKVhCyY4tShPYEgIjHNuDpNUYZcVtMFrEkN2RlogLeDpclnx5pJhfV8ZTdaZ+a1t1QNUfGCTtRA4EhE8ZggeGBFFtMo23dSdUE5iXGDrnk8xZBE=
+                    </ns1:CipherValue>
+                </ns1:CipherData>
+                <ns1:ReferenceList>
+                    <ns1:DataReference URI="#hbFLy8nm1CT72dU2"/>
+                </ns1:ReferenceList>
+            </ns1:EncryptedKey>
+            <dsig:Signature xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
+                <dsig:SignedInfo>
+                    <dsig:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                        <exc14n:InclusiveNamespaces xmlns:exc14n="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                    </dsig:CanonicalizationMethod>
+                    <dsig:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+                    <dsig:Reference URI="#Timestamp_HJ8rYD1psy2XXuof">
+                        <dsig:Transforms>
+                            <dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                                <exc14n:InclusiveNamespaces xmlns:exc14n="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                            </dsig:Transform>
+                        </dsig:Transforms>
+                        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                        <dsig:DigestValue>EJrrPbxtRrR4iXIiugzECAd6mus=</dsig:DigestValue>
+                    </dsig:Reference>
+                    <dsig:Reference URI="#BKUa9QEF0RW5o1lchj8kgFplXUvTwqBo1rPWCcC2D9Ve1hZscRHq">
+                        <dsig:Transforms>
+                            <dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                                <exc14n:InclusiveNamespaces xmlns:exc14n="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                            </dsig:Transform>
+                        </dsig:Transforms>
+                        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                        <dsig:DigestValue>LQS7gvLs1oD+GjOIh+vKyAgnUHc=</dsig:DigestValue>
+                    </dsig:Reference>
+                    <dsig:Reference URI="#str_nEXra9c1gpcr5AJN">
+                        <dsig:Transforms>
+                            <dsig:Transform
+                                    Algorithm="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#STR-Transform">
+                                <wsse:TransformationParameters>
+                                    <dsig:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                                        <exc14n:InclusiveNamespaces
+                                                xmlns:exc14n="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                                    </dsig:CanonicalizationMethod>
+                                </wsse:TransformationParameters>
+                            </dsig:Transform>
+                        </dsig:Transforms>
+                        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                        <dsig:DigestValue>Og5BRpm4+mr3/svidhzVoJNhbgw=</dsig:DigestValue>
+                    </dsig:Reference>
+                </dsig:SignedInfo>
+                <dsig:SignatureValue>
+                    SS/Vfc7NBmLgQfIXxUrEp7tmNejDRHXPi+90wohBSi1cSdiK7bAXZ8bymmLnuOinV7ipUTKDo365P99iKAJq8MpSyPzGbi2c5brh1dxBBeEVEv1u/gQZqqkvCAmMxAlO4myQgh6o+02Iwif/mHbV3GjQX65ZpY2ygmQZY8q5Okk=
+                </dsig:SignatureValue>
+                <dsig:KeyInfo>
+                    <wsse:SecurityTokenReference
+                            xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+                            xmlns:wsse11="http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd"
+                            xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+                            wsse11:TokenType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3"
+                            wsu:Id="str_nEXra9c1gpcr5AJN">
+                        <wsse:KeyIdentifier
+                                EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary"
+                                ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509SubjectKeyIdentifier">
+                            CuJdE1B2dUFd1dkLZSzQ5vj6MYg=
+                        </wsse:KeyIdentifier>
+                    </wsse:SecurityTokenReference>
+                </dsig:KeyInfo>
+            </dsig:Signature>
+        </wsse:Security>
+    </soapenv:Header>
+    <soapenv:Body wsu:Id="BKUa9QEF0RW5o1lchj8kgFplXUvTwqBo1rPWCcC2D9Ve1hZscRHq"
+                  xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+        <ns1:EncryptedData Id="hbFLy8nm1CT72dU2" Type="http://www.w3.org/2001/04/xmlenc#Content" MimeType="text/xml"
+                           Encoding="UTF-8" xmlns:ns1="http://www.w3.org/2001/04/xmlenc#">
+            <ns1:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/>
+            <ns1:CipherData>
+                <ns1:CipherValue>
+                    /SB02OZ5m1Fn3HVSZwSDPwpCno/rioo+gKJgvwIPG5e7slUR0U1+nk7oykxxHFpZs7KDfY9GlLdb1yeTHZ+7JUfUyb/Pui/MaBdnLVUd2BKihGRtMletZf03w9dPx9Ke
+                </ns1:CipherValue>
+            </ns1:CipherData>
+        </ns1:EncryptedData>
+    </soapenv:Body>
+</soapenv:Envelope>

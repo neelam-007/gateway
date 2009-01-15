@@ -230,10 +230,27 @@ public class WssProcessorTest extends TestCase {
         }
     }
 
+    public void testLayer7Interop2008Response222() throws Exception {
+        Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "wssInterop/interop_2008_layer7_222_response.xml");
+        TestDocument td = new TestDocument("Layer7Interop2008Response222", d,
+                                            TestDocuments.getWssInteropAliceKey(),
+                                            TestDocuments.getWssInteropAliceCert(),
+                                            null,
+                                            TestDocuments.getWssInteropBobCert(),
+                                            new SimpleSecurityTokenResolver(TestDocuments.getWssInteropBobCert()));
+        doTest(td);
+    }
+
     public void testBug3736StrTransform() throws Exception {
         TestDocument result;
         Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3736_STR_TRANSFORM_REQUEST);
-        result = new TestDocument("Bug3736StrTransform", d, null, null, null, null, null);
+
+        result = new TestDocument("Bug3736StrTransform", d,
+                                            null,
+                                            null,
+                                            null,
+                                            null,
+                                            null);
         doTest(result);
     }
 
@@ -245,7 +262,7 @@ public class WssProcessorTest extends TestCase {
     }
 
     /**
-     * Test that use of unsupported XPath transform causes reasonable error (not java.lang.NoSuchMethodError). 
+     * Test that use of unsupported XPath transform causes reasonable error (not java.lang.NoSuchMethodError).
      */
     public void testBug3747DsigXpath() throws Exception {
         TestDocument result;
@@ -292,7 +309,7 @@ public class WssProcessorTest extends TestCase {
     public void testBug3754PingReqVordelSigned() throws Exception {
         doTest(makeBug3754PingReqVordelSignedTestDocument());
     }
-    
+
     public TestDocument makeBug3754PingReqVordelSignedTestDocument() throws Exception {
         Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3754_PING_REQ_VORDEL_SIGNED);
         return new TestDocument("Bug3754PingReqVordelSigned", d, null, null, null, null, null);

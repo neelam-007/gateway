@@ -57,6 +57,26 @@ public class WsspWriterTest {
     }
 
     @Test
+    public void testWriteExample_2131() throws Exception {
+        test(L7_POLICY_EXAMPLE_2131);
+    }
+
+    @Test
+    public void testWriteExample_222() throws Exception {
+        test(L7_POLICY_EXAMPLE_222);
+    }
+    
+    @Test
+    public void testWriteExample_214() throws Exception {
+        test(L7_POLICY_EXAMPLE_214);
+    }
+
+    @Test
+    public void testWriteExample_241() throws Exception {
+        test(L7_POLICY_EXAMPLE_241);
+    }
+
+    @Test
     public void testDOMWrite() throws Exception {
         Policy wssp = new WsspWriter().convertFromLayer7(WspReader.getDefault().parsePermissively( XmlUtil.stringToDocument(L7_POLICY_T1).getDocumentElement()));
         StAXPolicyWriter pw = (StAXPolicyWriter) PolicyFactory.getPolicyWriter(PolicyFactory.StAX_POLICY_WRITER);
@@ -74,7 +94,7 @@ public class WsspWriterTest {
     @Test
     public void testDecorateWsdl() throws Exception {
         final Document doc = XmlUtil.stringToDocument(PING_WSDL);
-        WsspWriter.decorate(doc, parseL7(L7_POLICY_T1));
+        WsspWriter.decorate(doc, parseL7(L7_POLICY_T1), null, null, null);
         System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(XmlUtil.nodeToString(doc))));
     }
 
@@ -273,6 +293,146 @@ public class WsspWriterTest {
             "            <L7p:RequireTimestamp booleanValue=\"true\"/>\n" +
             "            <L7p:RequiredPassword stringValue=\"ecilA\"/>\n" +
             "        </L7p:WssDigest>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    private static final String L7_POLICY_EXAMPLE_241 =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "            <wsse:SecurityToken xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n" +
+            "                <wsse:TokenType>http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct</wsse:TokenType>\n" +
+            "                <L7p:Properties/>\n" +
+            "            </wsse:SecurityToken>\n" +
+            "            <wsse:Integrity wsp:Usage=\"wsp:Required\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n" +
+            "                <wsse:MessageParts\n" +
+            "                    Dialect=\"http://www.w3.org/TR/1999/REC-xpath-19991116\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>\n" +
+            "            </wsse:Integrity>\n" +
+            "            <L7p:ResponseWssIntegrity/>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    private static final String L7_POLICY_EXAMPLE_2131 =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "            <L7p:EncryptedUsernameToken/>\n" +
+            "            <L7p:RequestWssConfidentiality/>\n" +
+            "            <L7p:ResponseWssIntegrity/>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    private static final String L7_POLICY_EXAMPLE_214 =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "            <L7p:EncryptedUsernameToken/>\n" +
+            "            <wsse:Integrity wsp:Usage=\"wsp:Required\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n" +
+            "                <wsse:MessageParts\n" +
+            "                    Dialect=\"http://www.w3.org/TR/1999/REC-xpath-19991116\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>\n" +
+            "            </wsse:Integrity>\n" +
+            "            <L7p:RequestWssConfidentiality/>\n" +
+            "            <L7p:ResponseWssIntegrity/>\n" +
+            "            <L7p:ResponseWssConfidentiality/>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    private static final String L7_POLICY_EXAMPLE_222 =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "            <wsse:SecurityToken xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n" +
+            "                <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>\n" +
+            "                <L7p:Properties/>\n" +
+            "            </wsse:SecurityToken>\n" +
+            "            <wsse:Integrity wsp:Usage=\"wsp:Required\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n" +
+            "                <wsse:MessageParts\n" +
+            "                    Dialect=\"http://www.w3.org/TR/1999/REC-xpath-19991116\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>\n" +
+            "            </wsse:Integrity>\n" +
+            "            <L7p:RequestWssConfidentiality>\n" +
+            "                <L7p:XEncAlgorithm stringValue=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/>\n" +
+            "                <L7p:XEncAlgorithmList stringListValue=\"included\">\n" +
+            "                    <L7p:item stringValue=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/>\n" +
+            "                </L7p:XEncAlgorithmList>\n" +
+            "                <L7p:XpathExpression xpathExpressionValue=\"included\">\n" +
+            "                    <L7p:Expression stringValue=\"/soapenv:Envelope/soapenv:Body\"/>\n" +
+            "                    <L7p:Namespaces mapValue=\"included\">\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"soapenv\"/>\n" +
+            "                            <L7p:value stringValue=\"http://schemas.xmlsoap.org/soap/envelope/\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"wsp\"/>\n" +
+            "                            <L7p:value stringValue=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"tns\"/>\n" +
+            "                            <L7p:value stringValue=\"http://example.com/ws/2008/09/securitypolicy\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"L7p\"/>\n" +
+            "                            <L7p:value stringValue=\"http://www.layer7tech.com/ws/policy\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"s12\"/>\n" +
+            "                            <L7p:value stringValue=\"http://www.w3.org/2003/05/soap-envelope\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"xsd\"/>\n" +
+            "                            <L7p:value stringValue=\"http://www.w3.org/2001/XMLSchema\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"env\"/>\n" +
+            "                            <L7p:value stringValue=\"http://www.w3.org/2003/05/soap-envelope\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"xsi\"/>\n" +
+            "                            <L7p:value stringValue=\"http://www.w3.org/2001/XMLSchema-instance\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                    </L7p:Namespaces>\n" +
+            "                </L7p:XpathExpression>\n" +
+            "            </L7p:RequestWssConfidentiality>\n" +
+            "            <L7p:ResponseWssIntegrity/>\n" +
+            "            <L7p:ResponseWssConfidentiality>\n" +
+            "                <L7p:XEncAlgorithm stringValue=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/>\n" +
+            "                <L7p:XpathExpression xpathExpressionValue=\"included\">\n" +
+            "                    <L7p:Expression stringValue=\"/soapenv:Envelope/soapenv:Body\"/>\n" +
+            "                    <L7p:Namespaces mapValue=\"included\">\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"soapenv\"/>\n" +
+            "                            <L7p:value stringValue=\"http://schemas.xmlsoap.org/soap/envelope/\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"wsp\"/>\n" +
+            "                            <L7p:value stringValue=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"tns\"/>\n" +
+            "                            <L7p:value stringValue=\"http://example.com/ws/2008/09/securitypolicy\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"L7p\"/>\n" +
+            "                            <L7p:value stringValue=\"http://www.layer7tech.com/ws/policy\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"s12\"/>\n" +
+            "                            <L7p:value stringValue=\"http://www.w3.org/2003/05/soap-envelope\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"xsd\"/>\n" +
+            "                            <L7p:value stringValue=\"http://www.w3.org/2001/XMLSchema\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"env\"/>\n" +
+            "                            <L7p:value stringValue=\"http://www.w3.org/2003/05/soap-envelope\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                        <L7p:entry>\n" +
+            "                            <L7p:key stringValue=\"xsi\"/>\n" +
+            "                            <L7p:value stringValue=\"http://www.w3.org/2001/XMLSchema-instance\"/>\n" +
+            "                        </L7p:entry>\n" +
+            "                    </L7p:Namespaces>\n" +
+            "                </L7p:XpathExpression>\n" +
+            "            </L7p:ResponseWssConfidentiality>\n" +
             "    </wsp:All>\n" +
             "</wsp:Policy>";
 }

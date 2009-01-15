@@ -66,6 +66,7 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
                 wssReqs.setUsernameTokenCredentials(new UsernameTokenImpl(username, password));
                 wssReqs.setRecipientCertificate(serverCert);
                 wssReqs.setEncryptUsernameToken(true);
+                wssReqs.setSignUsernameToken(true);
                 // TODO reuse existing encrypted key?
                 wssReqs.setUseDerivedKeys(true);
 

@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.policy.EnumPropertyEditor;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.variable.InvalidContextVariableException;
@@ -124,7 +123,6 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends Asse
      */
     protected DefaultAssertionPropertiesEditor(Class<? extends AT> assertionClass) {
         super(assertionClass);
-        initComponents();
     }
 
     protected void showValidationErrorMessage(ValidationException ve) {
@@ -154,53 +152,6 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends Asse
     }
 
     /**
-     * Prepare this dialog for display by creating the main content pane and wiring up the default button
-     * and escape key action.
-     * <p/>
-     * This method sets the content pane to the return value from {@link #createContentPane}, sets the
-     * default button to {@link #okButton}, configures the dialog to respond to the ESC key by disposing itself,
-     * and packs the dialog.
-     */
-    protected void initComponents() {
-        setContentPane(createContentPane());
-        getRootPane().setDefaultButton(getOkButton());
-        Utilities.setEscKeyStrokeDisposes(this);
-        pack();
-    }
-
-    /**
-     * Create the main content pane of this dialog.
-     * <p/>
-     * This method creates a panel with the main area filled with the return value from {@link #createPropertyPanel}
-     * and a bar along the bottom filled with the return value from {@link #createButtonPanel}.
-     *
-     * @return the main content pane to use for this dialog.  Never null.
-     */
-    protected JPanel createContentPane() {
-        JPanel main = new JPanel(new GridBagLayout());
-        JPanel buttonPanel = createButtonPanel();
-        JPanel propPanel = createPropertyPanel();
-
-        GridBagConstraints maingc = new GridBagConstraints();
-        maingc.fill = GridBagConstraints.BOTH;
-        maingc.anchor = GridBagConstraints.NORTHWEST;
-        maingc.gridx = 0;
-        maingc.gridy = 0;
-        maingc.weightx = 100.0;
-        maingc.weighty = 100.0;
-        maingc.insets = new Insets(12, 2, 12, 2);
-        main.add(propPanel, maingc);
-        maingc.gridy = 1;
-        maingc.insets = new Insets(2, 18, 8, 8);
-        maingc.fill = GridBagConstraints.HORIZONTAL;
-        maingc.anchor = GridBagConstraints.SOUTHEAST;
-        maingc.weightx = 0.0;
-        maingc.weighty = 0.0;
-        main.add(buttonPanel, maingc);
-        return main;
-    }
-
-    /**
      * Create a panel to edit the properties of the assertion bean.  This panel does not include any
      * Ok or Cancel buttons.
      * <p/>
@@ -208,7 +159,6 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends Asse
      * to bottom.  Each row has a label on the left and a property editor component on the right.
      * Each row is backed by an EditRow instance that takes care of wiring up the view to the property editor
      * and knows how to retrieve the the property value currently represented by the view.
-     *
      * @return a panel that can be used to edit the assertion properties.  Never null.
      */
     protected JPanel createPropertyPanel() {

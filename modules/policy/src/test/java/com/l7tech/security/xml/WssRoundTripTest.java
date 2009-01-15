@@ -177,6 +177,16 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getSigningOnlyTestDocument()));
     }
 
+    public void testSigningOnlyWithProtectTokens() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnlyWithProtectTokens",
+                                               wssDecoratorTest.getSigningOnlyWithProtectTokensTestDocument()));
+    }
+
+    public void testSigningProtectTokenNoBst() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningProtectTokenNoBst",
+                wssDecoratorTest.getSigningProtectTokenNoBstTestDocument()));
+    }
+
     public void testSingleSignatureMultipleEncryption() throws Exception {
         runRoundTripTest(new NamedTestDocument("SingleSignatureMultipleEncryption",
                                                wssDecoratorTest.getSingleSignatureMultipleEncryptionTestDocument()));
@@ -347,7 +357,7 @@ public class WssRoundTripTest extends TestCase {
 
         martha.decorateMessage(c.messageMessage, reqs);
 
-        log.info("Decorated message:\n\n" + XmlUtil.nodeToString(c.messageMessage.getXmlKnob().getDocumentReadOnly()));
+        log.info("Decorated message (reformatted):\n\n" + XmlUtil.nodeToFormattedString(c.messageMessage.getXmlKnob().getDocumentReadOnly()));
         schemaValidateSamlAssertions(soapMessage);
 
         // Serialize to string to simulate network transport
@@ -445,9 +455,17 @@ public class WssRoundTripTest extends TestCase {
             for (SignatureConfirmation element : gotConfimationElements)
                 assertTrue(signedDomElements.contains(element.asElement()));
             List<String> gotConfirmationValues = Functions.map(gotConfimationElements,
-                    Functions.<String, SignatureConfirmation>getterTransform(SignatureConfirmation.class.getMethod("getConfirmationValue")));            
+                    Functions.<String, SignatureConfirmation>getterTransform(SignatureConfirmation.class.getMethod("getConfirmationValue")));
             for (String expectedConfValue : td.req.getSignatureConfirmations())
                 assertTrue("Expect SignatureConfirmation for: " + expectedConfValue, gotConfirmationValues.contains(expectedConfValue));
+        }
+
+        if (td.req.isProtectTokens()) {
+            for (SignedElement signedElement : signed) {
+                final Element signingTokenEl = signedElement.getSigningSecurityToken().asElement();
+                final boolean signingTokenElWasSigned = signedDomElements.contains(signingTokenEl);
+                assertTrue("ProtectTokens implies that all signing tokens were signed", signingTokenElWasSigned);
+            }
         }
 
         assertTrue("WS-I BSP check.", isValid);
@@ -480,7 +498,8 @@ public class WssRoundTripTest extends TestCase {
     private void checkEncryptedUsernameToken(WssDecoratorTest.TestDocument td, UsernameToken usernameToken, ProcessorResult r, SigningSecurityToken timestampSigner) {
         if (td.req.isEncryptUsernameToken()) {
             assertNotNull(usernameToken);
-            assertTrue(ProcessorResultUtil.nodeIsPresent(usernameToken.asElement(), r.getElementsThatWereSigned()));
+            if (td.req.isSignUsernameToken())
+                assertTrue(ProcessorResultUtil.nodeIsPresent(usernameToken.asElement(), r.getElementsThatWereSigned()));
             assertTrue(ProcessorResultUtil.nodeIsPresent(usernameToken.asElement(), r.getElementsThatWereEncrypted()));
             SigningSecurityToken[] utSigners = r.getSigningTokens(usernameToken.asElement());
             assertNotNull(utSigners);

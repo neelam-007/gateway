@@ -166,7 +166,8 @@ public class WssDecoratorTest extends TestCase {
                             String signatureConfirmation,
                             String actor,
                             UsernameToken senderUsernameToken,
-                            boolean useDerivedKeys, boolean signUsernameToken)
+                            boolean useDerivedKeys,
+                            boolean signUsernameToken)
         {
             this.c = c;
             req.setSenderSamlToken(senderSamlAssertion, signSamlToken);
@@ -271,6 +272,43 @@ public class WssDecoratorTest extends TestCase {
 
     public void testSigningOnly() throws Exception {
         runTest(getSigningOnlyTestDocument());
+    }
+
+    public void testSigningOnlyWithProtectTokens() throws Exception {
+        runTest(getSigningOnlyWithProtectTokensTestDocument());
+    }
+
+    public TestDocument getSigningOnlyWithProtectTokensTestDocument() throws Exception {
+        final Context c = new Context();
+        final TestDocument td = new TestDocument(c,
+                TestDocuments.getEttkClientCertificate(),
+                TestDocuments.getEttkClientPrivateKey(),
+                TestDocuments.getDotNetServerCertificate(),
+                TestDocuments.getDotNetServerPrivateKey(),
+                true,
+                new Element[0],
+                new Element[]{c.body});
+        td.req.setProtectTokens(true);
+        return td;
+    }
+
+    public void testSigningProtectTokenNoBst() throws Exception {
+        runTest(getSigningProtectTokenNoBstTestDocument());
+    }
+
+    public TestDocument getSigningProtectTokenNoBstTestDocument() throws Exception {
+        final Context c = new Context();
+        final TestDocument td = new TestDocument(c,
+                TestDocuments.getWssInteropAliceCert(),
+                TestDocuments.getWssInteropAliceKey(),
+                TestDocuments.getWssInteropBobCert(),
+                TestDocuments.getWssInteropBobKey(),
+                true,
+                new Element[0],
+                new Element[]{c.body});
+        td.req.setKeyInfoInclusionType(KeyInfoInclusionType.STR_SKI);
+        td.req.setProtectTokens(true);
+        return td;
     }
 
     public void testGoogleProblem() throws Exception {
@@ -737,7 +775,9 @@ public class WssDecoratorTest extends TestCase {
                                 null, false,
                                 KeyInfoInclusionType.STR_SKI,
                                 true, null, null, null,
-                                new UsernameTokenImpl("testuser", "password".toCharArray()), false, false);
+                                new UsernameTokenImpl("testuser", "password".toCharArray()),
+                                false,
+                                true);
     }
 
     public void testSignedAndEncryptedUsernameToken() throws Exception {
@@ -773,7 +813,8 @@ public class WssDecoratorTest extends TestCase {
                                 KeyInfoInclusionType.STR_SKI,
                                 true, null, null, null,
                                 new UsernameTokenImpl("testuser", "password".toCharArray()),
-                                true, false);
+                                true,
+                                true);
     }
 
     public void testWssInteropResponse() throws Exception {

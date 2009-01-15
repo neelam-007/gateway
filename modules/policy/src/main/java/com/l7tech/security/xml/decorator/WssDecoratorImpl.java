@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
+ *
  */
 package com.l7tech.security.xml.decorator;
 
@@ -16,6 +17,8 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
+import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
+import com.l7tech.security.xml.processor.X509SigningSecurityTokenImpl;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
@@ -44,6 +47,9 @@ public class WssDecoratorImpl implements WssDecorator {
 
     public static final String PROPERTY_SUPPRESS_NANOSECONDS = "com.l7tech.server.timestamp.omitNanos";
     public static final String PROPERTY_SAML_USE_URI_REF = "com.l7tech.server.saml.useUriReference";
+    public static final String PROPERTY_PROTECTTOKENS_SIGNS_DERIVED_KEYS = "com.l7tech.security.xml.protectTokensSignsDerivedKeys";
+
+    private static final boolean PROTECTTOKENS_SIGNS_DERIVED_KEYS = SyspropUtil.getBoolean(PROPERTY_PROTECTTOKENS_SIGNS_DERIVED_KEYS, false);
 
     public static final int TIMESTAMP_TIMOUT_MILLIS = 300000;
     private static final int NEW_DERIVED_KEY_LENGTH = 32;
@@ -63,6 +69,7 @@ public class WssDecoratorImpl implements WssDecorator {
         byte[] lastEncryptedKeyBytes = null;
         SecretKey lastEncryptedKeySecretKey = null;
         AttachmentEntityResolver attachmentResolver;
+        DecorationRequirements dreq;
 
         String getBase64EncodingTypeUri() {
             return SoapConstants.SECURITY_NAMESPACE.equals(nsf.getWsseNs())
@@ -89,6 +96,7 @@ public class WssDecoratorImpl implements WssDecorator {
         c.message = message;
         c.nsf = dreq.getNamespaceFactory();
         c.attachmentResolver = buildAttachmentEntityResolver(c, dreq);
+        c.dreq = dreq;
 
         // get writeable document after getting MIME part iterator
         final Document soapMsg = message.getXmlKnob().getDocumentWritable();
@@ -143,7 +151,8 @@ public class WssDecoratorImpl implements WssDecorator {
                                                                             usernameToken.getPrefix());
                 securityHeader.removeChild(usernameToken);
                 addedUsernameTokenHolder.appendChild(usernameToken);
-                signList.add(usernameToken);
+                if (dreq.isSignUsernameToken())
+                    signList.add(usernameToken);
                 cryptList.add(addedUsernameTokenHolder);
             }
         }
@@ -189,6 +198,8 @@ public class WssDecoratorImpl implements WssDecorator {
                     Element x509Bst = addX509BinarySecurityToken(securityHeader, dreq.getSenderMessageSigningCertificate(), c);
                     String bstId = getOrCreateWsuId(c, x509Bst, null);
                     senderCertKeyInfo = KeyInfoDetails.makeUriReference(bstId, SoapConstants.VALUETYPE_X509);
+                    if (dreq.isProtectTokens())
+                        signList.add(x509Bst);
                     break;
                 case STR_SKI:
                     // Use keyinfo reference target of a SKI
@@ -210,13 +221,17 @@ public class WssDecoratorImpl implements WssDecorator {
 
         // Add kerberos ticket reference
         if (dreq.isIncludeKerberosTicketId() && dreq.getKerberosTicketId() != null) {
-            addKerberosSecurityTokenReference(securityHeader, dreq.getKerberosTicketId());
+            Element ktokStr = addKerberosSecurityTokenReference(securityHeader, dreq.getKerberosTicketId());
+            if (dreq.isProtectTokens() && !signList.isEmpty())
+                signList.add(ktokStr);
         }
 
         // Add Kerberos ticket
         Element addedKerberosBst = null;
         if (dreq.isIncludeKerberosTicket() && dreq.getKerberosTicket() != null) {
             addedKerberosBst = addKerberosBinarySecurityToken(securityHeader, dreq.getKerberosTicket().getGSSAPReqTicket());
+            if (dreq.isProtectTokens() && !signList.isEmpty())
+                signList.add(addedKerberosBst);
         }
 
         // At this point, if we possess a sender cert, we have a senderCertKeyInfo, and have also have added a BST unless it's suppressed
@@ -231,6 +246,8 @@ public class WssDecoratorImpl implements WssDecorator {
                 c.nsf.setWsscNs( SoapConstants.WSSC_NAMESPACE2);
             }
             sct = addSecurityContextToken(c, securityHeader, session.getId());
+            if (dreq.isProtectTokens() && !signList.isEmpty())
+                signList.add(sct);
         }
 
         final Element signature;
@@ -251,6 +268,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 } else {
                     signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY);
                 }
+                maybeSignDerivedKeyToken(signList, dreq, derivedKeyToken);
             } else if (dreq.getEncryptedKey() != null &&
                        dreq.getEncryptedKeySha1() != null)
             {
@@ -273,6 +291,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     } else {
                         signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY);
                     }
+                    maybeSignDerivedKeyToken(signList, dreq, derivedKeyToken);
                 } else {
                     // Use the implicit ephemeral key directly
                     senderSigningKey = new SecretKeySpec(dreq.getEncryptedKey(), "SHA1");
@@ -295,6 +314,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                 signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2);
+                maybeSignDerivedKeyToken(signList, dreq, derivedKeyToken);
             } else if (dreq.getKerberosTicket() != null) {
                 // Derive key from kerberos session referenced using KerberosSHA1
                 c.nsf.setWsscNs( SoapConstants.WSSC_NAMESPACE2);
@@ -310,6 +330,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                 signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2);
+                maybeSignDerivedKeyToken(signList, dreq, derivedKeyToken);
             } else if (senderCertKeyInfo != null || keyInfoType != null) {
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
@@ -337,6 +358,8 @@ public class WssDecoratorImpl implements WssDecorator {
                 } else {
                     signatureKeyInfo = KeyInfoDetails.makeKeyId(assId, false, samlValueType);
                 }
+                if (dreq.isProtectTokens() && !signList.isEmpty())
+                    signList.add(saml);
             } else if (dreq.getRecipientCertificate() != null) {
                 // create a new EncryptedKey and sign with that
                 String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
@@ -356,6 +379,8 @@ public class WssDecoratorImpl implements WssDecorator {
                                               dreq.getKeyEncryptionAlgorithm(),
                                               null);
                 String encKeyId = getOrCreateWsuId(c, addedEncKey, null);
+                if (dreq.isProtectTokens() && !signList.isEmpty())
+                    signList.add(addedEncKey);
 
                 if (dreq.isUseDerivedKeys()) {
                     // Derive a new key for signing
@@ -374,6 +399,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     } else {
                         signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY);
                     }
+                    maybeSignDerivedKeyToken(signList, dreq, derivedKeyToken);
                 } else {
                     // No derived key -- use the raw EncryptedKey directly
                     senderSigningKey = addedEncKeyXmlEncKey.getSecretKey();
@@ -562,7 +588,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                 dreq.getRecipientCertificate(),
                                 cryptList.toArray(new Element[0]),
                                 encKey,
-                                dreq.getKeyEncryptionAlgorithm(),                        
+                                dreq.getKeyEncryptionAlgorithm(),
                                 xencDesiredNextSibling);
             } else
                 throw new IllegalArgumentException("Encryption is requested, but there is no recipientCertificate or SecureConversation session.");
@@ -605,6 +631,11 @@ public class WssDecoratorImpl implements WssDecorator {
                 return c.lastEncryptedKeySecretKey;
             }
         };
+    }
+
+    private void maybeSignDerivedKeyToken(Set<Element> signList, DecorationRequirements dreq, DerivedKeyToken derivedKeyToken) {
+        if (dreq.isProtectTokens() && !signList.isEmpty() && PROTECTTOKENS_SIGNS_DERIVED_KEYS)
+            signList.add(derivedKeyToken.dkt);
     }
 
     private Element addSignatureConfirmation(Element securityHeader, String signatureConfirmation) {
@@ -797,14 +828,34 @@ public class WssDecoratorImpl implements WssDecorator {
                                  Element securityHeader,
                                  KeyInfoDetails keyInfoDetails,
                                  boolean suppressSamlStrDereference)
-            throws DecoratorException, InvalidDocumentFormatException, IOException
-    {
+            throws DecoratorException, InvalidDocumentFormatException, IOException, CertificateEncodingException {
+        final String DS_PREFIX = "ds";
 
         if (elementsToSign == null || elementsToSign.length < 1) return null;
 
+        final Document domFactory = securityHeader.getOwnerDocument();
+        Element keyInfoElement = keyInfoDetails.createKeyInfoElement(domFactory, c.nsf, DS_PREFIX);
+        boolean signingKeyInfoWithStrXform = false;
+
+        Element keyInfoStr = null;
+        if (c.dreq.isProtectTokens() && keyInfoDetails.isX509ValueReference()) {
+            // KeyInfo is valueref to X.509.  We must include the KeyInfo in the signature with an STRTransform so that a virtual
+            // BST gets included in the signature representing the signing X.509 token.
+            int num = elementsToSign.length;
+            Element[] newElementsToSign = new Element[num + 1];
+            System.arraycopy(elementsToSign, 0, newElementsToSign, 0, num);
+            keyInfoStr = DomUtils.findOnlyOneChildElementByName(keyInfoElement, securityHeader.getNamespaceURI(), SoapConstants.SECURITYTOKENREFERENCE_EL_NAME);
+            if (keyInfoStr != null) {
+                newElementsToSign[num] = keyInfoStr;
+                elementsToSign = newElementsToSign;
+                signingKeyInfoWithStrXform = true;
+            }
+        }
+
         // make sure all elements already have an id
-        String[] signedIds = new String[elementsToSign.length];
-        for (int i = 0; i < elementsToSign.length; i++) {
+        final int numToSign = elementsToSign.length;
+        String[] signedIds = new String[numToSign];
+        for (int i = 0; i < numToSign; i++) {
             Element eleToSign = elementsToSign[i];
             if (!suppressSamlStrDereference && "Assertion".equals(eleToSign.getLocalName()) &&
                  (SamlConstants.NS_SAML2.equals(eleToSign.getNamespaceURI()) ||
@@ -828,15 +879,16 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
-        TemplateGenerator template = new TemplateGenerator(elementsToSign[0].getOwnerDocument(),
+        TemplateGenerator template = new TemplateGenerator(domFactory,
                                                            XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
         template.setIndentation(false);
-        template.setPrefix("ds");
+        template.setPrefix(DS_PREFIX);
         final Map<Node,Node> strTransformsNodeToNode = new HashMap<Node, Node>();
-        for (int i = 0; i < elementsToSign.length; i++) {
+        for (int i = 0; i < numToSign; i++) {
             final Element element = elementsToSign[i];
             final String id = signedIds[i];
 
+            boolean addedCanon = false;
             final Reference ref;
             if (!suppressSamlStrDereference && "Assertion".equals(element.getLocalName()) &&
                  (SamlConstants.NS_SAML2.equals(element.getNamespaceURI()) || SamlConstants.NS_SAML.equals(element.getNamespaceURI()))) {
@@ -852,14 +904,19 @@ public class WssDecoratorImpl implements WssDecorator {
                     SoapConstants.VALUETYPE_SAML_ASSERTIONID3;
                 Element str = addSamlSecurityTokenReference(securityHeader, assId, samlValueType);
                 ref = template.createReference("#" + getOrCreateWsuId(c, str, "SamlSTR"));
-                // need SecurityTokenReference transform to go through indirection
-                Element strTransform = elementsToSign[0].getOwnerDocument().createElementNS( SoapConstants.DIGSIG_URI, "ds:Transform");
-                strTransform.setAttribute("Algorithm", SoapConstants.TRANSFORM_STR);
-                Element strParams = DomUtils.createAndAppendElementNS(strTransform, "TransformationParameters", c.nsf.getWsseNs(), "wsse");
-                Element cannonParam = DomUtils.createAndAppendElementNS(strParams, "CanonicalizationMethod", SoapConstants.DIGSIG_URI, "ds");
-                cannonParam.setAttribute("Algorithm", Transform.C14N_EXCLUSIVE);
+                Element strTransform = createStrTransform(c, domFactory, DS_PREFIX);
                 ref.addTransform(strTransform);
+                addedCanon = true;
                 strTransformsNodeToNode.put(str, element);
+            } else if (signingKeyInfoWithStrXform && keyInfoStr == element) {
+                // Signing the SecurityTokenReference inside the KeyInfo, and we already know we'll need STRTransform
+                ref = template.createReference("#" + id);
+                Element strTransform = createStrTransform(c, domFactory, DS_PREFIX);
+                ref.addTransform(strTransform);
+                addedCanon = true;
+                final X509SigningSecurityTokenImpl bst = X509BinarySecurityTokenImpl.createBinarySecurityToken(domFactory,
+                        c.dreq.getSenderMessageSigningCertificate(), securityHeader.getPrefix(), securityHeader.getNamespaceURI());
+                strTransformsNodeToNode.put(keyInfoStr, bst.asElement());
             } else
                 ref = template.createReference("#" + id);
 
@@ -871,7 +928,8 @@ public class WssDecoratorImpl implements WssDecorator {
 
             // Note that c14n is not required when using STR-Transform, this can be removed
             // once 4.0 is the earliest version in use.
-            ref.addTransform(Transform.C14N_EXCLUSIVE);
+            if (!addedCanon)
+                ref.addTransform(Transform.C14N_EXCLUSIVE);
             template.addReference(ref);
         }
         for (final String partIdentifier : partsToSign) {
@@ -917,9 +975,18 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         Element signatureElement = (Element)securityHeader.appendChild(emptySignatureElement);
-        keyInfoDetails.createAndAppendKeyInfoElement(c.nsf, signatureElement);
+        signatureElement.appendChild(keyInfoElement);
 
         return signatureElement;
+    }
+
+    private Element createStrTransform(Context c, Document domFactory, String DS_PREFIX) {
+        Element strTransform = domFactory.createElementNS( SoapConstants.DIGSIG_URI, "ds:Transform");
+        strTransform.setAttribute("Algorithm", SoapConstants.TRANSFORM_STR);
+        Element strParams = DomUtils.createAndAppendElementNS(strTransform, "TransformationParameters", c.nsf.getWsseNs(), "wsse");
+        Element cannonParam = DomUtils.createAndAppendElementNS(strParams, "CanonicalizationMethod", SoapConstants.DIGSIG_URI, DS_PREFIX);
+        cannonParam.setAttribute("Algorithm", Transform.C14N_EXCLUSIVE);
+        return strTransform;
     }
 
     private Element addSamlSecurityTokenReference(Element securityHeader, String assertionId, String valueType) {
@@ -1064,7 +1131,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 Element oaepParamsEle = DomUtils.createAndAppendElementNS(encryptionMethod, "OAEPparams", xencNs, xenc);
                 oaepParamsEle.appendChild(DomUtils.createTextNode(oaepParamsEle, HexUtils.encodeBase64(params)));
             }
-            
+
             Element digestMethodEle = DomUtils.createAndAppendElementNS(encryptionMethod, "DigestMethod", SoapConstants.DIGSIG_URI, "ds");
             digestMethodEle.setAttribute("Algorithm", SoapConstants.DIGSIG_URI+"sha1");
         } else {

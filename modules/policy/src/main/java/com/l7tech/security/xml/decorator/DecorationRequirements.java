@@ -590,6 +590,20 @@ public class DecorationRequirements {
         this.useDerivedKeys = useDerivedKeys;
     }
 
+    public boolean isProtectTokens() {
+        return protectTokens;
+    }
+
+    /**
+     * If true, the token on which the signature is based will be included in the signature if it is
+     * present in the message.  This is similar to the semantics of the sp:ProtectTokens assertion in WS-SecurityPolicy.
+     *
+     * @param protectTokens true to sign the BST (or other signing token); false to leave it unsigned.
+     */
+    public void setProtectTokens(boolean protectTokens) {
+        this.protectTokens = protectTokens;
+    }
+
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
@@ -622,4 +636,5 @@ public class DecorationRequirements {
     private boolean encryptUsernameToken = false;
     private boolean useDerivedKeys = false;
     private boolean suppressSamlStrTransform = false;
+    private boolean protectTokens = false;
 }

@@ -6,44 +6,37 @@
 package com.l7tech.policy.wssp;
 
 import com.l7tech.common.TestDocuments;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.l7tech.wsdl.Wsdl;
 import org.apache.ws.policy.Policy;
+import org.junit.*;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import static org.junit.Assert.*;
 
 import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
-import java.util.logging.Logger;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.Logger;
 
 /**
  * Try converted a policy from WSSP -> Layer 7 -> WSSP  and from Layer 7 -> WSSP -> Layer 7
  */
-public class WsspRoundTripTest extends TestCase {
+public class WsspRoundTripTest {
     private static Logger log = Logger.getLogger(WsspRoundTripTest.class.getName());
 
-    public WsspRoundTripTest(String name) {
-        super(name);
+    static {
+        System.setProperty("com.l7tech.policy.wssp.useNewWsspNs", "false");
+        System.setProperty("com.l7tech.policy.wssp.useNewWspNs", "false");
     }
 
-    public static Test suite() {
-        return new TestSuite(WsspRoundTripTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void test_A11_L7WsspL7() throws Exception {
         String l7Xml = WsspWriterTest.L7_POLICY_A11;
         Assertion l7root = WspReader.getDefault().parsePermissively(l7Xml);
@@ -71,18 +64,22 @@ public class WsspRoundTripTest extends TestCase {
         System.out.println("\n\nConverted back to Layer 7 form:\n" + backToL7 + "\n");
     }
 
+    @Test
     public void test_A11_L7WsdlL7() throws Exception {
         test_L7WsspL7(WsspWriterTest.L7_POLICY_A11);
     }
 
+    @Test
     public void test_A12_L7WsdlL7() throws Exception {
         test_L7WsspL7(WsspWriterTest.L7_POLICY_A12);
     }
 
+    @Test
     public void test_T1_L7WsdlL7() throws Exception {
         test_L7WsspL7(WsspWriterTest.L7_POLICY_T1);
     }
 
+    @Test
     public void test_T3_L7WsdlL7() throws Exception {
         test_L7WsspL7(WsspWriterTest.L7_POLICY_T3);
     }
@@ -95,7 +92,7 @@ public class WsspRoundTripTest extends TestCase {
         Document wsdlDoc = TestDocuments.getTestDocument(TestDocuments.WSDL);
 
         // Decorate it with the layer 7 policy
-        WsspWriter.decorate(wsdlDoc, l7root);
+        WsspWriter.decorate(wsdlDoc, l7root, null, null, null);
 
         // Send it to the SSB
         // ...
@@ -128,21 +125,25 @@ public class WsspRoundTripTest extends TestCase {
         System.out.println("\n\nConverted back to Layer 7 form:\n" + backToL7 + "\n");
     }
 
+    @Test
     public void test_A11_WsspL7Wssp() throws Exception {
         final String bindingName = "A11Binding";
         testWsspL7Wssp(bindingName);
     }
 
+    @Test
     public void test_A12_WsspL7Wssp() throws Exception {
         final String bindingName = "A12Binding";
         testWsspL7Wssp(bindingName);
     }
 
+    @Test
     public void test_T1_WsspL7Wssp() throws Exception {
         final String bindingName = "T1Binding";
         testWsspL7Wssp(bindingName);
     }
 
+    @Test
     public void test_T3_WsspL7Wssp() throws Exception {
         final String bindingName = "T3Binding";
         testWsspL7Wssp(bindingName);

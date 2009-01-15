@@ -131,6 +131,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JCheckBox tripleDESCheckBox;
     private JRadioButton bstReferenceRadioButton;
     private JRadioButton skiReferenceRadioButton;
+    private JCheckBox signedBstCheckBox;
     private JTextField varPrefixField;
     private JLabel varPrefixLabel;
     private SpeedIndicator speedIndicator;
@@ -695,6 +696,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         ButtonGroup bg = new ButtonGroup();
         bg.add(bstReferenceRadioButton);
         bg.add(skiReferenceRadioButton);
+        signedBstCheckBox.setSelected(rwssi.isProtectTokens());
         if (KeyReference.BST.getName().equals(rwssi.getKeyReference())) {
             bstReferenceRadioButton.setSelected(true);
         } else {
@@ -785,6 +787,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             return;
         }
         ResponseWssIntegrity rwssi = (ResponseWssIntegrity)assertion;
+        rwssi.setProtectTokens(signedBstCheckBox.isSelected());
         if (bstReferenceRadioButton.isSelected()) {
             rwssi.setKeyReference(KeyReference.BST.getName());
         } else if (skiReferenceRadioButton.isSelected()) {

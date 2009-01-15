@@ -36,4 +36,8 @@ public class UriReferenceKeyInfoDetails extends KeyInfoDetails {
 
         return keyInfo;
     }
+
+    public boolean isX509ValueReference() {
+        return false;
+    }
 }

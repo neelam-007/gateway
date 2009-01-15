@@ -56,6 +56,11 @@ public class ResponseWssIntegrityValidator implements AssertionValidator {
                     result.addError(new PolicyValidatorResult.Error(assertion, path, message, null));
                     logger.info(message);
                 }
+                if (ra.isProtectTokens() != assertion.isProtectTokens()) {
+                    String message = "Multiple integrity assertions present with different token signature requirements";
+                    result.addError(new PolicyValidatorResult.Error(assertion, path, message, null));
+                    logger.info(message);
+                }
             }
         }
     }

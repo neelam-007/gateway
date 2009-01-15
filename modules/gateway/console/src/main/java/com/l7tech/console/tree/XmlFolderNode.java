@@ -35,7 +35,6 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
         insert(new InverseHttpFormPostNode(), index++);
         insert(new WsiBspPaletteNode(), index++);
         insert(new WsiSamlPaletteNode(), index++);
-        insert(new WsspPaletteNode(), index++);
         insert(new PreemptiveCompressionPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);
         index = insertMatchingCustomAssertions(index, Category.MESSAGE);

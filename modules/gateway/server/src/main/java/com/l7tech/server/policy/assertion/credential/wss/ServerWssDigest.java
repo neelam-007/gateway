@@ -14,6 +14,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -90,7 +91,10 @@ public class ServerWssDigest extends AbstractServerAssertion<WssDigest> {
             // TODO check for recently-seen nonces; can throw out remembered nonces with old timestamps
         }
 
-        String expectedDigest = UsernameTokenImpl.createPasswordDigest(assertion.getRequiredPassword().toCharArray(), created, nonce);
+        final String requiredPass = assertion.getRequiredPassword();
+        if (requiredPass == null)
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "WssDigest assertion has no password configured");
+        String expectedDigest = UsernameTokenImpl.createPasswordDigest(requiredPass.toCharArray(), created, nonce);
 
         if (!expectedDigest.equals(digest))
             return falsify("UsernameToken digest value does not match the expected value");

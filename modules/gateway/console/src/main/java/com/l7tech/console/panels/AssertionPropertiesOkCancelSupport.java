@@ -13,6 +13,8 @@ import java.awt.event.ActionListener;
 /**
  * Extends AssertionPropertiesEditorSupport to add an Ok and Cancel button and to manage the assertion
  * bean lifecycle.
+ * <p/>
+ * Subclasses must call {@link #initComponents()} before the dialog is displayed.
  */
 public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> extends AssertionPropertiesEditorSupport<AT> {
     private JButton okButton;
@@ -212,6 +214,61 @@ public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> e
         buttonPanel.add(Box.createHorizontalStrut(8));
         buttonPanel.add(cancelButton);
         return buttonPanel;
+    }
+
+    /**
+     * Create the main content pane of this dialog.
+     * <p/>
+     * This method creates a panel with the main area filled with the return value from {@link #createPropertyPanel}
+     * and a bar along the bottom filled with the return value from {@link #createButtonPanel}.
+     *
+     * @return the main content pane to use for this dialog.  Never null.
+     */
+    protected JPanel createContentPane() {
+        JPanel main = new JPanel(new GridBagLayout());
+        JPanel buttonPanel = createButtonPanel();
+        JPanel propPanel = createPropertyPanel();
+
+        GridBagConstraints maingc = new GridBagConstraints();
+        maingc.fill = GridBagConstraints.BOTH;
+        maingc.anchor = GridBagConstraints.NORTH;
+        maingc.gridx = 0;
+        maingc.gridy = 0;
+        maingc.weightx = 100.0;
+        maingc.weighty = 100.0;
+        maingc.insets = new Insets(12, 2, 12, 2);
+        main.add(propPanel, maingc);
+        maingc.gridy = 1;
+        maingc.insets = new Insets(2, 18, 8, 8);
+        maingc.fill = GridBagConstraints.HORIZONTAL;
+        maingc.anchor = GridBagConstraints.SOUTH;
+        maingc.weightx = 0.0;
+        maingc.weighty = 0.0;
+        main.add(buttonPanel, maingc);
+        return main;
+    }
+
+    /**
+     * Create a panel to edit the properties of the assertion bean.  This panel does not include any
+     * Ok or Cancel buttons.
+     *
+     * @return a panel that can be used to edit the assertion properties.  Never null.
+     */
+    protected abstract JPanel createPropertyPanel();
+
+    /**
+     * Prepare this dialog for display by creating the main content pane and wiring up the default button
+     * and escape key action.
+     * <p/>
+     * This method sets the content pane to the return value from {@link #createContentPane}, sets the
+     * default button to {@link #okButton}, configures the dialog to respond to the ESC key by disposing itself,
+     * and packs the dialog.
+     */
+    protected void initComponents() {
+        setContentPane(createContentPane());
+        getRootPane().setDefaultButton(getOkButton());
+        Utilities.setEscKeyStrokeDisposes(this);
+        pack();
     }
 
     /**

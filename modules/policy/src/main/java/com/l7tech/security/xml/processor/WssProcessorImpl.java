@@ -443,7 +443,7 @@ public class WssProcessorImpl implements WssProcessor {
                         String role = element.getAttributeNS("http://www.w3.org/2003/05/soap-envelope", "role");
                         if ("SecureSpan".equals(role) || SoapConstants.ROLE_VALUE_NEXT.equals(role))
                             throw new MustUnderstandException(element);
-                        
+
                     } catch (InvalidDocumentFormatException e) {
                         throw new MustUnderstandException(element, e);
                     }
@@ -1307,6 +1307,8 @@ public class WssProcessorImpl implements WssProcessor {
                 final X509SigningSecurityTokenImpl token = (X509SigningSecurityTokenImpl)x509TokensById.get(uriAttr);
                 if (token != null) {
                     if(logger.isLoggable(Level.FINEST)) logger.finest(MessageFormat.format("The keyInfo referred to a previously parsed Security Token ''{0}''", uriAttr));
+                    if (!strToTarget.containsKey(securityTokenReference))
+                        strToTarget.put(securityTokenReference, token.asElement());
                     return token;
                 }
 
@@ -1380,8 +1382,10 @@ public class WssProcessorImpl implements WssProcessor {
                         } else {
                             if(logger.isLoggable(Level.FINEST))
                                 logger.finest("The KeyInfo referred to a recognized X.509 certificate by its SKI: " + foundCert.getSubjectDN().getName());
-                            token = new X509BinarySecurityTokenImpl(foundCert, keyId);
+                            token = X509BinarySecurityTokenImpl.createBinarySecurityToken(parentElement.getOwnerDocument(), foundCert, securityTokenReference.getPrefix(), securityTokenReference.getNamespaceURI());
                             securityTokens.add(token);
+                            if (!strToTarget.containsKey(securityTokenReference))
+                                strToTarget.put(securityTokenReference, token.asElement());
                             x509TokensBySki.put(value, token);
                             return token;
                         }
