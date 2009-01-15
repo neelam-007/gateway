@@ -68,12 +68,14 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         props = props.replaceFirst("bind_addr=0.0.0.0", "bind_addr=" + interfaceAddress);
         tree.setClusterProperties(props);
         tree.setTransactionManagerLookup(new TransactionManagerLookup(){
+            @Override
             public TransactionManager getTransactionManager() throws Exception {
                 return dummyTransactionManager;
             }
         });
         // if we're the first, load old message ids from database
         getHibernateTemplate().execute(new HibernateCallback() {
+            @Override
             public Object doInHibernate(Session session) {
                 try {
                     start(session);
@@ -110,8 +112,10 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
      * A {@link TimerTask} that periodically purges expired message IDs from the distributed cache and database.
      */
     private class GarbageCollectionTask extends TimerTask {
+        @Override
         public void run() {
           getHibernateTemplate().execute(new HibernateCallback() {
+              @Override
               public Object doInHibernate(Session session) {
                   doRun(session);
                   return null;
@@ -251,6 +255,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
      */
     public void close() throws Exception {
         getHibernateTemplate().execute(new HibernateCallback() {
+            @Override
             public Object doInHibernate(Session session) {
                 try {
                     flush(session);
@@ -260,6 +265,13 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
                 }
             }
         });
+
+        TreeCache treeCache = tree;
+        if (treeCache != null) {
+            logger.info("Stopping distributed cache.");
+            treeCache.stopService();
+            logger.info("Stopped distributed cache.");
+        }
     }
 
     /**
@@ -379,6 +391,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
      * @param prospect the {@link MessageId} to check for uniqueness
      * @throws DuplicateMessageIdException if the given {@link MessageId} was seen previously
      */
+    @Override
     public void assertMessageIdIsUnique(MessageId prospect) throws DuplicateMessageIdException {
         UserTransaction tx = null;
         try {

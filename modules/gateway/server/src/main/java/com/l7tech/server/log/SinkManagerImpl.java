@@ -60,6 +60,7 @@ public class SinkManagerImpl
         this.syslogManager = syslogManager;
         this.trafficLogger = trafficLogger;
         this.applicationListener = new ApplicationListener() {
+            @Override
             public void onApplicationEvent( ApplicationEvent event ) {
                 handleEvent(event);
             }
@@ -73,6 +74,7 @@ public class SinkManagerImpl
      *
      * @return The size in bytes.
      */
+    @Override
     public long getMaximumFileStorageSpace() {
         long storage = DEFAULT_FILE_SPACE_LIMIT;
 
@@ -97,6 +99,7 @@ public class SinkManagerImpl
      *
      * @return The size in bytes.
      */
+    @Override
     public long getReservedFileStorageSpace() {
         long reservedSpace = 0;
 
@@ -110,14 +113,17 @@ public class SinkManagerImpl
         return reservedSpace;
     }
 
+    @Override
     public Class<SinkConfiguration> getImpClass() {
         return SinkConfiguration.class;
     }
 
+    @Override
     public Class<SinkConfiguration> getInterfaceClass() {
         return SinkConfiguration.class;
     }
 
+    @Override
     public String getTableName() {
         return "sink_config";
     }
@@ -129,6 +135,7 @@ public class SinkManagerImpl
      * @param testMessage The message to send.
      * @return True if the message may have been sent
      */
+    @Override
     public boolean test(final SinkConfiguration sinkConfiguration, final String testMessage) {
         boolean success = false;
 
@@ -162,15 +169,18 @@ public class SinkManagerImpl
         return success;
     }
 
+    @Override
     public void setApplicationContext(final ApplicationContext applicationContext) {
         if ( this.applicationContext == null )
             this.applicationContext = applicationContext;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         updateLogLevels( (String)evt.getOldValue(), (String)evt.getNewValue() );
     }
 
+    @Override
     public MessageSink getPublishingSink() {
         return publishingSink;
     }
@@ -191,13 +201,6 @@ public class SinkManagerImpl
         installConnectionListener();
         closeMarkedHandlers();
         rebuildLogSinks();
-
-        // close all on shutdown
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
-            public void run() {
-                dispatchingSink.close();
-            }
-        }));
 
         logger.info("Redirected logging to configured log sinks.");
     }
@@ -344,6 +347,7 @@ public class SinkManagerImpl
      */
     private void installLogConfigurationListener() {
         LogManager.getLogManager().addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 installHandlers();
                 updateLogLevels(null, null);
@@ -356,10 +360,12 @@ public class SinkManagerImpl
      */
     private void installConnectionListener() {
         syslogManager.setConnectionListener(new SyslogConnectionListener(){
+            @Override
             public void notifyConnected(final SocketAddress address) {
                 fireEvent(address, true);
             }
 
+            @Override
             public void notifyDisconnected(final SocketAddress address) {
                 fireEvent(address, false);
             }
@@ -714,6 +720,7 @@ public class SinkManagerImpl
      */
     private void delayedClose( final MessageSink sink, final long time ) {
         Thread cleanup = new Thread( new Runnable(){
+            @Override
             public void run() {
                 try {
                     Thread.sleep(time);
@@ -734,10 +741,12 @@ public class SinkManagerImpl
             this.sink = sink;
         }
 
+        @Override
         public void message(final MessageCategory category, final LogRecord record) {
             sink.message(category, record);
         }
 
+        @Override
         public void close() {
         }
     }

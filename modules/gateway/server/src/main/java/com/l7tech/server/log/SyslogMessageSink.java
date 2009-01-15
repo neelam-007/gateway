@@ -33,6 +33,7 @@ class SyslogMessageSink extends MessageSinkSupport {
      */
     public static final String LOG_PATTERN_NO_HOST = "<{2}>{3} {7}[{8}]: {9}";
 
+    @Override
     public void close() throws IOException {
         syslog.close();
     }
@@ -44,9 +45,10 @@ class SyslogMessageSink extends MessageSinkSupport {
                        final SyslogManager manager) throws ConfigurationException {
         super( configuration );
         this.syslog = buildSyslog( configuration, manager, serverConfig.getHostname() );
-        this.process = "SSG-default_";
+        this.process = "SSG";
     }
 
+    @Override
     void processMessage(final MessageCategory category, final LogRecord record) {
         syslog.log(
                 getSeverity(record.getLevel()),

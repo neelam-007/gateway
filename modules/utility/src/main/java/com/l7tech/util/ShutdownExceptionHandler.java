@@ -26,6 +26,7 @@ public class ShutdownExceptionHandler implements Thread.UncaughtExceptionHandler
     public static void addShutdownHandler(final Timer timer) {
         if (timer != null) {
             timer.schedule(new TimerTask(){
+                @Override
                 public void run() {
                     Thread.currentThread().setUncaughtExceptionHandler(getInstance());
                 }
@@ -40,6 +41,7 @@ public class ShutdownExceptionHandler implements Thread.UncaughtExceptionHandler
         }
     }
 
+    @Override
     public void uncaughtException(final Thread thread, Throwable exception) {
         String threadName = thread!=null ? thread.getName() : "<NULL>";
 
@@ -64,10 +66,7 @@ public class ShutdownExceptionHandler implements Thread.UncaughtExceptionHandler
 
     private ShutdownExceptionHandler() {
         logger.info("Registering for shutdown notification.");
-        final Thread hook = new Thread(new ShutdownHook());
-        hook.setName("ShutdownExceptionHandlerHook");
-        hook.setDaemon(true);
-        Runtime.getRuntime().addShutdownHook(hook);
+        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook()));
     }
 
     private static final class InstanceHolder {
@@ -75,6 +74,7 @@ public class ShutdownExceptionHandler implements Thread.UncaughtExceptionHandler
     }
 
     private final class ShutdownHook implements Runnable {
+        @Override
         public void run() {
             logger.info("Received shutdown notification.");
             synchronized(lock) {

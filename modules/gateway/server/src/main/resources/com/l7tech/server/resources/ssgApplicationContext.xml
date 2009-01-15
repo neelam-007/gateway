@@ -1089,7 +1089,7 @@
         <constructor-arg ref="serverConfig"/>
     </bean>
 
-    <bean id="syslogManager" class="com.l7tech.server.log.syslog.SyslogManager"/>
+    <bean id="syslogManager" class="com.l7tech.server.log.syslog.SyslogManager" destroy-method="close"/>
 
     <bean id="sinkManager" class="com.l7tech.server.log.SinkManagerImpl" parent="hibernateBean" depends-on="systemAuditListener">
         <constructor-arg ref="serverConfig"/>

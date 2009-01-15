@@ -12,6 +12,9 @@ import java.util.logging.Level;
 public class GatewayMain {
     public static void main(String[] args) {
         try {
+            if ( System.getProperty("java.util.logging.manager") == null ) {
+                System.setProperty("java.util.logging.manager", GatewayBoot.GatewayLogManager.class.getName());
+            }
             new GatewayBoot().runUntilShutdown();
             System.exit(0); // force exit even if there are non-daemon threads created by mistake (Bug #4384)
         } catch (Throwable e) {

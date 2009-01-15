@@ -60,6 +60,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
      * @param time     The time for the log message
      * @param message  The log message
      */
+    @Override
     public void log(final SyslogFormat format,
                     final int facility,
                     final SyslogSeverity severity,
@@ -68,13 +69,12 @@ public class MinaManagedSyslog extends ManagedSyslog {
                     final long threadId,
                     final long time,
                     final String message) {
-        if ( !sender.isRunning() )
-            throw new IllegalStateException("Message logged when stopped");
-
-        try {
-            messageQueue.put(buildMessage(format, facility, severity, host, process, threadId, time, message));
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
+        if ( sender.isRunning() ) {
+            try {
+                messageQueue.put(buildMessage(format, facility, severity, host, process, threadId, time, message));
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -83,6 +83,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
      *
      * <p>Attempts to use this Syslog after calling close will fail.</p>
      */
+    @Override
     public void close() {
         sender.stop();
     }
@@ -97,6 +98,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
      *
      * <p>Once initialized, futher calls will have no affect.</p>
      */
+    @Override
     protected void init() {
         if ( !initialized ) {
             initialized = true;
@@ -117,6 +119,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
         //
         ExceptionMonitor.setInstance(new ExceptionMonitor(){
             // Called for exceptions on interrupted, IOException on close, etc.
+            @Override
             public void exceptionCaught(Throwable cause) {}
         });
     }
@@ -126,7 +129,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
     private static final long DEFAULT_RECONNECT_SLEEP = 1000L;
     private static final long MAX_RECONNECT_SLEEP = 60000L;
 
-    private final BlockingQueue<FormattedSyslogMessage> messageQueue = new ArrayBlockingQueue(QUEUE_CAPACITY);
+    private final BlockingQueue<FormattedSyslogMessage> messageQueue = new ArrayBlockingQueue<FormattedSyslogMessage>(QUEUE_CAPACITY);
     private final MessageSender sender;
     private boolean initialized = false;
 
@@ -174,7 +177,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
      */
     private static class MessageSender implements Runnable {
         private final BlockingQueue<FormattedSyslogMessage> messageQueue;
-        private final List<SyslogMessage> dropList = new ArrayList(DROP_BATCH_SIZE);;
+        private final List<SyslogMessage> dropList = new ArrayList<SyslogMessage>(DROP_BATCH_SIZE);
         private final SyslogProtocol protocol;
         private final SocketAddress address;
         private final IoConnector connector;
@@ -182,7 +185,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
         private final AtomicBoolean run = new AtomicBoolean(true);
         private final AtomicBoolean reconnect = new AtomicBoolean(true);
         private final AtomicReference<IoSession> sessionRef = new AtomicReference<IoSession>();
-        private final AtomicReference<SyslogConnectionListener> listener = new AtomicReference();
+        private final AtomicReference<SyslogConnectionListener> listener = new AtomicReference<SyslogConnectionListener>();
         private long reconnectSleep = DEFAULT_RECONNECT_SLEEP;
 
         public MessageSender(final BlockingQueue<FormattedSyslogMessage> messageQueue,
@@ -194,6 +197,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
 
             // create IO handler
             this.handler = new MinaSyslogHandler(new Functions.UnaryVoid<IoSession>(){
+                @Override
                 public void call(final IoSession session) {
                     setSession(session);
                 }
@@ -215,6 +219,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
             }
         }
 
+        @Override
         public void run() {
             sendMessages();
         }
@@ -223,6 +228,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
          * Get a string representation of this sender, this should contain
          * info to allow the threads to be identified. 
          */
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder(128);
             builder.append("MessageSender-");
@@ -331,6 +337,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
             try {
                 final ConnectFuture connectFuture = connector.connect( address, handler, config );
                 connectFuture.addListener(new IoFutureListener() {
+                    @Override
                     public void operationComplete(IoFuture future) {
                         if ( !connectFuture.isConnected() ) {
                             flagReconnectAfterDelay();

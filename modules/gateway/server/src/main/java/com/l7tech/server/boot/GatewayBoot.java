@@ -19,6 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.LogManager;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -109,6 +110,7 @@ public class GatewayBoot {
     // Launch a background thread that warns if no DB connections appear within a reasonable period of time (Bug #4271)
     private void spawnDbWarner() {
         Thread dbcheck = new Thread("Database Check") {
+            @Override
             public void run() {
                 try {
                     Thread.sleep(DB_CHECK_DELAY * 1000L);
@@ -168,6 +170,7 @@ public class GatewayBoot {
             /**
              * Run before shutdown, we need to be ready to exit when this thread dies.
              */
+            @Override
             public void run() {
                 // notify to start shutdown process
                 shutdown.countDown();
@@ -179,6 +182,11 @@ public class GatewayBoot {
                 } catch (InterruptedException e) {
                     // thread exits immediately
                 }
+
+                LogManager logManager = LogManager.getLogManager();
+                if ( logManager instanceof GatewayLogManager ) {
+                    ((GatewayLogManager)logManager).resetLogs();
+                }                
             }
         }));
     }
@@ -194,6 +202,24 @@ public class GatewayBoot {
             shutdown.await();
         } catch (InterruptedException e) {
             logger.info("Shutting down due to interrruped.");
+        }
+    }
+
+    /**
+     * This prevents JDK logging shutdown when the JUL shutdown hook is invoked.
+     *
+     * <p>The Gateway will reset the underlying manager when shutdown of components
+     * is completed.</p>
+     *
+     * Perhaps inspired by JBossJDKLogManager.
+     */
+    public static final class GatewayLogManager extends LogManager {
+        @Override
+        public void reset() throws SecurityException {
+        }
+
+        public void resetLogs() throws SecurityException {
+            super.reset();
         }
     }
 }

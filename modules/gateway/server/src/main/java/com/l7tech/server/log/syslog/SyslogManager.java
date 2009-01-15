@@ -2,11 +2,13 @@ package com.l7tech.server.log.syslog;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Iterator;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.atomic.AtomicReference;
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
+import java.io.Closeable;
 
 import com.l7tech.server.log.syslog.impl.MinaManagedSyslog;
 import com.l7tech.util.ResourceUtils;
@@ -23,7 +25,7 @@ import com.l7tech.util.SyspropUtil;
  *
  * @author Steve Jones
  */
-public class SyslogManager {
+public class SyslogManager implements Closeable {
 
     //- PUBLIC
 
@@ -77,6 +79,24 @@ public class SyslogManager {
      */
     public void setConnectionListener(final SyslogConnectionListener listener) {
         syslogListener.delegate.set(listener);
+    }
+
+    /**
+     * Close all underlying resources.
+     *
+     * <p>Clients should still be able to call log after this is done but,
+     * any messages will be silently dropped.</p>
+     */
+    @Override
+    public void close() {
+        synchronized (syslogLock) {
+            Iterator<ManagedSyslog> syslogIter = syslogs.values().iterator();
+            while ( syslogIter.hasNext() ) {
+                ManagedSyslog msyslog = syslogIter.next();
+                syslogIter.remove();
+                ResourceUtils.closeQuietly( msyslog );
+            }
+        }
     }
 
     //- PACKAGE
@@ -141,7 +161,7 @@ public class SyslogManager {
 
     private final DelegatingSyslogConnectionListener syslogListener = new DelegatingSyslogConnectionListener();
     private final Object syslogLock = new Object();
-    private final Map<SyslogKey,ManagedSyslog> syslogs = new HashMap();
+    private final Map<SyslogKey,ManagedSyslog> syslogs = new HashMap<SyslogKey,ManagedSyslog>();
 
 
     /**
@@ -200,6 +220,8 @@ public class SyslogManager {
             this.address = address;
         }
 
+        @SuppressWarnings({"RedundantIfStatement"})
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -212,6 +234,7 @@ public class SyslogManager {
             return true;
         }
 
+        @Override
         public int hashCode() {
             int result;
             result = protocol.hashCode();
@@ -224,8 +247,9 @@ public class SyslogManager {
      * Listener that is used by all ManagedSyslogs.
      */
     private static final class DelegatingSyslogConnectionListener implements SyslogConnectionListener {
-        private AtomicReference<SyslogConnectionListener> delegate = new AtomicReference();
+        private AtomicReference<SyslogConnectionListener> delegate = new AtomicReference<SyslogConnectionListener>();
 
+        @Override
         public void notifyConnected(final SocketAddress address) {
             SyslogConnectionListener listener = delegate.get();
             if ( listener != null ) {
@@ -237,6 +261,7 @@ public class SyslogManager {
             }
         }
 
+        @Override
         public void notifyDisconnected(final SocketAddress address) {
             SyslogConnectionListener listener = delegate.get();
             if ( listener != null ) {
