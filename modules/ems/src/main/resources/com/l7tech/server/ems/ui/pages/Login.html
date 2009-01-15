@@ -43,7 +43,8 @@
 
         function init() {
             loginButton = new YAHOO.widget.Button('submit', {
-                onclick : {fn : onLogin}
+                onclick : {fn : onLogin},
+                type : 'push'
             });
             updateSubmitButton();
             document.getElementById('username').focus();
@@ -88,7 +89,7 @@
                                                 </tr>
                                                 <tr>
                                                     <td class="right"> </td>
-                                                    <td class="right"><input id="submit" type="button" value="Log In" /></td>
+                                                    <td class="right"><input id="submit" type="submit" value="Log In" /></td>
                                                 </tr>
                                             </table>
                                         </form>
