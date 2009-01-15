@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlSeeAlso;
  * @author flascelles
  */
 @XmlRootElement
-@XmlSeeAlso({IdentityHeader.class,GuidEntityHeader.class})
+@XmlSeeAlso({IdentityHeader.class,GuidEntityHeader.class, ValueReferenceEntityHeader.class})
 public class EntityHeader extends EntityHeaderRef {
     
     public EntityHeader(String id, EntityType type, String name, String description) {

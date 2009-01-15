@@ -14,6 +14,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.lang.reflect.Method;
+import java.io.IOException;
 
 /**
  * Extracts the dependencies and mappings from a Policy object belonging to a service,
@@ -31,8 +32,12 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
 
     private static final Logger logger = Logger.getLogger(PolicyPropertyResolver.class.getName());
 
+    public PolicyPropertyResolver(PropertyResolverFactory factory) {
+        super(factory);
+    }
+
     @Override
-    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(EntityHeader source, Object entity, final Method property) throws PropertyResolverException {
+    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(EntityHeader source, Object entity, final Method property, String propertyName) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         Policy policy;
@@ -51,17 +56,19 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
             throw new PropertyResolverException("Error getting root assertion from policy.", e);
         }
 
-        String propName = MigrationUtils.propertyNameFromGetter(property.getName());
         Map<EntityHeader, Set<MigrationDependency>> result = new HashMap<EntityHeader, Set<MigrationDependency>>();
-        getHeadersRecursive(source, assertion, result, propName);
+        getHeadersRecursive(source, assertion, result, propertyName);
 
         logger.log(Level.FINE, "Found {0} headers for property {1}.", new Object[] { result.size(), property });
 
         return result;
     }
 
-    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
-        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{EntityHeaderUtils.fromEntity(sourceEntity), propName});
+    public void applyMapping(Object sourceEntity, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+        if (! (sourceEntity instanceof Entity))
+            throw new PropertyResolverException("Cannot handle non-entities; received: " + (sourceEntity == null ? null : sourceEntity.getClass()));
+
+        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{EntityHeaderUtils.fromEntity((Entity) sourceEntity), propName});
 
         if (sourceEntity instanceof PublishedService && ! propName.contains(":")) {
             // set the policy in the targetValue, but keep the existing service's policy's oid/version
@@ -69,61 +76,41 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
             long originalPolicyOid = originalPolicy.getOid();
             int originalPolicyVersion = originalPolicy.getVersion();
 
-            super.applyMapping(sourceEntity, propName, targetValue, originalHeader);
+            super.applyMapping(sourceEntity, propName, targetHeader, targetValue, originalHeader);
 
             ((PublishedService) sourceEntity).getPolicy().setOid(originalPolicyOid);
             ((PublishedService) sourceEntity).getPolicy().setVersion(originalPolicyVersion);
 
         } else if (sourceEntity instanceof PublishedService) {
-            applyMappingToPolicy(((PublishedService)sourceEntity).getPolicy(), propName, targetValue, originalHeader);
+            applyMappingToPolicy(((PublishedService)sourceEntity).getPolicy(), propName, targetHeader, targetValue, originalHeader);
         } else if (sourceEntity instanceof Policy) {
-            applyMappingToPolicy((Policy)sourceEntity, propName, targetValue, originalHeader);
+            applyMappingToPolicy((Policy)sourceEntity, propName, targetHeader, targetValue, originalHeader);
         } else {
-            throw new PropertyResolverException("Cannot handle entity of type: " + (sourceEntity != null ? sourceEntity.getClass().getName() : null));
+            throw new PropertyResolverException("Cannot handle entity of type: " + sourceEntity.getClass().getName());
         }
     }
 
-    private void applyMappingToPolicy(Policy policy, String propName, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+    private void applyMappingToPolicy(Policy policy, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+
+        Assertion assertion = MigrationUtils.getAssertion(policy, propName);
+
         String assertionPropName;
-        int targetOrdinal;
         try {
             String[] tokens = propName.split(":");
-            targetOrdinal = Integer.parseInt(tokens[1]);
             assertionPropName = tokens[2];
         } catch (Exception e) {
             throw new PropertyResolverException("Error parsing property name: " + propName, e);
         }
 
-        Assertion rootAssertion;
+        Method getter = MigrationUtils.getterForPropertyName(assertion, assertionPropName);
+        PropertyResolver resolver = getResolver(getter);
+        resolver.applyMapping(assertion, assertionPropName, targetHeader, targetValue, originalHeader);
+
         try {
-            rootAssertion = policy.getAssertion();
-        } catch (Exception e) {
-            throw new PropertyResolverException("Error getting root assertion from policy.", e);
+            policy.setXml(WspWriter.getPolicyXml(policy.getAssertion()));
+        } catch (IOException e) {
+            throw new PropertyResolverException("Error parsing property name: " + propName, e);
         }
-
-        Assertion assertion = rootAssertion;
-        Iterator iter = assertion.preorderIterator();
-        while (iter.hasNext() && !(assertion.getOrdinal() == targetOrdinal)) {
-            assertion = (Assertion) iter.next();
-        }
-
-        if (!(assertion.getOrdinal() == targetOrdinal))
-            throw new PropertyResolverException("Assertion with ordinal " + targetOrdinal + " not found in poilcy.");
-
-        logger.log(Level.FINEST, "Applying mapping for assertion {0} : {1}.", new Object[]{assertion, assertionPropName});
-        try {
-            Method setter;
-            if ("EntitiesUsed".equals(assertionPropName)) {
-                setter = MigrationUtils.setterForPropertyName(assertion, "replaceEntity", EntityHeader.class, EntityHeader.class);
-                setter.invoke(assertion, originalHeader, EntityHeaderUtils.fromEntity((Entity) targetValue));
-            } else {
-                setter = MigrationUtils.setterForPropertyName(assertion, assertionPropName, targetValue.getClass());
-                setter.invoke(assertion, targetValue);
-            }
-        } catch (Exception e) {
-            throw new PropertyResolverException("Error applying mapping for " + propName, e);
-        }
-        policy.setXml(WspWriter.getPolicyXml(rootAssertion));
     }
 
     private void getHeadersRecursive(EntityHeader source, Assertion assertion, Map<EntityHeader, Set<MigrationDependency>> result, String topPropertyName) throws PropertyResolverException {
@@ -133,13 +120,12 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         // process direct dependencies of this assertion
         for (Method method : assertion.getClass().getMethods()) {
             if (MigrationUtils.isDependency(method)) {
-                // todo: figure out how to get a hold of resolvers specified through Migration.targetType()
-                PropertyResolver resolver = MigrationUtils.getResolver(method);
-                Map<EntityHeader, Set<MigrationDependency>> deps = resolver.getDependencies(source, assertion, method);
+                PropertyResolver resolver = getResolver(method);
+                // use assertion's ordinal to identify where in the policy xml each dependency can be mapped
+                String propertyName = topPropertyName + ":" + Integer.toString(assertion.getOrdinal()) + ":" + MigrationUtils.propertyNameFromGetter(method.getName());
+                Map<EntityHeader, Set<MigrationDependency>> deps = resolver.getDependencies(source, assertion, method, propertyName);
                 for (EntityHeader depHeader : deps.keySet()) {
                     for (MigrationDependency dep : deps.get(depHeader)) {
-                        // use assertion's ordinal to identify where in the policy xml each dependency can be mapped
-                        dep.setPropName(topPropertyName + ":" + Integer.toString(assertion.getOrdinal()) + ":" + dep.getPropName());
                         addToResult(depHeader, dep, result);
                     }
                 }

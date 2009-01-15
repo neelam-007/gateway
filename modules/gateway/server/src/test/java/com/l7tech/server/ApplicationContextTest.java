@@ -39,7 +39,13 @@ public class ApplicationContextTest  {
     private static final Set<String> NON_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "genericLogAdmin" ));
     private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin" ) );
     private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionsAdmin" ) );
-    private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>( Arrays.asList( EntityType.ESM_ENTERPRISE_FOLDER,  EntityType.ESM_SSG_CLUSTER,  EntityType.ESM_SSG_NODE, EntityType.ESM_STANDARD_REPORT, EntityType.ESM_MIGRATION_RECORD) );
+    private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>( Arrays.asList(
+        EntityType.ESM_ENTERPRISE_FOLDER,  
+        EntityType.ESM_SSG_CLUSTER,
+        EntityType.ESM_SSG_NODE,
+        EntityType.ESM_STANDARD_REPORT,
+        EntityType.ESM_MIGRATION_RECORD,
+        EntityType.VALUE_REFERENCE) );
 
     /**
      * Loading the definitions in this way will check the syntax and that all the

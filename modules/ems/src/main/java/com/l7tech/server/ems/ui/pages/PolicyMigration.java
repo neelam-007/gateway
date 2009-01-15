@@ -471,6 +471,9 @@ public class PolicyMigration extends EsmStandardWebPage {
             case TRUSTED_CERT:
                 type = "trusted certificate";
                 break;
+            case VALUE_REFERENCE:
+                type = "value reference";
+                break;
             default:
                 type = entityType.toString();
                 break;
@@ -677,7 +680,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 if ( cluster.getTrustStatus() ) {
                     GatewayContext context = gatewayContextFactory.getGatewayContext( getUser(), cluster.getSslHostName(), cluster.getAdminPort() );
                     MigrationApi api = context.getMigrationApi();
-                    EntityHeader entityHeader = new EntityHeader( sourceKey.id, sourceKey.type, "", null );
+                    EntityHeader entityHeader = sourceKey.asEntityHeader();
                     Map candidates = MigrationApi.MappingCandidate.fromCandidates(api.retrieveMappingCandidates( Collections.singletonList( entityHeader ), filter ));
                     if ( candidates != null && candidates.containsKey(entityHeader) ) {
                         EntityHeaderSet<EntityHeader> entitySet = (EntityHeaderSet<EntityHeader>) candidates.get(entityHeader);

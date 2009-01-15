@@ -8,8 +8,8 @@ import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.objectmodel.EntityType;
 
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Column;
@@ -95,7 +95,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
     }
 
     @Transient
-    @Migration(mapName = NONE, mapValue = NONE, export = false, targetType = EntityType.ID_PROVIDER_CONFIG)
+    @Migration(mapName = NONE, mapValue = NONE, export = false, resolver = PropertyResolver.Type.ID_PROVIDER_CONFIG)
     public long getProviderId() {
         return providerOid;
     }

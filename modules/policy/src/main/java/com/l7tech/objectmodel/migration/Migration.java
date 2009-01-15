@@ -1,7 +1,5 @@
 package com.l7tech.objectmodel.migration;
 
-import com.l7tech.objectmodel.EntityType;
-
 import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -30,17 +28,10 @@ public @interface Migration {
     MigrationMappingSelection mapValue() default MigrationMappingSelection.OPTIONAL;
 
     /**
-     * Specifies the DependencyResolver implementation that can be used to extract dependencies
-     * for the annotated property.
-     *
-     * @return DependencyResolver implementation for the annotated property.
+     * Specifies the property resolver type that must be used to extract and apply
+     * dependencies to the annotated property.
      */
-    Class<? extends PropertyResolver> resolver() default DefaultEntityPropertyResolver.class;
-
-    /**
-     * Specifies the entity type of the dependency that the annotated property points to.
-     */
-    EntityType targetType() default EntityType.ANY;
+    PropertyResolver.Type resolver() default PropertyResolver.Type.DEFAULT;
 
     /**
      * Specifies if the value of a dependency should be serialized and added to the exported bundle.

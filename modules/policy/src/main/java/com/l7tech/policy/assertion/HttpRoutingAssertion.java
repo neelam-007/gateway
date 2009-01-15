@@ -8,6 +8,9 @@ package com.l7tech.policy.assertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -261,6 +264,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     }
 
     /** @return the custom IP addresses to use as an array of String, or null if no custom IP address list is configured. */
+    @Migration(mapName = NONE, mapValue = OPTIONAL, resolver = PropertyResolver.Type.VALUE_REFERENCE)
     public String[] getCustomIpAddresses() {
         return customIpAddresses;
     }

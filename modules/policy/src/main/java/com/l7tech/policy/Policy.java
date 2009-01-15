@@ -7,8 +7,8 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -113,7 +113,7 @@ public class Policy extends NamedEntityImp implements HasFolder {
         assertion = null;
     }
 
-    @Migration(targetType = EntityType.POLICY)
+    @Migration(resolver = PropertyResolver.Type.POLICY)
     public String getXml() {
         return xml;
     }

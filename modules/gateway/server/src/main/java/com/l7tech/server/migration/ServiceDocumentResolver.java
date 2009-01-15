@@ -17,16 +17,17 @@ import java.lang.reflect.Method;
  *
  * @author jbufu
  */
-public class ServiceDocumentResolver implements PropertyResolver {
+public class ServiceDocumentResolver extends AbstractPropertyResolver {
     private static final Logger logger = Logger.getLogger(AbstractOidPropertyResolver.class.getName());
 
     private ServiceDocumentManager documentManager;
 
-    public ServiceDocumentResolver(ServiceDocumentManager documentManager) {
+    public ServiceDocumentResolver(PropertyResolverFactory factory, ServiceDocumentManager documentManager) {
+        super(factory);
         this.documentManager = documentManager;
     }
 
-    public final Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, Method property) throws PropertyResolverException {
+    public final Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         final Long serviceOid;
@@ -48,7 +49,7 @@ public class ServiceDocumentResolver implements PropertyResolver {
         return result;
     }
 
-    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+    public void applyMapping(Object sourceEntity, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
         // nothing to do here; this is an inverse dependency: the service entity is applied as a property of the service document
     }
 }

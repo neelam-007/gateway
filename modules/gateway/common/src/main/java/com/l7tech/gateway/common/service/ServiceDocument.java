@@ -2,8 +2,8 @@ package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
-import com.l7tech.objectmodel.EntityType;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -24,7 +24,7 @@ public class ServiceDocument extends PersistentEntityImp {
      *
      * @return The service identifier
      */
-    @Migration(mapName = NONE, mapValue = NONE, targetType = EntityType.SERVICE)
+    @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.SERVICE)
     public long getServiceId() {
         return serviceId;
     }

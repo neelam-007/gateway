@@ -1,6 +1,7 @@
-package com.l7tech.objectmodel.migration;
+package com.l7tech.server.migration;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.migration.*;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -19,18 +20,21 @@ import java.lang.reflect.Method;
  *  
  * @author jbufu
  */
-public class DefaultEntityPropertyResolver implements PropertyResolver {
+public class DefaultEntityPropertyResolver extends AbstractPropertyResolver {
 
     private static final Logger logger = Logger.getLogger(DefaultEntityPropertyResolver.class.getName());
 
-    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, final Method property) throws PropertyResolverException {
+    public DefaultEntityPropertyResolver(PropertyResolverFactory factory) {
+        super(factory);
+    }
+
+    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, final Method property, String propertyName) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
         if (!MigrationUtils.isDefaultDependency(property))
             throw new IllegalArgumentException("Cannot handle property: " + property);
 
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
         final boolean exported = MigrationUtils.isExported(property);
-        String propName = MigrationUtils.propertyNameFromGetter(property.getName());
 
         final Object propertyValue;
         try {
@@ -46,11 +50,11 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
 
         else if (propertyValue instanceof EntityHeader) {
             addToResult((EntityHeader) propertyValue,
-                new MigrationDependency(source, (EntityHeader) propertyValue, propName, type, exported), result);
+                new MigrationDependency(source, (EntityHeader) propertyValue, propertyName, type, exported), result);
 
         } else if (propertyValue instanceof Entity) {
             addToResult(MigrationUtils.getHeaderFromEntity((Entity) propertyValue),
-                new MigrationDependency(source, MigrationUtils.getHeaderFromEntity((Entity) propertyValue), propName, type, exported), result);
+                new MigrationDependency(source, MigrationUtils.getHeaderFromEntity((Entity) propertyValue), propertyName, type, exported), result);
 
         } else { // array or set
             Collection input = null;
@@ -62,10 +66,10 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
             if (input != null) {
                 for(Object item : input) {
                     if (item instanceof EntityHeader)
-                        addToResult((EntityHeader) item, new MigrationDependency(source, (EntityHeader) item, propName, type, exported), result);
+                        addToResult((EntityHeader) item, new MigrationDependency(source, (EntityHeader) item, propertyName, type, exported), result);
                     else if (item instanceof Entity)
                         addToResult(MigrationUtils.getHeaderFromEntity((Entity) item),
-                            new MigrationDependency(source, MigrationUtils.getHeaderFromEntity((Entity) item), propName, type, exported), result);
+                            new MigrationDependency(source, MigrationUtils.getHeaderFromEntity((Entity) item), propertyName, type, exported), result);
                 }
             } else {
                 // should not happen
@@ -88,8 +92,11 @@ public class DefaultEntityPropertyResolver implements PropertyResolver {
         mappingsForHeader.add(dep);
     }
 
-    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
-        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{MigrationUtils.getHeaderFromEntity(sourceEntity), propName});
+    public void applyMapping(Object sourceEntity, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+        if (! (sourceEntity instanceof Entity))
+            throw new PropertyResolverException("Cannot handle non-entities; received: " + (sourceEntity == null ? null : sourceEntity.getClass()));
+
+        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{MigrationUtils.getHeaderFromEntity((Entity) sourceEntity), propName});
         Method method = MigrationUtils.setterForPropertyName(sourceEntity, propName, targetValue.getClass());
 
         try {

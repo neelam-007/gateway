@@ -8,8 +8,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.UserGroupResolver;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * Asserts that the requestor is a member of a particular group.
@@ -44,7 +44,7 @@ public class MemberOfGroup extends IdentityAssertion {
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, export = false, resolver = UserGroupResolver.class)
+    @Migration(mapName = NONE, mapValue =  NONE, export = false, resolver = PropertyResolver.Type.USERGROUP)
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = super.getEntitiesUsed();
         EntityHeader[] headers2 = new EntityHeader[headers.length + 1];

@@ -2,7 +2,6 @@ package com.l7tech.server.migration;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.objectmodel.migration.DefaultEntityPropertyResolver;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.service.ServiceDocumentManager;
 
@@ -17,7 +16,7 @@ public class PropertyResolverFactory {
     private EntityFinder entityFinder;
     private ServiceDocumentManager serviceDocumentManager;
 
-    private Map<EntityType, PropertyResolver> registry = new HashMap<EntityType, PropertyResolver>();
+    private Map<PropertyResolver.Type, PropertyResolver> registry = new HashMap<PropertyResolver.Type, PropertyResolver>();
 
     public PropertyResolverFactory(EntityFinder entityFinder, ServiceDocumentManager serviceDocumentManager) {
         this.entityFinder = entityFinder;
@@ -27,21 +26,24 @@ public class PropertyResolverFactory {
 
     private void initRegistry() {
         // todo: better registry initialization
-        registry.put(EntityType.ANY, new DefaultEntityPropertyResolver());
-        registry.put(EntityType.POLICY, new PolicyPropertyResolver());
-        registry.put(EntityType.SERVICE_DOCUMENT, new ServiceDocumentResolver(serviceDocumentManager));
-        registry.put(EntityType.SERVICE, new AbstractOidPropertyResolver(entityFinder) {
+        registry.put(PropertyResolver.Type.DEFAULT, new DefaultEntityPropertyResolver(this));
+        registry.put(PropertyResolver.Type.SERVICE_DOCUMENT, new ServiceDocumentResolver(this, serviceDocumentManager));
+        registry.put(PropertyResolver.Type.SERVICE, new AbstractOidPropertyResolver(this, entityFinder) {
             public EntityType getTargetType() { return EntityType.SERVICE; }
         });
-        registry.put(EntityType.ID_PROVIDER_CONFIG, new AbstractOidPropertyResolver(entityFinder) {
+        registry.put(PropertyResolver.Type.POLICY, new PolicyPropertyResolver(this));
+        registry.put(PropertyResolver.Type.ASSERTION, new AssertionPropertyResolver(this));
+        registry.put(PropertyResolver.Type.ID_PROVIDER_CONFIG, new AbstractOidPropertyResolver(this, entityFinder) {
             public EntityType getTargetType() { return EntityType.ID_PROVIDER_CONFIG; }
         });
+        registry.put(PropertyResolver.Type.USERGROUP, new UserGroupResolver(this));
+        registry.put(PropertyResolver.Type.VALUE_REFERENCE, new ValueReferencePropertyResolver(this));
     }
 
     /**
      * Retrieves a property resolver that is able to lookup entities of
      */
-    public PropertyResolver getPropertyResolver(EntityType targetType) {
+    public PropertyResolver getPropertyResolver(PropertyResolver.Type targetType) {
         return registry.get(targetType);
     }
 }

@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.EntityHeader;
 
 /**
@@ -42,7 +43,7 @@ public class AuthenticationAssertion extends IdentityAssertion {
         return super.getIdentityProviderOid();
     }
 
-    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false)
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         return super.getEntitiesUsed();
     }

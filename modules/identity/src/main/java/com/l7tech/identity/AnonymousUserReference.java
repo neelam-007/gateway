@@ -4,8 +4,8 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.AnonymousEntityReference;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
@@ -20,7 +20,7 @@ public class AnonymousUserReference extends AnonymousEntityReference implements 
         this.userBean.setUniqueIdentifier(uniqueId);
     }
 
-    @Migration(mapName = NONE, mapValue = NONE, export = false, targetType = EntityType.ID_PROVIDER_CONFIG)
+    @Migration(mapName = NONE, mapValue = NONE, export = false, resolver = PropertyResolver.Type.ID_PROVIDER_CONFIG)
     public long getProviderId() {
         return userBean.getProviderId();
     }

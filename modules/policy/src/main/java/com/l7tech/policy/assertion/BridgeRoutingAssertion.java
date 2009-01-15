@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 
 /**
@@ -135,7 +136,7 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
     protected int httpPort = 0;
     protected int httpsPort = 0;
 
-    @Migration(mapName = MigrationMappingSelection.REQUIRED)
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         if (serverCertificateOid != null) {
             return new EntityHeader[] { new EntityHeader(serverCertificateOid.toString(), EntityType.TRUSTED_CERT, serverCertificateName, "Trusted certificate to be used by the bridge routing assertion")};

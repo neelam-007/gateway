@@ -15,7 +15,9 @@ import org.junit.Assert;
 public class EntityTypeTest {
 
     @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
-    private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>(  );    
+    private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>(  ) {{
+      add(EntityType.VALUE_REFERENCE);  
+    }};
 
     @Test
     public void testEntityTypesDeclarations() throws Exception {

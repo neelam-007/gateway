@@ -21,24 +21,24 @@ import java.lang.reflect.Method;
  *
  * @author jbufu
  */
-public abstract class AbstractOidPropertyResolver implements PropertyResolver {
+public abstract class AbstractOidPropertyResolver extends AbstractPropertyResolver {
     private static final Logger logger = Logger.getLogger(AbstractOidPropertyResolver.class.getName());
 
     private EntityFinder entityFinder;
 
-    protected AbstractOidPropertyResolver(EntityFinder finder) {
+    protected AbstractOidPropertyResolver(PropertyResolverFactory factory, EntityFinder finder) {
+        super(factory);
         this.entityFinder = finder;
     }
 
     public abstract EntityType getTargetType();
 
     // gets a persistent entity's header out of a long/OID property and its type
-    public final Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, Method property) throws PropertyResolverException {
+    public final Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
         final boolean exported = MigrationUtils.isExported(property);
-        final String propName = MigrationUtils.propertyNameFromGetter(property.getName());
         EntityType targetType = getTargetType();
 
         final Long oid;
@@ -51,7 +51,7 @@ public abstract class AbstractOidPropertyResolver implements PropertyResolver {
         Map<EntityHeader,Set<MigrationDependency>> result = new HashMap<EntityHeader, Set<MigrationDependency>>();
         try {
             EntityHeader idpHeader = entityFinder.findHeader(targetType, oid);
-            result.put(idpHeader, Collections.singleton(new MigrationDependency(source, idpHeader, propName, type, exported)));
+            result.put(idpHeader, Collections.singleton(new MigrationDependency(source, idpHeader, propertyName, type, exported)));
         } catch (FindException e) {
             logger.log(Level.FINE, "No entity found for type: {0} oid: {1}.", new Object[]{targetType, oid});
         }
@@ -59,8 +59,11 @@ public abstract class AbstractOidPropertyResolver implements PropertyResolver {
     }
 
     // assigns the targetEntity's OID to the sourceEntity's property
-    public void applyMapping(Entity sourceEntity, String propName, Object targetValue, EntityHeader originalValue) throws PropertyResolverException {
-        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{EntityHeaderUtils.fromEntity(sourceEntity), propName});
+    public void applyMapping(Object sourceEntity, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+        if (! (sourceEntity instanceof Entity))
+            throw new PropertyResolverException("Cannot handle non-entities; received: " + (sourceEntity == null ? null : sourceEntity.getClass()));
+
+        logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{EntityHeaderUtils.fromEntity((Entity) sourceEntity), propName});
 
         if ( ! (targetValue instanceof PersistentEntity) )
             throw new PropertyResolverException("Error applying mapping for property name; invalid target value:" + targetValue);

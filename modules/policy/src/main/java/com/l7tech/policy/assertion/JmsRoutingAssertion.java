@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 /**
  * Holds information needed to route a message to an outbound JMS destination.
@@ -102,7 +103,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
         responseJmsMessagePropertyRuleSet = ruleSet;
     }
 
-    @Migration(mapName = MigrationMappingSelection.REQUIRED)
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         if(endpointOid != null) {
             return new EntityHeader[] { new EntityHeader(endpointOid.toString(), EntityType.JMS_ENDPOINT, endpointName, null)};

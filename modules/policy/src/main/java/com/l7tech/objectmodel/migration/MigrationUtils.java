@@ -5,11 +5,14 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.Policy;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Utility methods for Migration related operations.
@@ -20,44 +23,6 @@ public class MigrationUtils {
 
     private MigrationUtils() {}
 
-    /**
-     * Retrieves the property resolver for the given property method.
-     *
-     * The method can specify a custom property resolver through the {@link Migration} annotations;
-     * if a custom one is not specified, the {@link com.l7tech.objectmodel.migration.DefaultEntityPropertyResolver}
-     * is returned.
-     *
-     * @param property the method for which a property resolver is retrieved
-     * @return  the property resolver
-     * @throws MigrationException if the resolver cannot be instantiated
-     * @see com.l7tech.objectmodel.migration.Migration, PropertyResolver
-     */
-    public static PropertyResolver getResolver(Method property) throws PropertyResolverException {
-
-        Class<? extends PropertyResolver> resolverClass;
-        if (isDependency(property)) {
-            resolverClass = property.isAnnotationPresent(Migration.class) ? property.getAnnotation(Migration.class).resolver() : DefaultEntityPropertyResolver.class;
-        } else {
-            throw new PropertyResolverException("Property " + property + " is not a dependency.");
-        }
-        try {
-            return resolverClass.newInstance();
-        } catch (Exception e) {
-            throw new PropertyResolverException("Error getting property resolver for: " + property, e);
-        }
-    }
-
-    public static PropertyResolver getResolver(Entity sourceEntity, String propName) throws PropertyResolverException {
-
-        String name = stripPropertyName(propName);
-        Method method = getterForPropertyName(sourceEntity, name);
-        if (method == null)
-            throw new PropertyResolverException("No getter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
-
-        // we have the method, get the resolver for it (if it's a dependency etc)
-        return getResolver(method);
-    }
-
     private static String stripPropertyName(String propName) {
         String name = propName;
         int sep = propName.indexOf(":");
@@ -66,17 +31,19 @@ public class MigrationUtils {
         return name;
     }
 
-    public static EntityType getTargetType(Entity sourceEntity, String propName) throws PropertyResolverException {
+    public static PropertyResolver.Type getTargetType(Entity sourceEntity, String propName) throws PropertyResolverException {
         String name = stripPropertyName(propName);
         Method method = getterForPropertyName(sourceEntity, name);
         if (method == null)
             throw new PropertyResolverException("No getter found for the entity:property combination " + sourceEntity.getClass() + " : " + propName);
+        return getTargetType(method);
+    }
 
-        // we have the method, get the target type for it
+    public static PropertyResolver.Type getTargetType(Method method) {
         if (method.isAnnotationPresent(Migration.class))
-            return method.getAnnotation(Migration.class).targetType();
+            return method.getAnnotation(Migration.class).resolver();
         else
-            return EntityType.ANY;
+            return PropertyResolver.Type.DEFAULT;
     }
 
     private static Method methodForPropertyName(Object sourceEntity, String name) {
@@ -87,8 +54,10 @@ public class MigrationUtils {
         String prefix = setterParam == null || setterParam.length == 0 ? "get" : "set";
         try {
             // try with prefix first
-            return setterParam == null ? sourceEntity.getClass().getMethod(name.startsWith(prefix) ? name : prefix + name) :
-                sourceEntity.getClass().getMethod(name.startsWith(prefix) ? name : prefix + name, setterParam);
+            if (setterParam == null || setterParam.length == 0)
+                return sourceEntity.getClass().getMethod(name.startsWith(prefix) ? name : prefix + name);
+            else
+                return sourceEntity.getClass().getMethod(name.startsWith(prefix) ? name : prefix + name, setterParam);
         } catch (NoSuchMethodException e) {
             // fall back to non-prefixed name
             if (! name.startsWith(prefix)) {
@@ -210,5 +179,33 @@ public class MigrationUtils {
 
     public static boolean isExported(Method property) {
         return !property.isAnnotationPresent(Migration.class) || property.getAnnotation(Migration.class).export();
+    }
+
+    public static Assertion getAssertion(Policy policy, String compositePropName) throws PropertyResolverException {
+        int targetOrdinal;
+        try {
+            String[] tokens = compositePropName.split(":");
+            targetOrdinal = Integer.parseInt(tokens[1]);
+        } catch (Exception e) {
+            throw new PropertyResolverException("Error parsing property name: " + compositePropName, e);
+        }
+
+        Assertion rootAssertion;
+        try {
+            rootAssertion = policy.getAssertion();
+        } catch (Exception e) {
+            throw new PropertyResolverException("Error getting root assertion from policy.", e);
+        }
+
+        Assertion assertion = rootAssertion;
+        Iterator iter = assertion.preorderIterator();
+        while (iter.hasNext() && !(assertion.getOrdinal() == targetOrdinal)) {
+            assertion = (Assertion) iter.next();
+        }
+
+        if (!(assertion.getOrdinal() == targetOrdinal))
+            throw new PropertyResolverException("Assertion with ordinal " + targetOrdinal + " not found in poilcy.");
+
+        return assertion;
     }
 }

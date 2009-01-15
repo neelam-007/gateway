@@ -1,8 +1,8 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.objectmodel.EntityType;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class GroupBean implements Group, Serializable {
         this.version = version;
     }
 
-    @Migration(mapName = NONE, mapValue = NONE, export = false, targetType = EntityType.ID_PROVIDER_CONFIG)
+    @Migration(mapName = NONE, mapValue = NONE, export = false, resolver = PropertyResolver.Type.ID_PROVIDER_CONFIG)
     public long getProviderId() {
         return providerId;
     }

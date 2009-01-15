@@ -9,8 +9,8 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.wsdl.Wsdl;
@@ -80,7 +80,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
 
     @Override
     @Transient
-    @Migration(mapName = NONE, mapValue = NONE, targetType = EntityType.SERVICE_DOCUMENT)
+    @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.SERVICE_DOCUMENT)
     public String getId() {
         return super.getId();
     }
@@ -277,7 +277,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         return _name;
     }
 
-    @Migration(mapName = NONE, mapValue = NONE, targetType = EntityType.POLICY)
+    @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.POLICY)
     public Policy getPolicy() {
         return policy;
     }
@@ -480,7 +480,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     }
 
     @Override
-    @Migration(mapName = NONE, mapValue = NONE)
+    @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.ASSERTION)
     public Folder getFolder() {
         return folder;
     }
