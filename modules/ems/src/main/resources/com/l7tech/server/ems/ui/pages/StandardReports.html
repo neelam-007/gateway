@@ -83,7 +83,6 @@
         var loadSettingsButton;
         var saveSettingsButton;
         var deleteSettingsButton;
-        var saveDefaultButton;
         var addEntityButton;
         var addGroupingButton;
         var generateButton;
@@ -367,19 +366,12 @@
             saveSettingsButton.set('disabled', !validateSettings());
         }
 
-        function updateSaveDefaultButton() {
-            var selected = reportTypeDropDown.options[reportTypeDropDown.selectedIndex];
-            saveDefaultButton.set('label', l7.Util.formatMessage(localizedStrings.SAVE_DEFAULT_BUTTON_LABEL, selected.text));
-            saveDefaultButton.set('disabled', !validateSettings());
-        }
-
         function updateGenerateButton() {
             generateButton.set('disabled', !validateSettings());
         }
 
         function onChangeReportType() {
             updateSaveSettingsButton();
-            updateSaveDefaultButton();
             updateGenerateButton();
         }
 
@@ -409,7 +401,6 @@
 
             updateAddGroupingButton();
             updateSaveSettingsButton();
-            updateSaveDefaultButton();
             updateGenerateButton();
         }
 
@@ -421,7 +412,6 @@
             updateGroupingSsgClusterDropDowns();
             validateGroupings();
             updateSaveSettingsButton();
-            updateSaveDefaultButton();
             updateGenerateButton();
         }
 
@@ -434,7 +424,6 @@
                 relativeTimePeriodHint.innerHTML = '(' + localizedStrings.RELATIVE_TIME_PERIOD_HINT + ')';
             }
             updateSaveSettingsButton();
-            updateSaveDefaultButton();
             updateGenerateButton();
         }
 
@@ -453,13 +442,11 @@
                 absoluteTimePeriodHint.innerHTML = '(' + localizedStrings.ABSOLUTE_TIME_PERIOD_HINT + ')';
             }
             updateSaveSettingsButton();
-            updateSaveDefaultButton();
             updateGenerateButton();
         }
 
         function onChangeTimePeriodTimeZone() { // TODO This is not necessary if all items in the drop down list are valid.
             updateSaveSettingsButton();
-            updateSaveDefaultButton();
             updateGenerateButton();
         }
 
@@ -490,20 +477,17 @@
             timeIntervalTextBox.disabled = !hasTimeIntervalRadioButton.checked;
             timeIntervalUnitDropDown.disabled = !hasTimeIntervalRadioButton.checked;
             updateSaveSettingsButton();
-            updateSaveDefaultButton();
             updateGenerateButton();
         }
 
         function onChangeGroupings() {
             messageWhenNoGrouping.style.display = groupingTableBody.rows.length == 0 ? '' : 'none';
             updateSaveSettingsButton();
-            updateSaveDefaultButton();
             updateGenerateButton();
         }
 
         function onChangeReportName() {
             updateSaveSettingsButton();
-            updateSaveDefaultButton();
             updateGenerateButton();
         }
 
@@ -1121,11 +1105,6 @@
             deleteSettingsDialog.show();
         }
 
-        function onClickSaveDefault() {
-            // TODO
-            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
-        }
-
         function onClickAddEntity() {
             var ssgCluster = ssgClusterContentSelectorWindow.getSsgCluster();
             var entities = ssgClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected();
@@ -1201,7 +1180,6 @@
             YAHOO.util.Event.addListener(messageContextDropDown, 'change',
                 function(event) {
                     updateSaveSettingsButton();
-                    updateSaveDefaultButton();
                     updateGenerateButton();
                 }
             );
@@ -1213,7 +1191,6 @@
                     var messageContextDropDown = tr._messageContextDropDown;
                     populateGroupingMessageContextDropDown(messageContextDropDown, ssgClusterDropDown.value);
                     updateSaveSettingsButton();
-                    updateSaveDefaultButton();
                     updateGenerateButton();
                 },
                 tr
@@ -1344,11 +1321,6 @@
             });
             deleteSettingsButton = new YAHOO.widget.Button('deleteSettingsButton', {
                 onclick : {fn : onClickDeleteSettings},
-                type : 'push'
-            });
-            saveDefaultButton = new YAHOO.widget.Button('saveDefaultButton', {
-                disabled : true,
-                onclick : {fn : onClickSaveDefault},
                 type : 'push'
             });
             addEntityButton = new YAHOO.widget.Button('addEntityButton', {
@@ -1505,7 +1477,6 @@
             onChangeTimePeriodType();
             onChangeTimeInterval();
             updateAddGroupingButton();
-            updateSaveDefaultButton();
             updateGenerateButton();
         }
 
@@ -1631,17 +1602,10 @@
                                 <tr>
                                     <th class="middle">Report Type:</th>
                                     <td class="middle">
-                                        <table>
-                                            <tr>
-                                                <td class="middle">
-                                                    <select id="reportTypeDropDown" onchange="onChangeReportType();">
-                                                        <option value="performance">Performance Statistics</option>
-                                                        <option value="usage">Usage Report</option>
-                                                    </select>
-                                                </td>
-                                                <td class="middle" style="display: none;"><button id="saveDefaultButton"></button></td>
-                                            </tr>
-                                        </table>
+                                        <select id="reportTypeDropDown" onchange="onChangeReportType();">
+                                            <option value="performance">Performance Statistics</option>
+                                            <option value="usage">Usage Report</option>
+                                        </select>
                                     </td>
                                 </tr>
                                 <tr>
