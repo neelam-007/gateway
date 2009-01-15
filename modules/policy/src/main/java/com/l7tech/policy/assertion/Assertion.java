@@ -523,33 +523,48 @@ public abstract class Assertion implements Cloneable, Serializable {
 
     /**
      * Check if the given assertion has a child of the given type.
+     * This will return true if the assertion itself or any direct or indirect descendant is assignable to
+     * the specified assertion class.
      *
-     * @param in: the assertion to check
+     *
+     * @param in: the assertion to check.  If null, this method returns false.
      * @param assertionClass: the type to find
      * @param considerAssertionDisable: a flag indicates if it is needed to consider the checked assertion is disabled or not.
      * @return true if the given assertion or one of its children is the correct type and also is enabled if consierDisable
      *         is set to ture.
      */
     public static boolean contains(Assertion in, Class assertionClass, boolean considerAssertionDisable) {
-        boolean found = false;
+        return null != find(in, assertionClass, considerAssertionDisable);
+    }
 
+    /**
+     * Search the given assertion for a child of the given type.
+     * This will return the first matching assertion among the assertion itself and any direct or indirect
+     * descendants that is assignable to the specified assertion class, or null if no matching assertion
+     * is found.
+     *
+     * @param in the assertion to search.  If null, this method returns null.
+     * @param assertionClass the assertion class to search for.  Required.
+     * @param considerAssertionDisable true to match even disabled assertions; false to ignore disabled assertions.
+     * @return the first matching assertion, which may be the assertion passed in, or null if no match.
+     */
+    public static <T extends Assertion> T find(Assertion in, Class<T> assertionClass, boolean considerAssertionDisable) {
         if (assertionClass.isInstance(in)) {
             if (! considerAssertionDisable || in.isEnabled())
-                found = true;
-        }
-        else  if (in instanceof CompositeAssertion) {
+                return (T)in;
+        } else if (in instanceof CompositeAssertion) {
             CompositeAssertion comp = (CompositeAssertion) in;
             List kids = comp.getChildren();
             for (Iterator iterator = kids.iterator(); iterator.hasNext();) {
                 Assertion assertion = (Assertion) iterator.next();
-                if (contains(assertion, assertionClass, considerAssertionDisable)) {
-                    found = true;
-                    break;
-                }
+
+                T result = find(assertion, assertionClass, considerAssertionDisable);
+                if (result != null)
+                    return result;
             }
         }
 
-        return found;
+        return null;
     }
 
     public static boolean isRequest(Assertion assertion) {
