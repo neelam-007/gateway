@@ -28,7 +28,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -42,22 +41,28 @@ import java.util.logging.Level;
  * to forward the request to a node that has it.
  */
 public class CSRHandler extends AuthenticatableHttpServlet {
-    public void init(ServletConfig config) throws ServletException {
+
+    @Override
+    public void init( final ServletConfig config ) throws ServletException {
         super.init(config);
         defaultKey = (DefaultKey)getApplicationContext().getBean("defaultKey", DefaultKey.class);
         providerConfigManager = (IdentityProviderConfigManager)getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
         auditContext = (AuditContext)getApplicationContext().getBean("auditContext", AuditContext.class);
     }
 
+    @Override
     protected String getFeature() {
         return GatewayFeatureSets.SERVICE_CSRHANDLER;
     }
 
+    @Override
     protected SsgConnector.Endpoint getRequiredEndpoint() {
         return SsgConnector.Endpoint.CSRHANDLER;
     }
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    @Override
+    protected void doPost( final HttpServletRequest request,
+                           final HttpServletResponse response)
       throws ServletException, IOException {
 
         // make sure we come in through ssl
@@ -104,9 +109,9 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             return;
         }
 
-        AuthenticationResult authResult = results[0];
-        User authenticatedUser = authResult.getUser();
-        X509Certificate requestCert = authResult.getAuthenticatedCert();
+        final AuthenticationResult authResult = results[0];
+        final User authenticatedUser = authResult.getUser();
+        final X509Certificate requestCert = authResult.getAuthenticatedCert();
 
         try {
             if (!clientCertManager.userCanGenCert(authenticatedUser, requestCert)) {
@@ -116,8 +121,8 @@ public class CSRHandler extends AuthenticatableHttpServlet {
                 return;
             }
 
-            long oid  = authenticatedUser.getProviderId();
-            IdentityProviderConfig conf = providerConfigManager.findByPrimaryKey(oid);
+            final long oid  = authenticatedUser.getProviderId();
+            final IdentityProviderConfig conf = providerConfigManager.findByPrimaryKey(oid);
             if (conf instanceof LdapIdentityProviderConfig) {
                 LdapIdentityProviderConfig ldapIdentityProviderConfig = (LdapIdentityProviderConfig) conf;
                 if (ldapIdentityProviderConfig.isUserCertsEnabled()) {
@@ -136,8 +141,8 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             return;
         }
 
-        byte[] csr = readCSRFromRequest(request);
-        Certificate cert;
+        final byte[] csr = readCSRFromRequest(request);
+        final Certificate cert;
 
         String certSubject = "cn=" + authenticatedUser.getLogin();
         // todo: perhaps we should use the real dn in the case of ldap users but then we
@@ -156,6 +161,10 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             } else {
                 cert = sign(csr, certSubject);
             }
+        } catch (NoCaException ncae) {
+            response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway CA service not available");
+            logger.log(Level.WARNING, "This Gateway does not currently have a default CA key configured.");
+            return;
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -163,17 +172,17 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         }
 
         // record new cert
-        boolean wasSystem = auditContext.isSystem();
+        final boolean wasSystem = auditContext.isSystem();
         auditContext.setSystem(true);
         try {
             clientCertManager.recordNewUserCert(authenticatedUser, cert, authResult.isCertSignedByStaleCA());
-            String message = buildIssuedMessage(authenticatedUser);
+            final String message = buildIssuedMessage(authenticatedUser);
             getApplicationContext().publishEvent(new CertificateSigningServiceEvent(this, Level.INFO 
                                                 , request.getRemoteAddr()
                                                 , message, authenticatedUser.getProviderId()
                                                 , getName(authenticatedUser), authenticatedUser.getId()));
         } catch (UpdateException e) {
-            String msg = "Could not record cert. " + e.getMessage();
+            final String msg = "Could not record cert. " + e.getMessage();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
             logger.log(Level.SEVERE, msg, e);
             return;
@@ -183,7 +192,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         
         // send cert back
         try {
-            byte[] certbytes = cert.getEncoded();
+            final byte[] certbytes = cert.getEncoded();
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType("application/x-x509-ca-cert");
             response.setContentLength(certbytes.length);
@@ -198,7 +207,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     }
 
     private String buildIssuedMessage( User user ) {                 
-        StringBuilder message = new StringBuilder();
+        final StringBuilder message = new StringBuilder();
         message.append("Issued certificate for user ");
         message.append(getName(user));
         message.append(" (#");
@@ -212,11 +221,11 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         return message.toString();
     }
 
-    private String getName(User user) {
+    private String getName( final User user ) {
         return user.getLogin()!=null ? user.getLogin() : user.getId();
     }
 
-    private byte[] readCSRFromRequest(HttpServletRequest request) throws IOException {
+    private byte[] readCSRFromRequest( final HttpServletRequest request ) throws IOException {
         // csr request might be based64 or not, we need to see what format we are getting
         byte[] contents = IOUtils.slurpStream(request.getInputStream());
         try {
@@ -227,20 +236,22 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         }
     }
 
-    private RsaSignerEngine getSigner() throws SignatureException {
-        SignerInfo ca = defaultKey.getCaInfo();
+    private RsaSignerEngine getSigner() throws NoCaException {
+        final SignerInfo ca = defaultKey.getCaInfo();
         if (ca == null)
-            throw new SignatureException("This Gateway does not currently have a default CA key configured.");
+            throw new NoCaException();
         return JceProvider.createRsaSignerEngine(ca.getPrivate(), ca.getCertificateChain());
     }
 
-    private Certificate sign(byte[] csr, String subject) throws Exception {
+    private Certificate sign( final byte[] csr, final String subject ) throws Exception {
         return getSigner().createCertificate(csr, subject);
     }
 
-    private Certificate sign(byte[] csr, String subject, long expiration) throws Exception {
+    private Certificate sign( final byte[] csr, final String subject, final long expiration ) throws Exception {
         return getSigner().createCertificate(csr, subject, expiration);
     }
+
+    private static final class NoCaException extends Exception {}
 
     private DefaultKey defaultKey;
     private IdentityProviderConfigManager providerConfigManager;
