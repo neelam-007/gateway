@@ -407,6 +407,25 @@ public class SoapUtil extends SoapConstants {
     }
 
     /**
+     * Get a wsu:Id attribute from the specified element, creating a new one if needed.
+     * <p/>
+     * This method should be used as a last resort since it is slow, has a tiny probability
+     * of generating non-unique IDs, and provides no way to configure which wsu namespace to use.
+     *
+     * @param node the element to examine.  May be modified if a wsu:Id needs to be added.  Required.
+     * @return the wsu:Id value from this element, possibly newly-created.
+     */
+    public static String getOrCreateElementWsuId(Element node) {
+        String id = getElementWsuId(node);
+        if (id != null)
+            return id;
+
+        id = generateUniqueId(node.getLocalName(), 0);
+        setWsuId(node, SoapConstants.WSU_NAMESPACE, id);
+        return id;
+    }
+
+    /**
      * Gets the WSU:Id attribute of the passed element using all supported WSU namespaces.
      *
      * @param specialSamlHandling true if the method should find SAML1 AssertionID or SAML2 ID attributes as well
@@ -1149,164 +1168,6 @@ public class SoapUtil extends SoapConstants {
     private static boolean bothNullOrEqual(String s1, String s2) {
         return (s1 == null && s2 == null) || (s1 != null && s1.equals(s2));
     }
-
-    /*public static Operation getOperation(Wsdl wsdl, Message request)
-            throws IOException, SAXException, InvalidDocumentFormatException,
-                   MessageNotSoapException
-    {
-        XmlKnob requestXml = (XmlKnob)request.getKnob(XmlKnob.class);
-        if (requestXml == null) {
-            log.info("Can't get operation for non-XML message");
-            return null;
-        }
-        Document requestDoc = requestXml.getDocumentReadOnly();
-        Element payload = getPayloadElement(requestDoc);
-        if (payload == null) {
-            log.info("Can't get operation for message with no payload element");
-            return null;
-        }
-
-        Operation operation = null;
-
-        Map bindings = wsdl.getDefinition().getBindings();
-        if (bindings.isEmpty()) {
-            log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
-            return null;
-        }
-
-        boolean foundSoapBinding = false;
-        bindings: for (Iterator h = bindings.keySet().iterator(); h.hasNext();) {
-            QName bindingName = (QName)h.next();
-            Binding binding = (Binding)bindings.get(bindingName);
-            SOAPBinding soapBinding = null;
-            List bindingEels = binding.getExtensibilityElements();
-            for (Iterator bindit = bindingEels.iterator(); bindit.hasNext();) {
-                ExtensibilityElement element = (ExtensibilityElement)bindit.next();
-                if (element instanceof SOAPBinding) {
-                    foundSoapBinding = true;
-                    soapBinding = (SOAPBinding)element;
-                }
-            }
-
-            if (soapBinding == null)
-                continue bindings; // This isn't a SOAP binding; we don't care
-
-            List bindingOperations = binding.getBindingOperations();
-
-            for (Iterator i = bindingOperations.iterator(); i.hasNext();) {
-                // Look for RPC (element name = operation name)
-                BindingOperation bindingOperation = (BindingOperation)i.next();
-                Operation candidateOperation = bindingOperation.getOperation();
-
-                if ("rpc".equals(wsdl.getBindingStyle(bindingOperation))) {
-                    BindingInput binput = bindingOperation.getBindingInput();
-                    String ns = null;
-                    List bindingInputEels = binput.getExtensibilityElements();
-                    if (bindingInputEels != null) {
-                        for (Iterator j = bindingInputEels.iterator(); j.hasNext();) {
-                            ExtensibilityElement eel = (ExtensibilityElement)j.next();
-                            if (eel instanceof javax.wsdl.extensions.soap.SOAPBody) {
-                                javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)eel;
-                                ns = body.getNamespaceURI();
-                            }  else if (eel instanceof javax.wsdl.extensions.soap12.SOAP12Body) {
-                                javax.wsdl.extensions.soap12.SOAP12Body body = (javax.wsdl.extensions.soap12.SOAP12Body) eel;
-                                ns = body.getNamespaceURI();
-                            } else if (eel instanceof MIMEMultipartRelated) {
-                                MIMEMultipartRelated mime = (MIMEMultipartRelated)eel;
-                                List parts = mime.getMIMEParts();
-                                if (parts.size() >= 1) {
-                                    MIMEPart firstPart = (MIMEPart)parts.get(0);
-                                    List mimeEels = firstPart.getExtensibilityElements();
-                                    for (Iterator k = mimeEels.iterator(); k.hasNext();) {
-                                        ExtensibilityElement mimeEel = (ExtensibilityElement)k.next();
-                                        if (mimeEel instanceof javax.wsdl.extensions.soap.SOAPBody ) {
-                                            javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)mimeEel;
-                                            ns = body.getNamespaceURI();
-                                        } else if (mimeEel instanceof javax.wsdl.extensions.soap12.SOAP12Body) {
-                                            javax.wsdl.extensions.soap12.SOAP12Body body = (javax.wsdl.extensions.soap12.SOAP12Body) mimeEel;
-                                            ns = body.getNamespaceURI();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (ns == null) ns = wsdl.getDefinition().getTargetNamespace();
-                    if (payload.getLocalName().equals(bindingOperation.getName()) &&
-                            bothNullOrEqual(payload.getNamespaceURI(), ns)) {
-                        if (operation != null && operation != candidateOperation) {
-                            warnMultipleOperations(payload, wsdl);
-                        }
-                        operation = candidateOperation;
-                    }
-                }
-
-                // Try to match the abstract Operation's input message
-                Input input = candidateOperation.getInput();
-                javax.wsdl.Message inputMessage = null;
-                if (input != null) {
-                    inputMessage = input.getMessage();
-                    QName expectedElementQname = inputMessage.getQName();
-                    if (payload != null && expectedElementQname != null) {
-                        if (bothNullOrEqual(payload.getNamespaceURI(), expectedElementQname.getNamespaceURI())) {
-                            if (bothNullOrEqual(payload.getLocalName(), expectedElementQname.getLocalPart())) {
-                                if (operation != null && operation != candidateOperation) {
-                                    warnMultipleOperations(payload, wsdl);
-                                }
-                                operation = candidateOperation;
-                            }
-                        }
-                    }
-
-                    // Try to match message parts
-                    Map parts = inputMessage.getParts();
-                    for (Iterator j = parts.keySet().iterator(); j.hasNext();) {
-                        String partName = (String)j.next();
-                        Part part = (Part)inputMessage.getParts().get(partName);
-                        QName elementName = part.getElementName();
-                        if (elementName != null && payload != null &&
-                                bothNullOrEqual(elementName.getLocalPart(), payload.getLocalName()) &&
-                                bothNullOrEqual(elementName.getNamespaceURI(), payload.getNamespaceURI()) )
-                        {
-                            if (operation != null && operation != candidateOperation) {
-                                warnMultipleOperations(payload, wsdl);
-                            }
-                            operation = candidateOperation;
-                        }
-                    }
-                }
-            }
-
-            // Finally try to match based on SOAPAction
-            if (operation == null) {
-                HttpRequestKnob requestHttp = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
-                String requestSoapAction = requestHttp == null ? null : stripQuotes(requestHttp.getHeaderSingleValue(SOAPACTION));
-                List matchingOperationsBySoapAction = new ArrayList();
-                for (Iterator i = bindingOperations.iterator(); i.hasNext();) {
-                    BindingOperation bindingOperation = (BindingOperation)i.next();
-
-                    String candidateSoapAction = stripQuotes(findSoapAction(bindingOperation));
-                    Operation candidateOperation = bindingOperation.getOperation();
-                    if (candidateSoapAction != null && candidateSoapAction.length() > 0 &&
-                            candidateSoapAction.equals(requestSoapAction)) {
-                        matchingOperationsBySoapAction.add(candidateOperation);
-                    }
-                }
-
-                if (matchingOperationsBySoapAction.size() == 1) {
-                    operation = (Operation)matchingOperationsBySoapAction.get(0);
-                }
-            }
-        }
-
-        if (!foundSoapBinding) {
-            log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
-            return null;
-        }
-
-        return operation;
-    }*/
 
     /**
      * Narrows a list of candidate wsdl operations by matching them against a soapaction
