@@ -192,10 +192,6 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
                 String msg = "Error in CertificateFactory.getInstance";
                 logger.log(Level.WARNING, msg, e);
                 throw new FindException(msg, e);
-            } catch (IOException e) {
-                String msg = "Error in base64decoder.decodeBuffer";
-                logger.log(Level.WARNING, msg, e);
-                throw new FindException(msg, e);
             }
         } else {
             logger.finest("no entry for " + getName(user) + " in provider " + user.getProviderId());

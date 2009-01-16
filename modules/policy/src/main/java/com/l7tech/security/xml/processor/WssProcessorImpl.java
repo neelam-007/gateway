@@ -1211,7 +1211,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processBinarySecurityToken(final Element binarySecurityTokenElement)
-            throws ProcessorException, GeneralSecurityException, InvalidDocumentFormatException
+            throws ProcessorException, GeneralSecurityException
     {
         if(logger.isLoggable(Level.FINEST)) logger.finest("Processing BinarySecurityToken");
 
@@ -1233,11 +1233,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         final byte[] decodedValue; // must strip whitespace or base64 decoder misbehaves
-        try {
-            decodedValue = HexUtils.decodeBase64(value, true);
-        } catch (IOException e) {
-            throw new InvalidDocumentFormatException("Unable to parse base64 BinarySecurityToken", e);
-        }
+        decodedValue = HexUtils.decodeBase64(value, true);
 
         final String wsuId = SoapUtil.getElementWsuId(binarySecurityTokenElement);
         if(valueType.endsWith("X509v3")) {

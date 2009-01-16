@@ -15,7 +15,6 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
@@ -648,12 +647,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         if (persistPassword == null)
             return null;
 
-        try {
-            return new String(HexUtils.decodeBase64(new String(persistPassword))).toCharArray();
-        } catch (IOException e) {
-            log.log(Level.SEVERE, "Unable to recover persisted password", e);
-            return null;
-        }
+        return new String(HexUtils.decodeBase64(new String(persistPassword))).toCharArray();
     }
 
     public void notifyPolicyUpdate(Policy policy) {

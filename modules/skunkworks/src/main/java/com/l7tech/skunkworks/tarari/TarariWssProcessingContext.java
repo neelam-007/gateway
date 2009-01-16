@@ -188,11 +188,7 @@ class TarariWssProcessingContext {
                             } else if ("DigestMethod".equals(lname)) {
                                 ref.digestAlgorithm = ec.getAttributeValue("Algorithm");
                             } else if ("DigestValue".equals(lname)) {
-                                try {
-                                    ref.referenceDigestValue = HexUtils.decodeBase64(ec.getTextValue(), true);
-                                } catch (IOException e) {
-                                    throw new InvalidDocumentFormatException(e);
-                                }
+                                ref.referenceDigestValue = HexUtils.decodeBase64(ec.getTextValue(), true);
                             }
                         }
                     });
@@ -250,8 +246,6 @@ class TarariWssProcessingContext {
                                 try {
                                     bytes = HexUtils.decodeBase64(b64, true);
                                     signingCert[0] = CertUtils.decodeCert(bytes);
-                                } catch (IOException e) {
-                                    throw new InvalidDocumentFormatException(e);
                                 } catch (CertificateException e) {
                                     throw new RuntimeException(e);
                                 }

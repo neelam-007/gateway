@@ -94,9 +94,6 @@ public class EncryptionUtil {
             CharsetDecoder decoder = utf8Charset.newDecoder();
             return decoder.decode(ByteBuffer.wrap(dataBytes)).toString();
         }
-        catch(UnsupportedEncodingException uue) {
-            throw new RuntimeException("Platform must support default encoding.", uue);
-        }
         catch(CharacterCodingException cce) {
             throw new IllegalArgumentException("Cannot decode data.", cce);
         }

@@ -32,7 +32,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateEncodingException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.io.IOException;
 
 /**
  * Corresponding GUI for the {@link com.l7tech.console.action.EditXmlSecurityRecipientContextAction} action.
@@ -224,8 +223,6 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                                                             xsecass.getRecipientContext().getBase64edX509Certificate(), true));
                     } catch (CertificateException e) {
                         throw new RuntimeException(e); // should not happen
-                    } catch (IOException e) {
-                        throw new RuntimeException(e); // should not happen
                     }
                     xmlSecRecipientsFromOtherAssertions.put(existingactor, existingcert);
                 }
@@ -261,8 +258,6 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                                                         assertion.getRecipientContext().getBase64edX509Certificate(), true));
 
                 } catch (CertificateException e) {
-                    throw new RuntimeException(e); // should not happen
-                } catch (IOException e) {
                     throw new RuntimeException(e); // should not happen
                 }
                 certSubject.setText(locallyDefinedRecipient.getSubjectDN().getName());

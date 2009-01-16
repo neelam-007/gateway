@@ -155,12 +155,7 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
 
     public X509Certificate getTokenServerCert() throws CertificateException {
         if (tokenServerCert == null && tokenServerCertB64 != null && tokenServerCertB64.length() > 0) {
-            try {
-                tokenServerCert = CertUtils.decodeCert(HexUtils.decodeBase64(tokenServerCertB64, true));
-            } catch (IOException e) {
-                throw (CertificateException)new CertificateException(
-                        "Unable to decode stores Base64 token server certificate: " + e.getMessage()).initCause(e);
-            }
+            tokenServerCert = CertUtils.decodeCert(HexUtils.decodeBase64(tokenServerCertB64, true));
         }
         return tokenServerCert;
     }

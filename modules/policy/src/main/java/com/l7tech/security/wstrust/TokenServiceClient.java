@@ -583,11 +583,7 @@ public class TokenServiceClient {
             sharedSecret = XencUtil.decryptKey(encryptedKeyEl, clientPrivateKey);
         } else if (binarySecretEl != null && clientPrivateKey == null) {
             String base64edsecret = DomUtils.getTextValue(binarySecretEl);
-            try {
-                sharedSecret = HexUtils.decodeBase64(base64edsecret, true);
-            } catch (IOException e) {
-                throw new InvalidDocumentFormatException(e);
-            }
+            sharedSecret = HexUtils.decodeBase64(base64edsecret, true);
         } else if (binarySecretEl != null) {
             throw new InvalidDocumentFormatException("Response RequestedProofToken contained a BinarySecret element " +
                                                      "but should contain an EncryptedKey instead since this client has " +

@@ -292,12 +292,8 @@ public class XencUtil {
         Element oaepParamsEle = DomUtils.findOnlyOneChildElementByName(encryptionMethodEl,
                                                                       SoapConstants.XMLENC_NS,
                                                                       "OAEPparams"); // not OAEPParams
-        try {
-            String oaepParams = oaepParamsEle == null ? null : DomUtils.getTextValue(oaepParamsEle);
-            return oaepParams == null ? new byte[0] : HexUtils.decodeBase64(oaepParams);
-        } catch(IOException ioe) {
-            throw new InvalidDocumentFormatException("Wrapped key has invalid OAEPparams value");
-        }
+        String oaepParams = oaepParamsEle == null ? null : DomUtils.getTextValue(oaepParamsEle);
+        return oaepParams == null ? new byte[0] : HexUtils.decodeBase64(oaepParams);
     }
 
 
@@ -333,11 +329,7 @@ public class XencUtil {
     public static byte[] decryptKey(String b64edEncryptedKey, byte[] oaepParams, PrivateKey recipientKey)
             throws InvalidDocumentFormatException, GeneralSecurityException
     {
-        try {
-            return decryptKey(HexUtils.decodeBase64(b64edEncryptedKey, true), oaepParams, recipientKey);
-        } catch (IOException e) {
-            throw new InvalidDocumentFormatException("Unable to parse base64 EncryptedKey CipherValue", e);
-        }
+        return decryptKey(HexUtils.decodeBase64(b64edEncryptedKey, true), oaepParams, recipientKey);
     }
 
 

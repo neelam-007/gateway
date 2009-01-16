@@ -81,7 +81,7 @@ public class HexUtils {
         return decodeUtf8(Base64.encodeBase64(binaryData, !stripWhitespace)).trim();
     }
 
-    public static byte[] decodeBase64(String s) throws IOException {
+    public static byte[] decodeBase64(String s) {
         return Base64.decodeBase64(encodeUtf8(s));
     }
 
@@ -92,9 +92,8 @@ public class HexUtils {
      * @param stripWhitespaceFirst  if true, strip whitespace that might confuse the decoder.  Currently ignored.
      * @return the decoded bytes
      * @noinspection UnusedDeclaration
-     * @throws java.io.IOException  if the base64 is not well formed
      */
-    public static byte[] decodeBase64(String s, boolean stripWhitespaceFirst) throws IOException {
+    public static byte[] decodeBase64(String s, boolean stripWhitespaceFirst) {
         // The 'stripWhitespaceFirst' param used to remove whitespace before
         // passing to suns BASE64Decoder.
         //

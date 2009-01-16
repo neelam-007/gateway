@@ -11,7 +11,6 @@ import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -218,8 +217,6 @@ public abstract class X509Entity extends PersistentEntityImp {
             cert = CertUtils.decodeCert(HexUtils.decodeBase64(certBase64));
         } catch (CertificateException e) {
             logger.log(Level.WARNING, "Following cert cannot be decoded and may be corrupted (bad ASN.1): " + certBase64, e);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Following cert cannot be decoded and may be corrupted (bad Base64): " + certBase64, e);
         }
         setCertificate(cert, false);
     }

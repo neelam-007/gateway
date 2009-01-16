@@ -4,7 +4,6 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.HexUtils;
 
 import java.io.Serializable;
-import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 
@@ -70,8 +69,6 @@ public class XmlSecurityRecipientContext implements Serializable {
                                        ? null
                                        : CertUtils.decodeCert(HexUtils.decodeBase64(base64edX509Certificate, true));
         } catch (CertificateException e) {
-            throw new IllegalArgumentException("Bad certificate", e);
-        } catch (IOException e) {
             throw new IllegalArgumentException("Bad certificate", e);
         }
     }

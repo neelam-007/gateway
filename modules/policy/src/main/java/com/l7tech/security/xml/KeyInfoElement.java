@@ -302,11 +302,7 @@ public class KeyInfoElement implements ParsedElement {
             return null;
         }
 
-        try {
-            return CertUtils.decodeCert(HexUtils.decodeBase64(DomUtils.getTextValue(x509CertEle)));
-        } catch (IOException e) {
-            throw new CertificateException("Invalid certificate in X509Data", e);
-        }
+        return CertUtils.decodeCert(HexUtils.decodeBase64(DomUtils.getTextValue(x509CertEle)));
     }
 
     /**
@@ -393,11 +389,7 @@ public class KeyInfoElement implements ParsedElement {
             } else if (valueType.endsWith( SoapConstants.VALUETYPE_X509_SUFFIX)) {
                 // It seems to be a complete certificate
                 byte[] keyIdValueBytes;
-                try {
-                    keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue, true);
-                } catch (IOException e) {
-                    throw new InvalidDocumentFormatException("Unable to parse base64 Key Identifier", e);
-                }
+                keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue, true);
                 if (keyIdValueBytes == null || keyIdValueBytes.length < 1) throw new InvalidDocumentFormatException("KeyIdentifier was empty");
                 X509Certificate referencedCert = CertUtils.decodeCert(keyIdValueBytes);
                 SignerInfo found = securityTokenResolver.lookupPrivateKeyByCert(referencedCert);

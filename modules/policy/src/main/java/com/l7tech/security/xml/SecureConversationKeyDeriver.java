@@ -5,7 +5,6 @@ import org.w3c.dom.Element;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
@@ -109,11 +108,7 @@ public class SecureConversationKeyDeriver {
         nonce = DomUtils.getTextValue(nonceNode);
 
         final byte[] nonceA;
-        try {
-            nonceA = HexUtils.decodeBase64(nonce);
-        } catch (IOException e) {
-            throw new InvalidDocumentFormatException(e);
-        }
+        nonceA = HexUtils.decodeBase64(nonce);
 
         byte[] seed = new byte[label.length() + nonceA.length];
         System.arraycopy(label.getBytes(), 0, seed, 0, label.length());

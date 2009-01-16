@@ -211,8 +211,6 @@ public class ClusterPassphraseChanger {
             saltbytes = HexUtils.decodeBase64(b64edSalt);
             iterationCount = Integer.parseInt(strIterationCount);
             cipherbytes = HexUtils.decodeBase64(b64edCiphertext);
-        } catch ( IOException e ) {
-            throw new IOException("Invalid shared key format: " + b64edEncKey, e);
         } catch ( NumberFormatException nfe ) {
             throw new IOException("Invalid shared key format: " + b64edEncKey, nfe);
         }

@@ -116,8 +116,6 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
             logger.log(Level.WARNING, "Unable to update Kerberos config following cluster property change.", ke);
         } catch (ParseException pe) {
             logger.log(Level.WARNING, "Unable to update Kerberos config following cluster property change (decryption failed) '"+pe.getMessage()+"'.", ExceptionUtils.getDebugException(pe));
-        } catch (IOException ke) {
-            logger.log(Level.WARNING, "Unable to update Kerberos config following cluster property change (invalid data).", ExceptionUtils.getDebugException(ke));
         }
     }
 }
