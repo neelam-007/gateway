@@ -43,9 +43,9 @@ public class WsspRoundTripTest {
         System.out.println("Starting L7 policy:\n" + l7root + "\n\n");
 
         WsspWriter writer = new WsspWriter();
-        Policy bindingPolicy = writer.convertFromLayer7(l7root);
-        Policy requestPolicy = writer.convertFromLayer7(l7root, true);
-        Policy responsePolicy = writer.convertFromLayer7(l7root, false);
+        Policy bindingPolicy = writer.convertFromLayer7(l7root, false);
+        Policy requestPolicy = writer.convertFromLayer7(l7root, false, true);
+        Policy responsePolicy = writer.convertFromLayer7(l7root, false, false);
 
         System.out.println("WSP Binding policy:\n");
         WsspReaderTest.displayWispyPolicy(bindingPolicy, System.out);
@@ -92,7 +92,7 @@ public class WsspRoundTripTest {
         Document wsdlDoc = TestDocuments.getTestDocument(TestDocuments.WSDL);
 
         // Decorate it with the layer 7 policy
-        WsspWriter.decorate(wsdlDoc, l7root, null, null, null);
+        WsspWriter.decorate(wsdlDoc, l7root, false, null, null, null);
 
         // Send it to the SSB
         // ...
@@ -179,9 +179,9 @@ public class WsspRoundTripTest {
 
         // Convert back into WSSP format
         WsspWriter writer = new WsspWriter();
-        Policy bindingPolicy = writer.convertFromLayer7(ssbPolicy);
-        Policy requestPolicy = writer.convertFromLayer7(ssbPolicy, true);
-        Policy responsePolicy = writer.convertFromLayer7(ssbPolicy, false);
+        Policy bindingPolicy = writer.convertFromLayer7(ssbPolicy, false);
+        Policy requestPolicy = writer.convertFromLayer7(ssbPolicy, false, true);
+        Policy responsePolicy = writer.convertFromLayer7(ssbPolicy, false, false);
 
         System.out.println("WSP Binding policy:\n");
         WsspReaderTest.displayWispyPolicy(bindingPolicy, System.out);

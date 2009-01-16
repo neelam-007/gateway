@@ -76,14 +76,14 @@ public class WsspWriter {
      * @throws PolicyAssertionException if the policy cannot be converted to WS-SP
      * @throws SAXException if specified override XML is not well formed
      */
-    public static void decorate(Document wsdl, Assertion layer7Root, String overrideBasePolicyXml, String overrideInputPolicyXml, String overrideOutputPolicyXml) throws PolicyAssertionException, SAXException {
+    public static void decorate(Document wsdl, Assertion layer7Root, boolean isWss11, String overrideBasePolicyXml, String overrideInputPolicyXml, String overrideOutputPolicyXml) throws PolicyAssertionException, SAXException {
         addPreferredNamespacesIfAvailable(wsdl.getDocumentElement());
         WsspWriter wsspWriter = new WsspWriter();
 
         final String wsspId;
         final Element wsspElement;
         if (overrideBasePolicyXml == null) {
-            Policy wssp = wsspWriter.convertFromLayer7(layer7Root);
+            Policy wssp = wsspWriter.convertFromLayer7(layer7Root, isWss11);
             wssp.setId(SoapUtil.generateUniqueId("policy", 1));
             wsspElement = toElement(wsdl, wssp);
             wsspId = wssp.getId();
@@ -95,7 +95,7 @@ public class WsspWriter {
         final String inputWsspId;
         final Element inputWsspElement;
         if (overrideInputPolicyXml == null) {
-            Policy inputWssp = wsspWriter.convertFromLayer7(layer7Root, true);
+            Policy inputWssp = wsspWriter.convertFromLayer7(layer7Root, isWss11, true);
             inputWssp.setId( SoapUtil.generateUniqueId("policy", 2));
             inputWsspElement = toElement(wsdl, inputWssp);
             inputWsspId = inputWssp.getId();
@@ -107,7 +107,7 @@ public class WsspWriter {
         final String outputWsspId;
         final Element outputWsspElement;
         if (overrideOutputPolicyXml == null) {
-            Policy outputWssp = wsspWriter.convertFromLayer7(layer7Root, false);
+            Policy outputWssp = wsspWriter.convertFromLayer7(layer7Root, isWss11, false);
             outputWssp.setId(SoapUtil.generateUniqueId("policy", 3));
             outputWsspElement = toElement(wsdl, outputWssp);
             outputWsspId = outputWssp.getId();
@@ -172,9 +172,10 @@ public class WsspWriter {
      * is lost.</p>
      *
      * @param layer7Root the layer 7 policy tree to convert. Must not be null.
+     * @param isWss11 true to use WSS 1.1
      * @return  the converted Apache Policy.  Never null.
      */
-    public Policy convertFromLayer7(Assertion layer7Root) throws PolicyAssertionException {
+    public Policy convertFromLayer7(Assertion layer7Root, boolean isWss11) throws PolicyAssertionException {
         if(!(layer7Root instanceof AllAssertion)) {
             throw new IllegalArgumentException("Assertion must be AllAssertion!");
         }
@@ -191,35 +192,23 @@ public class WsspWriter {
 
         // Construct the Policy
         if (isSymmetricBinding(l7Assertions)) {
-            buildSymmetricBinding(wssp, algorithmSuite, l7Assertions);
+            buildSymmetricBinding(wssp, algorithmSuite, isWss11, l7Assertions);
         } else if (isAsymmetricBinding(l7Assertions)) {
-            buildAsymmetricBinding(wssp, algorithmSuite);
+            buildAsymmetricBinding(wssp, algorithmSuite, isWss11);
         } else if (isTransportBinding(l7Assertions)) {
-            buildTransportBinding(wssp, algorithmSuite, l7Assertions);
-            wssp.addTerm(buildWss10());
+            buildTransportBinding(wssp, algorithmSuite, isWss11, l7Assertions);
         }
-
-        boolean ssl = isSslPolicy(l7Assertions);
-
-        if (containsInstanceOf(l7Assertions, WssBasic.class)) {
-            buildSupportingToken(wssp, ssl, false);
-        }
-
-        if (containsInstanceOf(l7Assertions, WssDigest.class)) {
-            buildSupportingToken(wssp, ssl, true);
-        }
-
 
         return wssp;
     }
 
-    private void buildSupportingToken(Policy wssp, boolean ssl, boolean digest) {
+    private void buildSupportingToken(org.apache.ws.policy.Assertion wssp, boolean ssl, boolean digest, boolean wss11) {
         String supportingTokenEleName = ssl ? SPELE_SIGNED_SUPPORTING_TOKENS : SPELE_SUPPORTING_TOKENS;
         PrimitiveAssertion supportingTokens = prim(supportingTokenEleName);
         Policy supportingTokensPolicy = new Policy();
         supportingTokens.addTerm(supportingTokensPolicy);
 
-        supportingTokensPolicy.addTerm(buildUsernameToken(digest));
+        supportingTokensPolicy.addTerm(buildUsernameToken(digest,wss11));
 
         wssp.addTerm(supportingTokens);
     }
@@ -237,10 +226,12 @@ public class WsspWriter {
      * TODO policies for operation instances (rather than jus in / out)
      *
      * @param layer7Root  the layer 7 policy tree to convert.  Must not be null.
+     * @param isWss11 true to use WSS 1.1
      * @param isInput true if this is the input message
      * @return  the converted Apache Policy.  Never null.
      */
-    public Policy convertFromLayer7(Assertion layer7Root, boolean isInput) throws PolicyAssertionException {
+    @SuppressWarnings({"UnusedDeclaration"})
+    public Policy convertFromLayer7(Assertion layer7Root, boolean isWss11, boolean isInput) throws PolicyAssertionException {
         if(!(layer7Root instanceof AllAssertion)) {
             throw new IllegalArgumentException("Assertion must be AllAssertion!");
         }
@@ -295,40 +286,40 @@ public class WsspWriter {
     private static final int ALGORITHM_SUITE_TRIPLEDES_RSAOAEP = 8;
 
     // namespaces / prefix
-    private static final boolean USE_NEW_WSSP_NS = SyspropUtil.getBoolean("com.l7tech.policy.wssp.useNewWsspNs", true);
-    private static final String SP_NS_NEW = "http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200702";
-    private static final String SP_NS_OLD = "http://schemas.xmlsoap.org/ws/2005/07/securitypolicy";
-    private static final String SP_NS = USE_NEW_WSSP_NS ? SP_NS_NEW : SP_NS_OLD;
+    private static final String DEFAULT_WSSP_VERSION = SyspropUtil.getString("com.l7tech.policy.wssp.defaultVersion", "1.1");
+    private static final String DEFAULT_WSP_VERSION = SyspropUtil.getString("com.l7tech.policy.wsp.defaultVersion", "1.2");
+
+    private static final String SP12_NS = "http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200702";
+    private static final String SP11_NS = "http://schemas.xmlsoap.org/ws/2005/07/securitypolicy";
     private static final String SP_PREFIX = "sp";
 
+    public static final String WSP12_NS = "http://schemas.xmlsoap.org/ws/2004/09/policy";
+    public static final String WSP15_NS = "http://www.w3.org/ns/ws-policy";
     private static final String WSP_PREFIX = "wsp";
-
-    private static final String SP13_NS = "http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200802";
-    private static final String SP13_PREFIX = "sp13";
 
     private static final String WSU_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
     private static final String WSU_PREFIX = "wsu";
 
-    private static final boolean USE_NEW_WSP_NS = SyspropUtil.getBoolean("com.l7tech.policy.wssp.useNewWspNs", true);
-    public static final String WSP_NS_OLD = "http://schemas.xmlsoap.org/ws/2004/09/policy";
-    public static final String WSP_NS_NEW = "http://www.w3.org/ns/ws-policy";
-    public static final String WSP_NS = USE_NEW_WSP_NS ? WSP_NS_NEW : WSP_NS_OLD;
+    public static final String WSP_NS = DEFAULT_WSP_VERSION.equals("1.5") ? WSP15_NS : WSP12_NS;
+    public static final String SP_NS = DEFAULT_WSSP_VERSION.equals("1.2") ? SP12_NS : SP11_NS;    
 
     private static final String[][] PREFERRED_NAMESPACE_PREFIXES = new String[][] {
             {WSP_PREFIX, WSP_NS},
             {WSU_PREFIX, WSU_NS},
             {SP_PREFIX, SP_NS},
-            {SP13_PREFIX, SP13_NS}
     };
 
     // Security Policy Elements
     private static final String SPELE_TOKEN_RECIPIENT = "RecipientToken";
     private static final String SPELE_TOKEN_X509 = "X509Token";
     private static final String SPELE_TOKEN_X509_WSS10 = "WssX509V3Token10";
+    private static final String SPELE_TOKEN_X509_WSS11 = "WssX509V3Token11";
     private static final String SPELE_TOKEN_TRANSPORT = "TransportToken";
     private static final String SPELE_TOKEN_PROTECTION = "ProtectionToken";
     private static final String SPELE_TOKEN_TRANSPORT_HTTPS = "HttpsToken";
     private static final String SPELE_TOKEN_USERNAME = "UsernameToken";
+    private static final String SPELE_TOKEN_USERNAME10 = "WssUsernameToken10";
+    private static final String SPELE_TOKEN_USERNAME11 = "WssUsernameToken11";
     private static final String SPELE_HASH_PASSWORD = "HashPassword";
     private static final String SPELE_TOKEN_INITIATOR = "InitiatorToken";
     private static final String SPELE_LAYOUT = "Layout";
@@ -341,6 +332,8 @@ public class WsspWriter {
     private static final String SPELE_WSS10 = "Wss10";
     private static final String SPELE_MUSTSUPPORT_REF_KEY_ID = "MustSupportRefKeyIdentifier";
     private static final String SPELE_MUSTSUPPORT_REF_ISSUER_SERIAL = "MustSupportRefIssuerSerial";
+    private static final String SPELE_WSS11 = "Wss11";
+    private static final String SPELE_REQUIRE_SIGNATURE_CONFIRMATION = "RequireSignatureConfirmation";
     private static final String SPELE_ALGORITHM_SUITE = "AlgorithmSuite";
     private static final String SPELE_ALGORITHMSUITE_BASIC128RSAOAEP = "Basic128";
     private static final String SPELE_ALGORITHMSUITE_BASIC192RSAOAEP = "Basic192";
@@ -644,11 +637,16 @@ public class WsspWriter {
      * Build a username token
      * @param digest
      */
-    private org.apache.ws.policy.Assertion buildUsernameToken(boolean digest) {
+    private org.apache.ws.policy.Assertion buildUsernameToken(boolean digest, boolean wss11) {
         PrimitiveAssertion usernameToken = prim(SPELE_TOKEN_USERNAME);
         usernameToken.addAttribute(qname(SPATTR_INCL_TOKEN), SPVALUE_INCL_TOKEN_ALWAYSTORECIPIENT);
+
+        Policy usernameTokenPolicy = new Policy();        
         if (digest)
-            usernameToken.addTerm(prim(SPELE_HASH_PASSWORD));
+            usernameTokenPolicy.addTerm(prim(SPELE_HASH_PASSWORD));
+        usernameTokenPolicy.addTerm(prim(wss11 ? SPELE_TOKEN_USERNAME11 : SPELE_TOKEN_USERNAME10));
+        usernameToken.addTerm(usernameTokenPolicy);
+
         return usernameToken;
     }
 
@@ -667,39 +665,55 @@ public class WsspWriter {
     }
 
     /**
+     * Build a Wss 1.1 assertion
+     */
+    private org.apache.ws.policy.Assertion buildWss11() {
+        PrimitiveAssertion wss11 = prim(SPELE_WSS11);
+        Policy wss11Policy = new Policy();
+        wss11.addTerm(wss11Policy);
+
+        wss11Policy.addTerm(prim(SPELE_MUSTSUPPORT_REF_KEY_ID));
+        wss11Policy.addTerm(prim(SPELE_MUSTSUPPORT_REF_ISSUER_SERIAL));
+        wss11Policy.addTerm(prim(SPELE_REQUIRE_SIGNATURE_CONFIRMATION));
+
+        return wss11;
+    }
+
+    /**
      * Build an asymmetric binding assertion and siblings, attach to the given assertion
      */
-    private void buildAsymmetricBinding(org.apache.ws.policy.Assertion assertion, int algorithmSuite) {
+    private void buildAsymmetricBinding(org.apache.ws.policy.Assertion assertion, int algorithmSuite, boolean wss11) {
         QName name = qname(SPELE_BINDING_ASYMMETRIC);
         PrimitiveAssertion binding = new PrimitiveAssertion(name);
 
         Policy bindingPolicy = new Policy();
         binding.addTerm(bindingPolicy);
 
-        bindingPolicy.addTerm(buildX509Token(SPELE_TOKEN_RECIPIENT, SPELE_TOKEN_X509_WSS10, SPVALUE_INCL_TOKEN_NEVER));
-        bindingPolicy.addTerm(buildX509Token(SPELE_TOKEN_INITIATOR, SPELE_TOKEN_X509_WSS10, SPVALUE_INCL_TOKEN_ALWAYSTORECIPIENT));
+        bindingPolicy.addTerm(buildX509Token(SPELE_TOKEN_RECIPIENT, wss11 ? SPELE_TOKEN_X509_WSS11 : SPELE_TOKEN_X509_WSS10, SPVALUE_INCL_TOKEN_NEVER));
+        bindingPolicy.addTerm(buildX509Token(SPELE_TOKEN_INITIATOR, wss11 ? SPELE_TOKEN_X509_WSS11 : SPELE_TOKEN_X509_WSS10, SPVALUE_INCL_TOKEN_ALWAYSTORECIPIENT));
         bindingPolicy.addTerm(buildAlgorithmSuite(algorithmSuite));
         bindingPolicy.addTerm(buildLayout());
         bindingPolicy.addTerm(prim(SPELE_TIMESTAMP));
         bindingPolicy.addTerm(prim(SPELE_SIGN_HEADERS_BODY));
 
         assertion.addTerm(binding);
-        assertion.addTerm(buildWss10());
+        assertion.addTerm( wss11? buildWss11() : buildWss10());
     }
 
     /**
      * Build a symmetric binding assertion and siblings, attach to given assertion
      */
-    private void buildSymmetricBinding(org.apache.ws.policy.Assertion assertion, int algorithmSuite, Collection l7Assertions) {
+    private void buildSymmetricBinding(org.apache.ws.policy.Assertion assertion, int algorithmSuite, boolean wss11, Collection<Assertion> l7Assertions) {
         QName name = qname(SPELE_BINDING_SYMMETRIC);
         PrimitiveAssertion binding = new PrimitiveAssertion(name);
 
         Policy bindingPolicy = new Policy();
         binding.addTerm(bindingPolicy);
 
+        boolean isSc = false;
         if (containsInstanceOf(l7Assertions, SecureConversation.class)) {
-            SecureConversation secureConv = getInstanceOf(l7Assertions, SecureConversation.class);
-            bindingPolicy.addTerm(buildProtectionToken(secureConv));
+            isSc = true;
+            bindingPolicy.addTerm(buildProtectionToken());
             // TODO add sp:Trust13 assertion as next-sibling of SymmetricBinding
         }
 
@@ -711,6 +725,17 @@ public class WsspWriter {
         }
 
         assertion.addTerm(binding);
+
+        if ( !isSc ) {
+            boolean ssl = isSslPolicy(l7Assertions);
+            if (containsInstanceOf(l7Assertions, WssBasic.class)) {
+                buildSupportingToken(assertion, ssl, false, wss11);
+            } else if (containsInstanceOf(l7Assertions, WssDigest.class)) {
+                buildSupportingToken(assertion, ssl, true, wss11);
+            }
+        }
+
+        assertion.addTerm(wss11 ? buildWss11() : buildWss10());
     }
 
     private PrimitiveAssertion prim(String name) {
@@ -721,7 +746,7 @@ public class WsspWriter {
         return new PrimitiveAssertion(new QName(nsUri, name, nsPrefix));
     }
 
-    private PrimitiveAssertion buildProtectionToken(SecureConversation secureConv) {
+    private PrimitiveAssertion buildProtectionToken() {
         PrimitiveAssertion protToken = prim(SPELE_TOKEN_PROTECTION);
         Policy protTokenPolicy = new Policy();
         protToken.addTerm(protTokenPolicy);
@@ -741,7 +766,7 @@ public class WsspWriter {
     /**
      * Build a transport binding assertion and siblings, attach to the given assertion
      */
-    private void buildTransportBinding(org.apache.ws.policy.Assertion assertion, int algorithmSuite, Collection l7Assertions) {
+    private void buildTransportBinding(org.apache.ws.policy.Assertion assertion, int algorithmSuite, boolean wss11, Collection<Assertion> l7Assertions) {
         PrimitiveAssertion binding = prim(SPELE_BINDING_TRANSPORT);
 
         Policy bindingPolicy = new Policy();
@@ -760,6 +785,18 @@ public class WsspWriter {
         }
 
         assertion.addTerm(binding);
+
+        boolean ssl = isSslPolicy(l7Assertions);
+        boolean wss = false;
+        if (containsInstanceOf(l7Assertions, WssBasic.class)) {
+            wss = true;
+            buildSupportingToken(assertion, ssl, false, wss11);
+        } else if (containsInstanceOf(l7Assertions, WssDigest.class)) {
+            wss = true;
+            buildSupportingToken(assertion, ssl, true, wss11);
+        }
+
+        if ( wss ) assertion.addTerm(wss11 ? buildWss11() : buildWss10());
     }
 
     /**
@@ -961,8 +998,8 @@ public class WsspWriter {
     }
 
     public static String policyToXml(Policy p) throws PolicyAssertionException {
-        if (USE_NEW_WSP_NS)
-            return policyToXml(p, WSP_NS_OLD, WSP_NS_NEW);
+        if ( !WSP12_NS.equals( WSP_NS ) )
+            return policyToXml(p, WSP12_NS, WSP_NS);
         else
             return policyToXml(p, null, null);
     }

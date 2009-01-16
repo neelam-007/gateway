@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.WsspAssertion;
+import com.l7tech.policy.assertion.xmlsec.WssVersionAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -506,6 +507,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             // remove any existing policy
             XmlUtil.stripNamespace(wsdl.getDocumentElement(), SoapConstants.WSP_NAMESPACE2);
 
+            boolean wss11 = Assertion.contains(rootassertion, WssVersionAssertion.class);
             Assertion effectivePolicy = wsspFilterManager.applyAllFilters(null, rootassertion);
             if (effectivePolicy != null) {
                     if (logger.isLoggable(Level.FINEST)) {
@@ -514,6 +516,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
                     WsspWriter.decorate(wsdl,
                             effectivePolicy,
+                            wss11,
                             wsspAssertion.getBasePolicyXml(),
                             wsspAssertion.getInputPolicyXml(),
                             wsspAssertion.getOutputPolicyXml());

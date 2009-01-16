@@ -78,7 +78,7 @@ public class WsspWriterTest {
 
     @Test
     public void testDOMWrite() throws Exception {
-        Policy wssp = new WsspWriter().convertFromLayer7(WspReader.getDefault().parsePermissively( XmlUtil.stringToDocument(L7_POLICY_T1).getDocumentElement()));
+        Policy wssp = new WsspWriter().convertFromLayer7(WspReader.getDefault().parsePermissively( XmlUtil.stringToDocument(L7_POLICY_T1).getDocumentElement()), false);
         StAXPolicyWriter pw = (StAXPolicyWriter) PolicyFactory.getPolicyWriter(PolicyFactory.StAX_POLICY_WRITER);
         pw.writePolicy(wssp, (XMLStreamWriter)Proxy.newProxyInstance(WsspWriterTest.class.getClassLoader(), new Class[]{XMLStreamWriter.class}, new InvocationHandler(){
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -94,13 +94,13 @@ public class WsspWriterTest {
     @Test
     public void testDecorateWsdl() throws Exception {
         final Document doc = XmlUtil.stringToDocument(PING_WSDL);
-        WsspWriter.decorate(doc, parseL7(L7_POLICY_T1), null, null, null);
+        WsspWriter.decorate(doc, parseL7(L7_POLICY_T1), false, null, null, null);
         System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(XmlUtil.nodeToString(doc))));
     }
 
     private void test(String l7policyXmlStr) throws Exception {
         Assertion ass = parseL7(l7policyXmlStr);
-        Policy p = new WsspWriter().convertFromLayer7(ass);
+        Policy p = new WsspWriter().convertFromLayer7(ass, false);
         String policyDocStr = WsspWriter.policyToXml(p);
         System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(policyDocStr)));
     }
