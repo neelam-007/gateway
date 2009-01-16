@@ -153,7 +153,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE = "authCacheSuccessCacheSize";
     public static final String PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE = "authCacheFailureCacheSize";
     public static final String PARAM_AUTH_CACHE_MAX_SUCCESS_TIME = "authCacheMaxSuccessTime";
-    public static final String PARAM_AUTH_CACHE_MAX_FAILURE_TIME = "authCacheMaxSuccessTime";
+    public static final String PARAM_AUTH_CACHE_MAX_FAILURE_TIME = "authCacheMaxFailureTime";
     public static final String PARAM_AUTH_CACHE_GROUP_MEMB_CACHE_SIZE = "authCacheGroupMembershipCacheSize";
 
     public static final String PARAM_PRINCIPAL_SESSION_CACHE_SIZE = "principalSessionCacheSize";
