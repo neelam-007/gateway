@@ -44,7 +44,7 @@ import java.io.IOException;
  * @author $Author$
  * @version $Revision$
  */
-public class ConfigurableLogFormatter extends Formatter {
+public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
 
     // - PUBLIC
 
@@ -93,6 +93,10 @@ public class ConfigurableLogFormatter extends Formatter {
         }
         // Note that you need to edit the EXCEPTION_ARG if you change the exception index
         Object[] formatArgs =  new Object[]{new Long(time), level.getName(), new FormattableLoggerName(name), message, new Integer(threadId), toMethodString(record), toString(thrown)};
+
+        if ( thrown != null && !isLoggableException( record.getLoggerName() ) ) {
+            thrown = null;
+        }
 
         String selectedFormat = null;
         boolean standardFormat = true;
