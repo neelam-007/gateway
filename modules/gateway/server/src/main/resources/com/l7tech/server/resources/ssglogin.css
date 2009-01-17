@@ -4,7 +4,7 @@
   }
 
   .title {
-      height: 34px;
+      min-height: 34px;
       color: #6a737b;
       text-indent: 40px;
       font-weight: bold;
