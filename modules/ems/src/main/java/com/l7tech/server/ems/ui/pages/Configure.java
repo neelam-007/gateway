@@ -184,24 +184,24 @@ public class Configure extends EsmStandardWebPage {
         addFolderForm.add(addFolderDialogInputParentId);
         addFolderForm.add(addFolderInputName);
 
-        final HiddenField renameFolderDialogInputId = new HiddenField("renameFolderDialog_id", new Model(""));
-        final RequiredTextField renameFolderInputName = new RequiredTextField("renameFolderDialog_name", new Model(""));
-        Form renameFolderForm = new JsonDataResponseForm("renameFolderForm", new AttemptedUpdateAny( EntityType.ESM_ENTERPRISE_FOLDER )){
+        final HiddenField editFolderDialogInputId = new HiddenField("editFolderDialog_id", new Model(""));
+        final RequiredTextField editFolderInputName = new RequiredTextField("editFolderDialog_name", new Model(""));
+        Form editFolderForm = new JsonDataResponseForm("editFolderForm", new AttemptedUpdateAny( EntityType.ESM_ENTERPRISE_FOLDER )){
             @Override
             protected Object getJsonResponseData() {
-                String renamedFolderGuid = (String)renameFolderDialogInputId.getConvertedInput();
-                String newFolderName = (String)renameFolderInputName.getConvertedInput();
+                String editedFolderGuid = (String)editFolderDialogInputId.getConvertedInput();
+                String newFolderName = (String)editFolderInputName.getConvertedInput();
                 try {
-                    logger.fine("Renaming folder (GUID = "+ renamedFolderGuid + ") with a new name, " + newFolderName);
+                    logger.fine("Editing folder (GUID = "+ editedFolderGuid + ") by changing a new name, " + newFolderName);
 
-                    enterpriseFolderManager.renameByGuid(newFolderName, renamedFolderGuid);
+                    enterpriseFolderManager.renameByGuid(newFolderName, editedFolderGuid);
                     return null;    // No response object expected if successful.
                 } catch (Exception e) {
                     logger.warning(e.toString());
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                         try {
-                            EnterpriseFolder renamedFolder = enterpriseFolderManager.findByGuid(renamedFolderGuid);
-                            EnterpriseFolder parentFolder = renamedFolder.getParentFolder();
+                            EnterpriseFolder editedFolder = enterpriseFolderManager.findByGuid(editedFolderGuid);
+                            EnterpriseFolder parentFolder = editedFolder.getParentFolder();
                             String errorMsg = "A folder with the name '" + newFolderName + "' already exists in the folder '"
                                 + parentFolder.getName() + "'.<br/>Please specify a different name.";
                             return new JSONException(new DuplicateObjectException(errorMsg, e));
@@ -214,8 +214,8 @@ public class Configure extends EsmStandardWebPage {
                 }
             }
         };
-        renameFolderForm.add(renameFolderDialogInputId);
-        renameFolderForm.add(renameFolderInputName);
+        editFolderForm.add(editFolderDialogInputId);
+        editFolderForm.add(editFolderInputName);
 
         final HiddenField deleteFolderDialogInputId = new HiddenField("deleteFolderDialog_id", new Model(""));
         Form deleteFolderForm = new JsonDataResponseForm("deleteFolderForm", new AttemptedDeleteAll( EntityType.ESM_ENTERPRISE_FOLDER )){
@@ -276,38 +276,49 @@ public class Configure extends EsmStandardWebPage {
         addSSGClusterForm.add(addSSGClusterInputHostName);
         addSSGClusterForm.add(addSSGClusterInputPort);
 
-        final HiddenField renameSSGClusterDialogInputId = new HiddenField("renameSSGClusterDialog_id", new Model(""));
-        final RequiredTextField renameSSGClusterInputName = new RequiredTextField("renameSSGClusterDialog_name", new Model(""));
-        Form renameSSGClusterForm = new JsonDataResponseForm("renameSSGClusterForm", new AttemptedUpdateAny( EntityType.ESM_SSG_CLUSTER )){
+        final HiddenField editSSGClusterDialogInputId = new HiddenField("editSSGClusterDialog_id", new Model(""));
+        final RequiredTextField editSSGClusterInputName = new RequiredTextField("editSSGClusterDialog_name", new Model(""));
+        final RequiredTextField editSSGClusterInputSslHostname = new RequiredTextField("editSSGClusterDialog_sslHostname", new Model(""));
+        final RequiredTextField editSSGClusterInputAdminPort = new RequiredTextField("editSSGClusterDialog_adminPort", new Model(""));
+        Form editSSGClusterForm = new JsonDataResponseForm("editSSGClusterForm", new AttemptedUpdateAny( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {
-                String renamedSSGClusterGuid = (String)renameSSGClusterDialogInputId.getConvertedInput();
-                String newClusterName = (String)renameSSGClusterInputName.getConvertedInput();
-                try {
-                    logger.fine("Renaming SSG Cluster (GUID = "+ renamedSSGClusterGuid + ") with a new name, " + newClusterName);
+                String editedSSGClusterGuid = (String)editSSGClusterDialogInputId.getConvertedInput();
+                String newClusterName = (String)editSSGClusterInputName.getConvertedInput();
+                String newSslHostname = (String)editSSGClusterInputSslHostname.getConvertedInput();
+                String newAdminPort = (String)editSSGClusterInputAdminPort.getConvertedInput();
 
-                    ssgClusterManager.renameByGuid(newClusterName, renamedSSGClusterGuid);
+                try {
+                    logger.fine("Editing SSG Cluster (GUID = "+ editedSSGClusterGuid + ") by changing the name, the ssl hostname, or the admin port.");
+
+                    ssgClusterManager.editByGuid(editedSSGClusterGuid, newClusterName, newSslHostname, newAdminPort);
                     return null;    // No response object expected if successful.
-                } catch (Exception e) {
+                } catch (Exception e) { // e could be FindException, UpdateException, DuplicateHostnameException, or DuplicateObjectException.
                     logger.warning(e.toString());
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                         try {
-                            SsgCluster renamedCluster = ssgClusterManager.findByGuid(renamedSSGClusterGuid);
-                            EnterpriseFolder parentFolder = renamedCluster.getParentFolder();
+                            SsgCluster editedCluster = ssgClusterManager.findByGuid(editedSSGClusterGuid);
+                            EnterpriseFolder parentFolder = editedCluster.getParentFolder();
                             String errorMsg = "A cluster with the name '" + newClusterName + "' already exists in the folder '"
                                 + parentFolder.getName() + "'.<br/>Please specify a different name.";
                             return new JSONException(new DuplicateObjectException(errorMsg, e));
                         } catch (FindException e1) {
                             return new JSONException(e1);
                         }
+                    } else if (ExceptionUtils.causedBy(e, DuplicateHostnameException.class)) {
+                        String errorMsg = "A cluster with the hostname (" + newSslHostname + ") already exists in the enterprise tree." +
+                            "<br/>Please specify a different hostname.";
+                        return new JSONException(new DuplicateObjectException(errorMsg, e));
                     } else {
                         return new JSONException(e);
                     }
                 }
             }
         };
-        renameSSGClusterForm.add(renameSSGClusterDialogInputId);
-        renameSSGClusterForm.add(renameSSGClusterInputName);
+        editSSGClusterForm.add(editSSGClusterDialogInputId);
+        editSSGClusterForm.add(editSSGClusterInputName);
+        editSSGClusterForm.add(editSSGClusterInputSslHostname);
+        editSSGClusterForm.add(editSSGClusterInputAdminPort);
 
         final HiddenField deleteSSGClusterDialogInputId = new HiddenField("deleteSSGClusterDialog_id", new Model(""));
         Form deleteSSGClusterForm = new JsonDataResponseForm("deleteSSGClusterForm", new AttemptedDeleteAll( EntityType.ESM_SSG_CLUSTER )){
@@ -452,10 +463,10 @@ public class Configure extends EsmStandardWebPage {
         stopSsgNodeForm.add(stopSsgNodeInputId);
 
         add(addFolderForm);
-        add(renameFolderForm);
+        add(editFolderForm);
         add(deleteFolderForm);
         add(addSSGClusterForm);
-        add(renameSSGClusterForm);
+        add(editSSGClusterForm);
         add(deleteSSGClusterForm);
         add(reconfirmSSGClusterDeletionForm);
         add(getGatewayTrustServletInputsForm);

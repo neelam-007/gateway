@@ -65,7 +65,7 @@
             var localizedStrings = {
                 ADD_FOLDER : 'New Folder',
                 ADD_SSG_CLUSTER : 'Add Cluster',
-                RENAME : 'Rename',
+                EDIT : 'Edit',
                 MOVE : 'Move',
                 DELETE : 'Delete',
                 START : 'Start',
@@ -89,10 +89,10 @@
                 STARTING_SSG_NODE : 'Starting SSG Node &ldquo;{0}&rdquo;...',
                 STOPPING_SSG_NODE : 'Stopping SSG Node &ldquo;{0}&rdquo;...',
                 CANNOT_ADD_FOLDER : 'Failed to add folder: ',
-                CANNOT_RENAME_FOLDER : 'Failed to rename folder: ',
+                CANNOT_EDIT_FOLDER : 'Failed to edit folder: ',
                 CANNOT_DELETE_FOLDER : 'Failed to delete folder: ',
                 CANNOT_ADD_SSG_CLUSTER : 'Failed to add SSG Cluster: ',
-                CANNOT_RENAME_SSG_CLUSTER : 'Failed to rename SSG Cluster: ',
+                CANNOT_EDIT_SSG_CLUSTER : 'Failed to edit SSG Cluster: ',
                 CANNOT_DELETE_SSG_CLUSTER : 'Failed to delete SSG Cluster: ',
                 CANNOT_START_SSG_NODE : 'Failed to start SSG Node: ',
                 CANNOT_STOP_SSG_NODE : 'Failed to stop SSG Node: '
@@ -107,7 +107,7 @@
 
             var addFolderButton;
             var addSSGClusterButton;
-            var renameButton;
+            var editButton;
             //var moveButton;
             var deleteButton;
             var startButton;
@@ -116,7 +116,7 @@
 
             var addFolderMenuItem;
             var addSSGClusterMenuItem;
-            var renameMenuItem;
+            var editMenuItem;
             var moveMenuItem;
             var deleteMenuItem;
             var startMenuItem;
@@ -124,10 +124,10 @@
             var launchSSMMenuItem;
 
             var addFolderDialog;
-            var renameFolderDialog;
+            var editFolderDialog;
             var deleteFolderDialog;
             var addSSGClusterDialog;
-            var renameSSGClusterDialog;
+            var editSSGClusterDialog;
             var deleteSSGClusterDialog;
             var reconfirmSSGClusterDeletionDialog;
             var ssgClusterTrustDialog;
@@ -152,12 +152,12 @@
                 if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
                     var isRootFolder = entity.parentId == null;
                     if (action == 'addFolder') result = entity.rbacCUD;
-                    if (action == 'rename') result = entity.rbacCUD;
+                    if (action == 'edit') result = entity.rbacCUD;
                     if (action == 'move') result = !isRootFolder && entity.rbacCUD;
                     if (action == 'delete') result = !isRootFolder && entity.rbacCUD;
                     if (action == 'addSSGCluster') result = entity.rbacCUD;
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
-                    if (action == 'rename') result = entity.rbacCUD;
+                    if (action == 'edit') result = entity.rbacCUD;
                     if (action == 'move') result = entity.rbacCUD;
                     if (action == 'delete') result = entity.rbacCUD;
                     if (action == 'launchSSM') result = entity.trustStatus &&
@@ -173,7 +173,7 @@
                                                    entity.onlineStatus == l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.ON;
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.SERVICE_FOLDER) {
                     if (action == 'addFolder') result = entity.rbacCUD;
-                    if (action == 'rename') result = entity.rbacCUD;
+                    if (action == 'edit') result = entity.rbacCUD;
                     if (action == 'move') result = entity.rbacCUD;
                     if (action == 'delete') result = entity.rbacCUD;
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
@@ -191,7 +191,7 @@
             function enableToolbarButtons(enabled) {
                 addFolderButton.set('disabled', !enabled);
                 addSSGClusterButton.set('disabled', !enabled);
-                renameButton.set('disabled', !enabled);
+                editButton.set('disabled', !enabled);
                 //moveButton.set('disabled', !enabled);
                 deleteButton.set('disabled', !enabled);
                 startButton.set('disabled', !enabled);
@@ -202,7 +202,7 @@
             function onEntityHighlighted(previous, entity) {
                 enableToolbarButtons(false);
                 addFolderButton.set('disabled', !isPermitted(entity, 'addFolder'));
-                renameButton.set('disabled', !isPermitted(entity, 'rename'));
+                editButton.set('disabled', !isPermitted(entity, 'edit'));
                 //moveButton.set('disabled', !isPermitted(entity, 'move'));
                 deleteButton.set('disabled', !isPermitted(entity, 'delete'));
                 addSSGClusterButton.set('disabled', !isPermitted(entity, 'addSSGCluster'));
@@ -306,32 +306,35 @@
                 addFolderDialog.show();
             }
 
-            function onClickRenameFolder(event) {
+            function onClickEditFolder(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
-                document.getElementById('renameFolderDialog_id').value = entity.id;
-                document.getElementById('renameFolderDialog_name').value = entity.name;
-                validateRenameFolderDialog();
-                renameFolderDialog.center();
-                renameFolderDialog.show();
+                document.getElementById('editFolderDialog_id').value = entity.id;
+                document.getElementById('editFolderDialog_name').value = entity.name;
+                validateEditFolderDialog();
+                editFolderDialog.center();
+                editFolderDialog.show();
             }
 
-            function onClickRenameSSGCluster(event) {
+            function onClickEditSSGCluster(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
-                document.getElementById('renameSSGClusterDialog_id').value = entity.id;
-                document.getElementById('renameSSGClusterDialog_name').value = entity.name;
-                validateRenameSSGClusterDialog();
-                renameSSGClusterDialog.center();
-                renameSSGClusterDialog.show();
+                document.getElementById('editSSGClusterDialog_id').value = entity.id;
+                document.getElementById('editSSGClusterDialog_name').value = entity.name;
+                document.getElementById('editSSGClusterDialog_sslHostname').value = entity.sslHostName;
+                document.getElementById('editSSGClusterDialog_adminPort').value = entity.adminPort;
+
+                validateEditSSGClusterDialog();
+                editSSGClusterDialog.center();
+                editSSGClusterDialog.show();
             }
 
-            function onClickRename(event) {
+            function onClickEdit(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
                 if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
-                    onClickRenameFolder(event);
+                    onClickEditFolder(event);
                 } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
-                    onClickRenameSSGCluster(event);
+                    onClickEditSSGCluster(event);
                 } else {
-                    YAHOO.log('No rename handler for entity type: ' + entity.type, 'error', 'Configure.html');
+                    YAHOO.log('No edit handler for entity type: ' + entity.type, 'error', 'Configure.html');
                 }
             }
 
@@ -483,20 +486,20 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 }
             }
 
-            function validateRenameFolderDialog() {
-                var nameTextBox = document.getElementById('renameFolderDialog_name');
+            function validateEditFolderDialog() {
+                var nameTextBox = document.getElementById('editFolderDialog_name');
                 var name = nameTextBox.value;
                 var errMsg = validateFolderName(name);
                 var nameIsValid = errMsg == null;
                 if (nameIsValid || name.length == 0) {
                     YAHOO.util.Dom.removeClass(nameTextBox, 'invalid');
-                    document.getElementById('renameFolderDialog_name_hint').innerHTML = '';
+                    document.getElementById('editFolderDialog_name_hint').innerHTML = '';
                 } else if (name.length != 0) {
                     YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
-                    document.getElementById('renameFolderDialog_name_hint').innerHTML = '(' + errMsg + ')';
+                    document.getElementById('editFolderDialog_name_hint').innerHTML = '(' + errMsg + ')';
                 }
 
-                var okButton = renameFolderDialog.getButtons()[0];
+                var okButton = editFolderDialog.getButtons()[0];
                 if (nameIsValid) {
                     okButton.set('disabled', false);
                 } else {
@@ -538,21 +541,34 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 }
             }
 
-            function validateRenameSSGClusterDialog() {
-                var nameTextBox = document.getElementById('renameSSGClusterDialog_name');
+            function validateEditSSGClusterDialog() {
+                var nameTextBox = document.getElementById('editSSGClusterDialog_name');
                 var name = nameTextBox.value;
                 var errMsg = validateSSGClusterName(name);
                 var nameIsValid = errMsg == null;
                 if (nameIsValid || name.length == 0) {
                     YAHOO.util.Dom.removeClass(nameTextBox, 'invalid');
-                    document.getElementById('renameSSGClusterDialog_name_hint').innerHTML = '';
+                    document.getElementById('editSSGClusterDialog_name_hint').innerHTML = '';
                 } else if (name.length != 0) {
                     YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
-                    document.getElementById('renameSSGClusterDialog_name_hint').innerHTML = '(' + errMsg + ')';
+                    document.getElementById('editSSGClusterDialog_name_hint').innerHTML = '(' + errMsg + ')';
                 }
 
-                var okButton = renameSSGClusterDialog.getButtons()[0];
-                if (nameIsValid) {
+                var hostNameIsValid = document.getElementById('editSSGClusterDialog_sslHostname').value.length > 0;
+
+                var portTextBox = document.getElementById('editSSGClusterDialog_adminPort');
+                var port = portTextBox.value;
+                var portIsValid = l7.Util.isIntString(port) && port > 0;
+                if (portIsValid || port.length == 0) {
+                    YAHOO.util.Dom.removeClass(portTextBox, 'invalid');
+                    document.getElementById('editSSGClusterDialog_port_hint').innerHTML = '';
+                } else if (port.length != 0) {
+                    YAHOO.util.Dom.addClass(portTextBox, 'invalid');
+                    document.getElementById('editSSGClusterDialog_port_hint').innerHTML = '(' + localizedStrings.SSG_CLUSTER_PORT_HINT + ')';
+                }
+
+                var okButton = editSSGClusterDialog.getButtons()[0];
+                if (nameIsValid && hostNameIsValid && portIsValid) {
                     okButton.set('disabled', false);
                 } else {
                     okButton.set('disabled', true);
@@ -602,8 +618,8 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 }
             }
 
-            function initRenameFolderDialog() {
-                renameFolderDialog = new YAHOO.widget.Dialog('renameFolderDialog', {
+            function initEditFolderDialog() {
+                editFolderDialog = new YAHOO.widget.Dialog('editFolderDialog', {
                     buttons     : [
                         {
                             text      : localizedStrings.OK,
@@ -626,12 +642,12 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     postmethod  : 'async',
                     visible     : false
                 });
-                renameFolderDialog.render();
-                renameFolderDialog.callback.success = function(o) {
+                editFolderDialog.render();
+                editFolderDialog.callback.success = function(o) {
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_RENAME_FOLDER) + '</p>',
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_EDIT_FOLDER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -639,8 +655,8 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                         loadEntityTreeTable();  // Reloads to show new folder name.
                     }
                 }
-                renameFolderDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_RENAME_FOLDER + o.statusText, localizedStrings.OK);
+                editFolderDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_EDIT_FOLDER + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -736,8 +752,8 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 }
             }
 
-            function initRenameSSGClusterDialog() {
-                renameSSGClusterDialog = new YAHOO.widget.Dialog('renameSSGClusterDialog', {
+            function initEditSSGClusterDialog() {
+                editSSGClusterDialog = new YAHOO.widget.Dialog('editSSGClusterDialog', {
                     buttons     : [
                         {
                             text      : localizedStrings.OK,
@@ -760,12 +776,12 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     postmethod  : 'async',
                     visible     : false
                 });
-                renameSSGClusterDialog.render();
-                renameSSGClusterDialog.callback.success = function(o) {
+                editSSGClusterDialog.render();
+                editSSGClusterDialog.callback.success = function(o) {
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_RENAME_SSG_CLUSTER) + '</p>',
+                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_EDIT_SSG_CLUSTER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -773,8 +789,8 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                         loadEntityTreeTable();  // Reloads to show new SSG Cluster name.
                     }
                 }
-                renameSSGClusterDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_RENAME_SSG_CLUSTER + o.statusText, localizedStrings.OK);
+                editSSGClusterDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_EDIT_SSG_CLUSTER + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -1078,10 +1094,10 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
 
             function initDialogs() {
                 initAddFolderDialog();
-                initRenameFolderDialog();
+                initEditFolderDialog();
                 initDeleteFolderDialog();
                 initAddSSGClusterDialog();
-                initRenameSSGClusterDialog();
+                initEditSSGClusterDialog();
                 initDeleteSSGClusterDialog();
                 initReconfirmSSGClusterDeletionDialog();
                 initSSGClusterTrustDialog();
@@ -1098,9 +1114,9 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     label   : '<img src="../images/addSSGCluster.png" alt="" />&nbsp;' + localizedStrings.ADD_SSG_CLUSTER,
                     onclick : {fn : onClickAddSSGCluster}
                 });
-                renameButton = new YAHOO.widget.Button('renameButton', {
-                    label   : '<img src="../images/rename.png" alt="" />&nbsp;' + localizedStrings.RENAME,
-                    onclick : {fn : onClickRename}
+                editButton = new YAHOO.widget.Button('editButton', {
+                    label   : '<img src="../images/rename.png" alt="" />&nbsp;' + localizedStrings.EDIT,
+                    onclick : {fn : onClickEdit}
                 });
                 /*moveButton = new YAHOO.widget.Button('moveButton', {
                     label   : '<img src="../images/move.png" alt="" />&nbsp;' + localizedStrings.MOVE,
@@ -1142,7 +1158,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 initContextMenuItemsEventHandler(); // Need to do this because, strangely, clearContent destroys the onclick handler of menu items.
 
                 if (isPermitted(entity, 'addFolder')) this.addItem(addFolderMenuItem);
-                if (isPermitted(entity, 'rename')) this.addItem(renameMenuItem);
+                if (isPermitted(entity, 'edit')) this.addItem(editMenuItem);
 // TODO         if (isPermitted(entity, 'move')) this.addItem(moveMenuItem);
                 if (isPermitted(entity, 'delete')) this.addItem(deleteMenuItem);
                 if (isPermitted(entity, 'addSSGCluster')) this.addItem(addSSGClusterMenuItem);
@@ -1172,7 +1188,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             function initContextMenuItemsEventHandler() {
                 addFolderMenuItem.cfg.setProperty('onclick', {fn : onClickAddFolder});
                 addSSGClusterMenuItem.cfg.setProperty('onclick', {fn : onClickAddSSGCluster});
-                renameMenuItem.cfg.setProperty('onclick', {fn : onClickRename});
+                editMenuItem.cfg.setProperty('onclick', {fn : onClickEdit});
                 moveMenuItem.cfg.setProperty('onclick', {fn : onClickMove});
                 deleteMenuItem.cfg.setProperty('onclick', {fn : onClickDelete});
                 startMenuItem.cfg.setProperty('onclick', {fn : onClickStart});
@@ -1183,7 +1199,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             function initContextMenuItems() {
                 addFolderMenuItem = new YAHOO.widget.MenuItem('<img src="../images/addFolder.png">&nbsp;' + localizedStrings.ADD_FOLDER);
                 addSSGClusterMenuItem = new YAHOO.widget.MenuItem('<img src="../images/addSSGCluster.png">&nbsp;' + localizedStrings.ADD_SSG_CLUSTER);
-                renameMenuItem = new YAHOO.widget.MenuItem('<img src="../images/rename.png">&nbsp;' + localizedStrings.RENAME);
+                editMenuItem = new YAHOO.widget.MenuItem('<img src="../images/rename.png">&nbsp;' + localizedStrings.EDIT);
                 moveMenuItem = new YAHOO.widget.MenuItem('<img src="../images/move.png">&nbsp;' + localizedStrings.MOVE);
                 deleteMenuItem = new YAHOO.widget.MenuItem('<img src="../images/delete.png">&nbsp;' + localizedStrings.DELETE);
                 startMenuItem = new YAHOO.widget.MenuItem('<img src="../images/start.png">&nbsp;' + localizedStrings.START);
@@ -1328,7 +1344,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                             <div class="panelToolbar">
                                 <button id="addFolderButton" type="submit" name="addFolderButton" value="addFolder"></button>
                                 <button id="addSSGClusterButton" type="submit" name="addSSGClusterButton" value="addSSGCluster"></button>
-                                <button id="renameButton" type="submit" name="renameButton" value="rename"></button>
+                                <button id="editButton" type="submit" name="editButton" value="edit"></button>
                                 <!--<button id="moveButton" type="submit" name="moveButton" value="move"></button>-->
                                 <button id="deleteButton" type="submit" name="deleteButton" value="delete"></button>
                                 <button id="startButton" type="submit" name="startButton" value="start"></button>
@@ -1373,15 +1389,15 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
     </div>
 </div>
 
-<div id="renameFolderDialog">
-    <div class="hd">Rename Folder</div>
+<div id="editFolderDialog">
+    <div class="hd">Edit Folder</div>
     <div class="bd">
-        <form name="renameFolderForm" wicket:id="renameFolderForm" method="POST">
-            <input id="renameFolderDialog_id" wicket:id="renameFolderDialog_id" type="hidden" name="id" />
+        <form name="editFolderForm" wicket:id="editFolderForm" method="POST">
+            <input id="editFolderDialog_id" wicket:id="editFolderDialog_id" type="hidden" name="id" />
             <table class="spaced">
                 <tr>
                     <th>New Name:</th>
-                    <td><input type="text" id="renameFolderDialog_name" wicket:id="renameFolderDialog_name" name="name" size="40" maxlength="128" onkeyup="validateRenameFolderDialog();" /> <span id="renameFolderDialog_name_hint" class="red"></span></td>
+                    <td><input type="text" id="editFolderDialog_name" wicket:id="editFolderDialog_name" name="name" size="40" maxlength="128" onkeyup="validateEditFolderDialog();" /> <span id="editFolderDialog_name_hint" class="red"></span></td>
                 </tr>
             </table>
         </form>
@@ -1474,15 +1490,23 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
     </div>
 </div>
 
-<div id="renameSSGClusterDialog">
-    <div class="hd">Rename SSG Cluster</div>
+<div id="editSSGClusterDialog">
+    <div class="hd">Edit SSG Cluster</div>
     <div class="bd">
-        <form name="renameSSGClusterForm" wicket:id="renameSSGClusterForm" method="POST">
-            <input id="renameSSGClusterDialog_id" wicket:id="renameSSGClusterDialog_id" type="hidden" name="id" />
+        <form name="editSSGClusterForm" wicket:id="editSSGClusterForm" method="POST">
+            <input id="editSSGClusterDialog_id" wicket:id="editSSGClusterDialog_id" type="hidden" name="id" />
             <table class="spaced">
                 <tr>
                     <th>New Name:</th>
-                    <td><input type="text" id="renameSSGClusterDialog_name" wicket:id="renameSSGClusterDialog_name" name="name" size="40" maxlength="128" onkeyup="validateRenameSSGClusterDialog();" /> <span id="renameSSGClusterDialog_name_hint" class="red"></span></td>
+                    <td><input type="text" id="editSSGClusterDialog_name" wicket:id="editSSGClusterDialog_name" name="name" size="40" maxlength="128" onkeyup="validateEditSSGClusterDialog();" /><span id="editSSGClusterDialog_name_hint" class="red"></span></td>
+                </tr>
+                <tr>
+                    <th>New Host Name:</th>
+                    <td><input type="text" id="editSSGClusterDialog_sslHostname" wicket:id="editSSGClusterDialog_sslHostname" name="hostName" size="40" maxlength="128" onkeyup="validateEditSSGClusterDialog();" /></td>
+                </tr>
+                <tr>
+                    <th>New Administrative Port Number:</th>
+                    <td><input type="text" id="editSSGClusterDialog_adminPort" wicket:id="editSSGClusterDialog_adminPort" name="port" size="10" onkeyup="validateEditSSGClusterDialog();" /><span id="editSSGClusterDialog_port_hint" class="red"></span></td>
                 </tr>
             </table>
         </form>

@@ -1,10 +1,6 @@
 package com.l7tech.server.ems.enterprise;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityManagerStub;
 
 import java.util.List;
@@ -30,7 +26,7 @@ public class MockSsgClusterManager extends EntityManagerStub<SsgCluster, EntityH
     }
 
     @Override
-    public void renameByGuid(String name, String guid) throws FindException, UpdateException {
+    public void editByGuid(String guid, String newName, String newSslHostname, String newAdminPort) throws FindException, UpdateException, DuplicateHostnameException {
     }
 
     @Override

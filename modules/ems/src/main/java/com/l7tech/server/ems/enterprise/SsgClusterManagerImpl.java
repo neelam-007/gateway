@@ -81,11 +81,44 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     @Override
-    public void renameByGuid(String name, String guid) throws FindException, UpdateException {
+    public void editByGuid(String guid, String newName, String newSslHostname, String newAdminPort) throws FindException, UpdateException, DuplicateHostnameException {
+        boolean updated = false;
         final SsgCluster cluster = findByGuid(guid);
-        verifyLegalClusterName(name);
-        cluster.setName(name);
-        update(cluster);
+        if (cluster == null) return;
+
+        // Verify and update the new name
+        String oldName = cluster.getName();
+        if (newName != null && !newName.equals(oldName)) {
+            verifyLegalClusterName(newName);
+            cluster.setName(newName);
+            updated = true;
+        }
+
+        // Verify and update the new ssl hostname
+        String oldSslHostname = cluster.getSslHostName();
+        if (newSslHostname != null && !newSslHostname.equals(oldSslHostname)) {
+            if (! isSameHost(newSslHostname, oldSslHostname)) {
+                verifyHostnameUniqueness(newSslHostname);
+            }
+            cluster.setSslHostName(newSslHostname);
+            updated = true;
+        }
+
+        // Verify and update the new admin port
+        try {
+            int oldport = cluster.getAdminPort();
+            int newport = Integer.parseInt(newAdminPort);
+            if (newport != oldport) {
+                cluster.setAdminPort(newport);
+                updated = true;
+            }
+        } catch (NumberFormatException e) {
+        }
+
+        // Update the cluster
+        if (updated) {
+            update(cluster);
+        }
     }
 
     @Override

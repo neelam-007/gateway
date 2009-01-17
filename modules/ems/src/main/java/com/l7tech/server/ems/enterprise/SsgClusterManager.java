@@ -23,14 +23,18 @@ public interface SsgClusterManager extends EntityManager<SsgCluster, EntityHeade
     SsgCluster findByGuid(final String guid) throws FindException;
 
     /**
-     * Rename the name of the cluster with the guid.
-     * @param name: the new name of the cluster
+     * Edit the cluster by changing the name, the ssl hostname, or the admin port of the cluster with the guid.
+     *
      * @param guid: the guid of the cluster
-     * @throws FindException if failed to determine if a folder with <code>parentFolderGuid</code> exists
-     * @throws InvalidNameException if <code>name</code> does not conform to name rules
-     * @throws SaveException if the new folder cannot be persisted
+     * @param newName The new name of the cluster
+     * @param newSslHostname The new ssl hostname of the cluster
+     * @param newAdminPort The new admin port used by the cluster.
+     *
+     * @throws FindException if failed to determine if a folder with <code>guid</code> exists
+     * @throws UpdateException if the new folder cannot be persisted
+     * @throws DuplicateHostnameException if the new hostname is the same as the hostname of one other cluster.
      */
-    void renameByGuid(String name, String guid) throws FindException, UpdateException;
+    void editByGuid(String guid, String newName, String newSslHostname, String newAdminPort) throws FindException, UpdateException, DuplicateHostnameException;
 
     /**
      * Deletes an SSG Cluster with the given GUID.
