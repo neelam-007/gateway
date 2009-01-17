@@ -390,9 +390,14 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                     foundHttp = true;
                     try {
                         if (actuallyStartThem) addConnector(connector);
-                    } catch (Exception e) {
-                        logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                                    ": " + ExceptionUtils.getMessage(e), e);
+                    } catch ( Exception e ) {
+                        if ( ExceptionUtils.getMessage(e).contains("java.net.BindException: ") ) { // The exception cause is not chained ...
+                            logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                                        ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        } else {
+                            logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                                        ": " + ExceptionUtils.getMessage(e), e);
+                        }
                     }
                 }
             }
