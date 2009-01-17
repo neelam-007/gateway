@@ -12,9 +12,15 @@ import org.apache.wicket.model.IObjectClassAwareModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.validation.validator.NumberValidator;
 import org.apache.wicket.validation.validator.PatternValidator;
+import org.apache.wicket.validation.validator.AbstractValidator;
+import org.apache.wicket.validation.IValidatable;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.net.NetworkInterface;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.net.SocketException;
 
 /**
  * Panel for editing of server listen IP address / port.
@@ -54,6 +60,7 @@ public class ListenerEditPanel extends Panel {
         });
 
         addr.add( new PatternValidator("^(?:(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|\\*)$") );
+        addr.add( new LocalIpAddressValidator() );
         port.add( new NumberValidator.RangeValidator(1024, 65535) );
 
         Form listenerForm = new Form("listenerForm"){
@@ -73,5 +80,26 @@ public class ListenerEditPanel extends Panel {
         listenerForm.add( addr );
         listenerForm.add( port );
         
-        add( listenerForm );    }
+        add( listenerForm );
+    }
+
+    private static final class LocalIpAddressValidator extends AbstractValidator {
+        @Override
+        protected void onValidate( final IValidatable validatable ) {
+            String ipAddress = (String) validatable.getValue();
+
+            boolean isOk = false;
+            try {
+                isOk = "*".equals(ipAddress) || NetworkInterface.getByInetAddress( InetAddress.getByName(ipAddress) ) != null;
+            } catch (UnknownHostException uhe) {
+                // not ok
+            } catch (SocketException e) {
+                // not ok
+            }
+
+            if ( !isOk ) {
+                error( validatable );
+            }
+        }
+    }
 }
