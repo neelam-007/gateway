@@ -147,4 +147,9 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

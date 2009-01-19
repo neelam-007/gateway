@@ -218,4 +218,8 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         }
     }
 
+    @Override
+    public String toString() {
+        return getName();
+    }
 }
