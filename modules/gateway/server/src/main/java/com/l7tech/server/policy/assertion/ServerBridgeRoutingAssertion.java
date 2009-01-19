@@ -302,7 +302,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e); // can't happen
                 } catch (ProcessorException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
                 } catch ( PolicyLockedException e) {
                     thrown = e;
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING, null, e);
