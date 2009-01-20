@@ -301,7 +301,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         //check for inline setting
         boolean isInline = false;
         if (inline != null && inline.length() > 0) {
-            isInline = "yes".equalsIgnoreCase(fullDoc) || Boolean.parseBoolean(fullDoc);
+            isInline = "yes".equalsIgnoreCase(inline) || Boolean.parseBoolean(inline);
             logger.finest("Passed value for " + SecureSpanConstants.HttpQueryParameters.PARAM_INLINE + " was " + inline);
             if (isInline)
                 logger.finest("Will passthrough and return inlined policy document");
