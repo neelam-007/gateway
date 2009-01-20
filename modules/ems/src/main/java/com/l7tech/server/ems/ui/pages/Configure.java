@@ -7,7 +7,6 @@ import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.standardreports.StandardReportManager;
-import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayContext;
@@ -67,9 +66,6 @@ public class Configure extends EsmStandardWebPage {
 
     @SpringBean
     private EsmSecurityManager securityManager;
-
-    @SpringBean
-    private UserPropertyManager userPropertyManager;
 
     @SpringBean
     private StandardReportManager standardReportManager;

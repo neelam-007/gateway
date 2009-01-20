@@ -2,8 +2,10 @@ package com.l7tech.server.ems.ui.pages;
 
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
+import com.l7tech.server.ems.user.UserPropertyManager;
 import org.apache.wicket.Component;
 import org.apache.wicket.RequestListenerInterface;
+import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.authorization.UnauthorizedActionException;
 import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.markup.html.form.Form;
@@ -11,11 +13,15 @@ import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
 
+import java.util.Map;
+
 /**
  * Base page for EMS pages that include the standard top-level navigation tabs and controls.
  */
 @RequiredPermissionSet()
 public abstract class EsmStandardWebPage extends EsmBaseWebPage {
+    @SpringBean
+    protected UserPropertyManager userPropertyManager;
 
     //- PUBLIC
 
@@ -33,6 +39,8 @@ public abstract class EsmStandardWebPage extends EsmBaseWebPage {
         add( new UnlicensedLabel("userLabel", new StringResourceModel( "page.user", this, infoModel )) );
         add( new UnlicensedLabel("sinceLabel", sinceResourceModel ));
         add( new NavigationPanel("navigation", new Model(this), securityManager) );
+
+        saveLastVisitedPage();
     }
 
     public String getPageName() {
@@ -87,5 +95,17 @@ public abstract class EsmStandardWebPage extends EsmBaseWebPage {
         } );
 
         super.onBeforeRender();
+    }
+
+    /**
+     * Save the page last viewed into the user property. 
+     */
+    private void saveLastVisitedPage() {
+        try {
+            Map<String,String> props = userPropertyManager.getUserProperties(getUser());
+            props.put("lastvisited", getPageName());
+            userPropertyManager.saveUserProperties(getUser(), props);
+        } catch (Exception e) {
+        }
     }
 }

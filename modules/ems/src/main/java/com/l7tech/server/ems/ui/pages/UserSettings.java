@@ -18,7 +18,6 @@ import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.ui.EsmApplication;
 import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.ui.NavigationModel;
-import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.Config;
@@ -86,9 +85,6 @@ public class UserSettings extends EsmStandardWebPage {
 
     @SpringBean
     private EsmSecurityManager securityManager;
-
-    @SpringBean
-    private UserPropertyManager userPropertyManager;
 
     @SpringBean
     private Config config;
@@ -230,7 +226,7 @@ public class UserSettings extends EsmStandardWebPage {
     }
 
     /**
-     * Change password form
+     * Change user interface preference form
      */
     private final class PreferencesForm extends Form {
 
@@ -247,19 +243,29 @@ public class UserSettings extends EsmStandardWebPage {
                     return securityManager.hasPermission( aClass );
                 }
             });
+            List<String> homePages = new ArrayList<String>(navigationModel.getNavigationPages());
+            homePages.add(EsmApplication.LAST_VISITED_PAGE);
 
             add( new DropDownChoice( "timezone", zoneIds ) );
             add( new DropDownChoice( "dateformat", EsmApplication.getDateFormatkeys(), new DateChoiceRenderer(true) ) );
             add( new DropDownChoice( "timeformat", EsmApplication.getTimeFormatkeys(), new DateChoiceRenderer(false) ) );
-            add( new GroupingDropDownChoice( "homepage", new ArrayList<String>(navigationModel.getNavigationPages()) ){
+            add( new GroupingDropDownChoice( "homepage", homePages ) {
                 @Override
                 protected String getOptionGroupForChoice(final Object object) {
-                    return  new StringResourceModel("section."+navigationModel.getNavigationSectionForPage(object.toString())+".label", this, null).getString();
+                    if (EsmApplication.LAST_VISITED_PAGE.equals(object)) {
+                        return "Settings"; // set the last visited page in Settings group.
+                    } else {
+                        return  new StringResourceModel("section."+navigationModel.getNavigationSectionForPage(object.toString())+".label", this, null).getString();
+                    }
                 }
 
                 @Override
                 protected Object getOptionDisplayValue(final Object object) {
-                    return  new StringResourceModel("page."+super.getOptionDisplayValue(object)+".label", this, null).getString();
+                    if (EsmApplication.LAST_VISITED_PAGE.equals(object)) {
+                        return object;
+                    } else {
+                        return  new StringResourceModel("page."+super.getOptionDisplayValue(object)+".label", this, null).getString();
+                    }
                 }
             } );
         }

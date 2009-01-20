@@ -43,6 +43,7 @@ public class EsmApplication extends WebApplication {
     public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
     public static final String DEFAULT_SYSTEM_TIME_ZONE = "[System Default Time Zone]";
     public static final String DEFAULT_HOME_PAGE = "SystemSettings";
+    public static final String LAST_VISITED_PAGE = "[Last Visited]";
 
     /**
      *
@@ -331,6 +332,9 @@ public class EsmApplication extends WebApplication {
             datetimeformat = EsmApplication.getDateTimeFormat(dateFormat, timeFormat);
             zoneid = props.get("timezone");
             preferredpage = props.get("homepage");
+            if (LAST_VISITED_PAGE.equals(preferredpage)) {
+                preferredpage = props.get("lastvisited");
+            }
         } catch ( FindException fe ) {
             // use default format
         }
