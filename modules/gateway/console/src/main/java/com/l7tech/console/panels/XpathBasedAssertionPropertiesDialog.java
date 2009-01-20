@@ -253,6 +253,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 if (serviceWsdl != null) {
                     serviceWsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
                     SoapMessageGenerator sg = new SoapMessageGenerator(null, new Wsdl.UrlGetter() {
+                        @Override
                         public String get(String url) throws IOException {
                             return Registry.getDefault().getServiceManager().resolveWsdlTarget(url);
                         }
@@ -303,6 +304,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         enableSampleButtons();
 
         addSampleButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final SampleMessage sm;
                 try {
@@ -321,6 +323,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 }
 
                 showSampleMessageDialog(sm, new Functions.UnaryVoid<SampleMessageDialog>() {
+                    @Override
                     public void call(SampleMessageDialog smd) {
                         if (smd.isOk()) {
                             try {
@@ -336,10 +339,12 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         });
 
         editSampleButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final SampleMessageComboEntry entry = (SampleMessageComboEntry)sampleMessagesCombo.getSelectedItem();
                 if (entry == USE_AUTOGEN) return;
                 showSampleMessageDialog(entry.message, new Functions.UnaryVoid<SampleMessageDialog>() {
+                    @Override
                     public void call(SampleMessageDialog smd) {
                         if (smd.isOk()) {
                             try {
@@ -356,6 +361,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         });
 
         removeSampleButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 SampleMessageComboEntry entry = (SampleMessageComboEntry)sampleMessagesCombo.getSelectedItem();
                 if (entry == USE_AUTOGEN) return;
@@ -376,6 +382,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         });
 
         sampleMessagesCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 SampleMessageComboEntry entry = (SampleMessageComboEntry)sampleMessagesCombo.getSelectedItem();
                 try {
@@ -416,6 +423,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         smd.pack();
         Utilities.centerOnScreen(smd);
         DialogDisplayer.display(smd, new Runnable() {
+            @Override
             public void run() {
                 result.call(smd);
             }
@@ -448,6 +456,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             sampleMessagesCombo.setSelectedItem(whichEntryToSelect);
 
         sampleMessagesCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableSampleButtons();
             }
@@ -490,16 +499,18 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         initializeResponseSignatureConfig();
         setModal(true);
         namespaceButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                List requiredNS = new ArrayList(requiredNamespaces.values());
-                final NamespaceMapEditor nseditor = new NamespaceMapEditor(XpathBasedAssertionPropertiesDialog.this,
+                final NamespaceMapEditor nseditor = new NamespaceMapEditor(
+                        XpathBasedAssertionPropertiesDialog.this,
                         namespaces,
-                        requiredNS);
+                        Collections.unmodifiableMap(new HashMap<String,String>(requiredNamespaces)));
                 nseditor.pack();
                 Utilities.centerOnScreen(nseditor);
                 DialogDisplayer.display(nseditor, new Runnable() {
+                    @Override
                     public void run() {
-                        Map newMap = nseditor.newNSMap();
+                        Map<String,String> newMap = nseditor.newNSMap();
                         if (newMap != null) {
                             namespaces = newMap;
 
@@ -513,6 +524,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 XpathBasedAssertionPropertiesDialog.this.dispose();
             }
@@ -520,6 +532,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 // get xpath from control and the namespace map
                 // then save it in assertion
@@ -564,6 +577,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         });
 
         helpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(XpathBasedAssertionPropertiesDialog.this);
             }
@@ -620,6 +634,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         try {
             testEvaluator = XpathEvaluator.newEvaluator(XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"),
                                                         new NamespaceContext(){
+                                                            @Override
                                                             public String translateNamespacePrefixToUri(String prefix) {
                                                                 return namespaces.get(prefix);
                                                             }
@@ -663,6 +678,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             TextComponentPauseListenerManager.registerPauseListener(
                 varPrefixField,
                 new PauseListener() {
+                    @Override
                     public void textEntryPaused(JTextComponent component, long msecs) {
                         if(validateVariablePrefix()) {
                             okButton.setEnabled(true);
@@ -671,6 +687,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                         }
                     }
 
+                    @Override
                     public void textEntryResumed(JTextComponent component) {
                         clearVariablePrefixStatus();
                     }
@@ -922,6 +939,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
     private final TreeSelectionListener
       operationsSelectionListener = new TreeSelectionListener() {
+        @Override
         public void valueChanged(TreeSelectionEvent e) {
             TreePath path = e.getNewLeadSelectionPath();
             if (path == null) {
@@ -1038,12 +1056,14 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
 
     final PauseListener xpathFieldPauseListener = new PauseListener() {
+        @Override
         public void textEntryPaused(JTextComponent component, long msecs) {
             final JTextField xpathField = (JTextField)component;
             XpathFeedBack feedBack = getFeedBackMessage(namespaces, xpathField);
             processFeedBack(feedBack, xpathField);
         }
 
+        @Override
         public void textEntryResumed(JTextComponent component) {
 //                final JTextField xpathField = (JTextField)component;
 //                XpathFeedBack feedBack = getFeedBackMessage(xpathField);
@@ -1105,6 +1125,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 speedIndicator.setToolTipText("Expression will be hardware accelerated, but is too complex to run in parallel at full speed");
 
                 // Squiggles and detailed parse error messages are disabled for now
+                //noinspection ConstantConditions
                 if (false && xpathField instanceof SquigglyField) {
                     SquigglyField squigglyField = (SquigglyField)xpathField;
                     int pos = hardwareFeedBack.errorPosition;
