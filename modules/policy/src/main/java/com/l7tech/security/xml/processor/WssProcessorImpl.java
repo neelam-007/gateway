@@ -1478,7 +1478,7 @@ public class WssProcessorImpl implements WssProcessor {
             try {
                 issuer = new X500Principal(X509IssuerName);
             } catch ( IllegalArgumentException iae ) {
-                logger.warning("Ignoring certificate reference with invalid isuer '"+X509IssuerName+"', serial number is '"+X509SerialNumber+"'.");
+                logger.warning("Ignoring certificate reference with invalid issuer '"+X509IssuerName+"', serial number is '"+X509SerialNumber+"'.");
                 return null;
             }
             final BigInteger serial;
