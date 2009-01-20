@@ -28,6 +28,7 @@
         <dependency name="LDAPQueryAssertion" rev="latest.integration" conf="default"/>
         <dependency name="EsmAssertion" rev="latest.integration" conf="default"/>
         <dependency name="MessageContextAssertion" rev="latest.integration" conf="default"/>
+        <dependency name="SamlpAssertion" rev="latest.integration" conf="default"/>
 
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="optional"/>
     </dependencies>

@@ -37,7 +37,7 @@ ALTER TABLE internal_user ADD COLUMN password_expiry BIGINT(20) DEFAULT 0;
 ALTER TABLE internal_user ADD COLUMN change_password boolean DEFAULT FALSE;
 
 -- This one was missed in upgrade_4.4.0-4.5.0.sql
-ALTER TABLE policy ADD UNIQUE KEY i2_guid (guid);
+ALTER TABLE policy ADD KEY i2_guid (guid);
 
 -- Add foreign key constraing for wsdm_subscriptions
 ALTER TABLE wsdm_subscription ADD

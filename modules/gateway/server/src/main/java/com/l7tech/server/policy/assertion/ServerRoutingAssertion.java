@@ -99,8 +99,8 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                     ProcessorResult pr = requestSec.getProcessorResult();
                     if (pr != null && pr.getProcessedActor() == SecurityActor.L7ACTOR) {
                         defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
-                        if(defaultSecHeader == null) { // Try again looking for the secure_span actor
-                            defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR_OLD.getValue());
+                        if(defaultSecHeader == null) { // Try again looking for the v4.6 actor URI
+                            defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR_URI.getValue());
                         }
                     } else {
                         defaultSecHeader = SoapUtil.getSecurityElement(doc);

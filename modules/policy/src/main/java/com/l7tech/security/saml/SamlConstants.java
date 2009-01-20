@@ -17,7 +17,9 @@ public class SamlConstants {
     public static final String NS_SAML_PREFIX = "saml";
     public static final String NS_SAML2_PREFIX = "saml2";
     public static final String NS_SAMLP = "urn:oasis:names:tc:SAML:1.0:protocol";
+    public static final String NS_SAMLP2 = "urn:oasis:names:tc:SAML:2.0:protocol";
     public static final String NS_SAMLP_PREFIX = "samlp";
+    public static final String NS_SAMLP2_PREFIX = "samlp2";
 
     /** confirmations */
     public static final String CONFIRMATION_SENDER_VOUCHES = "urn:oasis:names:tc:SAML:1.0:cm:sender-vouches";

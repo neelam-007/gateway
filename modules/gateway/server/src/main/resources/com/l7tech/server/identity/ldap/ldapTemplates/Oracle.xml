@@ -15,7 +15,7 @@
        <string>mail</string> 
       </void>
       <void property="userCertAttrName">
-       <string>userCertificate;binary</string> 
+       <string>userCertificate</string> 
       </void>
       <void property="firstNameAttrName"> 
        <string>givenName</string> 

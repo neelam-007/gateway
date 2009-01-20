@@ -12,8 +12,13 @@ package com.l7tech.security.xml;
  * @author flascelles@layer7-tech.com
  */
 public class SecurityActor {
-    public static final SecurityActor L7ACTOR = new SecurityActor("http://www.layer7tech.com/ws/policy");
-    public static final SecurityActor L7ACTOR_OLD = new SecurityActor("secure_span");
+    /** This is the original Layer 7 actor value, recognized by every XVC and Gateway version since 2.0 as being addressed to Trogdor. */
+    public static final SecurityActor L7ACTOR = new SecurityActor("secure_span");
+
+    /** This is a URI actor/role value, sent by default by version 4.6 SSBs and SSGs.  See Bug #*/
+    public static final SecurityActor L7ACTOR_URI = new SecurityActor("http://www.layer7tech.com/ws/policy");
+
+    /** This represents the default Security header with no actor or role. */
     public static final SecurityActor NOACTOR = new SecurityActor(null);
 
     private String attributeValue;

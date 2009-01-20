@@ -7,6 +7,12 @@ import javax.persistence.*;
 
 import org.hibernate.annotations.Cascade;
 
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.util.Properties;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
 /**
  * An email listener configuration.
  */
@@ -14,6 +20,9 @@ import org.hibernate.annotations.Cascade;
 @Entity
 @Table(name="email_listener")
 public class EmailListener extends NamedEntityImp {
+    private static final Logger logger = Logger.getLogger(EmailListener.class.getName());
+    private static final String ENCODING = "UTF-8";
+
     private String host;
     private int port;
     private EmailServerType serverType;
@@ -25,6 +34,12 @@ public class EmailListener extends NamedEntityImp {
     private int pollInterval = 60;
     private boolean active;
     private transient EmailListenerState emailListenerState;    //transient because don't need state information when editing email listener in GUI
+
+    private String properties;
+
+    public static final String PREFIX = "com.l7tech.server.email.prop";
+    public static final String PROP_IS_HARDWIRED_SERVICE = PREFIX + ".hardwired.service.bool";
+    public static final String PROP_HARDWIRED_SERVICE_ID = PREFIX + ".hardwired.service.id";
 
     public EmailListener() {
         super();
@@ -50,13 +65,14 @@ public class EmailListener extends NamedEntityImp {
         folder = emailListener.getFolder();
         pollInterval = emailListener.getPollInterval();
         active = emailListener.isActive();
+        properties = emailListener.getProperties();
         createEmailListenerState(emailListener.getEmailListenerState());
 
     }
 
     public EmailListener(long oid, String name, String host, int port, EmailServerType serverType, boolean useSsl,
                          boolean deleteOnReceive, String username, String password, String folder, int pollInterval,
-                         boolean active, String ownerNodeId, long lastPollTime, Long lastMessageId) {
+                         boolean active, String ownerNodeId, long lastPollTime, Long lastMessageId, String properties) {
         super();
         setOid(oid);
         setName(name);
@@ -70,6 +86,7 @@ public class EmailListener extends NamedEntityImp {
         this.folder = folder;
         this.pollInterval = pollInterval;
         this.active = active;
+        this.properties = properties;
         createEmailListenerState(ownerNodeId, lastPollTime, lastMessageId);
     }
 
@@ -135,6 +152,46 @@ public class EmailListener extends NamedEntityImp {
 
     public void setHost(String host) {
         this.host = host;
+    }
+
+
+    @Column(name="properties", length=Integer.MAX_VALUE)
+    @Lob
+    public String getProperties() {
+        return properties;
+    }
+
+    public void setProperties(String properties) {
+        this.properties = properties;
+    }
+
+    public Properties properties() {
+        Properties properties = new Properties();
+        try {
+            String propertiesStr = getProperties();
+            if (propertiesStr != null && propertiesStr.trim().length()>0) {
+                properties.loadFromXML(new ByteArrayInputStream(propertiesStr.getBytes(ENCODING)));
+            }
+        }
+        catch(Exception e) {
+            logger.log(Level.WARNING, "Error loading properties", e);
+        }
+        return properties;
+    }
+
+    public void properties(Properties properties) {
+        if (properties == null) {
+            setProperties("");
+        } else {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                properties.storeToXML(baos, null, ENCODING);
+                setProperties(baos.toString(ENCODING));
+            }
+            catch (Exception e) {
+                logger.log(Level.WARNING, "Error saving properties", e);
+            }
+        }
     }
 
     @Column(name="port", nullable=false)

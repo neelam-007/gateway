@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.l7tech.lib"
+		module="samlp_v2_jaxb"
+		revision="1.0"
+		status="release"
+		publication="20090116161011"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="samlp_v2_jaxb" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

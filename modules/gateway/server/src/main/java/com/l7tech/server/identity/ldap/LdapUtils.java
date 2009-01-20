@@ -5,6 +5,7 @@ package com.l7tech.server.identity.ldap;
 
 import com.sun.jndi.ldap.LdapURL;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.server.ServerConfig;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
@@ -34,17 +35,26 @@ public final class LdapUtils {
     static boolean attrContainsCaseIndependent(Attribute attr, String valueToLookFor) {
         if (valueToLookFor == null || "".equals(valueToLookFor))
             return true;
-        for (int i = 0; i < attr.size(); i++) {
-            try {
-                Object attrVal = attr.get(i);
-                if (attrVal == null) continue;
-                if (valueToLookFor.equalsIgnoreCase(attrVal.toString()))
-                    return true;
-            } catch (NamingException e) {
-                // ignore this (non)value
-            }
-        }
-        return false;
+
+        boolean shouldBeCaseInsensitiveValue = Boolean.parseBoolean(
+            ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_LDAP_COMPARISON_CASE_INSENSITIVE));
+
+                for (int i = 0; i < attr.size(); i++) {
+                    try {
+                        Object attrVal = attr.get(i);
+                        if (attrVal == null) continue;
+                        if (shouldBeCaseInsensitiveValue) {
+                            if (valueToLookFor.equalsIgnoreCase(attrVal.toString()))
+                                return true;
+                        } else {
+                            if (valueToLookFor.equals(attrVal.toString()))
+                                return true;
+                        }
+                    } catch (NamingException e) {
+                        // ignore this (non)value
+                    }
+                }
+                return false;
     }
 
     static Object extractOneAttributeValue(Attributes attributes, String attrName) throws NamingException {

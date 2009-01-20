@@ -48,7 +48,7 @@ public class EmailTask implements Runnable {
     }
 
     /**
-     * Task execution.  This method performs the call to the JmsRequestHandler and handling any errors
+     * Task execution.  This method performs the call to the EmailHandler and handles any errors
      * accordingly.
      */
     public final void run() {

@@ -6,6 +6,8 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.util.Pair;
 
 /**
  *
@@ -50,7 +52,7 @@ public class SoapFaultManagerTest {
         SoapFaultManager sfm = new SoapFaultManager();
         SoapFaultLevel level = new SoapFaultLevel();
         level.setLevel(SoapFaultLevel.GENERIC_FAULT);
-        String fault = sfm.constructReturningFault( level, getSoap12PEC(false) );
+        Pair<ContentTypeHeader,String> fault = sfm.constructReturningFault( level, getSoap12PEC(false) );
         System.out.println(fault);
     }
 
@@ -60,7 +62,7 @@ public class SoapFaultManagerTest {
         SoapFaultManager sfm = new SoapFaultManager();
         SoapFaultLevel level = new SoapFaultLevel();
         level.setLevel(SoapFaultLevel.GENERIC_FAULT);
-        String fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
+        Pair<ContentTypeHeader, String> fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
         System.out.println(fault);
     }
 

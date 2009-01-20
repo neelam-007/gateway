@@ -19,6 +19,8 @@ import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.message.EmailKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.message.MimeKnob;
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.mail.internet.MimeMessage;
 import javax.mail.Header;
@@ -132,6 +134,21 @@ public class EmailHandlerImpl implements EmailHandler {
             final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
                     new com.l7tech.message.Message());
 
+            try {
+                Properties props = emailListenerCfg.getEmailListener().properties();
+                String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);
+                if (tmp != null) {
+                    if (Boolean.parseBoolean(tmp)) {
+                        tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
+                        long hardwiredserviceid = Long.parseLong(tmp);
+                        context.setHardwiredService(hardwiredserviceid);
+                    }
+                }
+            } catch (Exception e) {
+                _logger.log(Level.WARNING, "problem testing for hardwired service", e);
+            }
+
+
             String faultMessage = null;
             String faultCode = null;
 
@@ -169,7 +186,7 @@ public class EmailHandlerImpl implements EmailHandler {
                         faultMessage = msg1;
                         faultCode = "Client";
                     } catch ( Throwable t ) {
-                        _logger.log( Level.WARNING, "Exception while processing JMS message", t );
+                        _logger.log( Level.WARNING, "Exception while processing email message: {0}", ExceptionUtils.getMessage(t));
                         faultMessage = t.getMessage();
                         if ( faultMessage == null ) faultMessage = t.toString();
                     }

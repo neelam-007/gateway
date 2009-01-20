@@ -1,5 +1,5 @@
 ---
---- Script to update mysql ssg database from 4.6 to 5.0
+--- Script to update mysql ssg database from 4.6.5 to 5.0
 ---
 --- Layer 7 Technologies, inc
 ---
@@ -195,7 +195,7 @@ CREATE TABLE trusted_esm (
   name varchar(128) NOT NULL,
   trusted_cert_oid bigint(20) NOT NULL,
   primary key(objectid),
-  FOREIGN KEY (trusted_cert_oid) REFERENCES trusted_cert (objectid)
+  FOREIGN KEY (trusted_cert_oid) REFERENCES trusted_cert (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS trusted_esm_user;
@@ -206,7 +206,6 @@ CREATE TABLE trusted_esm_user (
   provider_oid bigint(20) NOT NULL,
   user_id varchar(128) NOT NULL,
   esm_user_id varchar(128) NOT NULL,
-  esm_user_display_name varchar(128) default NULL,
   PRIMARY KEY(objectid),
   FOREIGN KEY (trusted_esm_oid) REFERENCES trusted_esm (objectid) ON DELETE CASCADE,
   FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE
@@ -312,9 +311,6 @@ CREATE TABLE rbac_predicate_entityfolder (
 
 -- Add version column to the Folders table
 ALTER TABLE folder ADD COLUMN version int(11) NOT NULL AFTER objectid; 
-
--- Add flag for enable/disable wss processing to published service
-ALTER TABLE published_service ADD COLUMN wss_processing TINYINT(1) NOT NULL DEFAULT 1 AFTER lax_resolution;
 
 --
 -- Reenable FK at very end of script

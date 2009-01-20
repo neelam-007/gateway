@@ -192,10 +192,6 @@ public class UriResolver extends ServiceResolver<String> {
         throw new UnsupportedOperationException();
     }
 
-    public boolean isSoap() {
-        return false;
-    }
-
     public String doGetTargetValue(PublishedService service) {
         String uri = service.getRoutingUri();
         if (uri == null) uri = "";

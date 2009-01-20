@@ -34,6 +34,7 @@ import java.sql.SQLException;
  * User: flascell<br/>
  * Date: Nov 25, 2003<br/>
  */
+@SuppressWarnings({ "JpaQlInspection" })
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ReolutionManagerImpl extends HibernateDaoSupport implements ResolutionManager, ApplicationContextAware {
     private static final String HQL_FIND_BY_SERVICE_OID =
@@ -72,13 +73,13 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
      */
     @Override
     public void recordResolutionParameters(PublishedService publishedService) throws DuplicateObjectException, UpdateException {
-        Collection distinctItemsToSave;
+        Collection<ResolutionParameters> distinctItemsToSave;
         try {
             distinctItemsToSave = getDistinct(publishedService);
         } catch (ServiceResolutionException sre) {
             throw new UpdateException("Cannot get service resolution data for service.", sre);
         }
-        Collection existingParameters = existingResolutionParameters(publishedService.getOid());
+        Collection<ResolutionParameters> existingParameters = existingResolutionParameters(publishedService.getOid());
 
         if (isSameParameters(distinctItemsToSave, existingParameters)) {
             logger.finest("resolution parameters unchanged");
@@ -97,14 +98,13 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
 
         // delete the resolution parameters that are no longer part of the new ones
         try {
-            for (Iterator i = existingParameters.iterator(); i.hasNext();) {
-                ResolutionParameters maybeTodelete = (ResolutionParameters)i.next();
+            for (ResolutionParameters existingParameter : existingParameters) {
                 boolean delete = true;
-                if (distinctItemsToSave != null && distinctItemsToSave.contains(maybeTodelete)) {
+                if (distinctItemsToSave != null && distinctItemsToSave.contains(existingParameter)) {
                     delete = false;
                 }
                 if (delete) {
-                    getHibernateTemplate().delete(maybeTodelete);
+                    getHibernateTemplate().delete(existingParameter);
                 }
             }
         } catch (HibernateException e) {
@@ -115,13 +115,8 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
 
         // insert the ones that did not exist before
         try {
-            for (Iterator i = distinctItemsToSave.iterator(); i.hasNext();) {
-                ResolutionParameters maybeToAdd = (ResolutionParameters)i.next();
-                boolean add = true;
-                if (existingParameters != null && existingParameters.contains(maybeToAdd)) {
-                    add = false;
-                }
-                if (add) {
+             for (ResolutionParameters maybeToAdd : distinctItemsToSave) {
+                if (existingParameters == null || !existingParameters.contains(maybeToAdd)) {
                     getHibernateTemplate().save(maybeToAdd);
                 }
             }
@@ -160,7 +155,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         }
     }
 
-    private boolean isSameParameters(Collection paramcol1, Collection paramcol2) {
+    private boolean isSameParameters(Collection<ResolutionParameters> paramcol1, Collection<ResolutionParameters> paramcol2) {
         boolean sameParams = false;
         if (paramcol1.size() == paramcol2.size()) {
             sameParams = paramcol2.containsAll(paramcol1);
@@ -190,7 +185,7 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
         return listOfParameters;
     }
 
-    private Collection existingResolutionParameters(final long serviceid) {
+    private Collection<ResolutionParameters> existingResolutionParameters(final long serviceid) {
         try {
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 @Override
@@ -232,14 +227,12 @@ public class ReolutionManagerImpl extends HibernateDaoSupport implements Resolut
      * @throws DuplicateObjectException on duplicate detect
      * @throws HibernateException       on hibernate error
      */
-    private void checkForDuplicateResolutionParameters(Collection parameters, long serviceIdToIgnore) throws DuplicateObjectException {
+    private void checkForDuplicateResolutionParameters(Collection<ResolutionParameters> parameters, long serviceIdToIgnore) throws DuplicateObjectException {
 
         Set duplicates = new HashSet();
-        List results = getHibernateTemplate().find(HQL_FIND_ALL);
-        for (Iterator ir = results.iterator(); ir.hasNext();) {
-            ResolutionParameters rp = (ResolutionParameters)ir.next();
-            for (Iterator ip = parameters.iterator(); ip.hasNext();) {
-                ResolutionParameters r = (ResolutionParameters)ip.next();
+        List<ResolutionParameters> results = getHibernateTemplate().find(HQL_FIND_ALL);
+        for (ResolutionParameters rp : results) {
+            for (ResolutionParameters r : parameters) {
                 if (r.resolutionEquals(rp) && rp.getServiceid() != serviceIdToIgnore) {
                     duplicates.add(r);
                 }

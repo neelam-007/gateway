@@ -4,11 +4,15 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
-import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DocumentSizeFilter;
-import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gui.util.*;
 import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -17,6 +21,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Properties;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.text.MessageFormat;
 
 /**
@@ -28,9 +35,12 @@ import java.text.MessageFormat;
  */
 public class EmailListenerPropertiesDialog extends JDialog {
     public static final String TITLE = "Email Listener Properties";
-
+    private static final EntityHeader[] EMPTY_ENTITY_HEADER = new EntityHeader[0];
+    
     /** Resource bundle with default locale */
     private ResourceBundle resources = null;
+    private Logger logger = Logger.getLogger(EmailListenerPropertiesDialog.class.getName());
+    
 
     private JPanel mainPanel;
     private JButton cancelButton;
@@ -48,11 +58,84 @@ public class EmailListenerPropertiesDialog extends JDialog {
     private JButton testButton;
     private JCheckBox deleteOnReceiveCheckbox;
     private JCheckBox activeCheckbox;
+    private JRadioButton hardwiredServiceSpecifyContentType;
+    private JTextField hardwiredServiceContentTypeValue;
+    private JRadioButton hardwiredServiceContentTypeFromProperty;
+    private JTextField hardwiredServiceContentTypeProperty;
+    private JCheckBox associateWithPublishedService;
+    private JPanel serviceNamePanel;
+    private JLabel serviceNameLabel;
+    private JComboBox serviceNameCombo;
 
     private EmailListener emailListener;
     private InputValidator inputValidator;
     private boolean confirmed = false;
 
+    private static class ComboItem {
+        ComboItem(String name, long id) {
+            serviceName = name;
+            serviceID = id;
+        }
+
+        @Override
+        public String toString() {
+            return serviceName;
+        }
+
+        String serviceName;
+        long serviceID;
+
+        @Override
+        @SuppressWarnings({ "RedundantIfStatement" })
+        public boolean equals(Object o) {
+           if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ComboItem comboItem = (ComboItem) o;
+
+            if (serviceID != comboItem.serviceID) return false;
+            if (serviceName != null ? !serviceName.equals(comboItem.serviceName) : comboItem.serviceName != null)
+                return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+            result = (serviceName != null ? serviceName.hashCode() : 0);
+            result = 31 * result + (int) (serviceID ^ (serviceID >>> 32));
+            return result;
+        }
+    }
+
+    private class ComponentEnabler implements ActionListener {
+           private final Functions.Nullary<Boolean> f;
+           private final JComponent[] components;
+
+           public ComponentEnabler(Functions.Nullary<Boolean> f, JComponent... components) {
+               this.f = f;
+               this.components = components;
+           }
+
+           public void actionPerformed(ActionEvent e) {
+               for (JComponent component : components) {
+                   component.setEnabled(f.call());
+               }
+           }
+       }
+
+        private RunOnChangeListener formPreener = new RunOnChangeListener(new Runnable() {
+           public void run() {
+               enableOrDisableComponents();
+           }
+       });
+
+       private void enableOrDisableComponents() {
+           serviceNameLabel.setEnabled(associateWithPublishedService.isSelected());
+           serviceNameCombo.setEnabled(associateWithPublishedService.isSelected());
+       }
+    
     /**
      * Creates a new instance of EmailListenerPropertiesDialog. The fields in the dialog
      * will be set from the values in the provided EmailListener and if the dialog is
@@ -105,6 +188,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
 
         pack();
+        enableOrDisableComponents();
         Utilities.centerOnScreen(this);
     }
 
@@ -140,6 +224,8 @@ public class EmailListenerPropertiesDialog extends JDialog {
                 dispose();
             }
         });
+
+        associateWithPublishedService.addActionListener(formPreener);
 
         // When the type field is changed, enable or disable the tabs that aren't associated
         // with the new type value.
@@ -248,6 +334,24 @@ public class EmailListenerPropertiesDialog extends JDialog {
         // Interval must be an integer between greater than or equal to 1
         checkInterval.setModel(new SpinnerNumberModel(5, 1, Integer.MAX_VALUE, 1));
         ((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().setFocusLostBehavior(JFormattedTextField.PERSIST);  //we'll do our own checking
+
+    }
+
+    private PublishedService getSelectedHardwiredService() {
+        PublishedService svc = null;
+        ComboItem item = (ComboItem)serviceNameCombo.getSelectedItem();
+        if (item == null) return null;
+        ServiceAdmin sa = getServiceAdmin();
+        try {
+            svc = sa.findServiceByID(Long.toString(item.serviceID));
+        } catch (FindException e) {
+            logger.severe("Can not find service with id " + item.serviceID);
+        }
+        return svc;
+    }
+
+    public ServiceAdmin getServiceAdmin() {
+        return Registry.getDefault().getServiceManager();
     }
 
     public void setVisible(boolean b) {
@@ -361,6 +465,48 @@ public class EmailListenerPropertiesDialog extends JDialog {
         password.setText(emailListener.getPassword());
         folderName.setText(emailListener.getFolder() != null && emailListener.getFolder().length() > 0 ? emailListener.getFolder() : "INBOX");
         checkInterval.setValue(emailListener.getPollInterval());
+        // populate the service combo
+ 	 	EntityHeader[] allServices = EMPTY_ENTITY_HEADER;
+ 	 	try {
+ 	 	    ServiceAdmin sa = getServiceAdmin();
+ 	 	    allServices = sa.findAllPublishedServices();
+ 	 	} catch (Exception e) {
+ 	 	    logger.log(Level.WARNING, "problem listing services", e);
+ 	 	}
+
+        boolean isHardWired = false;
+ 	 	long hardWiredId = 0;
+
+        Properties props = emailListener.properties();
+ 	 	String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);
+ 	 	if (tmp != null) {
+            if (Boolean.parseBoolean(tmp)) {
+                tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
+                isHardWired = true;
+                hardWiredId = Long.parseLong(tmp);
+            }
+ 	 	}
+
+        if (allServices != null) {
+ 	 	    ComboItem[] comboitems = new ComboItem[allServices.length];
+ 	 	    Object selectMe = null;
+ 	 	    for (int i = 0; i < allServices.length; i++) {
+ 	 	        EntityHeader aService = allServices[i];
+ 	 	        ServiceHeader svcHeader = (ServiceHeader) aService;
+ 	 	        comboitems[i] = new ComboItem(svcHeader.getDisplayName(), svcHeader.getOid());
+ 	 	        if (isHardWired && aService.getOid() == hardWiredId) {
+ 	 	            selectMe = comboitems[i];
+ 	 	        }
+ 	 	    }
+
+            serviceNameCombo.setModel(new DefaultComboBoxModel(comboitems));
+ 	 	    if (selectMe != null) {
+ 	 	        serviceNameCombo.setSelectedItem(selectMe);
+ 	 	        associateWithPublishedService.setSelected(true);
+ 	 	    } else {
+ 	 	        associateWithPublishedService.setSelected(false);
+ 	 	    }
+ 	 	}
     }
 
     /**
@@ -378,6 +524,17 @@ public class EmailListenerPropertiesDialog extends JDialog {
         emailListener.setPassword(new String(password.getPassword()));
         emailListener.setFolder(folderName.getText().trim());
         emailListener.setPollInterval(((Number)checkInterval.getValue()).intValue());
+
+        Properties properties = new Properties();
+        if (associateWithPublishedService.isSelected()) {
+ 	 	    PublishedService svc = getSelectedHardwiredService();
+ 	 	    properties.setProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE, (Boolean.TRUE).toString());
+ 	 	    properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, (new Long(svc.getOid())).toString());
+ 	 	} else {
+ 	 	    properties.setProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE, (Boolean.FALSE).toString());
+ 	 	}
+
+        emailListener.properties(properties);
     }
 
     /** @return true if the dialog has been dismissed with the ok button */

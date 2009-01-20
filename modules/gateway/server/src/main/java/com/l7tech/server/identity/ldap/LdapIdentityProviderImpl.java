@@ -942,9 +942,13 @@ public class LdapIdentityProviderImpl
         StringBuffer output = new StringBuffer();
         if (terms.length > 1) output.append("(|");
 
+        String comparator = "=";
+        if(Boolean.parseBoolean(ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_LDAP_COMPARISON_CASE_INSENSITIVE))) {
+            comparator = ":=";
+        }
         for (LdapSearchTerm term : terms) {
             output.append("(&");
-            output.append("(objectClass=").append(term.objectclass).append(")");
+            output.append("(objectClass").append(comparator).append(term.objectclass).append(")");
             output.append("(").append(term.searchAttribute).append("=").append(term.searchValue).append(")");
             output.append(")");
         }

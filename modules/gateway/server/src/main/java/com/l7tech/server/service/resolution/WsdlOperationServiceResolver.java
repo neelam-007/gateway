@@ -5,6 +5,7 @@ package com.l7tech.server.service.resolution;
 
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.BindingOperation;
@@ -79,9 +80,13 @@ public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceRe
         return out;
     }
 
-    public boolean isSoap() {
-        return true;
-    }
+    protected abstract T getTargetValue(Definition def, BindingOperation operation);
 
-    protected abstract T getTargetValue( Definition def, BindingOperation operation );
+    public boolean isApplicableToMessage(Message msg) throws ServiceResolutionException {
+        try {
+            return msg.isSoap();
+        } catch (Exception e) {
+            throw new ServiceResolutionException("Unable to determine whether message is SOAP", e);
+        }
+    }
 }

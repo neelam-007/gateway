@@ -27,8 +27,6 @@ import java.util.regex.Pattern;
 public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<String> {
     private final Pattern[] regexPatterns;
 
-
-
     public OriginalUrlServiceOidResolver(ApplicationContext spring) {
         super(spring);
         List<Pattern> compiled = new ArrayList<Pattern>();
@@ -108,18 +106,9 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<Stri
         throw new UnsupportedOperationException();
     }
 
-    public boolean isSoap() {
-        return false;
-    }
-
-    public Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
-        String value = getRequestValue(request);
+    public boolean isApplicableToMessage(Message request) throws ServiceResolutionException {
         // special case: if the request does not follow pattern, then all services passed
         // match, the next resolver will narrow it down
-        if (value == null) {
-            return Result.NOT_APPLICABLE;
-        } else {
-            return super.resolve(value, serviceSubset);
-        }
+        return getRequestValue(request) != null;
     }
 }

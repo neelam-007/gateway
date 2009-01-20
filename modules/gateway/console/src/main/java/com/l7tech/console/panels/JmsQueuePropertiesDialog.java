@@ -19,8 +19,11 @@ import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.common.mime.ContentTypeHeader;
 
 import javax.naming.Context;
 import javax.swing.*;
@@ -33,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * Dialog for configuring a JMS Queue (ie, a [JmsConnection, JmsEndpoint] pair).
@@ -91,11 +95,20 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JRadioButton outboundMessageIdRadioButton;
     private JPanel inboundCorrelationPanel;
     private JPanel outboundCorrelationPanel;
-    private JRadioButton defaultToNormalResolutionRadioButton;
-    private JRadioButton useJmsMsgPropAsSoapActionRadioButton;
-    private JRadioButton associateQueueWithPublishedRadioButton;
+    private JCheckBox useJmsMsgPropAsSoapActionRadioButton;
+ 	private JCheckBox associateQueueWithPublishedService;
     private JPanel inboundOptionsPanel;
     private JPanel outboundOptionsPanel;
+
+    private JPanel msgResolutionPanel;
+
+    private JRadioButton specifyContentTypeFreeForm;
+ 	private JComboBox contentTypeValues;
+ 	private JRadioButton specifyContentTypeFromHeader;
+ 	private JTextField getContentTypeFromProperty;
+ 	private JCheckBox specifyContentTypeCheckBox;
+    private JPanel serviceNamePanel;
+
 
     private JmsConnection connection = null;
     private JmsEndpoint endpoint = null;
@@ -103,9 +116,63 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private boolean outboundOnly = false;
     private FormAuthorizationPreparer securityFormAuthorizationPreparer;
     private Logger logger = Logger.getLogger(JmsQueuePropertiesDialog.class.getName());
-
+    private ContentTypeComboBoxModel contentTypeModel;
+    
     public ServiceAdmin getServiceAdmin() {
         return Registry.getDefault().getServiceManager();
+    }
+
+    private static class ContentTypeComboBoxItem {
+ 	    private ContentTypeHeader cType;
+ 	 	private ContentTypeComboBoxItem(ContentTypeHeader cType) {
+ 	 	    this.cType = cType;
+ 	 	}
+
+        private ContentTypeComboBoxItem(String cTypeString) throws IOException {
+ 	 	    this.cType = ContentTypeHeader.parseValue(cTypeString);
+ 	 	}
+
+        public ContentTypeHeader getContentType() {
+ 	 	    return this.cType;
+ 	 	}
+
+        @Override
+ 	 	public String toString() {
+            return this.cType.getMainValue();
+ 	 	}
+
+        public boolean equals(Object o) {
+ 	 	    if (this == o) return true;
+ 	 	    if (o == null || getClass() != o.getClass()) return false;
+
+            ContentTypeComboBoxItem that = (ContentTypeComboBoxItem) o;
+
+            if (cType != null ? !cType.getFullValue().equals(that.cType.getFullValue()) : that.cType != null) return false;
+ 	 	        return true;
+ 	 	    }
+
+        public int hashCode() {
+ 	 	    return (cType != null ? cType.hashCode() : 0);
+ 	 	}
+ 	}
+
+    private class ContentTypeComboBoxModel extends DefaultComboBoxModel {
+ 	 	private ContentTypeComboBoxModel(ContentTypeComboBoxItem[] items) {
+            super(items);
+ 	 	}
+
+ 	 	// implements javax.swing.MutableComboBoxModel
+ 	 	public void addElement(Object anObject) {
+ 	 	    if (anObject instanceof String) {
+ 	 	        String s = (String) anObject;
+ 	 	        try {
+ 	 	            ContentTypeHeader cth = ContentTypeHeader.parseValue(s);
+ 	 	                super.addElement(new ContentTypeComboBoxItem(cth)) ;
+ 	 	        } catch (IOException e) {
+ 	 	            logger.warning("Error parsing the content type " + s);
+ 	 	        }
+ 	 	    }
+ 	 	}
     }
 
     private static class ProviderComboBoxItem {
@@ -285,6 +352,29 @@ public class JmsQueuePropertiesDialog extends JDialog {
         inboundReplyAutomaticRadioButton.addActionListener(inboundEnabler);
         inboundReplyNoneRadioButton.addActionListener(inboundEnabler);
 
+        Utilities.enableGrayOnDisabled(contentTypeValues);
+ 	 	Utilities.enableGrayOnDisabled(getContentTypeFromProperty);
+
+        //        final ActionListener contentTypeSetter = new ActionListener() {
+ 	 	//            public void actionPerformed(ActionEvent e) {
+ 	 	//                selectContentType();
+		//            }
+        //        };
+
+        ActionListener contentTypeOptionListener = new ActionListener() {
+ 	 	    public void actionPerformed(ActionEvent e) {
+ 	 	        enableOrDisableComponents();
+ 	 	    }
+ 	 	};
+
+        specifyContentTypeCheckBox.addActionListener(contentTypeOptionListener);
+ 	 	specifyContentTypeFreeForm.addActionListener(contentTypeOptionListener);
+ 	 	specifyContentTypeFromHeader.addActionListener(contentTypeOptionListener);
+        getContentTypeFromProperty.getDocument().addDocumentListener(formPreener);
+
+          //        associateQueueWithPublishedService.addActionListener(contentTypeSetter);
+ 	 	//        serviceNameCombo.addActionListener(contentTypeSetter);
+
         final ComponentEnabler outboundEnabler = new ComponentEnabler(new Functions.Nullary<Boolean>() {
             public Boolean call() {
                 return outboundReplySpecifiedQueueRadioButton.isSelected();
@@ -354,9 +444,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         useJmsMsgPropAsSoapActionRadioButton.addItemListener(formPreener);
         jmsMsgPropWithSoapActionTextField.getDocument().addDocumentListener(formPreener);
         Utilities.enableGrayOnDisabled(jmsMsgPropWithSoapActionTextField);
-        associateQueueWithPublishedRadioButton.addActionListener(formPreener);
-        defaultToNormalResolutionRadioButton.addActionListener(formPreener);
-
+        associateQueueWithPublishedService.addActionListener(formPreener);
+        
         testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onTest();
@@ -380,6 +469,66 @@ public class JmsQueuePropertiesDialog extends JDialog {
         enableOrDisableComponents();
         applyFormSecurity();
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+//    private void selectContentType() {
+// 	    PublishedService svc = getSelectedHardwiredService();
+// 	    loadContentTypesModel();
+// 	    if (svc.isSoap()) {
+// 	        specifyContentTypeFreeForm.setSelected(true);
+// 	        contentTypeValues.setSelectedItem(ContentTypeHeader.SOAP_1_2_DEFAULT.getMainValue()) ;
+// 	    } else {
+// 	        specifyContentTypeFreeForm.setSelected(true);
+// 	        contentTypeValues.setSelectedItem(ContentTypeHeader.XML_DEFAULT.getMainValue());
+// 	    }
+// 	}
+
+    private void loadContentTypesModel() {
+        if (contentTypeModel == null) {
+            java.util.List<ContentTypeComboBoxItem> items = new ArrayList<ContentTypeComboBoxItem>();
+            items.add(new ContentTypeComboBoxItem(ContentTypeHeader.XML_DEFAULT));
+            items.add(new ContentTypeComboBoxItem(ContentTypeHeader.SOAP_1_2_DEFAULT));
+            items.add(new ContentTypeComboBoxItem(ContentTypeHeader.TEXT_DEFAULT));
+            items.add(new ContentTypeComboBoxItem(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED));
+            items.add(new ContentTypeComboBoxItem(ContentTypeHeader.OCTET_STREAM_DEFAULT));
+            try {
+                items.add(new ContentTypeComboBoxItem(ContentTypeHeader.parseValue("application/fastinfoset")));
+            } catch (IOException e) {
+                logger.warning("Error trying to initialize content-type application/fastinfoset");
+            }
+            try {
+                items.add(new ContentTypeComboBoxItem(ContentTypeHeader.parseValue("application/soap+fastinfoset")));
+            } catch (IOException e) {
+                logger.warning("Error trying to initialize content-type application/soap+fastinfoset");
+            }
+
+            contentTypeModel = new ContentTypeComboBoxModel(items.toArray(new ContentTypeComboBoxItem[items.size()]));
+            contentTypeValues.setModel(contentTypeModel);
+        }
+    }
+
+    private void enableContentTypeControls() {
+        boolean specifyEnabled = specifyContentTypeCheckBox.isSelected();
+        specifyContentTypeFreeForm.setEnabled(specifyEnabled);
+        contentTypeValues.setEnabled(specifyEnabled && specifyContentTypeFreeForm.isSelected());
+
+        specifyContentTypeFromHeader.setEnabled(specifyEnabled);
+        getContentTypeFromProperty.setEnabled(specifyEnabled && specifyContentTypeFromHeader.isSelected());
+    }
+
+
+    private PublishedService getSelectedHardwiredService() {
+        PublishedService svc = null;
+        ComboItem item = (ComboItem)serviceNameCombo.getSelectedItem();
+        if (item == null) return null;
+
+        ServiceAdmin sa = getServiceAdmin();
+        try {
+            svc = sa.findServiceByID(Long.toString(item.serviceID));
+        } catch (FindException e) {
+            logger.severe("Can not find service with id " + item.serviceID);
+        }
+        return svc;
     }
 
     private void initProviderComboBox() {
@@ -519,7 +668,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
      * @return a new JmsConnection with the current settings, or null if one could not be created.  The new connection
      *         will not yet have been saved to the database.
      */
-    private JmsConnection makeJmsConnectionFromView() {
+    private JmsConnection makeJmsConnectionFromView() throws IOException{
         if (!validateForm()) {
             JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
               "At minimum, the name, queue name, naming URL and factory URL are required.",
@@ -559,13 +708,32 @@ public class JmsQueuePropertiesDialog extends JDialog {
             conn.setPassword(null);
         }
 
-        if (associateQueueWithPublishedRadioButton.isSelected()) {
-            ComboItem item = (ComboItem)serviceNameCombo.getSelectedItem();
+        if (associateQueueWithPublishedService.isSelected()) {
+            PublishedService svc = getSelectedHardwiredService();
             properties.setProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE, (Boolean.TRUE).toString());
-            properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, (new Long(item.serviceID)).toString());
+            properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, (new Long(svc.getOid())).toString());
         } else {
             properties.setProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE, (Boolean.FALSE).toString());
         }
+
+        if (specifyContentTypeCheckBox.isSelected()) {
+ 	 	    if (specifyContentTypeFreeForm.isSelected()) {
+ 	 	        ContentTypeHeader selectedContentType = ( (ContentTypeComboBoxItem)contentTypeValues.getSelectedItem()).getContentType();
+ 	 	        if (selectedContentType != null) {
+ 	 	            properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE, JmsConnection.CONTENT_TYPE_SOURCE_FREEFORM);
+ 	 	            properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_VAL, selectedContentType.getFullValue());
+ 	 	        }
+ 	 	    } else {
+ 	 	        String propertyName = getContentTypeFromProperty.getText();
+ 	 	        if ( (propertyName != null) && !"".equals(propertyName) ) {
+ 	 	            properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE, JmsConnection.CONTENT_TYPE_SOURCE_HEADER);
+ 	 	            properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_VAL, propertyName);
+ 	 	        }
+ 	 	    }
+ 	 	} else {
+            properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE, "");
+ 	 	    properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_VAL, "");
+ 	 	}
 
         conn.setJndiUrl(jndiUrlTextField.getText());
         conn.setInitialContextFactoryClassname(icfTextField.getText());
@@ -746,6 +914,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private void initializeView() {
         boolean isHardWired = false;
         long hardWiredId = 0;
+        loadContentTypesModel();
         if (connection != null) {
             Properties props = connection.properties();
 
@@ -775,6 +944,37 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     hardWiredId = Long.parseLong(tmp);
                 }
             }
+
+            String ctSource = props.getProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE);
+
+            boolean shouldSelect = false;
+            if(JmsConnection.CONTENT_TYPE_SOURCE_FREEFORM.equals(ctSource)) {
+                shouldSelect = true;
+                String ctStr = props.getProperty(JmsConnection.PROP_CONTENT_TYPE_VAL);
+                if ((null != ctStr) && !"".equals(ctStr)) {
+                    try {
+                        ContentTypeHeader ctHeader = ContentTypeHeader.parseValue(ctStr);
+                        contentTypeValues.setSelectedItem(new ContentTypeComboBoxItem(ctHeader));
+                        specifyContentTypeFreeForm.setSelected(true);
+                    } catch (IOException e1) {
+                        logger.log(Level.WARNING,
+                                MessageFormat.format("Error while parsing the Content-Type for JMS Queue {0}. Value was {1}", connection.toString(), ctStr),
+                                ExceptionUtils.getMessage(e1));
+                        shouldSelect = false;
+                    }
+                }
+            } else if (JmsConnection.CONTENT_TYPE_SOURCE_HEADER.equals(ctSource)) {
+                shouldSelect = true;
+                String jmsPropertyName = props.getProperty(JmsConnection.PROP_CONTENT_TYPE_VAL);
+                if ( (null != jmsPropertyName) && !"".equals(jmsPropertyName) ) {
+                    getContentTypeFromProperty.setText(jmsPropertyName);
+                    specifyContentTypeFromHeader.setSelected(true);
+                }
+            } else if (ctSource == null || "".equals(ctSource)) {
+                shouldSelect = false;
+            }
+            specifyContentTypeCheckBox.setSelected(shouldSelect);
+
         } else {
             // No connection is set
             providerComboBox.setSelectedIndex(0);
@@ -806,34 +1006,33 @@ public class JmsQueuePropertiesDialog extends JDialog {
             if (isHardWired) {
                 String message = "Service " + hardWiredId + " is selected, but cannot be displayed.";
                 serviceNameCombo.addItem(new ComboItem(message, hardWiredId));
-                associateQueueWithPublishedRadioButton.setSelected(true);
+                associateQueueWithPublishedService.setSelected(true);
             }
             // Case 2: There are no any published services at all.
             else {
                 // We just want to show the message "No published services available." in the combo box.
                 // So "-1" is just a dummy ServiceOID and it won't be used since the checkbox is set to disabled.
                 serviceNameCombo.addItem(new ComboItem("No published services available.", -1));
-                associateQueueWithPublishedRadioButton.setEnabled(false);
+                associateQueueWithPublishedService.setEnabled(false);
             }
         } else {
-            java.util.List<EntityHeader> onlySoapServicesList = new ArrayList<EntityHeader>();
-            for (EntityHeader entity : allServices) {
-                if (((ServiceHeader)entity).isSoap()) onlySoapServicesList.add(entity);
-            }
-            EntityHeader[] soapServices = onlySoapServicesList.toArray(new EntityHeader[onlySoapServicesList.size()]);
-            ComboItem[] comboitems = new ComboItem[soapServices.length];
+            ComboItem[] comboitems = new ComboItem[allServices.length];
             Object selectMe = null;
-            for (int i = 0; i < soapServices.length; i++) {
-                comboitems[i] = new ComboItem(((ServiceHeader)soapServices[i]).getDisplayName(), soapServices[i].getOid());
-                if (isHardWired && soapServices[i].getOid() == hardWiredId) {
+            for (int i = 0; i < allServices.length; i++) {
+                EntityHeader aService = allServices[i];
+                ServiceHeader svcHeader = (ServiceHeader) aService;
+                comboitems[i] = new ComboItem(svcHeader.getDisplayName(), svcHeader.getOid());
+                if (isHardWired && aService.getOid() == hardWiredId) {
                     selectMe = comboitems[i];
                 }
             }
             serviceNameCombo.setModel(new DefaultComboBoxModel(comboitems));
             if (selectMe != null) {
                 serviceNameCombo.setSelectedItem(selectMe);
-                associateQueueWithPublishedRadioButton.setSelected(true);
-            } 
+                associateQueueWithPublishedService.setSelected(true);
+            } else {
+                associateQueueWithPublishedService.setSelected(false);
+            }
         }
         useQueueForFailedCheckBox.setSelected(false);
         failureQueueNameTextField.setText("");
@@ -905,6 +1104,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (inboundRadioButton.isSelected() && endpoint.isDisabled()) {
             disableListeningTheQueueCheckBox.setSelected(true);
         }
+
+        enableOrDisableComponents();
     }
 
     /**
@@ -955,9 +1156,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (inboundReplySpecifiedQueueField.isEnabled() &&
             inboundReplySpecifiedQueueField.getText().trim().length() == 0)
             return false;
-        if (associateQueueWithPublishedRadioButton.isSelected() &&
+        if (associateQueueWithPublishedService.isSelected() &&
                 (serviceNameCombo == null || serviceNameCombo.getItemCount() <= 0))
             return false;
+        if (specifyContentTypeCheckBox.isSelected() &&
+ 	 	    specifyContentTypeFromHeader.isSelected() &&
+ 	 	    getContentTypeFromProperty.getText().trim().length() == 0)
+ 	 	    return false;
+
         return true;
     }
 
@@ -977,10 +1183,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private void enableOrDisableComponents() {
         if (inboundRadioButton.isSelected()) {
             useJmsMsgPropAsSoapActionRadioButton.setEnabled(true);
-            jmsMsgPropWithSoapActionLabel.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected() && !defaultToNormalResolutionRadioButton.isSelected());
-            jmsMsgPropWithSoapActionTextField.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected() && !defaultToNormalResolutionRadioButton.isSelected());
-            serviceNameLabel.setEnabled(associateQueueWithPublishedRadioButton.isSelected() && !defaultToNormalResolutionRadioButton.isSelected());
-            serviceNameCombo.setEnabled(associateQueueWithPublishedRadioButton.isSelected() && !defaultToNormalResolutionRadioButton.isSelected());
+            jmsMsgPropWithSoapActionLabel.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected());
+ 	 	    jmsMsgPropWithSoapActionTextField.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected());
+ 	 	    serviceNameLabel.setEnabled(associateQueueWithPublishedService.isSelected());
+ 	 	    serviceNameCombo.setEnabled(associateQueueWithPublishedService.isSelected());
             tabbedPane.setEnabledAt(3, true);
             tabbedPane.setEnabledAt(4, false);
             enableOrDisableAcknowledgementControls();
@@ -1000,6 +1206,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         final boolean valid = validateForm();
         saveButton.setEnabled(valid);
         testButton.setEnabled(valid);
+        enableContentTypeControls();
     }
 
     private void enableOrDisableAcknowledgementControls() {
@@ -1072,18 +1279,18 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void onSave() {
-        JmsConnection newConnection = makeJmsConnectionFromView();
-        if (newConnection == null)
-            return;
-
-        JmsEndpoint newEndpoint = makeJmsEndpointFromView();
-        if (newEndpoint == null)
-            return;
-
-        // For the case where the queue name is changed, then the connection should be updated.
-        newConnection.setName(newEndpoint.getName());
-
         try {
+ 	 	    JmsConnection newConnection = makeJmsConnectionFromView();
+ 	 	    if (newConnection == null)
+ 	 	        return;
+
+            JmsEndpoint newEndpoint = makeJmsEndpointFromView();
+            if (newEndpoint == null)
+ 	 	        return;
+
+            // For the case where the queue name is changed, then the connection should be updated.
+ 	 	    newConnection.setName(newEndpoint.getName());
+ 	 	
             long oid = Registry.getDefault().getJmsManager().saveConnection(newConnection);
             newConnection.setOid(oid);
             newEndpoint.setConnectionOid(newConnection.getOid());

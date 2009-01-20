@@ -126,7 +126,8 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }
     }
 
-    public Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
+    public final Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
+        if (!isApplicableToMessage(request)) return Result.NOT_APPLICABLE;
         T value = getRequestValue(request);
         return resolve(value, serviceSubset);
     }
@@ -167,4 +168,6 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     protected final Map<T, Map<Long, PublishedService>> _valueToServiceMapMap = new HashMap<T, Map<Long, PublishedService>>();
     protected final Map<Long, List<T>> serviceOidToValueListMap = new HashMap<Long, List<T>>();
     protected final ReadWriteLock _rwlock = new ReentrantReadWriteLock(false);
+
+    public abstract boolean isApplicableToMessage(Message msg) throws ServiceResolutionException;
 }

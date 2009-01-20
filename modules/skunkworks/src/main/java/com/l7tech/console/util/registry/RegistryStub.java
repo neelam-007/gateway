@@ -257,7 +257,8 @@ public class RegistryStub extends Registry {
                                                                           true,
                                                                           "test-node",
                                                                           System.currentTimeMillis(),
-                                                                          1L);
+                                                                          1L,
+                                                                          "properties");
             
             public EmailListener findEmailListenerByPrimaryKey(long oid) throws FindException {
                 if(oid == 2468L) {

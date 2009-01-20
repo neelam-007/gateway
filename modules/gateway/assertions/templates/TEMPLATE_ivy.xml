@@ -5,7 +5,7 @@
         status="integration"
 	>
 	</info>
-	<configurations>
+	<configurations defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default">
         <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
         <conf name="default" description="Runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
         <conf name="master" description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
@@ -19,10 +19,8 @@
 		<artifact name="@ASSERTION@Assertion" type="aar" ext="aar" conf="master"/>
 	</publications>
 	<dependencies>
-        <dependency name="layer7-modular-assertions" rev="latest.integration" force="true" conf="compile,runtime,test"/>
-
-        <!-- add direct dependency on server to work around problem when building idea project files -->
-        <dependency name="layer7-gateway-server" rev="latest.integration" force="true"
-                    conf="optional; test->default,test" transitive="false"/>
+        <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
+                    conf="compile->compile;runtime->runtime;test->test"/>
+                
 	</dependencies>
 </ivy-module>

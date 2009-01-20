@@ -144,36 +144,42 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     public synchronized void setWsdlXml(String wsdlXml) {
         _wsdlXml = wsdlXml;
         _parsedWsdl = null;
-        _soapVersion = SoapVersion.UNKNOWN;
-
-         try {
-             parsedWsdl();
-             if(_parsedWsdl != null) {
-                 for(BindingOperation bindingOperation : _parsedWsdl.getBindingOperations()) {
-                     Iterator eels = bindingOperation.getExtensibilityElements().iterator();
-                     ExtensibilityElement ee;
-                     while ( eels.hasNext() ) {
-                         ee = (ExtensibilityElement)eels.next();
-                         if ( ee instanceof SOAPOperation) {
-                             _soapVersion = SoapVersion.SOAP_1_1;
-                             break;
-                         } else if( ee instanceof SOAP12Operation) {
-                             _soapVersion = SoapVersion.SOAP_1_2;
-                             break;
-                         }
-                     }
-
-                     if(_soapVersion != SoapVersion.UNKNOWN) {
-                         break;
-                     }
-                 }
-             }
-         } catch (WSDLException e) {
-             throw new RuntimeException(e); // WSDL should have already been parsed by now
-         }
+        _soapVersion = null;
     }
 
-    public SoapVersion getSoapVersion() {
+    private static SoapVersion guessSoapVersionFromWsdl(Wsdl wsdl) {
+ 	    SoapVersion ret = SoapVersion.UNKNOWN;
+        if (wsdl == null)
+            return ret;
+
+        for(BindingOperation bindingOperation : wsdl.getBindingOperations()) {
+
+            Iterator eels = bindingOperation.getExtensibilityElements().iterator();
+            ExtensibilityElement ee;
+            while ( eels.hasNext() ) {
+                ee = (ExtensibilityElement)eels.next();
+                if ( ee instanceof SOAPOperation) {
+                    ret = SoapVersion.SOAP_1_1;
+                    break;
+                } else if( ee instanceof SOAP12Operation) {
+                    ret = SoapVersion.SOAP_1_2;
+                    break;
+                }
+            }
+            if(ret != SoapVersion.UNKNOWN) {
+                break;
+            }
+        }
+        return ret;
+    }
+
+    public synchronized SoapVersion getSoapVersion() {
+        if (_soapVersion == null)
+ 	 	    try {
+ 	 	        _soapVersion = guessSoapVersionFromWsdl(parsedWsdl());
+ 	 	    } catch (WSDLException e) {
+ 	 	        _soapVersion = SoapVersion.UNKNOWN;
+ 	 	    }
         return _soapVersion;
     }
 
@@ -529,7 +535,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     // ************************************************
     private String _wsdlUrl;
     private String _wsdlXml;
-    private SoapVersion _soapVersion = SoapVersion.UNKNOWN;
+    private SoapVersion _soapVersion = null;
     private boolean _disabled;
     private boolean soap = true;
     private boolean internal = false;

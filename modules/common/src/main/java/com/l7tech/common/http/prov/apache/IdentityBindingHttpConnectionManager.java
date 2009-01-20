@@ -140,7 +140,7 @@ public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionM
         ThreadLocalInfo tli = getInfo();
 
         if (tli == null) {
-            logger.warning("Attempt to bind with no id set, using fake id!");
+            logger.warning("Attempt to bind with no id set"); // using fake id!
             tli = setInfo(new Object());
         }
 

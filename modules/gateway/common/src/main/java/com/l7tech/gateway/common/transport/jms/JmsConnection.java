@@ -57,6 +57,11 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     public static final String PROP_CUSTOMIZER = PREFIX + ".customizer.class";
     public static final String PROP_IS_HARDWIRED_SERVICE = PREFIX + ".hardwired.service.bool";
     public static final String PROP_HARDWIRED_SERVICE_ID = PREFIX + ".hardwired.service.id";
+    public static final String PROP_CONTENT_TYPE_SOURCE = PREFIX + ".contentType.source";
+    public static final String PROP_CONTENT_TYPE_VAL = PREFIX + ".contentType.value";
+    public static final String CONTENT_TYPE_SOURCE_FREEFORM = PREFIX + ".contentType.freeform";
+    public static final String CONTENT_TYPE_SOURCE_HEADER = PREFIX + ".contentType.header";
+
 
     /** Name of String property (in returned value of {@link #properties()}) that
         contains the name of JMS message property to be used as SOAPAction value

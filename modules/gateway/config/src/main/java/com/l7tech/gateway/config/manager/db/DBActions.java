@@ -76,6 +76,7 @@ public class DBActions {
 
         List<DbVersionChecker> dbCheckers = Arrays.asList(
             new DbVersion50Checker(),
+            new DbVersion465Checker(),    
             new DbVersion46Checker(),
             new DbVersion45Checker(),
             new DbVersion44Checker(),

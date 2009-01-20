@@ -5,8 +5,10 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -17,12 +19,17 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Pair;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.message.Message;
+import com.l7tech.message.XmlKnob;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.text.FieldPosition;
@@ -31,6 +38,7 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * Server side SoapFaultLevel utils.
@@ -109,11 +117,12 @@ public class SoapFaultManager implements ApplicationContextAware {
 
     /**
      * constructs a soap fault based on the pec and the level desired.
-     * @return may return null if level is SoapFaultLevel.DROP_CONNECTION otherwise returns a string containing the soap fault xml
+     * @return returns a Pair of content type, string.  The string may be empty if faultLevel is SoapFaultLevel.DROP_CONNECTION.
      */
-    public String constructReturningFault(SoapFaultLevel faultLevelInfo, PolicyEnforcementContext pec) {
-        String output = null;
+    public Pair<ContentTypeHeader, String> constructReturningFault(SoapFaultLevel faultLevelInfo, PolicyEnforcementContext pec) {
+        String output = "";
         AssertionStatus globalstatus = pec.getPolicyResult();
+        ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
         if (globalstatus == null) {
             // if this happens, it means a bug needs fixing where a path fails to set a value on the policy result
             logger.severe("PolicyEnforcementContext.policyResult not set. Fallback on SERVER_ERROR");
@@ -124,6 +133,8 @@ public class SoapFaultManager implements ApplicationContextAware {
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
                 output = ExpandVariables.process(faultLevelInfo.getFaultTemplate(), pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor), auditor);
+                if (output.contains(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE))
+                    ctype = ContentTypeHeader.SOAP_1_2_DEFAULT;
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 try {
@@ -134,7 +145,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                     Element policyResultEl = (Element)res.item(0);
                     policyResultEl.setAttribute("status", globalstatus.getMessage());
                     // populate the faultactor value
-                    String actor = pec.getVariable("request.url").toString();
+                    String actor = getRequestUrlVariable(pec);
                     if(useSoap12) {
                         res = tmp.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role");
                     } else {
@@ -155,8 +166,30 @@ public class SoapFaultManager implements ApplicationContextAware {
                 output = buildDetailedFault(pec, globalstatus, true);
                 break;
         }
-        return output;
+        return new Pair<ContentTypeHeader, String>(ctype, output);
     }
+
+    public boolean isSoap12(PolicyEnforcementContext pec) {
+        // If we can see that the request has a SOAP version, use the version from the request
+        try {
+            final Message request = pec.getRequest();
+            if (request.isSoap()) {
+                final XmlKnob xmlKnob = request.getXmlKnob();
+                final ElementCursor cursor = xmlKnob.getElementCursor();
+                cursor.moveToDocumentElement();
+                String docNs = cursor.getNamespaceUri();
+                return SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(docNs);
+            }
+            // Fallthrough and guess based on service
+        } catch (IOException e) {
+            // Fallthrough and guess based on service
+        } catch (SAXException e) {
+            // Fallthrough and guess based on service
+        }
+
+        return pec.getService() != null && SoapVersion.SOAP_1_2.equals(pec.getService().getSoapVersion());
+    }
+
 
     /**
      * SOAP faults resulting from an exception that occurs in the processing of the policy.
@@ -166,7 +199,7 @@ public class SoapFaultManager implements ApplicationContextAware {
         String output = null;
         try {
             boolean policyVersionFault = pec.isRequestClaimingWrongPolicyVersion();
-            if(pec.getService() != null && pec.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
+            if(isSoap12(pec)) {
                 Document tmp = XmlUtil.stringToDocument(policyVersionFault ?
                         POLICY_VERSION_EXCEPTION_FAULT_SOAP_1_2 : EXCEPTION_FAULT_SOAP_1_2);
 
@@ -178,14 +211,8 @@ public class SoapFaultManager implements ApplicationContextAware {
                     policyResultEl.setAttribute("status", e.getMessage());
                 }
                 // populate the faultactor value
-                String role;
-                try {
-                    role = pec.getVariable("request.url").toString();
-                    // todo, catch cases when this throws and just fix it
-                } catch (NoSuchVariableException notfound) {
-                    logger.log(Level.WARNING, "this variable is not found but should always be set", notfound);
-                    role = "ssg";
-                }
+                String role = getRequestUrlVariable(pec);
+
                 NodeList res = tmp.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role");
                 Element faultrole = (Element) res.item(0);
                 faultrole.setTextContent(role);
@@ -202,14 +229,8 @@ public class SoapFaultManager implements ApplicationContextAware {
                     policyResultEl.setAttribute("status", e.getMessage());
                 }
                 // populate the faultactor value
-                String actor;
-                try {
-                    actor = pec.getVariable("request.url").toString();
-                    // todo, catch cases when this throws and just fix it
-                } catch (NoSuchVariableException notfound) {
-                    logger.log(Level.WARNING, "this variable is not found but should always be set", notfound);
-                    actor = "ssg";
-                }
+                String actor = getRequestUrlVariable(pec);
+
                 NodeList res = tmp.getElementsByTagName("faultactor");
                 Element faultactor = (Element) res.item(0);
                 faultactor.setTextContent(actor);
@@ -244,7 +265,7 @@ public class SoapFaultManager implements ApplicationContextAware {
     private String buildDetailedFault(PolicyEnforcementContext pec, AssertionStatus globalstatus, boolean includeSuccesses) {
         String output = null;
         try {
-            boolean useSoap12 = pec.getService() != null && pec.getService().getSoapVersion() == SoapVersion.SOAP_1_2;
+            boolean useSoap12 = isSoap12(pec);
             Document tmp = XmlUtil.stringToDocument(useSoap12 ? GENERIC_FAULT_SOAP_1_2 : GENERIC_FAULT);
             NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
             // populate @status element
@@ -253,14 +274,8 @@ public class SoapFaultManager implements ApplicationContextAware {
             policyResultEl.setAttribute("xmlns:l7p", WspConstants.L7_POLICY_NS);
 
             // populate the faultactor value
-            String actor;
-            try {
-                actor = pec.getVariable("request.url").toString();
-                // todo, catch cases when this throws and just fix it
-            } catch (NoSuchVariableException notfound) {
-                logger.log(Level.WARNING, "this variable is not found but should always be set", notfound);
-                actor = "ssg";
-            }
+            String actor = getRequestUrlVariable(pec);
+
             res = useSoap12 ? tmp.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role") : tmp.getElementsByTagName("faultactor");
             Element faultactor = (Element)res.item(0);
             faultactor.setTextContent(actor);
@@ -461,5 +476,25 @@ public class SoapFaultManager implements ApplicationContextAware {
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get cluster properties", e);
         }
+    }
+
+    /**
+     * Gets the <code>request.url</code> context variable value.  Defaults to "ssg" if the variable is not set
+     *
+     * @param pec policy context
+     * @return String value from the request.url variable, defaults to "ssg" if the variable is not set
+     */
+    private String getRequestUrlVariable(PolicyEnforcementContext pec) {
+
+        String reqUrl;
+        try {
+            reqUrl = pec.getVariable("request.url").toString();
+            // todo, catch cases when this throws and just fix it
+        } catch (NoSuchVariableException notfound) {
+            if (pec.getRequest().isHttpRequest())
+                logger.log(Level.WARNING, "this variable is not found but should always be set: {0}", ExceptionUtils.getMessage(notfound));
+            reqUrl = "ssg";
+        }
+        return reqUrl;
     }
 }

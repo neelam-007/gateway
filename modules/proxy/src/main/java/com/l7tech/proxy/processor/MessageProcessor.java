@@ -1150,13 +1150,13 @@ public class MessageProcessor {
             // the processed security header will be deleted iff. it was explicitely addressed to us
             if (processorResult.getProcessedActor() != null &&
                 (processorResult.getProcessedActor() == SecurityActor.L7ACTOR ||
-                processorResult.getProcessedActor() == SecurityActor.L7ACTOR_OLD))
+                processorResult.getProcessedActor() == SecurityActor.L7ACTOR_URI))
             {
                 XmlKnob xmlKnob = response.getXmlKnob();
                 Document doc = xmlKnob.getDocumentReadOnly();
                 Element eltodelete = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
                 if(eltodelete == null) {
-                    eltodelete = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR_OLD.getValue());
+                    eltodelete = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR_URI.getValue());
                 }
                 if (eltodelete == null) {
                     log.warning("the security element was already deleted somehow?"); // should not happen

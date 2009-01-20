@@ -20,7 +20,7 @@ public class ConfigureFtpAuditArchiverAction extends SecureAction {
     static final Logger log = Logger.getLogger(ManageEmailListenersAction.class.getName());
 
     public ConfigureFtpAuditArchiverAction() {
-        super(new AttemptedAnyOperation(EntityType.EMAIL_LISTENER), UI_MANAGE_EMAIL_LISTENERS);
+        super(new AttemptedAnyOperation(EntityType.ANY));
     }
 
     @Override

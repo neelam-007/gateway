@@ -805,7 +805,7 @@ insert into keystore_file values (2, 0, "Software DB", "sdb.pkcs12", null);
 DROP TABLE IF EXISTS shared_keys;
 CREATE TABLE shared_keys (
   encodingid varchar(32) NOT NULL,
-  b64edval varchar(256) NOT NULL,
+  b64edval varchar(2048) NOT NULL,
   primary key(encodingid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -1081,6 +1081,7 @@ INSERT INTO rbac_permission VALUES (-655,1,-650,'CREATE',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-656,1,-650,'DELETE',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-657,1,-650,'UPDATE',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-658,1,-650,'READ',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission VALUES (-659,1,-650,'READ',NULL,'SERVICE');
 
 INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.');
 INSERT INTO rbac_permission VALUES (-701,0,-700,'READ',NULL,'CLUSTER_PROPERTY');
@@ -1118,6 +1119,7 @@ INSERT INTO rbac_permission VALUES (-901,0,-900,'READ',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-902,0,-900,'CREATE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-903,0,-900,'UPDATE',NULL,'EMAIL_LISTENER');
 INSERT INTO rbac_permission VALUES (-904,0,-900,'DELETE',NULL,'EMAIL_LISTENER');
+INSERT INTO rbac_permission VALUES (-905,0,-900,'READ',NULL,'SERVICE');
 
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');
@@ -1173,6 +1175,7 @@ CREATE TABLE email_listener (
   folder varchar(255) NOT NULL,
   poll_interval int(8) NOT NULL,
   active tinyint(1) NOT NULL default 1,
+  properties mediumtext,
   PRIMARY KEY  (objectid)
 ) TYPe=InnoDB DEFAULT CHARACTER SET utf8;
 

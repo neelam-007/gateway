@@ -213,7 +213,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Resolve the relevent Security header
         Element l7secheader = SoapUtil.getSecurityElement(processedDocument, SecurityActor.L7ACTOR.getValue());
-        if(l7secheader == null) l7secheader = SoapUtil.getSecurityElement(processedDocument, SecurityActor.L7ACTOR_OLD.getValue());
+        if(l7secheader == null) l7secheader = SoapUtil.getSecurityElement(processedDocument, SecurityActor.L7ACTOR_URI.getValue());
         Element noactorsecheader = SoapUtil.getSecurityElement(processedDocument);
         if (l7secheader != null) {
             releventSecurityHeader = l7secheader;

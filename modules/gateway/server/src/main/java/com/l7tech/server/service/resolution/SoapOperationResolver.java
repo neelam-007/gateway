@@ -122,6 +122,14 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
         }
     }
 
+    public boolean isApplicableToMessage(Message msg) throws ServiceResolutionException {
+        try {
+            return msg.isSoap();
+        } catch (Exception e) {
+            throw new ServiceResolutionException("Unable to determine whether message is SOAP", e);
+        }
+    }
+
     public boolean usesMessageContent() {
         return true;
     }
@@ -130,7 +138,4 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
         throw new UnsupportedOperationException();
     }
 
-    public boolean isSoap() {
-        return true;
-    }
 }

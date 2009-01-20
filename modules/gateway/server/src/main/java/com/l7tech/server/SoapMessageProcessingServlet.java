@@ -32,6 +32,7 @@ import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.web.context.WebApplicationContext;
@@ -418,11 +419,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         String faultXml = null;
         try {
             responseStream = hresp.getOutputStream();
-            if(context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
-                hresp.setContentType(SOAP_1_2_CONTENT_TYPE);
-            } else {
-                hresp.setContentType(DEFAULT_CONTENT_TYPE);
-            }
             hresp.setStatus(status == AssertionStatus.BAD_REQUEST ? 400 : 500); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
@@ -435,8 +431,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     }
                 }
             }
-            faultXml = soapFaultManager.constructReturningFault(faultLevelInfo, context);
-            responseStream.write(faultXml.getBytes());
+            Pair<ContentTypeHeader, String> fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
+            if (fault != null && fault.right != null) {
+                hresp.setContentType(fault.left.getFullValue());
+                faultXml = fault.right;
+                responseStream.write(faultXml.getBytes());
+            }
         } finally {
             if (responseStream != null) responseStream.close();
         }

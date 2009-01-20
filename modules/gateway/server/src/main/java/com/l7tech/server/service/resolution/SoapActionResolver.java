@@ -53,7 +53,8 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
 
     }
 
-    public Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
+    @Override
+    public boolean isApplicableToMessage(Message request) {
         // Filter out requests for which resolution by soap action is not appropriate.
         //
         MimeKnob mimeKnob = (MimeKnob) request.getKnob(MimeKnob.class);
@@ -83,9 +84,9 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
         // If it is an HTTP/XML service it should have been resolved by now.
         if ( (isHttp && !isXml) || (!isHttp && !soapActionAvailable) ) {
             auditor.logAndAudit(MessageProcessingMessages.SR_SOAPACTION_NOT_HTTP_OR_SOAP);
-            return Result.NOT_APPLICABLE;
+            return false;
         } else {
-            return super.resolve(request, serviceSubset);
+            return true;
         }
     }
 }

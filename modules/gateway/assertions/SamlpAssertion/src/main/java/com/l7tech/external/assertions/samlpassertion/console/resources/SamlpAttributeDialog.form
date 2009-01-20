@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.external.assertions.samlpassertion.console.SamlpEditAttributeDialog">
+  <grid id="a4abd" binding="mainPanel" layout-manager="GridLayoutManager" row-count="9" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="12" left="12" bottom="12" right="12"/>
+    <constraints>
+      <xy x="32" y="62" width="560" height="454"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <component id="f0068" class="javax.swing.JLabel">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <labelFor value="25190"/>
+          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpEditAttributeDialog" key="attributeNameField.label"/>
+          <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeNameField.tooltip"/>
+        </properties>
+      </component>
+      <component id="aaac7" class="javax.swing.JLabel">
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <labelFor value="4cd6b"/>
+          <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpEditAttributeDialog" key="attributeNamespaceField.label"/>
+          <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeNamespaceField.tooltip"/>
+        </properties>
+      </component>
+      <component id="25190" class="javax.swing.JTextField" binding="attributeNameField">
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeNameField.tooltip"/>
+        </properties>
+      </component>
+      <component id="4cd6b" class="javax.swing.JTextField" binding="attributeNamespaceField">
+        <constraints>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeNamespaceField.tooltip"/>
+        </properties>
+      </component>
+      <grid id="160ce" binding="attributeValuePanel" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeValueField.tooltip"/>
+        </properties>
+        <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpEditAttributeDialog" title-key="attributeValueField.label"/>
+        <children>
+          <component id="2e05a" class="javax.swing.JRadioButton" binding="specificValueRadio">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Specific &amp;value:"/>
+            </properties>
+          </component>
+          <component id="1d90a" class="javax.swing.JRadioButton" binding="anyValueRadio">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Allow &amp;any non-empty value"/>
+            </properties>
+          </component>
+          <component id="589fa" class="javax.swing.JCheckBox" binding="repeatIfMultivaluedCheckBox" default-binding="true">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Repeat if &amp;Multivalued"/>
+            </properties>
+          </component>
+          <scrollpane id="22699">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="12f40" class="javax.swing.JTextArea" binding="attributeValueField">
+                <constraints/>
+                <properties>
+                  <rows value="4"/>
+                  <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeValueField.tooltip"/>
+                </properties>
+              </component>
+            </children>
+          </scrollpane>
+        </children>
+      </grid>
+      <grid id="50cf2" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="af458" class="javax.swing.JButton" binding="okButton">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false">
+                <minimum-size width="75" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <label resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="okButton.label"/>
+              <text value="OK"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="okButton.tooltip"/>
+            </properties>
+          </component>
+          <component id="8c4c3" class="javax.swing.JButton" binding="cancelButton">
+            <constraints>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false">
+                <minimum-size width="75" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="cancelButton.label"/>
+            </properties>
+          </component>
+          <hspacer id="ee6ba">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </hspacer>
+          <hspacer id="f80a">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
+                <minimum-size width="12" height="-1"/>
+              </grid>
+            </constraints>
+          </hspacer>
+        </children>
+      </grid>
+      <vspacer id="67a3d">
+        <constraints>
+          <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+            <minimum-size width="520" height="12"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <grid id="5865d" binding="nameFormatPanel" layout-manager="GridLayoutManager" row-count="2" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeNameFormatField.tooltip"/>
+        </properties>
+        <border type="none" title-resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" title-key="attributeNameFormatField.label"/>
+        <children>
+          <component id="71922" class="javax.swing.JRadioButton" binding="nameFormatURIRefRadioButton">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="URI Reference"/>
+            </properties>
+          </component>
+          <component id="3415f" class="javax.swing.JRadioButton" binding="nameFormatOtherRadioButton">
+            <constraints>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Other"/>
+            </properties>
+          </component>
+          <component id="45fe2" class="javax.swing.JRadioButton" binding="nameFormatUnspecifiedRadioButton">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <selected value="true"/>
+              <text value="Unspecified"/>
+            </properties>
+          </component>
+          <component id="781f1" class="javax.swing.JRadioButton" binding="nameFormatBasicRadioButton">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <selected value="false"/>
+              <text value="Basic"/>
+            </properties>
+          </component>
+          <component id="c330e" class="javax.swing.JTextField" binding="attributeNameFormatTextField">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <enabled value="false"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <grid id="ce576" binding="friendlyNamePanel" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="8c1f8" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <labelFor value="25190"/>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/SamlpEditAttributeDialog" key="attributeFriendlyNameField.label"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeNameField.tooltip"/>
+            </properties>
+          </component>
+          <hspacer id="96d68">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </hspacer>
+          <component id="7ddd7" class="javax.swing.JTextField" binding="attributeFriendlyNameField">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeNameField.tooltip"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+    </children>
+  </grid>
+  <buttonGroups>
+    <group name="buttonGroup">
+      <member id="2e05a"/>
+      <member id="1d90a"/>
+    </group>
+  </buttonGroups>
+</form>

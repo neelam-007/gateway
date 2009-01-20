@@ -27,6 +27,7 @@ import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -95,26 +96,23 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         AssertionStatus status = AssertionStatus.UNDEFINED;
         boolean responseSuccess = false;
         boolean messageTooLarge = false;
+        Properties props = endpointCfg.getConnection().properties();
         try {
             try {
                 // Init content and type
                 long size = 0;
+
+                ctype = getContentType(jmsRequest, props);
+
                 if ( jmsRequest instanceof TextMessage ) {
                     size = ((TextMessage)jmsRequest).getText().length() * 2;
                     requestStream = new ByteArrayInputStream(((TextMessage)jmsRequest).getText().getBytes("UTF-8"));
-                    ctype = ContentTypeHeader.XML_DEFAULT;
                 } else if ( jmsRequest instanceof BytesMessage ) {
                     size = ((BytesMessage)jmsRequest).getBodyLength();
                     requestStream = new BytesMessageInputStream((BytesMessage)jmsRequest);
-                    String requestCtype = jmsRequest.getStringProperty("Content-Type");
-                    if (requestCtype != null)
-                        ctype = ContentTypeHeader.parseValue(requestCtype);
-                    else
-                        ctype = ContentTypeHeader.XML_DEFAULT;
                 } else {
+                    // not reached;
                     handleInvalidMessageType(endpointCfg, jmsRequest);
-                    // not reached
-                    ctype = null;
                     requestStream = null;
                 }
 
@@ -173,7 +171,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                                                                                       new com.l7tech.message.Message());
 
                 try {
-                    Properties props = endpointCfg.getConnection().properties();
+
                     String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);
                     if (tmp != null) {
                         if (Boolean.parseBoolean(tmp)) {
@@ -216,6 +214,10 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                                                 "Not sending response message.");
                                     stealthMode = true;
                                 } else {
+                                    // add more detailed diagnosis message
+ 	 	                            if (!context.getResponse().isXml()) {
+                                          _logger.log(Level.WARNING, "Response message is non-XML, the ContentType is: {0}", context.getRequest().getMimeKnob().getOuterContentType());
+                                    }
                                     responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
                                 }
                             } else {
@@ -228,7 +230,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                             faultMessage = msg1;
                             faultCode = SoapUtil.FC_CLIENT;
                         } catch ( Throwable t ) {
-                            _logger.log( Level.WARNING, "Exception while processing JMS message", t );
+                            _logger.warning("Exception while processing JMS message: " + ExceptionUtils.getMessage(t));
                             faultMessage = t.getMessage();
                             if ( faultMessage == null ) faultMessage = t.toString();
                         }
@@ -351,6 +353,51 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                 } 
             }
         }
+    }
+
+    private ContentTypeHeader getContentType(Message jmsRequest, Properties props)
+            throws JmsRuntimeException, JMSException, IOException {
+        ContentTypeHeader ctype = null;
+        String requestCtype = null;
+
+        if (jmsRequest instanceof TextMessage) return ContentTypeHeader.XML_DEFAULT;
+
+        String source = props.getProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE);
+        String val = props.getProperty(JmsConnection.PROP_CONTENT_TYPE_VAL);
+
+        try {
+ 	 	    if ( (null == source) || "".equals(source) ) {
+ 	 	        _logger.warning ("no content type specified for this message, attempting to find one using Content-Type property");
+ 	 	        requestCtype = jmsRequest.getStringProperty("Content-Type");
+ 	 	        if (requestCtype != null) {
+ 	 	            _logger.info("found a content type of " + requestCtype);
+ 	 	            ctype = ContentTypeHeader.parseValue(requestCtype);
+ 	 	        } else {
+ 	 	            _logger.info("Didn't find a content type. Using " + ContentTypeHeader.XML_DEFAULT.toString());
+ 	 	            ctype = ContentTypeHeader.XML_DEFAULT;
+	            }
+ 	        } else {
+                if (JmsConnection.CONTENT_TYPE_SOURCE_HEADER.equals(source)) {
+ 	 	            requestCtype = jmsRequest.getStringProperty(val);
+ 	 	            // more informative diagnosis message
+ 	 	            if (requestCtype == null || requestCtype.isEmpty()) {
+ 	 	                throw new JmsRuntimeException("Expected ContentType JMS property not set: " + val);
+ 	 	            }
+                } else {
+                    requestCtype = val;
+ 	 	        }
+ 	 	        ctype = ContentTypeHeader.parseValue(requestCtype);
+
+ 	 	        // log warning for unrecognized content type
+ 	 	        if (ctype != null && !ctype.matches("text", "xml") && !ctype.matches("text", "plain") && !ctype.matches("application", "*")) {
+ 	 	            _logger.log(Level.WARNING, "ContentType from JMS property not recognized, may cause policy to fail: {0}", ctype.toString());
+ 	 	        }
+	        }
+        } catch (IOException ioex) {
+            _logger.log(Level.WARNING, "Bad ContentType encountered={0}, error message: {1}", new String[] {requestCtype, ioex.getMessage()});
+            throw ioex;
+        }
+        return ctype;
     }
 
     private void handleInvalidMessageType(JmsEndpointConfig endpointCfg, Message message) throws JmsRuntimeException {

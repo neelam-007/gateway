@@ -1,6 +1,7 @@
 package com.l7tech.server.security.kerberos;
 
 import com.l7tech.kerberos.*;
+import com.l7tech.util.HexUtils;
 import org.ietf.jgss.*;
 
 import javax.security.auth.Subject;
@@ -52,8 +53,8 @@ public class KerberosRoutingClient extends KerberosClient {
 
             final KerberosTicket creds = kerberosServiceTicket.getDelegatedKerberosTicket();
             if (creds == null) {
-                logger.info("KTKT: " + com.l7tech.util.HexUtils.encodeBase64(kerberosServiceTicket.getGSSAPReqTicket().toByteArray(), true));
-                throw new KerberosException("Credentials not available.");
+                logger.finer("Kerberos Ticket (base64): " + HexUtils.encodeBase64(kerberosServiceTicket.getGSSAPReqTicket().toByteArray(), true));
+                throw new KerberosException("Credentials for delegation not found");
             }
 
             try {

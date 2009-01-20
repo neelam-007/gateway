@@ -452,6 +452,11 @@ public class GatewayFeatureSets {
             mass("assertion:EsmMetrics"),
             mass("assertion:EsmSubscription"));
 
+        GatewayFeatureSet samlpAssertions =
+ 	 	fsr("set:SAMLP:Assertions", "The necessary assertions to enable SAMLP functionality",
+ 	 	    mass("assertion:SamlpRequestBuilder"),
+ 	 	    mass("assertion:SamlpResponseEvaluation"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -543,6 +548,7 @@ public class GatewayFeatureSets {
             fs(customFw),
             fs(ssb),
             fs(modularAssertions),
+            fs(samlpAssertions),
             fs(uiFw),
             fs(wssp),
             fs(ems));

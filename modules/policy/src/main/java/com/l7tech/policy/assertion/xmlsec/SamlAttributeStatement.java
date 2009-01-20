@@ -61,6 +61,9 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
         private boolean anyValue;
         private boolean repeatIfMulti;
 
+        // additional Value for SAMLP
+        private String friendlyName;
+
         public Attribute() {
         }
 
@@ -124,6 +127,14 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
             this.repeatIfMulti = repeatIfMulti;
         }
 
+        public String getFriendlyName() {
+            return friendlyName;
+        }
+
+        public void setFriendlyName(String friendlyName) {
+            this.friendlyName = friendlyName;
+        }
+
         public String toString() {
             StringBuffer sb = new StringBuffer();
             sb.append("[ ")
@@ -132,8 +143,12 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
               .append(", name="+ (name == null ? "null" : name))
               .append(", value="+ (value == null ? "null" : value))
               .append(", anyValue=" + anyValue)
-              .append(", repeatIfMulti=" + repeatIfMulti)
-              .append(" ]");
+              .append(", repeatIfMulti=" + repeatIfMulti);
+            if (friendlyName != null) {
+                sb.append("friendlyName=").append(friendlyName).append("]");
+            } else {
+                sb.append(" ]");
+            }
             return sb.toString();
         }
 

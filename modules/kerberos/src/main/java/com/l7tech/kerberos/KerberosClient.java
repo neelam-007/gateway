@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -25,13 +26,7 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
-import sun.security.krb5.EncryptionKey;
-import sun.security.krb5.KrbApReq;
-import sun.security.krb5.Checksum;
-import sun.security.krb5.Credentials;
-import sun.security.krb5.EncryptedData;
-import sun.security.krb5.KrbCred;
-import sun.security.krb5.PrincipalName;
+import sun.security.krb5.*;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 
@@ -252,7 +247,8 @@ public class KerberosClient {
     }
 
     /**
-     * Used to get a ticket in acceptance of a session.
+     * Used to get a ticket in acceptance of a session.  Also extracts the delegated creds to build a
+ 	 * service ticket that can later be used for delegation during HTTP routing.
      *
      * @return the ticket
      * @throws KerberosException on error
@@ -287,66 +283,20 @@ public class KerberosClient {
                         KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
                         KrbApReq apReq = new KrbApReq(apReqBytes, toEncryptionKey(keys));
                         validateServerPrincipal(kerberosSubject.getPrincipals(), new KerberosPrincipal(apReq.getCreds().getServer().getName()) );
-                        EncryptionKey key = apReq.getCreds().getSessionKey();
-                        EncryptionKey subKey = apReq.getSubKey();
 
-                        Checksum checksum = apReq.getChecksum();
+                        // Extract the delegated kerberos ticket if one exists
+                        EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
+                        KerberosTicket delegatedKerberosTicket = extractDelegatedServiceTicket(apReq.getChecksum(), sessionKey);
+                        
+                        // get the key bytes
+ 	 	                byte[] keyBytes;
+ 	 	                if (apReq.getSubKey() != null)
+ 	 	                    keyBytes = apReq.getSubKey().getBytes();
+ 	 	                else
+ 	 	                    keyBytes = sessionKey.getBytes();
 
-                        byte[] checksumBytes = checksum.getBytes();
-                        int flags = readInt(checksumBytes, 20);
-                        //if ((flags & 2) != 0)
-                        //    throw new KerberosException("Session not established (mutual authentication not supported).");
 
-                        KerberosTicket delegatedKerberosTicket = null;
-                        if ((flags & 2) > 0) {
-                            int credLen = readShort(checksumBytes, 26);
-                            byte[] credBytes = new byte[credLen];
-                            System.arraycopy(checksumBytes, 28, credBytes, 0, credLen);
-
-                            Credentials delegatedCred;
-                            int etype = key.getEType();
-                            if (logger.isLoggable(Level.FINER)) {
-                                logger.log(Level.FINER,
-                                        "Encryption type is ''{0}'', size is {1}.",
-                                        new Object[]{etype, key.getBytes().length*8});
-                            }
-                            if (etype == EncryptedData.ETYPE_ARCFOUR_HMAC ||
-                                etype == EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96 ||
-                                etype == EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96) {
-                                delegatedCred = new KrbCred(credBytes, key).getDelegatedCreds()[0];
-                            } else {
-                                delegatedCred = new KrbCred(credBytes, EncryptionKey.NULL_KEY).getDelegatedCreds()[0];
-                            }
-                            EncryptionKey delegatedSessionKey = delegatedCred.getSessionKey();
-
-                            PrincipalName cPrinc = delegatedCred.getClient();
-                            KerberosPrincipal client = null;
-                            if (cPrinc != null) {
-                                client =  new KerberosPrincipal(cPrinc.getName());
-                            }
-
-                            PrincipalName sPrinc = delegatedCred.getServer();
-                            KerberosPrincipal server = null;
-                            if (sPrinc != null) {
-                                server = new KerberosPrincipal(sPrinc.getName());
-                            }
-
-                            delegatedKerberosTicket = new KerberosTicket(
-                                              delegatedCred.getEncoded(),
-                                              client,
-                                              server,
-                                              delegatedSessionKey.getBytes(),
-                                              delegatedSessionKey.getEType(),
-                                              delegatedCred.getFlags(),
-                                              delegatedCred.getAuthTime() == null ? new java.util.Date() : delegatedCred.getAuthTime(),
-                                              delegatedCred.getStartTime(),
-                                              delegatedCred.getEndTime(),
-                                              delegatedCred.getRenewTill(),
-                                              delegatedCred.getClientAddresses());
-                        }
-
-                        byte[] keyBytes = (subKey==null ? key : subKey).getBytes();
-
+                        // create the service ticket
                         return new KerberosServiceTicket(apReq.getCreds().getClient().getName(),
                                                          gssPrincipal,
                                                          keyBytes,
@@ -641,7 +591,75 @@ public class KerberosClient {
         return ticket;
     }
 
-    /**
+    /** Extracts the delegated creds from the request kerberos ticket and builds a KerberosTicket
+ 	 * that can be used for delegation (through the HTTP routing assertion).
+ 	 *
+ 	 * @param checksum The AP_REQ checksum
+ 	 * @param key Encryption key
+ 	 * @return The kerberos ticket that can be used for delegation or null if one is not found
+ 	 * @throws sun.security.krb5.KrbException if error occurs creating the kerberos credentials for delegation
+ 	 * @throws java.io.IOException if error occurs creating the kerberos credentials for delegation
+ 	 */
+ 	 private KerberosTicket extractDelegatedServiceTicket(Checksum checksum, EncryptionKey key)
+ 	    throws KrbException, IOException
+ 	 {
+            KerberosTicket delegatedKerberosTicket = null;
+ 	 	    byte[] checksumBytes = checksum.getBytes();
+
+ 	 	    // check the delegateFlag
+ 	 	    int flags = readInt(checksumBytes, 20);
+
+ 	 	    if (checksumBytes.length > 24 && (flags & 2) > 0) {
+                // get the length of the creds
+                int credLen = readShort(checksumBytes, 26);
+                byte[] credBytes = new byte[credLen];
+                System.arraycopy(checksumBytes, 28, credBytes, 0, credLen);
+
+                Credentials delegatedCred;
+                int etype = key.getEType();
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.log(Level.FINER,
+                        "Encryption type is ''{0}'', size is {1}.",
+                        new Object[]{Integer.valueOf(etype), Integer.valueOf(key.getBytes().length*8)});
+                }
+                if (etype == EncryptedData.ETYPE_ARCFOUR_HMAC ||
+                    etype == EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96 ||
+                    etype == EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96) {
+                    delegatedCred = new KrbCred(credBytes, key).getDelegatedCreds()[0];
+                } else {
+                    delegatedCred = new KrbCred(credBytes, EncryptionKey.NULL_KEY).getDelegatedCreds()[0];
+                }
+                EncryptionKey delegatedSessionKey = delegatedCred.getSessionKey();
+
+                PrincipalName cPrinc = delegatedCred.getClient();
+                KerberosPrincipal client = null;
+                if (cPrinc != null) {
+                    client =  new KerberosPrincipal(cPrinc.getName());
+                }
+
+                PrincipalName sPrinc = delegatedCred.getServer();
+                KerberosPrincipal server = null;
+                if (sPrinc != null) {
+                    server = new KerberosPrincipal(sPrinc.getName());
+                }
+
+                delegatedKerberosTicket = new KerberosTicket(
+                                                delegatedCred.getEncoded(),
+                                                client,
+                                                server,
+                                                delegatedSessionKey.getBytes(),
+                                                delegatedSessionKey.getEType(),
+                                                delegatedCred.getFlags(),
+                                                delegatedCred.getAuthTime() == null ? new java.util.Date() : delegatedCred.getAuthTime(),
+                                                delegatedCred.getStartTime(),
+                                                delegatedCred.getEndTime(),
+                                                delegatedCred.getRenewTill(),
+                                                delegatedCred.getClientAddresses());
+ 	 	    }
+ 	 	    return delegatedKerberosTicket;
+      }
+
+ 	/**
      * Ensure that the given principal set contains the principal 
      */
     private static void validateServerPrincipal(final Set<Principal> allowedPrincipals,
@@ -668,7 +686,11 @@ public class KerberosClient {
     }
 
     /**
-     *
+     * Parse out the Kerberos private key(s) from the provide credentials.
+	 *
+     * @param creds the credentials to extract the private keys from
+ 	 * @return Array of one or more private keys found in the credentials
+ 	 * @throws IllegalStateException if the private key cannot be found
      */
     private static KerberosKey[] getKeys(Set creds) throws IllegalStateException {
         List<KerberosKey> keys = new ArrayList<KerberosKey>();
@@ -683,7 +705,11 @@ public class KerberosClient {
     }
 
     /**
-     *
+     * Takes the array of KerberosKeys and converts them into corresponding
+     * sun.security.krb5.EncryptionKey objects.
+	 *
+     * @param keys the Kerberos Keys
+ 	 * @return Array of EncryptionKeys, one for each Kerberos key in the argument
      */
     private static EncryptionKey[] toEncryptionKey(KerberosKey[] keys) {
         EncryptionKey[] ekeys = new EncryptionKey[keys.length];
@@ -696,7 +722,10 @@ public class KerberosClient {
     }
 
     /**
-     *
+     * Returns a callback handler used for authenticating the kerberos service principal.
+	 *
+     * @param servicePrincipalName service principal name to be returned by the callback handler
+ 	 * @return CallbackHandler instance
      */
     private static CallbackHandler getServerCallbackHandler(final String servicePrincipalName) {
         return new CallbackHandler() {
@@ -713,16 +742,31 @@ public class KerberosClient {
             }
         };
     }
-
+    /**
+ 	 * Parse the byte indexed by the offset into a short.
+ 	 *
+ 	 * @param data the byte array to read
+ 	 * @param offset the index into the data bytes
+ 	 * @return a short value, -1 if the offset is invalid
+ 	 */
     private static int readShort(byte[] data, int offset) {
-        if(data.length < (offset+2)) throw new IllegalArgumentException("Not enough data to read short!");
+        if(data.length < (offset+2))
+ 	 	    return -1; // throw new IllegalArgumentException("Not enough data to read short!");
 
         return (data[offset  ]&0xFF)
             | ((data[offset+1]&0xFF) <<  8);
     }
 
+    /**
+ 	 * Parse the byte indexed by the offset into an int.
+ 	 *
+ 	 * @param data the byte array to read
+ 	 * @param offset the index into the data bytes
+ 	 * @return an int value, -1 if the offset is invalid
+ 	 */
     private static int readInt(byte[] data, int offset) {
-        if(data.length < (offset+4)) throw new IllegalArgumentException("Not enough data to read int!");
+        if(data.length < (offset+4))
+ 	 	    return -1; // throw new IllegalArgumentException("Not enough data to read int!");
 
         return (data[offset  ]&0xFF)
             | ((data[offset+1]&0xFF) <<  8)

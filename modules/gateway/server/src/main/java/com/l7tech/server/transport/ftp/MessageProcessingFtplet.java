@@ -280,7 +280,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                 }
 
                 if ( status != AssertionStatus.NONE ) {
-                    faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context);
+                    faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).right;
                 }
 
                 if (faultXml != null)

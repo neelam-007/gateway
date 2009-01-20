@@ -67,6 +67,4 @@ public abstract class ServiceResolver<T> {
      * @return a Set containing distinct values
      */
     public abstract Set<T> getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException ;
-
-    public abstract boolean isSoap();
 }

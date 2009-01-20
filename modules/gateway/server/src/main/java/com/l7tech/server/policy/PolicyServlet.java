@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
@@ -496,15 +497,14 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     private void returnFault(PolicyEnforcementContext context, HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
-        String faultXml;
         try {
             responseStream = hresp.getOutputStream();
-            hresp.setContentType(DEFAULT_CONTENT_TYPE);
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
-            faultXml = soapFaultManager.constructReturningFault(faultLevelInfo, context);
-            responseStream.write(faultXml.getBytes());
+            Pair<ContentTypeHeader, String> fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
+            hresp.setContentType(fault.left.getFullValue());
+            responseStream.write(fault.right.getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
