@@ -1458,7 +1458,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         Element issuerSerial = XmlUtil.findFirstChildElementByName(x509data, DsigUtil.DIGSIG_URI, "X509IssuerSerial");
         if (issuerSerial != null) {
-            logger.info("The signature refers to an X509IssuerSerial");
+            logger.fine("The signature refers to an X509IssuerSerial");
             // read ds:X509IssuerName and ds:X509SerialNumber
             Element X509IssuerNameEl = XmlUtil.findFirstChildElementByName(issuerSerial, DsigUtil.DIGSIG_URI, "X509IssuerName");
             Element X509SerialNumberEl = XmlUtil.findFirstChildElementByName(issuerSerial, DsigUtil.DIGSIG_URI, "X509SerialNumber");
@@ -1470,14 +1470,31 @@ public class WssProcessorImpl implements WssProcessor {
             if (X509IssuerName == null || X509IssuerName.length() <= 0 || X509SerialNumber == null || X509SerialNumber.length() <= 0)
                 throw new InvalidDocumentFormatException("X509IssuerName and/or X509SerialNumber was empty");
 
-            logger.info("Trying to lookup cert with Issuer DN '" + X509IssuerName + "' and serial '" + X509SerialNumber + "'");
-            final X509Certificate certificate = securityTokenResolver.lookupByIssuerAndSerial( new X500Principal(X509IssuerName), new BigInteger(X509SerialNumber) );
+            if ( logger.isLoggable( Level.FINE ) ) {
+                logger.log( Level.FINE, "Trying to lookup cert with Issuer DN '" + X509IssuerName + "' and serial '" + X509SerialNumber + "'");
+            }
+
+            final X500Principal issuer;
+            try {
+                issuer = new X500Principal(X509IssuerName);
+            } catch ( IllegalArgumentException iae ) {
+                logger.warning("Ignoring certificate reference with invalid isuer '"+X509IssuerName+"', serial number is '"+X509SerialNumber+"'.");
+                return null;
+            }
+            final BigInteger serial;
+            try {
+                serial = new BigInteger(X509SerialNumber);
+            } catch ( NumberFormatException nfe ) {
+                logger.warning("Ignoring certificate reference with invalid serial number '"+X509SerialNumber+"', issuer is '"+X509IssuerName+"'.");
+                return null;
+            }
+            final X509Certificate certificate = securityTokenResolver.lookupByIssuerAndSerial(issuer, serial);
             if (certificate == null) {
-                logger.info("Could not find cert");
+                logger.info("Could not find certificate for issuer '"+X509IssuerName+"', serial '"+X509SerialNumber+"'.");
                 return null;
             }
 
-            logger.info("Certificate found");
+            logger.fine("Certificate found");
             final X509IssuerSerialSecurityToken issuerSerialSecurityToken = new X509IssuerSerialSecurityToken(x509data, certificate);
             securityTokens.add(issuerSerialSecurityToken);
             return issuerSerialSecurityToken;
