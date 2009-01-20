@@ -78,6 +78,15 @@ public class EditableSearchComboBox extends JComboBox {
     }
 
     /**
+     * Clear search text and background colour accordingly.
+     */
+    public void clearSearch() {
+        if (editor != null) {
+            editor.clearSearch();
+        }
+    }
+
+    /**
      * The model implementation that will model the editable search combo box.
      */
     private class FilterableComboBoxModel extends AbstractListModel implements MutableComboBoxModel {
@@ -202,6 +211,10 @@ public class EditableSearchComboBox extends JComboBox {
         public void setComparator(Comparator comparator) {
             this.comparator = comparator;
         }
+
+        public int getSearchableItemsCount(){
+            return items.size();
+        }
     }
 
     /**
@@ -288,15 +301,32 @@ public class EditableSearchComboBox extends JComboBox {
             setPopupVisible(false);
 
             //only show drop down list when there are filtered items available to be displayed
-            if (getModel().getSize() > 0){
-                setPopupVisible(true);
-                textField.setBackground(Color.white);
+            boolean hasSearchableItems = ((FilterableComboBoxModel) getModel()).getSearchableItemsCount() > 0;
+            if (hasSearchableItems) {
+                if (getModel().getSize() > 0) {
+                    setPopupVisible(true);
+                    textField.setBackground(Color.white);
+                } else {
+                    if (!"".equals(textField.getText())) {
+                        textField.setBackground(new Color(0xFF, 0xFF, 0xe1));
+                    }
+                }
             } else {
                 if (!"".equals(textField.getText())) {
                     textField.setBackground(new Color(0xFF, 0xFF, 0xe1));
+                } else {
+                    textField.setBackground(Color.white);
                 }
             }
             isFiltering = false;
+        }
+
+        /**
+         * Clears the text field and sets background back to white.
+         */
+        public void clearSearch() {
+            textField.setText("");
+            textField.setBackground(Color.white);;
         }
     }
 

@@ -298,6 +298,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         setFilterAndSortMenuEnabled(false);
         getSearchComboBox().setEnabled(false);
         searchLabel.setEnabled(false);
+        getSearchComboBox().clearSearch();
 
     }
 
