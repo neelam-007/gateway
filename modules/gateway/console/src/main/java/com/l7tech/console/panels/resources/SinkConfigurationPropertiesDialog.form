@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="contentPane" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="20" y="20" width="524" height="400"/>
+      <xy x="20" y="20" width="561" height="452"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -11,7 +11,7 @@
       <tabbedpane id="d6d0d" binding="tabbedPane">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
-            <preferred-size width="400" height="200"/>
+            <preferred-size width="480" height="200"/>
           </grid>
         </constraints>
         <properties/>
@@ -217,7 +217,7 @@
               </component>
             </children>
           </grid>
-          <grid id="cb9db" layout-manager="GridLayoutManager" row-count="7" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="cb9db" layout-manager="GridLayoutManager" row-count="7" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <tabbedpane title-resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" title-key="tabs.syslogSettings.title"/>
@@ -234,59 +234,30 @@
                   <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.protocol.label"/>
                 </properties>
               </component>
-              <vspacer id="c66de">
-                <constraints>
-                  <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-                </constraints>
-              </vspacer>
               <component id="8fb82" class="javax.swing.JComboBox" binding="syslogProtocolField">
                 <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <model>
                     <item value="TCP (plain)"/>
                     <item value="UDP"/>
+                    <item value="SSL"/>
                   </model>
                 </properties>
               </component>
               <component id="403d6" class="javax.swing.JLabel">
                 <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <labelFor value="fe4b0"/>
+                  <labelFor value=""/>
                   <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.host.label"/>
                 </properties>
               </component>
-              <component id="fe4b0" class="javax.swing.JTextField" binding="syslogHostField">
-                <constraints>
-                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties/>
-              </component>
-              <component id="33b59" class="javax.swing.JLabel">
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <labelFor value="899c6"/>
-                  <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.port.label"/>
-                </properties>
-              </component>
-              <component id="899c6" class="javax.swing.JTextField" binding="syslogPortField">
-                <constraints>
-                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="-1"/>
-                  </grid>
-                </constraints>
-                <properties/>
-              </component>
               <component id="f27ce" class="javax.swing.JLabel">
                 <constraints>
-                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.facility.label"/>
@@ -294,7 +265,7 @@
               </component>
               <component id="43de4" class="javax.swing.JLabel">
                 <constraints>
-                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <labelFor value="9a37e"/>
@@ -303,7 +274,7 @@
               </component>
               <component id="9a37e" class="javax.swing.JComboBox" binding="syslogCharsetField">
                 <constraints>
-                  <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="3" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <model>
@@ -315,7 +286,7 @@
               </component>
               <component id="2341e" class="javax.swing.JLabel">
                 <constraints>
-                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <labelFor value="9a06a"/>
@@ -324,7 +295,7 @@
               </component>
               <component id="9a06a" class="javax.swing.JComboBox" binding="syslogTimezoneField">
                 <constraints>
-                  <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                  <grid row="4" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <model/>
@@ -333,7 +304,7 @@
               <grid id="7fced" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="2" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -354,29 +325,143 @@
                   </component>
                 </children>
               </grid>
-              <grid id="aec57" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="5c569" layout-manager="GridLayoutManager" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="1" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <hspacer id="8e671">
+                  <component id="b9087" class="javax.swing.JButton" binding="syslogHostAdd">
                     <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                  </hspacer>
-                  <component id="8dc59" class="javax.swing.JButton" binding="syslogTestMessageButton">
-                    <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.testButton.label"/>
+                      <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.host.add.label"/>
+                    </properties>
+                  </component>
+                  <component id="78ff8" class="javax.swing.JButton" binding="syslogHostRemove">
+                    <constraints>
+                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.host.remove.label"/>
+                    </properties>
+                  </component>
+                  <component id="3b47b" class="javax.swing.JButton" binding="syslogHostEdit">
+                    <constraints>
+                      <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.host.edit.label"/>
+                    </properties>
+                  </component>
+                  <scrollpane id="1f8d6" binding="syslogHostScrollPane">
+                    <constraints>
+                      <grid row="0" column="0" row-span="5" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="e5699" class="javax.swing.JList" binding="syslogHostList">
+                        <constraints/>
+                        <properties>
+                          <enabled value="true"/>
+                          <maximumSize width="200" height="34"/>
+                          <minimumSize width="200" height="34"/>
+                          <model/>
+                          <preferredSize width="200" height="34"/>
+                          <selectionMode value="0"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </scrollpane>
+                  <component id="a5ce5" class="javax.swing.JButton" binding="syslogHostUp">
+                    <constraints>
+                      <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.host.moveUp.label"/>
+                    </properties>
+                  </component>
+                  <component id="d6403" class="javax.swing.JButton" binding="syslogHostDown">
+                    <constraints>
+                      <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.host.moveDown.label"/>
                     </properties>
                   </component>
                 </children>
               </grid>
+              <grid id="8c663" binding="syslogSSLSettingsPanel" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <grid row="5" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="72049" class="javax.swing.JCheckBox" binding="syslogSSLClientAuthenticationCheckBox">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.sslClientAuth.label"/>
+                    </properties>
+                  </component>
+                  <component id="7ae26" class="com.l7tech.console.panels.PrivateKeysComboBox" binding="syslogSSLKeystoreComboBox">
+                    <constraints>
+                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <enabled value="true"/>
+                      <model/>
+                    </properties>
+                  </component>
+                  <component id="81bd7" class="javax.swing.JLabel" binding="syslogSSLKeystoreLabel">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="3" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <labelFor value="7ae26"/>
+                      <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.sslClientAuthKeystore.label"/>
+                    </properties>
+                  </component>
+                  <hspacer id="547d9">
+                    <constraints>
+                      <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                  </hspacer>
+                </children>
+              </grid>
+              <component id="c6154" class="javax.swing.JLabel" binding="syslogSSLSettingsLabel">
+                <constraints>
+                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.sslSettings.label"/>
+                </properties>
+              </component>
+              <vspacer id="7790">
+                <constraints>
+                  <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+              <component id="8dc59" class="javax.swing.JButton" binding="syslogTestMessageButton">
+                <constraints>
+                  <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/console/resources/SinkConfigurationPropertiesDialog" key="syslogSettings.testButton.label"/>
+                </properties>
+              </component>
+              <hspacer id="f3166">
+                <constraints>
+                  <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </hspacer>
             </children>
           </grid>
         </children>

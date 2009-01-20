@@ -36,7 +36,7 @@
     </bean>
 
     <!-- SSG boot process -->
-    <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker sinkManager">
+    <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker"><!-- sinkManager -->
         <property name="serverConfig" ref="serverConfig"/>
         <property name="otherPropertiesFiles">
             <map>
@@ -444,6 +444,35 @@
         <property name="arguments">
             <list>
                 <ref bean="sslKeyManagers"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- SSL for Syslog -->
+    <bean id="syslogClientSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.log.syslog.impl.SyslogSslClientSupport"/>
+        <property name="targetMethod" value="setTrustManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="trustManager"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="syslogClientSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.log.syslog.impl.SyslogSslClientSupport"/>
+        <property name="targetMethod" value="setDefaultKeyManagers"/>
+        <property name="arguments">
+            <list>
+                <ref bean="sslKeyManagers"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="syslogClientSocketFactoryKeyStoreManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.log.syslog.impl.SyslogSslClientSupport"/>
+        <property name="targetMethod" value="setSsgKeyStoreManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="ssgKeyStoreManager"/>
             </list>
         </property>
     </bean>

@@ -1,43 +1,34 @@
 package com.l7tech.server.log;
 
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationContext;
-
-import java.util.logging.LogRecord;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.LogManager;
-import java.util.logging.Handler;
-import java.util.*;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-import java.io.StringReader;
-import java.io.IOException;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
-import java.net.SocketAddress;
-import java.nio.charset.Charset;
-
 import com.l7tech.gateway.common.log.SinkConfiguration;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.ValidationUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.SyslogEvent;
-import com.l7tech.server.log.syslog.SyslogManager;
 import com.l7tech.server.log.syslog.SyslogConnectionListener;
+import com.l7tech.server.log.syslog.SyslogManager;
 import com.l7tech.server.log.syslog.SyslogProtocol;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ValidationUtils;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.*;
+import java.net.SocketAddress;
+import java.nio.charset.Charset;
+import java.util.*;
+import java.util.logging.*;
 
 /**
  *
@@ -224,7 +215,7 @@ public class SinkManagerImpl
     @SuppressWarnings( { "FieldCanBeLocal" } )
     private final ApplicationListener applicationListener; // need reference to prevent listener gc
     private final ServerConfig serverConfig;
-    private final SyslogManager syslogManager;
+        private final SyslogManager syslogManager;
     private final TrafficLogger trafficLogger;
     private ApplicationContext applicationContext;
 
@@ -359,7 +350,8 @@ public class SinkManagerImpl
      * Install a syslog connection listener to audit connection errors.
      */
     private void installConnectionListener() {
-        syslogManager.setConnectionListener(new SyslogConnectionListener(){
+        syslogManager.setConnectionListener(new
+                SyslogConnectionListener(){
             @Override
             public void notifyConnected(final SocketAddress address) {
                 fireEvent(address, true);
@@ -610,8 +602,8 @@ public class SinkManagerImpl
 
                     break;
                 case SYSLOG:
-                    String host = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_HOST );
-                    String port = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_PORT );
+                    String host = "syslog.l7tech.com"; // configuration.getProperty( SinkConfiguration.PROP_SYSLOG_HOST );
+                    String port = "1999"; //configuration.getProperty( SinkConfiguration.PROP_SYSLOG_PORT );
                     String prot = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_PROTOCOL );
                     String facility = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_FACILITY );
 

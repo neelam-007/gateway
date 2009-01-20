@@ -1,18 +1,19 @@
 package com.l7tech.server.log;
 
-import java.util.logging.LogRecord;
-import java.util.logging.Level;
-import java.util.ResourceBundle;
-import java.util.MissingResourceException;
-import java.io.IOException;
-import java.text.MessageFormat;
-
 import com.l7tech.gateway.common.log.SinkConfiguration;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.log.syslog.Syslog;
 import com.l7tech.server.log.syslog.SyslogManager;
 import com.l7tech.server.log.syslog.SyslogProtocol;
 import com.l7tech.server.log.syslog.SyslogSeverity;
-import com.l7tech.server.ServerConfig;
+
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 /**
  * MessageSink that writes to Syslog.
@@ -63,6 +64,7 @@ class SyslogMessageSink extends MessageSinkSupport {
 
     private final Syslog syslog;
     private final String process;
+    private Integer currentSyslogIndex;
 
     /**
      * Map the log record level to a Syslog severity.
@@ -111,22 +113,47 @@ class SyslogMessageSink extends MessageSinkSupport {
         return format;
     }
 
+    private int getCurrentSyslogIndex() {
+
+        if (this.currentSyslogIndex == null)
+            currentSyslogIndex = 0;
+
+        return currentSyslogIndex;
+    }
+
     /**
-     * Construct a syslog for the given config
+     * Construct the primary syslog for this message sink.
      */
     private Syslog buildSyslog( final SinkConfiguration configuration,
                                 final SyslogManager manager,
-                                final String host ) throws ConfigurationException {
+                                final String host) throws ConfigurationException
+    {
+        // the syslog hostlist must be > 0
+        return buildSelectedSyslog(configuration, manager, host, getCurrentSyslogIndex());
+    }
+
+    /**
+     * Construct a syslog for the given sink configuration that connects to the host referenced by
+     * the hostIndex.
+     */
+    private Syslog buildSelectedSyslog( final SinkConfiguration configuration,
+                                final SyslogManager manager,
+                                final String host,
+                                final int hostIndex) throws ConfigurationException
+    {
         SyslogProtocol protocol;
         String configProtocol = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL);
-        if ( SinkConfiguration.SYSLOG_PROTOCOL_TCP.equals(configProtocol) ) {
+        if ( SinkConfiguration.SYSLOG_PROTOCOL_TCP.equals(configProtocol)) { 
             protocol = SyslogProtocol.TCP;
+        } else if ( SinkConfiguration.SYSLOG_PROTOCOL_SSL.equals(configProtocol) ) {
+            protocol = SyslogProtocol.SSL;
         } else {
-            protocol = SyslogProtocol.UDP;    
+            protocol = SyslogProtocol.UDP;
         }
 
-        String syslogHost = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_HOST);
-        int syslogPort = Integer.parseInt(configuration.getProperty(SinkConfiguration.PROP_SYSLOG_PORT));
+        // get the host:port from the configuration
+        String[][] syslogHosts = getSyslogHost(configuration);
+
         String format = LOG_PATTERN_STANDARD;
         if ( !Boolean.valueOf(configuration.getProperty(SinkConfiguration.PROP_SYSLOG_LOG_HOSTNAME)) ) {
             format = LOG_PATTERN_NO_HOST;
@@ -136,10 +163,48 @@ class SyslogMessageSink extends MessageSinkSupport {
         int facility = Integer.parseInt(configuration.getProperty(SinkConfiguration.PROP_SYSLOG_FACILITY));
         String charset = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_CHAR_SET);
 
-        try {
-            return manager.getSyslog(protocol, syslogHost, syslogPort, format, timeZoneId, facility, host, charset, null);
-        } catch (IllegalArgumentException iae) {
-            throw new ConfigurationException("Error creating syslog client", iae);    
+        // get properties for SSL with client auth if flag is set
+        String sslKeystoreAlias = null;
+        String sslKeystoreId = null;
+        if (SyslogProtocol.SSL.equals(protocol) && "true".equals(configuration.getProperty(SinkConfiguration.PROP_SYSLOG_SSL_CLIENTAUTH))) {
+            sslKeystoreAlias = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEY_ALIAS);
+            sslKeystoreId = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEYSTORE_ID);
         }
+
+        try {
+            return manager.getSyslog(protocol, syslogHosts, format, timeZoneId, facility, host, charset, null, sslKeystoreAlias, sslKeystoreId);
+        } catch (IllegalArgumentException iae) {
+            throw new ConfigurationException("Error creating syslog client", iae);
+        }
+    }
+
+    /**
+     * Returns the host & port number values from the configuration's SyslogHost list given
+     * the specified list index.
+     *
+     * @param configuration the sink configuration
+     * @return 2-dimentional array of string values where: index 0 = host; and index 1 = port;
+     * @throws ConfigurationException if the host value pulled from the configuration is not valid
+     */
+    private String[][] getSyslogHost(final SinkConfiguration configuration)
+        throws ConfigurationException
+    {
+        String[][] result = new String[configuration.syslogHostList().size()][];
+
+        StringTokenizer stok = null;
+        int index = 0;
+        for (String value : configuration.syslogHostList()) {
+
+            stok = new StringTokenizer(value, ":");
+
+            // this error should not occur if the UI is validating the input data correctly
+            if (stok.countTokens() != 2) {
+                throw new ConfigurationException("Invalid Syslog host format encountered=" + value);
+            }
+
+            result[index++] = new String[] { stok.nextToken(), stok.nextToken() };
+        }
+
+        return result;
     }
 }

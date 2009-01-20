@@ -4,22 +4,13 @@ import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.AttributeOverride;
-import javax.persistence.Column;
-import javax.persistence.Lob;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
+import javax.persistence.*;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.*;
 
 /**
  * Describes the configuration of a logging sink.
@@ -44,12 +35,14 @@ public class SinkConfiguration extends NamedEntityImp {
         SYSLOG(
                 new String[] {
                         PROP_SYSLOG_PROTOCOL,
-                        PROP_SYSLOG_HOST,
-                        PROP_SYSLOG_PORT,
+                        PROP_SYSLOG_HOSTLIST,
                         PROP_SYSLOG_FACILITY,
                         PROP_SYSLOG_LOG_HOSTNAME,
                         PROP_SYSLOG_CHAR_SET,
-                        PROP_SYSLOG_TIMEZONE
+                        PROP_SYSLOG_TIMEZONE,
+                        PROP_SYSLOG_SSL_CLIENTAUTH,
+                        PROP_SYSLOG_SSL_KEYSTORE_ID,
+                        PROP_SYSLOG_SSL_KEY_ALIAS
                 }
         );
 
@@ -107,10 +100,8 @@ public class SinkConfiguration extends NamedEntityImp {
     // Syslog sink property names
     /** The property name for the syslog protocol to use */
     public static final String PROP_SYSLOG_PROTOCOL = "syslog.protocol";
-    /** The property name for the syslog host to log to */
-    public static final String PROP_SYSLOG_HOST = "syslog.host";
-    /** The property name for the port to connect to */
-    public static final String PROP_SYSLOG_PORT = "syslog.port";
+    /** The property name for the list of syslog host to log to */
+    public static final String PROP_SYSLOG_HOSTLIST = "syslog.hostList";
     /** The property name for the facility name to use */
     public static final String PROP_SYSLOG_FACILITY = "syslog.facility";
     /** The property name for the hostname to use in log messages */
@@ -119,14 +110,22 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String PROP_SYSLOG_CHAR_SET = "syslog.charSet";
     /** The property name for the timezone to use for log messages */
     public static final String PROP_SYSLOG_TIMEZONE = "syslog.timezone";
+    /** The property name for enabling SSL with client authentication */
+    public static final String PROP_SYSLOG_SSL_CLIENTAUTH = "syslog.ssl.clientAuth";
+    /** The property name for the SSL keystore id */
+    public static final String PROP_SYSLOG_SSL_KEYSTORE_ID = "syslog.ssl.keystore.id";
+    /** The property name for the SSL key alias */
+    public static final String PROP_SYSLOG_SSL_KEY_ALIAS = "syslog.ssl.key.alias";
 
     public static final String SYSLOG_PROTOCOL_TCP = "TCP";
     public static final String SYSLOG_PROTOCOL_UDP = "UDP";
+    public static final String SYSLOG_PROTOCOL_SSL = "SSL";
     public static final Set<String> SYSLOG_PROTOCOL_SET;
     static {
         Set<String> protocols = new LinkedHashSet<String>();
         protocols.add(SYSLOG_PROTOCOL_TCP);
         protocols.add(SYSLOG_PROTOCOL_UDP);
+        protocols.add(SYSLOG_PROTOCOL_SSL);
         SYSLOG_PROTOCOL_SET = Collections.unmodifiableSet(protocols);
     }
 
@@ -137,6 +136,7 @@ public class SinkConfiguration extends NamedEntityImp {
     private String categories;
     private transient String xmlProperties;
     private Map<String, String> properties;
+    private List<String> syslogHosts;
 
     /**
      * Drops the existing set of properties and reads the new properties to use from the
@@ -153,7 +153,14 @@ public class SinkConfiguration extends NamedEntityImp {
             try {
                 XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
                 //noinspection unchecked
-                this.properties = (Map<String, String>)xd.readObject();
+                Object parsedObject = xd.readObject();
+                if (parsedObject instanceof Object[]) {
+                    Object[] readProperties = (Object[]) parsedObject;
+                    this.properties = (Map<String, String>) readProperties[0];
+                    this.syslogHosts = (List<String>) readProperties[1];
+                } else {
+                    this.properties = (Map<String, String>) parsedObject;
+                }
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e); // Can't happen
             }
@@ -170,12 +177,21 @@ public class SinkConfiguration extends NamedEntityImp {
     public String getXmlProperties() {
         if ( xmlProperties == null ) {
             Map<String, String> properties = this.properties;
+            List<String> hosts = this.syslogHosts;
             if ( properties == null ) return null;
             BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
             try {
                 //noinspection IOResourceOpenedButNotSafelyClosed
                 XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
-                xe.writeObject(properties);
+
+                Object writeObject;
+                if (hosts != null) {
+                    writeObject = new Object[] { properties, hosts };
+                } else {
+                    writeObject = properties;
+                }
+
+                xe.writeObject(writeObject);
                 xe.close();
                 xmlProperties = baos.toString(PROPERTIES_ENCODING);
             } catch (UnsupportedEncodingException e) {
@@ -333,6 +349,32 @@ public class SinkConfiguration extends NamedEntityImp {
         xmlProperties = null;
     }
 
+    public void addSyslogHostEntry(String value) {
+        syslogHostList().add( new SyslogHostEntry(value).getValue() );
+
+        // invalidate cached properties
+        xmlProperties = null;
+    }
+
+    public void removeSyslogHostEntry(int index) {
+        List<String> hostList = syslogHostList();
+
+        if (index >= 0 && index < hostList.size())
+            hostList.remove(index);
+
+        // otherwise, just ignore because it shouldn't happen
+
+        // invalidate cached properties
+        xmlProperties = null;
+    }
+
+    public List<String> syslogHostList() {
+        if (syslogHosts == null) {
+            syslogHosts = new ArrayList<String>();
+        }
+        return syslogHosts;
+    }
+
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -388,5 +430,48 @@ public class SinkConfiguration extends NamedEntityImp {
         }
 
         return result;
+    }
+
+    /**
+     * Represents one host:port entry in the Syslog host list.
+     */
+    public class SyslogHostEntry implements Serializable {
+
+        static final String HOST_ENTRY_DELIM = ":";
+
+        String hostName;
+        String port;
+
+        /**
+         * Constructor that parses the hostName and port number from a single host entry.
+         * @param hostString single host entry to parse formatted as "hostName:portNumber"
+         */
+        SyslogHostEntry(String hostString) {
+            StringTokenizer stok = new StringTokenizer(hostString, HOST_ENTRY_DELIM);
+            if (stok.hasMoreTokens())
+                hostName = stok.nextToken();
+            if (stok.hasMoreTokens())
+                port = stok.nextToken();
+
+            // if either are null, get angry
+            if (hostName == null || hostName.length() == 0) {
+                throw new IllegalArgumentException("Syslog hostName cannot be null or empty");
+            }
+            if (port == null || port.length() == 0) {
+                throw new IllegalArgumentException("Syslog port cannot be null or empty");
+            }
+        }
+
+        public String getHostName() {
+            return hostName;
+        }
+
+        public String getPort() {
+            return port;
+        }
+
+        public String getValue() {
+            return new StringBuffer(hostName).append(HOST_ENTRY_DELIM).append(port).toString();
+        }
     }
 }

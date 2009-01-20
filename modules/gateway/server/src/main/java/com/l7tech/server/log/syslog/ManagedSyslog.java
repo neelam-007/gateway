@@ -1,15 +1,10 @@
 package com.l7tech.server.log.syslog;
 
 import java.io.Closeable;
+import java.nio.charset.Charset;
+import java.text.*;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
-import java.text.MessageFormat;
-import java.text.Format;
-import java.text.FieldPosition;
-import java.text.ParsePosition;
-import java.text.DateFormat;
 
 /**
  * Managed syslog class
@@ -140,17 +135,6 @@ public abstract class ManagedSyslog implements Closeable {
 
     //- PACKAGE
 
-    void init(final SyslogManager manager) {
-        this.manager = manager;
-        init();
-    }
-
-    Syslog getSylog(final SyslogFormat format,
-                    final int facility,
-                    final String host) {
-        return new SyslogHandle(this, format, facility, host); 
-    }
-
     void reference() {
         referenceCount.incrementAndGet();
     }
@@ -164,6 +148,19 @@ public abstract class ManagedSyslog implements Closeable {
 
     boolean isReferenced() {
         return referenceCount.get() > 0;
+    }
+
+    //- PROTECTED
+
+    protected void init(final SyslogManager manager) {
+        this.manager = manager;
+        init();
+    }
+
+    protected Syslog getSylog(final SyslogFormat format,
+                    final int facility,
+                    final String host) {
+        return new SyslogHandle(this, format, facility, host);
     }
 
     //- PRIVATE

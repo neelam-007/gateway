@@ -3,7 +3,9 @@
  */
 package com.l7tech.server.transport.http;
 
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
 import java.util.logging.Logger;
 
 /**
@@ -36,11 +38,11 @@ public final class SslClientSocketFactory extends SslClientSocketFactorySupport 
 
     //- PACKAGE
 
-    final X509TrustManager getTrustManager() {
+    public final X509TrustManager getTrustManager() {
         return trustManager;
     }
 
-    final KeyManager[] getDefaultKeyManagers() {
+    public final KeyManager[] getDefaultKeyManagers() {
         return defaultKeyManagers;
     }
 

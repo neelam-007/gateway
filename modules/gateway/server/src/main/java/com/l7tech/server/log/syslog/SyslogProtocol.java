@@ -13,6 +13,11 @@ public enum SyslogProtocol {
     TCP,
 
     /**
+     * SSL protocol
+     */
+    SSL,
+
+    /**
      * UDP protocol
      */
     UDP,

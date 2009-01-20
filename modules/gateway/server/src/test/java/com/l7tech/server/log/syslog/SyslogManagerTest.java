@@ -1,29 +1,28 @@
 package com.l7tech.server.log.syslog;
 
+import com.l7tech.util.ResourceUtils;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.apache.mina.common.ByteBuffer;
+import org.apache.mina.common.IoHandlerAdapter;
+import org.apache.mina.common.IoSession;
+import org.apache.mina.common.ThreadModel;
+import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
+import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
+import org.apache.mina.transport.vmpipe.VmPipeAddress;
+
+import java.net.SocketAddress;
 import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import java.util.Date;
-import java.net.SocketAddress;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import org.apache.mina.transport.vmpipe.VmPipeAddress;
-import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
-import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
-import org.apache.mina.common.IoHandlerAdapter;
-import org.apache.mina.common.IoSession;
-import org.apache.mina.common.ThreadModel;
-import org.apache.mina.common.ByteBuffer;
-
-import com.l7tech.util.ResourceUtils;
+import java.util.regex.Pattern;
 
 /**
  * JUnit test for syslog manager
@@ -134,7 +133,7 @@ public class SyslogManagerTest extends TestCase {
      */
     public void testClientConnectionEvents() throws Exception {
         SyslogManager manager = new SyslogManager();
-        VmPipeAddress address = new VmPipeAddress(1234);
+        VmPipeAddress[] addresses = new VmPipeAddress[] { new VmPipeAddress(1234) };
         final CountDownLatch startLatch = new CountDownLatch(1);
         final CountDownLatch endLatch = new CountDownLatch(1);
         final AtomicInteger connectEventCount = new AtomicInteger(0);
@@ -168,10 +167,10 @@ public class SyslogManagerTest extends TestCase {
         SocketConnectorConfig config = new SocketConnectorConfig();
         config.setThreadModel(ThreadModel.MANUAL);
         VmPipeAcceptor acceptor = new VmPipeAcceptor();
-        acceptor.bind(address, handler, config);
+        acceptor.bind(addresses[0], handler, config);
 
         // create client
-        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, address, null, null, 23, "test.l7tech.com", null, null);
+        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null);
 
         try {
             // wait until connected
@@ -208,7 +207,7 @@ public class SyslogManagerTest extends TestCase {
      */
     public void testClientReconnection() throws Exception {
         SyslogManager manager = new SyslogManager();
-        VmPipeAddress address = new VmPipeAddress(1234);
+        VmPipeAddress[] addresses = new VmPipeAddress[] { new VmPipeAddress(1234) };
         final AtomicReference<CountDownLatch> startLatchRef = new AtomicReference(new CountDownLatch(1));
         final CountDownLatch endLatch = new CountDownLatch(3);
         final AtomicInteger connectEventCount = new AtomicInteger(0);
@@ -242,10 +241,10 @@ public class SyslogManagerTest extends TestCase {
         SocketConnectorConfig config = new SocketConnectorConfig();
         config.setThreadModel(ThreadModel.MANUAL);
         VmPipeAcceptor acceptor = new VmPipeAcceptor();
-        acceptor.bind(address, handler, config);
+        acceptor.bind(addresses[0], handler, config);
 
         // create client
-        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, address, null, null, 23, "test.l7tech.com", null, null);
+        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null);
 
         try {
             // wait until connected
@@ -301,7 +300,7 @@ public class SyslogManagerTest extends TestCase {
      */
     public void testClientDisconnect() throws Exception {
         SyslogManager manager = new SyslogManager();
-        VmPipeAddress address = new VmPipeAddress(1234);
+        VmPipeAddress[] addresses = new VmPipeAddress[] { new VmPipeAddress(1234) };
         final CountDownLatch startLatch = new CountDownLatch(1);
         final CountDownLatch endLatch = new CountDownLatch(1);
 
@@ -322,10 +321,10 @@ public class SyslogManagerTest extends TestCase {
         SocketConnectorConfig config = new SocketConnectorConfig();
         config.setThreadModel(ThreadModel.MANUAL);
         VmPipeAcceptor acceptor = new VmPipeAcceptor();
-        acceptor.bind(address, handler, config);
+        acceptor.bind(addresses[0], handler, config);
 
         // create client
-        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, address, null, null, 23, "test.l7tech.com", null, null);
+        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null);
 
         try {
             // wait until connected
@@ -360,7 +359,7 @@ public class SyslogManagerTest extends TestCase {
      */
     public void testClientsShareConnection() throws Exception {
         SyslogManager manager = new SyslogManager();
-        VmPipeAddress address = new VmPipeAddress(1234);
+        VmPipeAddress[] addresses = new VmPipeAddress[] { new VmPipeAddress(1234) };
         final AtomicInteger sessionCount = new AtomicInteger(0);
         final CountDownLatch startLatch = new CountDownLatch(1);
         final CountDownLatch messagesLatch = new CountDownLatch(3);
@@ -388,12 +387,12 @@ public class SyslogManagerTest extends TestCase {
         SocketConnectorConfig config = new SocketConnectorConfig();
         config.setThreadModel(ThreadModel.MANUAL);
         VmPipeAcceptor acceptor = new VmPipeAcceptor();
-        acceptor.bind(address, handler, config);
+        acceptor.bind(addresses[0], handler, config);
 
         // create clients
-        Syslog syslog1 = manager.getSyslog(SyslogProtocol.VM, address, null, null, 23, "test.l7tech.com", null, null);
-        Syslog syslog2 = manager.getSyslog(SyslogProtocol.VM, address, null, null,  2, "test.l7tech.com", null, null);
-        Syslog syslog3 = manager.getSyslog(SyslogProtocol.VM, address, null, null, 13, "test.l7tech.com", null, null);
+        Syslog syslog1 = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null);
+        Syslog syslog2 = manager.getSyslog(SyslogProtocol.VM, addresses, null, null,  2, "test.l7tech.com", null, null);
+        Syslog syslog3 = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 13, "test.l7tech.com", null, null);
 
         try {
             // wait until connected
@@ -436,7 +435,7 @@ public class SyslogManagerTest extends TestCase {
                                final long time,
                                final String message) throws Exception {
         SyslogManager manager = new SyslogManager();
-        VmPipeAddress address = new VmPipeAddress(vmpipeport);
+        VmPipeAddress[] addresses = new VmPipeAddress[] { new VmPipeAddress(vmpipeport) };
         final CountDownLatch latch = new CountDownLatch(1);
 
         // start syslog server
@@ -461,10 +460,10 @@ public class SyslogManagerTest extends TestCase {
         VmPipeAcceptor acceptor = new VmPipeAcceptor();
         Syslog syslog = null;
         try {
-            acceptor.bind(address, handler, config);
+            acceptor.bind(addresses[0], handler, config);
 
             // create client
-            syslog = manager.getSyslog(SyslogProtocol.VM, address, null, null, facility, hostname + ".l7tech.com", null, null);
+            syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, facility, hostname + ".l7tech.com", null, null);
 
             // log message
             syslog.log(severity, process, threadId, time, message.replace(' ', '\n')); // covers testing translation of \n to <SPACE>

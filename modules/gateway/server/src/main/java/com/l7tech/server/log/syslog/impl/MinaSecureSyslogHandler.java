@@ -1,0 +1,165 @@
+package com.l7tech.server.log.syslog.impl;
+
+import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import org.apache.mina.common.IoConnector;
+import org.apache.mina.common.IoSession;
+import org.apache.mina.filter.SSLFilter;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * SSL extension to the Mina Syslog IoHandler implementation.
+ *
+ * @author: vchan
+ */
+public class MinaSecureSyslogHandler extends MinaSyslogHandler {
+
+    /** Logger */
+    private static final Logger logger = Logger.getLogger(MinaSecureSyslogHandler.class.getName());
+    /** Separator char for errorMessages */
+    private static final String ERROR_SEP = "; ";
+
+    /** SSL filter */
+    private SSLFilter SSL_FILTER;
+    /** SSL with client auth keystore alias (optional) */
+    private String sslKeystoreAlias;
+    /** SSL with client auth keystore id (optional) */
+    private Long sslKeystoreId;
+    /** List of errors encountered by the handler before the connection is terminated */
+    private StringBuffer errorMessages;
+    /** Flag indicating whether the currently held session has been open */
+    private boolean sessionOpened;
+
+    /**
+     * Default constructor.
+     *
+     * @param sessionCallback the callback function to perform
+     * @param sslKeystoreAlias the keystore alias name to use for the SSL KeyManager
+     * @param sslKeystoreId the keystore Id to use for the SSL KeyManager
+     */
+    MinaSecureSyslogHandler(Functions.UnaryVoid<IoSession> sessionCallback, String sslKeystoreAlias, Long sslKeystoreId) {
+        super(sessionCallback);
+        this.errorMessages = new StringBuffer();
+
+        if (SSL_FILTER == null) {
+            this.sslKeystoreAlias = sslKeystoreAlias;
+            this.sslKeystoreId = sslKeystoreId;
+            
+            SSLFilter filter = new SSLFilter( getSSLContext() );
+            filter.setUseClientMode(true);
+            SSL_FILTER = filter;
+        }
+    }
+
+    /**
+     * Returns an SSLContext instance based on the arguments passed in the constructor.  When specified,
+     * the keystore alias/id is used to query the keyManager.  Otherwise, the SSG default SSL MeyManager
+     * will be used to establish the SSLContext.
+     *
+     * @return an SSLContext instance
+     */
+    private SSLContext getSSLContext() {
+
+        try {
+            KeyManager[] km;
+            TrustManager tm = SyslogSslClientSupport.getTrustManager();
+            if (sslKeystoreAlias != null && sslKeystoreId != null && !sslKeystoreId.equals(-1L)) {
+                // use the configured sslKeystore
+                try {
+                    if (SyslogSslClientSupport.isInitialized()) {
+                        SsgKeyEntry entry = SyslogSslClientSupport.getSsgKeyStoreManager().lookupKeyByKeyAlias(sslKeystoreAlias, sslKeystoreId);
+                        KeyManager keyManager = new SingleCertX509KeyManager(entry.getCertificateChain(), entry.getPrivateKey());
+                        km = new KeyManager[] { keyManager };
+
+                    } else {
+
+                        return null; // for now
+
+                    }
+                } catch (GeneralSecurityException e) {
+                    return null;
+                } catch (ObjectModelException e) {
+                    return null;
+                }
+            } else {
+                // use default SSL keystore
+                km = SyslogSslClientSupport.getDefaultKeyManagers();
+            }
+
+            // Create the SSLContext
+            SSLContext ctx = SSLContext.getInstance("SSL");
+            ctx.init(km, new TrustManager[] { tm }, null);
+            return ctx;
+
+        } catch (NoSuchAlgorithmException nex) {
+            logger.log(Level.WARNING, "Unable to instantiate SSLContext for Secure Syslog: {0}", ExceptionUtils.getMessage(nex));
+        } catch (KeyManagementException kex) {
+            logger.log(Level.WARNING, "Unable to instantiate SSLContext for Secure Syslog: {0}", ExceptionUtils.getMessage(kex));
+        }
+        return null;
+    }
+
+    /**
+     * Appends the SSL_FILTER to the connector's filter chain to enable SSL.
+     *
+     * @param connector the connector to initialize
+     */
+    public void setupConnectorForSSL(IoConnector connector) {
+        connector.getFilterChain().addLast("ssl", SSL_FILTER);
+    }
+
+    @Override
+    public void exceptionCaught(IoSession session, Throwable throwable) throws Exception {
+        // capture the error message
+        if (logger.isLoggable(Level.WARNING))
+            this.errorMessages.append(ExceptionUtils.getMessage(throwable)).append(ERROR_SEP);
+        super.exceptionCaught(session, throwable);
+    }
+
+    @Override
+    public void sessionOpened(IoSession session) throws Exception {
+        this.sessionOpened = (session.isConnected() && !session.isClosing());
+        super.sessionOpened(session);
+    }
+
+    @Override
+    public void sessionClosed(IoSession session) throws Exception {
+        this.sessionOpened = false;
+        if (errorMessages.length() > 0) {
+            logger.log(Level.WARNING, "SSL session closed with errors: {0}", errorMessages.toString());
+            errorMessages = new StringBuffer();
+        }
+        logger.log(Level.INFO, "Session closed after (ms): {0}", System.currentTimeMillis() - session.getCreationTime());
+        super.sessionClosed(session);
+    }
+
+    @Override
+    public boolean verifySession(IoSession session) {
+        boolean check = super.verifySession(session);
+        if (check) {
+            if (SSL_FILTER.isSSLStarted(session) && sessionOpened) {
+                return (SSL_FILTER.getSSLSession(session) != null);
+            }
+        }
+        return false;
+    }
+
+    /*
+     * This method is only used for debug purposes
+     */
+    SSLSession getSSLSession(IoSession session) {
+        return SSL_FILTER.getSSLSession(session);
+    }
+}

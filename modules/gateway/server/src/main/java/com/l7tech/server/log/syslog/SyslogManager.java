@@ -1,18 +1,18 @@
 package com.l7tech.server.log.syslog;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.concurrent.atomic.AtomicReference;
-import java.net.SocketAddress;
-import java.net.InetSocketAddress;
-import java.io.Closeable;
-
 import com.l7tech.server.log.syslog.impl.MinaManagedSyslog;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
+
+import java.io.Closeable;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Manager for syslog endpoints.
@@ -36,8 +36,7 @@ public class SyslogManager implements Closeable {
      * closed when no longer required.</p>
      *
      * @param protocol The protocol to use
-     * @param syslogHost The host to use
-     * @param syslogPort The port to use
+     * @param syslogHosts The list of host(s) and corresponding port value(s) to use
      * @param format The syslog format (null for default)
      * @param timeZone The syslog timezone (null for default)
      * @param facility The facility to log as
@@ -46,20 +45,41 @@ public class SyslogManager implements Closeable {
      * @param lineDelimiter The delimiter for newlines when using TCP (null for default)
      * @return The existing or newly created Syslog
      */
+    @Deprecated
     public Syslog getSyslog(final SyslogProtocol protocol,
-                            final String syslogHost,
-                            final int syslogPort,
+                            final String[][] syslogHosts,
                             final String format,
                             final String timeZone,
                             final int facility,
                             final String host,
                             final String charset,
                             final String lineDelimiter) {
+        return this.getSyslog(protocol, syslogHosts, format, timeZone, facility, host, charset, lineDelimiter, null, null);
+    }
+
+
+    public Syslog getSyslog(final SyslogProtocol protocol,
+                            final String[][] syslogHosts,
+                            final String format,
+                            final String timeZone,
+                            final int facility,
+                            final String host,
+                            final String charset,
+                            final String lineDelimiter,
+                            final String sslKeystoreAlias,
+                            final String sslKeystoreId) {
         if (protocol == null) throw new IllegalArgumentException("protocol must not be null");
-        if (syslogHost == null) throw new IllegalArgumentException("syslogHost must not be null");
+        if (syslogHosts == null || syslogHosts.length == 0) throw new IllegalArgumentException("syslogHosts must not be null or empty");
         if (host == null) throw new IllegalArgumentException("host must not be null");
-        if (syslogPort < 1 || syslogPort > 0xFFFF) throw new IllegalArgumentException("invalid syslogPort " + syslogPort);
         if (facility < 0 || facility > 124) throw new IllegalArgumentException("invalid facility " + facility);
+
+        Long keystoreIdLong = null;
+        if (SyslogProtocol.SSL.equals(protocol) && sslKeystoreId != null)
+            try {
+            keystoreIdLong = Long.parseLong(sslKeystoreId);
+            } catch (NumberFormatException nfe) {
+                throw new IllegalArgumentException("SSL Keystore Id must be numeric " + sslKeystoreId);
+            }
 
         // no delimiter required for UDP
         String delimiter = SyslogProtocol.UDP == protocol ?
@@ -67,9 +87,10 @@ public class SyslogManager implements Closeable {
                 lineDelimiter;
 
         // we don't check for resolution here, since it may start working later
-        InetSocketAddress address = new InetSocketAddress(syslogHost, syslogPort);
+        InetSocketAddress[] addresses = getHostAddresses(syslogHosts);
+        // InetSocketAddress addresses = new InetSocketAddress(syslogHost, syslogPort);
 
-        return getSyslog(protocol, address, format, timeZone, facility, host, charset, delimiter);
+        return getSyslog(protocol, addresses, format, timeZone, facility, host, charset, delimiter, sslKeystoreAlias, keystoreIdLong);
     }
 
     /**
@@ -106,16 +127,31 @@ public class SyslogManager implements Closeable {
      *
      * @return The existing or newly created Syslog
      */
+    @Deprecated
     Syslog getSyslog(final SyslogProtocol protocol,
-                     final SocketAddress address,
+                     final SocketAddress[] addresses,
                      final String format,
                      final String timeZone,
                      final int facility,
                      final String host,
                      final String charset,
                      final String delimiter) {
+        return this.getSyslog(protocol, addresses, format, timeZone, facility, host, charset, delimiter, null, null);
+    }
+
+
+    Syslog getSyslog(final SyslogProtocol protocol,
+                     final SocketAddress[] addresses,
+                     final String format,
+                     final String timeZone,
+                     final int facility,
+                     final String host,
+                     final String charset,
+                     final String delimiter,
+                     final String sslKeystoreAlias,
+                     final Long sslKeystoreId) {
         // access/create managed syslog
-        ManagedSyslog mSyslog = getManagedSyslog(protocol, address);
+        ManagedSyslog mSyslog = getManagedSyslog(protocol, addresses, sslKeystoreAlias, sslKeystoreId);
 
         // return handle
         return mSyslog.getSylog(
@@ -183,20 +219,23 @@ public class SyslogManager implements Closeable {
      * Get a managed syslog for sending messages to the given host/port.
      *
      * @param protocol The protocol to use
-     * @param address The address to use
+     * @param addresses The list of addresses to use
      * @return The existing or newly created ManagedSyslog
      */
-    private ManagedSyslog getManagedSyslog(final SyslogProtocol protocol, final SocketAddress address) {
+    private ManagedSyslog getManagedSyslog(final SyslogProtocol protocol,
+                                           final SocketAddress[] addresses,
+                                           final String sslKeystoreAlias,
+                                           final Long sslKeystoreId) {
         if (protocol == null) throw new IllegalArgumentException("protocol must not be null");
 
         ManagedSyslog syslog;
 
         synchronized (syslogLock) {
-            SyslogKey key = new SyslogKey(protocol, address);
+            SyslogKey key = new SyslogKey(protocol, addresses[0]);
             syslog = syslogs.get(key);
 
             if (syslog == null) {
-                ManagedSyslog msyslog = new MinaManagedSyslog(protocol, address);
+                ManagedSyslog msyslog = new MinaManagedSyslog(protocol, addresses, sslKeystoreAlias, sslKeystoreId);
                 msyslog.init(this);
                 syslogs.put(key, msyslog);
                 syslog = msyslog;
@@ -207,6 +246,35 @@ public class SyslogManager implements Closeable {
 
         return syslog;
     }
+
+
+    private InetSocketAddress[] getHostAddresses(String[][] syslogHosts) {
+
+        InetSocketAddress[] addresses = new InetSocketAddress[syslogHosts.length];
+
+        int port = 0;
+        for (int i=0; i<syslogHosts.length; i++) {
+
+            if (syslogHosts[i][0] == null) {
+                throw new IllegalArgumentException("syslog host is null");
+            }
+
+            try {
+                port = Integer.valueOf(syslogHosts[i][1]);
+
+                if (port < 1 || port > 0xFFFF)
+                    throw new IllegalArgumentException("invalid syslog port " + port);
+
+            } catch (NumberFormatException nfe) {
+                throw new IllegalArgumentException("invalid syslog port " + port);
+            }
+
+            addresses[i] = new InetSocketAddress(syslogHosts[i][0], port);
+        }
+        return addresses;
+    }
+
+
 
     /**
      * Key for a syslog target

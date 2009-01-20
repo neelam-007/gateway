@@ -1,22 +1,24 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DocumentSizeFilter;
-import com.l7tech.gateway.common.log.SinkConfiguration;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
+import com.l7tech.gateway.common.log.SinkConfiguration;
 import static com.l7tech.gateway.common.log.SinkConfiguration.SeverityThreshold;
 import static com.l7tech.gateway.common.log.SinkConfiguration.SinkType;
+import com.l7tech.gui.util.DocumentSizeFilter;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.OkCancelDialog;
+import com.l7tech.gui.widgets.TextEntryPanel;
 import com.l7tech.util.ValidationUtils;
-import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
 import java.text.MessageFormat;
+import java.util.*;
 
 /**
  * This is the dialog for updating the properties of a log sink configuration.
@@ -41,19 +43,36 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private JSpinner fileMaxSizeField;
     private JSpinner fileLogCount;
     private JComboBox syslogProtocolField;
-    private JTextField syslogHostField;
-    private JTextField syslogPortField;
     private JSpinner syslogFacilityField;
     private JComboBox syslogCharsetField;
     private JComboBox syslogTimezoneField;
     private JCheckBox syslogLogHostnameField;
     private JComboBox fileFormatField;
     private JButton syslogTestMessageButton;
+    private JButton syslogHostAdd;
+    private JButton syslogHostRemove;
+    private JButton syslogHostEdit;
+    private JList syslogHostList;
+    private DefaultListModel syslogHostListModel;
+    private JCheckBox syslogSSLClientAuthenticationCheckBox;
+    private PrivateKeysComboBox syslogSSLKeystoreComboBox;
+    private JScrollPane syslogHostScrollPane;
+    private JButton syslogHostUp;
+    private JButton syslogHostDown;
+    private JPanel syslogSSLSettingsPanel;
+    private JLabel syslogSSLKeystoreLabel;
+    private JLabel syslogSSLSettingsLabel;
 
     private final SinkConfiguration sinkConfiguration;
     private InputValidator inputValidator;
     private int testCount = 0;
     private boolean confirmed = false;
+
+    private static final int ACTION_ADD    = 0;
+    private static final int ACTION_REMOVE = 2;
+    private static final int ACTION_EDIT   = 1;
+    private static final int ACTION_UP     = 3;
+    private static final int ACTION_DOWN   = 4;
 
     /**
      * Creates a new instance of SinkConfigurationPropertiesDialog. The fields in the dialog
@@ -107,6 +126,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         // Update all of the fields using the values from SinkConfiguration
         modelToView();
         enableDisableTabs();
+        enableDisableSyslogSslSettings();
         if (nameField.getText().length() < 1)
             nameField.requestFocusInWindow();
     }
@@ -258,6 +278,11 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private void initializeSyslogFields() {
         syslogProtocolField.setModel(new DefaultComboBoxModel(SinkConfiguration.SYSLOG_PROTOCOL_SET.toArray()));
         syslogProtocolField.setRenderer(new KeyedResourceRenderer(resources, "syslogSettings.protocol.{0}.text"));
+        syslogProtocolField.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                enableDisableSyslogSslSettings();
+            }
+        });
 
         JSpinner.NumberEditor numberEditor = new JSpinner.NumberEditor(syslogFacilityField);
         syslogFacilityField.setEditor(numberEditor);
@@ -302,47 +327,32 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             }
         });
 
-        // If type is set to SYSLOG, then the syslog host must not be empty
-        ((AbstractDocument)syslogHostField.getDocument()).setDocumentFilter(new DocumentSizeFilter(512));
-        inputValidator.constrainTextField(syslogHostField, new InputValidator.ComponentValidationRule(syslogHostField) {
-            public String getValidationError() {
-                if( typeField.getSelectedItem() != SinkType.SYSLOG ) {
-                    return null;
-                }
+        // populate host list
+        syslogHostListModel = new DefaultListModel();
+        syslogHostList.setModel(syslogHostListModel);
 
-                if( syslogHostField.getText().length() == 0 ) {
-                    return resources.getString("syslogSettings.host.errors.empty");
-                }
+        // host list add, edit, and remove button
+        syslogHostAdd.addActionListener(new SyslogHostListActionListener(ACTION_ADD));
+        syslogHostRemove.addActionListener(new SyslogHostListActionListener(ACTION_REMOVE));
+        syslogHostEdit.addActionListener(new SyslogHostListActionListener(ACTION_EDIT));
+        // host list up/down
+        syslogHostUp.addActionListener(new SyslogHostListActionListener(ACTION_UP));
+        syslogHostDown.addActionListener(new SyslogHostListActionListener(ACTION_DOWN));
 
-                if( !ValidationUtils.isValidDomain(syslogHostField.getText()) ) {
-                    return resources.getString("syslogSettings.host.errors.invalid");
-                }
+        // SSL Keystore combo box
+        if (syslogSSLKeystoreComboBox.getModel().getSize() == 0)
+            syslogSSLKeystoreComboBox.repopulate();
 
-                return null;
-            }
-        });
-        // If type is set to SYSLOG, then the syslog port must be between 0 and 65535
-        ((AbstractDocument)syslogPortField.getDocument()).setDocumentFilter(new DocumentSizeFilter(5));
-        inputValidator.constrainTextField(syslogPortField, new InputValidator.ComponentValidationRule(syslogPortField) {
-            public String getValidationError() {
-                if( typeField.getSelectedItem() != SinkType.SYSLOG) {
-                    return null;
-                }
+        // SSL client auth checkbox
+        syslogSSLClientAuthenticationCheckBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
 
-                if(syslogPortField.getText().length() == 0) {
-                    return resources.getString("syslogSettings.port.errors.invalid");
+                // enable the keystore combo box based this checkbox
+                if (syslogSSLClientAuthenticationCheckBox.isSelected()) {
+                    syslogSSLKeystoreComboBox.setEnabled(true);
+                } else {
+                    syslogSSLKeystoreComboBox.setEnabled(false);
                 }
-
-                try {
-                    int value = Integer.parseInt(syslogPortField.getText());
-                    if(value < 0 || value > 65535) {
-                        return resources.getString("syslogSettings.port.errors.invalid");
-                    }
-                } catch(NumberFormatException e) {
-                    return resources.getString("syslogSettings.port.errors.invalid");
-                }
-
-                return null;
             }
         });
     }
@@ -387,11 +397,35 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         case SYSLOG:
             tabbedPane.setEnabledAt(1, false);
             tabbedPane.setEnabledAt(2, true);
+            enableDisableSyslogSslSettings();
             break;
         default:
             tabbedPane.setEnabledAt(1, false);
             tabbedPane.setEnabledAt(2, false);
             break;
+        }
+    }
+
+    /**
+     * Updates the enabled status for the SSL settings section in the Syslog Settings Tab.
+     */
+    private void enableDisableSyslogSslSettings() {
+
+        if (SinkType.SYSLOG == typeField.getSelectedItem()) {
+
+            if (SinkConfiguration.SYSLOG_PROTOCOL_SSL.equals(syslogProtocolField.getSelectedItem())) {
+                syslogSSLSettingsPanel.setEnabled(true);
+                syslogSSLClientAuthenticationCheckBox.setEnabled(true);
+                syslogSSLKeystoreLabel.setEnabled(true);
+                syslogSSLKeystoreComboBox.setEnabled(syslogSSLClientAuthenticationCheckBox.isSelected());
+                syslogSSLSettingsLabel.setEnabled(true);
+            } else {
+                syslogSSLSettingsPanel.setEnabled(false);
+                syslogSSLClientAuthenticationCheckBox.setEnabled(false);
+                syslogSSLKeystoreComboBox.setEnabled(false);
+                syslogSSLKeystoreLabel.setEnabled(false);
+                syslogSSLSettingsLabel.setEnabled(false);
+            }
         }
     }
 
@@ -485,10 +519,12 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         } else {
             syslogProtocolField.setSelectedItem(value);
         }
-        value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_HOST);
-        syslogHostField.setText(value);
-        value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_PORT);
-        syslogPortField.setText(value);
+
+        // set the host list values
+        for (String entry : sinkConfiguration.syslogHostList()) {
+            syslogHostListModel.addElement(entry);
+        }
+
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_FACILITY);
         syslogFacilityField.setValue(value == null ? 1 : new Integer(value));
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_LOG_HOSTNAME);
@@ -497,6 +533,17 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         syslogCharsetField.setSelectedItem(value == null ? "UTF-8" : value);
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_TIMEZONE);
         syslogTimezoneField.setSelectedItem(value == null ? resources.getString("syslogSettings.timezone.values.useExisting") : value);
+        value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_SSL_CLIENTAUTH);
+        syslogSSLClientAuthenticationCheckBox.setSelected("true".equals(value));
+
+        if (syslogSSLClientAuthenticationCheckBox.isSelected()) {
+            String id = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEYSTORE_ID);
+            String alias = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEY_ALIAS);
+            if (id != null && alias != null)
+                syslogSSLKeystoreComboBox.select(Long.parseLong(id), alias);
+            else
+                syslogSSLKeystoreComboBox.selectDefaultSsl();
+        }
     }
 
     /**
@@ -555,8 +602,13 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      */
     private void viewToModelSyslog(final SinkConfiguration sinkConfiguration) {
         sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL, (String) syslogProtocolField.getSelectedItem());
-        sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_HOST, syslogHostField.getText());
-        sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_PORT, syslogPortField.getText());
+
+        // re-populate the sinkConfig from the host list
+        sinkConfiguration.syslogHostList().clear();
+        for (int i=0; i<syslogHostListModel.getSize(); i++) {
+            sinkConfiguration.addSyslogHostEntry(syslogHostListModel.getElementAt(i).toString());
+        }
+
         sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_FACILITY, syslogFacilityField.getValue().toString());
 
         if (syslogLogHostnameField.isSelected()) {
@@ -572,6 +624,16 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_TIMEZONE, (String) syslogTimezoneField.getSelectedItem());
         } else {
             sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_TIMEZONE, null);
+        }
+
+        if (syslogSSLClientAuthenticationCheckBox.isEnabled() && syslogSSLClientAuthenticationCheckBox.isSelected()) {
+            sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_CLIENTAUTH, "true");
+            sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEYSTORE_ID, Long.toString(syslogSSLKeystoreComboBox.getSelectedKeystoreId()));
+            sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEY_ALIAS, syslogSSLKeystoreComboBox.getSelectedKeyAlias());
+        } else {
+            sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_CLIENTAUTH, "false");
+            sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEYSTORE_ID, null);
+            sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_SSL_KEY_ALIAS, null);
         }
     }
 
@@ -599,6 +661,9 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         s.setVisible(true);
         s.dispose();
         f.dispose();
+    }
+
+    private void createUIComponents() {
     }
 
     /**
@@ -644,5 +709,144 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
             return this;
         }
+    }
+
+    public static class SyslogHostPanel extends TextEntryPanel {
+        public SyslogHostPanel() {
+            this(null);
+        }
+
+        public SyslogHostPanel(String initialValue) {
+            super("Syslog host and port:", "host", initialValue);
+        }
+
+//        @Override
+//        protected String getSemanticError(String model) {
+//
+//            StringTokenizer stok = new StringTokenizer(model, ":");
+//            if (stok.countTokens() == 2) {
+//            }
+//
+//            return null;
+//        }
+
+        @Override
+        protected String getSyntaxError(String model) {
+            if (model == null || model.length() == 0) return null;
+            // if the URL contains context variable, you just can't check syntax
+
+            StringTokenizer stok = new StringTokenizer(model, ":");
+            if (stok.countTokens() != 2) {
+
+                return "Expected format is &lt;host&gt;:&lt;port number&gt;";
+
+            } else {
+                // check for valid hostname or IP address
+                String h = stok.nextToken();
+                if( !ValidationUtils.isValidDomain(h) ) {
+                    return "Invalid host value";
+                }
+
+                String p = stok.nextToken();
+                if( !ValidationUtils.isValidInteger(p, false, 1, 65535) ) {
+                    return "Port number must be from 1 to 65535";
+                }
+            }
+            return null;
+        }
+
+    }
+
+    /**
+     * ActionListener for handling the syslog host list buttons.
+     */
+    protected class SyslogHostListActionListener implements ActionListener {
+
+        private final int listenerAction;
+
+        public SyslogHostListActionListener(int action) {
+
+            this.listenerAction = action;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+
+            switch(listenerAction) {
+                case ACTION_ADD:    doAdd(e); break;
+                case ACTION_REMOVE: doRemove(e); break;
+                case ACTION_EDIT:   doEdit(e); break;
+                case ACTION_UP:     doUp(e); break;
+                case ACTION_DOWN:   doDown(e); break;
+            }
+        }
+
+        void doAdd(ActionEvent e) {
+            // open a dialog box
+            OkCancelDialog dialog = OkCancelDialog.createOKCancelDialog(
+                    getRootPane(), "Add Syslog Host", true, new SyslogHostPanel());
+            dialog.pack();
+            Utilities.centerOnScreen(dialog);
+            dialog.setVisible(true);
+
+            // add value to list, only when value is specified
+            String value = (String) dialog.getValue();
+            if (value != null && value.trim().length() > 0) {
+                syslogHostListModel.addElement(value);
+                syslogHostList.setSelectedIndex(syslogHostListModel.size()-1);
+            }
+        }
+
+        void doRemove(ActionEvent e) {
+            // remove value to model
+            Object val = syslogHostList.getSelectedValue();
+            if (val != null) {
+                syslogHostListModel.removeElementAt(syslogHostList.getSelectedIndex());
+            }
+        }
+
+        void doEdit(ActionEvent e) {
+            if (syslogHostList.getSelectedValue() != null) {
+                // open a dialog box
+                int selected = syslogHostList.getSelectedIndex();
+                OkCancelDialog dialog = OkCancelDialog.createOKCancelDialog(
+                        getRootPane(), "Edit Syslog Host", true, new SyslogHostPanel(syslogHostList.getSelectedValue().toString()));
+                dialog.pack();
+                Utilities.centerOnScreen(dialog);
+                dialog.setVisible(true);
+
+                // add value to list, only when value is specified
+                String value = (String) dialog.getValue();
+                if (value != null && value.trim().length() > 0) {
+                    syslogHostListModel.removeElementAt(selected);
+                    syslogHostListModel.add(selected, value);
+                    syslogHostList.setSelectedIndex(selected);
+                }
+            }
+        }
+
+        void doUp(ActionEvent e) {
+            if (syslogHostList.getSelectedValue() != null) {
+                int selected = syslogHostList.getSelectedIndex();
+                if (selected > 0) {
+                    Object obj = syslogHostListModel.getElementAt(selected);
+                    syslogHostListModel.removeElementAt(selected);
+                    syslogHostListModel.add(selected-1, obj);
+                    syslogHostList.setSelectedIndex(selected-1);
+                }
+            }
+        }
+
+        void doDown(ActionEvent e) {
+            if (syslogHostList.getSelectedValue() != null) {
+                int selected = syslogHostList.getSelectedIndex();
+                if (selected < syslogHostListModel.size()-1) {
+                    Object obj = syslogHostListModel.getElementAt(selected);
+                    syslogHostListModel.removeElementAt(selected);
+                    syslogHostListModel.add(selected+1, obj);
+                    syslogHostList.setSelectedIndex(selected+1);
+                }
+            }
+        }
+
     }
 }

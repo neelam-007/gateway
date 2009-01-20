@@ -1,21 +1,20 @@
 package com.l7tech.server.log.syslog.impl;
 
-import java.nio.charset.Charset;
-
+import com.l7tech.util.Functions;
+import org.apache.mina.common.IoFilter;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
-import org.apache.mina.common.IoFilter;
-import org.apache.mina.util.SessionLog;
 import org.apache.mina.filter.codec.ProtocolCodecFactory;
-import org.apache.mina.filter.codec.ProtocolEncoder;
-import org.apache.mina.filter.codec.ProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.filter.codec.textline.TextLineDecoder;
+import org.apache.mina.filter.codec.ProtocolDecoder;
+import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.textline.LineDelimiter;
+import org.apache.mina.filter.codec.textline.TextLineDecoder;
+import org.apache.mina.util.SessionLog;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 
-import com.l7tech.util.Functions;
+import java.nio.charset.Charset;
 
 /**
  * MINA IoHandler for Syslog client
@@ -58,6 +57,16 @@ class MinaSyslogHandler extends IoHandlerAdapter {
     public void exceptionCaught(final IoSession session, final Throwable throwable) throws Exception {
         // close session to cause reconnection
         session.close();
+    }
+
+    /**
+     * Checks the session to see if it's connected and available
+     *
+     * @param session the ioSession to verify
+     * @return true when the IO session is connected and ready for use, false otherwise
+     */
+    public boolean verifySession(IoSession session) {
+        return (session != null && session.isConnected() && !session.isClosing());
     }
 
     //- PACKAGE
