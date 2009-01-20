@@ -37,6 +37,7 @@ public class ConfigurationClient extends Interaction {
                                 final OptionSet optionSet,
                                 final String command ) throws ConfigurationException {
         this.provider = provider;
+        this.optionInit = provider instanceof OptionInitializer ? (OptionInitializer) provider : null;
         this.optionSet = optionSet;
         this.configBeanList = provider.loadConfiguration();
         this.command = validateCommand(command);        
@@ -119,6 +120,7 @@ public class ConfigurationClient extends Interaction {
     private static final Collection COMMANDS = Collections.unmodifiableCollection(Arrays.asList( COMMAND_AUTO, COMMAND_WIZARD, COMMAND_EDIT, COMMAND_SHOW ));   
     
     private final ConfigurationBeanProvider provider;
+    private final OptionInitializer optionInit;
     private final OptionSet optionSet;
     private final String command;
     private final Collection<ConfigurationBean> configBeanList;
@@ -208,17 +210,33 @@ public class ConfigurationClient extends Interaction {
         return done;
     }
 
-    private void initConfig( final OptionSet os, 
+    @SuppressWarnings({"unchecked"})
+    private void initConfig( final OptionSet os,
                              final Map<String,ConfigurationBean> configBeans,
                              final Collection<ConfigurationBean> configBeanList ) {
         if ( configBeanList != null ) {
             for ( Option option : os.getOptions() ) {
+                boolean optionInitialized = false;
+
                 for ( ConfigurationBean configBean : configBeanList ) {
                     if ( option.getConfigName().equals(configBean.getConfigName()) ) {
                         configBean.setId( option.getId() );
                         configBean.setFormatter( option.getType().getFormat() );
                         configBeans.put( option.getId(), configBean);
+                        optionInitialized = true;
                         break;
+                    }
+                }
+
+                if ( !optionInitialized && optionInit != null) {
+                    final Object value = optionInit.getInitialValue( option.getConfigName() );
+                    if ( value != null ) {
+                        ConfigurationBean configBean = new ConfigurationBean();
+                        configBean.setConfigName( option.getConfigName() );
+                        configBean.setConfigValue( value );
+                        configBean.setId( option.getId() );
+                        configBean.setFormatter( option.getType().getFormat() );
+                        configBeans.put( option.getId(), configBean);
                     }
                 }
             }

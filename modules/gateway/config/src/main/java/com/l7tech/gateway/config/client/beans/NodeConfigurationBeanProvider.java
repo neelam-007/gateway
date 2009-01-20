@@ -1,6 +1,7 @@
 package com.l7tech.gateway.config.client.beans;
 
 import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.config.client.OptionInitializer;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.beans.ConfigurationBeanProvider;
 import com.l7tech.objectmodel.FindException;
@@ -11,16 +12,20 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 
 import com.l7tech.server.management.config.node.NodeConfig.ClusterType;
+import com.l7tech.common.io.InetAddressUtil;
+
 import javax.xml.ws.soap.SOAPFaultException;
 import java.util.*;
 import java.util.logging.Level;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * ConfigurationBeanProvider for process controller / node configuration.
  *
  * @since 5.0
  */
-public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProviderSupport<NodeConfig> implements ConfigurationBeanProvider {
+public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProviderSupport<NodeConfig> implements ConfigurationBeanProvider, OptionInitializer {
 
     //- PUBLIC
 
@@ -28,6 +33,7 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
         this.nodeManagementApiFactory = nodeManagementApiFactory;
     }
 
+    @Override
     public void storeConfiguration(Collection<ConfigurationBean> configuration) throws ConfigurationException {
         NodeManagementApi managementService = getManagementService();
         try {
@@ -84,16 +90,42 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
         }
     }
 
+    @Override
+    public Object getInitialValue( final String configName ) {
+        Object value = null;
+
+        if ( "cluster.host".equals(configName) ) {
+            String hostname = null;
+            try {
+                hostname = InetAddress.getLocalHost().getCanonicalHostName();
+            } catch (UnknownHostException e) {
+                try {
+                    hostname = InetAddress.getLocalHost().getHostName();
+                } catch (UnknownHostException e2) {
+                    // fail
+                }
+            }
+            if ( hostname != null && !InetAddressUtil.isValidIpAddress(hostname) ) {
+                value = hostname;
+            }
+        }
+
+        return value;
+    }
+
     //- PACKAGE
 
+    @Override
     NodeManagementApi getManagementService() {
         return nodeManagementApiFactory.getManagementService();
     }
 
+    @Override
     NodeConfig toConfig(NodeManagementApi.NodeHeader nodeHeader) throws FindException {
         return getManagementService().getNode( nodeHeader.getName() );
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     Collection<ConfigurationBean> toBeans( final NodeConfig config ) {
         List<ConfigurationBean> configuration = new ArrayList<ConfigurationBean>();
