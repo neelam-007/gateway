@@ -68,6 +68,16 @@ public class EditableSearchComboBox extends JComboBox {
     }
 
     /**
+     * Sets the filtering that will be used as part of the searching for this combo box.
+     * @param filter    The implemented filtering
+     */
+    public void setFilter(Filter filter) {
+        if (editor != null) {
+            editor.setFilter(filter);
+        }
+    }
+
+    /**
      * The model implementation that will model the editable search combo box.
      */
     private class FilterableComboBoxModel extends AbstractListModel implements MutableComboBoxModel {
@@ -201,11 +211,13 @@ public class EditableSearchComboBox extends JComboBox {
         public JTextField textField;
         private volatile boolean isFiltering = false;
         private volatile boolean isSetting = false;
+        private Filter filter;
 
 
         public SearchFieldEditor() {
             textField = new JTextField();
             textField.getDocument().addDocumentListener(this);
+            filter = null;
         }
 
         public SearchFieldEditor(int cols) {
@@ -256,6 +268,10 @@ public class EditableSearchComboBox extends JComboBox {
             filterItems();
         }
 
+        public void setFilter(Filter filter) {
+            this.filter = filter;
+        }
+
         /**
          *  The core of the filtering to display the new items in the drop down list based on the filtering
          */
@@ -263,11 +279,9 @@ public class EditableSearchComboBox extends JComboBox {
             if (isSetting) return;
 
             isFiltering = true;
-            Filter filter = null;
-            if (textField.getText().length() > 0) {
-                filter = new CaseInsensitiveStartsWithFilter(textField.getText());
+            if (filter != null) {
+                filter.setPrefix(textField.getText());
             }
-
             ((FilterableComboBoxModel) getModel()).setFilter(filter);
 
             //refresh the drop down list
@@ -279,7 +293,7 @@ public class EditableSearchComboBox extends JComboBox {
                 textField.setBackground(Color.white);
             } else {
                 if (!"".equals(textField.getText())) {
-                    textField.setBackground(Color.red);
+                    textField.setBackground(new Color(0xFF, 0xFF, 0xe1));
                 }
             }
             isFiltering = false;
@@ -287,28 +301,28 @@ public class EditableSearchComboBox extends JComboBox {
     }
 
     /**
-     * Filtering interface so that in the future other can implement their own filtering criteria.
+     * Abstract filtering class to filter out the searchable items.
      */
-    public static interface Filter {
+    public static abstract class Filter {
+        protected String prefix;
+
+        public Filter() {
+            prefix = "";
+        }
+
+        public Filter(String prefix) {
+            this.prefix = prefix;
+        }
+
+        public void setPrefix(String prefix) {
+            this.prefix = prefix;
+        }
+
         /**
          * @param obj   Object to be filtered
          * @return  TRUE if the provide object is accepted as part of the filtering.  Otherwise, FALSE.
          */
-        public boolean accept(Object obj);
-    }
-
-
-    public class CaseInsensitiveStartsWithFilter implements Filter {
-        private String prefix;
-
-        public CaseInsensitiveStartsWithFilter(String prefix) {
-            this.prefix = prefix;
-        }
-
-        public boolean accept(Object obj) {
-            //search case insensitive
-            return !(obj == null || prefix == null) && obj.toString().toLowerCase().startsWith(prefix.toLowerCase());
-        }
+        public abstract boolean accept(Object obj);
     }
 
     public static void main(String[] arg) {

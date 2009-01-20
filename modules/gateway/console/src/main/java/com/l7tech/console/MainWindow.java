@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.VersionException;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gui.util.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
@@ -2168,6 +2169,30 @@ public class MainWindow extends JFrame implements SheetHolder {
                     setIcon(new ImageIcon(node.getIcon()));
                     setText(node.getName());
                     return this;
+                }
+            });
+
+            //set filter style
+            searchComboBox.setFilter(new EditableSearchComboBox.Filter() {
+                public boolean accept(Object obj) {
+                    //match display names
+                    boolean matches = !(obj == null) && obj.toString().toLowerCase().startsWith(this.prefix.toLowerCase());
+
+                    //match uri as well
+                    if (obj instanceof ServiceNode) {
+                        ServiceNode serviceNode = (ServiceNode) obj;
+                        try {
+                            PublishedService service = serviceNode.getEntity();
+                            String routingUri = service.getRoutingUri();
+                            if (routingUri != null) {
+                                matches = matches || routingUri.toLowerCase().startsWith(this.prefix.toLowerCase());
+                            }
+                        } catch (FindException fe) {
+                            //do nothing, just return the results from the previous matches
+                        }
+                    }
+
+                    return matches; 
                 }
             });
 
