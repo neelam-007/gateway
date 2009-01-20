@@ -46,6 +46,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.SoapFaultDetail;
+import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
@@ -792,9 +793,11 @@ public class MessageProcessor {
                         throw e;
                     } catch(SAXException e) {
                         throw e;
+                    } catch(MessageNotSoapException mnse) {
+                        String reason = ExceptionUtils.getMessage(mnse);
+                        throw new ProcessorException("Response message is not SOAP, unable to undecorate response" + ("".equals(reason) ? "" : ": " + reason ));
                     } catch(Exception e) {
-                        throw new ProcessorException("Unable to undecorate response: " + ExceptionUtils.getMessage(e),
-                                ExceptionUtils.getDebugException(e));
+                        throw new ProcessorException("Unable to undecorate response: " + ExceptionUtils.getMessage(e), e);
                     }
                 }
             });

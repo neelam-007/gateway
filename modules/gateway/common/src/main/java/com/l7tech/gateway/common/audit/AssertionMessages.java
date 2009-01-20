@@ -63,6 +63,7 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_UNEXPECTED_METHOD       = m(4045, Level.WARNING, "Unexpected request HTTP method {0}; using POST");
     public static final M HTTPROUTE_DEFAULT_METHOD_NON_HTTP = m(4046, Level.INFO, "Request was not HTTP; using POST");
     public static final M HTTPROUTE_DEFAULT_METHOD_VAR      = m(4047, Level.INFO, "Request is a context variable; using POST");
+    public static final M BRIDGEROUTE_WSS_PROCESSING_RESP   = m(4048, Level.WARNING, "Error in WSS processing of response ''{0}''");
 
     // ServerCredentialSourceAssertion messages
     public static final M HTTPCREDS_AUTH_REQUIRED    = m(4100, Level.INFO, "Authentication required");
