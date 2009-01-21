@@ -56,6 +56,7 @@
             CANNOT_DELETE_SETTINGS : 'Failed to delete settings &ldquo;{0}&rdquo;.',
             CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST : 'Failed to download list of saved settings.',
             CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Failed to download saved settings &ldquo;{0}&rdquo;.',
+            DOWNLOAD_SAVED_SETTINGS_WARNING : 'Saved settings has been loaded but with problem:',
             CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Failed to download list of message context keys for the selected SSG Clusers.',
             SSG_CLUSTER_NOT_APPLICABLE : 'None of the selected entities belong to this SSG Cluster. Please delete or reselect.',
             TOO_MANY_UNIQUE_MESSAGE_CONTEXT_KEYS : 'Cannot use more than 5 unique message context keys per SSG cluster',
@@ -760,7 +761,7 @@
             }
 
             if (errMsgs.length > 0) {
-                var bodyHtml = '<div style="max-width: 600px;">' + l7.Util.escapeAsText(localizedStrings.INVALID_GROUPINGS_REMOVED) + '<ul style="margin-left: 1.5em;">';
+                var bodyHtml = '<div style="max-width: 600px;">' + l7.Util.escapeAsText(localizedStrings.INVALID_GROUPINGS_REMOVED) + '<ul style="margin-left: 1.5em; margin-top: 1em;">';
                 for (var j = 0; j < errMsgs.length; ++j) {
                     bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeAsText(errMsgs[j]) + '</li>';
                 }
@@ -1066,16 +1067,14 @@
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
-                        if (result.warning) {
-                            var bodyHtml = '<div style="max-width: 600px;">' + result.warning;
-                            if (result.warningItems && result.warningItems instanceof Array && result.warningItems.length > 0) {
-                                bodyHtml += '<ul style="margin-left: 1.5em;">'
-                                for (var i = 0; i < result.warningItems.length; ++i) {
-                                    var warningItem = result.warningItems[i];
-                                    bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeAsText(warningItem) + '</li>';
-                                }
-                                bodyHtml += '</ul>';
+                        if (result.warningItems && result.warningItems instanceof Array && result.warningItems.length > 0) {
+                            var bodyHtml = '<div style="max-width: 600px;">' + localizedStrings.DOWNLOAD_SAVED_SETTINGS_WARNING;
+                            bodyHtml += '<ul style="margin-left: 1.5em; margin-top: 1em;">'
+                            for (var i = 0; i < result.warningItems.length; ++i) {
+                                var warningItem = result.warningItems[i];
+                                bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeAsText(warningItem) + '</li>';
                             }
+                            bodyHtml += '</ul>';
                             bodyHtml += '</div>';
                             l7.Dialog.showErrorDialog(localizedStrings.WARNING, bodyHtml, localizedStrings.OK);
                         }
