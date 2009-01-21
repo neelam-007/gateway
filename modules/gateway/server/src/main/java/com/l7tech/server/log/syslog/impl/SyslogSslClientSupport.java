@@ -16,31 +16,31 @@ public class SyslogSslClientSupport {
 
     private static SsgKeyStoreManager ssgKeyStoreManager;
 
-    static boolean isInitialized() {
+    public static boolean isInitialized() {
         return (trustManager != null && defaultKeyManagers != null && ssgKeyStoreManager != null);
     }
 
-    static X509TrustManager getTrustManager() {
+    public static X509TrustManager getTrustManager() {
         return trustManager;
     }
 
-    static void setTrustManager(X509TrustManager trustManager) {
+    public static void setTrustManager(X509TrustManager trustManager) {
         SyslogSslClientSupport.trustManager = trustManager;
     }
 
-    static KeyManager[] getDefaultKeyManagers() {
+    public static KeyManager[] getDefaultKeyManagers() {
         return defaultKeyManagers;
     }
 
-    static void setDefaultKeyManagers(KeyManager[] defaultKeyManagers) {
+    public static void setDefaultKeyManagers(KeyManager[] defaultKeyManagers) {
         SyslogSslClientSupport.defaultKeyManagers = defaultKeyManagers;
     }
 
-    static SsgKeyStoreManager getSsgKeyStoreManager() {
+    public static SsgKeyStoreManager getSsgKeyStoreManager() {
         return ssgKeyStoreManager;
     }
 
-    static void setSsgKeyStoreManager(SsgKeyStoreManager ssgKeyStoreManager) {
+    public static void setSsgKeyStoreManager(SsgKeyStoreManager ssgKeyStoreManager) {
         SyslogSslClientSupport.ssgKeyStoreManager = ssgKeyStoreManager;
     }
 }
