@@ -1300,20 +1300,6 @@
             var settings = getSettingsFromFields();
             settings.name = name;   // Add settings name to request payload object.
             var postData = YAHOO.lang.JSON.stringify(settings);
-            // PROTOTYPE ONLY BEGIN
-            var saveSettingsUrl = 'action/standardReport/saveSettings';
-            if (name.indexOf('duplicate') != -1) {
-                // Provides a way to test settings name already exists.
-                saveSettingsUrl = 'action/standardReport/saveSettings_DUPLICATE.json';
-            } else if (name.indexOf('exception') != -1) {
-                // Provides a way to test exception response.
-                saveSettingsUrl = 'action/standardReport/saveSettings_EXCEPTION.json';
-            } else if (name.indexOf('404') != -1) {
-                // Provides a way to test 404 response.
-                saveSettingsUrl = '_no_such_address_';
-            }
-            var saveSettingsOverwriteUrl = 'action/standardReport/saveSettingsOverwrite';
-            // PROTOTYPE ONLY END
             var url = overwrite ? saveSettingsOverwriteUrl : saveSettingsUrl;
             var xhr = l7.Connection.syncRequest('POST', url, postData, true);
             if (xhr.status == 200) {
