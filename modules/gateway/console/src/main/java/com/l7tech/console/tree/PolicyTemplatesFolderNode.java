@@ -142,4 +142,11 @@ public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
             }
         });
     }
+
+    @Override
+    public Action[] getActions() {
+        return new Action[] {
+                new RefreshTreeNodeAction(this)
+        };
+    }
 }

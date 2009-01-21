@@ -94,11 +94,10 @@ public class EditPolicyTemplateNameAction extends SecureAction {
                       final File newName = new File(templateDir.getPath() + File.separator + ev.getActionCommand());
                       boolean success = node.getFile().renameTo(newName);
                       if (!success) {
-                          String error = "The system reported problem in accessing " +
-                            "the policy template directory " + templateDir.getPath() + "\n" +
-                            "The policy template is not renamed.";
-                          ErrorManager.getDefault().
-                            notify(Level.WARNING, new IOException(error), error);
+                          DialogDisplayer.showMessageDialog(null,
+                                                 "Policy template '" + templateFile.getPath() + "' was changed.  Please refresh for an updated version.",
+                                                 "Policy template rename failed",
+                                                 JOptionPane.WARNING_MESSAGE, null);
                           return;
                       }
                       node.setUserObject(newName);

@@ -241,38 +241,6 @@ public class Actions {
         });
     }
 
-    public static void deletePolicyTemplate(final PolicyTemplateNode node, final Functions.UnaryVoid<Boolean> result) {
-        // Make sure
-        DialogDisplayer.showConfirmDialog(getTopParent(),
-          "Are you sure you want to delete template " +
-          node.getName() + "?",
-          "Delete Policy Template",
-          JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
-            public void reportResult(int opresult) {
-                if (opresult != JOptionPane.YES_OPTION) {
-                    result.call(false);
-                    return;
-                }
-
-                // Delete the  node and update the tree
-                try {
-                    File file = node.getFile();
-                    if (file.exists()) {
-                        if (!file.delete()) {
-                            throw new IOException("Error deleting file " + file.getName());
-                        }
-                    }
-                    result.call(true);
-                    return;
-                } catch (Exception e) {
-                    ErrorManager.getDefault().
-                      notify(Level.WARNING, e, "Error deleting policy template");
-                }
-                result.call(false);
-            }
-        });
-    }
-
     /**
      * invoke help programatically the F1 - help
      *
