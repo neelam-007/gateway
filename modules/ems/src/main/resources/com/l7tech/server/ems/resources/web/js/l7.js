@@ -1257,7 +1257,7 @@ if (!l7.Dialog) {
                     }
                     return o;
                 } catch (e) {
-                    l7.Dialog.showErrorDialog(errHeader, htmlIfBadJSON + ': ' + e, errOk);
+                    l7.Dialog.showErrorDialog(errHeader, htmlIfBadJSON + '<br/><br/>' + e, errOk);
                     return s;
                 }
             }

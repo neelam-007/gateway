@@ -43,7 +43,7 @@
             ACCESSING_SERVER : 'Accessing server...',
             OK : 'OK',
             ERROR : 'Error',
-            CANNOT_DOWNLOAD_ENTITY_DATA : 'Failed to get array of SSG Cluster entities from server: ',
+            CANNOT_DOWNLOAD_ENTITY_DATA : 'Failed to get array of SSG Cluster entities from server.',
             CANNOT_PARSE_ENTITY_DATA : 'Failed to parse array of SSG Cluster entities downloaded from server: '
         };
     </script>
@@ -200,7 +200,7 @@
                 failure : function(o) {
                     l7.Dialog.hideWaitDialog();
                     entityTreeTable.displayDataError();
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                     afterLoadSsgClusterContent();
                 }
             };

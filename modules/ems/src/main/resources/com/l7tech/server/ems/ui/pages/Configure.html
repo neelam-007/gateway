@@ -75,12 +75,12 @@
                 OK : 'OK',
                 CANCEL : 'Cancel',
                 ERROR : 'Error',
-                CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server: ',
-                CANNOT_DOWNLOAD_ENTITY_DATA : 'Failed to get array of enterprise entities from server: ',
-                CANNOT_PARSE_ENTITY_DATA : 'Failed to parse array of enterprise entities downloaded from server: ',
+                CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
+                CANNOT_DOWNLOAD_ENTITY_DATA : 'Failed to get array of enterprise entities from server.',
+                CANNOT_PARSE_ENTITY_DATA : 'Failed to parse array of enterprise entities downloaded from server.',
                 ENTITY_DATA_ERROR : 'Data error.',
-                CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Failed to get data from server for establishing trust by SSG Cluster: ',
-                CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Failed to get data from server for mapping access account: ',
+                CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Failed to get data from server for establishing trust by SSG Cluster.',
+                CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Failed to get data from server for mapping access account.',
                 INVALID_NAME_LENGTH : 'must be 1 to 128 characters',
                 INVALID_NAME_SLASH : 'slash "/" not allowed',
                 INVALID_NAME_LEADING_SPACES : 'leading spaces not allowed',
@@ -88,14 +88,14 @@
                 SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
                 STARTING_SSG_NODE : 'Starting SSG Node &ldquo;{0}&rdquo;...',
                 STOPPING_SSG_NODE : 'Stopping SSG Node &ldquo;{0}&rdquo;...',
-                CANNOT_ADD_FOLDER : 'Failed to add folder: ',
-                CANNOT_EDIT_FOLDER : 'Failed to edit folder: ',
-                CANNOT_DELETE_FOLDER : 'Failed to delete folder: ',
-                CANNOT_ADD_SSG_CLUSTER : 'Failed to add SSG Cluster: ',
-                CANNOT_EDIT_SSG_CLUSTER : 'Failed to edit SSG Cluster: ',
-                CANNOT_DELETE_SSG_CLUSTER : 'Failed to delete SSG Cluster: ',
-                CANNOT_START_SSG_NODE : 'Failed to start SSG Node: ',
-                CANNOT_STOP_SSG_NODE : 'Failed to stop SSG Node: '
+                CANNOT_ADD_FOLDER : 'Failed to add folder.',
+                CANNOT_EDIT_FOLDER : 'Failed to edit folder.',
+                CANNOT_DELETE_FOLDER : 'Failed to delete folder.',
+                CANNOT_ADD_SSG_CLUSTER : 'Failed to add SSG Cluster.',
+                CANNOT_EDIT_SSG_CLUSTER : 'Failed to edit SSG Cluster.',
+                CANNOT_DELETE_SSG_CLUSTER : 'Failed to delete SSG Cluster.',
+                CANNOT_START_SSG_NODE : 'Failed to start SSG Node.',
+                CANNOT_STOP_SSG_NODE : 'Failed to stop SSG Node.'
             };
         </script>
         <script type="text/javascript">
@@ -230,14 +230,14 @@
                             entities = YAHOO.lang.JSON.parse(o.responseText);
                         } catch (e) {
                             displayError();
-                            l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_PARSE_ENTITY_DATA + e, localizedStrings.OK);
+                            l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_PARSE_ENTITY_DATA + '<br/><br/>' + e, localizedStrings.OK);
                             return;
                         }
                         entityTreeTable.load(entities);
                     },
                     failure : function(o) {
                         displayError();
-                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + o.statusText, localizedStrings.OK);
+                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                     }
                 };
                 YAHOO.util.Connect.asyncRequest('GET', jsonUrl, callback, null);
@@ -423,7 +423,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     },
                     failure : function(o) {
                         l7.Dialog.hideWaitDialog();
-                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_START_SSG_NODE + o.statusText, localizedStrings.OK);
+                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_START_SSG_NODE + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                     }
                 };
                 var url = document.forms['startSsgNodeForm'].action;
@@ -450,7 +450,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     },
                     failure : function(o) {
                         l7.Dialog.hideWaitDialog();
-                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_STOP_SSG_NODE + o.statusText, localizedStrings.OK);
+                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_STOP_SSG_NODE + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                     }
                 };
                 var url = document.forms['stopSsgNodeForm'].action;
@@ -614,7 +614,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 addFolderDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_FOLDER + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_FOLDER + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -656,7 +656,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 editFolderDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_EDIT_FOLDER + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_EDIT_FOLDER + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -698,7 +698,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 deleteFolderDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_FOLDER + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_FOLDER + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -748,7 +748,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 addSSGClusterDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_SSG_CLUSTER + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_ADD_SSG_CLUSTER + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -790,7 +790,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 editSSGClusterDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_EDIT_SSG_CLUSTER + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_EDIT_SSG_CLUSTER + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -837,7 +837,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 deleteSSGClusterDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SSG_CLUSTER + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SSG_CLUSTER + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -879,7 +879,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     }
                 }
                 reconfirmSSGClusterDeletionDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SSG_CLUSTER + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SSG_CLUSTER + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -1006,7 +1006,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     failure : function(o) {
                         l7.Dialog.showErrorDialog(
                                 localizedStrings.ERROR,
-                                localizedStrings.CANNOT_GET_DATA_TO_ESTABLISH_TRUST + o.statusText,
+                                localizedStrings.CANNOT_GET_DATA_TO_ESTABLISH_TRUST + '<br/><br/>' + o.status + ' ' + o.statusText,
                                 localizedStrings.OK);
                     },
                     argument : {
@@ -1047,7 +1047,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     failure : function(o) {
                         l7.Dialog.showErrorDialog(
                                 localizedStrings.ERROR,
-                                localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT + o.statusText,
+                                localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT + '<br/><br/>' + o.status + ' ' + o.statusText,
                                 localizedStrings.OK);
                     },
                     argument : entity
@@ -1083,7 +1083,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     failure : function(o) {
                         l7.Dialog.showErrorDialog(
                                 localizedStrings.ERROR,
-                                localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT + o.statusText,
+                                localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT + '<br/><br/>' + o.status + ' ' + o.statusText,
                                 localizedStrings.OK);
                     },
                     argument : entity
