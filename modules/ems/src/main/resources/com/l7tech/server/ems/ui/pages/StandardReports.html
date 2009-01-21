@@ -47,14 +47,16 @@
             SETTINGS_SAVED : "Settings is saved successfully.",
             OK : 'OK',
             CANCEL : 'Cancel',
+            YES : 'Yes',
+            NO : 'No',
             WARNING: 'Warning',
             ERROR : 'Error',
             CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server: ',
-            CANNOT_SAVE_SETTINGS : 'Failed to save settings: ',
-            CANNOT_DELETE_SETTINGS : 'Failed to delete settings &ldquo;{0}&rdquo;: ',
-            CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST : 'Failed to download list of saved settings: ',
-            CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Failed to download saved settings &ldquo;{0}&rdquo;: ',
-            CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Failed to download list of message context keys for the selected SSG Clusers: ',
+            CANNOT_SAVE_SETTINGS : 'Failed to save settings.',
+            CANNOT_DELETE_SETTINGS : 'Failed to delete settings &ldquo;{0}&rdquo;.',
+            CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST : 'Failed to download list of saved settings.',
+            CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Failed to download saved settings &ldquo;{0}&rdquo;.',
+            CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Failed to download list of message context keys for the selected SSG Clusers.',
             SSG_CLUSTER_NOT_APPLICABLE : 'None of the selected entities belong to this SSG Cluster. Please delete or reselect.',
             TOO_MANY_UNIQUE_MESSAGE_CONTEXT_KEYS : 'Cannot use more than 5 unique message context keys per SSG cluster',
             INVALID_GROUPINGS_REMOVED : "Some groupings in this settings have been removed because they no longer applies: ",
@@ -66,7 +68,7 @@
             ABSOLUTE_TIME_PERIOD_HINT : 'From time must be earlier than To time',
             TIME_INTERVAL_HINT : 'Must be positive integer',
             SUBMITTING_GENERATE_REPORT : 'Submitting standard report generation',
-            CANNOT_SUBMIT_GENERATE_REPORT : 'Failed to submit standard report generation: '
+            CANNOT_SUBMIT_GENERATE_REPORT : 'Failed to submit standard report generation.'
         }
     </script>
     <script type="text/javascript">
@@ -125,6 +127,7 @@
         var groupingTableBody;
 
         var saveSettingsDialog;
+        var saveSettingsOverwriteDialog;
         var deleteSettingsDialog;
 
         /**
@@ -546,10 +549,10 @@
          * @param {string} ssgClusterId
          * @param {string} ssgClusterName
          * @param {array} ssgClusterAncestors
-         * @param {string} publishedServiceId
+         * @param {string} publishedServiceId       ID of published service or published service alias
          * @param {string} publishedServiceName
-         * @param {string} relatedId                applies only if the selected entity is a published service alias or an operation associated with a published service alias.
-         * @param {string} operation                applies only if the selected entity is an operation
+         * @param {string} relatedId                ID of the original published service if the selected entity is a published service alias or an operation inside a published service alias; undefined otherwise
+         * @param {string} operation                name of operation; undefined if the selected entity is not an operation
          */
         function addEntity(ssgClusterId, ssgClusterName, ssgClusterAncestors, publishedServiceId, publishedServiceName, relatedId, operation) {
             // Skips this if already added.
@@ -592,9 +595,9 @@
             // Published Service column.
             td = tr.insertCell(-1);
             td.innerHTML = publishedServiceName;
-            if (relatedId != undefined) { // refer that the entity is a published service alias.
-                    td.style.fontStyle = 'italic';
-                }
+            if (relatedId != undefined) { // the selected entity is either a published service alias or an operation inside a published service alias	
+                td.style.fontStyle = 'italic';
+            }
             tr._publishedServiceId = publishedServiceId;        // Stash away for later retrieval.
             tr._publishedServiceName = publishedServiceName;    // Stash away for later retrieval.
             tr._relatedId = relatedId;                          // Stash away for later retrieval.
@@ -890,7 +893,7 @@
                 failure : function(o) {
                     loadSettingsButton.set('disabled', settingsListDropDown.length == 0);
                     deleteSettingsButton.set('disabled', settingsListDropDown.length == 0);
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST + o.statusText + ' (' + o.status + ')', localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             };
             var getSettingsListUrl = document.forms['getSettingsListForm'].action;
@@ -903,11 +906,11 @@
 
         function refreshSsgClusterContentSelector() {
             var ssgCluster = ssgClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
-            var selectedEntityType = getEntitySelectionType();
-            var entitiesWithTristateCheckbox = [l7.EntityTreeTable.ENTITY.SERVICE_FOLDER, selectedEntityType];
-            if (selectedEntityType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+            var entitySelectionType = getEntitySelectionType();
+            var entitiesWithTristateCheckbox = [l7.EntityTreeTable.ENTITY.SERVICE_FOLDER, entitySelectionType];
+            if (entitySelectionType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
                 entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS);
-            } else if (selectedEntityType == l7.EntityTreeTable.ENTITY.OPERATION) {
+            } else if (entitySelectionType == l7.EntityTreeTable.ENTITY.OPERATION) {
                 entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE);
                 entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS);
             }
@@ -946,7 +949,7 @@
                     availableMessageContext = result;
                 }
             } else {
-                l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST + xhr.statusText + ' (' + xhr.status + ')', localizedStrings.OK);
+                l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST + '<br/><br/>' + xhr.status + ' ' + xhr.statusText, localizedStrings.OK);
             }
         }
 
@@ -1082,7 +1085,7 @@
                 },
                 failure : function(o) {
                     l7.Dialog.hideWaitDialog();
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName) + o.statusText + ' (' + o.status + ')', localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName) + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             };
             var getSettingsUrl = document.forms['getSettingsForm'].action;
@@ -1108,17 +1111,17 @@
         function onClickAddEntity() {
             var ssgCluster = ssgClusterContentSelectorWindow.getSsgCluster();
             var entities = ssgClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected();
-            var selectedEntityType = getEntitySelectionType();
+            var entitySelectionType = getEntitySelectionType();
 
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
 
-                if (selectedEntityType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                if (entitySelectionType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
                     if (entity.type != l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE &&
                         entity.type != l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS) {
                         continue;
                     }
-                } else if (selectedEntityType == l7.EntityTreeTable.ENTITY.OPERATION) {
+                } else if (entitySelectionType == l7.EntityTreeTable.ENTITY.OPERATION) {
                     if (entity.type != l7.EntityTreeTable.ENTITY.OPERATION) {
                         continue;
                     }
@@ -1244,7 +1247,7 @@
                 },
                 failure : function(o) {
                     l7.Dialog.hideWaitDialog();
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_SUBMIT_GENERATE_REPORT + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_SUBMIT_GENERATE_REPORT + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             };
             var settings = getSettingsFromFields();
@@ -1279,35 +1282,62 @@
         }
 
         /**
-         * Note: This uses an asynchronous call.
-         * @param {string} name     settings name to save as
+         * Saves the current settings.
+         *
+         * If "overwrite" is false, the request is sent to a server address which should
+         * respond, if duplicate settings name exists, with a JSON object whose property
+         * "reconfirm" set to true; otherwise responds with a JSON "null".
+         *
+         * If "overwrite" is true, the request is sent to another server address which
+         * should overwrite any duplicate settings and responds with a JSON "null".
+         *
+         * Note: This uses a synchronous call.
+         *
+         * @param {string} name         settings name to save as
+         * @param {boolean} overwrite   true to overwrite existing settings with same name without confirmation dialog
          */
-        function saveSettings(name) {
-            var callback = {
-                success : function(o) {
-                    var result = l7.Dialog.parseJSON(
-                            o.responseText,
-                            localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_SAVE_SETTINGS) + '</p>',
-                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                            localizedStrings.OK);
-                    if (!l7.Util.isException(result)) {
-                        // No return object expected.
-                        l7.Dialog.showInfoDialog(localizedStrings.SETTINGS_SAVED_TITLE, localizedStrings.SETTINGS_SAVED, localizedStrings.OK);
-                        populateSettingsListDropDown();    // Refreshes to show added settings.
-                    }
-                },
-                failure : function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_SAVE_SETTINGS + o.statusText, localizedStrings.OK);
-                }
-            };
+        function saveSettings(name, overwrite) {
             var settings = getSettingsFromFields();
             settings.name = name;   // Add settings name to request payload object.
             var postData = YAHOO.lang.JSON.stringify(settings);
-            YAHOO.util.Connect.setDefaultPostHeader(false);
-            YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');
-            YAHOO.util.Connect.asyncRequest('POST', saveSettingsUrl, callback, postData);
-            YAHOO.util.Connect.setDefaultPostHeader(true);  // Revert to default for next caller.
+            // PROTOTYPE ONLY BEGIN
+            var saveSettingsUrl = 'action/standardReport/saveSettings';
+            if (name.indexOf('duplicate') != -1) {
+                // Provides a way to test settings name already exists.
+                saveSettingsUrl = 'action/standardReport/saveSettings_DUPLICATE.json';
+            } else if (name.indexOf('exception') != -1) {
+                // Provides a way to test exception response.
+                saveSettingsUrl = 'action/standardReport/saveSettings_EXCEPTION.json';
+            } else if (name.indexOf('404') != -1) {
+                // Provides a way to test 404 response.
+                saveSettingsUrl = '_no_such_address_';
+            }
+            var saveSettingsOverwriteUrl = 'action/standardReport/saveSettingsOverwrite';
+            // PROTOTYPE ONLY END
+            var url = overwrite ? saveSettingsOverwriteUrl : saveSettingsUrl;
+            var xhr = l7.Connection.syncRequest('POST', url, postData, true);
+            if (xhr.status == 200) {
+                var result = l7.Dialog.parseJSON(
+                        xhr.responseText,
+                        localizedStrings.ERROR,
+                        '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_SAVE_SETTINGS) + '</p>',
+                        localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                        localizedStrings.OK);
+                if (!l7.Util.isException(result)) {
+                    if (result == null) {
+                        // No return object expected.
+                        l7.Dialog.showInfoDialog(localizedStrings.SETTINGS_SAVED_TITLE, localizedStrings.SETTINGS_SAVED, localizedStrings.OK);
+                        populateSettingsListDropDown();    // Refreshes to show added settings.
+                    } else if (result.reconfirm != undefined && result.reconfirm == true) {
+                        document.getElementById('saveSettingsOverwriteForm_name').value = name;
+                        document.getElementById('saveSettingsOverwriteDialog_name').innerHTML = l7.Util.escapeAsText(name);
+                        saveSettingsOverwriteDialog.center();
+                        saveSettingsOverwriteDialog.show();
+                    }
+                }
+            } else {
+                l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_SAVE_SETTINGS + '<br/><br/>' + xhr.status + ' ' + xhr.statusText, localizedStrings.OK);
+            }
         }
 
         function initButtons() {
@@ -1353,7 +1383,7 @@
                         handler   : function() {
                             this.hide();
                             var settingsName = document.getElementById('saveSettingsDialog_name').value;
-                            saveSettings(settingsName);
+                            saveSettings(settingsName, false);
                         },
                         isDefault : true
                     },
@@ -1368,16 +1398,43 @@
                 draggable   : true,
                 icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
                 modal       : true,
-                postmethod  : 'manual', // Because of JSON data instead of FORM data format.
+                postmethod  : 'manual', // Because payload is JSON data format, not FORM data.
                 visible     : false
             });
             saveSettingsDialog.manualSubmitEvent.subscribe(function() {
                 if (validateSaveSettingsDialog()) {
                     var settingsName = document.getElementById('saveSettingsDialog_name').value;
-                    saveSettings(settingsName);
+                    saveSettings(settingsName, false);
                 } // else treat as cancel
             }); // To handle ENTER key press.
             saveSettingsDialog.render();
+        }
+
+        function initSaveSettingsOverwriteDialog() {
+            saveSettingsOverwriteDialog = new YAHOO.widget.Dialog('saveSettingsOverwriteDialog', {
+                buttons     : [
+                    {
+                        text      : localizedStrings.YES,
+                        handler   : function() {
+                            saveSettings(document.getElementById('saveSettingsOverwriteForm_name').value, true);
+                            this.hide();
+                        },
+                        isDefault : true
+                    },
+                    {
+                        text      : localizedStrings.NO,
+                        handler   : function() {
+                            this.hide();
+                        }
+                    }
+                ],
+                close       : true,
+                draggable   : true,
+                icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                modal       : true,
+                visible     : false
+            });
+            saveSettingsOverwriteDialog.render();
         }
 
         function initDeleteSettingsDialog() {
@@ -1418,12 +1475,13 @@
                 }
             }
             deleteSettingsDialog.callback.failure = function(o) {
-                l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SETTINGS + o.statusText, localizedStrings.OK);
+                l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DELETE_SETTINGS + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
             }
         }
 
         function initDialogs() {
             initSaveSettingsDialog();
+            initSaveSettingsOverwriteDialog();
             initDeleteSettingsDialog();
         }
 
@@ -1846,6 +1904,20 @@
                                     <td><input type="text" id="saveSettingsDialog_name" name="name" size="40" maxlength="128" onkeyup="validateSaveSettingsDialog();" /></td>
                                 </tr>
                             </table>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="saveSettingsOverwriteDialog">
+                    <div class="hd">Duplicate Settings Name</div>
+                    <div class="bd">
+                        <form> <!-- No action because this is used merely to focus input and handle ENTER key press. -->
+                            <input id="saveSettingsOverwriteForm_name" type="hidden"/>
+                            A settings with the name &ldquo;<span id="saveSettingsOverwriteDialog_name"></span>&rdquo;
+                            already exists.
+                            <br/>
+                            <br/>
+                            Overwrite?
                         </form>
                     </div>
                 </div>

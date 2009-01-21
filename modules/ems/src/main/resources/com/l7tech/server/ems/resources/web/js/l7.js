@@ -46,6 +46,8 @@ if (!l7.Util) {
 
             if (startElement == null) {
                 startElement = document.body;
+            } else if (typeof startElement == 'string' || startElement instanceof String) {
+                startElement = document.getElementById(startElement);
             }
             if (tagName == null) {
                 tagName = '*';
@@ -346,6 +348,40 @@ if (!l7.Util) {
         }
 
         /**
+         * Returns the property values of passed objects as an array.
+         * @param {objects} varargs    any number of objects
+         * @return {array} array of property values; may be empty but never null
+         */
+        l7.Util.getPropertyValues = function(varargs) {
+            var result = [];
+            for (var i = 0; i < arguments.length; ++i) {
+                var argument = arguments[i];
+                if (argument instanceof Object) {
+                    for (var property in argument) {
+                        result.push(argument[property]);
+                    }
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Returns a new object with properties merged from all the passed objects.
+         * @param {objects} varargs    any number of objects
+         * @return {object}
+         */
+        l7.Util.mergeProperties = function(varargs) {
+            var result = {};
+            for (var i = 0; i < arguments.length; ++i) {
+                var argument = arguments[i];
+                for (var property in argument) {
+                    result[property] = argument[property];
+                }
+            }
+            return result;
+        }
+
+        /**
          * Removes matching element(s) from an array.
          *
          * @static
@@ -391,6 +427,18 @@ if (!l7.Util) {
                 }
             }
             return null;
+        }
+
+        /**
+         * Tests if a string is empty or contains blank characters only.
+         * Blank characters include white space, tab, carriage return, linefeed, vertical tab and form feed.
+         *
+         * @static
+         * @param {string} s    the string to test
+         * @return {boolean} true if the given string is empty or contains blank characters only
+         */
+        l7.Util.isBlankOnly = function(s) {
+            return s.match(/^\s*$/) != null;
         }
 
         /**
@@ -1125,7 +1173,7 @@ if (!l7.Dialog) {
             var tippyId = divId + '_tippy';
             var stackTraceTrIdPrefix = 'l7_Dialog_stackTrace_';
             var body = beginBody
-                     + '<div>' + l7.Util.escapeAsText(o.localizedMessage == null ? o.message : o.localizedMessage) + '</div>'
+                     + '<div style="margin-top: 10px;">' + l7.Util.escapeAsText(o.localizedMessage == null ? o.message : o.localizedMessage) + '</div>'
                      + '<div class="tippy" style="margin: 10px 0 4px 0; width: 600px;">'
                      +     '<img id="' + tippyId + '" class="tippy" src="../images/tippyCollapsed.png" alt="" onclick="l7.Tippy.toggleTippy(this, \'' + divId + '\')" />'
                      +     '<span class="clickable" onclick="l7.Tippy.toggleTippy(\'' + tippyId + '\', \'' + divId + '\')">Details</span>'
