@@ -717,19 +717,34 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
 
         if (specifyContentTypeCheckBox.isSelected()) {
- 	 	    if (specifyContentTypeFreeForm.isSelected()) {
- 	 	        ContentTypeHeader selectedContentType = ( (ContentTypeComboBoxItem)contentTypeValues.getSelectedItem()).getContentType();
- 	 	        if (selectedContentType != null) {
- 	 	            properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE, JmsConnection.CONTENT_TYPE_SOURCE_FREEFORM);
- 	 	            properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_VAL, selectedContentType.getFullValue());
- 	 	        }
- 	 	    } else {
- 	 	        String propertyName = getContentTypeFromProperty.getText();
- 	 	        if ( (propertyName != null) && !"".equals(propertyName) ) {
- 	 	            properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE, JmsConnection.CONTENT_TYPE_SOURCE_HEADER);
- 	 	            properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_VAL, propertyName);
- 	 	        }
- 	 	    }
+            if (specifyContentTypeFreeForm.isSelected()) {
+                //if none of the list is selected and there is a value in the content type, then we'll use the one
+                //that was entered by the user
+                ContentTypeHeader selectedContentType;
+                if (contentTypeValues.getSelectedIndex() == -1 && contentTypeValues.getEditor().getItem() != null) {
+                    String ctHeaderString = ((JTextField) contentTypeValues.getEditor().getEditorComponent()).getText();
+                    selectedContentType = ContentTypeHeader.parseValue(ctHeaderString);
+
+                    //check if the typed in content type matches to any one of the ones in our list
+                    int foundIndex = findContentTypeInList(selectedContentType);
+                    if (foundIndex != -1) {
+                        selectedContentType = ((ContentTypeComboBoxItem) contentTypeModel.getElementAt(foundIndex)).getContentType();
+                    }
+                } else {
+                    selectedContentType = ((ContentTypeComboBoxItem) contentTypeValues.getSelectedItem()).getContentType();
+                }
+
+                if (selectedContentType != null) {
+                    properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE, JmsConnection.CONTENT_TYPE_SOURCE_FREEFORM);
+                    properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_VAL, selectedContentType.getFullValue());
+                }
+            } else {
+                String propertyName = getContentTypeFromProperty.getText();
+                if ((propertyName != null) && !"".equals(propertyName)) {
+                    properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE, JmsConnection.CONTENT_TYPE_SOURCE_HEADER);
+                    properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_VAL, propertyName);
+                }
+            }
  	 	} else {
             properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE, "");
  	 	    properties.setProperty(JmsConnection.PROP_CONTENT_TYPE_VAL, "");
@@ -953,8 +968,16 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 String ctStr = props.getProperty(JmsConnection.PROP_CONTENT_TYPE_VAL);
                 if ((null != ctStr) && !"".equals(ctStr)) {
                     try {
+                        //determine if the content type is a manually entered one, if so, we'll display this content type
+                        //value in the editable box
                         ContentTypeHeader ctHeader = ContentTypeHeader.parseValue(ctStr);
-                        contentTypeValues.setSelectedItem(new ContentTypeComboBoxItem(ctHeader));
+                        if (findContentTypeInList(ctHeader) != -1) {
+                            contentTypeValues.setSelectedItem(new ContentTypeComboBoxItem(ctHeader));
+                        } else {
+                            contentTypeValues.setSelectedItem(null);
+                            contentTypeValues.getEditor().setItem(new ContentTypeComboBoxItem(ctHeader));
+                        }
+                        
                         specifyContentTypeFreeForm.setSelected(true);
                     } catch (IOException e1) {
                         logger.log(Level.WARNING,
@@ -1309,6 +1332,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
                         MessageFormat.format("Permission to {0} the {1} denied", pde.getOperation().getName(), tname),
                         "Permission Denied", JOptionPane.OK_OPTION);
+            } else if (ExceptionUtils.causedBy(e, IOException.class)) {
+                String errorMsg = ExceptionUtils.getMessage(e, "Invalid JMS connection settings.");
+                JOptionPane.showMessageDialog(this, errorMsg, "JMS Connection Settings", JOptionPane.ERROR_MESSAGE);
             } else {
                 throw new RuntimeException("Unable to save changes to this JMS Queue", e);
             }
@@ -1337,5 +1363,21 @@ public class JmsQueuePropertiesDialog extends JDialog {
             testButton.setEnabled(valid);
             enableOrDisableComponents();
         }
+    }
+
+
+    /**
+     * Finds the index of the ContentTypeComboBoxItem from the model that matches to the specified content type header
+     * @param ctHeader  The content type header
+     * @return  -1 if not found in the list, otherwise the index location of the found match.
+     */
+    private int findContentTypeInList(ContentTypeHeader ctHeader) {
+        for (int i = 0; i < contentTypeModel.getSize(); i++) {
+            ContentTypeComboBoxItem contentTypeItem = (ContentTypeComboBoxItem) contentTypeModel.getElementAt(i);
+            if (ctHeader.equals(contentTypeItem.getContentType())) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

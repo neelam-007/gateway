@@ -375,4 +375,17 @@ public class ContentTypeHeader extends MimeHeader {
             super.writeParam(os, name, value);
         }
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) return false;
+        if (!(obj instanceof ContentTypeHeader)) return false;
+
+        ContentTypeHeader ctHeader = (ContentTypeHeader) obj;
+        if (!type.equals(ctHeader.type)) return false;
+        if (!subtype.equals(ctHeader.subtype)) return false;
+        //if (!getEncoding().equals(ctHeader.getEncoding())) return false;
+
+        return true;
+    }
 }
