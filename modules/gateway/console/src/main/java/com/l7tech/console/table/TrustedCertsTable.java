@@ -1,5 +1,7 @@
 package com.l7tech.console.table;
 
+import com.l7tech.console.util.Registry;
+
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.JTableHeader;
@@ -112,7 +114,7 @@ public class TrustedCertsTable extends JTable {
         try {
             String dateStr =  getModel().getValueAt(row, TrustedCertTableSorter.CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX).toString();
             Date expiryDate = new SimpleDateFormat("MM/dd/yyyy").parse(dateStr);
-            Date today = new Date(System.currentTimeMillis());
+            Date today = Registry.getDefault().getClusterStatusAdmin().getCurrentClusterSystemTime();
 
             if (expiryDate.before(today)) {
                 cell.setBackground(Color.RED);
