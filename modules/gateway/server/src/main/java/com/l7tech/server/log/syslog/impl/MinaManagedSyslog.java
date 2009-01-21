@@ -237,29 +237,37 @@ public class MinaManagedSyslog extends ManagedSyslog {
                     setSession(session);
                 }
             };
-            if (isSSL) {
-                this.handler = new MinaSecureSyslogHandler(callback, sslKeystoreAlias, sslKeystoreId);
-            } else {
-                this.handler = new MinaSyslogHandler(callback);
-            }
 
-            // create TCP or UDP connector
-            switch ( protocol ) {
-                case TCP:
-                    this.connector = new SocketConnector();
-                    break;
-                case SSL:
+            // create the handler and connector instances
+            if (isSSL) {
+
+                if (SyslogSslClientSupport.isInitialized()) {
+                    this.handler = new MinaSecureSyslogHandler(callback, sslKeystoreAlias, sslKeystoreId);
                     this.connector = new SocketConnector();
                     MinaSecureSyslogHandler.class.cast(this.handler).setupConnectorForSSL(this.connector);
-                    break;
-                case UDP:
-                    this.connector = new DatagramConnector();
-                    break;
-                case VM:
-                    this.connector = new VmPipeConnector();
-                    break;
-                default:
-                    throw new IllegalArgumentException("invalid protocol " + protocol);
+                }
+
+            } else {
+
+                this.handler = new MinaSyslogHandler(callback);
+
+                // create TCP or UDP connector
+                switch ( protocol ) {
+                    case TCP:
+                        this.connector = new SocketConnector();
+                        break;
+                    case SSL:
+                        // won't happen -- covered by the isSSL check
+                        break;
+                    case UDP:
+                        this.connector = new DatagramConnector();
+                        break;
+                    case VM:
+                        this.connector = new VmPipeConnector();
+                        break;
+                    default:
+                        throw new IllegalArgumentException("invalid protocol " + protocol);
+                }
             }
         }
 
@@ -443,6 +451,24 @@ public class MinaManagedSyslog extends ManagedSyslog {
          */
         private void connectSSL() {
             // reset flag
+            if (connector == null) {
+                if (SyslogSslClientSupport.isInitialized()) {
+
+                    Functions.UnaryVoid<IoSession> callback = new Functions.UnaryVoid<IoSession>() {
+                        public void call(final IoSession session) {
+                            setSession(session);
+                        }
+                    };
+
+                    MinaSecureSyslogHandler sslHandler = new MinaSecureSyslogHandler(callback, sslKeystoreAlias, sslKeystoreId);
+                    this.handler = sslHandler;
+                    this.connector = new SocketConnector();
+                    sslHandler.setupConnectorForSSL(this.connector);
+                } else {
+                    return;
+                }
+            }
+
             reconnect.set( false );
 
             // build connector config
