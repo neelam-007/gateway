@@ -252,7 +252,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws IllegalArgumentException if the keybits or dn are improperly specified
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
     JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException;
 
     /**
@@ -266,7 +266,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException if there is a problem getting info from the database
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
+    @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
     byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException;
 
     /**

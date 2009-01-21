@@ -180,6 +180,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         if (!flags.canDeleteSome()) {
             destroyPrivateKeyButton.setEnabled(false);
             exportKeyButton.setEnabled(false);
+            generateCSRButton.setEnabled(false);
         }
         if (!flags.canUpdateSome())
             replaceCertificateChainButton.setEnabled(false);
